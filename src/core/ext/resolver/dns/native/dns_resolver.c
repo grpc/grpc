@@ -46,10 +46,11 @@
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/string.h"
 
-#define BACKOFF_MULTIPLIER 1.6
-#define BACKOFF_JITTER 0.2
-#define BACKOFF_MIN_SECONDS 1
-#define BACKOFF_MAX_SECONDS 120
+#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
+#define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
+#define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
+#define GRPC_DNS_RECONNECT_JITTER 0.2
 
 typedef struct {
   /** base class: must be first */
@@ -190,7 +191,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) <= 0) {
+    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
               timeout.tv_nsec);
     } else {
@@ -269,8 +270,11 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   server_name_arg.value.string = (char *)path;
   r->channel_args =
       grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
-  gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
-                   BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
+  gpr_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
+                   GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
+                   GRPC_DNS_RECONNECT_JITTER,
+                   GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+                   GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   return &r->base;
 }
 

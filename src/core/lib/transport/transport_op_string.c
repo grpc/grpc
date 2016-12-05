@@ -40,6 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -48,12 +49,12 @@
 
 static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
   gpr_strvec_add(b, gpr_strdup("key="));
-  gpr_strvec_add(b,
-                 gpr_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+  gpr_strvec_add(
+      b, grpc_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
   gpr_strvec_add(
-      b, gpr_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+      b, grpc_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
@@ -175,8 +176,8 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     first = false;
     char *msg = op->goaway_message == NULL
                     ? "null"
-                    : gpr_dump_slice(*op->goaway_message,
-                                     GPR_DUMP_ASCII | GPR_DUMP_HEX);
+                    : grpc_dump_slice(*op->goaway_message,
+                                      GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_asprintf(&tmp, "SEND_GOAWAY:status=%d:msg=%s", op->goaway_status, msg);
     if (op->goaway_message != NULL) gpr_free(msg);
     gpr_strvec_add(&b, tmp);

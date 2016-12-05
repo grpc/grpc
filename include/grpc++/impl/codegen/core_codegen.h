@@ -71,16 +71,16 @@ class CoreCodegen : public CoreCodegenInterface {
   void grpc_byte_buffer_reader_destroy(
       grpc_byte_buffer_reader* reader) override;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                   gpr_slice* slice) override;
+                                   grpc_slice* slice) override;
 
-  grpc_byte_buffer* grpc_raw_byte_buffer_create(gpr_slice* slice,
+  grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;
 
-  gpr_slice gpr_slice_malloc(size_t length) override;
-  void gpr_slice_unref(gpr_slice slice) override;
-  gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) override;
-  void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) override;
-  void gpr_slice_buffer_pop(gpr_slice_buffer* sb) override;
+  grpc_slice grpc_slice_malloc(size_t length) override;
+  void grpc_slice_unref(grpc_slice slice) override;
+  grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;
+  void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
+  void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
 
   void grpc_metadata_array_init(grpc_metadata_array* array) override;
   void grpc_metadata_array_destroy(grpc_metadata_array* array) override;

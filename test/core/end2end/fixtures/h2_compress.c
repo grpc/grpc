@@ -75,9 +75,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 }
 
 void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
-                                              grpc_channel_args *client_args,
-                                              const char *query_args) {
-  GPR_ASSERT(query_args == NULL);
+                                              grpc_channel_args *client_args) {
   fullstack_compression_fixture_data *ffd = f->fixture_data;
   if (ffd->client_args_compression != NULL) {
     grpc_channel_args_destroy(ffd->client_args_compression);
@@ -115,7 +113,9 @@ void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_fullstack_compression,
      chttp2_init_client_fullstack_compression,
      chttp2_init_server_fullstack_compression,

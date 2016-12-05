@@ -98,9 +98,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 }
 
 static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *client_args,
-                                          const char *query_args) {
-  GPR_ASSERT(query_args == NULL);
+                                          grpc_channel_args *client_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_transport *transport;
@@ -137,13 +135,16 @@ static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/socketpair_one_byte_at_a_time", 0,
-     chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,
-     chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
+    {"chttp2/socketpair_one_byte_at_a_time",
+     FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, chttp2_create_fixture_socketpair,
+     chttp2_init_client_socketpair, chttp2_init_server_socketpair,
+     chttp2_tear_down_socketpair},
 };
 
 int main(int argc, char **argv) {
   size_t i;
+
+  g_fixture_slowdown_factor = 2.0;
 
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();

@@ -48,5 +48,9 @@
     "Grpc.IntegrationTesting.MetadataCredentialsTest",
     "Grpc.IntegrationTesting.RunnerClientServerTest",
     "Grpc.IntegrationTesting.SslCredentialsTest"
+  ],
+  "Grpc.Reflection.Tests": [
+    "Grpc.Reflection.Tests.ReflectionClientServerTest",
+    "Grpc.Reflection.Tests.SymbolRegistryTest"
   ]
 }

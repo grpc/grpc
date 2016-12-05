@@ -35,13 +35,14 @@
 
 #include <string.h>
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 /** a size_t default value... maps to all 1's */
@@ -148,38 +149,38 @@ static void parse_query_parts(grpc_uri *uri) {
     uri->num_query_parts = 0;
     return;
   }
-  gpr_slice query_slice =
-      gpr_slice_new(uri->query, strlen(uri->query), do_nothing);
-  gpr_slice_buffer query_parts; /* the &-separated elements of the query */
-  gpr_slice_buffer query_param_parts; /* the =-separated subelements */
+  grpc_slice query_slice =
+      grpc_slice_new(uri->query, strlen(uri->query), do_nothing);
+  grpc_slice_buffer query_parts; /* the &-separated elements of the query */
+  grpc_slice_buffer query_param_parts; /* the =-separated subelements */
 
-  gpr_slice_buffer_init(&query_parts);
-  gpr_slice_buffer_init(&query_param_parts);
+  grpc_slice_buffer_init(&query_parts);
+  grpc_slice_buffer_init(&query_param_parts);
 
-  gpr_slice_split(query_slice, QUERY_PARTS_SEPARATOR, &query_parts);
+  grpc_slice_split(query_slice, QUERY_PARTS_SEPARATOR, &query_parts);
   uri->query_parts = gpr_malloc(query_parts.count * sizeof(char *));
   uri->query_parts_values = gpr_malloc(query_parts.count * sizeof(char *));
   uri->num_query_parts = query_parts.count;
   for (size_t i = 0; i < query_parts.count; i++) {
-    gpr_slice_split(query_parts.slices[i], QUERY_PARTS_VALUE_SEPARATOR,
-                    &query_param_parts);
+    grpc_slice_split(query_parts.slices[i], QUERY_PARTS_VALUE_SEPARATOR,
+                     &query_param_parts);
     GPR_ASSERT(query_param_parts.count > 0);
     uri->query_parts[i] =
-        gpr_dump_slice(query_param_parts.slices[0], GPR_DUMP_ASCII);
+        grpc_dump_slice(query_param_parts.slices[0], GPR_DUMP_ASCII);
     if (query_param_parts.count > 1) {
       /* TODO(dgq): only the first value after the separator is considered.
        * Perhaps all chars after the first separator for the query part should
        * be included, even if they include the separator. */
       uri->query_parts_values[i] =
-          gpr_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
+          grpc_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
     } else {
       uri->query_parts_values[i] = NULL;
     }
-    gpr_slice_buffer_reset_and_unref(&query_param_parts);
+    grpc_slice_buffer_reset_and_unref(&query_param_parts);
   }
-  gpr_slice_buffer_destroy(&query_parts);
-  gpr_slice_buffer_destroy(&query_param_parts);
-  gpr_slice_unref(query_slice);
+  grpc_slice_buffer_destroy(&query_parts);
+  grpc_slice_buffer_destroy(&query_param_parts);
+  grpc_slice_unref(query_slice);
 }
 
 grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {

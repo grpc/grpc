@@ -155,7 +155,7 @@ static const scenario scenarios[] = {
 };
 
 int main(int argc, char **argv) {
-  gpr_slice slice = gpr_slice_from_copied_string("x");
+  grpc_slice slice = grpc_slice_from_copied_string("x");
   double start, stop;
   unsigned i;
 
@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
   } while (event.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
   grpc_byte_buffer_destroy(the_buffer);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
 
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
           gpr_histogram_percentile(histogram, 50),

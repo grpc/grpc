@@ -76,34 +76,6 @@ static void test_dump(void) {
   expect_dump("ab", 2, GPR_DUMP_HEX | GPR_DUMP_ASCII, "61 62 'ab'");
 }
 
-static void expect_slice_dump(gpr_slice slice, uint32_t flags,
-                              const char *result) {
-  char *got = gpr_dump_slice(slice, flags);
-  GPR_ASSERT(0 == strcmp(got, result));
-  gpr_free(got);
-  gpr_slice_unref(slice);
-}
-
-static void test_dump_slice(void) {
-  static const char *text = "HELLO WORLD!";
-  static const char *long_text =
-      "It was a bright cold day in April, and the clocks were striking "
-      "thirteen. Winston Smith, his chin nuzzled into his breast in an effort "
-      "to escape the vile wind, slipped quickly through the glass doors of "
-      "Victory Mansions, though not quickly enough to prevent a swirl of "
-      "gritty dust from entering along with him.";
-
-  LOG_TEST_NAME("test_dump_slice");
-
-  expect_slice_dump(gpr_slice_from_copied_string(text), GPR_DUMP_ASCII, text);
-  expect_slice_dump(gpr_slice_from_copied_string(long_text), GPR_DUMP_ASCII,
-                    long_text);
-  expect_slice_dump(gpr_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX,
-                    "01");
-  expect_slice_dump(gpr_slice_from_copied_buffer("\x01", 1),
-                    GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
-}
-
 static void test_pu32_fail(const char *s) {
   uint32_t out;
   GPR_ASSERT(!gpr_parse_bytes_to_uint32(s, strlen(s), &out));
@@ -221,72 +193,6 @@ static void test_strjoin_sep(void) {
   gpr_free(joined);
 }
 
-static void test_strsplit(void) {
-  gpr_slice_buffer *parts;
-  gpr_slice str;
-
-  LOG_TEST_NAME("test_strsplit");
-
-  parts = gpr_malloc(sizeof(gpr_slice_buffer));
-  gpr_slice_buffer_init(parts);
-
-  str = gpr_slice_from_copied_string("one, two, three, four");
-  gpr_slice_split(str, ", ", parts);
-  GPR_ASSERT(4 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one"));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "two"));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[2], "three"));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[3], "four"));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  /* separator not present in string */
-  str = gpr_slice_from_copied_string("one two three four");
-  gpr_slice_split(str, ", ", parts);
-  GPR_ASSERT(1 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one two three four"));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  /* separator at the end */
-  str = gpr_slice_from_copied_string("foo,");
-  gpr_slice_split(str, ",", parts);
-  GPR_ASSERT(2 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "foo"));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  /* separator at the beginning */
-  str = gpr_slice_from_copied_string(",foo");
-  gpr_slice_split(str, ",", parts);
-  GPR_ASSERT(2 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "foo"));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  /* standalone separator */
-  str = gpr_slice_from_copied_string(",");
-  gpr_slice_split(str, ",", parts);
-  GPR_ASSERT(2 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  /* empty input */
-  str = gpr_slice_from_copied_string("");
-  gpr_slice_split(str, ", ", parts);
-  GPR_ASSERT(1 == parts->count);
-  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
-  gpr_slice_buffer_reset_and_unref(parts);
-  gpr_slice_unref(str);
-
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
-}
-
 static void test_ltoa() {
   char *str;
   char buf[GPR_LTOA_MIN_BUFSIZE];
@@ -377,12 +283,10 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
   test_dump();
-  test_dump_slice();
   test_parse_uint32();
   test_asprintf();
   test_strjoin();
   test_strjoin_sep();
-  test_strsplit();
   test_ltoa();
   test_int64toa();
   test_leftpad();

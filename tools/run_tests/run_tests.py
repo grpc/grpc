@@ -69,7 +69,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv', 'legacy']
+  'linux': ['epoll', 'poll', 'poll-cv']
 }
 
 
@@ -231,6 +231,9 @@ class CLanguage(object):
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
+        timeout_scaling = 1
+        if polling_strategy == 'poll-cv':
+          timeout_scaling *= 5
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
@@ -242,6 +245,9 @@ class CLanguage(object):
               target['name'])
         else:
           binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+        cpu_cost = target['cpu_cost']
+        if cpu_cost == 'capacity':
+          cpu_cost = multiprocessing.cpu_count()
         if os.path.isfile(binary):
           if 'gtest' in target and target['gtest']:
             # here we parse the output of --gtest_list_tests to build up a
@@ -265,7 +271,8 @@ class CLanguage(object):
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
-                                                cpu_cost=target['cpu_cost'],
+                                                cpu_cost=cpu_cost,
+                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -274,9 +281,9 @@ class CLanguage(object):
                                                           pipes.quote(arg)
                                                           for arg in cmdline) +
                                                       shortname_ext,
-                                            cpu_cost=target['cpu_cost'],
+                                            cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
-                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
+                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                             environ=env))
         elif self.args.regex == '.*' or self.platform == 'windows':
           print('\nWARNING: binary not found, skipping', binary)
@@ -333,7 +340,7 @@ class CLanguage(object):
     elif compiler == 'gcc4.6':
       return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc4.8':
-      return ('ubuntu1604', self._gcc_make_options(version_suffix='-4.8'))
+      return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':

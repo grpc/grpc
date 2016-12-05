@@ -70,6 +70,9 @@ class Reporter {
   /** Reports system and user time for client and server systems. */
   virtual void ReportTimes(const ScenarioResult& result) = 0;
 
+  /** Reports server cpu usage. */
+  virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
+
  private:
   const string name_;
 };
@@ -86,6 +89,7 @@ class CompositeReporter : public Reporter {
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
 
  private:
   std::vector<std::unique_ptr<Reporter> > reporters_;
@@ -101,6 +105,7 @@ class GprLogReporter : public Reporter {
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
 };
 
 /** Dumps the report to a JSON file. */
@@ -114,6 +119,7 @@ class JsonReporter : public Reporter {
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
 
   const string report_file_;
 };
