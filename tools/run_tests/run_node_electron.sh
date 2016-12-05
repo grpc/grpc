@@ -40,5 +40,6 @@ test_directory='src/node/test'
 timeout=8000
 
 JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
+  ./node_modules/.bin/xvfb-maybe \
   ./node_modules/.bin/electron-mocha --timeout $timeout \
   --reporter mocha-jenkins-reporter $test_directory
