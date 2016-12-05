@@ -58,8 +58,8 @@ void grpc_chttp2_server_handshaker_factory_create_handshakers(
     grpc_chttp2_server_handshaker_factory *handshaker_factory,
     grpc_handshake_manager *handshake_mgr) {
   if (handshaker_factory != NULL) {
-    handshaker_factory->vtable->create_handshakers(
-        exec_ctx, handshaker_factory, handshake_mgr);
+    handshaker_factory->vtable->create_handshakers(exec_ctx, handshaker_factory,
+                                                   handshake_mgr);
   }
 }
 
@@ -70,7 +70,6 @@ void grpc_chttp2_server_handshaker_factory_destroy(
     handshaker_factory->vtable->destroy(exec_ctx, handshaker_factory);
   }
 }
-
 
 typedef struct pending_handshake_manager_node {
   grpc_handshake_manager *handshake_mgr;
@@ -196,9 +195,9 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   // args instead of hard-coding it.
   const gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
-  grpc_handshake_manager_do_handshake(
-      exec_ctx, connection_state->handshake_mgr, tcp, state->args, deadline,
-      acceptor, on_handshake_done, connection_state);
+  grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
+                                      tcp, state->args, deadline, acceptor,
+                                      on_handshake_done, connection_state);
 }
 
 /* Server callback: start listening on our ports */
@@ -275,9 +274,8 @@ grpc_error *grpc_chttp2_server_add_port(
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state);
-  err =
-      grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,
-                             args, &tcp_server);
+  err = grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,
+                               args, &tcp_server);
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
