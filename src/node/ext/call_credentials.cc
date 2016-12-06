@@ -35,7 +35,7 @@
 #include <nan.h>
 #include <uv.h>
 
-#include <list>
+#include <queue>
 
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
@@ -170,7 +170,7 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   grpc_metadata_credentials_plugin plugin;
   plugin_state *state = new plugin_state;
   state->callback = new Nan::Callback(info[0].As<Function>());
-  state->pending_callbacks = new std::list<plugin_callback_data*>();
+  state->pending_callbacks = new std::queue<plugin_callback_data*>();
   uv_mutex_init(&state->plugin_mutex);
   uv_async_init(uv_default_loop(),
                 &state->plugin_async,
@@ -232,13 +232,13 @@ NAN_METHOD(PluginCallback) {
 NAUV_WORK_CB(SendPluginCallback) {
   Nan::HandleScope scope;
   plugin_state *state = reinterpret_cast<plugin_state*>(async->data);
-  std::list<plugin_callback_data*> callbacks;
+  std::queue<plugin_callback_data*> callbacks;
   uv_mutex_lock(&state->plugin_mutex);
-  callbacks.splice(callbacks.begin(), *state->pending_callbacks);
+  state->pending_callbacks->swap(callbacks);
   uv_mutex_unlock(&state->plugin_mutex);
   while (!callbacks.empty()) {
     plugin_callback_data *data = callbacks.front();
-    callbacks.pop_front();
+    callbacks.pop();
     Local<Object> callback_data = Nan::New<Object>();
     Nan::Set(callback_data, Nan::New("cb").ToLocalChecked(),
              Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
@@ -267,7 +267,7 @@ void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
   data->user_data = user_data;
 
   uv_mutex_lock(&p_state->plugin_mutex);
-  p_state->pending_callbacks->push_back(data);
+  p_state->pending_callbacks->push(data);
   uv_mutex_unlock(&p_state->plugin_mutex);
 
   uv_async_send(&p_state->plugin_async);
