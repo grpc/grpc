@@ -399,8 +399,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\health_check_service_server_builder_option.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\resource_quota_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
@@ -416,6 +414,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health_check_service.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health_check_service_server_builder_option.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
     </ClCompile>

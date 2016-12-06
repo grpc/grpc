@@ -31,45 +31,20 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
-#define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
-
-#include <mutex>
-
-#include <grpc++/health_check_service_interface.h>
-#include <grpc++/impl/codegen/service_types.h>
+#include <grpc++/ext/health_check_service_server_builder_option.h>
 
 namespace grpc {
 
-class SyncHealthCheckServiceImpl : public Service {
- public:
-  explicit SyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
-  Status Check(ServerContext* context, const ByteBuffer* request,
-               ByteBuffer* response);
+HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
+    std::unique_ptr<HealthCheckServiceInterface> hc)
+    : hc_(std::move(hc)) {}
+// Hand over hc_ to the server.
+void HealthCheckServiceServerBuilderOption::UpdateArguments(
+    ChannelArguments* args) override {
+  args->SetPointer(kDefaultHealthCheckServiceInterfaceArg, hc_.release());
+}
 
- private:
-  const DefaultHealthCheckService* service_;
-};
-
-// Default implementation of HealthCheckServiceInterface. Server will create and
-// own it.
-class DefaultHealthCheckService : public HealthCheckServiceInterface {
- public:
-  DefaultHealthCheckService();
-  void SetServingStatus(const grpc::string& service_name, bool serving) final;
-  void SetServingStatus(bool serving) final;
-  enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
-  ServingStatus GetServingStatus(const grpc::string& service_name) const;
-  SyncHealthCheckServiceImpl* GetSyncHealthCheckService() const {
-    return sync_service_.get();
-  }
-
- private:
-  std::mutex mu_;
-  std::map<grpc::string, bool> services_map_;
-  std::unique_ptr<SyncHealthCheckServiceImpl> sync_service_;
-};
+void HealthCheckServiceServerBuilderOption::UpdatePlugins(
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {}
 
 }  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H

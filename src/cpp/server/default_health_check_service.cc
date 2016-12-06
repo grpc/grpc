@@ -34,6 +34,29 @@
 #include "src/cpp/server/default_health_check_service.h"
 
 namespace grpc {
+namespace {
+
+const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
+
+}  // namespace
+
+SyncHealthCheckServiceImpl::SyncHealthCheckServiceImpl(
+    DefaultHealthCheckService* service)
+    : service_(service) {
+  auto* handler =
+      new RpcMethodHandler<SyncHealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
+          std::mem_fn(&SyncHealthCheckServiceImpl::Check), this);
+  auto* method = new RpcServiceMethod(kHealthCheckMethodName,
+                                      RpcMethod::NORMAL_RPC, handler);
+  AddMethod(mehtod);
+}
+
+Status SyncHealthCheckServiceImpl::Check(ServerContext* context,
+                                         const ByteBuffer* request,
+                                         ByteBuffer* response) {
+  // TODO nanopb
+  return Status::OK;
+}
 
 DefaultHealthCheckService::DefaultHealthCheckService() {
   services_map_.insert("", true);

@@ -370,8 +370,7 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false) {
+      server_initializer_(new ServerInitializer(this)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -387,6 +386,7 @@ Server::Server(
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
 
+  bool health_check_service_disabled = false;
   for (size_t i = 0; i < channel_args.num_args; i++) {
     if (0 == strcmp(channel_args.args[i].key,
                     kDefaultHealthCheckServiceInterfaceArg)) {
@@ -396,6 +396,15 @@ Server::Server(
         health_check_service_.reset(channel_args.args[i].value);
       }
       break;
+    }
+  }
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled &&
+      EnableDefaultHealthCheckService()) {
+    health_check_service_.reset(new DefaultHealthCheckService);
+    if (!sync_server_cqs->empty()) {  // Has sync methods.
+      RegisterService(health_check_service_->GetSyncHealthCheckService());
     }
   }
 
@@ -505,22 +514,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
-
-  // Only create default health check service when user did not provide an
-  // explicit one.
-  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
-      EnableDefaultHealthCheckService()) {
-    health_check_service_.reset(new DefaultHealthCheckService);
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->AddHealthCheckSyncMethod();
-    }
-
-    for (size_t i = 0; i < num_cqs; i++) {
-      if (cqs[i]->IsFrequentlyPolled()) {
-        //        new UnimplementedAsyncRequest(this, cqs[i]);
-      }
-    }
-  }
 
   if (!has_generic_service_) {
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {

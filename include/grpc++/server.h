@@ -55,12 +55,10 @@ struct grpc_server;
 
 namespace grpc {
 
-class GenericServerContext;
 class AsyncGenericService;
-class ServerAsyncStreamingInterface;
+class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
-class ThreadPoolInterface;
 
 /// Models a gRPC server.
 ///
@@ -99,7 +97,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Returns the health check service.
   HealthCheckServiceInterface* GetHealthCheckService() const {
-    return hc_.get();
+    return health_check_service_.get();
   }
 
  private:
@@ -221,8 +219,6 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   std::unique_ptr<ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
-  // User explicitly disabled health check service.
-  bool health_check_service_disabled_;
 };
 
 }  // namespace grpc
