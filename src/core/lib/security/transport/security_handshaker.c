@@ -100,7 +100,8 @@ static void security_handshaker_unref(grpc_exec_ctx *exec_ctx,
 
 // Set args fields to NULL, saving the endpoint and read buffer for
 // later destruction.
-static void cleanup_args_for_failure_locked(grpc_exec_ctx *exec_ctx, security_handshaker *h) {
+static void cleanup_args_for_failure_locked(grpc_exec_ctx *exec_ctx,
+                                            security_handshaker *h) {
   h->endpoint_to_destroy = h->args->endpoint;
   h->args->endpoint = NULL;
   h->read_buffer_to_destroy = h->args->read_buffer;

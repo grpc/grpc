@@ -429,8 +429,8 @@ static void on_response_headers_received(
   for (size_t i = 0; i < headers->count; i++) {
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.initial_metadata,
-        grpc_mdelem_from_metadata_strings(&exec_ctx,
-            grpc_mdstr_from_string(headers->headers[i].key),
+        grpc_mdelem_from_metadata_strings(
+            &exec_ctx, grpc_mdstr_from_string(headers->headers[i].key),
             grpc_mdstr_from_string(headers->headers[i].value)));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
@@ -507,8 +507,8 @@ static void on_response_trailers_received(
                trailers->headers[i].value);
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.trailing_metadata,
-        grpc_mdelem_from_metadata_strings(&exec_ctx,
-            grpc_mdstr_from_string(trailers->headers[i].key),
+        grpc_mdelem_from_metadata_strings(
+            &exec_ctx, grpc_mdstr_from_string(trailers->headers[i].key),
             grpc_mdstr_from_string(trailers->headers[i].value)));
     s->state.rs.trailing_metadata_valid = true;
   }

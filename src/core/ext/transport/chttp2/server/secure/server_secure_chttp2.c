@@ -67,8 +67,8 @@ static void server_security_handshaker_factory_destroy(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_server_handshaker_factory *hf) {
   server_security_handshaker_factory *handshaker_factory =
       (server_security_handshaker_factory *)hf;
-  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &handshaker_factory->security_connector->base,
-                                "server");
+  GRPC_SECURITY_CONNECTOR_UNREF(
+      exec_ctx, &handshaker_factory->security_connector->base, "server");
   gpr_free(hf);
 }
 
