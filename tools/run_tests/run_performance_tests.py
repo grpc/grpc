@@ -465,7 +465,7 @@ for scenario in scenarios:
       for worker in scenario.workers:
         worker.start()
       jobs = [scenario.jobspec]
-      if len(scenario.workers) > 0:
+      if scenario.workers:
         jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
       scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
