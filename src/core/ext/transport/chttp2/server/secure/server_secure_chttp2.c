@@ -54,12 +54,12 @@ typedef struct {
   grpc_server_security_connector *security_connector;
 } server_security_handshaker_factory;
 
-static void server_security_handshaker_factory_create_handshakers(
+static void server_security_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_server_handshaker_factory *hf,
     grpc_handshake_manager *handshake_mgr) {
   server_security_handshaker_factory *handshaker_factory =
       (server_security_handshaker_factory *)hf;
-  grpc_server_security_connector_create_handshakers(
+  grpc_server_security_connector_add_handshakers(
       exec_ctx, handshaker_factory->security_connector, handshake_mgr);
 }
 
@@ -74,7 +74,7 @@ static void server_security_handshaker_factory_destroy(
 
 static const grpc_chttp2_server_handshaker_factory_vtable
     server_security_handshaker_factory_vtable = {
-        server_security_handshaker_factory_create_handshakers,
+        server_security_handshaker_factory_add_handshakers,
         server_security_handshaker_factory_destroy};
 
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
