@@ -1623,6 +1623,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
       remove_stream(exec_ctx, t, s->id,
                     removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
     }
+    grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2");
   }
   GRPC_ERROR_UNREF(error);
