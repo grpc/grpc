@@ -58,6 +58,7 @@
 typedef struct cv_node {
   gpr_cv* cv;
   struct cv_node* next;
+  struct cv_node* prev;
 } cv_node;
 
 typedef struct fd_node {
@@ -68,9 +69,8 @@ typedef struct fd_node {
 
 typedef struct cv_fd_table {
   gpr_mu mu;
-  int pollcount;
-  int shutdown;
-  gpr_cv shutdown_complete;
+  gpr_refcount pollcount;
+  gpr_cv shutdown_cv;
   fd_node* cvfds;
   fd_node* free_fds;
   unsigned int size;
