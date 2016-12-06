@@ -60,9 +60,9 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
   gpr_free(sc);
 }
 
-static void httpcli_ssl_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_handshaker *handshaker = NULL;
