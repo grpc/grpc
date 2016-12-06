@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -30,55 +31,17 @@
  *
  */
 
-#include <grpc++/completion_queue.h>
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
-#include <memory>
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/security/transport/security_connector.h"
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/time.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+/// Creates any necessary security handshakers and adds them to
+/// \a handshake_mgr.
+void grpc_security_create_handshakers(grpc_exec_ctx *exec_ctx,
+                                      tsi_handshaker *handshaker,
+                                      grpc_security_connector *connector,
+                                      grpc_handshake_manager *handshake_mgr);
 
-namespace grpc {
-
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
-CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {
-  InitialAvalanching();
-}
-
-void CompletionQueue::Shutdown() {
-  g_gli_initializer.summon();
-  CompleteAvalanching();
-}
-
-void CompletionQueue::CompleteAvalanching() {
-  // Check if this was the last avalanching operation
-  if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                   static_cast<gpr_atm>(-1)) == 1) {
-    grpc_completion_queue_shutdown(cq_);
-  }
-}
-
-CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
-    void** tag, bool* ok, gpr_timespec deadline) {
-  for (;;) {
-    auto ev = grpc_completion_queue_next(cq_, deadline, nullptr);
-    switch (ev.type) {
-      case GRPC_QUEUE_TIMEOUT:
-        return TIMEOUT;
-      case GRPC_QUEUE_SHUTDOWN:
-        return SHUTDOWN;
-      case GRPC_OP_COMPLETE:
-        auto cq_tag = static_cast<CompletionQueueTag*>(ev.tag);
-        *ok = ev.success != 0;
-        *tag = cq_tag;
-        if (cq_tag->FinalizeResult(tag, ok)) {
-          return GOT_EVENT;
-        }
-        break;
-    }
-  }
-}
-
-}  // namespace grpc
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */

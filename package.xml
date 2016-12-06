@@ -305,9 +305,9 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/handshake.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
@@ -316,6 +316,7 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/connector.h" role="src" />
@@ -331,6 +332,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
@@ -503,9 +505,9 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/handshake.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/b64.c" role="src" />
@@ -514,6 +516,7 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/channel_connectivity.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.c" role="src" />
@@ -533,6 +536,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />

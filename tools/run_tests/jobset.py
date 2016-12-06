@@ -49,13 +49,21 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+
+# NOTE: If you change this, please make sure to test reviewing the
+# github PR with http://reviewable.io, which is known to add UTF-8
+# characters to the PR description, which leak into the environment here
+# and cause failures.
+def strip_non_ascii_chars(s):
+  return ''.join(c for c in s if ord(c) < 128)
+
+
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
-    print(key)
-    print(value)
-    sanitized[str(key).encode()] = str(value).encode()
+    sanitized[strip_non_ascii_chars(key)] = strip_non_ascii_chars(value)
   return sanitized
+
 
 def platform_string():
   if platform.system() == 'Windows':

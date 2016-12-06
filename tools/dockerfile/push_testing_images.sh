@@ -27,14 +27,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds selected testing docker images and pushes them to dockerhub.
+# Useful for testing environments where it's impractical (or impossible)
+# to rely on docker images being cached locally after they've been built
+# for the first time (which might be costly especially for some images).
+# NOTE: gRPC docker images intended to be used by end users are NOT
+# pushed using this script (they're built automatically by dockerhub).
+# This script is only for "internal" images we use when testing gRPC.  
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_master.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-  }
-}
+cd $(dirname $0)/../..
+git_root=$(pwd)
+cd -
+
+DOCKERHUB_ORGANIZATION=grpctesting
+
+for DOCKERFILE_DIR in tools/dockerfile/test/fuzzer
+do
+  # Generate image name based on Dockerfile checksum. That works well as long
+  # as can count on dockerfiles being written in a way that changing the logical 
+  # contents of the docker image always changes the SHA (e.g. using "ADD file" 
+  # cmd in the dockerfile in not ok as contents of the added file will not be
+  # reflected in the SHA).
+  DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+
+  # skip the image if it already exists in the repo 
+  curl --silent -f -lSL https://registry.hub.docker.com/v2/repositories/${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}/tags/latest > /dev/null \
+      && continue
+
+  docker build -t ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME} ${DOCKERFILE_DIR}
+      
+  # "docker login" needs to be run in advance
+  docker push ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}
+done
