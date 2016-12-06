@@ -1085,7 +1085,6 @@ add_library(grpc++
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
-  src/cpp/common/health_check_service_server_builder_option.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
@@ -1094,6 +1093,7 @@ add_library(grpc++
   src/cpp/server/default_health_check_service.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health_check_service.cc
+  src/cpp/server/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -1248,7 +1248,6 @@ add_library(grpc++_cronet
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
-  src/cpp/common/health_check_service_server_builder_option.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
@@ -1257,6 +1256,7 @@ add_library(grpc++_cronet
   src/cpp/server/default_health_check_service.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health_check_service.cc
+  src/cpp/server/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -1634,7 +1634,6 @@ add_library(grpc++_unsecure
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
-  src/cpp/common/health_check_service_server_builder_option.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
@@ -1643,6 +1642,7 @@ add_library(grpc++_unsecure
   src/cpp/server/default_health_check_service.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health_check_service.cc
+  src/cpp/server/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc

@@ -58,9 +58,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\health_check_service_server_builder_option.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\resource_quota_cc.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -83,6 +80,9 @@
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health_check_service.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health_check_service_server_builder_option.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
