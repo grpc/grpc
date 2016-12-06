@@ -43,24 +43,8 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
+namespace testing {
 namespace {
-
-using grpc::testing::CredentialTypeProvider;
-
-// Provide test credentials. Thread-safe.
-class CredentialsProvider {
- public:
-  virtual ~CredentialsProvider() {}
-
-  virtual void AddSecureType(
-      const grpc::string& type,
-      std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
-  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
-};
 
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
@@ -145,37 +129,21 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_providers_;
 };
 
-gpr_once g_once_init_provider = GPR_ONCE_INIT;
 CredentialsProvider* g_provider = nullptr;
-
-void CreateDefaultProvider() { g_provider = new DefaultCredentialsProvider; }
-
-CredentialsProvider* GetProvider() {
-  gpr_once_init(&g_once_init_provider, &CreateDefaultProvider);
-  return g_provider;
-}
 
 }  // namespace
 
-namespace testing {
-
-void AddSecureType(const grpc::string& type,
-                   std::unique_ptr<CredentialTypeProvider> type_provider) {
-  GetProvider()->AddSecureType(type, std::move(type_provider));
+CredentialsProvider* GetCredentialsProvider() {
+  if (g_provider == nullptr) {
+    g_provider = new DefaultCredentialsProvider;
+  }
+  return g_provider;
 }
 
-std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args) {
-  return GetProvider()->GetChannelCredentials(type, args);
-}
-
-std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type) {
-  return GetProvider()->GetServerCredentials(type);
-}
-
-std::vector<grpc::string> GetSecureCredentialsTypeList() {
-  return GetProvider()->GetSecureCredentialsTypeList();
+void SetCredentialsProvider(CredentialsProvider* provider) {
+  // For now, forbids overriding provider.
+  GPR_ASSERT(g_provider == nullptr);
+  g_provider = provider;
 }
 
 }  // namespace testing
