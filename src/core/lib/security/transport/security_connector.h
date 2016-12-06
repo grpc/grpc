@@ -98,7 +98,7 @@ void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
 /* Check the peer. Callee takes ownership of the peer object.
-   Sets *auth_context and invokes on_peer_checked when done. */
+   When done, sets *auth_context and invokes on_peer_checked. */
 void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_security_connector *sc,
                                         tsi_peer peer,
