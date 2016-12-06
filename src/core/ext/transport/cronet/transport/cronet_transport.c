@@ -418,6 +418,7 @@ static void on_response_headers_received(
     cronet_bidirectional_stream *stream,
     const cronet_bidirectional_stream_header_array *headers,
     const char *negotiated_protocol) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   CRONET_LOG(GPR_DEBUG, "R: on_response_headers_received(%p, %p, %s)", stream,
              headers, negotiated_protocol);
   stream_obj *s = (stream_obj *)stream->annotation;
@@ -428,12 +429,13 @@ static void on_response_headers_received(
   for (size_t i = 0; i < headers->count; i++) {
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.initial_metadata,
-        grpc_mdelem_from_metadata_strings(
+        grpc_mdelem_from_metadata_strings(&exec_ctx,
             grpc_mdstr_from_string(headers->headers[i].key),
             grpc_mdstr_from_string(headers->headers[i].value)));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
   gpr_mu_unlock(&s->mu);
+  grpc_exec_ctx_finish(&exec_ctx);
   execute_from_storage(s);
 }
 
@@ -491,6 +493,7 @@ static void on_read_completed(cronet_bidirectional_stream *stream, char *data,
 static void on_response_trailers_received(
     cronet_bidirectional_stream *stream,
     const cronet_bidirectional_stream_header_array *trailers) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   CRONET_LOG(GPR_DEBUG, "R: on_response_trailers_received(%p,%p)", stream,
              trailers);
   stream_obj *s = (stream_obj *)stream->annotation;
@@ -504,13 +507,14 @@ static void on_response_trailers_received(
                trailers->headers[i].value);
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.trailing_metadata,
-        grpc_mdelem_from_metadata_strings(
+        grpc_mdelem_from_metadata_strings(&exec_ctx,
             grpc_mdstr_from_string(trailers->headers[i].key),
             grpc_mdstr_from_string(trailers->headers[i].value)));
     s->state.rs.trailing_metadata_valid = true;
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
   gpr_mu_unlock(&s->mu);
+  grpc_exec_ctx_finish(&exec_ctx);
   execute_from_storage(s);
 }
 
