@@ -117,7 +117,6 @@ typedef struct {
   GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(slice)
 #define GRPC_SLICE_IS_EMPTY(slice) (GRPC_SLICE_LENGTH(slice) == 0)
 
-
 #ifdef GRPC_ALLOW_GPR_SLICE_FUNCTIONS
 
 /* Duplicate GPR_* definitions */
