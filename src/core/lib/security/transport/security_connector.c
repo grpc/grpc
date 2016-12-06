@@ -171,7 +171,8 @@ grpc_security_connector *grpc_security_connector_ref(
 }
 
 #ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
-void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc,
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc,
                                    const char *file, int line,
                                    const char *reason) {
   if (sc == NULL) return;
@@ -179,7 +180,8 @@ void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx, grpc_security_connec
           "SECURITY_CONNECTOR:%p unref %d -> %d %s", sc,
           (int)sc->refcount.count, (int)sc->refcount.count - 1, reason);
 #else
-void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc) {
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc) {
   if (sc == NULL) return;
 #endif
   if (gpr_unref(&sc->refcount)) sc->vtable->destroy(exec_ctx, sc);
@@ -232,13 +234,17 @@ grpc_security_connector *grpc_find_security_connector_in_args(
 
 /* -- Fake implementation. -- */
 
-static void fake_channel_destroy(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc) {
+static void fake_channel_destroy(grpc_exec_ctx *exec_ctx,
+                                 grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
   grpc_call_credentials_unref(exec_ctx, c->request_metadata_creds);
   gpr_free(sc);
 }
 
-static void fake_server_destroy(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc) { gpr_free(sc); }
+static void fake_server_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_security_connector *sc) {
+  gpr_free(sc);
+}
 
 static void fake_check_peer(grpc_exec_ctx *exec_ctx,
                             grpc_security_connector *sc, tsi_peer peer,
@@ -346,7 +352,8 @@ typedef struct {
   tsi_ssl_handshaker_factory *handshaker_factory;
 } grpc_ssl_server_security_connector;
 
-static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc) {
+static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_security_connector *sc) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   grpc_call_credentials_unref(exec_ctx, c->base.request_metadata_creds);
@@ -358,7 +365,8 @@ static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx, grpc_security_connector
   gpr_free(sc);
 }
 
-static void ssl_server_destroy(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc) {
+static void ssl_server_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_security_connector *sc) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
@@ -661,8 +669,8 @@ size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
   return GRPC_SLICE_LENGTH(default_pem_root_certs);
 }
 
-grpc_security_status grpc_ssl_channel_security_connector_create(grpc_exec_ctx *exec_ctx,
-    grpc_call_credentials *request_metadata_creds,
+grpc_security_status grpc_ssl_channel_security_connector_create(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *request_metadata_creds,
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
@@ -739,7 +747,8 @@ error:
 }
 
 grpc_security_status grpc_ssl_server_security_connector_create(
-grpc_exec_ctx *exec_ctx,    const grpc_ssl_server_config *config, grpc_server_security_connector **sc) {
+    grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_server_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const unsigned char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);

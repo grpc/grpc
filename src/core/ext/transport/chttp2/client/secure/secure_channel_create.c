@@ -137,8 +137,8 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   grpc_channel_security_connector *security_connector;
   grpc_channel_args *new_args_from_connector;
   if (grpc_channel_credentials_create_security_connector(
-          &exec_ctx, creds, target, args, &security_connector, &new_args_from_connector) !=
-      GRPC_SECURITY_OK) {
+          &exec_ctx, creds, target, args, &security_connector,
+          &new_args_from_connector) != GRPC_SECURITY_OK) {
     grpc_exec_ctx_finish(&exec_ctx);
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
