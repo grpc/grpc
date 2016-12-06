@@ -140,7 +140,7 @@ class ServerInterface : public CallHook {
                      ServerAsyncStreamingInterface* stream,
                      CompletionQueue* call_cq, void* tag,
                      bool delete_on_finalize);
-    virtual ~BaseAsyncRequest() {}
+    virtual ~BaseAsyncRequest();
 
     bool FinalizeResult(void** tag, bool* status) override;
 

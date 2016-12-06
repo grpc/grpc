@@ -28,13 +28,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_master.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+# TODO(jtattermusch): get rid of the system inspection eventually
+nproc || true
+lsb_release -dc || true
+gcc --version || true
+clang --version || true
+docker --version || true
+
+git submodule update --init
+
+tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
