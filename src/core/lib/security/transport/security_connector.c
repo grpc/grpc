@@ -293,9 +293,9 @@ static void fake_channel_add_handshakers(
       handshake_mgr);
 }
 
-static void fake_server_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_server_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_security_add_handshakers(
       exec_ctx, tsi_create_fake_handshaker(false /* is_client */), &sc->base,
       handshake_mgr);
@@ -382,9 +382,9 @@ static grpc_security_status ssl_create_handshaker(
   return GRPC_SECURITY_OK;
 }
 
-static void ssl_channel_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   // Instantiate TSI handshaker.
@@ -398,9 +398,9 @@ static void ssl_channel_add_handshakers(
   grpc_security_add_handshakers(exec_ctx, tsi_hs, &sc->base, handshake_mgr);
 }
 
-static void ssl_server_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                       grpc_server_security_connector *sc,
+                                       grpc_handshake_manager *handshake_mgr) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.

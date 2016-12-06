@@ -69,8 +69,7 @@ static void client_channel_factory_unref(
   }
 }
 
-static void add_handshakers(grpc_exec_ctx *exec_ctx,
-                            void *security_connector,
+static void add_handshakers(grpc_exec_ctx *exec_ctx, void *security_connector,
                             grpc_handshake_manager *handshake_mgr) {
   grpc_channel_security_connector_add_handshakers(exec_ctx, security_connector,
                                                   handshake_mgr);
