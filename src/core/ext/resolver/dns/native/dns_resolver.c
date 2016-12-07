@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
 #define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
@@ -218,6 +219,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
+                       r->base.pollset_set,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
@@ -308,7 +310,21 @@ static grpc_resolver_factory *dns_resolver_factory_create() {
 }
 
 void grpc_resolver_dns_native_init(void) {
-  grpc_register_resolver_type(dns_resolver_factory_create());
+  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (resolver != NULL && gpr_stricmp(resolver, "native") == 0) {
+    gpr_log(GPR_DEBUG, "Using native dns resolver");
+    grpc_register_resolver_type(dns_resolver_factory_create());
+  } else {
+    grpc_resolver_factory *existing_factory =
+        grpc_resolver_factory_lookup("dns");
+    if (existing_factory == NULL) {
+      gpr_log(GPR_DEBUG, "Using native dns resolver");
+      grpc_register_resolver_type(dns_resolver_factory_create());
+    } else {
+      grpc_resolver_factory_unref(existing_factory);
+    }
+  }
+  gpr_free(resolver);
 }
 
 void grpc_resolver_dns_native_shutdown(void) {}

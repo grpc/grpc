@@ -77,8 +77,12 @@ void grpc_resolver_registry_set_default_prefix(
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {
   int i;
   for (i = 0; i < g_number_of_resolvers; i++) {
-    GPR_ASSERT(0 != strcmp(factory->vtable->scheme,
-                           g_all_of_the_resolvers[i]->vtable->scheme));
+    if (0 == strcmp(factory->vtable->scheme,
+                    g_all_of_the_resolvers[i]->vtable->scheme)) {
+      grpc_resolver_factory_unref(g_all_of_the_resolvers[i]);
+      g_all_of_the_resolvers[i] = factory;
+      return;
+    }
   }
   GPR_ASSERT(g_number_of_resolvers != MAX_RESOLVERS);
   grpc_resolver_factory_ref(factory);
@@ -93,7 +97,6 @@ static grpc_resolver_factory *lookup_factory(const char *name) {
       return g_all_of_the_resolvers[i];
     }
   }
-
   return NULL;
 }
 

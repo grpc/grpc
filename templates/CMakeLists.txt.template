@@ -52,6 +52,7 @@
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      deps.append("${_gRPC_CARES_LIBRARIES}")
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
@@ -74,6 +75,9 @@
 
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_CARES_PROVIDER "module" CACHE STRING "Provider of c-ares library")
+  set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
@@ -113,6 +117,27 @@
       set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
     endif()
     set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
+  endif()
+
+  if("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "module")
+    if(NOT CARES_ROOT_DIR)
+      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/c-ares)
+    endif()
+    set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares")
+    if(EXISTS "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares/CMakeLists.txt")
+        add_subdirectory(src/c-ares third_party/c-ares)
+        if(TARGET cares)
+            set(_gRPC_CARES_LIBRARIES cares)
+        endif()
+    else()
+        message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
+    endif()
+  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
+    find_package(CARES)
+    if(TARGET CARES::CARES)
+      set(_gRPC_CARES_LIBRARIES CARES::CARES)
+    endif()
+    set(_gRPC_FIND_CARES "if(NOT CARES_FOUND)\n  find_package(CARES)\nendif()")
   endif()
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
@@ -215,6 +240,8 @@
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/c-ares
   )
 
   % if len(get_deps(lib)) > 0:
@@ -254,6 +281,8 @@
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+    PRIVATE <%text>${CARES_ROOT_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/c-ares
   )
 
   % if len(get_deps(tgt)) > 0:

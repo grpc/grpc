@@ -45,22 +45,26 @@
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 
-static grpc_error *my_resolve_address(const char *name, const char *addr,
-                                      grpc_resolved_addresses **addrs) {
+static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
+                               const char *default_port,
+                               grpc_pollset_set *interested_parties,
+                               grpc_closure *on_done,
+                               grpc_resolved_addresses **addrs) {
   gpr_mu_lock(&g_mu);
-  GPR_ASSERT(0 == strcmp("test", name));
+  GPR_ASSERT(0 == strcmp("test", addr));
+  grpc_error *error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
-    return GRPC_ERROR_CREATE("Forced Failure");
+    error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
     *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
-    return GRPC_ERROR_NONE;
   }
+  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
 }
 
 static grpc_resolver *create_resolver(const char *name) {
@@ -100,7 +104,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-  grpc_blocking_resolve_address = my_resolve_address;
+  grpc_resolve_address = my_resolve_address;
 
   grpc_resolver *resolver = create_resolver("dns:test");
 

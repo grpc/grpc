@@ -43,6 +43,7 @@ void grpc_resolver_registry_shutdown(void);
 void grpc_resolver_registry_set_default_prefix(const char *default_prefix);
 
 /** Register a resolver type.
+    \a factory will replace a registered factory if they have the same scheme.
     URI's of \a scheme will be resolved with the given resolver.
     If \a priority is greater than zero, then the resolver will be eligible
     to resolve names that are passed in with no scheme. Higher priority
