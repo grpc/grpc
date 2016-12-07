@@ -49,6 +49,7 @@
 typedef struct {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
+  gpr_atm filled_metadata;
 } call_data;
 
 typedef struct {
@@ -59,6 +60,9 @@ typedef struct {
 static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                           grpc_metadata_batch *mdb) {
   call_data *calld = elem->call_data;
+  if (!gpr_atm_no_barrier_cas(&calld->filled_metadata, 0, 1)) {
+    return;
+  }
   channel_data *chand = elem->channel_data;
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
@@ -72,6 +76,7 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   calld->details.prev = &calld->status;
   mdb->list.head = &calld->status;
   mdb->list.tail = &calld->details;
+  mdb->list.count = 2;
   mdb->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
@@ -118,6 +123,8 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
+  call_data *calld = elem->call_data;
+  gpr_atm_no_barrier_store(&calld->filled_metadata, 0);
   return GRPC_ERROR_NONE;
 }
 

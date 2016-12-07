@@ -111,6 +111,7 @@ grpc_end2end_proxy *grpc_end2end_proxy_create(const grpc_end2end_proxy_def *def,
   grpc_server_register_completion_queue(proxy->server, proxy->cq, NULL);
   grpc_server_start(proxy->server);
 
+  grpc_call_details_init(&proxy->new_call_details);
   gpr_thd_options_set_joinable(&opt);
   GPR_ASSERT(gpr_thd_new(&proxy->thd, thread_main, proxy, &opt));
 
@@ -397,6 +398,9 @@ static void on_new_call(void *arg, int success) {
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     request_call(proxy);
+
+    grpc_call_details_destroy(&proxy->new_call_details);
+    grpc_call_details_init(&proxy->new_call_details);
 
     unrefpc(pc, "init");
   } else {

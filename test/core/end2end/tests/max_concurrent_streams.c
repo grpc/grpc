@@ -391,6 +391,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(live_call + 1), 1);
   cq_verify(cqv);
 
+  grpc_call_details_destroy(&call_details);
+
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));

@@ -81,9 +81,9 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
       e[i - 1].next = &e[i];
       e[i].prev = &e[i - 1];
     }
-    e[i].md =
-        grpc_mdelem_from_slices(exec_ctx, grpc_slice_from_copied_string(key),
-                                grpc_slice_from_copied_string(value));
+    e[i].md = grpc_mdelem_from_slices(
+        exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
+        grpc_slice_intern(grpc_slice_from_static_string(value)));
   }
   e[0].prev = NULL;
   e[nheaders - 1].next = NULL;
@@ -91,6 +91,7 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
 
   b.list.head = &e[0];
   b.list.tail = &e[nheaders - 1];
+  b.list.count = nheaders;
 
   if (cap_to_delete == num_to_delete) {
     cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
@@ -195,9 +196,9 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
                                                      const char *key,
                                                      const char *value) {
   grpc_slice_buffer output;
-  grpc_mdelem elem =
-      grpc_mdelem_from_slices(exec_ctx, grpc_slice_from_copied_string(key),
-                              grpc_slice_from_copied_string(value));
+  grpc_mdelem elem = grpc_mdelem_from_slices(
+      exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
+      grpc_slice_intern(grpc_slice_from_static_string(value)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   size_t initial_table_size = g_compressor.table_size;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e));
@@ -208,6 +209,7 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
   e[0].next = NULL;
   b.list.head = &e[0];
   b.list.tail = &e[0];
+  b.list.count = 1;
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
