@@ -424,7 +424,7 @@ static uint32_t %(name)s_phash(uint32_t i) {
   i %(offset_sign)s= %(offset)d;
   uint32_t x = i %% %(t)d;
   uint32_t y = i / %(t)d;
-  return x + (uint32_t)%(name)s_r[y];
+  return y < GPR_ARRAY_SIZE(%(name)s_r) ? x + (uint32_t)%(name)s_r[y] : 0;
 }
     """ % {
       'name': name,

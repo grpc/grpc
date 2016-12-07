@@ -440,7 +440,7 @@ static uint32_t elems_phash(uint32_t i) {
   i -= 42;
   uint32_t x = i % 96;
   uint32_t y = i / 96;
-  return x + (uint32_t)elems_r[y];
+  return y < GPR_ARRAY_SIZE(elems_r) ? x + (uint32_t)elems_r[y] : 0;
 }
 
 static const uint16_t elem_keys[] = {
