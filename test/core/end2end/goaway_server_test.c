@@ -124,8 +124,16 @@ int main(int argc, char **argv) {
 
   char *addr;
 
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
+
   /* create a channel that picks first amongst the servers */
-  grpc_channel *chan = grpc_insecure_channel_create("test", NULL, NULL);
+  grpc_channel *chan = grpc_insecure_channel_create("test", &client_args, NULL);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
   grpc_call *call1 =

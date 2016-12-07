@@ -117,7 +117,7 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
         GRPC_MDVALUE(b->idx.named.grpc_message->md));
     if (grpc_slice_is_equivalent(pct_decoded_msg,
                                  GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
-      grpc_slice_unref(pct_decoded_msg);
+      grpc_slice_unref_internal(exec_ctx, pct_decoded_msg);
     } else {
       grpc_metadata_batch_set_value(exec_ctx, b->idx.named.grpc_message,
                                     pct_decoded_msg);
