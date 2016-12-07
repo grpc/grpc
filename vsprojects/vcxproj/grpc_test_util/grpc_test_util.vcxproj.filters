@@ -755,6 +755,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>

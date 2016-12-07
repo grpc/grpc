@@ -518,9 +518,15 @@ extern grpc_slice_split_head_type grpc_slice_split_head_import;
 typedef grpc_slice(*grpc_empty_slice_type)(void);
 extern grpc_empty_slice_type grpc_empty_slice_import;
 #define grpc_empty_slice grpc_empty_slice_import
-typedef uint32_t(*grpc_slice_default_hash_impl_type)(void *, grpc_slice s);
+typedef uint32_t(*grpc_slice_default_hash_impl_type)(grpc_slice s);
 extern grpc_slice_default_hash_impl_type grpc_slice_default_hash_impl_import;
 #define grpc_slice_default_hash_impl grpc_slice_default_hash_impl_import
+typedef int(*grpc_slice_default_eq_impl_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_default_eq_impl_type grpc_slice_default_eq_impl_import;
+#define grpc_slice_default_eq_impl grpc_slice_default_eq_impl_import
+typedef int(*grpc_slice_eq_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_eq_type grpc_slice_eq_import;
+#define grpc_slice_eq grpc_slice_eq_import
 typedef int(*grpc_slice_cmp_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_cmp_type grpc_slice_cmp_import;
 #define grpc_slice_cmp grpc_slice_cmp_import

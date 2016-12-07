@@ -200,21 +200,36 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
 static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
 
   gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_short", config.name);
   f = config.create_fixture(NULL, NULL);
-  simple_delayed_request_body(config, &f, NULL, NULL, 100000);
+
+  simple_delayed_request_body(config, &f, &client_args, NULL, 100000);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
 
   gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_long", config.name);
   f = config.create_fixture(NULL, NULL);
   /* This timeout should be longer than a single retry */
-  simple_delayed_request_body(config, &f, NULL, NULL, 1500000);
+  simple_delayed_request_body(config, &f, &client_args, NULL, 1500000);
   end_test(&f);
   config.tear_down_data(&f);
 }
