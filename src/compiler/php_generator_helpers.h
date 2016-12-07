@@ -41,8 +41,8 @@
 
 namespace grpc_php_generator {
 
-inline grpc::string GetPHPServiceFilename(const grpc::string& filename) {
-  return grpc_generator::StripProto(filename) + "_grpc_pb.php";
+inline grpc::string GetPHPServiceFilename(const grpc::protobuf::FileDescriptor *file) {
+  return grpc_generator::FileNameInUpperCamel(file, false) + "Grpc.php";
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".

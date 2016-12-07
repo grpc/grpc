@@ -57,7 +57,7 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     // Get output file name
-    grpc::string file_name = GetPHPServiceFilename(file->name());
+    grpc::string file_name = GetPHPServiceFilename(file);
 
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
