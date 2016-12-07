@@ -105,6 +105,16 @@ struct grpc_handshaker {
 void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker);
 
+void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                             grpc_handshaker* handshaker);
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker);
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
+                                  grpc_tcp_server_acceptor* acceptor,
+                                  grpc_closure* on_handshake_done,
+                                  grpc_handshaker_args* args);
+
 ///
 /// grpc_handshake_manager
 ///
