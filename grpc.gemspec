@@ -240,6 +240,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/json/json_reader.h )
   s.files += %w( src/core/lib/json/json_writer.h )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
+  s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )
