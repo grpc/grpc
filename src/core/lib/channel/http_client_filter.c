@@ -111,7 +111,7 @@ static grpc_mdelem *client_recv_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     grpc_slice pct_decoded_msg =
         grpc_permissive_percent_decode_slice(md->value->slice);
     if (grpc_slice_is_equivalent(pct_decoded_msg, md->value->slice)) {
-      grpc_slice_unref(pct_decoded_msg);
+      grpc_slice_unref_internal(exec_ctx, pct_decoded_msg);
       return md;
     } else {
       return grpc_mdelem_from_metadata_strings(

@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
@@ -149,7 +150,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_endpoint_shutdown(exec_ctx, args->endpoint);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
       grpc_channel_args_destroy(exec_ctx, args->args);
-      grpc_slice_buffer_destroy(args->read_buffer);
+      grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
       gpr_free(args->read_buffer);
     }
   } else {
