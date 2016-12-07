@@ -36,7 +36,6 @@
 #include <utility>
 
 #include <grpc++/completion_queue.h>
-#include <grpc++/ext/g.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
@@ -307,15 +306,6 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     sync_requests_.emplace_back(new SyncRequest(method, tag));
   }
 
-  void AddHealthCheckSyncMethod() {
-    if (!sync_requests_.empty()) {
-      health_check_.reset(
-          new RpcServiceMethod("???", RpcMethod::NORMAL_RPC, new XXXHandler));
-      sync_requests_.emplace_back(
-          new SyncRequest(health_check_.get(), nullptr));
-    }
-  }
-
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
       unknown_method_.reset(new RpcServiceMethod(
@@ -390,10 +380,11 @@ Server::Server(
   for (size_t i = 0; i < channel_args.num_args; i++) {
     if (0 == strcmp(channel_args.args[i].key,
                     kDefaultHealthCheckServiceInterfaceArg)) {
-      if (channel_args.args[i].value == nullptr) {
-        health_check_service_disabled_ = true;
+      if (channel_args.args[i].value.pointer.p == nullptr) {
+        health_check_service_disabled = true;
       } else {
-        health_check_service_.reset(channel_args.args[i].value);
+        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
+            channel_args.args[i].value.pointer.p));
       }
       break;
     }
@@ -401,10 +392,12 @@ Server::Server(
   // Only create default health check service when user did not provide an
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled &&
-      EnableDefaultHealthCheckService()) {
-    health_check_service_.reset(new DefaultHealthCheckService);
+      DefaultHealthCheckServiceEnabled()) {
+    auto* default_hc_service = new DefaultHealthCheckService;
+    health_check_service_.reset(default_hc_service);
     if (!sync_server_cqs->empty()) {  // Has sync methods.
-      RegisterService(health_check_service_->GetSyncHealthCheckService());
+      grpc::string host;
+      RegisterService(&host, default_hc_service->GetSyncHealthCheckService());
     }
   }
 
