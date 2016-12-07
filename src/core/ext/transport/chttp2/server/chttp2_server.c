@@ -153,6 +153,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_free(args->read_buffer);
     }
   } else {
+    // If the handshaking succeeded but there is no endpoint, then the
+    // handshaker may have handed off the connection to some external
+    // code, so we can just clean up here without creating a transport.
     if (args->endpoint != NULL) {
       grpc_transport *transport =
           grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
@@ -161,14 +164,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
           connection_state->accepting_pollset, args->args);
       grpc_chttp2_transport_start_reading(exec_ctx, transport,
                                           args->read_buffer);
-    } else {
-      // If the handshaking succeeded but there is no endpoint, then the
-      // handshaker may have handed off the connection to some external
-      // code, so we can just clean up here without creating a transport.
-      grpc_slice_buffer_destroy(args->read_buffer);
-      gpr_free(args->read_buffer);
+      grpc_channel_args_destroy(args->args);
     }
-    grpc_channel_args_destroy(args->args);
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
                                           connection_state->handshake_mgr);
