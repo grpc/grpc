@@ -400,9 +400,8 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
                             : c->target_name,
                         &tsi_hs);
   // Create handshakers.
-  grpc_handshake_manager_add(
-      handshake_mgr,
-      grpc_security_handshaker_create(exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
+                                                exec_ctx, tsi_hs, &sc->base));
 }
 
 static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
@@ -415,9 +414,8 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   ssl_create_handshaker(c->handshaker_factory, false /* is_client */,
                         NULL /* peer_name */, &tsi_hs);
   // Create handshakers.
-  grpc_handshake_manager_add(
-      handshake_mgr,
-      grpc_security_handshaker_create(exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
+                                                exec_ctx, tsi_hs, &sc->base));
 }
 
 static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
