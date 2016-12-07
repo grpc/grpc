@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark_register.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\colorprint.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\commandlineflags.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\complexity.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\console_reporter.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\csv_reporter.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\json_reporter.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\reporter.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\sleep.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\string_util.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\sysinfo.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\timers.cc">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\benchmark.h">
+      <Filter>third_party\benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\benchmark_api.h">
+      <Filter>third_party\benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\macros.h">
+      <Filter>third_party\benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\reporter.h">
+      <Filter>third_party\benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\arraysize.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark_api_internal.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\check.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\colorprint.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\commandlineflags.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\complexity.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\cycleclock.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\internal_macros.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\log.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\mutex.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\re.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\sleep.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\stat.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\string_util.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\sysinfo.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\timers.h">
+      <Filter>third_party\benchmark\src</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{7b593518-9fee-107e-6b64-24bdce73f939}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\benchmark">
+      <UniqueIdentifier>{f0d35de1-6b41-778d-0ba0-faad514fb0f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\benchmark\include">
+      <UniqueIdentifier>{cbc02dfa-face-8cc6-0efb-efacc0c3369c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\benchmark\include\benchmark">
+      <UniqueIdentifier>{4f2f03fc-b82d-df33-63ee-bedebeb2c0ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\benchmark\src">
+      <UniqueIdentifier>{f42a8e0a-5a76-0e6f-d708-f0306858f673}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
