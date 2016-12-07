@@ -75,6 +75,7 @@ static void prepare_test(int is_client) {
   g_state.deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   g_state.cq = grpc_completion_queue_create(NULL);
   g_state.cqv = cq_verifier_create(g_state.cq);
+  g_state.details = grpc_empty_slice();
   memset(g_state.ops, 0, sizeof(g_state.ops));
 
   if (is_client) {
