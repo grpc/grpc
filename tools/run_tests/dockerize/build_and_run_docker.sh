@@ -41,13 +41,20 @@ cd -
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
 # OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
+# DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
 # $@ - Extra args to pass to docker run
 
 # Use image name based on Dockerfile location checksum
 DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
-# Make sure docker image has been built. Should be instantaneous if so.
-docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
+if [ "$DOCKERHUB_ORGANIZATION" != "" ]
+then
+  DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$DOCKER_IMAGE_NAME
+  docker pull $DOCKER_IMAGE_NAME
+else
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
+fi
 
 # Choose random name for docker container
 CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
