@@ -31,6 +31,10 @@
  *
  */
 
+#include <mutex>
+
+#include <grpc++/impl/codegen/method_handler_impl.h>
+
 #include "src/cpp/server/default_health_check_service.h"
 
 namespace grpc {
@@ -40,43 +44,42 @@ const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
 
 }  // namespace
 
-SyncHealthCheckServiceImpl::SyncHealthCheckServiceImpl(
-    DefaultHealthCheckService* service)
+DefaultHealthCheckService::SyncHealthCheckServiceImpl::
+    SyncHealthCheckServiceImpl(DefaultHealthCheckService* service)
     : service_(service) {
   auto* handler =
       new RpcMethodHandler<SyncHealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
           std::mem_fn(&SyncHealthCheckServiceImpl::Check), this);
   auto* method = new RpcServiceMethod(kHealthCheckMethodName,
                                       RpcMethod::NORMAL_RPC, handler);
-  AddMethod(mehtod);
+  AddMethod(method);
 }
 
-Status SyncHealthCheckServiceImpl::Check(ServerContext* context,
-                                         const ByteBuffer* request,
-                                         ByteBuffer* response) {
+Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
+    ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
   // TODO nanopb
   return Status::OK;
 }
 
 DefaultHealthCheckService::DefaultHealthCheckService() {
-  services_map_.insert("", true);
+  services_map_.emplace("", true);
 }
 
 void DefaultHealthCheckService::SetServingStatus(
-    const grpc::string& service_name, bool serving) override {
+    const grpc::string& service_name, bool serving) {
   std::lock_guard<std::mutex> lock(mu_);
   services_map_[service_name] = serving;
 }
 
-void SetServingStatus(bool serving) override {
+void DefaultHealthCheckService::SetServingStatus(bool serving) {
   std::lock_guard<std::mutex> lock(mu_);
-  for (auto& iter = services_map_.begin(); iter != services_map_.end();
-       ++iter) {
+  for (auto iter = services_map_.begin(); iter != services_map_.end(); ++iter) {
     iter->second = serving;
   }
 }
 
-ServingStatus GetServingStatus(const grpc::string& service_name) const {
+DefaultHealthCheckService::ServingStatus
+DefaultHealthCheckService::GetServingStatus(const grpc::string& service_name) {
   std::lock_guard<std::mutex> lock(mu_);
   const auto& iter = services_map_.find(service_name);
   if (iter == services_map_.end()) {
@@ -86,5 +89,3 @@ ServingStatus GetServingStatus(const grpc::string& service_name) const {
 }
 
 }  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H

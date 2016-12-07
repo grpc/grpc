@@ -37,29 +37,30 @@
 #include <mutex>
 
 #include <grpc++/health_check_service_interface.h>
-#include <grpc++/impl/codegen/service_types.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/support/byte_buffer.h>
 
 namespace grpc {
-
-class SyncHealthCheckServiceImpl : public Service {
- public:
-  explicit SyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
-  Status Check(ServerContext* context, const ByteBuffer* request,
-               ByteBuffer* response);
-
- private:
-  const DefaultHealthCheckService* service_;
-};
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
 class DefaultHealthCheckService : public HealthCheckServiceInterface {
  public:
+  class SyncHealthCheckServiceImpl : public Service {
+   public:
+    explicit SyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
+    Status Check(ServerContext* context, const ByteBuffer* request,
+                 ByteBuffer* response);
+
+   private:
+    const DefaultHealthCheckService* service_;
+  };
+
   DefaultHealthCheckService();
   void SetServingStatus(const grpc::string& service_name, bool serving) final;
   void SetServingStatus(bool serving) final;
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
-  ServingStatus GetServingStatus(const grpc::string& service_name) const;
+  ServingStatus GetServingStatus(const grpc::string& service_name);
   SyncHealthCheckServiceImpl* GetSyncHealthCheckService() const {
     return sync_service_.get();
   }
