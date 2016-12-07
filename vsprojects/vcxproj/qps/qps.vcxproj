@@ -207,6 +207,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver_helper.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">

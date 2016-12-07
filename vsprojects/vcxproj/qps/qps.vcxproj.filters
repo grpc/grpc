@@ -25,6 +25,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver_helper.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>

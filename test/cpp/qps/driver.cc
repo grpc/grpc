@@ -54,6 +54,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
+#include "test/cpp/qps/driver_helper.h"
 
 using std::list;
 using std::thread;
@@ -63,17 +64,10 @@ using std::vector;
 
 namespace grpc {
 namespace testing {
-static std::string get_host(const std::string& worker) {
-  char* host;
-  char* port;
 
-  gpr_split_host_port(worker.c_str(), &host, &port);
-  const string s(host);
-
-  gpr_free(host);
-  gpr_free(port);
-  return s;
-}
+extern std::string get_host(const std::string& worker);
+extern const string get_qps_worker_driver_target(const string worker);
+extern void get_qps_worker_benchmark_target(char **benchmark_target, string host, int port);
 
 static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
     const deque<string>& workers) {
@@ -81,8 +75,10 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
   for (auto it = workers.begin(); it != workers.end(); it++) {
     const string host = get_host(*it);
     if (hosts.find(host) == hosts.end()) {
+      auto driver_target = get_qps_worker_driver_target(*it);
+      gpr_log(GPR_INFO, "driver target for get host and cores: |%s|", driver_target.c_str()); //TODO apolcyn remove
       auto stub = WorkerService::NewStub(
-          CreateChannel(*it, InsecureChannelCredentials()));
+          CreateChannel(driver_target, InsecureChannelCredentials()));
       grpc::ClientContext ctx;
       ctx.set_wait_for_ready(true);
       CoreRequest dummy;
@@ -220,6 +216,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Spawn some local workers if desired
   vector<unique_ptr<QpsWorker>> local_workers;
   for (int i = 0; i < abs(spawn_local_worker_count); i++) {
+    // TODO apolcyn handle local workers differently if necessary
+    GPR_ASSERT(0);
     // act as if we're a new test -- gets a good rng seed
     static bool called_init = false;
     if (!called_init) {
@@ -267,19 +265,20 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
+    auto server_driver_target = get_qps_worker_driver_target(workers[i]);
     servers[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureChannelCredentials()));
+        CreateChannel(server_driver_target, InsecureChannelCredentials()));
 
     ServerConfig server_config = initial_server_config;
-    char* host;
-    char* driver_port;
+
     char* cli_target;
-    gpr_split_host_port(workers[i].c_str(), &host, &driver_port);
-    string host_str(host);
+    string host_str = get_host(workers[i]);
     int server_core_limit = initial_server_config.core_limit();
     int client_core_limit = initial_client_config.core_limit();
 
     if (server_core_limit == 0 && client_core_limit > 0) {
+      // TODO apolcyn do we need to handle this case?
+      GPR_ASSERT(0);
       // In this case, limit the server cores if it matches the
       // same host as one or more clients
       const auto& dq = hosts_cores.at(host_str);
@@ -315,10 +314,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
     }
-    gpr_join_host_port(&cli_target, host, init_status.port());
+    get_qps_worker_benchmark_target(&cli_target, host_str, init_status.port()); 
     client_config.add_server_targets(cli_target);
-    gpr_free(host);
-    gpr_free(driver_port);
     gpr_free(cli_target);
   }
 
@@ -335,13 +332,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const auto& worker = workers[i + num_servers];
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
+    const auto client_driver_target = get_qps_worker_driver_target(worker);
     clients[i].stub = WorkerService::NewStub(
-        CreateChannel(worker, InsecureChannelCredentials()));
+        CreateChannel(client_driver_target, InsecureChannelCredentials()));
     ClientConfig per_client_config = client_config;
 
     int server_core_limit = initial_server_config.core_limit();
     int client_core_limit = initial_client_config.core_limit();
     if ((server_core_limit > 0) || (client_core_limit > 0)) {
+      // TODO apolcyn do we need to handle this?
+      GPR_ASSERT(0);
       auto& dq = hosts_cores.at(get_host(worker));
       if (client_core_limit == 0) {
         // limit client cores if it matches a server host
