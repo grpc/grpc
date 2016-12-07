@@ -41,6 +41,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 
@@ -158,7 +159,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     c->func(exec_ctx, c->arg, NULL);
   } else {
     grpc_channel_args_destroy(exec_ctx, args->args);
-    grpc_slice_buffer_destroy(args->read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
     gpr_free(args->read_buffer);
     c->func(exec_ctx, c->arg, args->endpoint);
   }

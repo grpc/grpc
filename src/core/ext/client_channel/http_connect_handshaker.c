@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/env.h"
 
 typedef struct http_connect_handshaker {
@@ -82,12 +83,13 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
       grpc_endpoint_destroy(exec_ctx, handshaker->endpoint_to_destroy);
     }
     if (handshaker->read_buffer_to_destroy != NULL) {
-      grpc_slice_buffer_destroy(handshaker->read_buffer_to_destroy);
+      grpc_slice_buffer_destroy_internal(exec_ctx,
+                                         handshaker->read_buffer_to_destroy);
       gpr_free(handshaker->read_buffer_to_destroy);
     }
     gpr_free(handshaker->proxy_server);
     gpr_free(handshaker->server_name);
-    grpc_slice_buffer_destroy(&handshaker->write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
     gpr_free(handshaker);
@@ -193,7 +195,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                &handshaker->args->read_buffer->slices[i + 1],
                                handshaker->args->read_buffer->count - i - 1);
         grpc_slice_buffer_swap(handshaker->args->read_buffer, &tmp_buffer);
-        grpc_slice_buffer_destroy(&tmp_buffer);
+        grpc_slice_buffer_destroy_internal(exec_ctx, &tmp_buffer);
         break;
       }
     }
@@ -210,7 +212,8 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // complete (e.g., handling chunked transfer encoding or looking
   // at the Content-Length: header).
   if (handshaker->http_parser.state != GRPC_HTTP_BODY) {
-    grpc_slice_buffer_reset_and_unref(handshaker->args->read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                               handshaker->args->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
                        handshaker->args->read_buffer,
                        &handshaker->response_read_closure);

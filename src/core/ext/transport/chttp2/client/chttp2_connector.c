@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 typedef struct {
   grpc_connector base;
@@ -127,7 +128,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_endpoint_shutdown(exec_ctx, args->endpoint);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
       grpc_channel_args_destroy(exec_ctx, args->args);
-      grpc_slice_buffer_destroy(args->read_buffer);
+      grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
       gpr_free(args->read_buffer);
     } else {
       error = GRPC_ERROR_REF(error);
