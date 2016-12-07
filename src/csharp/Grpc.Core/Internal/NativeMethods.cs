@@ -325,14 +325,14 @@ namespace Grpc.Core.Internal
             public delegate CallError grpcsharp_call_cancel_delegate(CallSafeHandle call);
             public delegate CallError grpcsharp_call_cancel_with_status_delegate(CallSafeHandle call, StatusCode status, string description);
             public delegate CallError grpcsharp_call_start_unary_delegate(CallSafeHandle call,
-                BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags);
+                BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_start_client_streaming_delegate(CallSafeHandle call,
-                BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+                BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_start_server_streaming_delegate(CallSafeHandle call,
-                BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen,
-                MetadataArraySafeHandle metadataArray, WriteFlags writeFlags);
+                BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags,
+                MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_start_duplex_streaming_delegate(CallSafeHandle call,
-                BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+                BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_send_message_delegate(CallSafeHandle call,
                 BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, bool sendEmptyInitialMetadata);
             public delegate CallError grpcsharp_call_send_close_from_client_delegate(CallSafeHandle call,

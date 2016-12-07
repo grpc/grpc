@@ -6749,6 +6749,7 @@
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
       "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -6943,6 +6944,7 @@
       "src/core/lib/slice/slice.c", 
       "src/core/lib/slice/slice_buffer.c", 
       "src/core/lib/slice/slice_intern.c", 
+      "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.c", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/alarm.c", 
@@ -7222,9 +7224,9 @@
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/transport/auth_filters.h", 
-      "src/core/lib/security/transport/handshake.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_connector.h", 
+      "src/core/lib/security/transport/security_handshaker.h", 
       "src/core/lib/security/transport/tsi_error.h", 
       "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.h"
@@ -7263,12 +7265,12 @@
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.c", 
-      "src/core/lib/security/transport/handshake.c", 
-      "src/core/lib/security/transport/handshake.h", 
       "src/core/lib/security/transport/secure_endpoint.c", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_connector.c", 
       "src/core/lib/security/transport/security_connector.h", 
+      "src/core/lib/security/transport/security_handshaker.c", 
+      "src/core/lib/security/transport/security_handshaker.h", 
       "src/core/lib/security/transport/server_auth_filter.c", 
       "src/core/lib/security/transport/tsi_error.c", 
       "src/core/lib/security/transport/tsi_error.h", 
@@ -7435,8 +7437,28 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel", 
       "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_chttp2_client_connector", 
+    "src": [
+      "src/core/ext/transport/chttp2/client/chttp2_connector.c", 
+      "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_client_connector"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -7455,7 +7477,8 @@
       "grpc_base", 
       "grpc_client_channel", 
       "grpc_secure", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_client_connector"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -7473,6 +7496,26 @@
       "grpc_base", 
       "grpc_transport_chttp2"
     ], 
+    "headers": [
+      "src/core/ext/transport/chttp2/server/chttp2_server.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_chttp2_server", 
+    "src": [
+      "src/core/ext/transport/chttp2/server/chttp2_server.c", 
+      "src/core/ext/transport/chttp2/server/chttp2_server.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_server"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -7489,7 +7532,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_secure", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_server"
     ], 
     "headers": [], 
     "is_filegroup": true, 

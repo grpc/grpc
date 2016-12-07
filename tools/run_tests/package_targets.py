@@ -71,50 +71,28 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
 class CSharpPackage:
   """Builds C# nuget packages."""
 
-  def __init__(self, linux=False, use_dotnet_cli=True):
+  def __init__(self, linux=False):
     self.linux = linux
-    self.use_dotnet_cli = use_dotnet_cli
-
     self.labels = ['package', 'csharp']
-
-    if use_dotnet_cli:
-      if linux:
-        self.name = 'csharp_package_dotnetcli_linux'
-	self.labels += ['linux']
-      else:
-        self.name = 'csharp_package_dotnetcli_windows'
-        self.labels += ['windows']
+    if linux:
+      self.name = 'csharp_package_dotnetcli_linux'
+      self.labels += ['linux']
     else:
-      # official packages built with dotnet cli rather than nuget pack
-      self.name = 'csharp_package_obsolete'
-      self.labels += ['obsolete']
-
+      self.name = 'csharp_package_dotnetcli_windows'
+      self.labels += ['windows']
 
   def pre_build_jobspecs(self):
-    # The older, obsolete build uses nuget only instead of dotnet cli
-    if 'obsolete' in self.labels:
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\pre_build_csharp.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return []
 
   def build_jobspec(self):
-    if self.use_dotnet_cli and self.linux:
+    if self.linux:
       return create_docker_jobspec(
           self.name,
           'tools/dockerfile/test/csharp_coreclr_x64',
           'src/csharp/build_packages_dotnetcli.sh')
-    elif self.use_dotnet_cli:
-      return create_jobspec(self.name,
-                            ['build_packages_dotnetcli.bat'],
-                            cwd='src\\csharp',
-                            shell=True)
     else:
       return create_jobspec(self.name,
-                            ['build_packages.bat'],
+                            ['build_packages_dotnetcli.bat'],
                             cwd='src\\csharp',
                             shell=True)
 
@@ -194,7 +172,6 @@ def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
           CSharpPackage(linux=True),
-          CSharpPackage(use_dotnet_cli=False),
           NodePackage(),
           RubyPackage(),
           PythonPackage(),
