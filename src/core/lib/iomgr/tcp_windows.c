@@ -53,6 +53,7 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 /* Nasty workaround for nasty bug when using the 64 bits msys compiler
