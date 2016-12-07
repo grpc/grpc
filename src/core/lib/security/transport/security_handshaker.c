@@ -434,17 +434,14 @@ static grpc_handshaker *fail_handshaker_create() {
 // exported functions
 //
 
-void grpc_security_add_handshakers(grpc_exec_ctx *exec_ctx,
-                                   tsi_handshaker *handshaker,
-                                   grpc_security_connector *connector,
-                                   grpc_handshake_manager *handshake_mgr) {
-  // If no TSI handshaker was created, add a handshaker that always fails.
-  // Otherwise, add a real security handshaker.
+grpc_handshaker *grpc_security_handshaker_create(
+    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
+    grpc_security_connector *connector) {
+  // If no TSI handshaker was created, return a handshaker that always fails.
+  // Otherwise, return a real security handshaker.
   if (handshaker == NULL) {
-    grpc_handshake_manager_add(handshake_mgr, fail_handshaker_create());
+    return fail_handshaker_create();
   } else {
-    grpc_handshake_manager_add(
-        handshake_mgr,
-        security_handshaker_create(exec_ctx, handshaker, connector));
+    return security_handshaker_create(exec_ctx, handshaker, connector);
   }
 }

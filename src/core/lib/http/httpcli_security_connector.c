@@ -74,7 +74,9 @@ static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
               tsi_result_to_string(result));
     }
   }
-  grpc_security_add_handshakers(exec_ctx, handshaker, &sc->base, handshake_mgr);
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(exec_ctx, handshaker, &sc->base));
 }
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
