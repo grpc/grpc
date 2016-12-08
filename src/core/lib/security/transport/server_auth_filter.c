@@ -137,6 +137,10 @@ static void on_md_processing_done(
     grpc_slice message;
     grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
     memset(close_op, 0, sizeof(*close_op));
+    for (size_t i = 0; i < calld->md.count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
