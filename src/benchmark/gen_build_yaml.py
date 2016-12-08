@@ -39,15 +39,15 @@ os.chdir(os.path.dirname(sys.argv[0])+'/../..')
 out = {}
 
 out['libs'] = [{
-    'name': 'google_benchmark',
+    'name': 'benchmark',
     'build': 'private',
     'language': 'c++',
     'secure': 'no',
-    'defaults': 'google_benchmark',
-    'src': sorted(glob.glob('third_party/google_benchmark/src/*.cc')),
+    'defaults': 'benchmark',
+    'src': sorted(glob.glob('third_party/benchmark/src/*.cc')),
     'headers': sorted(
-        glob.glob('third_party/google_benchmark/src/*.h') +
-        glob.glob('third_party/google_benchmark/include/benchmark/*.h')),
+        glob.glob('third_party/benchmark/src/*.h') +
+        glob.glob('third_party/benchmark/include/benchmark/*.h')),
 }]
 
 print yaml.dump(out)
