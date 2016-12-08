@@ -109,8 +109,7 @@ static int has_metadata_slices(const grpc_metadata *md, size_t count,
                                grpc_slice key, grpc_slice value) {
   size_t i;
   for (i = 0; i < count; i++) {
-    if (grpc_slice_eq(md[i].key, key) &&
-        grpc_slice_eq(md[i].value, value)) {
+    if (grpc_slice_eq(md[i].key, key) && grpc_slice_eq(md[i].value, value)) {
       return 1;
     }
   }

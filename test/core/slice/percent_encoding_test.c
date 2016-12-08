@@ -123,8 +123,8 @@ static void test_nonconformant_vector(const char *encoded,
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(grpc_slice_eq(permissive_unencoded_slice,
-                                 encoded2raw_permissive_slice));
+  GPR_ASSERT(
+      grpc_slice_eq(permissive_unencoded_slice, encoded2raw_permissive_slice));
 
   grpc_slice_unref(permissive_unencoded_slice);
   grpc_slice_unref(encoded2raw_permissive_slice);

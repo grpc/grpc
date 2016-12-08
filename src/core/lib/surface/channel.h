@@ -63,8 +63,8 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 
     The returned elem is owned by the caller. */
 grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
-                                                 grpc_channel *channel,
-                                                 int status_code);
+                                                grpc_channel *channel,
+                                                int status_code);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

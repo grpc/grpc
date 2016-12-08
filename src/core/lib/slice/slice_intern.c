@@ -189,22 +189,24 @@ uint32_t grpc_slice_hash(grpc_slice s) {
                             : s.refcount->vtable->hash(s);
 }
 
-void grpc_slice_static_intern(grpc_slice *slice) {
-  if (GRPC_IS_STATIC_METADATA_STRING(*slice)) {
-    return;
+grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
+                                          bool *returned_slice_is_different) {
+  if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
+    return slice;
   }
 
-  uint32_t hash = grpc_slice_hash(*slice);
+  uint32_t hash = grpc_slice_hash(slice);
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        grpc_slice_eq(grpc_static_slice_table[ent.idx], *slice)) {
-      grpc_slice_unref(*slice);
-      *slice = grpc_static_slice_table[ent.idx];
-      return;
+        grpc_slice_eq(grpc_static_slice_table[ent.idx], slice)) {
+      *returned_slice_is_different = true;
+      return grpc_static_slice_table[ent.idx];
     }
   }
+
+  return slice;
 }
 
 bool grpc_slice_is_interned(grpc_slice slice) {

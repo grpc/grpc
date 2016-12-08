@@ -72,8 +72,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
-    metadata.insert(std::make_pair(StringRefFromSlice(md[i].key),
-                                   StringRefFromSlice(md[i].value)));
+    metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
+                                   StringRefFromSlice(&md[i].value)));
   }
   SecureAuthContext context(ctx, false);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;

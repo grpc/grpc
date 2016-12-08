@@ -52,9 +52,12 @@ bool grpc_slice_is_interned(grpc_slice slice);
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
 void grpc_test_only_set_slice_hash_seed(uint32_t key);
-// if slice matches a static slice, consume it and replace it with the static
-// slice, otherwise do nothing: this is a fast interning for well known strings
-void grpc_slice_static_intern(grpc_slice *slice);
+// if slice matches a static slice, returns the static slice
+// otherwise returns the passed in slice (without reffing it)
+// used for surface boundaries where we might receive an un-interned static
+// string
+grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
+                                          bool *returned_slice_is_different);
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
 

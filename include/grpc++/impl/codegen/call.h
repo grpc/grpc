@@ -63,19 +63,6 @@ class CallHook;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
-inline void FillMetadataMap(
-    grpc_metadata_array* arr,
-    std::multimap<grpc::string_ref, grpc::string_ref>* metadata) {
-  for (size_t i = 0; i < arr->count; i++) {
-    // TODO(yangg) handle duplicates?
-    metadata->insert(std::pair<grpc::string_ref, grpc::string_ref>(
-        StringRefFromSlice(arr->metadata[i].key),
-        StringRefFromSlice(arr->metadata[i].value)));
-  }
-  g_core_codegen_interface->grpc_metadata_array_destroy(arr);
-  g_core_codegen_interface->grpc_metadata_array_init(arr);
-}
-
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
@@ -474,32 +461,30 @@ class CallOpServerSendStatus {
 
 class CallOpRecvInitialMetadata {
  public:
-  CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {}
+  CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
   void RecvInitialMetadata(ClientContext* context) {
     context->initial_metadata_received_ = true;
-    recv_initial_metadata_ = &context->recv_initial_metadata_;
+    metadata_map_ = &context->recv_initial_metadata_;
   }
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (!recv_initial_metadata_) return;
-    memset(&recv_initial_metadata_arr_, 0, sizeof(recv_initial_metadata_arr_));
+    if (metadata_map_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
+    op->data.recv_initial_metadata = metadata_map_->arr();
     op->flags = 0;
     op->reserved = NULL;
   }
   void FinishOp(bool* status, int max_receive_message_size) {
-    if (recv_initial_metadata_ == nullptr) return;
-    FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
-    recv_initial_metadata_ = nullptr;
+    if (metadata_map_ == nullptr) return;
+    metadata_map_->FillMap();
+    metadata_map_ = nullptr;
   }
 
  private:
-  std::multimap<grpc::string_ref, grpc::string_ref>* recv_initial_metadata_;
-  grpc_metadata_array recv_initial_metadata_arr_;
+  MetadataMap* metadata_map_;
 };
 
 class CallOpClientRecvStatus {
@@ -507,19 +492,16 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus() : recv_status_(nullptr) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
-    recv_trailing_metadata_ = &context->trailing_metadata_;
+    metadata_map_ = &context->trailing_metadata_;
     recv_status_ = status;
   }
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (recv_status_ == nullptr) return;
-    memset(&recv_trailing_metadata_arr_, 0,
-           sizeof(recv_trailing_metadata_arr_));
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata =
-        &recv_trailing_metadata_arr_;
+    op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &status_details_;
     op->flags = 0;
@@ -528,7 +510,7 @@ class CallOpClientRecvStatus {
 
   void FinishOp(bool* status, int max_receive_message_size) {
     if (recv_status_ == nullptr) return;
-    FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
+    metadata_map_->FillMap();
     *recv_status_ = Status(static_cast<StatusCode>(status_code_),
                            grpc::string(GRPC_SLICE_START_PTR(status_details_),
                                         GRPC_SLICE_END_PTR(status_details_)));
@@ -537,9 +519,8 @@ class CallOpClientRecvStatus {
   }
 
  private:
-  std::multimap<grpc::string_ref, grpc::string_ref>* recv_trailing_metadata_;
+  MetadataMap* metadata_map_;
   Status* recv_status_;
-  grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;
   grpc_slice status_details_;
 };

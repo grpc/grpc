@@ -342,8 +342,13 @@ grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
 
 grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_exec_ctx *exec_ctx,
                                            grpc_metadata *metadata) {
-  return grpc_mdelem_create(exec_ctx, metadata->key, metadata->value,
-                            (grpc_mdelem_data *)metadata);
+  bool changed = false;
+  grpc_slice key_slice =
+      grpc_slice_maybe_static_intern(metadata->key, &changed);
+  grpc_slice value_slice =
+      grpc_slice_maybe_static_intern(metadata->value, &changed);
+  return grpc_mdelem_create(exec_ctx, key_slice, value_slice,
+                            changed ? NULL : (grpc_mdelem_data *)metadata);
 }
 
 static size_t get_base64_encoded_size(size_t raw_length) {

@@ -46,7 +46,7 @@ struct grpc_slice_hash_table {
   grpc_slice_hash_table_entry* entries;
 };
 
-static bool is_empty(grpc_slice_hash_table_entry *entry) {
+static bool is_empty(grpc_slice_hash_table_entry* entry) {
   return entry->vtable == NULL;
 }
 
