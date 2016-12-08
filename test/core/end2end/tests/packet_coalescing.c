@@ -343,6 +343,7 @@ void packet_coalescing(grpc_end2end_test_config config) {
   test_request_response_with_metadata_and_payload(config, true);
   test_request_response_with_metadata_and_payload(config, false);
   gpr_set_log_function(gpr_default_log);
+  grpc_tracer_set_enabled("all", 0);
 }
 
 void packet_coalescing_pre_init(void) {}

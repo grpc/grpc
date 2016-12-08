@@ -860,23 +860,6 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     cronet_bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array,
                                       false);
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
-    result = ACTION_TAKEN_WITH_CALLBACK;
-  } else if (stream_op->recv_initial_metadata &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
-                           OP_RECV_INITIAL_METADATA)) {
-    CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
-    if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
-                          GRPC_ERROR_CANCELLED, NULL);
-    } else if (stream_state->state_callback_received[OP_FAILED]) {
-      grpc_exec_ctx_sched(
-          exec_ctx, stream_op->recv_initial_metadata_ready,
-          make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."), NULL);
-    } else {
-      grpc_chttp2_incoming_metadata_buffer_publish(
-          &oas->s->state.rs.initial_metadata, stream_op->recv_initial_metadata);
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
-                          GRPC_ERROR_NONE, NULL);
     if (!stream_op->send_message && !stream_op->send_trailing_metadata) {
       s->state.flush_cronet_when_ready = true;
     }
