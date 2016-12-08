@@ -70,6 +70,15 @@ cdef class Event:
   cdef readonly Operations batch_operations
 
 
+cdef class Slice:
+
+  cdef grpc_slice c_slice
+
+  cdef void _assign_slice(self, grpc_slice new_slice) nogil
+  @staticmethod
+  cdef Slice from_slice(grpc_slice slice)
+
+
 cdef class ByteBuffer:
 
   cdef grpc_byte_buffer *c_byte_buffer
@@ -97,7 +106,8 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   cdef grpc_metadata c_metadata
-  cdef object _key, _value
+  cdef Slice _key,
+  cdef Slice _value
 
 
 cdef class Metadata:
@@ -112,8 +122,7 @@ cdef class Operation:
   cdef ByteBuffer _received_message
   cdef Metadata _received_metadata
   cdef grpc_status_code _received_status_code
-  cdef char *_received_status_details
-  cdef size_t _received_status_details_capacity
+  cdef Slice _received_status_details
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references
