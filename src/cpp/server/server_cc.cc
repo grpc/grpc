@@ -576,7 +576,6 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
   call_cq_->RegisterAvalanching();  // This op will trigger more ops
-  memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
 ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
@@ -627,7 +626,7 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
   grpc_server_request_call(server->server(), &call_, &call_details_,
-                           &initial_metadata_array_, call_cq->cq(),
+                           context->client_metadata_.arr(), call_cq->cq(),
                            notification_cq->cq(), this);
 }
 

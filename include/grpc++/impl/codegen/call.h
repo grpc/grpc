@@ -438,9 +438,9 @@ class CallOpServerSendStatus {
         trailing_metadata_count_;
     op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
     op->data.send_status_from_server.status = send_status_code_;
-    grpc_slice status_details = SliceReferencingString(send_status_details_);
+    status_details_slice_ = SliceReferencingString(send_status_details_);
     op->data.send_status_from_server.status_details =
-        send_status_details_.empty() ? nullptr : &status_details;
+        send_status_details_.empty() ? nullptr : &status_details_slice_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -457,6 +457,7 @@ class CallOpServerSendStatus {
   grpc::string send_status_details_;
   size_t trailing_metadata_count_;
   grpc_metadata* trailing_metadata_;
+  grpc_slice status_details_slice_;
 };
 
 class CallOpRecvInitialMetadata {
