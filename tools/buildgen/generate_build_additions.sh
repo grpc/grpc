@@ -30,7 +30,7 @@
 
 gen_build_yaml_dirs="  \
   src/boringssl        \
-  src/google_benchmark \
+  src/benchmark \
   src/proto            \
   src/zlib             \
   test/core/bad_client \

@@ -464,9 +464,10 @@ for scenario in scenarios:
     try:
       for worker in scenario.workers:
         worker.start()
-      scenario_failures, resultset = jobset.run([scenario.jobspec,
-                                                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
-                                                newline_on_success=True, maxjobs=1)
+      jobs = [scenario.jobspec]
+      if scenario.workers:
+        jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
+      scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
       merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
                                               resultset.iteritems()))
