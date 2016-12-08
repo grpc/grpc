@@ -39,9 +39,10 @@
 
 namespace grpc {
 
-inline grpc::string_ref StringRefFromSlice(grpc_slice slice) {
-  return grpc::string_ref(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                          GRPC_SLICE_LENGTH(slice));
+inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
+  return grpc::string_ref(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*slice)),
+      GRPC_SLICE_LENGTH(*slice));
 }
 
 inline grpc::string StringFromCopiedSlice(grpc_slice slice) {
@@ -61,4 +62,4 @@ inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPCXX_IMPL_CODEGEN_SLICE_H

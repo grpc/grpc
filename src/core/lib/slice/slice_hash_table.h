@@ -29,8 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
-#define GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
+#define GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -75,4 +75,4 @@ void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
 void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
                                 const grpc_slice key);
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */

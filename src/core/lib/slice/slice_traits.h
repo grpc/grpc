@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef SLICE_TRAITS_H
-#define SLICE_TRAITS_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_TRAITS_H
+#define GRPC_CORE_LIB_SLICE_SLICE_TRAITS_H
 
 #include <grpc/slice.h>
 #include <stdbool.h>
@@ -41,4 +41,4 @@ bool grpc_slice_is_legal_header(grpc_slice s);
 bool grpc_slice_is_legal_nonbin_header(grpc_slice s);
 bool grpc_slice_is_bin_suffixed(grpc_slice s);
 
-#endif
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_TRAITS_H */

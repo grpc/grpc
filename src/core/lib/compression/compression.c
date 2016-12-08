@@ -84,8 +84,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
   if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE))
-    return GRPC_COMPRESS_DEFLATE;
+  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE)) return GRPC_COMPRESS_DEFLATE;
   if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_COMPRESS_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }

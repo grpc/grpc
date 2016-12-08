@@ -95,7 +95,7 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                      uint32_t index);
+                                     uint32_t index);
 /* add a table entry to the index */
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_hptbl *tbl,

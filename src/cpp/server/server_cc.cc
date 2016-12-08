@@ -586,14 +586,8 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (*status) {
-    for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(
-          std::pair<grpc::string_ref, grpc::string_ref>(
-              StringRefFromSlice(initial_metadata_array_.metadata[i].key),
-              StringRefFromSlice(initial_metadata_array_.metadata[i].value)));
-    }
+    context_->client_metadata_.FillMap();
   }
-  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_receive_message_size());
@@ -619,8 +613,8 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     ServerCompletionQueue* notification_cq) {
   grpc_server_request_registered_call(
       server_->server(), registered_method, &call_, &context_->deadline_,
-      &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
-      this);
+      context_->client_metadata_.arr(), payload, call_cq_->cq(),
+      notification_cq->cq(), this);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(

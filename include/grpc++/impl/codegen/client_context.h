@@ -57,7 +57,9 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
+#include <grpc++/impl/codegen/metadata_map.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
+#include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
@@ -193,7 +195,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
-    return recv_initial_metadata_;
+    return *recv_initial_metadata_.map();
   }
 
   /// Return a collection of trailing metadata key-value pairs. Note that keys
@@ -205,7 +207,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
-    return trailing_metadata_;
+    return *trailing_metadata_.map();
   }
 
   /// Set the deadline for the client call.
@@ -375,8 +377,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> recv_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> trailing_metadata_;
+  MetadataMap recv_initial_metadata_;
+  MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
