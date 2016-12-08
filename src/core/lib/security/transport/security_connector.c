@@ -296,9 +296,9 @@ static void fake_channel_add_handshakers(
           &sc->base));
 }
 
-static void fake_server_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_server_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
