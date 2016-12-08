@@ -131,6 +131,9 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
     // Not shutting down, so the write failed.  Clean up before
     // invoking the callback.
     cleanup_args_for_failure_locked(h);
+    // Set shutdown to true so that subsequent calls to
+    // security_handshaker_shutdown() do nothing.
+    h->shutdown = true;
   }
   // Invoke callback.
   grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, error, NULL);
