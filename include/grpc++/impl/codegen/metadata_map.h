@@ -31,8 +31,8 @@
 *
 */
 
-#ifndef META_H
-#define META_H
+#ifndef GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
+#define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 
 #include <grpc++/impl/codegen/slice.h>
 
@@ -68,4 +68,4 @@ class MetadataMap {
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
