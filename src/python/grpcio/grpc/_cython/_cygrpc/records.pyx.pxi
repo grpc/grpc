@@ -189,17 +189,11 @@ cdef class CallDetails:
 
   @property
   def method(self):
-    if self.c_details.method != NULL:
-      return <bytes>self.c_details.method
-    else:
-      return None
+    return Slice.from_slice(self.c_details.method).bytes()
 
   @property
   def host(self):
-    if self.c_details.host != NULL:
-      return <bytes>self.c_details.host
-    else:
-      return None
+    return Slice.from_slice(self.c_details.host).bytes()
 
   @property
   def deadline(self):
@@ -231,6 +225,42 @@ cdef class Event:
     self.request_metadata = request_metadata
     self.batch_operations = batch_operations
     self.is_new_request = is_new_request
+
+
+cdef class Slice:
+
+  def __cinit__(self):
+    with nogil:
+      grpc_init()
+      self.c_slice = grpc_empty_slice()
+
+  cdef void _assign_slice(self, grpc_slice new_slice) nogil:
+    grpc_slice_unref(self.c_slice)
+    self.c_slice = new_slice
+
+  @staticmethod
+  def from_bytes(bytes data):
+    cdef Slice self = Slice()
+    self._assign_slice(grpc_slice_from_copied_buffer(data, len(data)))
+    return self
+
+  @staticmethod
+  cdef Slice from_slice(grpc_slice slice):
+    cdef Slice self = Slice()
+    grpc_slice_ref(slice)
+    self._assign_slice(slice)
+    return self
+
+  def bytes(self):
+    with nogil:
+      pointer = grpc_slice_start_ptr(self.c_slice)
+      length = grpc_slice_length(self.c_slice)
+    return (<char *>pointer)[:length]
+
+  def __dealloc__(self):
+    with nogil:
+      grpc_slice_unref(self.c_slice)
+      grpc_shutdown()
 
 
 cdef class ByteBuffer:
@@ -310,7 +340,7 @@ cdef void* copy_ptr(void* ptr):
   return ptr
 
 
-cdef void destroy_ptr(void* ptr):
+cdef void destroy_ptr(grpc_exec_ctx* ctx, void* ptr):
   pass
 
 
@@ -382,20 +412,20 @@ cdef class ChannelArgs:
 
 cdef class Metadatum:
 
+  # TODO(atash) this should just accept Slice objects.
   def __cinit__(self, bytes key, bytes value):
-    self._key = key
-    self._value = value
-    self.c_metadata.key = self._key
-    self.c_metadata.value = self._value
-    self.c_metadata.value_length = len(self._value)
+    self._key = Slice.from_bytes(key)
+    self._value = Slice.from_bytes(value)
+    self.c_metadata.key = self._key.c_slice
+    self.c_metadata.value = self._value.c_slice
 
   @property
   def key(self):
-    return <bytes>self.c_metadata.key
+    return self._key.bytes()
 
   @property
   def value(self):
-    return <bytes>self.c_metadata.value[:self.c_metadata.value_length]
+    return self._value.bytes()
 
   def __len__(self):
     return 2
@@ -465,9 +495,8 @@ cdef class Metadata:
 
   def __getitem__(self, size_t i):
     return Metadatum(
-        key=<bytes>self.c_metadata_array.metadata[i].key,
-        value=<bytes>self.c_metadata_array.metadata[i].value[
-            :self.c_metadata_array.metadata[i].value_length])
+        key=Slice.from_slice(self.c_metadata_array.metadata[i].key).bytes(),
+        value=Slice.from_slice(self.c_metadata_array.metadata[i].value).bytes())
 
   def __iter__(self):
     return _MetadataIterator(self)
@@ -478,8 +507,7 @@ cdef class Operation:
   def __cinit__(self):
     grpc_init()
     self.references = []
-    self._received_status_details = NULL
-    self._received_status_details_capacity = 0
+    self._received_status_details = Slice()
     self.is_valid = False
 
   @property
@@ -536,19 +564,13 @@ cdef class Operation:
   def received_status_details(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       raise TypeError("self must be an operation receiving status details")
-    if self._received_status_details:
-      return self._received_status_details
-    else:
-      return None
+    return self._received_status_details.bytes()
 
   @property
   def received_status_details_or_none(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       return None
-    if self._received_status_details:
-      return self._received_status_details
-    else:
-      return None
+    return self._received_status_details.bytes()
 
   @property
   def received_cancelled(self):
@@ -564,11 +586,6 @@ cdef class Operation:
     return False if self._received_cancelled == 0 else True
 
   def __dealloc__(self):
-    # We *almost* don't need to do anything; most of the objects are handled by
-    # Python. The remaining one(s) are primitive fields filled in by GRPC core.
-    # This means that we need to clean up after receive_status_on_client.
-    if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
-      gpr_free(self._received_status_details)
     grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
@@ -609,9 +626,10 @@ def operation_send_status_from_server(
   op.c_op.data.send_status_from_server.trailing_metadata = (
       metadata.c_metadata_array.metadata)
   op.c_op.data.send_status_from_server.status = code
-  op.c_op.data.send_status_from_server.status_details = details
+  cdef Slice details_slice = Slice.from_bytes(details)
+  op.c_op.data.send_status_from_server.status_details = &details_slice.c_slice
   op.references.append(metadata)
-  op.references.append(details)
+  op.references.append(details_slice)
   op.is_valid = True
   return op
 
@@ -647,9 +665,7 @@ def operation_receive_status_on_client(int flags):
   op.c_op.data.receive_status_on_client.status = (
       &op._received_status_code)
   op.c_op.data.receive_status_on_client.status_details = (
-      &op._received_status_details)
-  op.c_op.data.receive_status_on_client.status_details_capacity = (
-      &op._received_status_details_capacity)
+      &op._received_status_details.c_slice)
   op.is_valid = True
   return op
 
