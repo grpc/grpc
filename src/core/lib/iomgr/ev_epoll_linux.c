@@ -69,6 +69,9 @@ static int grpc_polling_trace = 0; /* Disabled by default */
     gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
   }
 
+/* Uncomment the following enable extra checks on poll_object operations */
+/* #define PO_DEBUG */
+
 static int grpc_wakeup_signal = -1;
 static bool is_grpc_wakeup_signal_initialized = false;
 
