@@ -110,6 +110,7 @@ def _ping_pong_scenario(name, rpc_type,
                         client_language=None,
                         server_language=None,
                         server_core_limit=0,
+                        client_core_limit=0,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
@@ -124,6 +125,7 @@ def _ping_pong_scenario(name, rpc_type,
     'client_config': {
       'client_type': client_type,
       'security_params': _get_secargs(secure),
+      'core_limit': client_core_limit,
       'outstanding_rpcs_per_channel': 1,
       'client_channels': 1,
       'async_client_threads': 1,
@@ -628,17 +630,20 @@ class GoLanguage:
           client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_generic_payload=True, async_server_threads=1,
           secure=secure,
+          server_core_limit=1, client_core_limit=1,
           categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'go_protobuf_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           async_server_threads=1,
+          server_core_limit=1, client_core_limit=1,
           secure=secure)
 
       yield _ping_pong_scenario(
           'go_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          server_core_limit=1, client_core_limit=1,
           async_server_threads=1,
           secure=secure,
           categories=smoketest_categories)
