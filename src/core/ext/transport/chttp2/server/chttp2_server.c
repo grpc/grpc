@@ -166,6 +166,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&connection_state->server_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp_server);
+  gpr_free(connection_state->acceptor);
   gpr_free(connection_state);
 }
 

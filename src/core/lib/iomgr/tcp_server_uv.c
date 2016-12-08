@@ -188,7 +188,6 @@ static void accepted_connection_close_cb(uv_handle_t *handle) {
 
 static void on_connect(uv_stream_t *server, int status) {
   grpc_tcp_listener *sp = (grpc_tcp_listener *)server->data;
-  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   uv_tcp_t *client;
   grpc_endpoint *ep = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -201,6 +200,13 @@ static void on_connect(uv_stream_t *server, int status) {
             uv_strerror(status));
     return;
   }
+
+  // Create acceptor.
+  grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+  acceptor->from_server = sp->server;
+  acceptor->port_index = sp->port_index;
+  acceptor->fd_index = 0;
+
   client = gpr_malloc(sizeof(uv_tcp_t));
   uv_tcp_init(uv_default_loop(), client);
   // UV documentation says this is guaranteed to succeed
@@ -221,7 +227,7 @@ static void on_connect(uv_stream_t *server, int status) {
     }
     ep = grpc_tcp_create(client, sp->server->resource_quota, peer_name_string);
     sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                             &acceptor);
+                             acceptor);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 }
