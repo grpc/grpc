@@ -159,16 +159,6 @@ def _server_streaming(stub):
       raise ValueError(
           'response body of invalid size %d!' % len(response.payload.body))
 
-def _cancel_after_begin(stub):
-  sizes = (27182, 8, 1828, 45904,)
-  payloads = (messages_pb2.Payload(body=b'\x00' * size) for size in sizes)
-  requests = (messages_pb2.StreamingInputCallRequest(payload=payload)
-              for payload in payloads)
-  response_future = stub.StreamingInputCall.future(requests)
-  response_future.cancel()
-  if not response_future.cancelled():
-    raise ValueError('expected call to be cancelled')
-
 
 class _Pipe(object):
 
@@ -230,6 +220,16 @@ def _ping_pong(stub):
       if len(response.payload.body) != response_size:
         raise ValueError(
             'response body of invalid size %d!' % len(response.payload.body))
+
+
+def _cancel_after_begin(stub):
+  with _Pipe() as pipe:
+    response_future = stub.StreamingInputCall.future(pipe)
+    response_future.cancel()
+    if not response_future.cancelled():
+      raise ValueError('expected cancelled method to return True')
+    if response_future.code() is not grpc.StatusCode.CANCELLED:
+      raise ValueError('expected status code CANCELLED')
 
 
 def _cancel_after_first_response(stub):
