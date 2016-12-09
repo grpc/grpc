@@ -139,7 +139,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    if (error == GRPC_ERROR_NONE) {
+    if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
       // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -153,13 +153,19 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_free(args->read_buffer);
     }
   } else {
-    grpc_transport *transport =
-        grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
-    grpc_server_setup_transport(
-        exec_ctx, connection_state->server_state->server, transport,
-        connection_state->accepting_pollset, args->args);
-    grpc_chttp2_transport_start_reading(exec_ctx, transport, args->read_buffer);
-    grpc_channel_args_destroy(args->args);
+    // If the handshaking succeeded but there is no endpoint, then the
+    // handshaker may have handed off the connection to some external
+    // code, so we can just clean up here without creating a transport.
+    if (args->endpoint != NULL) {
+      grpc_transport *transport =
+          grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
+      grpc_server_setup_transport(
+          exec_ctx, connection_state->server_state->server, transport,
+          connection_state->accepting_pollset, args->args);
+      grpc_chttp2_transport_start_reading(exec_ctx, transport,
+                                          args->read_buffer);
+      grpc_channel_args_destroy(args->args);
+    }
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
                                           connection_state->handshake_mgr);
