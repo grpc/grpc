@@ -164,7 +164,7 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
     if (key_type1 != HASH_KEY_IS_STRING) {
       return false;
     }
-    if (!grpc_header_key_is_legal(key1, strlen(key1))) {
+    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key1))) {
       return false;
     }
     inner_array_hash = Z_ARRVAL_P(inner_array);
@@ -172,9 +172,8 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
       if (Z_TYPE_P(value) != IS_STRING) {
         return false;
       }
-      metadata->metadata[metadata->count].key = key1;
-      metadata->metadata[metadata->count].value = Z_STRVAL_P(value);
-      metadata->metadata[metadata->count].value_length = Z_STRLEN_P(value);
+      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key1);
+      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(Z_STRVAL_P(value), Z_STRLEN_P(value));
       metadata->count += 1;
     PHP_GRPC_HASH_FOREACH_END()
   PHP_GRPC_HASH_FOREACH_END()
@@ -229,10 +228,15 @@ PHP_METHOD(Call, __construct) {
   }
   add_property_zval(getThis(), "channel", channel_obj);
   wrapped_grpc_timeval *deadline = Z_WRAPPED_GRPC_TIMEVAL_P(deadline_obj);
+  grpc_slice method_slice = grpc_slice_from_copied_string(method);
+  grpc_slice host_slice = host_override != NULL ?
+      grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
   call->wrapped =
     grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
-                             completion_queue, method, host_override,
+                             completion_queue, method_slice, host_override != NULL ? &host_slice : NULL,
                              deadline->wrapped, NULL);
+  grpc_slice_unref(method_slice);
+  grpc_slice_unref(host_slice);
   call->owned = true;
 }
 
