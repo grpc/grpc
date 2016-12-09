@@ -349,12 +349,6 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     return;
   }
 
-  // Create acceptor.
-  grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
-  acceptor->from_server = sp->server;
-  acceptor->port_index = sp->port_index;
-  acceptor->fd_index = 0;
-
   /* The IOCP notified us of a completed operation. Let's grab the results,
      and act accordingly. */
   transfered_bytes = 0;
@@ -401,6 +395,11 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) {
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
                              acceptor);
   }

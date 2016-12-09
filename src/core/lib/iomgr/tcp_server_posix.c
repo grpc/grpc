@@ -386,12 +386,6 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     goto error;
   }
 
-  // Create acceptor.
-  grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
-  acceptor->from_server = sp->server;
-  acceptor->port_index = sp->port_index;
-  acceptor->fd_index = sp->fd_index;
-
   grpc_pollset *read_notifier_pollset =
       sp->server->pollsets[(size_t)gpr_atm_no_barrier_fetch_add(
                                &sp->server->next_pollset_to_assign, 1) %
@@ -436,6 +430,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     }
 
     grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
+
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = sp->fd_index;
 
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
