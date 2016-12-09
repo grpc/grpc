@@ -103,11 +103,18 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     } else {
       char *val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
                                   GPR_DUMP_ASCII);
+      char *msg;
+      gpr_asprintf(&msg, "Received http2 header with status: %s", val);
       grpc_error *e = grpc_error_set_str(
-          GRPC_ERROR_CREATE(
-              "Received http2 :status header with non-200 OK status"),
-          GRPC_ERROR_STR_VALUE, val);
+          grpc_error_set_int(
+              grpc_error_set_str(
+                  GRPC_ERROR_CREATE(
+                      "Received http2 :status header with non-200 OK status"),
+                  GRPC_ERROR_STR_VALUE, val),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
+          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(val);
+      gpr_free(msg);
       return e;
     }
   }

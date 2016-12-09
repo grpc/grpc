@@ -436,6 +436,8 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
 
   if (haystack_len == 0 || needle_len == 0) return -1;
   if (haystack_len < needle_len) return -1;
+  if (haystack_len == needle_len)
+    return grpc_slice_eq(haystack, needle) ? 0 : -1;
   if (needle_len == 1) return grpc_slice_chr(haystack, (char)*needle_bytes);
 
   const uint8_t *last = haystack_bytes + haystack_len - needle_len;
