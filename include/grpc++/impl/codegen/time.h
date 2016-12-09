@@ -75,8 +75,6 @@ class TimePoint<gpr_timespec> {
 
 }  // namespace grpc
 
-#ifndef GRPC_CXX0X_NO_CHRONO
-
 #include <chrono>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -105,7 +103,5 @@ class TimePoint<std::chrono::system_clock::time_point> {
 };
 
 }  // namespace grpc
-
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
 #endif  // GRPCXX_IMPL_CODEGEN_TIME_H

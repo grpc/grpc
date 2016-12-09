@@ -104,7 +104,7 @@ void grpc_free_port_using_server(char *server, int port) {
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                    grpc_closure_create(freed_port_from_server, &pr), &rsp);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
@@ -176,7 +176,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                      grpc_closure_create(got_port_from_server, pr),
                      &pr->response);
-    grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+    grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
     return;
   }
   GPR_ASSERT(response);
@@ -223,7 +223,7 @@ int grpc_pick_port_using_server(char *server) {
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                    grpc_closure_create(got_port_from_server, &pr),
                    &pr.response);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {

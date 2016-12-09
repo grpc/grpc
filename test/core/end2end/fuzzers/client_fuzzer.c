@@ -44,7 +44,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(gpr_slice slice) {}
+static void discard_write(grpc_slice slice) {}
 
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 
@@ -62,7 +62,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_resource_quota_create("client_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   grpc_transport *transport =
@@ -121,7 +121,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
-      gpr_slice_from_copied_buffer((const char *)data, size));
+      grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_event ev;
   while (1) {

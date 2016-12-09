@@ -4,6 +4,12 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_test_utils.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\authority_not_supported.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
@@ -50,6 +56,9 @@
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_latency.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">

@@ -78,12 +78,13 @@ static grpc_metadata_array metadata_batch_to_md_array(
     usr_md = &result.metadata[result.count++];
     usr_md->key = grpc_mdstr_as_c_string(key);
     usr_md->value = grpc_mdstr_as_c_string(value);
-    usr_md->value_length = GPR_SLICE_LENGTH(value->slice);
+    usr_md->value_length = GRPC_SLICE_LENGTH(value->slice);
   }
   return result;
 }
 
-static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
+                                       grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   size_t i;
@@ -92,14 +93,14 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
     /* Maybe we could do a pointer comparison but we do not have any guarantee
        that the metadata processor used the same pointers for consumed_md in the
        callback. */
-    if (GPR_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
-        GPR_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
+    if (GRPC_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
+        GRPC_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
       continue;
     }
-    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), consumed_md->key,
-               GPR_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GPR_SLICE_START_PTR(md->value->slice), consumed_md->value,
-               GPR_SLICE_LENGTH(md->value->slice)) == 0) {
+    if (memcmp(GRPC_SLICE_START_PTR(md->key->slice), consumed_md->key,
+               GRPC_SLICE_LENGTH(md->key->slice)) == 0 &&
+        memcmp(GRPC_SLICE_START_PTR(md->value->slice), consumed_md->value,
+               GRPC_SLICE_LENGTH(md->value->slice)) == 0) {
       return NULL; /* Delete. */
     }
   }
@@ -129,19 +130,19 @@ static void on_md_processing_done(
   if (status == GRPC_STATUS_OK) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
-    grpc_metadata_batch_filter(calld->recv_initial_metadata, remove_consumed_md,
-                               elem);
+    grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
+                               remove_consumed_md, elem);
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
-    gpr_slice message;
+    grpc_slice message;
     grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
     memset(close_op, 0, sizeof(*close_op));
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    message = gpr_slice_from_copied_string(error_details);
+    message = grpc_slice_from_copied_string(error_details);
     calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message != NULL) {
       grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);
@@ -149,7 +150,7 @@ static void on_md_processing_done(
     }
     calld->transport_op->send_trailing_metadata = NULL;
     close_op->on_complete = grpc_closure_create(destroy_op, close_op);
-    grpc_transport_stream_op_add_close(close_op, status, &message);
+    grpc_transport_stream_op_add_close(&exec_ctx, close_op, status, &message);
     grpc_call_next_op(&exec_ctx, elem, close_op);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv,
                         grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
@@ -264,7 +265,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
-  grpc_server_credentials_unref(chand->creds);
+  grpc_server_credentials_unref(exec_ctx, chand->creds);
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
@@ -278,4 +279,5 @@ const grpc_channel_filter grpc_server_auth_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "server-auth"};

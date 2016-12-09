@@ -69,7 +69,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv', 'legacy']
+  'linux': ['epoll', 'poll', 'poll-cv']
 }
 
 
@@ -83,7 +83,7 @@ _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
-  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[]):
+  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[], iomgr_platform='native'):
     if environ is None:
       environ = {}
     self.build_config = config
@@ -91,6 +91,7 @@ class Config(object):
     self.environ['CONFIG'] = config
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
+    self.iomgr_platform = iomgr_platform
 
   def job_spec(self, cmdline, timeout_seconds=_DEFAULT_TIMEOUT_SECONDS,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
@@ -202,6 +203,18 @@ class CLanguage(object):
     else:
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
+    if args.iomgr_platform == "uv":
+      cflags = '-DGRPC_UV '
+      try:
+        cflags += subprocess.check_output(['pkg-config', '--cflags', 'libuv']).strip() + ' '
+      except (subprocess.CalledProcessError, OSError):
+        pass
+      try:
+        ldflags = subprocess.check_output(['pkg-config', '--libs', 'libuv']).strip() + ' '
+      except (subprocess.CalledProcessError, OSError):
+        ldflags = '-luv '
+      self._make_options += ['EXTRA_CPPFLAGS={}'.format(cflags),
+                             'EXTRA_LDLIBS={}'.format(ldflags)]
 
   def test_specs(self):
     out = []
@@ -210,13 +223,20 @@ class CLanguage(object):
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['all'])
+      if self.args.iomgr_platform == 'uv':
+        polling_strategies = ['all']
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                  _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
+        timeout_scaling = 1
+        if polling_strategy == 'poll-cv':
+          timeout_scaling *= 5
         if self.config.build_config in target['exclude_configs']:
+          continue
+        if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
           binary = 'vsprojects/%s%s/%s.exe' % (
@@ -225,6 +245,9 @@ class CLanguage(object):
               target['name'])
         else:
           binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+        cpu_cost = target['cpu_cost']
+        if cpu_cost == 'capacity':
+          cpu_cost = multiprocessing.cpu_count()
         if os.path.isfile(binary):
           if 'gtest' in target and target['gtest']:
             # here we parse the output of --gtest_list_tests to build up a
@@ -248,7 +271,8 @@ class CLanguage(object):
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
-                                                cpu_cost=target['cpu_cost'],
+                                                cpu_cost=cpu_cost,
+                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -257,9 +281,9 @@ class CLanguage(object):
                                                           pipes.quote(arg)
                                                           for arg in cmdline) +
                                                       shortname_ext,
-                                            cpu_cost=target['cpu_cost'],
+                                            cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
-                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
+                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                             environ=env))
         elif self.args.regex == '.*' or self.platform == 'windows':
           print('\nWARNING: binary not found, skipping', binary)
@@ -315,6 +339,8 @@ class CLanguage(object):
       return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
     elif compiler == 'gcc4.6':
       return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
+    elif compiler == 'gcc4.8':
+      return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
@@ -346,7 +372,8 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
+                                         'node4', 'node5', 'node6',
+                                         'node7'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:
@@ -484,7 +511,7 @@ class PythonLanguage(object):
         config.run,
         timeout_seconds=5*60,
         environ=dict(list(environment.items()) +
-                     [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+                     [('GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
         shortname='%s.test.%s' % (config.name, suite_name),)
         for suite_name in tests_json
         for config in self.pythons]
@@ -825,6 +852,53 @@ class Sanity(object):
   def __str__(self):
     return 'sanity'
 
+class NodeExpressLanguage(object):
+  """Dummy Node express test target to enable running express performance
+  benchmarks"""
+
+  def __init__(self):
+    self.platform = platform_string()
+
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5', 'node6'])
+    if self.args.compiler == 'default':
+      self.node_version = '4'
+    else:
+      # Take off the word "node"
+      self.node_version = self.args.compiler[4:]
+
+  def test_specs(self):
+    return []
+
+  def pre_build_steps(self):
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\pre_build_node.bat']]
+    else:
+      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+
+  def make_targets(self):
+    return []
+
+  def make_options(self):
+    return []
+
+  def build_steps(self):
+    return []
+
+  def post_tests_steps(self):
+    return []
+
+  def makefile_name(self):
+    return 'Makefile'
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def __str__(self):
+    return 'node_express'
 
 # different configurations we can run under
 with open('tools/run_tests/configs.json') as f:
@@ -835,6 +909,7 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'node': NodeLanguage(),
+    'node_express': NodeExpressLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
@@ -995,13 +1070,18 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
+                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
+argp.add_argument('--iomgr_platform',
+                  choices=['native', 'uv'],
+                  default='native',
+                  help='Selects iomgr platform to build on')
 argp.add_argument('--build_only',
                   default=False,
                   action='store_const',

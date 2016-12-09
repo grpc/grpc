@@ -45,6 +45,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/stack_lockfree.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -195,6 +196,7 @@ struct grpc_server {
   grpc_completion_queue **cqs;
   grpc_pollset **pollsets;
   size_t cq_count;
+  size_t pollset_count;
   bool started;
 
   /* The two following mutexes control access to server-state
@@ -264,13 +266,13 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
 
 struct shutdown_cleanup_args {
   grpc_closure closure;
-  gpr_slice slice;
+  grpc_slice slice;
 };
 
 static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
   struct shutdown_cleanup_args *a = arg;
-  gpr_slice_unref(a->slice);
+  grpc_slice_unref_internal(exec_ctx, a->slice);
   gpr_free(a);
 }
 
@@ -283,7 +285,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
 
   op->send_goaway = send_goaway;
   op->set_accept_stream = true;
-  sc->slice = gpr_slice_from_copied_string("Server shutdown");
+  sc->slice = grpc_slice_from_copied_string("Server shutdown");
   op->goaway_message = &sc->slice;
   op->goaway_status = GRPC_STATUS_OK;
   op->disconnect_with_error = send_disconnect;
@@ -378,7 +380,7 @@ static void server_ref(grpc_server *server) {
 static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   registered_method *rm;
   size_t i;
-  grpc_channel_args_destroy(server->channel_args);
+  grpc_channel_args_destroy(exec_ctx, server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
   while ((rm = server->registered_methods) != NULL) {
@@ -459,8 +461,8 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
-  gpr_slice slice = value->slice;
-  size_t len = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = value->slice;
+  size_t len = GRPC_SLICE_LENGTH(slice);
 
   if (len + 1 > *capacity) {
     *capacity = GPR_MAX(len + 1, *capacity * 2);
@@ -739,7 +741,8 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
@@ -763,7 +766,8 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   gpr_timespec op_deadline;
 
   GRPC_ERROR_REF(error);
-  grpc_metadata_batch_filter(calld->recv_initial_metadata, server_filter, elem);
+  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                             server_filter, elem);
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
     calld->deadline = op_deadline;
@@ -837,11 +841,12 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   args.server_transport_data = transport_server_data;
   args.send_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_call *call;
-  grpc_error *error = grpc_call_create(&args, &call);
+  grpc_error *error = grpc_call_create(exec_ctx, &args, &call);
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   if (error != GRPC_ERROR_NONE) {
     got_initial_metadata(exec_ctx, elem, error);
+    GRPC_ERROR_UNREF(error);
     return;
   }
   call_data *calld = elem->call_data;
@@ -900,10 +905,10 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   GPR_ASSERT(calld->state != PENDING);
 
   if (calld->host) {
-    GRPC_MDSTR_UNREF(calld->host);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
   }
   if (calld->path) {
-    GRPC_MDSTR_UNREF(calld->path);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->path);
   }
   grpc_metadata_array_destroy(&calld->initial_metadata);
 
@@ -934,10 +939,10 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       if (chand->registered_methods[i].method) {
-        GRPC_MDSTR_UNREF(chand->registered_methods[i].method);
+        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].method);
       }
       if (chand->registered_methods[i].host) {
-        GRPC_MDSTR_UNREF(chand->registered_methods[i].host);
+        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].host);
       }
     }
     gpr_free(chand->registered_methods);
@@ -964,6 +969,7 @@ const grpc_channel_filter grpc_server_top_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "server",
 };
 
@@ -1083,7 +1089,7 @@ void grpc_server_start(grpc_server *server) {
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
   server->started = true;
-  size_t pollset_count = 0;
+  server->pollset_count = 0;
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   server->request_freelist_per_cq =
       gpr_malloc(sizeof(*server->request_freelist_per_cq) * server->cq_count);
@@ -1091,7 +1097,8 @@ void grpc_server_start(grpc_server *server) {
       gpr_malloc(sizeof(*server->requested_calls_per_cq) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
     if (!grpc_cq_is_non_listening_server_cq(server->cqs[i])) {
-      server->pollsets[pollset_count++] = grpc_cq_pollset(server->cqs[i]);
+      server->pollsets[server->pollset_count++] =
+          grpc_cq_pollset(server->cqs[i]);
     }
     server->request_freelist_per_cq[i] =
         gpr_stack_lockfree_create((size_t)server->max_requested_calls_per_cq);
@@ -1110,7 +1117,8 @@ void grpc_server_start(grpc_server *server) {
   }
 
   for (l = server->listeners; l; l = l->next) {
-    l->start(&exec_ctx, server, l->arg, server->pollsets, pollset_count);
+    l->start(&exec_ctx, server, l->arg, server->pollsets,
+             server->pollset_count);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1118,7 +1126,7 @@ void grpc_server_start(grpc_server *server) {
 
 void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
                               size_t *pollset_count) {
-  *pollset_count = server->cq_count;
+  *pollset_count = server->pollset_count;
   *pollsets = server->pollsets;
 }
 

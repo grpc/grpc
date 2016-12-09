@@ -54,7 +54,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -94,9 +94,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static gpr_slice large_slice(void) {
-  gpr_slice slice = gpr_slice_malloc(1000000);
-  memset(GPR_SLICE_START_PTR(slice), 'x', GPR_SLICE_LENGTH(slice));
+static grpc_slice large_slice(void) {
+  grpc_slice slice = grpc_slice_malloc(1000000);
+  memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
 
@@ -120,8 +120,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
       begin_test(config, name, &channel_args, &channel_args);
   gpr_free(name);
 
-  gpr_slice request_payload_slice = large_slice();
-  gpr_slice response_payload_slice = large_slice();
+  grpc_slice request_payload_slice = large_slice();
+  grpc_slice response_payload_slice = large_slice();
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -144,8 +144,10 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -244,7 +246,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -262,8 +265,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_slice_unref(request_payload_slice);
-  gpr_slice_unref(response_payload_slice);
+  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref(response_payload_slice);
 
   end_test(&f);
   config.tear_down_data(&f);

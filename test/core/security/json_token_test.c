@@ -37,13 +37,14 @@
 #include <string.h>
 
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
@@ -220,23 +221,25 @@ static void test_parse_json_key_failure_no_private_key(void) {
 
 static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
                                            char **scratchpad) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *b64;
   char *decoded;
   grpc_json *json;
-  gpr_slice slice;
+  grpc_slice slice;
   b64 = gpr_malloc(len + 1);
   strncpy(b64, str, len);
   b64[len] = '\0';
-  slice = grpc_base64_decode(b64, 1);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(slice));
-  decoded = gpr_malloc(GPR_SLICE_LENGTH(slice) + 1);
-  strncpy(decoded, (const char *)GPR_SLICE_START_PTR(slice),
-          GPR_SLICE_LENGTH(slice));
-  decoded[GPR_SLICE_LENGTH(slice)] = '\0';
+  slice = grpc_base64_decode(&exec_ctx, b64, 1);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
+  decoded = gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
+  strncpy(decoded, (const char *)GRPC_SLICE_START_PTR(slice),
+          GRPC_SLICE_LENGTH(slice));
+  decoded[GRPC_SLICE_LENGTH(slice)] = '\0';
   json = grpc_json_parse_string(decoded);
   gpr_free(b64);
   *scratchpad = decoded;
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
+  grpc_exec_ctx_finish(&exec_ctx);
   return json;
 }
 
@@ -338,12 +341,14 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
                                 const char *signed_data,
                                 size_t signed_data_size) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
   EVP_PKEY *key = EVP_PKEY_new();
 
-  gpr_slice sig = grpc_base64_decode(b64_signature, 1);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(sig));
-  GPR_ASSERT(GPR_SLICE_LENGTH(sig) == 128);
+  grpc_slice sig = grpc_base64_decode(&exec_ctx, b64_signature, 1);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(sig));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(sig) == 128);
 
   GPR_ASSERT(md_ctx != NULL);
   GPR_ASSERT(key != NULL);
@@ -352,12 +357,14 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   GPR_ASSERT(EVP_DigestVerifyInit(md_ctx, NULL, EVP_sha256(), NULL, key) == 1);
   GPR_ASSERT(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size) ==
              1);
-  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GPR_SLICE_START_PTR(sig),
-                                   GPR_SLICE_LENGTH(sig)) == 1);
+  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
+                                   GRPC_SLICE_LENGTH(sig)) == 1);
 
-  gpr_slice_unref(sig);
+  grpc_slice_unref_internal(&exec_ctx, sig);
   if (key != NULL) EVP_PKEY_free(key);
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static char *service_account_creds_jwt_encode_and_sign(

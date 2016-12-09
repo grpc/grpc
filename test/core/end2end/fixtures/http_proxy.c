@@ -33,13 +33,15 @@
 
 #include "test/core/end2end/fixtures/http_proxy.h"
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
@@ -57,6 +59,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -89,12 +92,12 @@ typedef struct proxy_connection {
   grpc_closure on_server_read_done;
   grpc_closure on_server_write_done;
 
-  gpr_slice_buffer client_read_buffer;
-  gpr_slice_buffer client_deferred_write_buffer;
-  gpr_slice_buffer client_write_buffer;
-  gpr_slice_buffer server_read_buffer;
-  gpr_slice_buffer server_deferred_write_buffer;
-  gpr_slice_buffer server_write_buffer;
+  grpc_slice_buffer client_read_buffer;
+  grpc_slice_buffer client_deferred_write_buffer;
+  grpc_slice_buffer client_write_buffer;
+  grpc_slice_buffer server_read_buffer;
+  grpc_slice_buffer server_deferred_write_buffer;
+  grpc_slice_buffer server_write_buffer;
 
   grpc_http_parser http_parser;
   grpc_http_request http_request;
@@ -108,12 +111,14 @@ static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
     if (conn->server_endpoint != NULL)
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
     grpc_pollset_set_destroy(conn->pollset_set);
-    gpr_slice_buffer_destroy(&conn->client_read_buffer);
-    gpr_slice_buffer_destroy(&conn->client_deferred_write_buffer);
-    gpr_slice_buffer_destroy(&conn->client_write_buffer);
-    gpr_slice_buffer_destroy(&conn->server_read_buffer);
-    gpr_slice_buffer_destroy(&conn->server_deferred_write_buffer);
-    gpr_slice_buffer_destroy(&conn->server_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx,
+                                       &conn->client_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx,
+                                       &conn->server_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
     gpr_free(conn);
@@ -144,12 +149,12 @@ static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     return;
   }
   // Clear write buffer (the data we just wrote).
-  gpr_slice_buffer_reset_and_unref(&conn->client_write_buffer);
+  grpc_slice_buffer_reset_and_unref(&conn->client_write_buffer);
   // If more data was read from the server since we started this write,
   // write that data now.
   if (conn->client_deferred_write_buffer.length > 0) {
-    gpr_slice_buffer_move_into(&conn->client_deferred_write_buffer,
-                               &conn->client_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
+                                &conn->client_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                         &conn->client_write_buffer,
                         &conn->on_client_write_done);
@@ -169,12 +174,12 @@ static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     return;
   }
   // Clear write buffer (the data we just wrote).
-  gpr_slice_buffer_reset_and_unref(&conn->server_write_buffer);
+  grpc_slice_buffer_reset_and_unref(&conn->server_write_buffer);
   // If more data was read from the client since we started this write,
   // write that data now.
   if (conn->server_deferred_write_buffer.length > 0) {
-    gpr_slice_buffer_move_into(&conn->server_deferred_write_buffer,
-                               &conn->server_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
+                                &conn->server_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
                         &conn->server_write_buffer,
                         &conn->on_server_write_done);
@@ -201,11 +206,11 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   //
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->server_write_buffer.length > 0) {
-    gpr_slice_buffer_move_into(&conn->client_read_buffer,
-                               &conn->server_deferred_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_read_buffer,
+                                &conn->server_deferred_write_buffer);
   } else {
-    gpr_slice_buffer_move_into(&conn->client_read_buffer,
-                               &conn->server_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_read_buffer,
+                                &conn->server_write_buffer);
     gpr_ref(&conn->refcount);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
                         &conn->server_write_buffer,
@@ -233,11 +238,11 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   //
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->client_write_buffer.length > 0) {
-    gpr_slice_buffer_move_into(&conn->server_read_buffer,
-                               &conn->client_deferred_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_read_buffer,
+                                &conn->client_deferred_write_buffer);
   } else {
-    gpr_slice_buffer_move_into(&conn->server_read_buffer,
-                               &conn->client_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_read_buffer,
+                                &conn->client_write_buffer);
     gpr_ref(&conn->refcount);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                         &conn->client_write_buffer,
@@ -258,7 +263,7 @@ static void on_write_response_done(grpc_exec_ctx* exec_ctx, void* arg,
     return;
   }
   // Clear write buffer.
-  gpr_slice_buffer_reset_and_unref(&conn->client_write_buffer);
+  grpc_slice_buffer_reset_and_unref(&conn->client_write_buffer);
   // Start reading from both client and server.  One of the read
   // requests inherits our ref to conn, but we need to take a new ref
   // for the other one.
@@ -287,9 +292,9 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
   // We've established a connection, so send back a 200 response code to
   // the client.
   // The write callback inherits our reference to conn.
-  gpr_slice slice =
-      gpr_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
-  gpr_slice_buffer_add(&conn->client_write_buffer, slice);
+  grpc_slice slice =
+      grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
+  grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                       &conn->client_write_buffer,
                       &conn->on_write_response_done);
@@ -311,7 +316,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
-    if (GPR_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
+    if (GRPC_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
       error = grpc_http_parser_parse(&conn->http_parser,
                                      conn->client_read_buffer.slices[i], NULL);
       if (error != GRPC_ERROR_NONE) {
@@ -322,7 +327,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
       }
     }
   }
-  gpr_slice_buffer_reset_and_unref(&conn->client_read_buffer);
+  grpc_slice_buffer_reset_and_unref(&conn->client_read_buffer);
   // If we're not done reading the request, read more data.
   if (conn->http_parser.state != GRPC_HTTP_BODY) {
     grpc_endpoint_read(exec_ctx, conn->client_endpoint,
@@ -358,8 +363,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(10, GPR_TIMESPAN));
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
                           &conn->server_endpoint, conn->pollset_set, NULL,
-                          (struct sockaddr*)&resolved_addresses->addrs[0].addr,
-                          resolved_addresses->addrs[0].len, deadline);
+                          &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
@@ -383,12 +387,12 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_closure_init(&conn->on_client_write_done, on_client_write_done, conn);
   grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn);
   grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn);
-  gpr_slice_buffer_init(&conn->client_read_buffer);
-  gpr_slice_buffer_init(&conn->client_deferred_write_buffer);
-  gpr_slice_buffer_init(&conn->client_write_buffer);
-  gpr_slice_buffer_init(&conn->server_read_buffer);
-  gpr_slice_buffer_init(&conn->server_deferred_write_buffer);
-  gpr_slice_buffer_init(&conn->server_write_buffer);
+  grpc_slice_buffer_init(&conn->client_read_buffer);
+  grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
+  grpc_slice_buffer_init(&conn->client_write_buffer);
+  grpc_slice_buffer_init(&conn->server_read_buffer);
+  grpc_slice_buffer_init(&conn->server_deferred_write_buffer);
+  grpc_slice_buffer_init(&conn->server_write_buffer);
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
@@ -431,13 +435,13 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
       &exec_ctx, NULL, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  grpc_sockaddr_set_port((struct sockaddr*)&addr, proxy_port);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  addr->sin_family = AF_INET;
+  grpc_sockaddr_set_port(&resolved_addr, proxy_port);
   int port;
-  error = grpc_tcp_server_add_port(proxy->server, (struct sockaddr*)&addr,
-                                   sizeof(addr), &port);
+  error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port == proxy_port);
   // Start server.
@@ -467,7 +471,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_tcp_server_shutdown_listeners(&exec_ctx, proxy->server);
   grpc_tcp_server_unref(&exec_ctx, proxy->server);
   gpr_free(proxy->proxy_name);
-  grpc_channel_args_destroy(proxy->channel_args);
+  grpc_channel_args_destroy(&exec_ctx, proxy->channel_args);
   grpc_closure destroyed;
   grpc_closure_init(&destroyed, destroy_pollset, proxy->pollset);
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset, &destroyed);

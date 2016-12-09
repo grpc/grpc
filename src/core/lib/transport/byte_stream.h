@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #define GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT (~(size_t)0)
@@ -52,7 +52,7 @@ struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
   bool (*next_slice)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                     gpr_slice *slice, size_t max_size_hint,
+                     grpc_slice *slice, size_t max_size_hint,
                      grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
@@ -72,7 +72,7 @@ struct grpc_byte_stream {
  */
 bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream,
-                                 gpr_slice *slice, size_t max_size_hint,
+                                 grpc_slice *slice, size_t max_size_hint,
                                  grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -82,12 +82,12 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
  */
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
-  gpr_slice_buffer *backing_buffer;
+  grpc_slice_buffer *backing_buffer;
   size_t cursor;
 } grpc_slice_buffer_stream;
 
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   gpr_slice_buffer *slice_buffer,
+                                   grpc_slice_buffer *slice_buffer,
                                    uint32_t flags);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

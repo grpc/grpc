@@ -51,7 +51,8 @@ extern "C" {
 
 /// One stage of mutation: call functions against \a builder to influence the
 /// finally constructed channel stack
-typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder *builder,
+typedef bool (*grpc_channel_init_stage)(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_stack_builder *builder,
                                         void *arg);
 
 /// Global initialization of the system

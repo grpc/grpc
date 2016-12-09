@@ -37,6 +37,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
@@ -63,6 +64,7 @@ static grpc_error *my_resolve_address(const char *name, const char *addr,
 }
 
 static grpc_resolver *create_resolver(const char *name) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
   grpc_uri *uri = grpc_uri_parse(name, 0);
   GPR_ASSERT(uri);
@@ -70,9 +72,10 @@ static grpc_resolver *create_resolver(const char *name) {
   memset(&args, 0, sizeof(args));
   args.uri = uri;
   grpc_resolver *resolver =
-      grpc_resolver_factory_create_resolver(factory, &args);
+      grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   grpc_resolver_factory_unref(factory);
   grpc_uri_destroy(uri);
+  grpc_exec_ctx_finish(&exec_ctx);
   return resolver;
 }
 
@@ -103,7 +106,7 @@ int main(int argc, char **argv) {
 
   grpc_resolver *resolver = create_resolver("dns:test");
 
-  grpc_resolver_result *result = (grpc_resolver_result *)1;
+  grpc_channel_args *result = (grpc_channel_args *)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_event ev1;
@@ -122,7 +125,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);
 
-  grpc_resolver_result_unref(&exec_ctx, result);
+  grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 

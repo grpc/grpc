@@ -232,6 +232,15 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories + [SCALABLE])
 
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='SYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
@@ -361,7 +370,8 @@ class NodeLanguage:
     self.safename = str(self)
 
   def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_node.sh']
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=grpc']
 
   def worker_port_offset(self):
     return 200
@@ -382,6 +392,11 @@ class NodeLanguage:
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         categories=[SCALABLE, SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'cpp_to_node_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='async_server',
+        client_language='c++')
 
     yield _ping_pong_scenario(
         'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
@@ -659,11 +674,40 @@ class GoLanguage:
   def __str__(self):
     return 'go'
 
+class NodeExpressLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=express']
+
+  def worker_port_offset(self):
+    return 700
+
+  def scenarios(self):
+    yield _ping_pong_scenario(
+        'node_express_json_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SCALABLE, SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'node_express_json_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        categories=[SCALABLE, SMOKETEST])
+
+  def __str__(self):
+    return 'node_express'
+
 
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),

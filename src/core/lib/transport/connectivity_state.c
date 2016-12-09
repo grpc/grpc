@@ -43,6 +43,8 @@ int grpc_connectivity_state_trace = 0;
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
+    case GRPC_CHANNEL_INIT:
+      return "INIT";
     case GRPC_CHANNEL_IDLE:
       return "IDLE";
     case GRPC_CHANNEL_CONNECTING:
@@ -98,7 +100,12 @@ grpc_connectivity_state grpc_connectivity_state_check(
   return tracker->current_state;
 }
 
-int grpc_connectivity_state_notify_on_state_change(
+bool grpc_connectivity_state_has_watchers(
+    grpc_connectivity_state_tracker *connectivity_state) {
+  return connectivity_state->watchers != NULL;
+}
+
+bool grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify) {
   if (grpc_connectivity_state_trace) {
@@ -117,7 +124,7 @@ int grpc_connectivity_state_notify_on_state_change(
       grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
       tracker->watchers = w->next;
       gpr_free(w);
-      return 0;
+      return false;
     }
     while (w != NULL) {
       grpc_connectivity_state_watcher *rm_candidate = w->next;
@@ -125,11 +132,11 @@ int grpc_connectivity_state_notify_on_state_change(
         grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
         w->next = w->next->next;
         gpr_free(rm_candidate);
-        return 0;
+        return false;
       }
       w = w->next;
     }
-    return 0;
+    return false;
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
@@ -159,6 +166,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     grpc_error_free_string(error_string);
   }
   switch (state) {
+    case GRPC_CHANNEL_INIT:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_READY:

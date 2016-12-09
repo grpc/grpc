@@ -38,9 +38,11 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream,
-                                 gpr_slice *slice, size_t max_size_hint,
+                                 grpc_slice *slice, size_t max_size_hint,
                                  grpc_closure *on_complete) {
   return byte_stream->next_slice(exec_ctx, byte_stream, slice, max_size_hint,
                                  on_complete);
@@ -55,12 +57,13 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 static bool slice_buffer_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                            grpc_byte_stream *byte_stream,
-                                           gpr_slice *slice,
+                                           grpc_slice *slice,
                                            size_t max_size_hint,
                                            grpc_closure *on_complete) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
-  *slice = gpr_slice_ref(stream->backing_buffer->slices[stream->cursor]);
+  *slice =
+      grpc_slice_ref_internal(stream->backing_buffer->slices[stream->cursor]);
   stream->cursor++;
   return true;
 }
@@ -69,7 +72,7 @@ static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
                                         grpc_byte_stream *byte_stream) {}
 
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   gpr_slice_buffer *slice_buffer,
+                                   grpc_slice_buffer *slice_buffer,
                                    uint32_t flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   stream->base.length = (uint32_t)slice_buffer->length;
