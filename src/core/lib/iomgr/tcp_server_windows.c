@@ -323,7 +323,6 @@ failure:
 /* Event manager callback when reads are ready. */
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_tcp_listener *sp = arg;
-  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -396,8 +395,13 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) {
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                             &acceptor);
+                             acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
