@@ -150,8 +150,8 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  char *method_text = grpc_slice_as_c_string(details.method);
-  char *host_text = grpc_slice_as_c_string(details.host);
+  char *method_text = grpc_slice_to_c_string(details.method);
+  char *host_text = grpc_slice_to_c_string(details.host);
   php_grpc_add_property_string(result, "method", method_text, true);
   php_grpc_add_property_string(result, "host", host_text, true);
   gpr_free(method_text);
