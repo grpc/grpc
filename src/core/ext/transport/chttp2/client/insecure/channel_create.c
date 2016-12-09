@@ -76,19 +76,6 @@ static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
 static grpc_client_channel_factory client_channel_factory = {
     &client_channel_factory_vtable};
 
-static void *cc_factory_arg_copy(void *cc_factory) { return cc_factory; }
-
-static void cc_factory_arg_destroy(void *cc_factory) {}
-
-static int cc_factory_arg_cmp(void *cc_factory1, void *cc_factory2) {
-  if (cc_factory1 < cc_factory2) return -1;
-  if (cc_factory1 > cc_factory2) return 1;
-  return 0;
-}
-
-static const grpc_arg_pointer_vtable cc_factory_arg_vtable = {
-    cc_factory_arg_copy, cc_factory_arg_destroy, cc_factory_arg_cmp};
-
 /* Create a client channel:
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
@@ -108,10 +95,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   new_args[0].type = GRPC_ARG_STRING;
   new_args[0].key = GRPC_ARG_SERVER_URI;
   new_args[0].value.string = (char *)target;
-  new_args[1].type = GRPC_ARG_POINTER;
-  new_args[1].key = GRPC_ARG_CLIENT_CHANNEL_FACTORY;
-  new_args[1].value.pointer.p = factory;
-  new_args[1].value.pointer.vtable = &cc_factory_arg_vtable;
+  new_args[1] = grpc_client_channel_factory_create_channel_arg(factory);
   grpc_channel_args *args_copy =
       grpc_channel_args_copy_and_add(args, new_args, GPR_ARRAY_SIZE(new_args));
   // Create channel.
