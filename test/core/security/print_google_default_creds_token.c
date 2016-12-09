@@ -63,7 +63,7 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
   } else {
     char *token;
     GPR_ASSERT(num_md == 1);
-    token = grpc_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
+    token = grpc_slice_to_c_string(md_elems[0].value);
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);
   }

@@ -41,6 +41,13 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+char *grpc_slice_to_c_string(grpc_slice slice) {
+  char *out = gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
+  memcpy(out, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
+  out[GRPC_SLICE_LENGTH(slice)] = 0;
+  return out;
+}
+
 grpc_slice grpc_empty_slice(void) {
   grpc_slice out;
   out.refcount = NULL;

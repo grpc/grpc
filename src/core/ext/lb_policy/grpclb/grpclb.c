@@ -1323,7 +1323,7 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (grpc_lb_glb_trace) {
     char *status_details =
-        grpc_dump_slice(glb_policy->lb_call_status_details, GPR_DUMP_ASCII);
+        grpc_slice_to_c_string(glb_policy->lb_call_status_details);
     gpr_log(GPR_DEBUG,
             "Status from LB server received. Status = %d, Details = '%s', "
             "(call: %p)",

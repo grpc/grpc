@@ -397,8 +397,8 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   }
 
   if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(elem)) {
-    char *k = grpc_dump_slice(GRPC_MDKEY(elem), GPR_DUMP_ASCII);
-    char *v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_ASCII);
+    char *k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
+    char *v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
     gpr_log(
         GPR_DEBUG,
         "Encode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",

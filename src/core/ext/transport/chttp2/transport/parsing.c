@@ -453,7 +453,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_ASSERT(s != NULL);
 
   if (grpc_http_trace) {
-    char *key = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
+    char *key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", s->id,
@@ -475,7 +475,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
       /* not already parsed: parse it now, and store the result away */
       cached_timeout = gpr_malloc(sizeof(gpr_timespec));
       if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
-        char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+        char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
         gpr_free(val);
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
@@ -525,7 +525,7 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_ASSERT(s != NULL);
 
   if (grpc_http_trace) {
-    char *key = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
+    char *key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_INFO, "HTTP:%d:TRL:%s: %s: %s", s->id,

@@ -532,7 +532,7 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       char *accept_encoding_entry_str =
-          grpc_dump_slice(accept_encoding_entry_slice, GPR_DUMP_ASCII);
+          grpc_slice_to_c_string(accept_encoding_entry_slice);
       gpr_log(GPR_ERROR,
               "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
               accept_encoding_entry_str);
@@ -599,7 +599,7 @@ static int prepare_application_metadata(
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!grpc_header_key_is_legal(md->key)) {
-      char *str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
+      char *str = grpc_slice_to_c_string(md->key);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
       gpr_free(str);
       break;
@@ -860,7 +860,7 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm_from_slice(GRPC_MDVALUE(md));
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    char *md_c_str = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+    char *md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(GPR_ERROR,
             "Invalid incoming compression algorithm: '%s'. Interpreting "
             "incoming data as uncompressed.",

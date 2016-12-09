@@ -79,7 +79,7 @@ static void plugin_md_request_metadata_ready(void *request,
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
       if (!grpc_header_key_is_legal(md[i].key)) {
-        char *key = grpc_dump_slice(md[i].key, GPR_DUMP_ASCII);
+        char *key = grpc_slice_to_c_string(md[i].key);
         gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", key);
         gpr_free(key);
         seen_illegal_header = true;

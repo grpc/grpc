@@ -161,8 +161,8 @@ static int is_mdelem_static(grpc_mdelem e) {
 static void ref_md_locked(mdtab_shard *shard,
                           interned_metadata *md DEBUG_ARGS) {
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-  char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+  char *key_str = grpc_slice_to_c_string(md->key);
+  char *value_str = grpc_slice_to_c_string(md->value);
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
@@ -261,8 +261,8 @@ grpc_mdelem grpc_mdelem_create(
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-    char *key_str = grpc_dump_slice(allocated->key, GPR_DUMP_ASCII);
-    char *value_str = grpc_dump_slice(allocated->value, GPR_DUMP_ASCII);
+    char *key_str = grpc_slice_to_c_string(allocated->key);
+    char *value_str = grpc_slice_to_c_string(allocated->value);
     gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%zu: '%s' = '%s'", (void *)allocated,
             gpr_atm_no_barrier_load(&allocated->refcnt), key_str, value_str);
     gpr_free(key_str);
@@ -312,8 +312,8 @@ grpc_mdelem grpc_mdelem_create(
   shard->elems[idx] = md;
   gpr_mu_init(&md->mu_user_data);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-  char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+  char *key_str = grpc_slice_to_c_string(md->key);
+  char *value_str = grpc_slice_to_c_string(md->value);
   gpr_log(GPR_DEBUG, "ELM   NEW:%p:%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt), key_str, value_str);
   gpr_free(key_str);
@@ -374,8 +374,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata *md = (interned_metadata *)GRPC_MDELEM_DATA(gmd);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-      char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      char *key_str = grpc_slice_to_c_string(md->key);
+      char *value_str = grpc_slice_to_c_string(md->value);
       gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
               "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
               gpr_atm_no_barrier_load(&md->refcnt),
@@ -394,8 +394,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata *md = (allocated_metadata *)GRPC_MDELEM_DATA(gmd);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-      char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      char *key_str = grpc_slice_to_c_string(md->key);
+      char *value_str = grpc_slice_to_c_string(md->value);
       gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
               "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
               gpr_atm_no_barrier_load(&md->refcnt),
@@ -422,8 +422,8 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata *md = (interned_metadata *)GRPC_MDELEM_DATA(gmd);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-      char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      char *key_str = grpc_slice_to_c_string(md->key);
+      char *value_str = grpc_slice_to_c_string(md->value);
       gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
               "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
               gpr_atm_no_barrier_load(&md->refcnt),
@@ -446,8 +446,8 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata *md = (allocated_metadata *)GRPC_MDELEM_DATA(gmd);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-      char *value_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      char *key_str = grpc_slice_to_c_string(md->key);
+      char *value_str = grpc_slice_to_c_string(md->value);
       gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
               "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
               gpr_atm_no_barrier_load(&md->refcnt),

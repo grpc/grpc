@@ -134,7 +134,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_error *error = GRPC_ERROR_NONE;
   for (i = 0; i < num_md; i++) {
     if (!grpc_header_key_is_legal(md_elems[i].key)) {
-      char *str = grpc_dump_slice(md_elems[i].key, GPR_DUMP_ASCII);
+      char *str = grpc_slice_to_c_string(md_elems[i].key);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
       gpr_free(str);
     } else if (!grpc_is_binary_header(md_elems[i].key) &&
@@ -162,7 +162,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
 void build_auth_metadata_context(grpc_security_connector *sc,
                                  grpc_auth_context *auth_context,
                                  call_data *calld) {
-  char *service = grpc_dump_slice(calld->method, GPR_DUMP_ASCII);
+  char *service = grpc_slice_to_c_string(calld->method);
   char *last_slash = strrchr(service, '/');
   char *method_name = NULL;
   char *service_url = NULL;
@@ -178,7 +178,7 @@ void build_auth_metadata_context(grpc_security_connector *sc,
     method_name = gpr_strdup(last_slash + 1);
   }
   if (method_name == NULL) method_name = gpr_strdup("");
-  char *host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
+  char *host = grpc_slice_to_c_string(calld->host);
   gpr_asprintf(&service_url, "%s://%s%s",
                sc->url_scheme == NULL ? "" : sc->url_scheme, host, service);
   calld->auth_md_context.service_url = service_url;
@@ -237,7 +237,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     send_security_metadata(exec_ctx, elem, &calld->op);
   } else {
     char *error_msg;
-    char *host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
+    char *host = grpc_slice_to_c_string(calld->host);
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  host);
     gpr_free(host);
@@ -297,7 +297,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       }
     }
     if (calld->have_host) {
-      char *call_host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
+      char *call_host = grpc_slice_to_c_string(calld->host);
       calld->op = *op; /* Copy op (originates from the caller's stack). */
       grpc_channel_security_connector_check_call_host(
           exec_ctx, chand->security_connector, call_host, chand->auth_context,

@@ -115,7 +115,7 @@ static grpc_error *process_send_initial_metadata(
         initial_metadata->idx.named.grpc_internal_encoding_request->md;
     if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
                                           &calld->compression_algorithm)) {
-      char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+      char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
       gpr_free(val);
@@ -123,7 +123,7 @@ static grpc_error *process_send_initial_metadata(
     }
     if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
                     calld->compression_algorithm)) {
-      char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+      char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (previously disabled). "
               "Ignoring.",

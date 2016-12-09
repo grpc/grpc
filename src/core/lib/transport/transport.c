@@ -224,7 +224,7 @@ void grpc_transport_stream_op_add_cancellation_with_message(
   }
   grpc_error *error;
   if (optional_message != NULL) {
-    char *msg = grpc_dump_slice(*optional_message, GPR_DUMP_ASCII);
+    char *msg = grpc_slice_to_c_string(*optional_message);
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
@@ -250,7 +250,7 @@ void grpc_transport_stream_op_add_close(grpc_exec_ctx *exec_ctx,
   }
   grpc_error *error;
   if (optional_message != NULL) {
-    char *msg = grpc_dump_slice(*optional_message, GPR_DUMP_ASCII);
+    char *msg = grpc_slice_to_c_string(*optional_message);
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);

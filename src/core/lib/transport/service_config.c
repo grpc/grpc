@@ -237,7 +237,7 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
   if (value == NULL) {
-    char* path_str = grpc_dump_slice(path, GPR_DUMP_ASCII);
+    char* path_str = grpc_slice_to_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
     char* buf = gpr_malloc(len + 2);  // '*' and NUL

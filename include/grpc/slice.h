@@ -157,6 +157,10 @@ GPRAPI int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b);
  * as \a s */
 GPRAPI grpc_slice grpc_slice_dup(grpc_slice a);
 
+/* Return a copy of slice as a C string. Offers no protection against embedded
+   NULL's. Returned string must be freed with gpr_free. */
+GPRAPI char *grpc_slice_to_c_string(grpc_slice s);
+
 #ifdef __cplusplus
 }
 #endif
