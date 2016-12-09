@@ -157,10 +157,11 @@ static bool call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
                                         grpc_handshake_manager* mgr,
                                         grpc_error* error) {
   GPR_ASSERT(mgr->index <= mgr->count);
-  // If we got an error or we've been shut down or we've finished the last
-  // handshaker, invoke the on_handshake_done callback.  Otherwise, call the
-  // next handshaker.
-  if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->index == mgr->count) {
+  // If we got an error or we've been shut down or we're exiting early or
+  // we've finished the last handshaker, invoke the on_handshake_done
+  // callback.  Otherwise, call the next handshaker.
+  if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
+      mgr->index == mgr->count) {
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     grpc_timer_cancel(exec_ctx, &mgr->deadline_timer);

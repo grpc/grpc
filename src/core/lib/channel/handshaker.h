@@ -72,6 +72,9 @@ typedef struct {
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
   grpc_slice_buffer* read_buffer;
+  // A handshaker may set this to true before invoking on_handshake_done
+  // to indicate that subsequent handshakers should be skipped.
+  bool exit_early;
   // User data passed through the handshake manager.  Not used by
   // individual handshakers.
   void* user_data;
