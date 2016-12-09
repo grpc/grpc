@@ -201,12 +201,6 @@ static void on_connect(uv_stream_t *server, int status) {
     return;
   }
 
-  // Create acceptor.
-  grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
-  acceptor->from_server = sp->server;
-  acceptor->port_index = sp->port_index;
-  acceptor->fd_index = 0;
-
   client = gpr_malloc(sizeof(uv_tcp_t));
   uv_tcp_init(uv_default_loop(), client);
   // UV documentation says this is guaranteed to succeed
@@ -226,6 +220,11 @@ static void on_connect(uv_stream_t *server, int status) {
       gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(status));
     }
     ep = grpc_tcp_create(client, sp->server->resource_quota, peer_name_string);
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
                              acceptor);
     grpc_exec_ctx_finish(&exec_ctx);
