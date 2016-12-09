@@ -60,9 +60,9 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
   gpr_free(sc);
 }
 
-static void httpcli_ssl_create_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_handshaker *handshaker = NULL;
@@ -74,8 +74,9 @@ static void httpcli_ssl_create_handshakers(
               tsi_result_to_string(result));
     }
   }
-  grpc_security_create_handshakers(exec_ctx, handshaker, &sc->base,
-                                   handshake_mgr);
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(exec_ctx, handshaker, &sc->base));
 }
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
@@ -132,7 +133,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
-  c->base.create_handshakers = httpcli_ssl_create_handshakers;
+  c->base.add_handshakers = httpcli_ssl_add_handshakers;
   *sc = &c->base;
   return GRPC_SECURITY_OK;
 }
@@ -185,8 +186,8 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
-  grpc_channel_security_connector_create_handshakers(exec_ctx, sc,
-                                                     c->handshake_mgr);
+  grpc_channel_security_connector_add_handshakers(exec_ctx, sc,
+                                                  c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, tcp, NULL /* channel_args */, deadline,
       NULL /* acceptor */, on_handshake_done, c /* user_data */);

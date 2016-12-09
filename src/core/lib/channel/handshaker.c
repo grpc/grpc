@@ -49,21 +49,21 @@ void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
   handshaker->vtable = vtable;
 }
 
-static void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
-                                    grpc_handshaker* handshaker) {
+void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                             grpc_handshaker* handshaker) {
   handshaker->vtable->destroy(exec_ctx, handshaker);
 }
 
-static void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                                     grpc_handshaker* handshaker) {
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker) {
   handshaker->vtable->shutdown(exec_ctx, handshaker);
 }
 
-static void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
-                                         grpc_handshaker* handshaker,
-                                         grpc_tcp_server_acceptor* acceptor,
-                                         grpc_closure* on_handshake_done,
-                                         grpc_handshaker_args* args) {
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
+                                  grpc_tcp_server_acceptor* acceptor,
+                                  grpc_closure* on_handshake_done,
+                                  grpc_handshaker_args* args) {
   handshaker->vtable->do_handshake(exec_ctx, handshaker, acceptor,
                                    on_handshake_done, args);
 }
