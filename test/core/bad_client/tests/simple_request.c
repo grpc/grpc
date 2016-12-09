@@ -117,8 +117,8 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

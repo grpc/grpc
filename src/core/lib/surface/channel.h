@@ -52,9 +52,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
     value of \a propagation_mask (see propagation_bits.h for possible values) */
 grpc_call *grpc_channel_create_pollset_set_call(
     grpc_exec_ctx *exec_ctx, grpc_channel *channel, grpc_call *parent_call,
-    uint32_t propagation_mask, grpc_pollset_set *pollset_set,
-    const char *method, const char *host, gpr_timespec deadline,
-    void *reserved);
+    uint32_t propagation_mask, grpc_pollset_set *pollset_set, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
@@ -63,9 +62,9 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
     status_code.
 
     The returned elem is owned by the caller. */
-grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
-                                                 grpc_channel *channel,
-                                                 int status_code);
+grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
+                                                grpc_channel *channel,
+                                                int status_code);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

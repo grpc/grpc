@@ -45,6 +45,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -54,8 +55,10 @@
 /* We can have a per-call credentials. */
 typedef struct {
   grpc_call_credentials *creds;
-  grpc_mdstr *host;
-  grpc_mdstr *method;
+  bool have_host;
+  bool have_method;
+  grpc_slice host;
+  grpc_slice method;
   /* pollset{_set} bound to this call; if we need to make external
      network requests, they should be done under a pollset added to this
      pollset_set so that work can progress when this call wants work to progress
@@ -99,6 +102,14 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   grpc_call_next_op(exec_ctx, elem, &calld->op);
 }
 
+static void add_error(grpc_error **combined, grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (*combined == GRPC_ERROR_NONE) {
+    *combined = GRPC_ERROR_CREATE("Client auth metadata plugin error");
+  }
+  *combined = grpc_error_add_child(*combined, error);
+}
+
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_md *md_elems,
                                     size_t num_md,
@@ -120,20 +131,38 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
   GPR_ASSERT(op->send_initial_metadata != NULL);
   mdb = op->send_initial_metadata;
+  grpc_error *error = GRPC_ERROR_NONE;
   for (i = 0; i < num_md; i++) {
-    grpc_metadata_batch_add_tail(
-        mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(exec_ctx,
-                                grpc_slice_ref_internal(md_elems[i].key),
-                                grpc_slice_ref_internal(md_elems[i].value)));
+    if (!grpc_header_key_is_legal(md_elems[i].key)) {
+      char *str = grpc_slice_to_c_string(md_elems[i].key);
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
+      gpr_free(str);
+    } else if (!grpc_is_binary_header(md_elems[i].key) &&
+               !grpc_header_nonbin_value_is_legal(md_elems[i].value)) {
+      char *str =
+          grpc_dump_slice(md_elems[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
+      gpr_free(str);
+    } else {
+      add_error(&error,
+                grpc_metadata_batch_add_tail(
+                    mdb, &calld->md_links[i],
+                    grpc_mdelem_from_slices(
+                        exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
+                        grpc_slice_ref_internal(md_elems[i].value))));
+    }
   }
-  grpc_call_next_op(exec_ctx, elem, op);
+  if (error == GRPC_ERROR_NONE) {
+    grpc_call_next_op(exec_ctx, elem, op);
+  } else {
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+  }
 }
 
 void build_auth_metadata_context(grpc_security_connector *sc,
                                  grpc_auth_context *auth_context,
                                  call_data *calld) {
-  char *service = gpr_strdup(grpc_mdstr_as_c_string(calld->method));
+  char *service = grpc_slice_to_c_string(calld->method);
   char *last_slash = strrchr(service, '/');
   char *method_name = NULL;
   char *service_url = NULL;
@@ -149,14 +178,15 @@ void build_auth_metadata_context(grpc_security_connector *sc,
     method_name = gpr_strdup(last_slash + 1);
   }
   if (method_name == NULL) method_name = gpr_strdup("");
+  char *host = grpc_slice_to_c_string(calld->host);
   gpr_asprintf(&service_url, "%s://%s%s",
-               sc->url_scheme == NULL ? "" : sc->url_scheme,
-               grpc_mdstr_as_c_string(calld->host), service);
+               sc->url_scheme == NULL ? "" : sc->url_scheme, host, service);
   calld->auth_md_context.service_url = service_url;
   calld->auth_md_context.method_name = method_name;
   calld->auth_md_context.channel_auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
+  gpr_free(host);
 }
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
@@ -207,8 +237,10 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     send_security_metadata(exec_ctx, elem, &calld->op);
   } else {
     char *error_msg;
+    char *host = grpc_slice_to_c_string(calld->host);
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
-                 grpc_mdstr_as_c_string(calld->host));
+                 host);
+    gpr_free(host);
     bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
     gpr_free(error_msg);
   }
@@ -247,23 +279,30 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   if (op->send_initial_metadata != NULL) {
     for (l = op->send_initial_metadata->list.head; l != NULL; l = l->next) {
-      grpc_mdelem *md = l->md;
+      grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
-      if (md->key == GRPC_MDSTR_AUTHORITY) {
-        if (calld->host != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->host);
-        calld->host = GRPC_MDSTR_REF(md->value);
-      } else if (md->key == GRPC_MDSTR_PATH) {
-        if (calld->method != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->method);
-        calld->method = GRPC_MDSTR_REF(md->value);
+      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
+        if (calld->have_host) {
+          grpc_slice_unref_internal(exec_ctx, calld->host);
+        }
+        calld->host = grpc_slice_ref_internal(GRPC_MDVALUE(md));
+        calld->have_host = true;
+      } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
+        if (calld->have_method) {
+          grpc_slice_unref_internal(exec_ctx, calld->method);
+        }
+        calld->method = grpc_slice_ref_internal(GRPC_MDVALUE(md));
+        calld->have_method = true;
       }
     }
-    if (calld->host != NULL) {
-      const char *call_host = grpc_mdstr_as_c_string(calld->host);
+    if (calld->have_host) {
+      char *call_host = grpc_slice_to_c_string(calld->host);
       calld->op = *op; /* Copy op (originates from the caller's stack). */
       grpc_channel_security_connector_check_call_host(
           exec_ctx, chand->security_connector, call_host, chand->auth_context,
           on_host_checked, elem);
+      gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_op", 0);
       return; /* early exit */
     }
@@ -296,11 +335,11 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   call_data *calld = elem->call_data;
   grpc_call_credentials_unref(exec_ctx, calld->creds);
-  if (calld->host != NULL) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
+  if (calld->have_host) {
+    grpc_slice_unref_internal(exec_ctx, calld->host);
   }
-  if (calld->method != NULL) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->method);
+  if (calld->have_method) {
+    grpc_slice_unref_internal(exec_ctx, calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
 }

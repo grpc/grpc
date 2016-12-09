@@ -265,6 +265,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
@@ -280,7 +281,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h" />
@@ -495,6 +495,10 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
@@ -536,8 +540,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>

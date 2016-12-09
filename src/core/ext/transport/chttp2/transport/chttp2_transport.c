@@ -898,8 +898,8 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 static bool contains_non_ok_status(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    if (l->md->key == GRPC_MDSTR_GRPC_STATUS &&
-        l->md != GRPC_MDELEM_GRPC_STATUS_0) {
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDSTR_GRPC_STATUS) &&
+        !grpc_mdelem_eq(l->md, GRPC_MDELEM_GRPC_STATUS_0)) {
       return true;
     }
   }
@@ -983,9 +983,12 @@ static void log_metadata(const grpc_metadata_batch *md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   for (grpc_linked_mdelem *md = md_batch->list.head; md != md_batch->list.tail;
        md = md->next) {
+    char *key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
+    char *value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
     gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
-            is_client ? "CLI" : "SVR", grpc_mdstr_as_c_string(md->md->key),
-            grpc_mdstr_as_c_string(md->md->value));
+            is_client ? "CLI" : "SVR", key, value);
+    gpr_free(key);
+    gpr_free(value);
   }
 }
 
@@ -1347,8 +1350,8 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
       }
     }
-    grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
-                                                 s->recv_initial_metadata);
+    grpc_chttp2_incoming_metadata_buffer_publish(
+        exec_ctx, &s->metadata_buffer[0], s->recv_initial_metadata);
     null_then_run_closure(exec_ctx, &s->recv_initial_metadata_ready,
                           GRPC_ERROR_NONE);
   }
@@ -1391,8 +1394,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     }
     if (s->all_incoming_byte_streams_finished &&
         s->recv_trailing_metadata_finished != NULL) {
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
-                                                   s->recv_trailing_metadata);
+      grpc_chttp2_incoming_metadata_buffer_publish(
+          exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE,
           "recv_trailing_metadata_finished");
@@ -1518,16 +1521,14 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     grpc_chttp2_incoming_metadata_buffer_add(
-        &s->metadata_buffer[1], grpc_mdelem_from_metadata_strings(
-                                    exec_ctx, GRPC_MDSTR_GRPC_STATUS,
-                                    grpc_mdstr_from_string(status_string)));
+        &s->metadata_buffer[1],
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                                grpc_slice_from_copied_string(status_string)));
     if (slice) {
       grpc_chttp2_incoming_metadata_buffer_add(
           &s->metadata_buffer[1],
-          grpc_mdelem_from_metadata_strings(
-              exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_mdstr_from_slice(exec_ctx,
-                                    grpc_slice_ref_internal(*slice))));
+          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                                  grpc_slice_ref_internal(*slice)));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);

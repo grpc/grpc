@@ -863,6 +863,7 @@ src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.h \
 src/core/lib/json/json_writer.h \
 src/core/lib/slice/percent_encoding.h \
+src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.h \
@@ -878,7 +879,6 @@ src/core/lib/surface/lame_client.h \
 src/core/lib/surface/server.h \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.h \
-src/core/lib/transport/mdstr_hash_table.h \
 src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/pid_controller.h \
@@ -1052,6 +1052,8 @@ src/core/lib/json/json_writer.c \
 src/core/lib/slice/percent_encoding.c \
 src/core/lib/slice/slice.c \
 src/core/lib/slice/slice_buffer.c \
+src/core/lib/slice/slice_hash_table.c \
+src/core/lib/slice/slice_intern.c \
 src/core/lib/slice/slice_string_helpers.c \
 src/core/lib/surface/alarm.c \
 src/core/lib/surface/api_trace.c \
@@ -1073,7 +1075,6 @@ src/core/lib/surface/validate_metadata.c \
 src/core/lib/surface/version.c \
 src/core/lib/transport/byte_stream.c \
 src/core/lib/transport/connectivity_state.c \
-src/core/lib/transport/mdstr_hash_table.c \
 src/core/lib/transport/metadata.c \
 src/core/lib/transport/metadata_batch.c \
 src/core/lib/transport/pid_controller.c \

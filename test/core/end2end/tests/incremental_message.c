@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -96,7 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Creates and returns a gpr_slice containing random alphanumeric characters. */
-static gpr_slice generate_random_slice() {
+static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char output[1024 * 1024];
@@ -104,7 +104,7 @@ static gpr_slice generate_random_slice() {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
   output[GPR_ARRAY_SIZE(output) - 1] = '\0';
-  return gpr_slice_from_copied_string(output);
+  return grpc_slice_from_copied_string(output);
 }
 
 void incremental_message(grpc_end2end_test_config config) {
@@ -113,7 +113,7 @@ void incremental_message(grpc_end2end_test_config config) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  gpr_slice request_payload_slice = generate_random_slice();
+  grpc_slice request_payload_slice = generate_random_slice();
 
   grpc_call *c;
   grpc_call *s;
@@ -127,13 +127,14 @@ void incremental_message(grpc_end2end_test_config config) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
   uint32_t recv_message_length;
 
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -150,7 +151,7 @@ void incremental_message(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_SEND_MESSAGE_INCREMENTAL_START;
   op->data.send_message_incremental_start.message_length =
-      (uint32_t)GPR_SLICE_LENGTH(request_payload_slice);
+      (uint32_t)GRPC_SLICE_LENGTH(request_payload_slice);
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -167,7 +168,6 @@ void incremental_message(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -199,10 +199,10 @@ void incremental_message(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(recv_message_length == GPR_SLICE_LENGTH(request_payload_slice));
+  GPR_ASSERT(recv_message_length == GRPC_SLICE_LENGTH(request_payload_slice));
 
   for (uint32_t i = 0; i < recv_message_length; i++) {
-    gpr_slice send_slice = gpr_slice_sub(request_payload_slice, i, i + 1);
+    grpc_slice send_slice = grpc_slice_sub(request_payload_slice, i, i + 1);
     grpc_byte_buffer *send_buffer = grpc_raw_byte_buffer_create(&send_slice, 1);
     grpc_byte_buffer *recv_buffer = grpc_raw_byte_buffer_create(NULL, 0);
     error = grpc_call_incremental_message_writer_push(c, send_buffer,
@@ -218,7 +218,7 @@ void incremental_message(grpc_end2end_test_config config) {
     GPR_ASSERT(byte_buffer_eq_slice(recv_buffer, send_slice));
     grpc_byte_buffer_destroy(send_buffer);
     grpc_byte_buffer_destroy(recv_buffer);
-    gpr_slice_unref(send_slice);
+    grpc_slice_unref(send_slice);
   }
 
   memset(ops, 0, sizeof(ops));
@@ -231,7 +231,8 @@ void incremental_message(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -243,12 +244,12 @@ void incremental_message(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -258,7 +259,7 @@ void incremental_message(grpc_end2end_test_config config) {
   grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
 
   end_test(&f);
   config.tear_down_data(&f);

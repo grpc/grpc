@@ -39,8 +39,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice_hash_table.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/mdstr_hash_table.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -148,8 +150,8 @@ static char* parse_json_method_name(grpc_json* json) {
 static bool parse_json_method_config(
     grpc_exec_ctx* exec_ctx, grpc_json* json,
     void* (*create_value)(const grpc_json* method_config_json),
-    const grpc_mdstr_hash_table_vtable* vtable,
-    grpc_mdstr_hash_table_entry* entries, size_t* idx) {
+    const grpc_slice_hash_table_vtable* vtable,
+    grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
   if (method_config == NULL) return false;
@@ -170,7 +172,7 @@ static bool parse_json_method_config(
   if (paths.count == 0) goto done;  // No names specified.
   // Add entry for each path.
   for (size_t i = 0; i < paths.count; ++i) {
-    entries[*idx].key = grpc_mdstr_from_string(paths.strs[i]);
+    entries[*idx].key = grpc_slice_from_copied_string(paths.strs[i]);
     entries[*idx].value = vtable->copy_value(method_config);
     entries[*idx].vtable = vtable;
     ++*idx;
@@ -182,15 +184,15 @@ done:
   return success;
 }
 
-grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
+grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    const grpc_mdstr_hash_table_vtable* vtable) {
+    const grpc_slice_hash_table_vtable* vtable) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
   size_t num_entries = 0;
-  grpc_mdstr_hash_table_entry* entries = NULL;
+  grpc_slice_hash_table_entry* entries = NULL;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) return NULL;
     if (strcmp(field->key, "methodConfig") == 0) {
@@ -202,7 +204,7 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
         num_entries += count_names_in_method_config_json(method);
       }
       // Populate method config table entries.
-      entries = gpr_malloc(num_entries * sizeof(grpc_mdstr_hash_table_entry));
+      entries = gpr_malloc(num_entries * sizeof(grpc_slice_hash_table_entry));
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
@@ -215,12 +217,12 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
     }
   }
   // Instantiate method config table.
-  grpc_mdstr_hash_table* method_config_table = NULL;
+  grpc_slice_hash_table* method_config_table = NULL;
   if (entries != NULL) {
-    method_config_table = grpc_mdstr_hash_table_create(num_entries, entries);
+    method_config_table = grpc_slice_hash_table_create(num_entries, entries);
     // Clean up.
     for (size_t i = 0; i < num_entries; ++i) {
-      GRPC_MDSTR_UNREF(exec_ctx, entries[i].key);
+      grpc_slice_unref_internal(exec_ctx, entries[i].key);
       vtable->destroy_value(exec_ctx, entries[i].value);
     }
     gpr_free(entries);
@@ -229,23 +231,24 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
 }
 
 void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
-                                   const grpc_mdstr_hash_table* table,
-                                   const grpc_mdstr* path) {
-  void* value = grpc_mdstr_hash_table_get(table, path);
+                                   const grpc_slice_hash_table* table,
+                                   grpc_slice path) {
+  void* value = grpc_slice_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
   if (value == NULL) {
-    const char* path_str = grpc_mdstr_as_c_string(path);
+    char* path_str = grpc_slice_to_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
     char* buf = gpr_malloc(len + 2);  // '*' and NUL
     memcpy(buf, path_str, len);
     buf[len] = '*';
     buf[len + 1] = '\0';
-    grpc_mdstr* wildcard_path = grpc_mdstr_from_string(buf);
+    grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
     gpr_free(buf);
-    value = grpc_mdstr_hash_table_get(table, wildcard_path);
-    GRPC_MDSTR_UNREF(exec_ctx, wildcard_path);
+    value = grpc_slice_hash_table_get(table, wildcard_path);
+    grpc_slice_unref_internal(exec_ctx, wildcard_path);
+    gpr_free(path_str);
   }
   return value;
 }

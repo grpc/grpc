@@ -122,8 +122,8 @@ void grpcsharp_metadata_array_destroy_metadata_including_entries(
   size_t i;
   if (array->metadata) {
     for (i = 0; i < array->count; i++) {
-      gpr_free((void *)array->metadata[i].key);
-      gpr_free((void *)array->metadata[i].value);
+      grpc_slice_unref(array->metadata[i].key);
+      grpc_slice_unref(array->metadata[i].value);
     }
   }
   gpr_free(array->metadata);
@@ -167,10 +167,8 @@ grpcsharp_metadata_array_add(grpc_metadata_array *array, const char *key,
                              const char *value, size_t value_length) {
   size_t i = array->count;
   GPR_ASSERT(array->count < array->capacity);
-  array->metadata[i].key = gpr_strdup(key);
-  array->metadata[i].value = (char *)gpr_malloc(value_length);
-  memcpy((void *)array->metadata[i].value, value, value_length);
-  array->metadata[i].value_length = value_length;
+  array->metadata[i].key = grpc_slice_from_copied_string(key);
+  array->metadata[i].value = grpc_slice_from_copied_buffer(value, value_length);
   array->count++;
 }
 
@@ -404,8 +402,10 @@ grpcsharp_channel_create_call(grpc_channel *channel, grpc_call *parent_call,
                               grpc_completion_queue *cq,
                               const char *method, const char *host,
                               gpr_timespec deadline) {
-  return grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
-                                  method, host, deadline, NULL);
+  grpc_slice method_slice = grpc_slice_from_copied_string(method);
+  grpc_slice host_slice = host == NULL ? grpc_empty_string() : grpc_slice_from_copied_string(host);
+  grpc_call *grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
+                                  method_slice, host_slice, deadline, NULL);
 }
 
 GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE

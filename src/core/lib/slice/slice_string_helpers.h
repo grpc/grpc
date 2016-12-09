@@ -34,11 +34,14 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 #define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/support/string.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +53,8 @@ char *grpc_dump_slice(grpc_slice slice, uint32_t flags);
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */
 void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst);
+
+bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t *result);
 
 #ifdef __cplusplus
 }

@@ -128,6 +128,10 @@ static const char *error_int_name(grpc_error_ints key) {
 
 static const char *error_str_name(grpc_error_strs key) {
   switch (key) {
+    case GRPC_ERROR_STR_KEY:
+      return "key";
+    case GRPC_ERROR_STR_VALUE:
+      return "value";
     case GRPC_ERROR_STR_DESCRIPTION:
       return "description";
     case GRPC_ERROR_STR_OS_ERROR:

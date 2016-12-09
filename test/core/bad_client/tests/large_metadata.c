@@ -126,8 +126,8 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -153,16 +153,14 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   const size_t metadata_value_size = 16 * 1024;
   grpc_metadata meta;
-  meta.key = "key";
-  meta.value = gpr_malloc(metadata_value_size + 1);
-  memset((char *)meta.value, 'a', metadata_value_size);
-  ((char *)meta.value)[metadata_value_size] = 0;
-  meta.value_length = metadata_value_size;
+  meta.key = grpc_slice_from_static_string("key");
+  meta.value = grpc_slice_malloc(metadata_value_size);
+  memset(GRPC_SLICE_START_PTR(meta.value), 'a', metadata_value_size);
 
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -176,7 +174,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   CQ_EXPECT_COMPLETION(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);
 
-  gpr_free((char *)meta.value);
+  grpc_slice_unref(meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_destroy(s);
@@ -212,7 +210,7 @@ static void client_validator(grpc_slice_buffer *incoming) {
   *p++ = 0;
   *p++ = 11;
   // Compare actual and expected.
-  GPR_ASSERT(grpc_slice_cmp(last_frame, expected) == 0);
+  GPR_ASSERT(grpc_slice_eq(last_frame, expected));
   grpc_slice_buffer_destroy(&last_frame_buffer);
 }
 

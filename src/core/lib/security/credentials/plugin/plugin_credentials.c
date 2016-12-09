@@ -42,6 +42,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 
 typedef struct {
@@ -77,13 +78,14 @@ static void plugin_md_request_metadata_ready(void *request,
     bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
-      if (!grpc_header_key_is_legal(md[i].key, strlen(md[i].key))) {
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", md[i].key);
+      if (!grpc_header_key_is_legal(md[i].key)) {
+        char *key = grpc_slice_to_c_string(md[i].key);
+        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", key);
+        gpr_free(key);
         seen_illegal_header = true;
         break;
-      } else if (!grpc_is_binary_header(md[i].key, strlen(md[i].key)) &&
-                 !grpc_header_nonbin_value_is_legal(md[i].value,
-                                                    md[i].value_length)) {
+      } else if (!grpc_is_binary_header(md[i].key) &&
+                 !grpc_header_nonbin_value_is_legal(md[i].value)) {
         gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
         seen_illegal_header = true;
         break;
@@ -95,9 +97,8 @@ static void plugin_md_request_metadata_ready(void *request,
     } else if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
-        md_array[i].key = grpc_slice_from_copied_string(md[i].key);
-        md_array[i].value =
-            grpc_slice_from_copied_buffer(md[i].value, md[i].value_length);
+        md_array[i].key = grpc_slice_ref(md[i].key);
+        md_array[i].value = grpc_slice_ref(md[i].value);
       }
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);

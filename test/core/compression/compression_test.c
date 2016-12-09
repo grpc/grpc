@@ -54,7 +54,7 @@ static void test_compression_algorithm_parse(void) {
     const char *valid_name = valid_names[i];
     grpc_compression_algorithm algorithm;
     const int success = grpc_compression_algorithm_parse(
-        valid_name, strlen(valid_name), &algorithm);
+        grpc_slice_from_static_string(valid_name), &algorithm);
     GPR_ASSERT(success != 0);
     GPR_ASSERT(algorithm == valid_algorithms[i]);
   }
@@ -64,7 +64,7 @@ static void test_compression_algorithm_parse(void) {
     grpc_compression_algorithm algorithm;
     int success;
     success = grpc_compression_algorithm_parse(
-        invalid_name, strlen(invalid_name), &algorithm);
+        grpc_slice_from_static_string(invalid_name), &algorithm);
     GPR_ASSERT(success == 0);
     /* the value of "algorithm" is undefined upon failure */
   }

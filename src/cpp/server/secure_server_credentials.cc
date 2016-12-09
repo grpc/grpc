@@ -35,10 +35,11 @@
 #include <map>
 #include <memory>
 
+#include <grpc++/impl/codegen/slice.h>
+#include <grpc++/security/auth_metadata_processor.h>
+
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
-#include <grpc++/security/auth_metadata_processor.h>
 
 namespace grpc {
 
@@ -71,8 +72,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
-    metadata.insert(std::make_pair(
-        md[i].key, grpc::string_ref(md[i].value, md[i].value_length)));
+    metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
+                                   StringRefFromSlice(&md[i].value)));
   }
   SecureAuthContext context(ctx, false);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
@@ -85,9 +86,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
     grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
+    md_entry.key = SliceReferencingString(it->first);
+    md_entry.value = SliceReferencingString(it->second);
     md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
@@ -95,9 +95,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
     grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
+    md_entry.key = SliceReferencingString(it->first);
+    md_entry.value = SliceReferencingString(it->second);
     md_entry.flags = 0;
     response_md.push_back(md_entry);
   }

@@ -98,8 +98,9 @@ typedef struct requested_call {
 typedef struct channel_registered_method {
   registered_method *server_registered_method;
   uint32_t flags;
-  grpc_mdstr *method;
-  grpc_mdstr *host;
+  bool has_host;
+  grpc_slice method;
+  grpc_slice host;
 } channel_registered_method;
 
 struct channel_data {
@@ -144,8 +145,10 @@ struct call_data {
   /** the current state of a call - see call_state */
   call_state state;
 
-  grpc_mdstr *path;
-  grpc_mdstr *host;
+  bool path_set;
+  bool host_set;
+  grpc_slice path;
+  grpc_slice host;
   gpr_timespec deadline;
 
   grpc_completion_queue *cq_new;
@@ -460,17 +463,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
                        op);
 }
 
-static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
-  grpc_slice slice = value->slice;
-  size_t len = GRPC_SLICE_LENGTH(slice);
-
-  if (len + 1 > *capacity) {
-    *capacity = GPR_MAX(len + 1, *capacity * 2);
-    *dest = gpr_realloc(*dest, *capacity);
-  }
-  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
-}
-
 static void done_request_event(grpc_exec_ctx *exec_ctx, void *req,
                                grpc_cq_completion *c) {
   requested_call *rc = req;
@@ -499,12 +491,10 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
   GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
   switch (rc->type) {
     case BATCH_CALL:
-      GPR_ASSERT(calld->host != NULL);
-      GPR_ASSERT(calld->path != NULL);
-      cpstr(&rc->data.batch.details->host,
-            &rc->data.batch.details->host_capacity, calld->host);
-      cpstr(&rc->data.batch.details->method,
-            &rc->data.batch.details->method_capacity, calld->path);
+      GPR_ASSERT(calld->host_set);
+      GPR_ASSERT(calld->path_set);
+      rc->data.batch.details->host = grpc_slice_ref_internal(calld->host);
+      rc->data.batch.details->method = grpc_slice_ref_internal(calld->path);
       rc->data.batch.details->deadline = calld->deadline;
       rc->data.batch.details->flags =
           (calld->recv_idempotent_request
@@ -624,35 +614,39 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   uint32_t hash;
   channel_registered_method *rm;
 
-  if (chand->registered_methods && calld->path && calld->host) {
+  if (chand->registered_methods && calld->path_set && calld->host_set) {
     /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
-    hash = GRPC_MDSTR_KV_HASH(calld->host->hash, calld->path->hash);
+    hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash(calld->host),
+                              grpc_slice_hash(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
       if (!rm) break;
-      if (rm->host != calld->host) continue;
-      if (rm->method != calld->path) continue;
+      if (!rm->has_host) continue;
+      if (!grpc_slice_eq(rm->host, calld->host)) continue;
+      if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request)
+          !calld->recv_idempotent_request) {
         continue;
+      }
       finish_start_new_rpc(exec_ctx, server, elem,
                            &rm->server_registered_method->request_matcher,
                            rm->server_registered_method->payload_handling);
       return;
     }
     /* check for a wildcard method definition (no host set) */
-    hash = GRPC_MDSTR_KV_HASH(0, calld->path->hash);
+    hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
       if (!rm) break;
-      if (rm->host != NULL) continue;
-      if (rm->method != calld->path) continue;
+      if (rm->has_host) continue;
+      if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request)
+          !calld->recv_idempotent_request) {
         continue;
+      }
       finish_start_new_rpc(exec_ctx, server, elem,
                            &rm->server_registered_method->request_matcher,
                            rm->server_registered_method->payload_handling);
@@ -741,38 +735,34 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                  grpc_mdelem *md) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
-  if (md->key == GRPC_MDSTR_PATH) {
-    if (calld->path == NULL) {
-      calld->path = GRPC_MDSTR_REF(md->value);
-    }
-    return NULL;
-  } else if (md->key == GRPC_MDSTR_AUTHORITY) {
-    if (calld->host == NULL) {
-      calld->host = GRPC_MDSTR_REF(md->value);
-    }
-    return NULL;
-  }
-  return md;
-}
-
 static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
                                             grpc_error *error) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   gpr_timespec op_deadline;
 
-  GRPC_ERROR_REF(error);
-  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
-                             server_filter, elem);
+  if (error == GRPC_ERROR_NONE) {
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != NULL);
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != NULL);
+    calld->path = grpc_slice_ref(
+        GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
+    calld->host = grpc_slice_ref(
+        GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
+    calld->path_set = true;
+    calld->host_set = true;
+    grpc_metadata_batch_remove(exec_ctx, calld->recv_initial_metadata,
+                               calld->recv_initial_metadata->idx.named.path);
+    grpc_metadata_batch_remove(
+        exec_ctx, calld->recv_initial_metadata,
+        calld->recv_initial_metadata->idx.named.authority);
+  } else {
+    GRPC_ERROR_REF(error);
+  }
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
     calld->deadline = op_deadline;
   }
-  if (calld->host && calld->path) {
+  if (calld->host_set && calld->path_set) {
     /* do nothing */
   } else {
     GRPC_ERROR_UNREF(error);
@@ -904,11 +894,11 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
   GPR_ASSERT(calld->state != PENDING);
 
-  if (calld->host) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
+  if (calld->host_set) {
+    grpc_slice_unref_internal(exec_ctx, calld->host);
   }
-  if (calld->path) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->path);
+  if (calld->path_set) {
+    grpc_slice_unref_internal(exec_ctx, calld->path);
   }
   grpc_metadata_array_destroy(&calld->initial_metadata);
 
@@ -938,11 +928,9 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
-      if (chand->registered_methods[i].method) {
-        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].method);
-      }
-      if (chand->registered_methods[i].host) {
-        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].host);
+      grpc_slice_unref_internal(exec_ctx, chand->registered_methods[i].method);
+      if (chand->registered_methods[i].has_host) {
+        grpc_slice_unref_internal(exec_ctx, chand->registered_methods[i].host);
       }
     }
     gpr_free(chand->registered_methods);
@@ -1140,8 +1128,6 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   channel_registered_method *crm;
   grpc_channel *channel;
   channel_data *chand;
-  grpc_mdstr *host;
-  grpc_mdstr *method;
   uint32_t hash;
   size_t slots;
   uint32_t probes;
@@ -1180,9 +1166,18 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(rm->host) : NULL;
-      method = grpc_mdstr_from_string(rm->method);
-      hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
+      grpc_slice host;
+      bool has_host;
+      grpc_slice method;
+      if (rm->host != NULL) {
+        host = grpc_slice_intern(grpc_slice_from_static_string(rm->host));
+        has_host = true;
+      } else {
+        has_host = false;
+      }
+      method = grpc_slice_intern(grpc_slice_from_static_string(rm->method));
+      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash(host) : 0,
+                                grpc_slice_hash(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != NULL;
            probes++)
@@ -1191,6 +1186,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       crm = &chand->registered_methods[(hash + probes) % slots];
       crm->server_registered_method = rm;
       crm->flags = rm->flags;
+      crm->has_host = has_host;
       crm->host = host;
       crm->method = method;
     }

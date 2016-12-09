@@ -49,6 +49,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 
 #include "completion_queue.h"
 #include "server.h"
@@ -149,8 +151,12 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  php_grpc_add_property_string(result, "method", details.method, true);
-  php_grpc_add_property_string(result, "host", details.host, true);
+  char *method_text = grpc_slice_to_c_string(details.method);
+  char *host_text = grpc_slice_to_c_string(details.host);
+  php_grpc_add_property_string(result, "method", method_text, true);
+  php_grpc_add_property_string(result, "host", host_text, true);
+  gpr_free(method_text);
+  gpr_free(host_text);
 #if PHP_MAJOR_VERSION < 7
   add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
   add_property_zval(result, "absolute_deadline",

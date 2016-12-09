@@ -34,11 +34,12 @@
 #ifndef GRPC_COMPRESSION_H
 #define GRPC_COMPRESSION_H
 
-#include <stdlib.h>
-
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <stdlib.h>
+
 #include <grpc/impl/codegen/compression_types.h>
+#include <grpc/slice.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,8 +49,7 @@ extern "C" {
  * grpc_compression_algorithm instance, updating \a algorithm. Returns 1 upon
  * success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_parse(
-    const char *name, size_t name_length,
-    grpc_compression_algorithm *algorithm);
+    grpc_slice value, grpc_compression_algorithm *algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
  * algorithm. Note that \a name is statically allocated and must *not* be freed.

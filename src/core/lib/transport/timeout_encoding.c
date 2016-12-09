@@ -131,20 +131,21 @@ void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer) {
   }
 }
 
-static int is_all_whitespace(const char *p) {
-  while (*p == ' ') p++;
-  return *p == 0;
+static int is_all_whitespace(const char *p, const char *end) {
+  while (p != end && *p == ' ') p++;
+  return p == end;
 }
 
-int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
+int grpc_http2_decode_timeout(grpc_slice text, gpr_timespec *timeout) {
   int32_t x = 0;
-  const uint8_t *p = (const uint8_t *)buffer;
+  const uint8_t *p = GRPC_SLICE_START_PTR(text);
+  const uint8_t *end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
   /* skip whitespace */
-  for (; *p == ' '; p++)
+  for (; p != end && *p == ' '; p++)
     ;
   /* decode numeric part */
-  for (; *p >= '0' && *p <= '9'; p++) {
+  for (; p != end && *p >= '0' && *p <= '9'; p++) {
     int32_t digit = (int32_t)(*p - (uint8_t)'0');
     have_digit = 1;
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
@@ -158,8 +159,9 @@ int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
   }
   if (!have_digit) return 0;
   /* skip whitespace */
-  for (; *p == ' '; p++)
+  for (; p != end && *p == ' '; p++)
     ;
+  if (p == end) return 0;
   /* decode unit specifier */
   switch (*p) {
     case 'n':
@@ -184,5 +186,5 @@ int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace((const char *)p);
+  return is_all_whitespace((const char *)p, (const char *)end);
 }
