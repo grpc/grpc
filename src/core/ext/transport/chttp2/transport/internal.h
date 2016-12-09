@@ -327,6 +327,9 @@ struct grpc_chttp2_transport {
    */
   grpc_error *close_transport_on_writes_finished;
 
+  /* a list of closures to run after writes are finished */
+  grpc_closure_list run_after_write;
+
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;
@@ -409,9 +412,6 @@ struct grpc_chttp2_stream {
   grpc_error *read_closed_error;
   /** the error that resulted in this stream being write-closed */
   grpc_error *write_closed_error;
-  /** should any writes be cleared once this stream becomes non-writable */
-  bool need_fail_pending_writes_on_writes_finished;
-  grpc_error *fail_pending_writes_on_writes_finished_error;
 
   grpc_published_metadata_method published_metadata[2];
   bool final_metadata_requested;
@@ -496,6 +496,8 @@ void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                  grpc_chttp2_stream **s);
+void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                     grpc_chttp2_stream *s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
@@ -692,9 +694,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s);
 
-void grpc_chttp2_leave_writing_lists(grpc_exec_ctx *exec_ctx,
-                                     grpc_chttp2_transport *t,
-                                     grpc_chttp2_stream *s);
 void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s, grpc_error *error);
