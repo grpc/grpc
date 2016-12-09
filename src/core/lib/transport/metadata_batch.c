@@ -99,8 +99,8 @@ void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md) {
-  char *k = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
-  char *v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+  char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+  char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
   grpc_error *out = grpc_error_set_str(
       grpc_error_set_str(src, GRPC_ERROR_STR_KEY, k), GRPC_ERROR_STR_VALUE, v);
   gpr_free(k);

@@ -626,8 +626,8 @@ static void convert_metadata_to_cronet_headers(
   while (num_headers < num_headers_available) {
     grpc_mdelem mdelem = curr->md;
     curr = curr->next;
-    char *key = grpc_dump_slice(GRPC_MDKEY(mdelem), GPR_DUMP_ASCII);
-    char *value = grpc_dump_slice(GRPC_MDVALUE(mdelem), GPR_DUMP_ASCII);
+    char *key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
+    char *value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
     if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
         grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_AUTHORITY)) {
       /* Cronet populates these fields on its own */
