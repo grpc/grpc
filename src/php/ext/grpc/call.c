@@ -100,11 +100,11 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
   grpc_metadata *elem;
   for (i = 0; i < count; i++) {
     elem = &elements[i];
-    key_len = strlen(elem->key);
+    key_len = GRPC_SLICE_LENGTH(elem->key);
     str_key = ecalloc(key_len + 1, sizeof(char));
-    memcpy(str_key, elem->key, key_len);
-    str_val = ecalloc(elem->value_length + 1, sizeof(char));
-    memcpy(str_val, elem->value, elem->value_length);
+    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
+    str_val = ecalloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
+    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
     if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
         == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
@@ -115,13 +115,13 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
         efree(str_val);
         return NULL;
       }
-      php_grpc_add_next_index_stringl(data, str_val, elem->value_length,
+      php_grpc_add_next_index_stringl(data, str_val, GRPC_SLICE_LENGTH(elem->value),
                                       false);
     } else {
       PHP_GRPC_MAKE_STD_ZVAL(inner_array);
       array_init(inner_array);
       php_grpc_add_next_index_stringl(inner_array, str_val,
-                                      elem->value_length, false);
+                                      GRPC_SLICE_LENGTH(elem->value), false);
       add_assoc_zval(array, str_key, inner_array);
     }
   }
