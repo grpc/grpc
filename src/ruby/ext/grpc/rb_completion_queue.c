@@ -42,7 +42,6 @@
 #include <grpc/support/time.h>
 #include <grpc/support/log.h>
 #include "rb_grpc.h"
-#include <stdio.h>
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
@@ -83,7 +82,7 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq) {
 
   grpc_completion_queue_shutdown(cq);
   do {
-    fprintf(stderr, "about to call cq next again in cc shutdown\n");
+    gpr_log(GPR_DEBUG, "Shutting down ruby wrapper completion queue.\n");
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
     ev = grpc_completion_queue_next(cq, deadline, NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
