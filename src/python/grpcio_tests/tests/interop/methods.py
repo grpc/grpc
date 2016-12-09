@@ -33,7 +33,6 @@ import enum
 import json
 import os
 import threading
-import time
 
 from oauth2client import client as oauth2client_client
 
@@ -269,7 +268,6 @@ def _timeout_on_sleeping_server(stub):
         response_type=messages_pb2.COMPRESSABLE,
         payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
     pipe.add(request)
-    time.sleep(0.1)
     try:
       next(response_iterator)
     except grpc.RpcError as rpc_error:
