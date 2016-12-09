@@ -271,7 +271,8 @@ PHP_METHOD(Call, startBatch) {
   grpc_metadata_array recv_metadata;
   grpc_metadata_array recv_trailing_metadata;
   grpc_status_code status;
-  grpc_slice status_details;
+  grpc_slice recv_status_details = grpc_empty_slice();
+  grpc_slice send_status_details = grpc_empty_slice();
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
@@ -383,7 +384,7 @@ PHP_METHOD(Call, startBatch) {
                                1 TSRMLS_CC);
           goto cleanup;
         }
-        grpc_slice send_status_details = grpc_slice_from_copied_string(Z_STRVAL_P(inner_value));
+        send_status_details = grpc_slice_from_copied_string(Z_STRVAL_P(inner_value));
         ops[op_num].data.send_status_from_server.status_details = &send_status_details;
       } else {
         zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -403,7 +404,7 @@ PHP_METHOD(Call, startBatch) {
           &recv_trailing_metadata;
       ops[op_num].data.recv_status_on_client.status = &status;
       ops[op_num].data.recv_status_on_client.status_details =
-          &status_details;
+          &recv_status_details;
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
@@ -475,7 +476,7 @@ PHP_METHOD(Call, startBatch) {
 #endif
       PHP_GRPC_DELREF(array);
       add_property_long(recv_status, "code", status);
-      char *status_details_text = grpc_slice_to_c_string(status_details);
+      char *status_details_text = grpc_slice_to_c_string(recv_status_details);
       php_grpc_add_property_string(recv_status, "details", status_details_text,
                                    true);
       gpr_free(status_details_text);
@@ -495,9 +496,8 @@ cleanup:
   grpc_metadata_array_destroy(&trailing_metadata);
   grpc_metadata_array_destroy(&recv_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
-  if (status_details != NULL) {
-    gpr_free(status_details);
-  }
+  grpc_slice_unref(recv_status_details);
+  grpc_slice_unref(send_status_details);
   for (int i = 0; i < op_num; i++) {
     if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
       grpc_byte_buffer_destroy(ops[i].data.send_message);
