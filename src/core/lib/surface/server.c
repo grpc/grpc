@@ -765,12 +765,14 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   if (calld->host_set && calld->path_set) {
     /* do nothing */
   } else {
-    GRPC_ERROR_UNREF(error);
+    grpc_error *src_error = error;
     error =
         GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path", &error, 1);
+    GRPC_ERROR_UNREF(src_error);
   }
 
   grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void server_mutate_op(grpc_call_element *elem,
