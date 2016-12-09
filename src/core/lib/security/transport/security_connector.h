@@ -98,7 +98,7 @@ void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
 /* Check the peer. Callee takes ownership of the peer object.
-   Sets *auth_context and invokes on_peer_checked when done. */
+   When done, sets *auth_context and invokes on_peer_checked. */
 void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_security_connector *sc,
                                         tsi_peer peer,
@@ -133,9 +133,9 @@ struct grpc_channel_security_connector {
                           grpc_channel_security_connector *sc, const char *host,
                           grpc_auth_context *auth_context,
                           grpc_security_call_host_check_cb cb, void *user_data);
-  void (*create_handshakers)(grpc_exec_ctx *exec_ctx,
-                             grpc_channel_security_connector *sc,
-                             grpc_handshake_manager *handshake_mgr);
+  void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_security_connector *sc,
+                          grpc_handshake_manager *handshake_mgr);
 };
 
 /* Checks that the host that will be set for a call is acceptable. */
@@ -145,7 +145,7 @@ void grpc_channel_security_connector_check_call_host(
     grpc_security_call_host_check_cb cb, void *user_data);
 
 /* Registers handshakers with \a handshake_mgr. */
-void grpc_channel_security_connector_create_handshakers(
+void grpc_channel_security_connector_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
     grpc_handshake_manager *handshake_mgr);
 
@@ -158,12 +158,12 @@ typedef struct grpc_server_security_connector grpc_server_security_connector;
 
 struct grpc_server_security_connector {
   grpc_security_connector base;
-  void (*create_handshakers)(grpc_exec_ctx *exec_ctx,
-                             grpc_server_security_connector *sc,
-                             grpc_handshake_manager *handshake_mgr);
+  void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
+                          grpc_server_security_connector *sc,
+                          grpc_handshake_manager *handshake_mgr);
 };
 
-void grpc_server_security_connector_create_handshakers(
+void grpc_server_security_connector_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_handshake_manager *handshake_mgr);
 

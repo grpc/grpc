@@ -53,13 +53,13 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-void grpc_chttp2_server_handshaker_factory_create_handshakers(
+void grpc_chttp2_server_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx,
     grpc_chttp2_server_handshaker_factory *handshaker_factory,
     grpc_handshake_manager *handshake_mgr) {
   if (handshaker_factory != NULL) {
-    handshaker_factory->vtable->create_handshakers(exec_ctx, handshaker_factory,
-                                                   handshake_mgr);
+    handshaker_factory->vtable->add_handshakers(exec_ctx, handshaker_factory,
+                                                handshake_mgr);
   }
 }
 
@@ -172,6 +172,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&connection_state->server_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp_server);
+  gpr_free(connection_state->acceptor);
   gpr_free(connection_state);
 }
 
@@ -183,6 +184,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
     grpc_endpoint_destroy(exec_ctx, tcp);
+    gpr_free(acceptor);
     return;
   }
   grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
@@ -195,7 +197,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
-  grpc_chttp2_server_handshaker_factory_create_handshakers(
+  grpc_chttp2_server_handshaker_factory_add_handshakers(
       exec_ctx, state->handshaker_factory, connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
