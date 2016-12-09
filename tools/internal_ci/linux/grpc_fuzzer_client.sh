@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,19 +28,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/benchmark \
-  src/proto            \
-  src/zlib             \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+set -ex
+
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+git submodule update --init
+
+# download fuzzer docker image from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+# runtime 23 * 60 mins
+config=asan-trace-cmp runtime=82800 tools/jenkins/run_fuzzer.sh client_fuzzer

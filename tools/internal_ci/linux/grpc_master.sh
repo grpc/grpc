@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,19 +28,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/benchmark \
-  src/proto            \
-  src/zlib             \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+set -ex
+
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+# TODO(jtattermusch): get rid of the system inspection eventually
+nproc || true
+lsb_release -dc || true
+gcc --version || true
+clang --version || true
+docker --version || true
+
+git submodule update --init
+
+tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
