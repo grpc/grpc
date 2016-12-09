@@ -402,8 +402,10 @@ grpcsharp_channel_create_call(grpc_channel *channel, grpc_call *parent_call,
                               grpc_completion_queue *cq,
                               const char *method, const char *host,
                               gpr_timespec deadline) {
-  return grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
-                                  method, host, deadline, NULL);
+  grpc_slice method_slice = grpc_slice_from_copied_string(method);
+  grpc_slice host_slice = host == NULL ? grpc_empty_string() : grpc_slice_from_copied_string(host);
+  grpc_call *grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
+                                  method_slice, host_slice, deadline, NULL);
 }
 
 GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
