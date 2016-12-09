@@ -208,8 +208,7 @@ static void match_initial_magic_string(grpc_slice_buffer *buffer) {
   size_t magic_length = strlen(magic_connect_string);
   GPR_ASSERT(buffer->length >= magic_length);
   for (i = 0, j = 0; i < state.incoming_buffer.count && j < magic_length; i++) {
-    char *dump =
-        grpc_slice_to_c_string(state.incoming_buffer.slices[i]);
+    char *dump = grpc_slice_to_c_string(state.incoming_buffer.slices[i]);
     cmp_length = GPR_MIN(strlen(dump), magic_length - j);
     GPR_ASSERT(strncmp(dump, magic_connect_string + j, cmp_length) == 0);
     j += cmp_length;
