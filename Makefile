@@ -6999,19 +6999,6 @@ endif
 
 
 LIBBENCHMARK_SRC = \
-    third_party/benchmark/src/benchmark.cc \
-    third_party/benchmark/src/benchmark_register.cc \
-    third_party/benchmark/src/colorprint.cc \
-    third_party/benchmark/src/commandlineflags.cc \
-    third_party/benchmark/src/complexity.cc \
-    third_party/benchmark/src/console_reporter.cc \
-    third_party/benchmark/src/csv_reporter.cc \
-    third_party/benchmark/src/json_reporter.cc \
-    third_party/benchmark/src/reporter.cc \
-    third_party/benchmark/src/sleep.cc \
-    third_party/benchmark/src/string_util.cc \
-    third_party/benchmark/src/sysinfo.cc \
-    third_party/benchmark/src/timers.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -7199,6 +7186,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
+    test/core/end2end/tests/packet_coalescing.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
@@ -7285,6 +7273,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
+    test/core/end2end/tests/packet_coalescing.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
