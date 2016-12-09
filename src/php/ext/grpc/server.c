@@ -49,6 +49,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 
 #include "completion_queue.h"
 #include "server.h"
