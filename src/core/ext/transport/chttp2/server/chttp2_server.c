@@ -139,7 +139,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    if (error == GRPC_ERROR_NONE) {
+    if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
       // TODO(ctiller): It is currently necessary to shutdown endpoints
