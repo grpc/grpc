@@ -67,6 +67,9 @@ namespace Grpc.Core.Tests
             var credentials = new FakeCallCredentials();
             Assert.AreSame(credentials, options.WithCredentials(credentials).Credentials);
 
+            var flags = CallFlags.WaitForReady | CallFlags.CacheableRequest;
+            Assert.AreEqual(flags, options.WithFlags(flags).Flags);
+
             // Check that the original instance is unchanged.
             Assert.IsNull(options.Headers);
             Assert.IsNull(options.Deadline);
@@ -74,6 +77,7 @@ namespace Grpc.Core.Tests
             Assert.IsNull(options.WriteOptions);
             Assert.IsNull(options.PropagationToken);
             Assert.IsNull(options.Credentials);
+            Assert.AreEqual(default(CallFlags), options.Flags);
         }
 
         [Test]
@@ -93,6 +97,17 @@ namespace Grpc.Core.Tests
                 new ContextPropagationOptions(propagateDeadline: false, propagateCancellation: true));
             Assert.AreEqual(token, new CallOptions(propagationToken: propagationToken2).Normalize().CancellationToken);
             Assert.Throws(typeof(ArgumentException), () => new CallOptions(cancellationToken: token, propagationToken: propagationToken2).Normalize());
+        }
+
+        [Test]
+        public void WaitForReady()
+        {
+            var callOptions = new CallOptions();
+            Assert.IsFalse(callOptions.IsWaitForReady);
+
+            Assert.AreEqual(CallFlags.WaitForReady, callOptions.WithWaitForReady().Flags);
+            Assert.IsTrue(callOptions.WithWaitForReady().IsWaitForReady);
+            Assert.IsFalse(callOptions.WithWaitForReady(true).WithWaitForReady(false).IsWaitForReady);
         }
     }
 }

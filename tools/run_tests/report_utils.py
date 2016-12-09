@@ -122,3 +122,10 @@ def render_interop_html_report(
   except:
     print(exceptions.text_error_template().render())
     raise
+
+def render_perf_profiling_results(output_filepath, profile_names):
+  with open(output_filepath, 'w') as output_file:
+    output_file.write('<ul>\n')
+    for name in profile_names:
+      output_file.write('<li><a href=%s>%s</a></li>\n' % (name, name))
+    output_file.write('</ul>\n')
