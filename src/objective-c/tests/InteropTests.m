@@ -147,6 +147,7 @@
 
 // TODO (mxyan): Do the same test for chttp2
 #ifdef GRPC_COMPILE_WITH_CRONET
+#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
 
 static bool coalesced_message_and_eos;
 
@@ -194,6 +195,7 @@ static void log_processor(gpr_log_func_args *args) {
   [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
+#endif
 #endif
 
 - (void)test4MBResponsesAreAccepted {

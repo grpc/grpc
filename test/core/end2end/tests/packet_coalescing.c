@@ -30,7 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 #include "test/core/end2end/end2end_tests.h"
 
 #include <stdio.h>
@@ -42,6 +41,8 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
+
+#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
 
 extern void gpr_default_log(gpr_log_func_args *args);
 
@@ -347,3 +348,7 @@ void packet_coalescing(grpc_end2end_test_config config) {
 }
 
 void packet_coalescing_pre_init(void) {}
+#else
+void packet_coalescing(grpc_end2end_test_config config) {}
+void packet_coalescing_pre_init(void) {}
+#endif
