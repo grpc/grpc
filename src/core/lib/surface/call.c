@@ -219,6 +219,8 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description);
+static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                              grpc_error *error);
 static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                          grpc_status_code status,
                                          const char *description);
@@ -698,11 +700,13 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return r;
 }
 
+typedef enum { TC_CANCEL, TC_CLOSE } termination_closure_type;
+
 typedef struct termination_closure {
   grpc_closure closure;
   grpc_call *call;
   grpc_error *error;
-  enum { TC_CANCEL, TC_CLOSE } type;
+  termination_closure_type type;
   grpc_transport_stream_op op;
 } termination_closure;
 
@@ -757,36 +761,43 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
   return GRPC_CALL_OK;
 }
 
-static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                          grpc_status_code status,
-                                          const char *description) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
+static grpc_call_error terminate_with_error(grpc_exec_ctx *exec_ctx,
+                                            grpc_call *c,
+                                            termination_closure_type tc_type,
+                                            grpc_error *error) {
   termination_closure *tc = gpr_malloc(sizeof(*tc));
-  memset(tc, 0, sizeof(termination_closure));
-  tc->type = TC_CANCEL;
+  memset(tc, 0, sizeof(*tc));
+  tc->type = tc_type;
   tc->call = c;
-  tc->error = grpc_error_set_int(
+  tc->error = error;
+  return terminate_with_status(exec_ctx, tc);
+}
+
+static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                              grpc_error *error) {
+  terminate_with_error(exec_ctx, c, TC_CANCEL, error);
+}
+
+static grpc_error *error_from_status(grpc_status_code status,
+                                     const char *description) {
+  return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE(description),
                          GRPC_ERROR_STR_GRPC_MESSAGE, description),
       GRPC_ERROR_INT_GRPC_STATUS, status);
+}
 
-  return terminate_with_status(exec_ctx, tc);
+static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                                          grpc_status_code status,
+                                          const char *description) {
+  return terminate_with_error(exec_ctx, c, TC_CANCEL,
+                              error_from_status(status, description));
 }
 
 static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                          grpc_status_code status,
                                          const char *description) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  termination_closure *tc = gpr_malloc(sizeof(*tc));
-  memset(tc, 0, sizeof(termination_closure));
-  tc->type = TC_CLOSE;
-  tc->call = c;
-  tc->error = grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
-      GRPC_ERROR_INT_GRPC_STATUS, status);
-
-  return terminate_with_status(exec_ctx, tc);
+  return terminate_with_error(exec_ctx, c, TC_CLOSE,
+                              error_from_status(status, description));
 }
 
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
@@ -1155,8 +1166,10 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void add_batch_error(batch_control *bctl, grpc_error *error) {
+static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
+                            grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
+  cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   if (bctl->error == GRPC_ERROR_NONE) {
     bctl->error = GRPC_ERROR_CREATE("Call batch operation failed");
   }
@@ -1170,7 +1183,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&call->mu);
 
-  add_batch_error(bctl, GRPC_ERROR_REF(error));
+  add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error));
   if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1270,7 +1283,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-  add_batch_error(bctl, GRPC_ERROR_REF(error));
+  add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
