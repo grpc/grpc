@@ -236,7 +236,8 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       /* We've consumed the edge, request a new one */
       grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
     } else {
-      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                 tcp->incoming_buffer);
       call_read_cb(exec_ctx, tcp,
                    tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
       TCP_UNREF(exec_ctx, tcp, "read");
