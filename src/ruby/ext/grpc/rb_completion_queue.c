@@ -72,10 +72,6 @@ static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
 
 /* Helper function to free a completion queue. */
 void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq) {
-  /* Every function that adds an event to a queue also synchronously plucks
-     that event from the queue, and holds a reference to the Ruby object that
-     holds the queue, so we only get to this point if all of those functions
-     have completed, and the queue is empty */
   grpc_event ev;
   gpr_timespec deadline;
   gpr_timespec increment = gpr_time_from_millis(200, GPR_TIMESPAN);

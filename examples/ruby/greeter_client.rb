@@ -41,11 +41,6 @@ require 'grpc'
 require 'helloworld_services_pb'
 
 def main
-	Thread.new { run }
-	sleep 0.5
-end
-
-def run
   stub = Helloworld::Greeter::Stub.new('localhost:50051', :this_channel_is_insecure)
   user = ARGV.size > 0 ?  ARGV[0] : 'world'
   message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
