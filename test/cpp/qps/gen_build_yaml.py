@@ -91,7 +91,7 @@ print yaml.dump({
       'boringssl': True,
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, False),
-      'exclude_configs': ['tsan'],
+      'exclude_configs': ['tsan', 'asan'],
       'timeout_seconds': 6*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
@@ -99,7 +99,7 @@ print yaml.dump({
   ] + [
     {
       'name': 'json_run_localhost',
-      'shortname': 'json_run_localhost:%s' % scenario_json['name'],
+      'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
       'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
       'ci_platforms': ['linux'],
       'platforms': ['linux'],
@@ -108,7 +108,7 @@ print yaml.dump({
       'boringssl': True,
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, True),
-      'exclude_configs': sorted(c for c in configs_from_yaml if c != 'tsan'),
+      'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
       'timeout_seconds': 6*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()

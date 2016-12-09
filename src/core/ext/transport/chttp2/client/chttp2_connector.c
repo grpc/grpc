@@ -56,6 +56,7 @@ typedef struct {
   gpr_refcount refs;
 
   bool shutdown;
+  bool connecting;
 
   char *server_name;
   grpc_chttp2_create_handshakers_func create_handshakers;
@@ -103,7 +104,9 @@ static void chttp2_connector_shutdown(grpc_exec_ctx *exec_ctx,
   }
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
-  if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
+  if (!c->connecting && c->endpoint != NULL) {
+    grpc_endpoint_shutdown(exec_ctx, c->endpoint);
+  }
   gpr_mu_unlock(&c->mu);
 }
 
@@ -192,6 +195,8 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   chttp2_connector *c = arg;
   gpr_mu_lock(&c->mu);
+  GPR_ASSERT(c->connecting);
+  c->connecting = false;
   if (error != GRPC_ERROR_NONE || c->shutdown) {
     if (error == GRPC_ERROR_NONE) {
       error = GRPC_ERROR_CREATE("connector shutdown");
@@ -202,6 +207,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+    if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, arg);
   } else {
@@ -235,6 +241,8 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(c->endpoint == NULL);
   chttp2_connector_ref(con);  // Ref taken for callback.
   grpc_closure_init(&c->connected, connected, c);
+  GPR_ASSERT(!c->connecting);
+  c->connecting = true;
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->endpoint,
                           args->interested_parties, args->channel_args,
                           args->addr, args->deadline);
