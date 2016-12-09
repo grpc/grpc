@@ -41,6 +41,7 @@
 #ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/ucx_transport.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -422,11 +423,23 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
+    if (GRPC_USE_UCX) {
+        ucx_connect(fd, 1);
+
+        int ucx_fd = ucx_get_fd();
+        GPR_ASSERT(0 != ucx_fd);
+
+        gpr_asprintf(&name, "ucx-server-connection:%s", addr_str);
+        fdobj = grpc_fd_create(ucx_fd, name);
+        /* TODO Do we need previously created tcp socket any more? */
+    } else {
+        gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
+        fdobj = grpc_fd_create(fd, name);
+    }
+
     if (grpc_tcp_trace) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
-
-    fdobj = grpc_fd_create(fd, name);
 
     if (read_notifier_pollset == NULL) {
       gpr_log(GPR_ERROR, "Read notifier pollset is not set on the fd");
@@ -435,10 +448,17 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
     grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
 
+    grpc_endpoint *ep = NULL;
+    if (GRPC_USE_UCX) {
+        ep = grpc_ucx_create(fdobj, sp->server->resource_quota,
+                             GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
+    } else {
+        ep = grpc_tcp_create(fdobj, sp->server->resource_quota,
+                             GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
+    }
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->resource_quota,
-                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
+        ep,
         read_notifier_pollset, &acceptor);
 
     gpr_free(name);

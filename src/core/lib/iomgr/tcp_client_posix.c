@@ -56,6 +56,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/ucx_transport.h"
 #include "src/core/lib/support/string.h"
 
 extern int grpc_tcp_trace;
@@ -155,8 +156,12 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
     }
   }
 
-  grpc_endpoint *ep =
-      grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
+  grpc_endpoint *ep = NULL;
+  if (GRPC_USE_UCX) { /*  UCX TODO */
+    ep = grpc_ucx_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
+  } else {
+    ep = grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
+  }
   grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   return ep;
 }
@@ -312,15 +317,28 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     err =
         connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
   } while (err < 0 && errno == EINTR);
-
   addr_str = grpc_sockaddr_to_uri(addr);
-  gpr_asprintf(&name, "tcp-client:%s", addr_str);
 
-  fdobj = grpc_fd_create(fd, name);
+  if (GRPC_USE_UCX) {
+      int save_errno = errno;
+      ucx_connect(fd, 0);
+      errno = save_errno;
+
+      gpr_asprintf(&name, "ucx-client:%s", addr_str);
+      int ucx_fd = ucx_get_fd();
+      GPR_ASSERT(0 != ucx_fd);
+
+      fdobj = grpc_fd_create(ucx_fd, name);
+      err = 0; /* while ucx_init procedure connection established on tcp socket */
+      /* TODO Do we need previously created tcp socket any more? */
+  } else {
+      gpr_asprintf(&name, "tcp-client:%s", addr_str);
+      fdobj = grpc_fd_create(fd, name);
+  }
 
   if (err >= 0) {
-    *ep =
-        grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
+    *ep = grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args,
+                                         addr_str);
     grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
     goto done;
   }
