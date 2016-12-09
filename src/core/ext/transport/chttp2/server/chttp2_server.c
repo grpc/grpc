@@ -178,6 +178,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
     grpc_endpoint_destroy(exec_ctx, tcp);
+    gpr_free(acceptor);
     return;
   }
   grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
