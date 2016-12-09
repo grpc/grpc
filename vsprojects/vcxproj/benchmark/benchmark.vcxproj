@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{AAD4AEF3-DF1E-7A6D-EC35-233BD1031BF4}</ProjectGuid>
+    <ProjectGuid>{07978586-E47C-8709-A63E-895FBF3C3C7D}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -57,10 +57,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>google_benchmark</TargetName>
+    <TargetName>benchmark</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>google_benchmark</TargetName>
+    <TargetName>benchmark</TargetName>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -147,53 +147,53 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark_api.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\macros.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\reporter.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\arraysize.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\benchmark_api_internal.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\check.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\colorprint.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\commandlineflags.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\complexity.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\cycleclock.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\internal_macros.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\log.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\mutex.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\re.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\sleep.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\stat.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\string_util.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\sysinfo.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\timers.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\benchmark.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\benchmark_api.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\macros.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\include\benchmark\reporter.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\arraysize.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark_api_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\check.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\colorprint.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\commandlineflags.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\complexity.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\cycleclock.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\internal_macros.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\mutex.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\re.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\sleep.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\stat.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\string_util.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\sysinfo.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\benchmark\src\timers.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\benchmark.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\benchmark_register.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\benchmark_register.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\colorprint.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\colorprint.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\commandlineflags.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\commandlineflags.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\complexity.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\complexity.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\console_reporter.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\console_reporter.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\csv_reporter.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\csv_reporter.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\json_reporter.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\json_reporter.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\reporter.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\reporter.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\sleep.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\sleep.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\string_util.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\string_util.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\sysinfo.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\sysinfo.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\timers.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\benchmark\src\timers.cc">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

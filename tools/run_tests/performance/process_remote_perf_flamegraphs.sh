@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,19 +28,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/benchmark \
-  src/proto            \
-  src/zlib             \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+mkdir -p $OUTPUT_DIR
+
+PERF_DATA_FILE=${PERF_BASE_NAME}-perf.data
+PERF_SCRIPT_OUTPUT=${PERF_BASE_NAME}-out.perf
+
+# Generate Flame graphs
+echo "running perf script on $USER_AT_HOST with perf.data"
+ssh $USER_AT_HOST "cd ~/performance_workspace/grpc && perf script -i $PERF_DATA_FILE | gzip > ${PERF_SCRIPT_OUTPUT}.gz"
+
+scp $USER_AT_HOST:~/performance_workspace/grpc/$PERF_SCRIPT_OUTPUT.gz .
+
+gzip -d -f $PERF_SCRIPT_OUTPUT.gz
+
+~/FlameGraph/stackcollapse-perf.pl --kernel $PERF_SCRIPT_OUTPUT | ~/FlameGraph/flamegraph.pl --color=java --hash > ${OUTPUT_DIR}/${OUTPUT_FILENAME}.svg
