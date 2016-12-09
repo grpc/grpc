@@ -97,28 +97,6 @@ static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
      client_channel_factory_create_subchannel,
      client_channel_factory_create_channel};
 
-static void *cc_factory_arg_copy(void *cc_factory) {
-  client_channel_factory_ref(cc_factory);
-  return cc_factory;
-}
-
-static void cc_factory_arg_destroy(void *cc_factory) {
-  // TODO(roth): remove local exec_ctx when
-  // https://github.com/grpc/grpc/pull/8705 is merged
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  client_channel_factory_unref(&exec_ctx, cc_factory);
-  grpc_exec_ctx_finish(&exec_ctx);
-}
-
-static int cc_factory_arg_cmp(void *cc_factory1, void *cc_factory2) {
-  if (cc_factory1 < cc_factory2) return -1;
-  if (cc_factory1 > cc_factory2) return 1;
-  return 0;
-}
-
-static const grpc_arg_pointer_vtable cc_factory_arg_vtable = {
-    cc_factory_arg_copy, cc_factory_arg_destroy, cc_factory_arg_cmp};
-
 /* Create a secure client channel:
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
@@ -165,10 +143,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   new_args[0].type = GRPC_ARG_STRING;
   new_args[0].key = GRPC_ARG_SERVER_URI;
   new_args[0].value.string = (char *)target;
-  new_args[1].type = GRPC_ARG_POINTER;
-  new_args[1].key = GRPC_ARG_CLIENT_CHANNEL_FACTORY;
-  new_args[1].value.pointer.p = f;
-  new_args[1].value.pointer.vtable = &cc_factory_arg_vtable;
+  new_args[1] = grpc_client_channel_factory_create_channel_arg(&f->base);
   new_args[2] = grpc_security_connector_to_arg(&security_connector->base);
   grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args,

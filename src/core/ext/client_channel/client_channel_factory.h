@@ -83,4 +83,7 @@ grpc_channel *grpc_client_channel_factory_create_channel(
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args);
 
+grpc_arg grpc_client_channel_factory_create_channel_arg(
+    grpc_client_channel_factory *factory);
+
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */
