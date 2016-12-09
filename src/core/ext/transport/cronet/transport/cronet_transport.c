@@ -424,8 +424,8 @@ static void on_stream_ready(cronet_bidirectional_stream *stream) {
     gpr_free(s->header_array.headers);
     s->header_array.headers = NULL;
   }
-  /* Send the initial metadata on wire if there is no SEND_MESSAGE or
-   * SEND_TRAILING_METADATA ops pending */
+/* Send the initial metadata on wire if there is no SEND_MESSAGE or
+ * SEND_TRAILING_METADATA ops pending */
 #ifdef GRPC_CRONET_WITH_PACKET_COALESCING
   if (s->state.flush_cronet_when_ready) {
     CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_flush (%p)", s->cbs);
