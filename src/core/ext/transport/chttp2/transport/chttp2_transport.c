@@ -111,9 +111,6 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
 static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
                                                 void *byte_stream,
                                                 grpc_error *error_ignored);
-static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                                grpc_error *error);
 
 static void benign_reclaimer(grpc_exec_ctx *exec_ctx, void *t,
                              grpc_error *error);
@@ -602,11 +599,13 @@ static void set_write_state(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  write_state_name(t->write_state),
                                  write_state_name(st), reason));
   t->write_state = st;
-  if (st == GRPC_CHTTP2_WRITE_STATE_IDLE &&
-      t->close_transport_on_writes_finished != NULL) {
-    grpc_error *err = t->close_transport_on_writes_finished;
-    t->close_transport_on_writes_finished = NULL;
-    close_transport_locked(exec_ctx, t, err);
+  if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
+    grpc_exec_ctx_enqueue_list(exec_ctx, &t->run_after_write, NULL);
+    if (t->close_transport_on_writes_finished != NULL) {
+      grpc_error *err = t->close_transport_on_writes_finished;
+      t->close_transport_on_writes_finished = NULL;
+      close_transport_locked(exec_ctx, t, err);
+    }
   }
 }
 
@@ -704,8 +703,6 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
     }
   }
 
-  grpc_chttp2_end_write(exec_ctx, t, GRPC_ERROR_REF(error));
-
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       GPR_UNREACHABLE_CODE(break);
@@ -733,6 +730,8 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                     GRPC_ERROR_NONE, true);
       break;
   }
+
+  grpc_chttp2_end_write(exec_ctx, t, GRPC_ERROR_REF(error));
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   GPR_TIMER_END("terminate_writing_with_lock", 0);
@@ -823,7 +822,14 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
   }
 }
 
+/* Flag that this closure barrier wants stats to be updated before finishing */
 #define CLOSURE_BARRIER_STATS_BIT (1 << 0)
+/* Flag that this closure barrier may be covering a write in a pollset, and so
+   we should not complete this closure until we can prove that the write got
+   scheduled */
+#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 1)
+/* First bit of the reference count, stored in the high order bits (with the low
+   bits being used for flags defined above) */
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
@@ -850,6 +856,16 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
+  if (grpc_http_trace) {
+    const char *errstr = grpc_error_string(error);
+    gpr_log(GPR_DEBUG,
+            "complete_closure_step: %p refs=%d flags=0x%04x desc=%s err=%s",
+            closure,
+            (int)(closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT),
+            (int)(closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT),
+            desc, errstr);
+    grpc_error_free_string(errstr);
+  }
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
       closure->error_data.error =
@@ -866,7 +882,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = NULL;
     }
-    grpc_closure_run(exec_ctx, closure, closure->error_data.error);
+    if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
+        !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
+      grpc_closure_run(exec_ctx, closure, closure->error_data.error);
+    } else {
+      grpc_closure_list_append(&t->run_after_write, closure,
+                               closure->error_data.error);
+    }
   }
 }
 
@@ -1011,6 +1033,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 
   if (op->send_initial_metadata != NULL) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata = op->send_initial_metadata;
     const size_t metadata_size =
@@ -1064,6 +1087,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->send_message != NULL) {
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
       grpc_chttp2_complete_closure_step(
@@ -1101,6 +1125,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 
   if (op->send_trailing_metadata != NULL) {
     GPR_ASSERT(s->send_trailing_metadata_finished == NULL);
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata = op->send_trailing_metadata;
     const size_t metadata_size =
@@ -1534,9 +1559,9 @@ static grpc_error *removal_error(grpc_error *extra_error, grpc_chttp2_stream *s,
   return error;
 }
 
-static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                                grpc_error *error) {
+void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s, grpc_error *error) {
   error =
       removal_error(error, s, "Pending writes failed due to stream closure");
   s->send_initial_metadata = NULL;
@@ -1590,13 +1615,16 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
   if (close_writes && !s->write_closed) {
     s->write_closed_error = GRPC_ERROR_REF(error);
     s->write_closed = true;
-    fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
+    grpc_chttp2_fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (s->read_closed && s->write_closed) {
     if (s->id != 0) {
       remove_stream(exec_ctx, t, s->id,
                     removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
+    } else {
+      /* Purge streams waiting on concurrency still waiting for id assignment */
+      grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2");
   }

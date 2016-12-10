@@ -31,20 +31,16 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
-#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/transport/security_connector.h"
 
-/* Calls the callback upon completion. Takes owership of handshaker and
- * read_buffer. */
-void grpc_do_security_handshake(
+/// Creates a security handshaker using \a handshaker.
+grpc_handshaker *grpc_security_handshaker_create(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
-    grpc_security_connector *connector, bool is_client_side,
-    grpc_endpoint *nonsecure_endpoint, grpc_slice_buffer *read_buffer,
-    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
+    grpc_security_connector *connector);
 
-void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx, void *handshake);
-
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */
