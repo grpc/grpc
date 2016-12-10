@@ -1524,7 +1524,12 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   } else if (n == 1) {
     return bctl->errors[0];
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+    grpc_error *error =
+        GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+    for (size_t i = 0; i < n; i++) {
+      GRPC_ERROR_UNREF(bctl->errors[i]);
+    }
+    return error;
   }
 }
 
