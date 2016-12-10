@@ -608,32 +608,23 @@ typedef struct termination_closure {
 static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
                              grpc_error *error) {
   termination_closure *tc = tcp;
-  switch (tc->type) {
-    case TC_CANCEL:
-      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "cancel");
-      break;
-    case TC_CLOSE:
-      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "close");
-      break;
-  }
+  GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "termination");
   GRPC_ERROR_UNREF(tc->error);
   gpr_free(tc);
 }
 
-static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
+static void send_termination(grpc_exec_ctx *exec_ctx, void *tcp,
+                             grpc_error *error) {
   termination_closure *tc = tcp;
   memset(&tc->op, 0, sizeof(tc->op));
-  tc->op.cancel_error = tc->error;
-  /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc);
-  tc->op.on_complete = &tc->closure;
-  execute_op(exec_ctx, tc->call, &tc->op);
-}
-
-static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  termination_closure *tc = tcp;
-  memset(&tc->op, 0, sizeof(tc->op));
-  tc->op.close_error = tc->error;
+  switch (tc->type) {
+    case TC_CANCEL:
+      tc->op.cancel_error = tc->error;
+      break;
+    case TC_CLOSE:
+      tc->op.close_error = tc->error;
+      break;
+  }
   /* reuse closure to catch completion */
   grpc_closure_init(&tc->closure, done_termination, tc);
   tc->op.on_complete = &tc->closure;
@@ -644,14 +635,8 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
                                              termination_closure *tc) {
   set_status_from_error(exec_ctx, tc->call, STATUS_FROM_API_OVERRIDE,
                         tc->error);
-
-  if (tc->type == TC_CANCEL) {
-    grpc_closure_init(&tc->closure, send_cancel, tc);
-    GRPC_CALL_INTERNAL_REF(tc->call, "cancel");
-  } else if (tc->type == TC_CLOSE) {
-    grpc_closure_init(&tc->closure, send_close, tc);
-    GRPC_CALL_INTERNAL_REF(tc->call, "close");
-  }
+  grpc_closure_init(&tc->closure, send_termination, tc);
+  GRPC_CALL_INTERNAL_REF(tc->call, "termination");
   grpc_exec_ctx_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE, NULL);
   return GRPC_CALL_OK;
 }
@@ -1537,7 +1522,7 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
-    return GRPC_ERROR_REF(bctl->errors[0]);
+    return bctl->errors[0];
   } else {
     return GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
   }
