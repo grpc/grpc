@@ -684,8 +684,10 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
   } else if (GET_CALL(calld) == CANCELLED_CALL) {
     /* already cancelled before subchannel became ready */
     fail_locked(exec_ctx, calld,
-                GRPC_ERROR_CREATE_REFERENCING(
-                    "Cancelled before creating subchannel", &error, 1));
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_REFERENCING(
+                        "Cancelled before creating subchannel", &error, 1),
+                    GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED));
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
