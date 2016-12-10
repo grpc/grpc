@@ -49,11 +49,21 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+
+# NOTE: If you change this, please make sure to test reviewing the
+# github PR with http://reviewable.io, which is known to add UTF-8
+# characters to the PR description, which leak into the environment here
+# and cause failures.
+def strip_non_ascii_chars(s):
+  return ''.join(c for c in s if ord(c) < 128)
+
+
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
-    sanitized[str(key).encode()] = str(value).encode()
+    sanitized[strip_non_ascii_chars(key)] = strip_non_ascii_chars(value)
   return sanitized
+
 
 def platform_string():
   if platform.system() == 'Windows':
@@ -129,16 +139,16 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
       if explanatory_text:
         print(explanatory_text)
       print('%s: %s' % (tag, msg))
-      return
-    sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-        _BEGINNING_OF_LINE,
-        _CLEAR_LINE,
-        '\n%s' % explanatory_text if explanatory_text is not None else '',
-        _COLORS[_TAG_COLOR[tag]][1],
-        _COLORS[_TAG_COLOR[tag]][0],
-        tag,
-        msg,
-        '\n' if do_newline or explanatory_text is not None else ''))
+    else:
+      sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+          _BEGINNING_OF_LINE,
+          _CLEAR_LINE,
+          '\n%s' % explanatory_text if explanatory_text is not None else '',
+          _COLORS[_TAG_COLOR[tag]][1],
+          _COLORS[_TAG_COLOR[tag]][0],
+          tag,
+          msg,
+          '\n' if do_newline or explanatory_text is not None else ''))
     sys.stdout.flush()
   except:
     pass
@@ -396,7 +406,7 @@ class Jobset(object):
         self.resultset[job.GetSpec().shortname].append(job.result)
         self._running.remove(job)
       if dead: return
-      if (not self._travis):
+      if not self._travis and platform_string() != 'windows':
         rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
         if self._remaining is not None and self._completed > 0:
           now = time.time()

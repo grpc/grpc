@@ -5898,6 +5898,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -6981,6 +7004,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -8025,6 +8071,28 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -9006,6 +9074,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fd_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -10066,6 +10157,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -10991,6 +11105,25 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -11996,6 +12129,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -13116,6 +13272,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -14207,6 +14387,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_load_reporting_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -15327,6 +15530,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -16287,6 +16514,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -17319,6 +17570,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -18255,6 +18530,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -19307,6 +19606,32 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [
+      "msan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -20388,6 +20713,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -21471,6 +21819,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -22423,6 +22794,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -23489,6 +23884,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -24549,6 +24967,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -25609,6 +26050,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -26553,6 +27017,29 @@
   {
     "args": [
       "server_finishes_request"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fd_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "short_deadlines"
     ], 
     "ci_platforms": [
       "linux", 
@@ -27612,6 +28099,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -28518,6 +29028,25 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -29500,6 +30029,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -30596,6 +31148,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -31664,6 +32240,29 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_load_reporting_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -32569,6 +33168,30 @@
   {
     "args": [
       "server_finishes_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "short_deadlines"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33600,6 +34223,30 @@
   }, 
   {
     "args": [
+      "short_deadlines"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
@@ -34489,6 +35136,30 @@
   {
     "args": [
       "server_finishes_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "short_deadlines"
     ], 
     "ci_platforms": [
       "windows", 
@@ -35513,6 +36184,32 @@
   {
     "args": [
       "server_finishes_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [
+      "msan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "short_deadlines"
     ], 
     "ci_platforms": [
       "windows", 
@@ -36549,6 +37246,29 @@
   {
     "args": [
       "server_finishes_request"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "short_deadlines"
     ], 
     "ci_platforms": [
       "linux", 
@@ -36765,7 +37485,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36788,7 +37509,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36811,7 +37533,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36834,7 +37557,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36857,7 +37581,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36880,7 +37605,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36903,7 +37629,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36926,7 +37653,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36949,7 +37677,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36972,7 +37701,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -36995,7 +37725,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37018,7 +37749,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37041,7 +37773,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37064,7 +37797,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37087,7 +37821,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37110,7 +37845,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37133,7 +37869,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37156,7 +37893,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37179,7 +37917,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37202,7 +37941,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37225,7 +37965,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37248,7 +37989,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37271,7 +38013,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37294,7 +38037,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37317,7 +38061,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37340,7 +38085,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37363,7 +38109,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37386,7 +38133,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37409,7 +38157,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37432,7 +38181,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37455,7 +38205,8 @@
     "cpu_cost": 1024, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37478,7 +38229,8 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37501,7 +38253,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37524,7 +38277,8 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "tsan"
+      "tsan", 
+      "asan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -37547,7 +38301,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37570,7 +38323,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_ping_pong_secure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_ping_pong_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37585,7 +38338,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37608,7 +38360,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37623,7 +38375,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37646,7 +38397,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_secure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37661,7 +38412,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37684,7 +38434,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37699,7 +38449,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37722,7 +38471,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37737,7 +38486,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37760,7 +38508,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37775,7 +38523,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37798,7 +38545,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37813,7 +38560,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37836,7 +38582,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37851,7 +38597,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37874,7 +38619,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37889,7 +38634,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37912,7 +38656,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37927,7 +38671,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37950,7 +38693,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -37965,7 +38708,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -37988,7 +38730,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38003,7 +38745,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38026,7 +38767,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38041,7 +38782,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38064,7 +38804,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38079,7 +38819,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38102,7 +38841,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38117,7 +38856,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38140,7 +38878,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_secure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38155,7 +38893,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38178,7 +38915,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38193,7 +38930,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38216,7 +38952,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_ping_pong_insecure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_ping_pong_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38231,7 +38967,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38254,7 +38989,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38269,7 +39004,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38292,7 +39026,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_insecure", 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38307,7 +39041,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38330,7 +39063,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38345,7 +39078,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38368,7 +39100,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38383,7 +39115,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38406,7 +39137,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38421,7 +39152,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38444,7 +39174,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38459,7 +39189,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38482,7 +39211,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38497,7 +39226,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38520,7 +39248,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38535,7 +39263,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38558,7 +39285,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38573,7 +39300,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38596,7 +39322,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38611,7 +39337,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38634,7 +39359,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38649,7 +39374,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38672,7 +39396,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38687,7 +39411,6 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38710,7 +39433,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38725,7 +39448,6 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38748,7 +39470,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38763,7 +39485,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38786,7 +39507,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_insecure", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -38801,7 +39522,6 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -38824,7 +39544,7 @@
     "platforms": [
       "linux"
     ], 
-    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota", 
+    "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {

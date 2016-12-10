@@ -367,6 +367,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
 static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
                       grpc_endpoint* endpoint, grpc_pollset* accepting_pollset,
                       grpc_tcp_server_acceptor* acceptor) {
+  gpr_free(acceptor);
   grpc_end2end_http_proxy* proxy = arg;
   // Instantiate proxy_connection.
   proxy_connection* conn = gpr_malloc(sizeof(*conn));
