@@ -772,7 +772,6 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   }
 
   grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata, error);
-  GRPC_ERROR_UNREF(error);
 }
 
 static void server_mutate_op(grpc_call_element *elem,
