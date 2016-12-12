@@ -36,6 +36,8 @@
 
 #include <stddef.h>
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus

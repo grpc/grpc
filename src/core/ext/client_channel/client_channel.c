@@ -687,15 +687,9 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                                      "Failed to create subchannel", &error, 1));
   } else if (GET_CALL(calld) == CANCELLED_CALL) {
     /* already cancelled before subchannel became ready */
-    grpc_error *cancellation_error = GRPC_ERROR_CREATE_REFERENCING(
-        "Cancelled before creating subchannel", &error, 1);
-    /* if due to deadline, attach the deadline exceeded status to the error */
-    if (gpr_time_cmp(calld->deadline, gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
-      cancellation_error =
-          grpc_error_set_int(cancellation_error, GRPC_ERROR_INT_GRPC_STATUS,
-                             GRPC_STATUS_DEADLINE_EXCEEDED);
-    }
-    fail_locked(exec_ctx, calld, cancellation_error);
+    fail_locked(exec_ctx, calld,
+                GRPC_ERROR_CREATE_REFERENCING(
+                    "Cancelled before creating subchannel", &error, 1));
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
@@ -819,6 +813,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
       }
     }
+    // TODO(dgq): make this deadline configurable somehow.
     const grpc_lb_policy_pick_args inputs = {
         initial_metadata, initial_metadata_flags, &calld->lb_token_mdelem,
         gpr_inf_future(GPR_CLOCK_MONOTONIC)};
