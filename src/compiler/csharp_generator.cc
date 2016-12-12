@@ -107,7 +107,7 @@ void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
         printer->Print("///\n");
       }
       last_was_empty = false;
-      printer->Print("/// $line$\n", "line", *it);
+      printer->Print("///$line$\n", "line", *it);
     }
   }
   printer->Print("/// </summary>\n");

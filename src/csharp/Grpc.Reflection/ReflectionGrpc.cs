@@ -64,8 +64,8 @@ namespace Grpc.Reflection.V1Alpha {
     public abstract partial class ServerReflectionBase
     {
       /// <summary>
-      ///  The reflection service is structured as a bidirectional stream, ensuring
-      ///  all related requests go to a single server.
+      /// The reflection service is structured as a bidirectional stream, ensuring
+      /// all related requests go to a single server.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task ServerReflectionInfo(IAsyncStreamReader<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> requestStream, IServerStreamWriter<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> responseStream, ServerCallContext context)
       {
@@ -98,16 +98,16 @@ namespace Grpc.Reflection.V1Alpha {
       }
 
       /// <summary>
-      ///  The reflection service is structured as a bidirectional stream, ensuring
-      ///  all related requests go to a single server.
+      /// The reflection service is structured as a bidirectional stream, ensuring
+      /// all related requests go to a single server.
       /// </summary>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return ServerReflectionInfo(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  The reflection service is structured as a bidirectional stream, ensuring
-      ///  all related requests go to a single server.
+      /// The reflection service is structured as a bidirectional stream, ensuring
+      /// all related requests go to a single server.
       /// </summary>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(CallOptions options)
       {
