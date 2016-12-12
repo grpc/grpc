@@ -36,6 +36,8 @@
 
 #include <stdio.h>
 
+#include <grpc/slice.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
