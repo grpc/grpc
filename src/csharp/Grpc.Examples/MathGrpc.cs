@@ -85,8 +85,8 @@ namespace Math {
     public abstract partial class MathBase
     {
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
       {
@@ -94,10 +94,10 @@ namespace Math {
       }
 
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
       {
@@ -105,9 +105,9 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
       {
@@ -115,8 +115,8 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
       {
@@ -149,86 +149,86 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Div(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Div, null, options, request);
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return DivAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_Div, null, options, request);
       }
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
       public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return DivMany(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
       public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_DivMany, null, options);
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
       public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Fib(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
       public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_Fib, null, options, request);
       }
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
       public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Sum(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
       public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
       {
