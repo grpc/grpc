@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,39 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Reference implementation for health checking in gRPC Python."""
+from libc cimport stdlib
 
-import threading
+cdef extern from "grpc_tools/main.h":
+  int protoc_main(int argc, char *argv[])
 
-import grpc
-
-from grpc.health.v1 import health_pb2
-
-
-class HealthServicer(health_pb2.HealthServicer):
-  """Servicer handling RPCs for service statuses."""
-
-  def __init__(self):
-    self._server_status_lock = threading.Lock()
-    self._server_status = {}
-
-  def Check(self, request, context):
-    with self._server_status_lock:
-      status = self._server_status.get(request.service)
-      if status is None:
-        context.set_code(grpc.StatusCode.NOT_FOUND)
-        return health_pb2.HealthCheckResponse()
-      else:
-        return health_pb2.HealthCheckResponse(status=status)
-
-  def set(self, service, status):
-    """Sets the status of a service.
-
-    Args:
-        service: string, the name of the service.
-            NOTE, '' must be set.
-        status: HealthCheckResponse.status enum value indicating
-            the status of the service
-    """
-    with self._server_status_lock:
-      self._server_status[service] = status
+def run_main(list args not None):
+  cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
+  for i in range(len(args)):
+    argv[i] = args[i]
+  return protoc_main(len(args), argv)
