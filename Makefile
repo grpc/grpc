@@ -292,10 +292,17 @@ AR = libtool -no_warning_for_no_symbols -o
 endif
 STRIP ?= strip -x
 else
+ifeq ($(SYSTEM),MINGW32)
+ifeq ($(origin AR), default)
+AR = ar rcs
+endif
+STRIP ?= strip --strip-unneeded
+else
 ifeq ($(origin AR), default)
 AR = ar rcs
 endif
 STRIP ?= strip
+endif
 endif
 endif
 INSTALL ?= install
