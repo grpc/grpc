@@ -818,9 +818,15 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * We need the LB channel to return addresses with is_balancer=false
    * so that it does not wind up recursively using the grpclb LB policy,
    * as per the special case logic in client_channel.c.
+   *
+   * Finally, we also strip out the channel arg for the server URI,
+   * since that will be different for the LB channel than for the parent
+   * channel.  (The client channel factory will re-add this arg with
+   * the right value.)
    */
   static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
-                                         GRPC_ARG_LB_ADDRESSES};
+                                         GRPC_ARG_LB_ADDRESSES,
+                                         GRPC_ARG_SERVER_URI};
   grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
       args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(

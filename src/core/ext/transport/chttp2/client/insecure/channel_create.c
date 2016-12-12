@@ -65,7 +65,16 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
-  return grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
+  // Add channel arg containing the server URI.
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_SERVER_URI;
+  arg.value.string = (char *)target;
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
+                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_channel_args_destroy(new_args);
+  return channel;
 }
 
 static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
@@ -90,19 +99,14 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GPR_ASSERT(reserved == NULL);
   grpc_client_channel_factory *factory =
       (grpc_client_channel_factory *)&client_channel_factory;
-  // Add channel args containing the server name and client channel factory.
-  grpc_arg new_args[2];
-  new_args[0].type = GRPC_ARG_STRING;
-  new_args[0].key = GRPC_ARG_SERVER_URI;
-  new_args[0].value.string = (char *)target;
-  new_args[1] = grpc_client_channel_factory_create_channel_arg(factory);
-  grpc_channel_args *args_copy =
-      grpc_channel_args_copy_and_add(args, new_args, GPR_ARRAY_SIZE(new_args));
+  // Add channel arg containing the client channel factory.
+  grpc_arg arg = grpc_client_channel_factory_create_channel_arg(factory);
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   // Create channel.
   grpc_channel *channel = client_channel_factory_create_channel(
-      &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, args_copy);
+      &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
-  grpc_channel_args_destroy(args_copy);
+  grpc_channel_args_destroy(new_args);
   grpc_client_channel_factory_unref(&exec_ctx, factory);
   grpc_exec_ctx_finish(&exec_ctx);
   return channel != NULL ? channel : grpc_lame_client_channel_create(
