@@ -217,14 +217,13 @@ class TransportStreamOp {
 class ChannelData {
  public:
   virtual ~ChannelData() {
-    if (peer_) gpr_free((void *)peer_);
   }
 
   /// Initializes the call data.
-  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
-
-  /// Caller does NOT take ownership of result.
-  const char *peer() const { return peer_; }
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
+                           grpc_channel_element_args *args) {
+    return GRPC_ERROR_NONE;
+  }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
@@ -235,11 +234,7 @@ class ChannelData {
                        const grpc_channel_info *channel_info);
 
  protected:
-  /// Takes ownership of \a peer.
-  ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
-
- private:
-  const char *peer_;
+  ChannelData() {}
 };
 
 /// Represents call data.
@@ -248,7 +243,10 @@ class CallData {
   virtual ~CallData() {}
 
   /// Initializes the call data.
-  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
+                           grpc_channel_element_args *args) {
+    return GRPC_ERROR_NONE;
+  }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
@@ -266,7 +264,7 @@ class CallData {
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
  protected:
-  explicit CallData(const ChannelData &) {}
+  CallData() {}
 };
 
 namespace internal {
@@ -282,14 +280,8 @@ class ChannelFilter final {
   static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_element *elem,
                                         grpc_channel_element_args *args) {
-    const char *peer =
-        args->optional_transport
-            ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
-            : nullptr;
-    // Construct the object in the already-allocated memory.
-    ChannelDataType *channel_data =
-        new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
-    return channel_data->Init();
+    ChannelDataType *channel_data = new (elem->channel_data) ChannelDataType();
+    return channel_data->Init(exec_ctx, args);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
@@ -317,11 +309,11 @@ class ChannelFilter final {
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
-    const ChannelDataType &channel_data =
-        *(ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
-    CallDataType *call_data = new (elem->call_data) CallDataType(channel_data);
-    return call_data->Init();
+    CallDataType *call_data = new (elem->call_data) CallDataType();
+    return call_data->Init(exec_ctx, channel_data, args);
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
