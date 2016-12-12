@@ -52,7 +52,8 @@ typedef struct grpc_tcp_server_acceptor {
   unsigned fd_index;
 } grpc_tcp_server_acceptor;
 
-/* Called for newly connected TCP connections. */
+/* Called for newly connected TCP connections.
+   Takes ownership of acceptor. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_endpoint *ep,
                                    grpc_pollset *accepting_pollset,
