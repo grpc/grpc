@@ -35,7 +35,7 @@ import sys
 
 import setuptools
 
-import grpc.tools.command
+import grpc_tools.command
 
 PY3 = sys.version_info.major == 3
 
@@ -68,7 +68,7 @@ COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
 
-    'build_package_protos': grpc.tools.command.BuildPackageProtos,
+    'build_package_protos': grpc_tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
