@@ -66,8 +66,14 @@ namespace Grpc.Core.Internal
         {
             var call = Native.grpcsharp_request_call_context_call(this);
 
-            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_request_call_context_method(this));
-            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_request_call_context_host(this));
+            UIntPtr methodLen;
+            IntPtr methodPtr = Native.grpcsharp_request_call_context_method(this, out methodLen);
+            var method = Marshal.PtrToStringAnsi(methodPtr, (int) methodLen.ToUInt32());
+
+            UIntPtr hostLen;
+            IntPtr hostPtr = Native.grpcsharp_request_call_context_host(this, out hostLen);
+            var host = Marshal.PtrToStringAnsi(hostPtr, (int) hostLen.ToUInt32());
+
             var deadline = Native.grpcsharp_request_call_context_deadline(this);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_request_call_context_request_metadata(this);
