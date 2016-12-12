@@ -60,8 +60,8 @@ typedef struct {
   bool connecting;
 
   char *server_name;
-  grpc_chttp2_create_handshakers_func create_handshakers;
-  void *create_handshakers_user_data;
+  grpc_chttp2_add_handshakers_func add_handshakers;
+  void *add_handshakers_user_data;
 
   grpc_closure *notify;
   grpc_connect_in_args args;
@@ -161,9 +161,9 @@ static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
         grpc_http_connect_handshaker_create(proxy_name, c->server_name));
     gpr_free(proxy_name);
   }
-  if (c->create_handshakers != NULL) {
-    c->create_handshakers(exec_ctx, c->create_handshakers_user_data,
-                          c->handshake_mgr);
+  if (c->add_handshakers != NULL) {
+    c->add_handshakers(exec_ctx, c->add_handshakers_user_data,
+                       c->handshake_mgr);
   }
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
@@ -256,15 +256,15 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
 
 grpc_connector *grpc_chttp2_connector_create(
     grpc_exec_ctx *exec_ctx, const char *server_name,
-    grpc_chttp2_create_handshakers_func create_handshakers,
-    void *create_handshakers_user_data) {
+    grpc_chttp2_add_handshakers_func add_handshakers,
+    void *add_handshakers_user_data) {
   chttp2_connector *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   c->server_name = gpr_strdup(server_name);
-  c->create_handshakers = create_handshakers;
-  c->create_handshakers_user_data = create_handshakers_user_data;
+  c->add_handshakers = add_handshakers;
+  c->add_handshakers_user_data = add_handshakers_user_data;
   return &c->base;
 }
