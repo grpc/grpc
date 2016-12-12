@@ -1575,11 +1575,24 @@ if (gRPC_INSTALL)
   )
 endif()
 
+if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+    COMMAND protoc --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha --grpc_out=${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha --plugin=protoc-gen-grpc=${CMAKE_BINARY_DIR}/grpc_cpp_plugin.exe ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.proto
+    DEPENDS grpc_cpp_plugin protoc
+)
   
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+    COMMAND protoc --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.proto
+    DEPENDS protoc
+)
+
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
-  src/proto/grpc/reflection/v1alpha/reflection.proto
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
 )
 
 target_include_directories(grpc++_reflection
@@ -1614,6 +1627,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
   
 add_library(grpc++_unsecure
   src/cpp/client/insecure_credentials.cc
