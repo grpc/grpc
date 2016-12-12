@@ -1,5 +1,6 @@
 import logging
 import time
+
 import http2_base_server
 
 class TestcaseGoaway(object):
@@ -7,7 +8,7 @@ class TestcaseGoaway(object):
     This test does the following:
       Process incoming request normally, i.e. send headers, data and trailers.
       Then send a GOAWAY frame with the stream id of the processed request.
-      It assert that the next request is made on a different TCP connection.
+      It checks that the next request is made on a different TCP connection.
   """
   def __init__(self, iteration):
     self._base_server = http2_base_server.H2ProtocolBaseServer()
@@ -22,15 +23,14 @@ class TestcaseGoaway(object):
     return self._base_server
 
   def on_connection_lost(self, reason):
-    logging.info('Disconnect received. Count %d'%self._iteration)
+    logging.info('Disconnect received. Count %d' % self._iteration)
     # _iteration == 2 => Two different connections have been used.
     if self._iteration == 2:
       self._base_server.on_connection_lost(reason)
 
   def on_send_done(self, stream_id):
     self._base_server.on_send_done_default(stream_id)
-    time.sleep(1)
-    logging.info('Sending GOAWAY for stream %d:'%stream_id)
+    logging.info('Sending GOAWAY for stream %d:' % stream_id)
     self._base_server._conn.close_connection(error_code=0, additional_data=None, last_stream_id=stream_id)
     self._base_server._stream_status[stream_id] = False
 
@@ -42,7 +42,7 @@ class TestcaseGoaway(object):
     self._base_server.on_data_received_default(event)
     sr = self._base_server.parse_received_data(event.stream_id)
     if sr:
-      logging.info('Creating response size = %s'%sr.response_size)
+      logging.info('Creating response size = %s' % sr.response_size)
       response_data = self._base_server.default_response_data(sr.response_size)
       self._ready_to_send = True
       self._base_server.setup_send(response_data, event.stream_id)
