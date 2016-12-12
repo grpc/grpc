@@ -1332,9 +1332,6 @@
   ${install_shared("csharp")}
 
   install-plugins: $(PROTOC_PLUGINS)
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) false
-  else
   	$(E) "[INSTALL] Installing grpc protoc plugins"
   % for tgt in targets:
   % if tgt.build == 'protoc':
@@ -1342,7 +1339,6 @@
   	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
   % endif
   % endfor
-  endif
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
