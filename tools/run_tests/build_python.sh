@@ -171,7 +171,8 @@ pip_install_dir() {
 }
 
 $VENV_PYTHON -m pip install --upgrade pip
-$VENV_PYTHON -m pip install setuptools
+# TODO(https://github.com/pypa/setuptools/issues/885) get the latest setuptools
+$VENV_PYTHON -m pip install setuptools==29.0.1
 $VENV_PYTHON -m pip install cython
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
