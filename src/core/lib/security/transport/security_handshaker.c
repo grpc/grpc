@@ -132,14 +132,10 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
     grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
     // Not shutting down, so the write failed.  Clean up before
     // invoking the callback.
-<<<<<<< HEAD
     cleanup_args_for_failure_locked(exec_ctx, h);
-=======
-    cleanup_args_for_failure_locked(h);
     // Set shutdown to true so that subsequent calls to
     // security_handshaker_shutdown() do nothing.
     h->shutdown = true;
->>>>>>> b62bffbea5eef106bfbe644e8af161889c927401
   }
   // Invoke callback.
   grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, error, NULL);
