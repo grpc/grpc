@@ -45,7 +45,7 @@ typedef struct grpc_chttp2_server_handshaker_factory
     grpc_chttp2_server_handshaker_factory;
 
 typedef struct {
-  void (*create_handshakers)(
+  void (*add_handshakers)(
       grpc_exec_ctx *exec_ctx,
       grpc_chttp2_server_handshaker_factory *handshaker_factory,
       grpc_handshake_manager *handshake_mgr);
@@ -57,7 +57,7 @@ struct grpc_chttp2_server_handshaker_factory {
   const grpc_chttp2_server_handshaker_factory_vtable *vtable;
 };
 
-void grpc_chttp2_server_handshaker_factory_create_handshakers(
+void grpc_chttp2_server_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx,
     grpc_chttp2_server_handshaker_factory *handshaker_factory,
     grpc_handshake_manager *handshake_mgr);

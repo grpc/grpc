@@ -139,16 +139,16 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
       if explanatory_text:
         print(explanatory_text)
       print('%s: %s' % (tag, msg))
-      return
-    sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-        _BEGINNING_OF_LINE,
-        _CLEAR_LINE,
-        '\n%s' % explanatory_text if explanatory_text is not None else '',
-        _COLORS[_TAG_COLOR[tag]][1],
-        _COLORS[_TAG_COLOR[tag]][0],
-        tag,
-        msg,
-        '\n' if do_newline or explanatory_text is not None else ''))
+    else:
+      sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+          _BEGINNING_OF_LINE,
+          _CLEAR_LINE,
+          '\n%s' % explanatory_text if explanatory_text is not None else '',
+          _COLORS[_TAG_COLOR[tag]][1],
+          _COLORS[_TAG_COLOR[tag]][0],
+          tag,
+          msg,
+          '\n' if do_newline or explanatory_text is not None else ''))
     sys.stdout.flush()
   except:
     pass
@@ -406,7 +406,7 @@ class Jobset(object):
         self.resultset[job.GetSpec().shortname].append(job.result)
         self._running.remove(job)
       if dead: return
-      if (not self._travis):
+      if not self._travis and platform_string() != 'windows':
         rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
         if self._remaining is not None and self._completed > 0:
           now = time.time()

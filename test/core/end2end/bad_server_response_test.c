@@ -146,6 +146,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
   grpc_closure_init(&on_write, done_write, NULL);
