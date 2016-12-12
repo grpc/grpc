@@ -49,11 +49,6 @@ typedef struct on_resolution_arg {
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  const grpc_arg *channel_arg =
-      grpc_channel_args_find(res->resolver_result, GRPC_ARG_SERVER_NAME);
-  GPR_ASSERT(channel_arg != NULL);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-  GPR_ASSERT(strcmp(res->expected_server_name, channel_arg->value.string) == 0);
   grpc_channel_args_destroy(res->resolver_result);
 }
 
