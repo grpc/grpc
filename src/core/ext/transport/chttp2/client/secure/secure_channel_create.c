@@ -79,7 +79,7 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
     const grpc_subchannel_args *args) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
   grpc_connector *connector = grpc_chttp2_connector_create(
-      exec_ctx, args->server_name, add_handshakers, f->security_connector);
+      exec_ctx, add_handshakers, f->security_connector);
   grpc_subchannel *s = grpc_subchannel_create(exec_ctx, connector, args);
   grpc_connector_unref(exec_ctx, connector);
   return s;

@@ -264,12 +264,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
-  grpc_arg server_name_arg;
-  server_name_arg.type = GRPC_ARG_STRING;
-  server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = (char *)path;
-  r->channel_args =
-      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
   gpr_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
                    GRPC_DNS_RECONNECT_JITTER,

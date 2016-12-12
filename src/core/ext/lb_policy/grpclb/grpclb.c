@@ -743,12 +743,6 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
-  /* Get server name. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char *server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
-
   /* Count the number of gRPC-LB addresses. There must be at least one.
    * TODO(roth): For now, we ignore non-balancer addresses, but in the
    * future, we may change the behavior such that we fall back to using
@@ -756,7 +750,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * time, this should be changed to allow a list with no balancer addresses,
    * since the resolver might fail to return a balancer address even when
    * this is the right LB policy to use. */
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_grpclb_addrs = 0;
@@ -768,13 +763,19 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
   memset(glb_policy, 0, sizeof(*glb_policy));
 
+  /* Get server name. */
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(arg != NULL);
+  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, 1);
+  glb_policy->server_name = gpr_strdup(uri->path);
+  grpc_uri_destroy(uri);
+
   /* All input addresses in addresses come from a resolver that claims
    * they are LB services. It's the resolver's responsibility to make sure
-   * this
-   * policy is only instantiated and used in that case.
+   * this policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
-  glb_policy->server_name = gpr_strdup(server_name);
   glb_policy->cc_factory = args->client_channel_factory;
   glb_policy->args = grpc_channel_args_copy(args->args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
@@ -824,9 +825,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * channel.  (The client channel factory will re-add this arg with
    * the right value.)
    */
-  static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
-                                         GRPC_ARG_LB_ADDRESSES,
-                                         GRPC_ARG_SERVER_URI};
+  static const char *keys_to_remove[] = {
+      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI};
   grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
       args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
