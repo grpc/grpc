@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"

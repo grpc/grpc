@@ -38,6 +38,9 @@
 #include "src/core/ext/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
 
+// Channel arg key for server URI string.
+#define GRPC_ARG_SERVER_URI "grpc.server_uri"
+
 /* A client channel is a channel that begins disconnected, and can connect
    to some endpoint on demand. If that endpoint disconnects, it will be
    connected to again later.
