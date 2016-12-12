@@ -31,6 +31,7 @@
 
 import abc
 import enum
+import sys
 
 import six
 
@@ -1342,3 +1343,24 @@ __all__ = (
     'secure_channel',
     'server',
 )
+
+
+############################### Extension Shims ################################
+
+
+# Here to maintain backwards compatibility; avoid using these in new code!
+try:
+  import grpc_tools
+  sys.modules.update({'grpc.tools': grpc_tools})
+except ImportError:
+  pass
+try:
+  import grpc_health
+  sys.modules.update({'grpc.health': grpc_health})
+except ImportError:
+  pass
+try:
+  import grpc_reflection
+  sys.modules.update({'grpc.reflection': grpc_reflection})
+except ImportError:
+  pass
