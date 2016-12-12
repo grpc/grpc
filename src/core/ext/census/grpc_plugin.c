@@ -31,10 +31,11 @@
  *
  */
 
-#include <limits.h>
 #include <string.h>
 
 #include <grpc/census.h>
+
+#include <limits.h>
 
 #include "src/core/ext/census/grpc_filter.h"
 #include "src/core/lib/channel/channel_stack_builder.h"

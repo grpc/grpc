@@ -31,11 +31,11 @@
  *
  */
 
-#include <limits.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <limits.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
