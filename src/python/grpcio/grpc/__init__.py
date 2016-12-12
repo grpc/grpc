@@ -1324,6 +1324,7 @@ __all__ = (
     'RpcMethodHandler',
     'HandlerCallDetails',
     'GenericRpcHandler',
+    'ServiceRpcHandler',
     'Server',
     'unary_unary_rpc_method_handler',
     'unary_stream_rpc_method_handler',

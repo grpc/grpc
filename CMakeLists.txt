@@ -258,7 +258,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -538,7 +537,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -790,7 +788,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1042,7 +1039,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1206,7 +1202,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1540,7 +1535,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1747,7 +1741,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
