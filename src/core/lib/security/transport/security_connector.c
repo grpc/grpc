@@ -43,6 +43,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -111,19 +112,19 @@ const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
   return NULL;
 }
 
-void grpc_channel_security_connector_create_handshakers(
+void grpc_channel_security_connector_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
     grpc_handshake_manager *handshake_mgr) {
   if (connector != NULL) {
-    connector->create_handshakers(exec_ctx, connector, handshake_mgr);
+    connector->add_handshakers(exec_ctx, connector, handshake_mgr);
   }
 }
 
-void grpc_server_security_connector_create_handshakers(
+void grpc_server_security_connector_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector,
     grpc_handshake_manager *handshake_mgr) {
   if (connector != NULL) {
-    connector->create_handshakers(exec_ctx, connector, handshake_mgr);
+    connector->add_handshakers(exec_ctx, connector, handshake_mgr);
   }
 }
 
@@ -291,20 +292,24 @@ static void fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
   cb(exec_ctx, user_data, GRPC_SECURITY_OK);
 }
 
-static void fake_channel_create_handshakers(
+static void fake_channel_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     grpc_handshake_manager *handshake_mgr) {
-  grpc_security_create_handshakers(
-      exec_ctx, tsi_create_fake_handshaker(true /* is_client */), &sc->base,
-      handshake_mgr);
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_fake_handshaker(true /* is_client */),
+          &sc->base));
 }
 
-static void fake_server_create_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
-  grpc_security_create_handshakers(
-      exec_ctx, tsi_create_fake_handshaker(false /* is_client */), &sc->base,
-      handshake_mgr);
+static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_server_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_fake_handshaker(false /* is_client */),
+          &sc->base));
 }
 
 static grpc_security_connector_vtable fake_channel_vtable = {
@@ -322,7 +327,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.vtable = &fake_channel_vtable;
   c->request_metadata_creds = grpc_call_credentials_ref(request_metadata_creds);
   c->check_call_host = fake_channel_check_call_host;
-  c->create_handshakers = fake_channel_create_handshakers;
+  c->add_handshakers = fake_channel_add_handshakers;
   return c;
 }
 
@@ -334,7 +339,7 @@ grpc_server_security_connector *grpc_fake_server_security_connector_create(
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
-  c->create_handshakers = fake_server_create_handshakers;
+  c->add_handshakers = fake_server_add_handshakers;
   return c;
 }
 
@@ -390,9 +395,9 @@ static grpc_security_status ssl_create_handshaker(
   return GRPC_SECURITY_OK;
 }
 
-static void ssl_channel_create_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_security_connector *sc,
+                                        grpc_handshake_manager *handshake_mgr) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   // Instantiate TSI handshaker.
@@ -403,12 +408,13 @@ static void ssl_channel_create_handshakers(
                             : c->target_name,
                         &tsi_hs);
   // Create handshakers.
-  grpc_security_create_handshakers(exec_ctx, tsi_hs, &sc->base, handshake_mgr);
+  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
+                                                exec_ctx, tsi_hs, &sc->base));
 }
 
-static void ssl_server_create_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_handshake_manager *handshake_mgr) {
+static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
+                                       grpc_server_security_connector *sc,
+                                       grpc_handshake_manager *handshake_mgr) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
@@ -416,7 +422,8 @@ static void ssl_server_create_handshakers(
   ssl_create_handshaker(c->handshaker_factory, false /* is_client */,
                         NULL /* peer_name */, &tsi_hs);
   // Create handshakers.
-  grpc_security_create_handshakers(exec_ctx, tsi_hs, &sc->base, handshake_mgr);
+  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
+                                                exec_ctx, tsi_hs, &sc->base));
 }
 
 static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
@@ -716,7 +723,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   c->base.request_metadata_creds =
       grpc_call_credentials_ref(request_metadata_creds);
   c->base.check_call_host = ssl_channel_check_call_host;
-  c->base.create_handshakers = ssl_channel_create_handshakers;
+  c->base.add_handshakers = ssl_channel_add_handshakers;
   gpr_split_host_port(target_name, &c->target_name, &port);
   gpr_free(port);
   if (overridden_target_name != NULL) {
@@ -792,7 +799,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     *sc = NULL;
     goto error;
   }
-  c->base.create_handshakers = ssl_server_create_handshakers;
+  c->base.add_handshakers = ssl_server_add_handshakers;
   *sc = &c->base;
   gpr_free((void *)alpn_protocol_strings);
   gpr_free(alpn_protocol_string_lengths);

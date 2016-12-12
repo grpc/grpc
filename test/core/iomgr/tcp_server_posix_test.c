@@ -126,6 +126,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
 
   on_connect_result temp_result;
   on_connect_result_set(&temp_result, acceptor);
+  gpr_free(acceptor);
 
   gpr_mu_lock(g_mu);
   g_result = temp_result;

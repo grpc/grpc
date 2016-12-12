@@ -111,8 +111,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   struct handshake_state state;
   state.done_callback_called = false;
   grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
-  grpc_server_security_connector_create_handshakers(&exec_ctx, sc,
-                                                    handshake_mgr);
+  grpc_server_security_connector_add_handshakers(&exec_ctx, sc, handshake_mgr);
   grpc_handshake_manager_do_handshake(
       &exec_ctx, handshake_mgr, mock_endpoint, NULL /* channel_args */,
       deadline, NULL /* acceptor */, on_handshake_done, &state);
