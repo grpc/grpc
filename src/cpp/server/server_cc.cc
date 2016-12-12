@@ -360,7 +360,8 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)) {
+      server_initializer_(new ServerInitializer(this)),
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -376,28 +377,16 @@ Server::Server(
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
 
-  bool health_check_service_disabled = false;
   for (size_t i = 0; i < channel_args.num_args; i++) {
     if (0 == strcmp(channel_args.args[i].key,
                     kDefaultHealthCheckServiceInterfaceArg)) {
       if (channel_args.args[i].value.pointer.p == nullptr) {
-        health_check_service_disabled = true;
+        health_check_service_disabled_ = true;
       } else {
         health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
             channel_args.args[i].value.pointer.p));
       }
       break;
-    }
-  }
-  // Only create default health check service when user did not provide an
-  // explicit one.
-  if (health_check_service_ == nullptr && !health_check_service_disabled &&
-      DefaultHealthCheckServiceEnabled()) {
-    auto* default_hc_service = new DefaultHealthCheckService;
-    health_check_service_.reset(default_hc_service);
-    if (!sync_server_cqs->empty()) {  // Has sync methods.
-      grpc::string host;
-      RegisterService(&host, default_hc_service->GetSyncHealthCheckService());
     }
   }
 
@@ -506,6 +495,18 @@ int Server::AddListeningPort(const grpc::string& addr,
 bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   started_ = true;
+
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
+      DefaultHealthCheckServiceEnabled()) {
+    auto* default_hc_service = new DefaultHealthCheckService;
+    health_check_service_.reset(default_hc_service);
+    if (!sync_server_cqs_->empty()) {  // Has sync methods.
+      RegisterService(nullptr, default_hc_service->GetSyncHealthCheckService());
+    }
+  }
+
   grpc_server_start(server_);
 
   if (!has_generic_service_) {

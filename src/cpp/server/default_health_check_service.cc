@@ -31,9 +31,11 @@
  *
  */
 
+#include <memory>
 #include <mutex>
 
 #include <grpc++/impl/codegen/method_handler_impl.h>
+#include <grpc/support/log.h>
 
 #include "src/cpp/server/default_health_check_service.h"
 
@@ -57,11 +59,12 @@ DefaultHealthCheckService::SyncHealthCheckServiceImpl::
 
 Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
     ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
-  // TODO nanopb
+  // TODO nanopb part
   return Status::OK;
 }
 
-DefaultHealthCheckService::DefaultHealthCheckService() {
+DefaultHealthCheckService::DefaultHealthCheckService()
+    : sync_service_(new SyncHealthCheckServiceImpl(this)) {
   services_map_.emplace("", true);
 }
 

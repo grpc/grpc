@@ -219,6 +219,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   std::unique_ptr<ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
+  bool health_check_service_disabled_;
 };
 
 }  // namespace grpc
