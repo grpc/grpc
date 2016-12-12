@@ -72,6 +72,9 @@ typedef struct {
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
   grpc_slice_buffer* read_buffer;
+  // A handshaker may set this to true before invoking on_handshake_done
+  // to indicate that subsequent handshakers should be skipped.
+  bool exit_early;
   // User data passed through the handshake manager.  Not used by
   // individual handshakers.
   void* user_data;
@@ -104,6 +107,16 @@ struct grpc_handshaker {
 /// Called by concrete implementations to initialize the base struct.
 void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker);
+
+void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                             grpc_handshaker* handshaker);
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker);
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
+                                  grpc_tcp_server_acceptor* acceptor,
+                                  grpc_closure* on_handshake_done,
+                                  grpc_handshaker_args* args);
 
 ///
 /// grpc_handshake_manager

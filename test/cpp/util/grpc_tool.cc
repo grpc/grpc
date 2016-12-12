@@ -414,6 +414,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   grpc::string request_text;
   grpc::string server_address(argv[0]);
   grpc::string method_name(argv[1]);
+  grpc::string formatted_method_name;
   std::unique_ptr<grpc::testing::ProtoFileParser> parser;
   grpc::string serialized_request_proto;
 
@@ -450,7 +451,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   if (FLAGS_binary_input) {
     serialized_request_proto = request_text;
+    formatted_method_name = method_name;
   } else {
+    formatted_method_name = parser->GetFormattedMethodName(method_name);
     serialized_request_proto = parser->GetSerializedProtoFromMethod(
         method_name, request_text, true /* is_request */);
     if (parser->HasError()) {
@@ -466,9 +469,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   ParseMetadataFlag(&client_metadata);
   PrintMetadata(client_metadata, "Sending client initial metadata:");
   grpc::Status status = grpc::testing::CliCall::Call(
-      channel, parser->GetFormatedMethodName(method_name),
-      serialized_request_proto, &serialized_response_proto, client_metadata,
-      &server_initial_metadata, &server_trailing_metadata);
+      channel, formatted_method_name, serialized_request_proto,
+      &serialized_response_proto, client_metadata, &server_initial_metadata,
+      &server_trailing_metadata);
   PrintMetadata(server_initial_metadata,
                 "Received initial metadata from server:");
   PrintMetadata(server_trailing_metadata,
