@@ -39,6 +39,9 @@
 #include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_stack.h"
 
+// Channel arg key for client channel factory.
+#define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
+
 typedef struct grpc_client_channel_factory grpc_client_channel_factory;
 typedef struct grpc_client_channel_factory_vtable
     grpc_client_channel_factory_vtable;

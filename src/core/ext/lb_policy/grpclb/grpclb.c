@@ -106,6 +106,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/client_channel_factory.h"
 #include "src/core/ext/client_channel/lb_policy_factory.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
