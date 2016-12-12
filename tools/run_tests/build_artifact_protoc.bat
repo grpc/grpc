@@ -30,15 +30,16 @@
 mkdir artifacts
 
 setlocal
-cd third_party/protobuf
+cd third_party/protobuf/cmake
 
-cd cmake
-cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF || goto :error
+mkdir build & cd build
+mkdir solution & cd solution
+cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF ../.. || goto :error
 endlocal
 
 call vsprojects/build_plugins.bat || goto :error
 
-xcopy /Y third_party\protobuf\cmake\Release\protoc.exe artifacts\ || goto :error
+xcopy /Y third_party\protobuf\cmake\build\solution\Release\protoc.exe artifacts\ || goto :error
 xcopy /Y vsprojects\Release\*_plugin.exe artifacts\ || xcopy /Y vsprojects\x64\Release\*_plugin.exe artifacts\ || goto :error
 
 goto :EOF
