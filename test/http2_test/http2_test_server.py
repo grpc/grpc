@@ -3,18 +3,20 @@
 """
 import argparse
 import logging
+import twisted
+import twisted.internet
+import twisted.internet.endpoints
+import twisted.internet.reactor
 
-from twisted.internet.protocol import Factory
-from twisted.internet import endpoints, reactor
 import http2_base_server
-import test_rst_after_header
-import test_rst_after_data
-import test_rst_during_data
 import test_goaway
-import test_ping
 import test_max_streams
+import test_ping
+import test_rst_after_data
+import test_rst_after_header
+import test_rst_during_data
 
-test_case_mappings = {
+_TEST_CASE_MAPPING = {
   'rst_after_header': test_rst_after_header.TestcaseRstStreamAfterHeader,
   'rst_after_data': test_rst_after_data.TestcaseRstStreamAfterData,
   'rst_during_data': test_rst_during_data.TestcaseRstStreamDuringData,
@@ -23,20 +25,20 @@ test_case_mappings = {
   'max_streams': test_max_streams.TestcaseSettingsMaxStreams,
 }
 
-class H2Factory(Factory):
+class H2Factory(twisted.internet.protocol.Factory):
   def __init__(self, testcase):
-    logging.info('In H2Factory')
+    logging.info('Creating H2Factory for new connection.')
     self._num_streams = 0
     self._testcase = testcase
 
   def buildProtocol(self, addr):
     self._num_streams += 1
-    logging.info('New Connection: %d'%self._num_streams)
-    if not test_case_mappings.has_key(self._testcase):
-      logging.error('Unknown test case: %s'%self._testcase)
+    logging.info('New Connection: %d' % self._num_streams)
+    if not _TEST_CASE_MAPPING.has_key(self._testcase):
+      logging.error('Unknown test case: %s' % self._testcase)
       assert(0)
     else:
-      t = test_case_mappings[self._testcase]
+      t = _TEST_CASE_MAPPING[self._testcase]
 
     if self._testcase == 'goaway':
       return t(self._num_streams).get_base_server()
@@ -49,9 +51,9 @@ if __name__ == "__main__":
   parser.add_argument("test")
   parser.add_argument("port")
   args = parser.parse_args()
-  if args.test not in test_case_mappings.keys():
-    logging.error('unknown test: %s'%args.test)
+  if args.test not in _TEST_CASE_MAPPING.keys():
+    logging.error('unknown test: %s' % args.test)
   else:
-    endpoint = endpoints.TCP4ServerEndpoint(reactor, int(args.port), backlog=128)
+    endpoint = twisted.internet.endpoints.TCP4ServerEndpoint(twisted.internet.reactor, int(args.port), backlog=128)
     endpoint.listen(H2Factory(args.test))
-    reactor.run()
+    twisted.internet.reactor.run()

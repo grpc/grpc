@@ -23,7 +23,6 @@ class TestcaseRstStreamDuringData(object):
       response_len = len(response_data)
       truncated_response_data = response_data[0:response_len/2]
       self._base_server.setup_send(truncated_response_data, event.stream_id)
-      # send reset stream
 
   def on_send_done(self, stream_id):
     self._base_server.send_reset_stream()
