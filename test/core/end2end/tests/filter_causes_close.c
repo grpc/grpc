@@ -210,7 +210,10 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = elem->call_data;
   grpc_exec_ctx_sched(
       exec_ctx, calld->recv_im_ready,
-      GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED),
+      NULL);
 }
 
 static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,

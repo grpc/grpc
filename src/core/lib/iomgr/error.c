@@ -261,7 +261,8 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   grpc_error *out;
   if (is_special(in)) {
     if (in == GRPC_ERROR_NONE)
-      out = GRPC_ERROR_CREATE("no error");
+      out = grpc_error_set_int(GRPC_ERROR_CREATE("no error"),
+                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK);
     else if (in == GRPC_ERROR_OOM)
       out = GRPC_ERROR_CREATE("oom");
     else if (in == GRPC_ERROR_CANCELLED)
