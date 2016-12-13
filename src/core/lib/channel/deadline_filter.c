@@ -56,10 +56,11 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   deadline_state->timer_pending = false;
   gpr_mu_unlock(&deadline_state->timer_mu);
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_slice msg = grpc_slice_from_static_string("Deadline Exceeded");
-    grpc_call_element_send_cancel_with_message(
-        exec_ctx, elem, GRPC_STATUS_DEADLINE_EXCEEDED, &msg);
-    grpc_slice_unref_internal(exec_ctx, msg);
+    grpc_call_element_signal_error(
+        exec_ctx, elem,
+        grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_DEADLINE_EXCEEDED));
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }

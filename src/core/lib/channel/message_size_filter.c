@@ -142,10 +142,11 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->send_message->length, calld->max_send_size);
-    grpc_slice message = grpc_slice_from_copied_string(message_string);
+    grpc_transport_stream_op_finish_with_failure(
+        exec_ctx, op, grpc_error_set_int(GRPC_ERROR_CREATE(message_string),
+                                         GRPC_ERROR_INT_GRPC_STATUS,
+                                         GRPC_STATUS_INVALID_ARGUMENT));
     gpr_free(message_string);
-    grpc_call_element_send_close_with_message(
-        exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Inject callback for receiving a message.
   if (op->recv_message_ready != NULL) {
