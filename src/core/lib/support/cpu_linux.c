@@ -43,6 +43,7 @@
 #include <sched.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -65,6 +66,18 @@ unsigned gpr_cpu_num_cores(void) {
   gpr_once_init(&once, init_num_cpus);
   return (unsigned)ncpus;
 }
+
+#ifndef __GLIBC__
+static int sched_getcpu() {
+    int c;
+    int s = (int) syscall(SYS_getcpu, &c, NULL, NULL);
+    if (s == -1) {
+        return s;
+    } else {
+        return c;
+    }
+}
+#endif
 
 unsigned gpr_cpu_current_cpu(void) {
   int cpu = sched_getcpu();
