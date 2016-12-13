@@ -98,10 +98,6 @@ static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
   return GRPC_FILTERED_MDELEM(md);
 }
 
-static void destroy_op(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  gpr_free(arg);
-}
-
 /* called from application code */
 static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
@@ -135,8 +131,6 @@ static void on_md_processing_done(
     grpc_closure_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE);
   } else {
     grpc_slice message;
-    grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
-    memset(close_op, 0, sizeof(*close_op));
     for (size_t i = 0; i < calld->md.count; i++) {
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
@@ -152,10 +146,6 @@ static void on_md_processing_done(
       calld->transport_op->send_message = NULL;
     }
     calld->transport_op->send_trailing_metadata = NULL;
-    close_op->on_complete =
-        grpc_closure_create(destroy_op, close_op, grpc_schedule_on_exec_ctx);
-    grpc_transport_stream_op_add_close(&exec_ctx, close_op, status, &message);
-    grpc_call_next_op(&exec_ctx, elem, close_op);
     grpc_closure_sched(&exec_ctx, calld->on_done_recv,
                        grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
                                           GRPC_ERROR_INT_GRPC_STATUS, status));

@@ -92,16 +92,6 @@ static void reset_auth_metadata_context(
   auth_md_context->channel_auth_context = NULL;
 }
 
-static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                            grpc_status_code status, const char *error_msg) {
-  call_data *calld = elem->call_data;
-  gpr_log(GPR_ERROR, "Client side authentication failure: %s", error_msg);
-  grpc_slice error_slice = grpc_slice_from_copied_string(error_msg);
-  grpc_transport_stream_op_add_close(exec_ctx, &calld->op, status,
-                                     &error_slice);
-  grpc_call_next_op(exec_ctx, elem, &calld->op);
-}
-
 static void add_error(grpc_error **combined, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*combined == GRPC_ERROR_NONE) {
@@ -121,35 +111,36 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_metadata_batch *mdb;
   size_t i;
   reset_auth_metadata_context(&calld->auth_md_context);
-  if (status != GRPC_CREDENTIALS_OK) {
-    bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED,
-                    (error_details != NULL && strlen(error_details) > 0)
-                        ? error_details
-                        : "Credentials failed to get metadata.");
-    return;
-  }
-  GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
-  GPR_ASSERT(op->send_initial_metadata != NULL);
-  mdb = op->send_initial_metadata;
   grpc_error *error = GRPC_ERROR_NONE;
-  for (i = 0; i < num_md; i++) {
-    if (!grpc_header_key_is_legal(md_elems[i].key)) {
-      char *str = grpc_slice_to_c_string(md_elems[i].key);
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
-      gpr_free(str);
-    } else if (!grpc_is_binary_header(md_elems[i].key) &&
-               !grpc_header_nonbin_value_is_legal(md_elems[i].value)) {
-      char *str =
-          grpc_dump_slice(md_elems[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
-      gpr_free(str);
-    } else {
-      add_error(&error,
-                grpc_metadata_batch_add_tail(
-                    mdb, &calld->md_links[i],
-                    grpc_mdelem_from_slices(
-                        exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
-                        grpc_slice_ref_internal(md_elems[i].value))));
+  if (status != GRPC_CREDENTIALS_OK) {
+    error = grpc_error_set_int(
+        GRPC_ERROR_CREATE(error_details != NULL && strlen(error_details) > 0
+                              ? error_details
+                              : "Credentials failed to get metadata."),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
+  } else {
+    GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
+    GPR_ASSERT(op->send_initial_metadata != NULL);
+    mdb = op->send_initial_metadata;
+    for (i = 0; i < num_md; i++) {
+      if (!grpc_header_key_is_legal(md_elems[i].key)) {
+        char *str = grpc_slice_to_c_string(md_elems[i].key);
+        gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
+        gpr_free(str);
+      } else if (!grpc_is_binary_header(md_elems[i].key) &&
+                 !grpc_header_nonbin_value_is_legal(md_elems[i].value)) {
+        char *str =
+            grpc_dump_slice(md_elems[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
+        gpr_free(str);
+      } else {
+        add_error(&error,
+                  grpc_metadata_batch_add_tail(
+                      mdb, &calld->md_links[i],
+                      grpc_mdelem_from_slices(
+                          exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
+                          grpc_slice_ref_internal(md_elems[i].value))));
+      }
     }
   }
   if (error == GRPC_ERROR_NONE) {
@@ -210,8 +201,12 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-      bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED,
-                      "Incompatible credentials set on channel and call.");
+      grpc_transport_stream_op_finish_with_failure(
+          exec_ctx, op,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE(
+                  "Incompatible credentials set on channel and call."),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED));
       return;
     }
   } else {
@@ -241,7 +236,10 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  host);
     gpr_free(host);
-    bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
+    grpc_call_element_signal_error(
+        exec_ctx, elem, grpc_error_set_int(GRPC_ERROR_CREATE(error_msg),
+                                           GRPC_ERROR_INT_GRPC_STATUS,
+                                           GRPC_STATUS_UNAUTHENTICATED));
     gpr_free(error_msg);
   }
 }

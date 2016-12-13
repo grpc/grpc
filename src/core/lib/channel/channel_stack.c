@@ -287,3 +287,11 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
   return (grpc_call_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
       sizeof(grpc_call_stack)));
 }
+
+void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *elem,
+                                    grpc_error *error) {
+  grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
+  op->cancel_error = error;
+  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+}
