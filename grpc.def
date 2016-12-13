@@ -164,6 +164,7 @@ EXPORTS
     grpc_slice_hash
     grpc_slice_is_equivalent
     grpc_slice_dup
+    grpc_slice_to_c_string
     grpc_slice_buffer_init
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add
