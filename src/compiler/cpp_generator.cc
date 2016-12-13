@@ -84,8 +84,8 @@ void PrintIncludes(Printer *printer, const std::vector<grpc::string> &headers,
     }
   }
 
-  for (auto i = headers.begin(); i != headers.end(); i++) {
-    vars["h"] = *i;
+  for (auto i : headers) {
+    vars["h"] = i;
     printer->Print(vars, "#include $l$$h$$r$\n");
   }
 }
@@ -151,8 +151,8 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();
 
-      for (auto part = parts.begin(); part != parts.end(); part++) {
-        vars["part"] = *part;
+      for (auto part : parts) {
+        vars["part"] = part;
         printer->Print(vars, "namespace $part$ {\n");
       }
       printer->Print(vars, "\n");
@@ -1045,8 +1045,8 @@ grpc::string GetSourceIncludes(File *file, const Parameters &params) {
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();
 
-      for (auto part = parts.begin(); part != parts.end(); part++) {
-        vars["part"] = *part;
+      for (auto part : parts) {
+        vars["part"] = part;
         printer->Print(vars, "namespace $part$ {\n");
       }
     }
@@ -1363,9 +1363,9 @@ grpc::string GetSourceEpilogue(File *file, const Parameters & /*params*/) {
   if (!file->package().empty()) {
     std::vector<grpc::string> parts = file->package_parts();
 
-    for (auto part = parts.begin(); part != parts.end(); part++) {
+    for (auto part : parts) {
       temp.append("}  // namespace ");
-      temp.append(*part);
+      temp.append(part);
       temp.append("\n");
     }
     temp.append("\n");

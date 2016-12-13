@@ -82,22 +82,20 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                                       &response_metadata);
 
   std::vector<grpc_metadata> consumed_md;
-  for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
-       ++it) {
+  for (auto it : consumed_metadata) {
     grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
+    md_entry.key = it.first.c_str();
+    md_entry.value = it.second.data();
+    md_entry.value_length = it.second.size();
     md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
-  for (auto it = response_metadata.begin(); it != response_metadata.end();
-       ++it) {
+  for (auto it : response_metadata) {
     grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
+    md_entry.key = it.first.c_str();
+    md_entry.value = it.second.data();
+    md_entry.value_length = it.second.size();
     md_entry.flags = 0;
     response_md.push_back(md_entry);
   }
@@ -124,10 +122,9 @@ void SecureServerCredentials::SetAuthMetadataProcessor(
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
-  for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
-       key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
+  for (auto key_cert_pair : options.pem_key_cert_pairs) {
+    grpc_ssl_pem_key_cert_pair p = {key_cert_pair.private_key.c_str(),
+                                    key_cert_pair.cert_chain.c_str()};
     pem_key_cert_pairs.push_back(p);
   }
   grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create_ex(
