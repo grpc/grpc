@@ -42,8 +42,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-
 extern void gpr_default_log(gpr_log_func_args *args);
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -102,12 +100,16 @@ static bool coalesced_message_and_eos;
 
 static void log_processor(gpr_log_func_args *args) {
   unsigned long file_len = strlen(args->file);
-  const char suffix[] = "secure_endpoint.c";
-  const int suffix_len = sizeof(suffix) - 1;
+  const char suffix1[] = "secure_endpoint.c";
+  const int suffix1_len = sizeof(suffix1) - 1;
+  const char suffix2[] = "tcp_posix.c";
+  const int suffix2_len = sizeof(suffix2) - 1;
   const char prefix[] = "READ";
   const int prefix_len = sizeof(prefix) - 1;
-  if (file_len > suffix_len &&
-      0 == strcmp(suffix, &args->file[file_len - suffix_len]) &&
+  if (((file_len >= suffix1_len &&
+        0 == strcmp(suffix1, &args->file[file_len - suffix1_len])) ||
+       (file_len >= suffix2_len &&
+        0 == strcmp(suffix2, &args->file[file_len - suffix2_len]))) &&
       0 == strncmp(prefix, args->message, prefix_len) &&
       strstr(args->message,
              "00 00 10 00 01 00 00 00 01 00 00 00 00 0b 68 65 6c 6c 6f 20 77 "
@@ -348,7 +350,3 @@ void packet_coalescing(grpc_end2end_test_config config) {
 }
 
 void packet_coalescing_pre_init(void) {}
-#else
-void packet_coalescing(grpc_end2end_test_config config) {}
-void packet_coalescing_pre_init(void) {}
-#endif

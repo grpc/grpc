@@ -923,7 +923,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
           result = ACTION_TAKEN_NO_CALLBACK;
         }
 #else
-        result = ACTION_TAKEN_NO_CALLBACK;
+        result = ACTION_TAKEN_WITH_CALLBACK;
 #endif
       } else {
         result = NO_ACTION_POSSIBLE;
