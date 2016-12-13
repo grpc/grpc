@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,48 +27,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import sys
+"""Reference implementation for health checking in gRPC Python."""
 
-import setuptools
+import threading
 
-from grpc.tools import protoc
+import grpc
 
-
-def build_package_protos(package_root):
-  proto_files = []
-  inclusion_root = os.path.abspath(package_root)
-  for root, _, files in os.walk(inclusion_root):
-    for filename in files:
-      if filename.endswith('.proto'):
-        proto_files.append(os.path.abspath(os.path.join(root, filename)))
-
-  for proto_file in proto_files:
-    command = [
-        'grpc.tools.protoc',
-        '--proto_path={}'.format(inclusion_root),
-        '--python_out={}'.format(inclusion_root),
-        '--grpc_python_out={}'.format(inclusion_root),
-    ] + [proto_file]
-    if protoc.main(command) != 0:
-      sys.stderr.write('warning: {} failed'.format(command))
+from grpc_health.v1 import health_pb2
 
 
-class BuildPackageProtos(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
+class HealthServicer(health_pb2.HealthServicer):
+  """Servicer handling RPCs for service statuses."""
 
-  description = 'build grpc protobuf modules'
-  user_options = []
+  def __init__(self):
+    self._server_status_lock = threading.Lock()
+    self._server_status = {}
 
-  def initialize_options(self):
-    pass
+  def Check(self, request, context):
+    with self._server_status_lock:
+      status = self._server_status.get(request.service)
+      if status is None:
+        context.set_code(grpc.StatusCode.NOT_FOUND)
+        return health_pb2.HealthCheckResponse()
+      else:
+        return health_pb2.HealthCheckResponse(status=status)
 
-  def finalize_options(self):
-    pass
+  def set(self, service, status):
+    """Sets the status of a service.
 
-  def run(self):
-    # due to limitations of the proto generator, we require that only *one*
-    # directory is provided as an 'include' directory. We assume it's the '' key
-    # to `self.distribution.package_dir` (and get a key error if it's not
-    # there).
-    build_package_protos(self.distribution.package_dir[''])
+    Args:
+        service: string, the name of the service.
+            NOTE, '' must be set.
+        status: HealthCheckResponse.status enum value indicating
+            the status of the service
+    """
+    with self._server_status_lock:
+      self._server_status[service] = status
