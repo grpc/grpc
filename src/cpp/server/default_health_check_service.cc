@@ -38,6 +38,8 @@
 #include <grpc/support/log.h>
 
 #include "src/cpp/server/default_health_check_service.h"
+#include "third_party/nanopb/pb_encode.h"
+#include "third_party/nanopb/pb_decode.h"
 
 namespace grpc {
 namespace {
@@ -59,7 +61,7 @@ DefaultHealthCheckService::SyncHealthCheckServiceImpl::
 
 Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
     ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
-  // TODO nanopb part
+
   return Status::OK;
 }
 
