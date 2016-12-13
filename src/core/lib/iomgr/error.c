@@ -385,9 +385,9 @@ void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
   // If the error has a status message, use it.  Otherwise, fall back to
   // the error description.
   *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE);
-  if (*msg == NULL) {
+  if (*msg == NULL && status != GRPC_STATUS_OK) {
     *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION);
-    if (*msg == NULL) *msg = "uknown error";  // Just in case.
+    if (*msg == NULL) *msg = "unknown error";  // Just in case.
   }
 }
 
