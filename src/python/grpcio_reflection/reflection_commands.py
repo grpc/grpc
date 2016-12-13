@@ -54,7 +54,7 @@ class CopyProtoModules(setuptools.Command):
     if os.path.isfile(HEALTH_PROTO):
       shutil.copyfile(
           HEALTH_PROTO,
-          os.path.join(ROOT_DIR, 'grpc/reflection/v1alpha/reflection.proto'))
+          os.path.join(ROOT_DIR, 'grpc_reflection/v1alpha/reflection.proto'))
 
 
 class BuildPackageProtos(setuptools.Command):
@@ -74,5 +74,5 @@ class BuildPackageProtos(setuptools.Command):
     # directory is provided as an 'include' directory. We assume it's the '' key
     # to `self.distribution.package_dir` (and get a key error if it's not
     # there).
-    from grpc.tools import command
+    from grpc_tools import command
     command.build_package_protos(self.distribution.package_dir[''])
