@@ -86,7 +86,7 @@ class ChannelReadyFutureTest(unittest.TestCase):
 
     ready_future = grpc.channel_ready_future(channel)
     ready_future.add_done_callback(callback.accept_value)
-    self.assertIsNone(ready_future.result(test_constants.SHORT_TIMEOUT))
+    self.assertIsNone(ready_future.result(test_constants.LONG_TIMEOUT))
     value_passed_to_callback = callback.block_until_called()
     self.assertIs(ready_future, value_passed_to_callback)
     self.assertFalse(ready_future.cancelled())
