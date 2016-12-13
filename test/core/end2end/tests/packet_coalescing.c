@@ -273,6 +273,10 @@ static void test_request_response_with_metadata_and_payload(
 }
 
 void packet_coalescing(grpc_end2end_test_config config) {
+  /* The test case does not support the fixture socketpair_one_byte_at_a_time */
+  if (0 == strcmp(config.name, "chttp2/socketpair_one_byte_at_a_time")) {
+    return;
+  }
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 1);
   gpr_set_log_function(log_processor);
