@@ -150,12 +150,17 @@ typedef struct grpc_transport_stream_op {
   /** Collect any stats into provided buffer, zero internal stat counters */
   grpc_transport_stream_stats *collect_stats;
 
-  /** If != GRPC_ERROR_NONE, cancel this stream */
+  /** If != GRPC_ERROR_NONE, forcefully close this stream.
+      The HTTP2 semantics should be:
+      - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
+        trailing metadata has not been sent, send trailing metadata with status
+        and message from cancel_error (use grpc_error_get_status) followed by
+        a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
+      - at all other times: use grpc_error_get_status to get a status code, and
+        convert to a HTTP2 error code using
+        grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
+        error. */
   grpc_error *cancel_error;
-
-  /** If != GRPC_ERROR_NONE, send grpc-status, grpc-message, and close this
-      stream for both reading and writing */
-  grpc_error *close_error;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;

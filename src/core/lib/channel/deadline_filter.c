@@ -197,8 +197,7 @@ void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op) {
   grpc_deadline_state* deadline_state = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE ||
-      op->close_error != GRPC_ERROR_NONE) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     cancel_timer_if_needed(exec_ctx, deadline_state);
   } else {
     // Make sure we know when the call is complete, so that we can cancel
@@ -286,8 +285,7 @@ static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                              grpc_call_element* elem,
                                              grpc_transport_stream_op* op) {
   server_call_data* calld = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE ||
-      op->close_error != GRPC_ERROR_NONE) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);
   } else {
     // If we're receiving initial metadata, we need to get the deadline
