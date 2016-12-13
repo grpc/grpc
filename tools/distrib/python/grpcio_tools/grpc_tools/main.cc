@@ -32,7 +32,7 @@
 
 #include "src/compiler/python_generator.h"
 
-#include "grpc/tools/main.h"
+#include "grpc_tools/main.h"
 
 int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;
