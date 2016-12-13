@@ -3818,6 +3818,7 @@ node_modules:
   - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
+  - src/node/ext/slice.h
   - src/node/ext/timeval.h
   js:
   - src/node/index.js
@@ -3839,6 +3840,7 @@ node_modules:
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
+  - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/

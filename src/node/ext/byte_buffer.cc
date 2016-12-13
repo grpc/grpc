@@ -40,6 +40,7 @@
 #include "grpc/slice.h"
 
 #include "byte_buffer.h"
+#include "slice.h"
 
 namespace grpc {
 namespace node {
@@ -54,10 +55,7 @@ using v8::Value;
 
 grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   Nan::HandleScope scope;
-  int length = ::node::Buffer::Length(buffer);
-  char *data = ::node::Buffer::Data(buffer);
-  grpc_slice slice = grpc_slice_malloc(length);
-  memcpy(GRPC_SLICE_START_PTR(slice), data, length);
+  grpc_slice slice = CreateSliceFromBuffer(buffer);
   grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
   grpc_slice_unref(slice);
   return byte_buffer;
