@@ -1511,7 +1511,7 @@ static grpc_error *begin_parse_string(grpc_exec_ctx *exec_ctx,
                                       const uint8_t *cur, const uint8_t *end,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string *str) {
-  if (!p->huff && binary == NOT_BINARY && (end - cur) >= p->strlen &&
+  if (!p->huff && binary == NOT_BINARY && (end - cur) >= (intptr_t)p->strlen &&
       p->current_slice_refcount != NULL) {
     str->copied = false;
     str->data.referenced.refcount = p->current_slice_refcount;
