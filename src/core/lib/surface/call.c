@@ -222,9 +222,8 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description);
-static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                         grpc_status_code status,
-                                         const char *description);
+static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                              grpc_error *error);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
                          grpc_error *error);
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
@@ -339,7 +338,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     grpc_status_code status;
     const char *error_str;
     grpc_error_get_status(error, &status, &error_str);
-    close_with_status(exec_ctx, call, status, error_str);
+    cancel_with_status(exec_ctx, call, status, error_str);
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
@@ -528,13 +527,10 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return r;
 }
 
-typedef enum { TC_CANCEL, TC_CLOSE } termination_closure_type;
-
 typedef struct termination_closure {
   grpc_closure closure;
   grpc_call *call;
   grpc_error *error;
-  termination_closure_type type;
   grpc_transport_stream_op op;
 } termination_closure;
 
@@ -550,14 +546,7 @@ static void send_termination(grpc_exec_ctx *exec_ctx, void *tcp,
                              grpc_error *error) {
   termination_closure *tc = tcp;
   memset(&tc->op, 0, sizeof(tc->op));
-  switch (tc->type) {
-    case TC_CANCEL:
-      tc->op.cancel_error = tc->error;
-      break;
-    case TC_CLOSE:
-      tc->op.close_error = tc->error;
-      break;
-  }
+  tc->op.cancel_error = tc->error;
   /* reuse closure to catch completion */
   grpc_closure_init(&tc->closure, done_termination, tc,
                     grpc_schedule_on_exec_ctx);
@@ -577,15 +566,17 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_call_error terminate_with_error(grpc_exec_ctx *exec_ctx,
-                                            grpc_call *c,
-                                            termination_closure_type tc_type,
-                                            grpc_error *error) {
+                                            grpc_call *c, grpc_error *error) {
   termination_closure *tc = gpr_malloc(sizeof(*tc));
   memset(tc, 0, sizeof(*tc));
-  tc->type = tc_type;
   tc->call = c;
   tc->error = error;
   return terminate_with_status(exec_ctx, tc);
+}
+
+static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                              grpc_error *error) {
+  terminate_with_error(exec_ctx, c, error);
 }
 
 static grpc_error *error_from_status(grpc_status_code status,
@@ -599,14 +590,7 @@ static grpc_error *error_from_status(grpc_status_code status,
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description) {
-  return terminate_with_error(exec_ctx, c, TC_CANCEL,
-                              error_from_status(status, description));
-}
-
-static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                         grpc_status_code status,
-                                         const char *description) {
-  return terminate_with_error(exec_ctx, c, TC_CLOSE,
+  return terminate_with_error(exec_ctx, c,
                               error_from_status(status, description));
 }
 
@@ -927,7 +911,7 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
   return CALL_STACK_FROM_CALL(call);
 }
 
-/*
+/*******************************************************************************
  * BATCH API IMPLEMENTATION
  */
 
@@ -1141,10 +1125,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
   if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    const char *msg;
-    grpc_error_get_status(error, &status, &msg);
-    close_with_status(exec_ctx, call, status, msg);
+    cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
   }
   gpr_mu_lock(&bctl->call->mu);
   if (bctl->call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
@@ -1172,7 +1153,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
                    algo);
       gpr_log(GPR_ERROR, "%s", error_msg);
-      close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+      cancel_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
     } else if (grpc_compression_options_is_algorithm_enabled(
                    &compression_options, algo) == 0) {
       /* check if algorithm is supported by current channel config */
@@ -1181,7 +1162,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
                    algo_name);
       gpr_log(GPR_ERROR, "%s", error_msg);
-      close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+      cancel_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
     } else {
       call->incoming_compression_algorithm = algo;
     }

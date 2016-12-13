@@ -1018,10 +1018,6 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     grpc_chttp2_cancel_stream(exec_ctx, t, s, GRPC_ERROR_REF(op->cancel_error));
   }
 
-  if (op->close_error != GRPC_ERROR_NONE) {
-    close_from_api(exec_ctx, t, s, GRPC_ERROR_REF(op->close_error));
-  }
-
   if (op->send_initial_metadata != NULL) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
@@ -1461,6 +1457,12 @@ static void status_codes_from_error(grpc_error *error, gpr_timespec deadline,
 void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                                grpc_error *due_to_error) {
+  if (!t->is_client && !s->sent_trailing_metadata &&
+      grpc_error_get_int(due_to_error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
+    close_from_api(exec_ctx, t, s, due_to_error);
+    return;
+  }
+
   if (!s->read_closed || !s->write_closed) {
     grpc_status_code grpc_status;
     grpc_chttp2_error_code http_error;

@@ -125,14 +125,6 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->close_error != GRPC_ERROR_NONE) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    const char *msg = grpc_error_string(op->close_error);
-    gpr_asprintf(&tmp, "CLOSE:%s", msg);
-    grpc_error_free_string(msg);
-    gpr_strvec_add(&b, tmp);
-  }
-
   out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);
 
