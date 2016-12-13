@@ -99,7 +99,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static bool coalesced_message_and_eos;
 
 static void log_processor(gpr_log_func_args *args) {
-  unsigned long file_len = strlen(args->file);
+  const int file_len = (int)strlen(args->file);
   const char suffix1[] = "secure_endpoint.c";
   const int suffix1_len = sizeof(suffix1) - 1;
   const char suffix2[] = "tcp_posix.c";
@@ -110,7 +110,7 @@ static void log_processor(gpr_log_func_args *args) {
         0 == strcmp(suffix1, &args->file[file_len - suffix1_len])) ||
        (file_len >= suffix2_len &&
         0 == strcmp(suffix2, &args->file[file_len - suffix2_len]))) &&
-      0 == strncmp(prefix, args->message, prefix_len) &&
+      0 == strncmp(prefix, args->message, (size_t)prefix_len) &&
       strstr(args->message,
              "00 00 10 00 01 00 00 00 01 00 00 00 00 0b 68 65 6c 6c 6f 20 77 "
              "6f 72 6c 64")) {
