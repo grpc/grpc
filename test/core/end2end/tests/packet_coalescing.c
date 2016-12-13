@@ -121,7 +121,7 @@ static void log_processor(gpr_log_func_args *args) {
 
 /* Request/response with metadata and payload.*/
 static void test_request_response_with_metadata_and_payload(
-    grpc_end2end_test_config config, bool coalesce) {
+    grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_slice request_payload_slice =
@@ -163,100 +163,44 @@ static void test_request_response_with_metadata_and_payload(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  if (coalesce) {
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->data.send_initial_metadata.count = 2;
-    op->data.send_initial_metadata.metadata = meta_c;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = request_payload;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &initial_metadata_recv;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-    op->data.recv_status_on_client.status = &status;
-    op->data.recv_status_on_client.status_details = &details;
-    op->data.recv_status_on_client.status_details_capacity = &details_capacity;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-  } else {
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->data.send_initial_metadata.count = 2;
-    op->data.send_initial_metadata.metadata = meta_c;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = request_payload;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &initial_metadata_recv;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-    op->data.recv_status_on_client.status = &status;
-    op->data.recv_status_on_client.status_details = &details;
-    op->data.recv_status_on_client.status_details_capacity = &details_capacity;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(5), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-  }
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 2;
+  op->data.send_initial_metadata.metadata = meta_c;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  if (!coalesce) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  }
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -276,9 +220,6 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  if (!coalesce) {
-    CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
-  }
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -299,11 +240,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  if (coalesce) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  } else {
-    CQ_EXPECT_COMPLETION(cqv, tag(5), 1);
-  }
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -315,11 +252,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key2", "val2"));
-  if (coalesce) {
-    GPR_ASSERT(coalesced_message_and_eos);
-  } else {
-    GPR_ASSERT(!coalesced_message_and_eos);
-  }
+  GPR_ASSERT(coalesced_message_and_eos);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -343,8 +276,7 @@ void packet_coalescing(grpc_end2end_test_config config) {
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 1);
   gpr_set_log_function(log_processor);
-  test_request_response_with_metadata_and_payload(config, true);
-  test_request_response_with_metadata_and_payload(config, false);
+  test_request_response_with_metadata_and_payload(config);
   gpr_set_log_function(gpr_default_log);
   grpc_tracer_set_enabled("all", 0);
 }
