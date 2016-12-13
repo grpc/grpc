@@ -105,6 +105,8 @@ cc_library(
     "src/core/lib/support/wrap_memcpy.c",
   ],
   hdrs = [
+    "include/grpc/slice.h",
+    "include/grpc/slice_buffer.h",
     "include/grpc/support/alloc.h",
     "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",
