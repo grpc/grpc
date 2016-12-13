@@ -208,15 +208,6 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  if (error == GRPC_ERROR_NONE) {
-    // close the stream with an error.
-    grpc_slice message =
-        grpc_slice_from_copied_string("Failure that's not preventable.");
-    grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
-    grpc_transport_stream_op_add_close(exec_ctx, op,
-                                       GRPC_STATUS_PERMISSION_DENIED, &message);
-    grpc_call_next_op(exec_ctx, elem, op);
-  }
   grpc_closure_sched(
       exec_ctx, calld->recv_im_ready,
       GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1));

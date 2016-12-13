@@ -245,18 +245,6 @@ void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error);
 
-void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status);
-
-void grpc_transport_stream_op_add_cancellation_with_message(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op,
-    grpc_status_code status, grpc_slice *optional_message);
-
-void grpc_transport_stream_op_add_close(grpc_exec_ctx *exec_ctx,
-                                        grpc_transport_stream_op *op,
-                                        grpc_status_code status,
-                                        grpc_slice *optional_message);
-
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
 

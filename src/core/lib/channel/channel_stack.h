@@ -299,18 +299,9 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem, grpc_transport_stream_op *op);
 
-void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
-                                   grpc_call_element *cur_elem);
-
-void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
-                                                grpc_call_element *cur_elem,
-                                                grpc_status_code status,
-                                                grpc_slice *optional_message);
-
-void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
-                                               grpc_call_element *cur_elem,
-                                               grpc_status_code status,
-                                               grpc_slice *optional_message);
+void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *cur_elem,
+                                    grpc_error *error);
 
 extern int grpc_trace_channel;
 

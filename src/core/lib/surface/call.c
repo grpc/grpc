@@ -92,10 +92,8 @@ typedef enum {
 } status_source;
 
 typedef struct {
-  bool is_code_set;
-  bool is_details_set;
-  grpc_status_code code;
-  grpc_slice details;
+  bool is_set;
+  grpc_error *error;
 } received_status;
 
 #define MAX_ERRORS_PER_BATCH 3
@@ -224,8 +222,6 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description);
-static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                              grpc_error *error);
 static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                          grpc_status_code status,
                                          const char *description);
@@ -233,6 +229,17 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
                          grpc_error *error);
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error);
+static void get_final_status(grpc_call *call,
+                             void (*set_value)(grpc_status_code code,
+                                               void *user_data),
+                             void *set_value_user_data, grpc_slice *details);
+static void set_status_value_directly(grpc_status_code status, void *dest);
+static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                                  status_source source, grpc_error *error);
+static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl);
+static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
+static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
+                            grpc_error *error);
 
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                              const grpc_call_create_args *args,
@@ -386,24 +393,6 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
   GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
-static void get_final_status(grpc_call *call,
-                             void (*set_value)(grpc_status_code code,
-                                               void *user_data),
-                             void *set_value_user_data) {
-  int i;
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_code_set) {
-      set_value(call->status[i].code, set_value_user_data);
-      return;
-    }
-  }
-  if (call->is_client) {
-    set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
-  } else {
-    set_value(GRPC_STATUS_OK, set_value_user_data);
-  }
-}
-
 static void set_status_value_directly(grpc_status_code status, void *dest);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
@@ -419,11 +408,6 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     grpc_byte_stream_destroy(exec_ctx, c->receiving_stream);
   }
   gpr_mu_destroy(&c->mu);
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (c->status[i].is_details_set) {
-      grpc_slice_unref_internal(exec_ctx, c->status[i].details);
-    }
-  }
   for (ii = 0; ii < c->send_extra_metadata_count; ii++) {
     GRPC_MDELEM_UNREF(exec_ctx, c->send_extra_metadata[ii].md);
   }
@@ -437,43 +421,240 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   }
   grpc_channel *channel = c->channel;
 
-  get_final_status(call, set_status_value_directly,
-                   &c->final_info.final_status);
+  get_final_status(call, set_status_value_directly, &c->final_info.final_status,
+                   NULL);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
+
+  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+    GRPC_ERROR_UNREF(c->status[i].error);
+  }
 
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info, c);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
   GPR_TIMER_END("destroy_call", 0);
 }
 
-static void set_status_code(grpc_call *call, status_source source,
-                            uint32_t status) {
-  if (call->status[source].is_code_set) return;
+void grpc_call_destroy(grpc_call *c) {
+  int cancel;
+  grpc_call *parent = c->parent;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  call->status[source].is_code_set = true;
-  call->status[source].code = (grpc_status_code)status;
+  GPR_TIMER_BEGIN("grpc_call_destroy", 0);
+  GRPC_API_TRACE("grpc_call_destroy(c=%p)", 1, (c));
+
+  if (parent) {
+    gpr_mu_lock(&parent->mu);
+    if (c == parent->first_child) {
+      parent->first_child = c->sibling_next;
+      if (c == parent->first_child) {
+        parent->first_child = NULL;
+      }
+      c->sibling_prev->sibling_next = c->sibling_next;
+      c->sibling_next->sibling_prev = c->sibling_prev;
+    }
+    gpr_mu_unlock(&parent->mu);
+    GRPC_CALL_INTERNAL_UNREF(&exec_ctx, parent, "child");
+  }
+
+  gpr_mu_lock(&c->mu);
+  GPR_ASSERT(!c->destroy_called);
+  c->destroy_called = 1;
+  cancel = !c->received_final_op;
+  gpr_mu_unlock(&c->mu);
+  if (cancel) grpc_call_cancel(c, NULL);
+  GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_TIMER_END("grpc_call_destroy", 0);
 }
 
-static void set_status_details(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               status_source source, grpc_slice status) {
-  if (call->status[source].is_details_set) {
-    grpc_slice_unref_internal(exec_ctx, status);
+grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
+  GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
+  GPR_ASSERT(!reserved);
+  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
+                                      NULL);
+}
+
+static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                       grpc_transport_stream_op *op) {
+  grpc_call_element *elem;
+
+  GPR_TIMER_BEGIN("execute_op", 0);
+  elem = CALL_ELEM_FROM_CALL(call, 0);
+  op->context = call->context;
+  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  GPR_TIMER_END("execute_op", 0);
+}
+
+char *grpc_call_get_peer(grpc_call *call) {
+  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  char *result;
+  GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
+  result = elem->filter->get_peer(&exec_ctx, elem);
+  if (result == NULL) {
+    result = grpc_channel_get_target(call->channel);
+  }
+  if (result == NULL) {
+    result = gpr_strdup("unknown");
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+  return result;
+}
+
+grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
+  return CALL_FROM_TOP_ELEM(elem);
+}
+
+/*******************************************************************************
+ * CANCELLATION
+ */
+
+grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
+                                             grpc_status_code status,
+                                             const char *description,
+                                             void *reserved) {
+  grpc_call_error r;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_API_TRACE(
+      "grpc_call_cancel_with_status("
+      "c=%p, status=%d, description=%s, reserved=%p)",
+      4, (c, (int)status, description, reserved));
+  GPR_ASSERT(reserved == NULL);
+  gpr_mu_lock(&c->mu);
+  r = cancel_with_status(&exec_ctx, c, status, description);
+  gpr_mu_unlock(&c->mu);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return r;
+}
+
+typedef enum { TC_CANCEL, TC_CLOSE } termination_closure_type;
+
+typedef struct termination_closure {
+  grpc_closure closure;
+  grpc_call *call;
+  grpc_error *error;
+  termination_closure_type type;
+  grpc_transport_stream_op op;
+} termination_closure;
+
+static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
+                             grpc_error *error) {
+  termination_closure *tc = tcp;
+  GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "termination");
+  GRPC_ERROR_UNREF(tc->error);
+  gpr_free(tc);
+}
+
+static void send_termination(grpc_exec_ctx *exec_ctx, void *tcp,
+                             grpc_error *error) {
+  termination_closure *tc = tcp;
+  memset(&tc->op, 0, sizeof(tc->op));
+  switch (tc->type) {
+    case TC_CANCEL:
+      tc->op.cancel_error = tc->error;
+      break;
+    case TC_CLOSE:
+      tc->op.close_error = tc->error;
+      break;
+  }
+  /* reuse closure to catch completion */
+  grpc_closure_init(&tc->closure, done_termination, tc,
+                    grpc_schedule_on_exec_ctx);
+  tc->op.on_complete = &tc->closure;
+  execute_op(exec_ctx, tc->call, &tc->op);
+}
+
+static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
+                                             termination_closure *tc) {
+  set_status_from_error(exec_ctx, tc->call, STATUS_FROM_API_OVERRIDE,
+                        GRPC_ERROR_REF(tc->error));
+  grpc_closure_init(&tc->closure, send_termination, tc,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CALL_INTERNAL_REF(tc->call, "termination");
+  grpc_closure_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE);
+  return GRPC_CALL_OK;
+}
+
+static grpc_call_error terminate_with_error(grpc_exec_ctx *exec_ctx,
+                                            grpc_call *c,
+                                            termination_closure_type tc_type,
+                                            grpc_error *error) {
+  termination_closure *tc = gpr_malloc(sizeof(*tc));
+  memset(tc, 0, sizeof(*tc));
+  tc->type = tc_type;
+  tc->call = c;
+  tc->error = error;
+  return terminate_with_status(exec_ctx, tc);
+}
+
+static grpc_error *error_from_status(grpc_status_code status,
+                                     const char *description) {
+  return grpc_error_set_int(
+      grpc_error_set_str(GRPC_ERROR_CREATE(description),
+                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
+      GRPC_ERROR_INT_GRPC_STATUS, status);
+}
+
+static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                                          grpc_status_code status,
+                                          const char *description) {
+  return terminate_with_error(exec_ctx, c, TC_CANCEL,
+                              error_from_status(status, description));
+}
+
+static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
+                                         grpc_status_code status,
+                                         const char *description) {
+  return terminate_with_error(exec_ctx, c, TC_CLOSE,
+                              error_from_status(status, description));
+}
+
+/*******************************************************************************
+ * FINAL STATUS CODE MANIPULATION
+ */
+
+static void get_final_status(grpc_call *call,
+                             void (*set_value)(grpc_status_code code,
+                                               void *user_data),
+                             void *set_value_user_data, grpc_slice *details) {
+  int i;
+  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+    if (call->status[i].is_set) {
+      const char *text = grpc_error_string(call->status[i].error);
+      gpr_log(GPR_DEBUG, "%s", text);
+      grpc_error_free_string(text);
+
+      grpc_status_code code;
+      const char *msg = NULL;
+      grpc_error_get_status(call->status[i].error, &code, &msg);
+      set_value(code, set_value_user_data);
+      if (details != NULL) {
+        *details = grpc_slice_from_copied_string(msg);
+      }
+      return;
+    }
+  }
+  if (call->is_client) {
+    set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
   } else {
-    call->status[source].details = status;
-    call->status[source].is_details_set = true;
+    set_value(GRPC_STATUS_OK, set_value_user_data);
   }
 }
 
 static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                   status_source source, grpc_error *error) {
-  grpc_status_code status;
-  const char *msg;
-  grpc_error_get_status(error, &status, &msg);
-  set_status_code(call, source, (uint32_t)status);
-  set_status_details(exec_ctx, call, source,
-                     grpc_slice_from_copied_string(msg));
+  if (call->status[source].is_set) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  call->status[source].is_set = true;
+  call->status[source].error = error;
 }
+
+/*******************************************************************************
+ * COMPRESSION
+ */
 
 static void set_incoming_compression_algorithm(
     grpc_call *call, grpc_compression_algorithm algo) {
@@ -560,23 +741,6 @@ uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
   return encodings_accepted_by_peer;
 }
 
-static void get_final_details(grpc_call *call, grpc_slice *out_details) {
-  int i;
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_code_set) {
-      if (call->status[i].is_details_set) {
-        *out_details = grpc_slice_ref(call->status[i].details);
-      } else {
-        goto no_details;
-      }
-      return;
-    }
-  }
-
-no_details:
-  *out_details = grpc_empty_slice();
-}
-
 static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
   return (grpc_linked_mdelem *)&md->internal_data;
 }
@@ -647,197 +811,6 @@ static int prepare_application_metadata(
   return 1;
 }
 
-void grpc_call_destroy(grpc_call *c) {
-  int cancel;
-  grpc_call *parent = c->parent;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  GPR_TIMER_BEGIN("grpc_call_destroy", 0);
-  GRPC_API_TRACE("grpc_call_destroy(c=%p)", 1, (c));
-
-  if (parent) {
-    gpr_mu_lock(&parent->mu);
-    if (c == parent->first_child) {
-      parent->first_child = c->sibling_next;
-      if (c == parent->first_child) {
-        parent->first_child = NULL;
-      }
-      c->sibling_prev->sibling_next = c->sibling_next;
-      c->sibling_next->sibling_prev = c->sibling_prev;
-    }
-    gpr_mu_unlock(&parent->mu);
-    GRPC_CALL_INTERNAL_UNREF(&exec_ctx, parent, "child");
-  }
-
-  gpr_mu_lock(&c->mu);
-  GPR_ASSERT(!c->destroy_called);
-  c->destroy_called = 1;
-  cancel = !c->received_final_op;
-  gpr_mu_unlock(&c->mu);
-  if (cancel) grpc_call_cancel(c, NULL);
-  GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
-  grpc_exec_ctx_finish(&exec_ctx);
-  GPR_TIMER_END("grpc_call_destroy", 0);
-}
-
-grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
-  GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
-  GPR_ASSERT(!reserved);
-  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
-                                      NULL);
-}
-
-grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
-                                             grpc_status_code status,
-                                             const char *description,
-                                             void *reserved) {
-  grpc_call_error r;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_API_TRACE(
-      "grpc_call_cancel_with_status("
-      "c=%p, status=%d, description=%s, reserved=%p)",
-      4, (c, (int)status, description, reserved));
-  GPR_ASSERT(reserved == NULL);
-  gpr_mu_lock(&c->mu);
-  r = cancel_with_status(&exec_ctx, c, status, description);
-  gpr_mu_unlock(&c->mu);
-  grpc_exec_ctx_finish(&exec_ctx);
-  return r;
-}
-
-typedef enum { TC_CANCEL, TC_CLOSE } termination_closure_type;
-
-typedef struct termination_closure {
-  grpc_closure closure;
-  grpc_call *call;
-  grpc_error *error;
-  termination_closure_type type;
-  grpc_transport_stream_op op;
-} termination_closure;
-
-static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
-                             grpc_error *error) {
-  termination_closure *tc = tcp;
-  switch (tc->type) {
-    case TC_CANCEL:
-      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "cancel");
-      break;
-    case TC_CLOSE:
-      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "close");
-      break;
-  }
-  GRPC_ERROR_UNREF(tc->error);
-  gpr_free(tc);
-}
-
-static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  termination_closure *tc = tcp;
-  memset(&tc->op, 0, sizeof(tc->op));
-  tc->op.cancel_error = tc->error;
-  /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc,
-                    grpc_schedule_on_exec_ctx);
-  tc->op.on_complete = &tc->closure;
-  execute_op(exec_ctx, tc->call, &tc->op);
-}
-
-static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  termination_closure *tc = tcp;
-  memset(&tc->op, 0, sizeof(tc->op));
-  tc->op.close_error = tc->error;
-  /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc,
-                    grpc_schedule_on_exec_ctx);
-  tc->op.on_complete = &tc->closure;
-  execute_op(exec_ctx, tc->call, &tc->op);
-}
-
-static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
-                                             termination_closure *tc) {
-  set_status_from_error(exec_ctx, tc->call, STATUS_FROM_API_OVERRIDE,
-                        tc->error);
-
-  if (tc->type == TC_CANCEL) {
-    grpc_closure_init(&tc->closure, send_cancel, tc, grpc_schedule_on_exec_ctx);
-    GRPC_CALL_INTERNAL_REF(tc->call, "cancel");
-  } else if (tc->type == TC_CLOSE) {
-    grpc_closure_init(&tc->closure, send_close, tc, grpc_schedule_on_exec_ctx);
-    GRPC_CALL_INTERNAL_REF(tc->call, "close");
-  }
-  grpc_closure_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE);
-  return GRPC_CALL_OK;
-}
-
-static grpc_call_error terminate_with_error(grpc_exec_ctx *exec_ctx,
-                                            grpc_call *c,
-                                            termination_closure_type tc_type,
-                                            grpc_error *error) {
-  termination_closure *tc = gpr_malloc(sizeof(*tc));
-  memset(tc, 0, sizeof(*tc));
-  tc->type = tc_type;
-  tc->call = c;
-  tc->error = error;
-  return terminate_with_status(exec_ctx, tc);
-}
-
-static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                              grpc_error *error) {
-  terminate_with_error(exec_ctx, c, TC_CANCEL, error);
-}
-
-static grpc_error *error_from_status(grpc_status_code status,
-                                     const char *description) {
-  return grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
-      GRPC_ERROR_INT_GRPC_STATUS, status);
-}
-
-static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                          grpc_status_code status,
-                                          const char *description) {
-  return terminate_with_error(exec_ctx, c, TC_CANCEL,
-                              error_from_status(status, description));
-}
-
-static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                         grpc_status_code status,
-                                         const char *description) {
-  return terminate_with_error(exec_ctx, c, TC_CLOSE,
-                              error_from_status(status, description));
-}
-
-static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                       grpc_transport_stream_op *op) {
-  grpc_call_element *elem;
-
-  GPR_TIMER_BEGIN("execute_op", 0);
-  elem = CALL_ELEM_FROM_CALL(call, 0);
-  op->context = call->context;
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
-  GPR_TIMER_END("execute_op", 0);
-}
-
-char *grpc_call_get_peer(grpc_call *call) {
-  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *result;
-  GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
-  result = elem->filter->get_peer(&exec_ctx, elem);
-  if (result == NULL) {
-    result = grpc_channel_get_target(call->channel);
-  }
-  if (result == NULL) {
-    result = gpr_strdup("unknown");
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
-  return result;
-}
-
-grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
-  return CALL_FROM_TOP_ELEM(elem);
-}
-
 /* we offset status by a small amount when storing it into transport metadata
    as metadata cannot store a 0 value (which is used as OK for grpc_status_codes
    */
@@ -880,22 +853,22 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
 
 static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                grpc_metadata_batch *b) {
-  if (b->idx.named.grpc_status != NULL) {
-    GPR_TIMER_BEGIN("status", 0);
-    set_status_code(call, STATUS_FROM_WIRE,
-                    decode_status(b->idx.named.grpc_status->md));
-    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
-    GPR_TIMER_END("status", 0);
-  }
+  uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
+  grpc_error *error =
+      status_code == GRPC_STATUS_OK
+          ? GRPC_ERROR_NONE
+          : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
+                               GRPC_ERROR_INT_GRPC_STATUS, status_code);
 
   if (b->idx.named.grpc_message != NULL) {
-    GPR_TIMER_BEGIN("status-details", 0);
-    set_status_details(
-        exec_ctx, call, STATUS_FROM_WIRE,
-        grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
+    char *msg =
+        grpc_slice_to_c_string(GRPC_MDVALUE(b->idx.named.grpc_message->md));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+    gpr_free(msg);
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    GPR_TIMER_END("status-details", 0);
   }
+
+  set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
 }
 
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
@@ -1026,7 +999,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&call->mu);
 
   if (error != GRPC_ERROR_NONE) {
-    set_status_from_error(exec_ctx, call, STATUS_FROM_CORE, error);
+    set_status_from_error(exec_ctx, call, STATUS_FROM_CORE,
+                          GRPC_ERROR_REF(error));
   }
 
   if (bctl->send_initial_metadata) {
@@ -1061,11 +1035,11 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 
     if (call->is_client) {
       get_final_status(call, set_status_value_directly,
-                       call->final_op.client.status);
-      get_final_details(call, call->final_op.client.status_details);
+                       call->final_op.client.status,
+                       call->final_op.client.status_details);
     } else {
       get_final_status(call, set_cancelled_value,
-                       call->final_op.server.cancelled);
+                       call->final_op.server.cancelled, NULL);
     }
 
     GRPC_ERROR_UNREF(error);
@@ -1468,19 +1442,25 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
-        if (op->data.send_status_from_server.status_details != NULL) {
-          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
-              exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_slice_ref_internal(
-                  *op->data.send_status_from_server.status_details));
-          call->send_extra_metadata_count++;
-          set_status_details(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
-                             grpc_slice_ref_internal(GRPC_MDVALUE(
-                                 call->send_extra_metadata[1].md)));
-        }
-        if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
-          set_status_code(call, STATUS_FROM_API_OVERRIDE,
-                          (uint32_t)op->data.send_status_from_server.status);
+        {
+          grpc_error *override_error = GRPC_ERROR_NONE;
+          if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
+            override_error = GRPC_ERROR_CREATE("Error from server send status");
+          }
+          if (op->data.send_status_from_server.status_details != NULL) {
+            call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
+                exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                grpc_slice_ref_internal(
+                    *op->data.send_status_from_server.status_details));
+            call->send_extra_metadata_count++;
+            char *msg = grpc_slice_to_c_string(
+                GRPC_MDVALUE(call->send_extra_metadata[1].md));
+            override_error = grpc_error_set_str(
+                override_error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+            gpr_free(msg);
+          }
+          set_status_from_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                                override_error);
         }
         if (!prepare_application_metadata(
                 exec_ctx, call,
