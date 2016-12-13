@@ -926,21 +926,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def add_shutdown_handler(self, shutdown_handler):
-    """Adds a handler to be called on server shutdown.
-
-    Shutdown handlers are run on server stop() or in the event that a running
-    server is destroyed unexpectedly.  The handlers are run in series before
-    the stop grace period.
-
-    Args:
-      shutdown_handler:  A function taking a single arg, a time in seconds
-      within which the handler should complete.  None indicates the handler can
-      run for any duration.
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
   def start(self):
     """Starts this Server's service of RPCs.
 
@@ -950,7 +935,7 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop(self, grace, shutdown_handler_grace=None):
+  def stop(self, grace):
     """Stops this Server's service of RPCs.
 
     All calls to this method immediately stop service of new RPCs. When existing
@@ -973,8 +958,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         aborted by this Server's stopping. If None, all RPCs will be aborted
         immediately and this method will block until this Server is completely
         stopped.
-      shutdown_handler_grace:  A duration of time in seconds or None.  This
-        value is passed to all shutdown handlers.
 
     Returns:
       A threading.Event that will be set when this Server has completely
@@ -1269,8 +1252,7 @@ def secure_channel(target, credentials, options=None):
                           credentials._credentials)
 
 
-def server(thread_pool, handlers=None, options=None, exit_grace=None,
-           exit_shutdown_handler_grace=None):
+def server(thread_pool, handlers=None, options=None):
   """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1283,19 +1265,13 @@ def server(thread_pool, handlers=None, options=None, exit_grace=None,
       returned Server is started.
     options: A sequence of string-value pairs according to which to configure
       the created server.
-    exit_grace:  The grace period to use when terminating
-      running servers at interpreter exit.  None indicates unspecified.
-    exit_shutdown_handler_grace:  The shutdown handler grace to use when
-      terminating running servers at interpreter exit.  None indicates
-      unspecified.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
   return _server.Server(thread_pool, () if handlers is None else handlers,
-                        () if options is None else options, exit_grace,
-                        exit_shutdown_handler_grace)
+                        () if options is None else options)
 
 
 ###################################  __all__  #################################
