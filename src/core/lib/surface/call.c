@@ -627,6 +627,11 @@ static void get_final_status(grpc_call *call,
 
 static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                   status_source source, grpc_error *error) {
+  const char *es = grpc_error_string(error);
+  gpr_log(GPR_DEBUG, "%p[%d]: set %d[is_set=%d] to %s", call, call->is_client,
+          source, call->status[source].is_set, es);
+  grpc_error_free_string(es);
+
   if (call->status[source].is_set) {
     GRPC_ERROR_UNREF(error);
     return;
