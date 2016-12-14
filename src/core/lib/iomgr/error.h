@@ -193,12 +193,6 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
 /// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
 
-/// A utility function to get the status code and message to be returned
-/// to the application.  If not set in the top-level message, looks
-/// through child errors until it finds the first one with these attributes.
-void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
-                           const char **msg);
-
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
 /// errors that contributed to them.

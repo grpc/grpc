@@ -43,8 +43,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 #define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
 

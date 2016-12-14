@@ -50,10 +50,10 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 /* TODO(ctiller): remove before submission */
 #include "src/core/lib/slice/slice_string_helpers.h"
