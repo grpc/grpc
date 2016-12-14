@@ -1560,7 +1560,6 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     return;
   }
   if (close_reads && !s->read_closed) {
-    grpc_chttp2_fake_status(exec_ctx, t, s, GRPC_ERROR_REF(error));
     s->read_closed_error = GRPC_ERROR_REF(error);
     s->read_closed = true;
     for (int i = 0; i < 2; i++) {
@@ -1571,22 +1570,23 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     decrement_active_streams_locked(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
-    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (close_writes && !s->write_closed) {
     s->write_closed_error = GRPC_ERROR_REF(error);
     s->write_closed = true;
     grpc_chttp2_fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
-    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (s->read_closed && s->write_closed) {
+    grpc_error *overall_error =
+        removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
     if (s->id != 0) {
-      remove_stream(exec_ctx, t, s->id,
-                    removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
+      remove_stream(exec_ctx, t, s->id, GRPC_ERROR_REF(overall_error));
     } else {
       /* Purge streams waiting on concurrency still waiting for id assignment */
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
+    grpc_chttp2_fake_status(exec_ctx, t, s, overall_error);
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2");
   }
   GRPC_ERROR_UNREF(error);
