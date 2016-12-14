@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/status_conversion.h"
+#include "src/core/lib/transport/status_conversion.h"
 
 int grpc_chttp2_grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {

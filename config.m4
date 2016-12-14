@@ -186,11 +186,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/error_utils.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/pid_controller.c \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
+    src/core/lib/transport/status_conversion.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -211,7 +213,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/huffsyms.c \
     src/core/ext/transport/chttp2/transport/incoming_metadata.c \
     src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/status_conversion.c \
     src/core/ext/transport/chttp2/transport/stream_lists.c \
     src/core/ext/transport/chttp2/transport/stream_map.c \
     src/core/ext/transport/chttp2/transport/varint.c \
