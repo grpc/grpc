@@ -85,39 +85,53 @@ namespace Math {
     public abstract partial class MathBase
     {
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -149,87 +163,123 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Div(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Div, null, options, request);
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return DivAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-      ///  and remainder.
+      /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      /// and remainder.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_Div, null, options, request);
       }
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return DivMany(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
+      /// DivMany accepts an arbitrary number of division args from the client stream
+      /// and sends back the results in the reply stream.  The stream continues until
+      /// the client closes its end; the server does the same after sending all the
+      /// replies.  The stream ends immediately if either end aborts.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_DivMany, null, options);
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Fib(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
+      /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
+      /// generates up to limit numbers; otherwise it continues until the call is
+      /// canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_Fib, null, options, request);
       }
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Sum(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
+      /// Sum sums a stream of numbers, returning the final result once the stream
+      /// is closed.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Sum, null, options);
@@ -242,6 +292,7 @@ namespace Math {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(MathBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
