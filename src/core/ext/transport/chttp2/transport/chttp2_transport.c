@@ -951,6 +951,8 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
                                            &s->fetching_slice, UINT32_MAX,
                                            &s->complete_fetch)) {
       add_fetched_slice_locked(exec_ctx, t, s);
+    } else {
+      break;
     }
   }
 }
