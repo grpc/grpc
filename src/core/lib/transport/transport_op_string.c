@@ -121,7 +121,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     const char *msg = grpc_error_string(op->cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
-    
+
     gpr_strvec_add(&b, tmp);
   }
 
@@ -160,7 +160,6 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     const char *err = grpc_error_string(op->disconnect_with_error);
     gpr_asprintf(&tmp, "DISCONNECT:%s", err);
     gpr_strvec_add(&b, tmp);
-    
   }
 
   if (op->goaway_error) {
@@ -168,7 +167,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     first = false;
     const char *msg = grpc_error_string(op->goaway_error);
     gpr_asprintf(&tmp, "SEND_GOAWAY:%s", msg);
-    
+
     gpr_strvec_add(&b, tmp);
   }
 

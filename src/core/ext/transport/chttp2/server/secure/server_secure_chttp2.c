@@ -123,7 +123,7 @@ done:
   if (err != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
-    
+
     GRPC_ERROR_UNREF(err);
   }
   return port_num;

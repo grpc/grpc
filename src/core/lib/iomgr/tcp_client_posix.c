@@ -117,7 +117,6 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
-    
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
@@ -177,7 +176,6 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
-    
   }
 
   gpr_mu_lock(&ac->mu);
