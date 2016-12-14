@@ -269,7 +269,7 @@ static void http_connect_handshaker_do_handshake(
   const grpc_arg* arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  char *canonical_uri =
+  char* canonical_uri =
       grpc_resolver_factory_add_default_prefix_if_needed(arg->value.string);
   grpc_uri* uri = grpc_uri_parse(canonical_uri, 1);
   char* server_name = uri->path;
