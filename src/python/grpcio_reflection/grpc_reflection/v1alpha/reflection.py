@@ -35,7 +35,7 @@ import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
-from grpc.reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2
 
 _POOL = descriptor_pool.Default()
 
