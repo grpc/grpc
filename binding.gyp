@@ -840,6 +840,7 @@
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
+        "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
       "dependencies": [
