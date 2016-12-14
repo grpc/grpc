@@ -56,6 +56,9 @@ void grpc_chttp2_incoming_metadata_buffer_publish(
 
 void grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem elem);
+void grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem);
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
 

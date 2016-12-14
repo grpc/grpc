@@ -1474,13 +1474,13 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       s->recv_trailing_metadata_finished != NULL) {
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
-    grpc_chttp2_incoming_metadata_buffer_add(
-        &s->metadata_buffer[1],
+    grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+        exec_ctx, &s->metadata_buffer[1],
         grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
                                 grpc_slice_from_copied_string(status_string)));
     if (msg != NULL) {
-      grpc_chttp2_incoming_metadata_buffer_add(
-          &s->metadata_buffer[1],
+      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+          exec_ctx, &s->metadata_buffer[1],
           grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
                                   grpc_slice_from_copied_string(msg)));
     }
@@ -1584,7 +1584,9 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
       /* Purge streams waiting on concurrency still waiting for id assignment */
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
-    grpc_chttp2_fake_status(exec_ctx, t, s, overall_error);
+    if (overall_error != GRPC_ERROR_NONE) {
+      grpc_chttp2_fake_status(exec_ctx, t, s, overall_error);
+    }
   }
   if (closed_read) {
     decrement_active_streams_locked(exec_ctx, t, s);
