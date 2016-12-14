@@ -354,11 +354,13 @@ static void dump_pending_tags(grpc_completion_queue *cc) {
   gpr_strvec v;
   gpr_strvec_init(&v);
   gpr_strvec_add(&v, gpr_strdup("PENDING TAGS:"));
+  gpr_mu_lock(cc->mu);
   for (size_t i = 0; i < cc->outstanding_tag_count; i++) {
     char *s;
     gpr_asprintf(&s, " %p", cc->outstanding_tags[i]);
     gpr_strvec_add(&v, s);
   }
+  gpr_mu_unlock(cc->mu);
   char *out = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
   gpr_log(GPR_DEBUG, "%s", out);

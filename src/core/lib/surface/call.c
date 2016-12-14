@@ -1551,6 +1551,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        /* IF this is a server, then GRPC_OP_RECV_INITIAL_METADATA *must* come
+           from server.c. In that case, it's coming from accept_stream, and in
+           that case we're not necessarily covered by a poller. */
+        stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = 1;
         call->buffered_metadata[0] = op->data.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
