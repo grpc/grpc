@@ -46,6 +46,7 @@ struct grpc_error {
   gpr_avl times;
   gpr_avl errs;
   uintptr_t next_err;
+  gpr_atm error_string;
 };
 
 bool grpc_error_is_special(grpc_error *err);

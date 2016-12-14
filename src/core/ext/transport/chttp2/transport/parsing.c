@@ -751,7 +751,7 @@ static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
     if (grpc_http_trace) {
       const char *msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);
-      grpc_error_free_string(msg);
+      
     }
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
     if (s) {

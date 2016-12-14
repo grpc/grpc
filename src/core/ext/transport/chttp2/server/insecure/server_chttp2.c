@@ -52,7 +52,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   if (err != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
-    grpc_error_free_string(msg);
+    
     GRPC_ERROR_UNREF(err);
   }
   grpc_exec_ctx_finish(&exec_ctx);

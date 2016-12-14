@@ -146,7 +146,6 @@ typedef enum {
 #define GRPC_ERROR_END_OF_STREAM ((grpc_error *)6)
 
 const char *grpc_error_string(grpc_error *error);
-void grpc_error_free_string(const char *str);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
 grpc_error *grpc_error_create(const char *file, int line, const char *desc,
