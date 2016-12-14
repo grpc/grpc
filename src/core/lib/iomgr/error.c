@@ -190,6 +190,7 @@ static void error_destroy(grpc_error *err) {
   gpr_avl_unref(err->strs);
   gpr_avl_unref(err->errs);
   gpr_avl_unref(err->times);
+  gpr_free((void *)gpr_atm_acq_load(&err->error_string));
   gpr_free(err);
 }
 
@@ -240,6 +241,7 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
                            box_time(gpr_now(GPR_CLOCK_REALTIME)));
+  gpr_atm_no_barrier_store(&err->error_string, 0);
   gpr_ref_init(&err->refs, 1);
   GPR_TIMER_END("grpc_error_create", 0);
   return err;
@@ -269,6 +271,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     out->strs = gpr_avl_ref(in->strs);
     out->errs = gpr_avl_ref(in->errs);
     out->times = gpr_avl_ref(in->times);
+    gpr_atm_no_barrier_store(&out->error_string, 0);
     out->next_err = in->next_err;
     gpr_ref_init(&out->refs, 1);
     GRPC_ERROR_UNREF(in);
@@ -495,7 +498,6 @@ static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap,
   *first = false;
   const char *e = grpc_error_string(n->value);
   append_str(e, s, sz, cap);
-  grpc_error_free_string(e);
   add_errs(n->right, s, sz, cap, first);
 }
 
@@ -517,7 +519,7 @@ static int cmp_kvs(const void *a, const void *b) {
   return strcmp(ka->key, kb->key);
 }
 
-static const char *finish_kvs(kv_pairs *kvs) {
+static char *finish_kvs(kv_pairs *kvs) {
   char *s = NULL;
   size_t sz = 0;
   size_t cap = 0;
@@ -538,18 +540,17 @@ static const char *finish_kvs(kv_pairs *kvs) {
   return s;
 }
 
-void grpc_error_free_string(const char *str) {
-  if (str == no_error_string) return;
-  if (str == oom_error_string) return;
-  if (str == cancelled_error_string) return;
-  gpr_free((char *)str);
-}
-
 const char *grpc_error_string(grpc_error *err) {
   GPR_TIMER_BEGIN("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
+
+  void *p = (void *)gpr_atm_acq_load(&err->error_string);
+  if (p != NULL) {
+    GPR_TIMER_END("grpc_error_string", 0);
+    return p;
+  }
 
   kv_pairs kvs;
   memset(&kvs, 0, sizeof(kvs));
@@ -563,7 +564,13 @@ const char *grpc_error_string(grpc_error *err) {
 
   qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
 
-  const char *out = finish_kvs(&kvs);
+  char *out = finish_kvs(&kvs);
+
+  if (!gpr_atm_rel_cas(&err->error_string, 0, (gpr_atm)out)) {
+    gpr_free(out);
+    out = (char *)gpr_atm_no_barrier_load(&err->error_string);
+  }
+
   GPR_TIMER_END("grpc_error_string", 0);
   return out;
 }
@@ -598,7 +605,6 @@ bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
   if (error == GRPC_ERROR_NONE) return true;
   const char *msg = grpc_error_string(error);
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what, msg);
-  grpc_error_free_string(msg);
   GRPC_ERROR_UNREF(error);
   return false;
 }

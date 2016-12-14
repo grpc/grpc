@@ -687,7 +687,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
 
     const char *errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-    grpc_error_free_string(errmsg);
+    
 
     maybe_start_connecting_locked(exec_ctx, c);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
@@ -758,7 +758,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-    grpc_error_free_string(error_string);
+    
     gpr_free(*call);
     return error;
   }

@@ -603,14 +603,14 @@ static void get_final_status(grpc_call *call,
   int i;
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (call->status[i].is_set) {
-      const char *text = grpc_error_string(call->status[i].error);
-      gpr_log(GPR_DEBUG, "%s", text);
-      grpc_error_free_string(text);
-
       grpc_status_code code;
       const char *msg = NULL;
       grpc_error_get_status(call->status[i].error, call->send_deadline, &code,
                             &msg, NULL);
+
+      gpr_log(GPR_DEBUG, "%s --> %d %s",
+              grpc_error_string(call->status[i].error), code, msg);
+
       set_value(code, set_value_user_data);
       if (details != NULL) {
         *details = grpc_slice_from_copied_string(msg);
@@ -630,7 +630,6 @@ static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
   const char *es = grpc_error_string(error);
   gpr_log(GPR_DEBUG, "%p[%d]: set %d[is_set=%d] to %s", call, call->is_client,
           source, call->status[source].is_set, es);
-  grpc_error_free_string(es);
 
   if (call->status[source].is_set) {
     GRPC_ERROR_UNREF(error);

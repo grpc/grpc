@@ -861,7 +861,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
             (int)(closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT),
             (int)(closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT),
             desc, errstr);
-    grpc_error_free_string(errstr);
   }
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
@@ -1452,7 +1451,6 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
-    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, due_to_error);
 }
@@ -1559,6 +1557,8 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     return;
   }
+  bool closed_read = false;
+  bool became_closed = false;
   if (close_reads && !s->read_closed) {
     s->read_closed_error = GRPC_ERROR_REF(error);
     s->read_closed = true;
@@ -1567,9 +1567,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
         s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
       }
     }
-    decrement_active_streams_locked(exec_ctx, t, s);
-    grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
-    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
+    closed_read = true;
   }
   if (close_writes && !s->write_closed) {
     s->write_closed_error = GRPC_ERROR_REF(error);
@@ -1577,6 +1575,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
   }
   if (s->read_closed && s->write_closed) {
+    became_closed = true;
     grpc_error *overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
     if (s->id != 0) {
@@ -1586,6 +1585,13 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
     grpc_chttp2_fake_status(exec_ctx, t, s, overall_error);
+  }
+  if (closed_read) {
+    decrement_active_streams_locked(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
+  }
+  if (became_closed) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2");
   }
