@@ -130,7 +130,6 @@ static void on_md_processing_done(
     grpc_metadata_array_destroy(&calld->md);
     grpc_closure_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE);
   } else {
-    grpc_slice message;
     for (size_t i = 0; i < calld->md.count; i++) {
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
@@ -139,7 +138,6 @@ static void on_md_processing_done(
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    message = grpc_slice_from_copied_string(error_details);
     calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message != NULL) {
       grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);
