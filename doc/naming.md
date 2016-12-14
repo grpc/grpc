@@ -53,7 +53,7 @@ include:
     is in use).
   - The name of the balancer, if the address is a balancer address.
     This will be used to perform peer authorization.
-- A [service config](service-config.md).
+- A [service config](service_config.md).
 
 The plugin API allows the resolvers to continuously watch an endpoint
 and return updated resolutions as needed.
