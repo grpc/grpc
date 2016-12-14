@@ -115,6 +115,7 @@ namespace Grpc.Health.V1 {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(HealthBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
