@@ -76,8 +76,8 @@ namespace Grpc.Testing {
     public abstract partial class MetricsServiceBase
     {
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
       public virtual global::System.Threading.Tasks.Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context)
       {
@@ -85,7 +85,7 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context)
       {
@@ -118,44 +118,44 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.GaugeResponse> GetAllGauges(global::Grpc.Testing.EmptyMessage request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetAllGauges(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.GaugeResponse> GetAllGauges(global::Grpc.Testing.EmptyMessage request, CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_GetAllGauges, null, options, request);
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
       public virtual global::Grpc.Testing.GaugeResponse GetGauge(global::Grpc.Testing.GaugeRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetGauge(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
       public virtual global::Grpc.Testing.GaugeResponse GetGauge(global::Grpc.Testing.GaugeRequest request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_GetGauge, null, options, request);
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
       public virtual AsyncUnaryCall<global::Grpc.Testing.GaugeResponse> GetGaugeAsync(global::Grpc.Testing.GaugeRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetGaugeAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
       public virtual AsyncUnaryCall<global::Grpc.Testing.GaugeResponse> GetGaugeAsync(global::Grpc.Testing.GaugeRequest request, CallOptions options)
       {
