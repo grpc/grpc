@@ -68,6 +68,19 @@ void grpc_chttp2_incoming_metadata_buffer_add(
   buffer->size += GRPC_MDELEM_LENGTH(elem);
 }
 
+void grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem) {
+  for (size_t i = 0; i < buffer->count; i++) {
+    if (grpc_slice_eq(GRPC_MDKEY(buffer->elems[i].md), GRPC_MDKEY(elem))) {
+      GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
+      buffer->elems[i].md = elem;
+      return;
+    }
+  }
+  grpc_chttp2_incoming_metadata_buffer_add(buffer, elem);
+}
+
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
   GPR_ASSERT(!buffer->published);
