@@ -44,6 +44,11 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer *sb) {
+  if (sb->base_slices != sb->slices) {
+    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+    sb->slices = sb->base_slices;
+  }
+
   /* How many far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
@@ -245,8 +250,6 @@ void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
   }
 
   src_idx = 0;
-  /* This was previously written has src_idx < src->capacity. Double-check that
-   * it was a mistake */
   while (src_idx < src->count) {
     grpc_slice slice = src->slices[src_idx];
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
