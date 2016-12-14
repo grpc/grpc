@@ -157,7 +157,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
       size_t i;
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "read: error=%s", str);
-      grpc_error_free_string(str);
+      
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
