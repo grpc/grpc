@@ -44,7 +44,7 @@ import threading
 import unittest
 
 import grpc
-from grpc.tools import protoc
+from grpc_tools import protoc
 from tests.unit.framework.common import test_constants
 
 _MESSAGES_IMPORT = b'import "messages.proto";'
