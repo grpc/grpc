@@ -227,23 +227,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "chttp2_status_conversion_test", 
-    "src": [
-      "test/core/transport/chttp2/status_conversion_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "chttp2_stream_map_test", 
     "src": [
       "test/core/transport/chttp2/stream_map_test.c"
@@ -1945,6 +1928,23 @@
     "name": "ssl_server_fuzzer", 
     "src": [
       "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "status_conversion_test", 
+    "src": [
+      "test/core/transport/status_conversion_test.c"
     ], 
     "third_party": false, 
     "type": "target"

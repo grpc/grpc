@@ -1477,16 +1477,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: chttp2_status_conversion_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/status_conversion_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: chttp2_stream_map_test
   build: test
   language: c
@@ -2618,6 +2608,16 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: status_conversion_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
