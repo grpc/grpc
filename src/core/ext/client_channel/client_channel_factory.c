@@ -56,12 +56,12 @@ grpc_channel* grpc_client_channel_factory_create_channel(
                                                 args);
 }
 
-static void *factory_arg_copy(void *factory) {
+static void* factory_arg_copy(void* factory) {
   grpc_client_channel_factory_ref(factory);
   return factory;
 }
 
-static void factory_arg_destroy(void *factory) {
+static void factory_arg_destroy(void* factory) {
   // TODO(roth): Remove local exec_ctx when
   // https://github.com/grpc/grpc/pull/8705 is merged.
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -69,7 +69,7 @@ static void factory_arg_destroy(void *factory) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static int factory_arg_cmp(void *factory1, void *factory2) {
+static int factory_arg_cmp(void* factory1, void* factory2) {
   if (factory1 < factory2) return -1;
   if (factory1 > factory2) return 1;
   return 0;
@@ -79,7 +79,7 @@ static const grpc_arg_pointer_vtable factory_arg_vtable = {
     factory_arg_copy, factory_arg_destroy, factory_arg_cmp};
 
 grpc_arg grpc_client_channel_factory_create_channel_arg(
-    grpc_client_channel_factory *factory) {
+    grpc_client_channel_factory* factory) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_ARG_CLIENT_CHANNEL_FACTORY;
