@@ -336,10 +336,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       args->server_transport_data, path, call->start_time, send_deadline,
       CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    const char *error_str;
-    grpc_error_get_status(error, &status, &error_str);
-    cancel_with_status(exec_ctx, call, status, error_str);
+    cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
@@ -612,7 +609,8 @@ static void get_final_status(grpc_call *call,
 
       grpc_status_code code;
       const char *msg = NULL;
-      grpc_error_get_status(call->status[i].error, &code, &msg);
+      grpc_error_get_status(call->status[i].error, call->send_deadline, &code,
+                            &msg, NULL);
       set_value(code, set_value_user_data);
       if (details != NULL) {
         *details = grpc_slice_from_copied_string(msg);

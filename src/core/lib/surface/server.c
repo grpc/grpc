@@ -280,18 +280,20 @@ static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
-                          int send_goaway, grpc_error *send_disconnect) {
+                          bool send_goaway, grpc_error *send_disconnect) {
   struct shutdown_cleanup_args *sc = gpr_malloc(sizeof(*sc));
   grpc_closure_init(&sc->closure, shutdown_cleanup, sc,
                     grpc_schedule_on_exec_ctx);
   grpc_transport_op *op = grpc_make_transport_op(&sc->closure);
   grpc_channel_element *elem;
 
-  op->send_goaway = send_goaway;
+  op->goaway_error =
+      send_goaway
+          ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
+                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
+          : GRPC_ERROR_NONE;
   op->set_accept_stream = true;
   sc->slice = grpc_slice_from_copied_string("Server shutdown");
-  op->goaway_message = &sc->slice;
-  op->goaway_status = GRPC_STATUS_OK;
   op->disconnect_with_error = send_disconnect;
 
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);

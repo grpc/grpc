@@ -1644,7 +1644,7 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_chttp2_transport *t = s->t;
   if (!s->write_closed) {
     grpc_slice_buffer_add(
-        &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR,
+        &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
     grpc_chttp2_initiate_write(exec_ctx, t, false, "force_rst_stream");
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, GRPC_ERROR_NONE);
