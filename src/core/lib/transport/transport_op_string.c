@@ -163,15 +163,12 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     grpc_error_free_string(err);
   }
 
-  if (op->send_goaway) {
+  if (op->goaway_error) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    char *msg = op->goaway_message == NULL
-                    ? "null"
-                    : grpc_dump_slice(*op->goaway_message,
-                                      GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_asprintf(&tmp, "SEND_GOAWAY:status=%d:msg=%s", op->goaway_status, msg);
-    if (op->goaway_message != NULL) gpr_free(msg);
+    const char *msg = grpc_error_string(op->goaway_error);
+    gpr_asprintf(&tmp, "SEND_GOAWAY:%s", msg);
+    grpc_error_free_string(msg);
     gpr_strvec_add(&b, tmp);
   }
 

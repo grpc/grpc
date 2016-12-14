@@ -39,11 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
-#include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 static grpc_error *init_frame_parser(grpc_exec_ctx *exec_ctx,
@@ -433,7 +433,7 @@ error_handler:
     }
     grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                                GRPC_CHTTP2_PROTOCOL_ERROR,
+                                                GRPC_HTTP2_PROTOCOL_ERROR,
                                                 &s->stats.outgoing));
     return init_skip_frame_parser(exec_ctx, t, 0);
   } else {
@@ -758,7 +758,7 @@ static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
       s->forced_close_error = err;
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                                  GRPC_CHTTP2_PROTOCOL_ERROR,
+                                                  GRPC_HTTP2_PROTOCOL_ERROR,
                                                   &s->stats.outgoing));
     } else {
       GRPC_ERROR_UNREF(err);

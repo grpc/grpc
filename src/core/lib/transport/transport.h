@@ -181,13 +181,8 @@ typedef struct grpc_transport_op {
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
   grpc_error *disconnect_with_error;
-  /** should we send a goaway?
-      after a goaway is sent, once there are no more active calls on
-      the transport, the transport should disconnect */
-  bool send_goaway;
   /** what should the goaway contain? */
-  grpc_status_code goaway_status;
-  grpc_slice *goaway_message;
+  grpc_error *goaway_error;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
