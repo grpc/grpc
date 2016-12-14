@@ -100,7 +100,7 @@ class BuildProtoModules(setuptools.Command):
     pass
 
   def run(self):
-    import grpc.tools.protoc as protoc
+    import grpc_tools.protoc as protoc
 
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
@@ -116,7 +116,7 @@ class BuildProtoModules(setuptools.Command):
     # but we currently have name conflicts in src/proto
     for path in paths:
       command = [
-          'grpc.tools.protoc',
+          'grpc_tools.protoc',
           '-I {}'.format(PROTO_STEM),
           '--python_out={}'.format(PROTO_STEM),
           '--grpc_python_out={}'.format(PROTO_STEM),
