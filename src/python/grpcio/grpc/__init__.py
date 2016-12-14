@@ -31,6 +31,7 @@
 
 import abc
 import enum
+import sys
 
 import six
 
@@ -849,6 +850,26 @@ class GenericRpcHandler(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
 
+class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
+  """An implementation of RPC methods belonging to a service.
+
+  A service handles RPC methods with structured names of the form
+  '/Service.Name/Service.MethodX', where 'Service.Name' is the value
+  returned by service_name(), and 'Service.MethodX' is the service method
+  name.  A service can have multiple service methods names, but only a single
+  service name.
+  """
+
+  @abc.abstractmethod
+  def service_name(self):
+    """Returns this services name.
+
+    Returns:
+      The service name.
+    """
+    raise NotImplementedError()
+
+
 #############################  Server Interface  ###############################
 
 
@@ -1280,6 +1301,7 @@ __all__ = (
     'RpcMethodHandler',
     'HandlerCallDetails',
     'GenericRpcHandler',
+    'ServiceRpcHandler',
     'Server',
     'unary_unary_rpc_method_handler',
     'unary_stream_rpc_method_handler',
@@ -1297,3 +1319,24 @@ __all__ = (
     'secure_channel',
     'server',
 )
+
+
+############################### Extension Shims ################################
+
+
+# Here to maintain backwards compatibility; avoid using these in new code!
+try:
+  import grpc_tools
+  sys.modules.update({'grpc.tools': grpc_tools})
+except ImportError:
+  pass
+try:
+  import grpc_health
+  sys.modules.update({'grpc.health': grpc_health})
+except ImportError:
+  pass
+try:
+  import grpc_reflection
+  sys.modules.update({'grpc.reflection': grpc_reflection})
+except ImportError:
+  pass

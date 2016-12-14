@@ -101,7 +101,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
 
 static deque<string> get_workers(const string& name) {
   char* env = gpr_getenv(name.c_str());
-  if (!env) return deque<string>();
+  if (!env || strlen(env) == 0) return deque<string>();
 
   deque<string> out;
   char* p = env;

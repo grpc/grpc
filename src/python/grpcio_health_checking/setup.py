@@ -66,7 +66,6 @@ setuptools.setup(
     license='3-clause BSD',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
-    namespace_packages=['grpc'],
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS
