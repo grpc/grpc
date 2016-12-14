@@ -96,7 +96,7 @@ Load-balancing policies fit into the gRPC client workflow in between
 name resolution and the connection to the server.  Here's how it all
 works:
 
-![image](images/load-balancing.svg)
+![image](images/load-balancing.png)
 
 1. On startup, the gRPC client issues a [name resolution](naming.md) request
    for the server name.  The name will resolve to one or more IP addresses,
