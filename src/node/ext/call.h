@@ -51,20 +51,12 @@ namespace node {
 using std::unique_ptr;
 using std::shared_ptr;
 
-typedef Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>> PersistentValue;
-
 v8::Local<v8::Value> nanErrorWithCode(const char *msg, grpc_call_error code);
 
 v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
-struct Resources {
-  std::vector<unique_ptr<Nan::Utf8String> > strings;
-  std::vector<unique_ptr<PersistentValue> > handles;
-};
-
 bool CreateMetadataArray(v8::Local<v8::Object> metadata,
-                         grpc_metadata_array *array,
-                         shared_ptr<Resources> resources);
+                         grpc_metadata_array *array);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public Nan::ObjectWrap {
@@ -106,8 +98,7 @@ class Call : public Nan::ObjectWrap {
 class Op {
  public:
   virtual v8::Local<v8::Value> GetNodeValue() const = 0;
-  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out,
-                       shared_ptr<Resources> resources) = 0;
+  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out) = 0;
   virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
   virtual bool IsFinalOp() = 0;
@@ -118,12 +109,10 @@ class Op {
 
 typedef std::vector<unique_ptr<Op>> OpVec;
 struct tag {
-  tag(Nan::Callback *callback, OpVec *ops,
-      shared_ptr<Resources> resources, Call *call);
+  tag(Nan::Callback *callback, OpVec *ops, Call *call);
   ~tag();
   Nan::Callback *callback;
   OpVec *ops;
-  shared_ptr<Resources> resources;
   Call *call;
 };
 
