@@ -216,8 +216,7 @@ class TransportStreamOp {
 /// Represents channel data.
 class ChannelData {
  public:
-  virtual ~ChannelData() {
-  }
+  virtual ~ChannelData() {}
 
   /// Initializes the call data.
   virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
@@ -309,8 +308,7 @@ class ChannelFilter final {
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
-    ChannelDataType *channel_data =
-        (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
     CallDataType *call_data = new (elem->call_data) CallDataType();
     return call_data->Init(exec_ctx, channel_data, args);
