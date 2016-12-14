@@ -123,6 +123,9 @@ The service config is a JSON string of the following form:
 }
 ```
 
+Note that new per-method parameters may be added in the future as new
+functionality is introduced.
+
 # Architecture
 
 A service config is associated with a server name.  The [name
@@ -131,71 +134,14 @@ name, will return both the resolved addresses and the service config.
 
 TODO(roth): Design how the service config will be encoded in DNS.
 
+# APIs
 
+The service config is used in the following APIs:
 
-
-The gRPC load balancing implements the external load balancing server approach:
-an external load balancer provides simple clients with an up-to-date list of
-servers.
-
-![image](images/load_balancing_design.png)
-
-1. On startup, the gRPC client issues a name resolution request for the service.
-   The name will resolve to one or more IP addresses to gRPC servers, a hint on
-   whether the IP address(es) point to a load balancer or not, and also return a
-   client config.
-2. The gRPC client connects to a gRPC Server.
-   1. If the name resolution has hinted that the endpoint is a load balancer,
-      the client's gRPC LB policy will attempt to open a stream to the load
-      balancer service. The server may respond in only one of the following
-      ways.
-      1. `status::UNIMPLEMENTED`. There is no loadbalancing in use. The client
-         call will fail.
-      2. "I am a Load Balancer and here is the server list." (Goto Step 4.)
-      3. "Please contact Load Balancer X" (See Step 3.) The client will close
-         this connection and cancel the stream.
-      4. If the server fails to respond, the client will wait for some timeout
-         and then re-resolve the name (process to Step 1 above).
-   2. If the name resolution has not hinted that the endpoint is a load
-      balancer, the client connects directly to the service it wants to talk to.
-3. The gRPC client's gRPC LB policy opens a separate connection to the Load
-   Balancer. If this fails, it will go back to step 1 and try another address.
-   1. During channel initialization to the Load Balancer, the client will
-      attempt to open a stream to the Load Balancer service.
-   2. The Load Balancer will return a server list to the gRPC client. If the
-      server list is empty, the call will wait until a non-empty one is
-      received. Optional: The Load Balancer will also open channels to the gRPC
-      servers if load reporting is needed.
-4. The gRPC client will send RPCs to the gRPC servers contained in the server
-   list from the Load Balancer.
-5. Optional: The gRPC servers may periodically report load to the Load Balancer.
-
-## Client
-
-When establishing a gRPC _stream_ to the balancer, the client will send an initial
-request to the load balancer (via a regular gRPC message). The load balancer
-will respond with client config (including, for example, settings for flow
-control, RPC deadlines, etc.) or a redirect to another load balancer. If the
-balancer did not redirect the client, it will then send a list of servers to the
-client. The client will contain simple load balancing logic for choosing the
-next server when it needs to send a request.
-
-## Load Balancer
-
-The Load Balancer is responsible for providing the client with a list of servers
-and client RPC parameters. The balancer chooses when to update the list of
-servers and can decide whether to provide a complete list, a subset, or a
-specific list of “picked” servers in a particular order. The balancer can
-optionally provide an expiration interval after which the server list should no
-longer be trusted and should be updated by the balancer.
-
-The load balancer may open reporting streams to each server contained in the
-server list. These streams are primarily used for load reporting. For example,
-Weighted Round Robin requires that the servers report utilization to the load
-balancer in order to compute the next list of servers.
-
-## Server
-
-The gRPC Server is responsible for answering RPC requests and providing
-responses to the client. The server will also report load to the load balancer
-if a reporting stream was opened for this purpose.
+- In the resolver API, used by resolver plugins to return the service
+  config to the gRPC client.
+- In the gRPC client API, where users can query the channel to obtain
+  the service config associated with the channel (for debugging
+  purposes).
+- In the gRPC client API, where users can set the service config
+  explicitly.  This is intended for use in unit tests.

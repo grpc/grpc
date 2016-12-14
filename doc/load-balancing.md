@@ -11,7 +11,7 @@ instruct the client how to send load to multiple backend servers.
 Prior to any gRPC specifics, we explore some usual ways to approach load
 balancing.
 
-### Proxy Model
+## Proxy Model
 
 Using a proxy provides a solid trustable client that can report load to the load
 balancing system. Proxies typically require more resources to operate since they
@@ -21,7 +21,7 @@ latency to the RPCs.
 The proxy model was deemed inefficient when considering request heavy services
 like storage.
 
-### Balancing-aware Client
+## Balancing-aware Client
 
 This thicker client places more of the load balancing logic in the client. For
 example, the client could contain many load balancing policies (Round Robin,
@@ -41,7 +41,7 @@ It would also significantly complicate the client's code: the new design hides
 the load balancing complexity of multiple layers and presents it as a simple
 list of servers to the client.
 
-### External Load Balancing Service
+## External Load Balancing Service
 
 The client load balancing code is kept simple and portable, implementing
 well-known algorithms (e.g., Round Robin) for server selection.
@@ -56,7 +56,7 @@ servers to collect load and health information.
 
 # Requirements
 
-### Simple API and client
+## Simple API and client
 
 The gRPC client load balancing code must be simple and portable. The
 client should only contain simple algorithms (e.g., Round Robin) for
@@ -68,7 +68,7 @@ unavailability or health issues. The load balancer will make any necessary
 complex decisions and inform the client. The load balancer may communicate
 with the backend servers to collect load and health information.
 
-### Security
+## Security
 
 The load balancer may be separate from the actual server backends and a
 compromise of the load balancer should only lead to a compromise of the
@@ -90,13 +90,13 @@ However, there are only a small number of these (one of which is the
 are discouraged from trying to extend gRPC by adding more.  Instead, new
 load balancing policies should be implemented in external load balancers.
 
-## Load Balancing Policies
+## Workflow
 
 Load-balancing policies fit into the gRPC client workflow in between
 name resolution and the connection to the server.  Here's how it all
 works:
 
-![image](images/load_balancing_design.png)
+![image](images/load-balancing.svg)
 
 1. On startup, the gRPC client issues a [name resolution](naming.md) request
    for the server name.  The name will resolve to one or more IP addresses,
@@ -130,33 +130,3 @@ works:
    received.
 6. The gRPC client will send RPCs to the gRPC servers contained in
    the server list from the Load Balancer.
-
-## Client
-
-When establishing a gRPC _stream_ to the balancer, the client will send an initial
-request to the load balancer (via a regular gRPC message). The load balancer
-will respond with client config (including, for example, settings for flow
-control, RPC deadlines, etc.) or a redirect to another load balancer. If the
-balancer did not redirect the client, it will then send a list of servers to the
-client. The client will contain simple load balancing logic for choosing the
-next server when it needs to send a request.
-
-## Load Balancer
-
-The Load Balancer is responsible for providing the client with a list of servers
-and client RPC parameters. The balancer chooses when to update the list of
-servers and can decide whether to provide a complete list, a subset, or a
-specific list of “picked” servers in a particular order. The balancer can
-optionally provide an expiration interval after which the server list should no
-longer be trusted and should be updated by the balancer.
-
-The load balancer may open reporting streams to each server contained in the
-server list. These streams are primarily used for load reporting. For example,
-Weighted Round Robin requires that the servers report utilization to the load
-balancer in order to compute the next list of servers.
-
-## Server
-
-The gRPC Server is responsible for answering RPC requests and providing
-responses to the client. The server will also report load to the load balancer
-if a reporting stream was opened for this purpose.
