@@ -34,6 +34,13 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 
+//////////////////////////////////////////////////////////////////////////////
+// IMPORTANT NOTE:
+//
+// When you update this API, please make the corresponding changes to
+// the C++ API in src/cpp/common/channel_filter.{h,cc}
+//////////////////////////////////////////////////////////////////////////////
+
 /* A channel filter defines how operations on a channel are implemented.
    Channel filters are chained together to create full channels, and if those
    chains are linear, then channel stacks provide a mechanism to minimize
