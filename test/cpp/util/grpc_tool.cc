@@ -86,11 +86,12 @@ class GrpcTool {
   // callback);
   // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
-  // bool ParseMessage(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
-  // bool ToText(int argc, const char** argv, GrpcToolOutputCallback callback);
-  // bool ToBinary(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
+  bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
+                    GrpcToolOutputCallback callback);
+  bool ToText(int argc, const char** argv, const CliCredentials& cred,
+              GrpcToolOutputCallback callback);
+  bool ToBinary(int argc, const char** argv, const CliCredentials& cred,
+                GrpcToolOutputCallback callback);
 
   void SetPrintCommandMode(int exit_status) {
     print_command_usage_ = true;
@@ -173,9 +174,9 @@ const Command ops[] = {
     {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
     {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
     {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
-    // {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
-    // {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
-    // {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
+    {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
+    {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
+    {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
 };
 
 void Usage(const grpc::string& msg) {
@@ -185,9 +186,9 @@ void Usage(const grpc::string& msg) {
       "  grpc_cli ls ...         ; List services\n"
       "  grpc_cli call ...       ; Call method\n"
       "  grpc_cli type ...       ; Print type\n"
-      // "  grpc_cli parse ...      ; Parse message\n"
-      // "  grpc_cli totext ...     ; Convert binary message to text\n"
-      // "  grpc_cli tobinary ...   ; Convert text message to binary\n"
+      "  grpc_cli parse ...      ; Parse message\n"
+      "  grpc_cli totext ...     ; Convert binary message to text\n"
+      "  grpc_cli tobinary ...   ; Convert text message to binary\n"
       "  grpc_cli help ...       ; Print this message, or per-command usage\n"
       "\n",
       msg.c_str());
@@ -494,6 +495,123 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   }
 
   return callback(output_ss.str());
+}
+
+bool GrpcTool::ParseMessage(int argc, const char** argv,
+                            const CliCredentials& cred,
+                            GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "Parse message\n"
+      "  grpc_cli parse <address> <type> [<message>]\n"
+      "    <address>                ; host:port\n"
+      "    <type>                   ; Protocol buffer type name\n"
+      "    <message>                ; Text protobuffer (overrides --infile)\n"
+      "    --protofiles             ; Comma separated proto files used as a"
+      " fallback when parsing request/response\n"
+      "    --proto_path             ; The search path of proto files, valid"
+      " only when --protofiles is given\n"
+      "    --infile                 ; Input filename (defaults to stdin)\n"
+      "    --outfile                ; Output filename (defaults to stdout)\n"
+      "    --binary_input           ; Input in binary format\n"
+      "    --binary_output          ; Output in binary format\n" +
+      cred.GetCredentialUsage());
+
+  std::stringstream output_ss;
+  grpc::string message_text;
+  grpc::string server_address(argv[0]);
+  grpc::string type_name(argv[1]);
+  std::unique_ptr<grpc::testing::ProtoFileParser> parser;
+  grpc::string serialized_request_proto;
+
+  if (argc == 3) {
+    message_text = argv[2];
+    if (!FLAGS_infile.empty()) {
+      fprintf(stderr, "warning: message given in argv, ignoring --infile.\n");
+    }
+  } else {
+    std::stringstream input_stream;
+    if (FLAGS_infile.empty()) {
+      if (isatty(STDIN_FILENO)) {
+        fprintf(stderr, "reading request message from stdin...\n");
+      }
+      input_stream << std::cin.rdbuf();
+    } else {
+      std::ifstream input_file(FLAGS_infile, std::ios::in | std::ios::binary);
+      input_stream << input_file.rdbuf();
+      input_file.close();
+    }
+    message_text = input_stream.str();
+  }
+
+  if (!FLAGS_binary_input || !FLAGS_binary_output) {
+    std::shared_ptr<grpc::Channel> channel =
+        grpc::CreateChannel(server_address, cred.GetCredentials());
+    parser.reset(
+        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
+                                           FLAGS_proto_path, FLAGS_protofiles));
+    if (parser->HasError()) {
+      return false;
+    }
+  }
+
+  if (FLAGS_binary_input) {
+    serialized_request_proto = message_text;
+  } else {
+    serialized_request_proto =
+        parser->GetSerializedProtoFromMessageType(type_name, message_text);
+    if (parser->HasError()) {
+      return false;
+    }
+  }
+
+  if (FLAGS_binary_output) {
+    output_ss << serialized_request_proto;
+  } else {
+    grpc::string output_text = parser->GetTextFormatFromMessageType(
+        type_name, serialized_request_proto);
+    if (parser->HasError()) {
+      return false;
+    }
+    output_ss << output_text << std::endl;
+  }
+
+  return callback(output_ss.str());
+}
+
+bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
+                      GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "Convert binary message to text\n"
+      "  grpc_cli totext <protofiles> <type>\n"
+      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <type>                   ; Protocol buffer type name\n"
+      "    --proto_path             ; The search path of proto files\n"
+      "    --infile                 ; Input filename (defaults to stdin)\n"
+      "    --outfile                ; Output filename (defaults to stdout)\n");
+
+  FLAGS_protofiles = argv[0];
+  FLAGS_remotedb = false;
+  FLAGS_binary_input = true;
+  FLAGS_binary_output = false;
+  return ParseMessage(argc, argv, cred, callback);
+}
+
+bool GrpcTool::ToBinary(int argc, const char** argv, const CliCredentials& cred,
+                        GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "Convert text message to binary\n"
+      "  grpc_cli tobinary <protofiles> <type> [<message>]\n"
+      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <type>                   ; Protocol buffer type name\n"
+      "    --proto_path             ; The search path of proto files\n"
+      "    --infile                 ; Input filename (defaults to stdin)\n"
+      "    --outfile                ; Output filename (defaults to stdout)\n");
+
+  FLAGS_protofiles = argv[0];
+  FLAGS_remotedb = false;
+  FLAGS_binary_input = false;
+  FLAGS_binary_output = true;
+  return ParseMessage(argc, argv, cred, callback);
 }
 
 }  // namespace testing
