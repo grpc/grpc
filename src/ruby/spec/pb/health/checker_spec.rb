@@ -119,7 +119,7 @@ describe Grpc::Health::Checker do
           subject.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
@@ -137,7 +137,7 @@ describe Grpc::Health::Checker do
           subject.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
@@ -158,7 +158,7 @@ describe Grpc::Health::Checker do
           subject.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
@@ -206,7 +206,7 @@ describe Grpc::Health::Checker do
         stub.check(HCReq.new(service: 'unknown'))
       end
       expected_msg = /#{StatusCodes::NOT_FOUND}/
-      expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+      expect(&blk).to raise_error GRPC::NotFound, expected_msg
       @srv.stop
       t.join
     end

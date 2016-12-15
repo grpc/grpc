@@ -28,50 +28,37 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/health/v1/health_services_pb'
-require 'thread'
 
-module Grpc
-  # Health contains classes and modules that support providing a health check
-  # service.
-  module Health
-    # Checker is implementation of the schema-specified health checking service.
-    class Checker < V1::Health::Service
-      StatusCodes = GRPC::Core::StatusCodes
-      HealthCheckResponse = V1::HealthCheckResponse
+StatusCodes = GRPC::Core::StatusCodes
 
-      # Initializes the statuses of participating services
-      def initialize
-        @statuses = {}
-        @status_mutex = Mutex.new  # guards access to @statuses
-      end
+describe StatusCodes do
+  # convert upper snake-case to camel case.
+  # e.g., DEADLINE_EXCEEDED -> DeadlineExceeded
+  def upper_snake_to_camel(name)
+    name.to_s.split('_').map(&:downcase).map(&:capitalize).join('')
+  end
 
-      # Implements the rpc IDL API method
-      def check(req, _call)
-        status = nil
-        @status_mutex.synchronize do
-          status = @statuses["#{req.service}"]
-        end
-	if status.nil?
-          fail GRPC::BadStatus.new_status_exception(StatusCodes::NOT_FOUND)
-	end
-        HealthCheckResponse.new(status: status)
-      end
+  StatusCodes.constants.each do |status_name|
+    it 'there is a subclass of BadStatus corresponding to StatusCode: ' \
+      "#{status_name} that has code: #{StatusCodes.const_get(status_name)}" do
+      camel_case = upper_snake_to_camel(status_name)
+      error_class = GRPC.const_get(camel_case)
+      # expect the error class to be a subclass of BadStatus
+      expect(error_class < GRPC::BadStatus)
 
-      # Adds the health status for a given service.
-      def add_status(service, status)
-        @status_mutex.synchronize { @statuses["#{service}"] = status }
-      end
+      error_object = error_class.new
+      # check that the code matches the int value of the error's constant
+      status_code = StatusCodes.const_get(status_name)
+      expect(error_object.code).to eq(status_code)
 
-      # Clears the status for the given service.
-      def clear_status(service)
-        @status_mutex.synchronize { @statuses.delete("#{service}") }
-      end
+      # check default parameters
+      expect(error_object.details).to eq('unknown cause')
+      expect(error_object.metadata).to eq({})
 
-      # Clears alls the statuses.
-      def clear_all
-        @status_mutex.synchronize { @statuses = {} }
-      end
+      # check that the BadStatus factory for creates the correct
+      # exception too
+      from_factory = GRPC::BadStatus.new_status_exception(status_code)
+      expect(from_factory.is_a?(error_class)).to be(true)
     end
   end
 end

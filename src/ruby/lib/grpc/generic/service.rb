@@ -111,7 +111,8 @@ module GRPC
                                       marshal_class_method,
                                       unmarshal_class_method)
         define_method(name) do
-          fail GRPC::BadStatus, GRPC::Core::StatusCodes::UNIMPLEMENTED
+          fail GRPC::BadStatus.new_status_exception(
+            GRPC::Core::StatusCodes::UNIMPLEMENTED)
         end
       end
 
