@@ -36,7 +36,6 @@
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable) {
   resolver->vtable = vtable;
-  resolver->pollset_set = grpc_pollset_set_create();
   gpr_ref_init(&resolver->refs, 1);
 }
 
@@ -63,7 +62,6 @@ void grpc_resolver_unref(grpc_resolver *resolver,
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 #endif
   if (gpr_unref(&resolver->refs)) {
-    grpc_pollset_set_destroy(resolver->pollset_set);
     resolver->vtable->destroy(exec_ctx, resolver);
   }
 }
