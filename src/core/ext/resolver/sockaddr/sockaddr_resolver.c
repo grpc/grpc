@@ -198,12 +198,7 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
   sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
   r->addresses = addresses;
-  grpc_arg server_name_arg;
-  server_name_arg.type = GRPC_ARG_STRING;
-  server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = args->uri->path;
-  r->channel_args =
-      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
   return &r->base;

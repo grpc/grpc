@@ -220,6 +220,9 @@ class ChannelData {
     if (peer_) gpr_free((void *)peer_);
   }
 
+  /// Initializes the call data.
+  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
+
   /// Caller does NOT take ownership of result.
   const char *peer() const { return peer_; }
 
@@ -276,15 +279,17 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static void InitChannelElement(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem,
-                                 grpc_channel_element_args *args) {
+  static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_element *elem,
+                                        grpc_channel_element_args *args) {
     const char *peer =
         args->optional_transport
             ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
             : nullptr;
     // Construct the object in the already-allocated memory.
-    new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
+    ChannelDataType *channel_data =
+        new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
+    return channel_data->Init();
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,

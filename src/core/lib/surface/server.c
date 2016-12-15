@@ -914,9 +914,9 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   server_unref(exec_ctx, chand->server);
 }
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
@@ -927,6 +927,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
   grpc_closure_init(&chand->channel_connectivity_changed,
                     channel_connectivity_changed, chand);
+  return GRPC_ERROR_NONE;
 }
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
