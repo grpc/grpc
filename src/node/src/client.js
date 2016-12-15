@@ -184,14 +184,15 @@ function _emitStatusIfDone() {
     } else {
       status = this.received_status;
     }
-    this.emit('status', status);
-    if (status.code !== grpc.status.OK) {
+    if (status.code === grpc.status.OK) {
+      this.push(null);
+    } else {
       var error = new Error(status.details);
       error.code = status.code;
       error.metadata = status.metadata;
       this.emit('error', error);
-      return;
     }
+    this.emit('status', status);
   }
 }
 
@@ -224,9 +225,11 @@ function _read(size) {
     } catch (e) {
       self._readsDone({code: grpc.status.INTERNAL,
                        details: 'Failed to parse server response'});
+      return;
     }
     if (data === null) {
       self._readsDone();
+      return;
     }
     if (self.push(deserialized) && data !== null) {
       var read_batch = {};
@@ -396,6 +399,8 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       var status = response.status;
       var error;
       var deserialized;
+      emitter.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
       if (status.code === grpc.status.OK) {
         if (err) {
           // Got a batch error, but OK status. Something went wrong
@@ -423,8 +428,6 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         args.callback(null, deserialized);
       }
       emitter.emit('status', status);
-      emitter.emit('metadata', Metadata._fromCoreRepresentation(
-          response.metadata));
     });
     return emitter;
   }
