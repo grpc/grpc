@@ -62,7 +62,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver != NULL);
 
   on_resolution_arg on_res_arg;
@@ -88,7 +88,7 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
   grpc_exec_ctx_finish(&exec_ctx);

@@ -140,7 +140,8 @@ static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
 
 static void do_nothing(void* ignored) {}
 
-static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
+static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
+                                           grpc_resolver_factory* factory,
                                            grpc_resolver_args* args) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
