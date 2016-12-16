@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base package &mdash; grpcio 1.0.1rc1 documentation</title>
+  <title>grpc.framework.interfaces.base package &mdash; grpcio 1.0.4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.0.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.0.4 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="next" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/>
         <link rel="prev" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/> 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.0.1rc1
+                1.0.4
               </div>
             
           
@@ -314,7 +314,7 @@ the time its stop method was called).</dd>
 <dl class="exception">
 <dt id="grpc.framework.interfaces.base.base.NoSuchMethodError">
 <em class="property">exception </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">NoSuchMethodError</code><span class="sig-paren">(</span><em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#NoSuchMethodError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.NoSuchMethodError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 <p>Indicates that an unrecognized operation has been called.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.NoSuchMethodError.code">
@@ -477,51 +477,6 @@ provided.</p>
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Outcome.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Ways in which an operation can terminate.</p>
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED">
-<code class="descname">CANCELLED</code><em class="property"> = &lt;Kind.CANCELLED: 'cancelled'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED">
-<code class="descname">COMPLETED</code><em class="property"> = &lt;Kind.COMPLETED: 'completed'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED">
-<code class="descname">EXPIRED</code><em class="property"> = &lt;Kind.EXPIRED: 'expired'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE">
-<code class="descname">LOCAL_FAILURE</code><em class="property"> = &lt;Kind.LOCAL_FAILURE: 'local failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN">
-<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = &lt;Kind.LOCAL_SHUTDOWN: 'local shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE">
-<code class="descname">RECEPTION_FAILURE</code><em class="property"> = &lt;Kind.RECEPTION_FAILURE: 'reception failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE">
-<code class="descname">REMOTE_FAILURE</code><em class="property"> = &lt;Kind.REMOTE_FAILURE: 'remote failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN">
-<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = &lt;Kind.REMOTE_SHUTDOWN: 'remote shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE">
-<code class="descname">TRANSMISSION_FAILURE</code><em class="property"> = &lt;Kind.TRANSMISSION_FAILURE: 'transmission failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </dd></dl>
@@ -639,21 +594,6 @@ Kind.FULL.</p>
 <dt id="grpc.framework.interfaces.base.base.Subscription.Kind">
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Subscription.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.FULL">
-<code class="descname">FULL</code><em class="property"> = &lt;Kind.FULL: 'full'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.FULL" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.NONE">
-<code class="descname">NONE</code><em class="property"> = &lt;Kind.NONE: 'none'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.NONE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY">
-<code class="descname">TERMINATION_ONLY</code><em class="property"> = &lt;Kind.TERMINATION_ONLY: 'termination only'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </dd></dl>
@@ -757,7 +697,7 @@ Kind.FULL.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.1rc1',
+            VERSION:'1.0.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
