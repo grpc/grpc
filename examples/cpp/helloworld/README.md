@@ -262,6 +262,16 @@ An asynchronous streaming server or client can read and write streaming data
 from/to each other. A common theme for a server/client stream is a dedicated
 thread that can callback when there is a new stream data available.
 
+One notable difference from the previous section on async RPCs and async
+streaming (bi-directional or otherwise) is the slightly complex nature of
+RPC flows and setup necessary:
+
+* Ensure the server calls `ServerContext::AsyncNotifyWhenDone(&tag)` during the
+  the stream setup so that you listen to notifications when the client is done 
+  with the stream.
+  
+* Ensure the client calls `WritesDone` to indicate it is done with the stream.
+
 A detailed example is in
 [greeter_async_bidi_server.cc](greeter_async_bidi_server.cc)
 and [greeter_async_bidi_client.cc](greeter_async_bidi_client.cc).

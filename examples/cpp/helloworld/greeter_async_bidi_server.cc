@@ -50,7 +50,7 @@ using hellostreamingworld::HelloRequest;
 using hellostreamingworld::HelloReply;
 using hellostreamingworld::MultiGreeter;
 
-enum class Type { READ = 1, WRITE = 2, CONNECT = 3, FINISH = 4 };
+enum class Type { READ = 1, WRITE = 2, CONNECT = 3, DONE = 4, FINISH = 5 };
 
 // NOTE: This is a complex example for an asynchronous, bidirectional streaming
 // server. For a simpler example, start with the
@@ -75,6 +75,9 @@ class AsyncBidiGreeterServer {
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
 
+    // This is important as the server should know when the client is done.
+    context_.AsyncNotifyWhenDone(reinterpret_cast<void*>(Type::DONE));
+
     // This initiates a single stream for a single client. To allow multiple
     // clients in different threads to connect, simply 'request' from the
     // different threads. Each stream is independent but can use the same
@@ -83,18 +86,28 @@ class AsyncBidiGreeterServer {
         new ServerAsyncReaderWriter<HelloReply, HelloRequest>(&context_));
     service_.RequestSayHello(&context_, stream_.get(), cq_.get(), cq_.get(),
                              reinterpret_cast<void*>(Type::CONNECT));
+
     grpc_thread_.reset(new std::thread([=]() { GrpcThread(); }));
     std::cout << "Server listening on " << server_address << std::endl;
   }
 
-  void SetResponse(const std::string& response) { response_str_ = response; }
+  void SetResponse(const std::string& response) {
+    if (response == "quit" && IsRunning()) {
+      stream_->Finish(grpc::Status::OK, reinterpret_cast<void*>(Type::FINISH));
+    }
+    response_str_ = response;
+  }
 
   ~AsyncBidiGreeterServer() {
-    std::cout << "Shutting down server." << std::endl;
+    std::cout << "Shutting down server...." << std::endl;
     server_->Shutdown();
     // Always shutdown the completion queue after the server.
     cq_->Shutdown();
     grpc_thread_->join();
+  }
+
+  bool IsRunning() const {
+    return is_running_;
   }
 
  private:
@@ -118,9 +131,11 @@ class AsyncBidiGreeterServer {
       void* got_tag = nullptr;
       bool ok = false;
       if (!cq_->Next(&got_tag, &ok)) {
-        std::cerr << "Client stream closed. Quitting" << std::endl;
+        std::cerr << "Server stream closed. Quitting" << std::endl;
         break;
       }
+      // stream_->Finish(grpc::Status::OK,
+      // reinterpret_cast<void*>(Type::FINISH));
 
       if (ok) {
         std::cout << std::endl
@@ -139,6 +154,15 @@ class AsyncBidiGreeterServer {
             std::cout << "Client connected." << std::endl;
             AsyncWaitForHelloRequest();
             break;
+          case Type::DONE:
+            std::cout << "Server disconnecting." << std::endl;
+            server_->Shutdown();
+            cq_->Shutdown();
+            is_running_ = false;
+            break;
+          case Type::FINISH:
+            std::cout << "Server quitting." << std::endl;
+            break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;
             GPR_ASSERT(false);
@@ -156,18 +180,16 @@ class AsyncBidiGreeterServer {
   std::unique_ptr<Server> server_;
   std::unique_ptr<ServerAsyncReaderWriter<HelloReply, HelloRequest>> stream_;
   std::unique_ptr<std::thread> grpc_thread_;
+  bool is_running_ = true;
 };
 
 int main(int argc, char** argv) {
   AsyncBidiGreeterServer server;
 
   std::string response;
-  while (true) {
+  while (server.IsRunning()) {
     std::cout << "Enter next set of responses (type quit to end): ";
     std::cin >> response;
-    if (response == "quit") {
-      break;
-    }
     server.SetResponse(response);
   }
 

@@ -53,13 +53,18 @@ using hellostreamingworld::MultiGreeter;
 // client. For a simpler example, start with the
 // greeter_client/greeter_async_client first.
 class AsyncBidiGreeterClient {
-  enum class Type { READ = 1, WRITE = 2, CONNECT = 3 };
+  enum class Type {
+    READ = 1,
+    WRITE = 2,
+    CONNECT = 3,
+    WRITES_DONE = 4,
+    FINISH = 5
+  };
 
  public:
   explicit AsyncBidiGreeterClient(std::shared_ptr<Channel> channel)
       : stub_(MultiGreeter::NewStub(channel)) {
-    grpc_thread_.reset(
-        new std::thread([=]() { GrpcThread(); }));
+    grpc_thread_.reset(new std::thread([=]() { GrpcThread(); }));
     stream_ = stub_->AsyncSayHello(&context_, &cq_,
                                    reinterpret_cast<void*>(Type::CONNECT));
   }
@@ -67,8 +72,14 @@ class AsyncBidiGreeterClient {
   // Similar to the async hello example in greeter_async_client but does not
   // wait for the response. Instead queues up a tag in the completion queue
   // that is notified when the server responds back (or when the stream is
-  // closed).
-  void AsyncSayHello(const std::string& user) {
+  // closed). Returns false when the stream is requested to be closed.
+  bool AsyncSayHello(const std::string& user) {
+    if (user == "quit") {
+      grpc::Status status = grpc::Status::OK;
+      stream_->WritesDone(reinterpret_cast<void*>(Type::WRITES_DONE));
+      return false;
+    }
+
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
@@ -81,10 +92,11 @@ class AsyncBidiGreeterClient {
     // are independent of each other in terms of ordering/delivery.
     std::cout << " ** Sending request: " << user << std::endl;
     stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
+    return true;
   }
 
   ~AsyncBidiGreeterClient() {
-    std::cout << "Shutting down client." << std::endl;
+    std::cout << "Shutting down client...." << std::endl;
     grpc::Status status;
     cq_.Shutdown();
     grpc_thread_->join();
@@ -136,6 +148,14 @@ class AsyncBidiGreeterClient {
           case Type::CONNECT:
             std::cout << "Server connected." << std::endl;
             break;
+          case Type::WRITES_DONE:
+            std::cout << "Server disconnecting." << std::endl;
+            break;
+          case Type::FINISH:
+            std::cout << "Client finish; status = "
+                      << (finish_status_.ok() ? "ok" : "cancelled")
+                      << std::endl;
+            break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;
             GPR_ASSERT(false);
@@ -167,6 +187,9 @@ class AsyncBidiGreeterClient {
 
   // Thread that notifies the gRPC completion queue tags.
   std::unique_ptr<std::thread> grpc_thread_;
+
+  // Finish status when the client is done with the stream.
+  grpc::Status finish_status_ = grpc::Status::OK;
 };
 
 int main(int argc, char** argv) {
@@ -177,12 +200,12 @@ int main(int argc, char** argv) {
   while (true) {
     std::cout << "Enter text (type quit to end): ";
     std::cin >> user;
-    if (user == "quit") {
-      break;
-    }
 
     // Async RPC call that sends a message and awaits a response.
-    greeter.AsyncSayHello(user);
+    if (!greeter.AsyncSayHello(user)) {
+      std::cout << "Quitting." << std::endl;
+      break;
+    }
   }
   return 0;
 }
