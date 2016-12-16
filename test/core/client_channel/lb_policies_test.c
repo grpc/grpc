@@ -241,6 +241,8 @@ static request_sequences request_sequences_create(size_t n) {
   res.n = n;
   res.connections = gpr_malloc(sizeof(*res.connections) * n);
   res.connectivity_states = gpr_malloc(sizeof(*res.connectivity_states) * n);
+  memset(res.connections, 0, sizeof(*res.connections) * n);
+  memset(res.connectivity_states, 0, sizeof(*res.connectivity_states) * n);
   return res;
 }
 
@@ -782,17 +784,15 @@ static void verify_total_carnage_round_robin(const servers_fixture *f,
     }
   }
 
-  /* no server is ever available. The persistent state is TRANSIENT_FAILURE. May
-   * also be CONNECTING if, under load, this check took too long to run and some
-   * subchannel already transitioned to retrying. */
+  /* No server is ever available. There should be no READY states (or SHUTDOWN).
+   * Note that all other states (IDLE, CONNECTING, TRANSIENT_FAILURE) are still
+   * possible, as the policy transitions while attempting to reconnect. */
   for (size_t i = 0; i < sequences->n; i++) {
     const grpc_connectivity_state actual = sequences->connectivity_states[i];
-    if (actual != GRPC_CHANNEL_TRANSIENT_FAILURE &&
-        actual != GRPC_CHANNEL_CONNECTING) {
+    if (actual == GRPC_CHANNEL_READY || actual == GRPC_CHANNEL_SHUTDOWN) {
       gpr_log(GPR_ERROR,
-              "CONNECTIVITY STATUS SEQUENCE FAILURE: expected "
-              "GRPC_CHANNEL_TRANSIENT_FAILURE or GRPC_CHANNEL_CONNECTING, got "
-              "'%s' at iteration #%d",
+              "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
+              "'%s' at iteration #%d.",
               grpc_connectivity_state_name(actual), (int)i);
       abort();
     }
@@ -841,17 +841,15 @@ static void verify_partial_carnage_round_robin(
     abort();
   }
 
-  /* ... and that the last one should be TRANSIENT_FAILURE, after all servers
-   * are gone. May also be CONNECTING if, under load, this check took too long
-   * to run and the subchannel already transitioned to retrying. */
+  /* ... and that the last one shouldn't be READY (or SHUTDOWN): all servers are
+   * gone. It may be all other states (IDLE, CONNECTING, TRANSIENT_FAILURE), as
+   * the policy transitions while attempting to reconnect. */
   actual = sequences->connectivity_states[num_iters - 1];
   for (i = 0; i < sequences->n; i++) {
-    if (actual != GRPC_CHANNEL_TRANSIENT_FAILURE &&
-        actual != GRPC_CHANNEL_CONNECTING) {
+    if (actual == GRPC_CHANNEL_READY || actual == GRPC_CHANNEL_SHUTDOWN) {
       gpr_log(GPR_ERROR,
-              "CONNECTIVITY STATUS SEQUENCE FAILURE: expected "
-              "GRPC_CHANNEL_TRANSIENT_FAILURE or GRPC_CHANNEL_CONNECTING, got "
-              "'%s' at iteration #%d",
+              "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
+              "'%s' at iteration #%d.",
               grpc_connectivity_state_name(actual), (int)i);
       abort();
     }
@@ -948,8 +946,8 @@ int main(int argc, char **argv) {
   const size_t NUM_ITERS = 10;
   const size_t NUM_SERVERS = 4;
 
-  grpc_test_init(argc, argv);
   grpc_init();
+  grpc_test_init(argc, argv);
   grpc_tracer_set_enabled("round_robin", 1);
 
   GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",
