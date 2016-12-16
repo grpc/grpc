@@ -1094,6 +1094,12 @@ argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 argp.add_argument('--report_suite_name', default='tests', type=str,
         help='Test suite name to use in generated JUnit XML report')
+argp.add_argument('--quiet_success',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Dont print anything when a test passes. Passing tests also will not be reported in XML report. ' +
+                       'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
@@ -1441,20 +1447,24 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
+    if args.quiet_success:
+      jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
+        quiet_success=args.quiet_success)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
-        if num_failures == num_runs:  # what about infinite_runs???
-          jobset.message('FAILED', k, do_newline=True)
-        elif num_failures > 0:
-          jobset.message(
-              'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
-              do_newline=True)
+        if num_failures > 0:
+          if num_failures == num_runs:  # what about infinite_runs???
+            jobset.message('FAILED', k, do_newline=True)
+          else:
+            jobset.message(
+                'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
+                do_newline=True)
   finally:
     for antagonist in antagonists:
       antagonist.kill()

@@ -242,6 +242,17 @@ def _allowed_labels():
   return sorted(all_labels)
 
 
+def _runs_per_test_type(arg_str):
+    """Auxiliary function to parse the "runs_per_test" flag."""
+    try:
+        n = int(arg_str)
+        if n <= 0: raise ValueError
+        return n
+    except:
+        msg = '\'{}\' is not a positive integer'.format(arg_str)
+        raise argparse.ArgumentTypeError(msg)
+
+
 if __name__ == "__main__":
   argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
   argp.add_argument('-j', '--jobs',
@@ -269,7 +280,7 @@ if __name__ == "__main__":
                     default=False,
                     action='store_const',
                     const=True,
-                    help='Filters out tests irrelavant to pull request changes.')
+                    help='Filters out tests irrelevant to pull request changes.')
   argp.add_argument('--base_branch',
                     default='origin/master',
                     type=str,
@@ -278,6 +289,9 @@ if __name__ == "__main__":
                     default=_DEFAULT_INNER_JOBS,
                     type=int,
                     help='Number of jobs in each run_tests.py instance')
+  argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
+                    help='How many times to run each tests. >1 runs implies ' +
+                    'omitting passing test from the output & reports.')
   args = argp.parse_args()
 
   extra_args = []
@@ -285,6 +299,10 @@ if __name__ == "__main__":
     extra_args.append('--build_only')
   if args.force_default_poller:
     extra_args.append('--force_default_poller')
+  if args.runs_per_test > 1:
+    extra_args.append('-n')
+    extra_args.append('%s' % args.runs_per_test)
+    extra_args.append('--quiet_success')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
