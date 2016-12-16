@@ -73,15 +73,18 @@ class H2Factory(twisted.internet.protocol.Factory):
     else:
       return t().get_base_server()
 
-if __name__ == "__main__":
-  logging.basicConfig(format = "%(levelname) -10s %(asctime)s %(module)s:%(lineno)s | %(message)s", level=logging.INFO)
+if __name__ == '__main__':
+  logging.basicConfig(
+    format='%(levelname) -10s %(asctime)s %(module)s:%(lineno)s | %(message)s',
+    level=logging.INFO)
   parser = argparse.ArgumentParser()
-  parser.add_argument("test")
-  parser.add_argument("port")
+  parser.add_argument('--test_case', choices=sorted(_TEST_CASE_MAPPING.keys()),
+    help='test case to run', required=True)
+  parser.add_argument('--port', type=int, default=8080,
+    help='port to run the server (default: 8080)')
   args = parser.parse_args()
-  if args.test not in _TEST_CASE_MAPPING.keys():
-    logging.error('unknown test: %s' % args.test)
-  else:
-    endpoint = twisted.internet.endpoints.TCP4ServerEndpoint(twisted.internet.reactor, int(args.port), backlog=128)
-    endpoint.listen(H2Factory(args.test))
-    twisted.internet.reactor.run()
+  logging.info('Running test case %s on port %d' % (args.test_case, args.port))
+  endpoint = twisted.internet.endpoints.TCP4ServerEndpoint(
+    twisted.internet.reactor, args.port, backlog=128)
+  endpoint.listen(H2Factory(args.test_case))
+  twisted.internet.reactor.run()
