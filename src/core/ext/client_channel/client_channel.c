@@ -526,7 +526,9 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  chand->resolver = grpc_resolver_create(arg->value.string, args->channel_args);
+  chand->resolver =
+      grpc_resolver_create(exec_ctx, arg->value.string, args->channel_args,
+                           chand->interested_parties);
   if (chand->resolver == NULL) {
     return GRPC_ERROR_CREATE("resolver creation failed");
   }

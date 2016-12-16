@@ -214,7 +214,8 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
 #define DECL_FACTORY(name)                                                  \
   static grpc_resolver *name##_factory_create_resolver(                     \
-      grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
+      grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,              \
+      grpc_resolver_args *args) {                                           \
     return sockaddr_create(args, parse_##name);                             \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
