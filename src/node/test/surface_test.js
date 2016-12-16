@@ -41,7 +41,7 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname +
+var math_proto = ProtoBuf.loadSync(__dirname +
     '/../../proto/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
@@ -85,11 +85,6 @@ describe('File loader', function() {
   it('Should load a json file with the json format', function() {
     assert.doesNotThrow(function() {
       grpc.load(__dirname + '/test_service.json', 'json');
-    });
-  });
-  it('Should fail to load a file with an unknown format', function() {
-    assert.throws(function() {
-      grpc.load(__dirname + '/test_service.proto', 'fake_format');
     });
   });
 });
@@ -283,7 +278,7 @@ describe('Echo service', function() {
   var server;
   var client;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/echo_service.proto');
     var echo_service = test_proto.lookup('EchoService');
     server = new grpc.Server();
     server.addProtoService(echo_service, {
@@ -406,7 +401,7 @@ describe('Echo metadata', function() {
   var server;
   var metadata;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     server.addProtoService(test_service, {
@@ -507,7 +502,7 @@ describe('Client malformed response handling', function() {
   var client;
   var badArg = new Buffer([0xFF]);
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     var malformed_test_service = {
       unary: {
@@ -614,7 +609,7 @@ describe('Server serialization failure handling', function() {
   var client;
   var server;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     var malformed_test_service = {
       unary: {
@@ -677,7 +672,9 @@ describe('Server serialization failure handling', function() {
     server.start();
   });
   after(function() {
-    server.forceShutdown();
+    if (server) {
+      server.forceShutdown();
+    }
   });
   it('should get an INTERNAL status with a unary call', function(done) {
     client.unary({}, function(err, data) {
@@ -721,7 +718,7 @@ describe('Other conditions', function() {
   var server;
   var port;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/test_service.proto');
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
@@ -1067,7 +1064,7 @@ describe('Call propagation', function() {
   var client;
   var server;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_proto = ProtoBuf.loadSync(__dirname + '/test_service.proto');
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     server.addProtoService(test_service, {
