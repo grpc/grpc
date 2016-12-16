@@ -38,6 +38,7 @@
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include <grpc++/impl/grpc_library.h>
 #include <grpc++/security/auth_metadata_processor.h>
 
 namespace grpc {
@@ -103,6 +104,13 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   }
   auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];
   auto response_md_data = response_md.empty() ? nullptr : &response_md[0];
+
+  // Instantiate GrpcLibraryCodegen to call grpc_init()/grpc_shutdown().
+  // We need this here because this whole method will be invoked asynchronously,
+  // potentially after all grpc_shutdown()s have been called. Because "cb" below
+  // is an arbitrary callback, we need to ensure it's called with the grpc
+  // library properly initialized.
+  GrpcLibraryCodegen init;
   cb(user_data, consumed_md_data, consumed_md.size(), response_md_data,
      response_md.size(), static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
