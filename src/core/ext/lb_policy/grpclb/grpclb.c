@@ -768,8 +768,14 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  grpc_uri *uri = grpc_uri_parse(arg->value.string, 1);
-  glb_policy->server_name = gpr_strdup(uri->path);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  GPR_ASSERT(uri->path[0] != '\0');
+  glb_policy->server_name =
+      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  if (grpc_lb_glb_trace) {
+    gpr_log(GPR_INFO, "Will use '%s' as the server name for LB request.",
+            glb_policy->server_name);
+  }
   grpc_uri_destroy(uri);
 
   /* All input addresses in addresses come from a resolver that claims
