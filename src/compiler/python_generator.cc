@@ -40,6 +40,7 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -64,7 +65,9 @@ using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
+using std::tuple;
 using std::vector;
+using std::set;
 
 namespace grpc_python_generator {
 
@@ -73,6 +76,8 @@ namespace {
 typedef vector<const Descriptor*> DescriptorVector;
 typedef map<grpc::string, grpc::string> StringMap;
 typedef vector<grpc::string> StringVector;
+typedef tuple<grpc::string, grpc::string> StringPair;
+typedef set<StringPair> StringPairSet;
 
 // Provides RAII indentation handling. Use as:
 // {
@@ -651,6 +656,7 @@ bool PrivateGenerator::PrintPreamble() {
       "face_utilities\n");
   if (generate_in_pb2_grpc) {
     out->Print("\n");
+    StringPairSet imports_set;
     for (int i = 0; i < file->service_count(); ++i) {
       const ServiceDescriptor* service = file->service(i);
       for (int j = 0; j < service->method_count(); ++j) {
@@ -662,10 +668,14 @@ bool PrivateGenerator::PrintPreamble() {
           grpc::string type_file_name = type->file()->name();
           grpc::string module_name = ModuleName(type_file_name);
           grpc::string module_alias = ModuleAlias(type_file_name);
-          out->Print("import $ModuleName$ as $ModuleAlias$\n", "ModuleName",
-                     module_name, "ModuleAlias", module_alias);
+          imports_set.insert(std::make_tuple(module_name, module_alias));
         }
       }
+    }
+    for (StringPairSet::iterator it = imports_set.begin();
+         it != imports_set.end(); ++it) {
+      out->Print("import $ModuleName$ as $ModuleAlias$\n", "ModuleName",
+                 std::get<0>(*it), "ModuleAlias", std::get<1>(*it));
     }
   }
   return true;
