@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc &mdash; grpcio 1.0.1rc1 documentation</title>
+  <title>grpc &mdash; grpcio 1.0.4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="grpcio 1.0.1rc1 documentation" href="../index.html"/>
+    <link rel="top" title="grpcio 1.0.4 documentation" href="../index.html"/>
         <link rel="up" title="Module code" href="index.html"/> 
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                1.0.1rc1
+                1.0.4
               </div>
             
           
@@ -170,6 +170,7 @@
 
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
 <span class="kn">import</span> <span class="nn">six</span>
 
@@ -906,8 +907,8 @@
 <span class="sd">    gRPC runtime to determine the status code of the RPC.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">      code: The integer status code of the RPC to be transmitted to the</span>
-<span class="sd">        invocation side of the RPC.</span>
+<span class="sd">      code: A StatusCode value to be transmitted to the invocation side of the</span>
+<span class="sd">        RPC as the status code of the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
@@ -919,8 +920,8 @@
 <span class="sd">    details to transmit.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">      details: The details string of the RPC to be transmitted to</span>
-<span class="sd">        the invocation side of the RPC.</span>
+<span class="sd">      details: A string to be transmitted to the invocation side of the RPC as</span>
+<span class="sd">        the status details of the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
@@ -1066,10 +1067,16 @@
 <span class="sd">    passed in a previous call will not have the effect of stopping the server</span>
 <span class="sd">    later.</span>
 
+<span class="sd">    This method does not block for any significant length of time. If None is</span>
+<span class="sd">    passed as the grace value, existing RPCs are immediately aborted and this</span>
+<span class="sd">    method blocks until this Server is completely stopped.</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">      grace: A duration of time in seconds to allow existing RPCs to complete</span>
-<span class="sd">        before being aborted by this Server&#39;s stopping. If None, this method</span>
-<span class="sd">        will block until the server is completely stopped.</span>
+<span class="sd">      grace: A duration of time in seconds or None. If a duration of time in</span>
+<span class="sd">        seconds, the time to allow existing RPCs to complete before being</span>
+<span class="sd">        aborted by this Server&#39;s stopping. If None, all RPCs will be aborted</span>
+<span class="sd">        immediately and this method will block until this Server is completely</span>
+<span class="sd">        stopped.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A threading.Event that will be set when this Server has completely</span>
@@ -1426,6 +1433,27 @@
     <span class="s1">&#39;secure_channel&#39;</span><span class="p">,</span>
     <span class="s1">&#39;server&#39;</span><span class="p">,</span>
 <span class="p">)</span>
+
+
+<span class="c1">############################### Extension Shims ################################</span>
+
+
+<span class="c1"># Here to maintain backwards compatibility; avoid using these in new code!</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">grpc_tools</span>
+  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.tools&#39;</span><span class="p">:</span> <span class="n">grpc_tools</span><span class="p">})</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+  <span class="k">pass</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">grpc_health</span>
+  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.health&#39;</span><span class="p">:</span> <span class="n">grpc_health</span><span class="p">})</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+  <span class="k">pass</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">grpc_reflection</span>
+  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.reflection&#39;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+  <span class="k">pass</span>
 </pre></div>
 
            </div>
@@ -1459,7 +1487,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'1.0.1rc1',
+            VERSION:'1.0.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
