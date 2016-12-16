@@ -62,7 +62,7 @@ Client Procedure:
 
 Client asserts:
 * Call was successful.
-* Response payload body is 1024 bytes in size.
+* Response payload body is 314159 bytes in size.
 
 Server Procedure:
   1. Server sends a GOAWAY after receiving the first UnaryCall.
@@ -167,7 +167,7 @@ Procedure:
   
 Client asserts:
 * call was successful.
-* response payload body is 1024 bytes in size.
+* response payload body is 314159 bytes in size.
 
 Server Procedure:
   1. Server tracks the number of outstanding pings (i.e. +1 when it sends a ping, and -1 
