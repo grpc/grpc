@@ -75,9 +75,6 @@ class AsyncBidiGreeterServer {
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
 
-    // This is important as the server should know when the client is done.
-    context_.AsyncNotifyWhenDone(reinterpret_cast<void*>(Type::DONE));
-
     // This initiates a single stream for a single client. To allow multiple
     // clients in different threads to connect, simply 'request' from the
     // different threads. Each stream is independent but can use the same
@@ -87,13 +84,18 @@ class AsyncBidiGreeterServer {
     service_.RequestSayHello(&context_, stream_.get(), cq_.get(), cq_.get(),
                              reinterpret_cast<void*>(Type::CONNECT));
 
-    grpc_thread_.reset(new std::thread([=]() { GrpcThread(); }));
+    // This is important as the server should know when the client is done.
+    context_.AsyncNotifyWhenDone(reinterpret_cast<void*>(Type::DONE));
+
+    grpc_thread_.reset(new std::thread(
+        (std::bind(&AsyncBidiGreeterServer::GrpcThread, this))));
     std::cout << "Server listening on " << server_address << std::endl;
   }
 
   void SetResponse(const std::string& response) {
     if (response == "quit" && IsRunning()) {
-      stream_->Finish(grpc::Status::OK, reinterpret_cast<void*>(Type::FINISH));
+      stream_->Finish(grpc::Status::CANCELLED,
+                      reinterpret_cast<void*>(Type::FINISH));
     }
     response_str_ = response;
   }
@@ -106,16 +108,16 @@ class AsyncBidiGreeterServer {
     grpc_thread_->join();
   }
 
-  bool IsRunning() const {
-    return is_running_;
-  }
+  bool IsRunning() const { return is_running_; }
 
  private:
   void AsyncWaitForHelloRequest() {
-    // In the case of the server, we wait for a READ first and then write a
-    // response. A server cannot initiate a connection so the server has to
-    // wait for the client to send a message in order for it to respond back.
-    stream_->Read(&request_, reinterpret_cast<void*>(Type::READ));
+    if (IsRunning()) {
+      // In the case of the server, we wait for a READ first and then write a
+      // response. A server cannot initiate a connection so the server has to
+      // wait for the client to send a message in order for it to respond back.
+      stream_->Read(&request_, reinterpret_cast<void*>(Type::READ));
+    }
   }
 
   void AsyncHelloSendResponse() {
@@ -156,8 +158,6 @@ class AsyncBidiGreeterServer {
             break;
           case Type::DONE:
             std::cout << "Server disconnecting." << std::endl;
-            server_->Shutdown();
-            cq_->Shutdown();
             is_running_ = false;
             break;
           case Type::FINISH:

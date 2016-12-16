@@ -64,7 +64,8 @@ class AsyncBidiGreeterClient {
  public:
   explicit AsyncBidiGreeterClient(std::shared_ptr<Channel> channel)
       : stub_(MultiGreeter::NewStub(channel)) {
-    grpc_thread_.reset(new std::thread([=]() { GrpcThread(); }));
+    grpc_thread_.reset(
+        new std::thread(std::bind(&AsyncBidiGreeterClient::GrpcThread, this)));
     stream_ = stub_->AsyncSayHello(&context_, &cq_,
                                    reinterpret_cast<void*>(Type::CONNECT));
   }
@@ -75,7 +76,6 @@ class AsyncBidiGreeterClient {
   // closed). Returns false when the stream is requested to be closed.
   bool AsyncSayHello(const std::string& user) {
     if (user == "quit") {
-      grpc::Status status = grpc::Status::OK;
       stream_->WritesDone(reinterpret_cast<void*>(Type::WRITES_DONE));
       return false;
     }
@@ -155,6 +155,8 @@ class AsyncBidiGreeterClient {
             std::cout << "Client finish; status = "
                       << (finish_status_.ok() ? "ok" : "cancelled")
                       << std::endl;
+            context_.TryCancel();
+            cq_.Shutdown();
             break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;
@@ -196,13 +198,13 @@ int main(int argc, char** argv) {
   AsyncBidiGreeterClient greeter(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
-  std::string user;
+  std::string text;
   while (true) {
     std::cout << "Enter text (type quit to end): ";
-    std::cin >> user;
+    std::cin >> text;
 
     // Async RPC call that sends a message and awaits a response.
-    if (!greeter.AsyncSayHello(user)) {
+    if (!greeter.AsyncSayHello(text)) {
       std::cout << "Quitting." << std::endl;
       break;
     }
