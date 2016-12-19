@@ -27,30 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+require 'grpc'
 
-Pod::Spec.new do |s|
-  s.name     = 'gRPC-RxLibrary'
-  version = '1.0.2'
-  s.version  = version
-  s.summary  = 'Reactive Extensions library for iOS/OSX.'
-  s.homepage = 'http://www.grpc.io'
-  s.license  = 'New BSD'
-  s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+StatusCodes = GRPC::Core::StatusCodes
 
-  s.source = {
-    :git => 'https://github.com/grpc/grpc.git',
-    :tag => "objective-c-v#{version}",
-  }
+describe StatusCodes do
+  # convert upper snake-case to camel case.
+  # e.g., DEADLINE_EXCEEDED -> DeadlineExceeded
+  def upper_snake_to_camel(name)
+    name.to_s.split('_').map(&:downcase).map(&:capitalize).join('')
+  end
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  StatusCodes.constants.each do |status_name|
+    it 'there is a subclass of BadStatus corresponding to StatusCode: ' \
+      "#{status_name} that has code: #{StatusCodes.const_get(status_name)}" do
+      camel_case = upper_snake_to_camel(status_name)
+      error_class = GRPC.const_get(camel_case)
+      # expect the error class to be a subclass of BadStatus
+      expect(error_class < GRPC::BadStatus)
 
-  name = 'RxLibrary'
-  s.module_name = name
-  s.header_dir = name
+      error_object = error_class.new
+      # check that the code matches the int value of the error's constant
+      status_code = StatusCodes.const_get(status_name)
+      expect(error_object.code).to eq(status_code)
 
-  src_dir = 'src/objective-c/RxLibrary'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
-  s.header_mappings_dir = "#{src_dir}"
+      # check default parameters
+      expect(error_object.details).to eq('unknown cause')
+      expect(error_object.metadata).to eq({})
+
+      # check that the BadStatus factory for creates the correct
+      # exception too
+      from_factory = GRPC::BadStatus.new_status_exception(status_code)
+      expect(from_factory.is_a?(error_class)).to be(true)
+    end
+  end
 end
