@@ -219,7 +219,8 @@ class JobResult(object):
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, newline_on_success, travis, add_env):
+  def __init__(self, spec, newline_on_success, travis, add_env,
+               quiet_success=False):
     self._spec = spec
     self._newline_on_success = newline_on_success
     self._travis = travis
@@ -227,7 +228,9 @@ class Job(object):
     self._retries = 0
     self._timeout_retries = 0
     self._suppress_failure_message = False
-    message('START', spec.shortname, do_newline=self._travis)
+    self._quiet_success = quiet_success
+    if not self._quiet_success:
+      message('START', spec.shortname, do_newline=self._travis)
     self.result = JobResult()
     self.start()
 
@@ -302,10 +305,11 @@ class Job(object):
           if real > 0.5:
             cores = (user + sys) / real
             measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
-        message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
-            self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
-            stdout() if self._spec.verbose_success else None,
-            do_newline=self._newline_on_success or self._travis)
+        if not self._quiet_success:
+          message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
+              self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
+              stdout() if self._spec.verbose_success else None,
+              do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
     elif (self._state == _RUNNING and
           self._spec.timeout_seconds is not None and
@@ -341,7 +345,7 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env):
+               stop_on_failure, add_env, quiet_success):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -352,6 +356,7 @@ class Jobset(object):
     self._travis = travis
     self._stop_on_failure = stop_on_failure
     self._add_env = add_env
+    self._quiet_success = quiet_success
     self.resultset = {}
     self._remaining = None
     self._start_time = time.time()
@@ -380,7 +385,8 @@ class Jobset(object):
     job = Job(spec,
               self._newline_on_success,
               self._travis,
-              self._add_env)
+              self._add_env,
+              self._quiet_success)
     self._running.add(job)
     if job.GetSpec().shortname not in self.resultset:
       self.resultset[job.GetSpec().shortname] = []
@@ -403,7 +409,8 @@ class Jobset(object):
         break
       for job in dead:
         self._completed += 1
-        self.resultset[job.GetSpec().shortname].append(job.result)
+        if not self._quiet_success or job.result.state != 'PASSED':
+          self.resultset[job.GetSpec().shortname].append(job.result)
         self._running.remove(job)
       if dead: return
       if not self._travis and platform_string() != 'windows':
@@ -463,7 +470,8 @@ def run(cmdlines,
         infinite_runs=False,
         stop_on_failure=False,
         add_env={},
-        skip_jobs=False):
+        skip_jobs=False,
+        quiet_success=False):
   if skip_jobs:
     results = {}
     skipped_job_result = JobResult()
@@ -474,7 +482,8 @@ def run(cmdlines,
     return results
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success, travis, stop_on_failure, add_env)
+              newline_on_success, travis, stop_on_failure, add_env,
+              quiet_success)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break
