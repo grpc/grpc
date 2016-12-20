@@ -382,10 +382,9 @@ class NodeLanguage(object):
 
   def test_specs(self):
     if self.platform == 'windows':
-      return [self.config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
+      return [self.config.job_spec(['tools\\run_tests\\run_node.bat'])]
     else:
       return [self.config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
-                                   None,
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -427,7 +426,7 @@ class PhpLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'],
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -463,7 +462,7 @@ class Php7Language(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'],
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -702,7 +701,6 @@ class CSharpLanguage(object):
         for test in tests_by_assembly[assembly]:
           cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
           specs.append(self.config.job_spec(cmdline,
-                                            None,
                                             shortname='csharp.%s' % test,
                                             environ=_FORCE_ENVIRON_FOR_WRAPPERS))
       else:
@@ -720,7 +718,6 @@ class CSharpLanguage(object):
         # to prevent problems with registering the profiler.
         run_exclusive = 1000000
         specs.append(self.config.job_spec(cmdline,
-                                          None,
                                           shortname='csharp.coverage.%s' % assembly,
                                           cpu_cost=run_exclusive,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
@@ -779,7 +776,7 @@ class ObjCLanguage(object):
   def test_specs(self):
     return [
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
-                              timeout_seconds=None,
+                              timeout_seconds=60*60,
                               shortname='objc-tests',
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
         self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
@@ -824,7 +821,7 @@ class Sanity(object):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
       return [self.config.job_spec(cmd['script'].split(),
-                                   timeout_seconds=None, environ={'TEST': 'true'},
+                                   timeout_seconds=30*60, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
 
