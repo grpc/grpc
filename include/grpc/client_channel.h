@@ -44,8 +44,19 @@
 extern "C" {
 #endif
 
+/* Returns the number of bytes written
+ * (excluding the final '\0'), and *joined_host_port points to a string which must later
+ * be destroyed using gpr_free().
+ * Return values and ownership semantics are meant to mimick gpr_split_host_port, see
+ * https://github.com/grpc/grpc/blob/master/include/grpc/support/host_port.h#L53 */
 int grpc_generic_join_host_port(char **joined_host_port, const char *host, const char *port);
 
+/* Split *joined_host_port into hostname and port number, into newly allocated strings, which must later be
+ * destroyed using gpr_free().
+ * Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
+ * failure.
+ * Return values and ownership semantics are meant to mimick gpr_join_host_port, see
+ * https://github.com/grpc/grpc/blob/master/include/grpc/support/host_port.h#L60*/
 int grpc_generic_split_host_port(const char *joined_host_port, char **host, char **port);
 
 #ifdef __cplusplus

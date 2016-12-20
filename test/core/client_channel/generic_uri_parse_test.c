@@ -36,6 +36,8 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "test/core/util/test_config.h"
 
@@ -62,15 +64,16 @@ static void fake_host_port_parser_unref(grpc_host_port_parser *parser) {}
 
 static int fake_host_port_parser_join_host_port(grpc_host_port_parser *parser, char **joined_host_port, const char *host, const char *port) {
   GPR_ASSERT(parser == &fake_host_port_parser);
-  *joined_host_port = "fake:fake_host_port";
-  return 0;
+  *joined_host_port = gpr_strdup("fake:fake_host_port");
+  return (int)strlen(*joined_host_port);
 }
 
 static int fake_host_port_parser_split_host_port(grpc_host_port_parser *parser, const char *joined_host_port, char **host, char **port) {
   GPR_ASSERT(parser == &fake_host_port_parser);
-  *host = "fake_host";
-  *port = "fake_port";
-  return 0;
+  *host = gpr_strdup("fake_host");
+  *port = gpr_strdup("fake_port");
+
+  return 1;
 }
 
 static void init_fake_host_port_parser() {
@@ -84,6 +87,8 @@ static void test_split_host_port_succeeds(char *joined_host_port, char *expected
   grpc_generic_split_host_port(joined_host_port, &actual_host, &actual_port);
   gpr_log(GPR_INFO, "actual host: %s", actual_host);
   GPR_ASSERT(0 == strcmp(expected_host, actual_host));
+  gpr_free(actual_host);
+  gpr_free(actual_port);
   gpr_log(GPR_INFO, "test succeeds");
 }
 
@@ -94,6 +99,7 @@ static void test_join_host_port_succeeds(const char *expected_host_port, const c
   grpc_generic_join_host_port(&joined_host_port, host, port);
   gpr_log(GPR_INFO, "actual host_port: %s", joined_host_port);
   GPR_ASSERT(0 == strcmp(expected_host_port, joined_host_port));
+  gpr_free(joined_host_port);
   gpr_log(GPR_INFO, "test succeeds");
 }
 

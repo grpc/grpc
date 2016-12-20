@@ -49,7 +49,19 @@ struct grpc_host_port_parser_vtable {
   void (*ref)(grpc_host_port_parser *parser);
   void (*unref)(grpc_host_port_parser *parser);
 
+  /* Returns the number of bytes written
+   * (excluding the final '\0'), and *joined_host_port points to a string which must later
+   * be destroyed using gpr_free().
+   * Return values and ownership semantics are meant to mimick gpr_split_host_port, see
+   * https://github.com/grpc/grpc/blob/master/include/grpc/support/host_port.h#L53 */
   int (*join_host_port)(grpc_host_port_parser *parser, char **joined_host_port, const char *host, const char *port);
+
+  /* Split *joined_host_port into hostname and port number, into newly allocated strings, which must later be
+   * destroyed using gpr_free().
+   * Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
+   * failure.
+   * Return values and ownership semantics are meant to mimick gpr_join_host_port, see
+   * https://github.com/grpc/grpc/blob/master/include/grpc/support/host_port.h#L60*/
   int (*split_host_port)(grpc_host_port_parser *parser, const char *joined_host_port, char **host, char **port);
 
   /** URI scheme that this parser implements */
