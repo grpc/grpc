@@ -83,8 +83,7 @@ class InvalidMetadataTest(unittest.TestCase):
     expected_error_details = "metadata was invalid: %s" % metadata
     with self.assertRaises(ValueError) as exception_context:
       self._unary_unary(request, metadata=metadata)
-    self.assertEqual(
-        expected_error_details, exception_context.exception.message)
+    self.assertIn(expected_error_details, str(exception_context.exception))
 
   def testUnaryRequestBlockingUnaryResponseWithCall(self):
     request = b'\x07\x08'
@@ -92,8 +91,7 @@ class InvalidMetadataTest(unittest.TestCase):
     expected_error_details = "metadata was invalid: %s" % metadata
     with self.assertRaises(ValueError) as exception_context:
       self._unary_unary.with_call(request, metadata=metadata)
-    self.assertEqual(
-        expected_error_details, exception_context.exception.message)
+    self.assertIn(expected_error_details, str(exception_context.exception))
 
   def testUnaryRequestFutureUnaryResponse(self):
     request = b'\x07\x08'
@@ -129,8 +127,7 @@ class InvalidMetadataTest(unittest.TestCase):
     expected_error_details = "metadata was invalid: %s" % metadata
     with self.assertRaises(ValueError) as exception_context:
       self._stream_unary(request_iterator, metadata=metadata)
-    self.assertEqual(
-        expected_error_details, exception_context.exception.message)
+    self.assertIn(expected_error_details, str(exception_context.exception))
 
   def testStreamRequestBlockingUnaryResponseWithCall(self):
     request_iterator = (
@@ -140,8 +137,7 @@ class InvalidMetadataTest(unittest.TestCase):
     multi_callable = _stream_unary_multi_callable(self._channel)
     with self.assertRaises(ValueError) as exception_context:
       multi_callable.with_call(request_iterator, metadata=metadata)
-    self.assertEqual(
-        expected_error_details, exception_context.exception.message)
+    self.assertIn(expected_error_details, str(exception_context.exception))
 
   def testStreamRequestFutureUnaryResponse(self):
     request_iterator = (
