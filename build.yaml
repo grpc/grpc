@@ -249,6 +249,7 @@ filegroups:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
+  - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/mdstr_hash_table.h
@@ -362,6 +363,7 @@ filegroups:
   - src/core/lib/surface/server.c
   - src/core/lib/surface/validate_metadata.c
   - src/core/lib/surface/version.c
+  - src/core/lib/transport/bdp_estimator.c
   - src/core/lib/transport/byte_stream.c
   - src/core/lib/transport/connectivity_state.c
   - src/core/lib/transport/mdstr_hash_table.c
@@ -1405,6 +1407,16 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: bdp_estimator_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/bdp_estimator_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_decoder_test
   build: test
   language: c
