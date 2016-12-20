@@ -54,9 +54,9 @@ import time
 from six.moves import urllib
 import uuid
 
-import jobset
-import report_utils
-import watch_dirs
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
+import python_utils.watch_dirs as watch_dirs
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -116,7 +116,7 @@ class Config(object):
 def get_c_tests(travis, test_lang) :
   out = []
   platforms_str = 'ci_platforms' if travis else 'platforms'
-  with open('tools/run_tests/tests.json') as f:
+  with open('tools/run_tests/generated/tests.json') as f:
     js = json.load(f)
     return [tgt
             for tgt in js
@@ -300,7 +300,7 @@ class CLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_c.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
     else:
       return []
 
@@ -311,7 +311,7 @@ class CLanguage(object):
     if self.platform == 'windows':
       return []
     else:
-      return [['tools/run_tests/post_tests_c.sh']]
+      return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -382,16 +382,16 @@ class NodeLanguage(object):
 
   def test_specs(self):
     if self.platform == 'windows':
-      return [self.config.job_spec(['tools\\run_tests\\run_node.bat'])]
+      return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
     else:
-      return [self.config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_node.sh', self.node_version],
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
 
   def make_targets(self):
     return []
@@ -401,9 +401,9 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
     else:
-      return [['tools/run_tests/build_node.sh', self.node_version]]
+      return [['tools/run_tests/helper_scripts/build_node.sh', self.node_version]]
 
   def post_tests_steps(self):
     return []
@@ -439,10 +439,10 @@ class PhpLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_php.sh']]
+    return [['tools/run_tests/helper_scripts/build_php.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_php.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -475,10 +475,10 @@ class Php7Language(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_php.sh']]
+    return [['tools/run_tests/helper_scripts/build_php.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_php.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -547,18 +547,18 @@ class PythonLanguage(object):
 
     if os.name == 'nt':
       shell = ['bash']
-      builder = [os.path.abspath('tools/run_tests/build_python_msys2.sh')]
+      builder = [os.path.abspath('tools/run_tests/helper_scripts/build_python_msys2.sh')]
       builder_prefix_arguments = ['MINGW{}'.format(bits)]
       venv_relative_python = ['Scripts/python.exe']
       toolchain = ['mingw32']
     else:
       shell = []
-      builder = [os.path.abspath('tools/run_tests/build_python.sh')]
+      builder = [os.path.abspath('tools/run_tests/helper_scripts/build_python.sh')]
       builder_prefix_arguments = []
       venv_relative_python = ['bin/python']
       toolchain = ['unix']
 
-    runner = [os.path.abspath('tools/run_tests/run_python.sh')]
+    runner = [os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')]
     config_vars = _PythonConfigVars(shell, builder, builder_prefix_arguments,
                               venv_relative_python, toolchain, runner)
     python27_config = _python_config_generator(name='py27', major='2',
@@ -610,12 +610,12 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
+    return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    return [['tools/run_tests/pre_build_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
   def make_targets(self):
     return []
@@ -624,10 +624,10 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -725,9 +725,9 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
     else:
-      return [['tools/run_tests/pre_build_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
   def make_targets(self):
     return ['grpc_csharp_ext']
@@ -738,22 +738,22 @@ class CSharpLanguage(object):
   def build_steps(self):
     if self.args.compiler == 'coreclr':
       if self.platform == 'windows':
-        return [['tools\\run_tests\\build_csharp_coreclr.bat']]
+        return [['tools\\run_tests\\helper_scripts\\build_csharp_coreclr.bat']]
       else:
-        return [['tools/run_tests/build_csharp_coreclr.sh']]
+        return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
     else:
       if self.platform == 'windows':
         return [[_windows_build_bat(self.args.compiler),
                  'src/csharp/Grpc.sln',
                  '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
       else:
-        return [['tools/run_tests/build_csharp.sh']]
+        return [['tools/run_tests/helper_scripts/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\post_tests_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\post_tests_csharp.bat']]
     else:
-      return [['tools/run_tests/post_tests_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -872,9 +872,9 @@ class NodeExpressLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
 
   def make_targets(self):
     return []
@@ -898,7 +898,7 @@ class NodeExpressLanguage(object):
     return 'node_express'
 
 # different configurations we can run under
-with open('tools/run_tests/configs.json') as f:
+with open('tools/run_tests/generated/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
@@ -1299,7 +1299,7 @@ def _start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+        [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
          'dump_version']))
     print('my port server is version %d' % current_version)
     running = (version >= current_version)
@@ -1311,7 +1311,7 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print('starting port_server, with log file %s' % logfile)
-    args = [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+    args = [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
@@ -1417,7 +1417,7 @@ def _build_and_run(
     return []
 
   # start antagonists
-  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
+  antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
   port_server_port = 32766
   _start_port_server(port_server_port)

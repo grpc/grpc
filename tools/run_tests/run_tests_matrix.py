@@ -31,12 +31,13 @@
 """Run test matrix."""
 
 import argparse
-import jobset
 import multiprocessing
 import os
-import report_utils
 import sys
-from filter_pull_request_tests import filter_tests
+
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
+from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -69,7 +70,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
   test_job = jobset.JobSpec(
-          cmdline=['tools/run_tests/run_tests_in_workspace.sh',
+          cmdline=['tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
                    '-x', '../report_%s.xml' % name,
