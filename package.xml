@@ -171,6 +171,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/client_channel.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
@@ -318,6 +319,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/generic_uri_parse.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
@@ -522,6 +524,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/default_initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/generic_uri_parse.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />

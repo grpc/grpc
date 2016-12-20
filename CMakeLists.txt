@@ -455,6 +455,7 @@ add_library(grpc
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/generic_uri_parse.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
@@ -545,6 +546,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc/grpc_security.h
+  include/grpc/client_channel.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -710,6 +712,7 @@ add_library(grpc_cronet
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/generic_uri_parse.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
@@ -797,6 +800,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_windows.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
+  include/grpc/client_channel.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -964,6 +968,7 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/generic_uri_parse.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
@@ -1046,6 +1051,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/client_channel.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -1404,6 +1410,7 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/generic_uri_parse.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
@@ -1551,6 +1558,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/client_channel.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})

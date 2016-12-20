@@ -294,6 +294,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
@@ -443,6 +444,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\generic_uri_parse.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
@@ -819,6 +821,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\default_initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\generic_uri_parse.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
     </ClCompile>

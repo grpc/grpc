@@ -378,10 +378,13 @@ filegroups:
   uses:
   - grpc_codegen
 - name: grpc_client_channel
+  public_headers:
+  - include/grpc/client_channel.h
   headers:
   - src/core/ext/client_channel/client_channel.h
   - src/core/ext/client_channel/client_channel_factory.h
   - src/core/ext/client_channel/connector.h
+  - src/core/ext/client_channel/generic_uri_parse.h
   - src/core/ext/client_channel/http_connect_handshaker.h
   - src/core/ext/client_channel/initial_connect_string.h
   - src/core/ext/client_channel/lb_policy.h
@@ -401,6 +404,7 @@ filegroups:
   - src/core/ext/client_channel/client_channel_plugin.c
   - src/core/ext/client_channel/connector.c
   - src/core/ext/client_channel/default_initial_connect_string.c
+  - src/core/ext/client_channel/generic_uri_parse.c
   - src/core/ext/client_channel/http_connect_handshaker.c
   - src/core/ext/client_channel/initial_connect_string.c
   - src/core/ext/client_channel/lb_policy.c
@@ -1729,6 +1733,16 @@ targets:
   src:
   - tools/codegen/core/gen_percent_encoding_tables.c
   deps: []
+- name: generic_uri_parse_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/generic_uri_parse_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
