@@ -243,14 +243,14 @@ def _allowed_labels():
 
 
 def _runs_per_test_type(arg_str):
-    """Auxiliary function to parse the "runs_per_test" flag."""
-    try:
-        n = int(arg_str)
-        if n <= 0: raise ValueError
-        return n
-    except:
-        msg = '\'{}\' is not a positive integer'.format(arg_str)
-        raise argparse.ArgumentTypeError(msg)
+  """Auxiliary function to parse the "runs_per_test" flag."""
+  try:
+    n = int(arg_str)
+    if n <= 0: raise ValueError
+    return n
+  except:
+    msg = '\'{}\' is not a positive integer'.format(arg_str)
+    raise argparse.ArgumentTypeError(msg)
 
 
 if __name__ == "__main__":
@@ -264,6 +264,11 @@ if __name__ == "__main__":
                     nargs='+',
                     default=[],
                     help='Filter targets to run by label with AND semantics.')
+  argp.add_argument('--exclude',
+                    choices=_allowed_labels(),
+                    nargs='+',
+                    default=[],
+                    help='Exclude targets with any of given labels.')
   argp.add_argument('--build_only',
                     default=False,
                     action='store_const',
@@ -310,7 +315,8 @@ if __name__ == "__main__":
   jobs = []
   for job in all_jobs:
     if not args.filter or all(filter in job.labels for filter in args.filter):
-      jobs.append(job)
+      if not any(exclude_label in job.labels for exclude_label in args.exclude):
+        jobs.append(job)
 
   if not jobs:
     jobset.message('FAILED', 'No test suites match given criteria.',
