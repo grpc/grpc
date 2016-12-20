@@ -88,6 +88,8 @@ typedef struct grpc_resource_user grpc_resource_user;
 
 grpc_resource_user *grpc_resource_user_create(
     grpc_resource_quota *resource_quota, const char *name);
+grpc_resource_quota *grpc_resource_user_quota(
+    grpc_resource_user *resource_user);
 void grpc_resource_user_ref(grpc_resource_user *resource_user);
 void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
                               grpc_resource_user *resource_user);
