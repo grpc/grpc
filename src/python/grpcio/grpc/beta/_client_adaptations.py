@@ -528,7 +528,7 @@ class _DynamicStub(face.DynamicStub):
   def __init__(self, generic_stub, group, cardinalities):
     self._generic_stub = generic_stub
     self._group = group
-    self._cardinalities = cardinalities
+    self._cardinalities = cardinalities or {}
 
   def __getattr__(self, attr):
     method_cardinality = self._cardinalities.get(attr)
