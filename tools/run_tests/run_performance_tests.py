@@ -495,7 +495,7 @@ args = argp.parse_args()
 
 languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
+                      iter(scenario_config.LANGUAGES.keys()) if x == 'all' else [x]
                       for x in args.language))
 
 
