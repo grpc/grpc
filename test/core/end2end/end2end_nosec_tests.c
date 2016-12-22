@@ -103,6 +103,8 @@ extern void no_logging(grpc_end2end_test_config config);
 extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
 extern void no_op_pre_init(void);
+extern void packet_coalescing(grpc_end2end_test_config config);
+extern void packet_coalescing_pre_init(void);
 extern void payload(grpc_end2end_test_config config);
 extern void payload_pre_init(void);
 extern void ping(grpc_end2end_test_config config);
@@ -169,6 +171,7 @@ void grpc_end2end_tests_pre_init(void) {
   network_status_change_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
+  packet_coalescing_pre_init();
   payload_pre_init();
   ping_pre_init();
   ping_pong_streaming_pre_init();
@@ -224,6 +227,7 @@ void grpc_end2end_tests(int argc, char **argv,
     network_status_change(config);
     no_logging(config);
     no_op(config);
+    packet_coalescing(config);
     payload(config);
     ping(config);
     ping_pong_streaming(config);
@@ -362,6 +366,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("no_op", argv[i])) {
       no_op(config);
+      continue;
+    }
+    if (0 == strcmp("packet_coalescing", argv[i])) {
+      packet_coalescing(config);
       continue;
     }
     if (0 == strcmp("payload", argv[i])) {

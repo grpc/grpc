@@ -100,6 +100,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\packet_coalescing.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

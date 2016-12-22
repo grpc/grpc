@@ -31,54 +31,53 @@
  *
  */
 
-/* This file has empty implementation of all the functions exposed by the cronet
-library, so we can build it in all environments */
+#import "GRXImmediateSingleWriter.h"
 
-#include <stdbool.h>
-
-#include <grpc/support/log.h>
-
-#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
-
-#ifdef GRPC_COMPILE_WITH_CRONET
-/* link with the real CRONET library in the build system */
-#else
-/* Dummy implementation of cronet API just to test for build-ability */
-cronet_bidirectional_stream* cronet_bidirectional_stream_create(
-    cronet_engine* engine, void* annotation,
-    cronet_bidirectional_stream_callback* callback) {
-  GPR_ASSERT(0);
-  return NULL;
+@implementation GRXImmediateSingleWriter {
+  id _value;
+  NSError *_errorOrNil;
+  id<GRXWriteable> _writeable;
 }
 
-int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
-  GPR_ASSERT(0);
-  return 0;
+@synthesize state = _state;
+
+- (instancetype)initWithValue:(id)value error:(NSError *)errorOrNil {
+  if (self = [super init]) {
+    _value = value;
+    _errorOrNil = errorOrNil;
+    _state = GRXWriterStateNotStarted;
+  }
+  return self;
 }
 
-int cronet_bidirectional_stream_start(
-    cronet_bidirectional_stream* stream, const char* url, int priority,
-    const char* method, const cronet_bidirectional_stream_header_array* headers,
-    bool end_of_stream) {
-  GPR_ASSERT(0);
-  return 0;
++ (GRXWriter *)writerWithValue:(id)value {
+  return [[self alloc] initWithValue:value error:nil];
 }
 
-int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
-                                     char* buffer, int capacity) {
-  GPR_ASSERT(0);
-  return 0;
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  _state = GRXWriterStateStarted;
+  _writeable = writeable;
+  [writeable writeValue:_value];
+  [self finishWithError:_errorOrNil];
 }
 
-int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
-                                      const char* buffer, int count,
-                                      bool end_of_stream) {
-  GPR_ASSERT(0);
-  return 0;
+- (void)finishWithError:(NSError *)errorOrNil {
+  _state = GRXWriterStateFinished;
+  _errorOrNil = nil;
+  _value = nil;
+  id<GRXWriteable> writeable = _writeable;
+  _writeable = nil;
+  [writeable writesFinishedWithError:errorOrNil];
 }
 
-void cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
-  GPR_ASSERT(0);
+- (void)setState:(GRXWriterState)newState {
+  // Manual state transition is not allowed
+  return;
 }
 
-#endif /* GRPC_COMPILE_WITH_CRONET */
+- (GRXWriter *)map:(id (^)(id))map {
+  _value = map(_value);
+  return self;
+}
+
+@end
