@@ -84,7 +84,7 @@ def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases,
   resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
-  template_file = 'tools/run_tests/interop_html_report.template'
+  template_file = 'tools/run_tests/interop/interop_html_report.template'
   try:
     mytemplate = Template(filename=template_file, format_exceptions=True)
   except NameError:
