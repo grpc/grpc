@@ -4,9 +4,13 @@
 
 #include "src/compiler/config.h"
 #include "src/compiler/schema_interface.h"
+#include "src/compiler/python_private_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
+#include "src/compiler/python_generator_helpers.h"
 
 #include <vector>
+
+using grpc::protobuf::Descriptor;
 
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>
@@ -27,6 +31,22 @@ class ProtoBufMethod : public grpc_generator::Method {
     }
     grpc::string output_type_name() const {
       return grpc_cpp_generator::ClassName(method_->output_type(), true);
+    }
+
+    bool get_module_and_message_path_input(grpc::string str, 
+                                           grpc::string generator_file_name,
+                                           bool generate_in_pb2_grpc) const {
+      return grpc_python_generator::GetModuleAndMessagePath(method_->input_type(),
+                                                            &str, generator_file_name,
+                                                            generate_in_pb2_grpc);
+    }
+
+    bool get_module_and_message_path_output(grpc::string str,
+                                            grpc::string generator_file_name,
+                                            bool generate_in_pb2_grpc) const {
+      return grpc_python_generator::GetModuleAndMessagePath(method_->output_type(),
+                                                            &str, generator_file_name,
+                                                            generate_in_pb2_grpc);
     }
 
     bool NoStreaming() const {
@@ -53,6 +73,10 @@ class ProtoBufMethod : public grpc_generator::Method {
       return GetCommentsHelper(method_, false, prefix);
     }
 
+    vector<grpc::string> GetAllComments() const {
+      return grpc_python_generator::get_all_comments(method_);
+    }
+
   private:
    const grpc::protobuf::MethodDescriptor *method_;
  };
@@ -77,6 +101,10 @@ class ProtoBufService : public grpc_generator::Service {
    grpc::string GetTrailingComments(const grpc::string prefix) const {
      return GetCommentsHelper(service_, false, prefix);
    }
+
+   vector<grpc::string> GetAllComments() const {
+      return grpc_python_generator::get_all_comments(service_);
+    }
 
   private:
    const grpc::protobuf::ServiceDescriptor *service_;
@@ -136,6 +164,10 @@ class ProtoBufFile : public grpc_generator::File {
    grpc::string GetTrailingComments(const grpc::string prefix) const {
      return GetCommentsHelper(file_, false, prefix);
    }
+
+   vector<grpc::string> GetAllComments() const {
+      return grpc_python_generator::get_all_comments(file_);
+    }
 
   private:
    const grpc::protobuf::FileDescriptor *file_;

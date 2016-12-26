@@ -56,6 +56,7 @@ namespace grpc_generator {
     virtual ~CommentHolder() {}
     virtual grpc::string GetLeadingComments(const grpc::string prefix) const = 0;
     virtual grpc::string GetTrailingComments(const grpc::string prefix) const = 0;
+    virtual std::vector<grpc::string> GetAllComments() const = 0;
   };
 
   // An abstract interface representing a method.
@@ -66,6 +67,13 @@ namespace grpc_generator {
 
     virtual grpc::string input_type_name() const = 0;
     virtual grpc::string output_type_name() const = 0;
+
+    virtual bool get_module_and_message_path_input(grpc::string str, 
+                                                  grpc::string generator_file_name,
+                                                  bool generate_in_pb2_grpc) const = 0;
+    virtual bool get_module_and_message_path_output(grpc::string str,
+                                                    grpc::string generator_file_name, 
+                                                    bool generate_in_pb2_grpc) const = 0;
 
     virtual bool NoStreaming() const = 0;
     virtual bool ClientStreaming() const = 0;
