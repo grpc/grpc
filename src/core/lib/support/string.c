@@ -275,3 +275,14 @@ int gpr_stricmp(const char *a, const char *b) {
   } while (ca == cb && ca && cb);
   return ca - cb;
 }
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  for (size_t i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
+}
