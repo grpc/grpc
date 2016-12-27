@@ -136,7 +136,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         gpr_log(GPR_ERROR, "%s ignored: it must be a string",
                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
       } else {
-        if (GRPC_MDISNULL(channel->default_authority)) {
+        if (!GRPC_MDISNULL(channel->default_authority)) {
           /* other ways of setting this (notably ssl) take precedence */
           gpr_log(GPR_ERROR,
                   "%s ignored: default host already set some other way",
