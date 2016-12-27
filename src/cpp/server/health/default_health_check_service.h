@@ -60,13 +60,13 @@ class DefaultHealthCheckService : public HealthCheckServiceInterface {
   void SetServingStatus(const grpc::string& service_name, bool serving) final;
   void SetServingStatus(bool serving) final;
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
-  ServingStatus GetServingStatus(const grpc::string& service_name);
+  ServingStatus GetServingStatus(const grpc::string& service_name) const;
   SyncHealthCheckServiceImpl* GetSyncHealthCheckService() const {
     return sync_service_.get();
   }
 
  private:
-  std::mutex mu_;
+  mutable std::mutex mu_;
   std::map<grpc::string, bool> services_map_;
   std::unique_ptr<SyncHealthCheckServiceImpl> sync_service_;
 };
