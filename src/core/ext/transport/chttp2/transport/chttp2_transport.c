@@ -1981,26 +1981,53 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = bs->transport;
   grpc_chttp2_stream *s = bs->stream;
 
-  if (bs->is_tail) {
+  if (bs->next_action.max_size_hint == GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT) {
+    if (bs->is_tail) {
+      gpr_mu_lock(&bs->slice_mu);
+      size_t cur_length = bs->slices.length;
+      gpr_mu_unlock(&bs->slice_mu);
+      incoming_byte_stream_update_flow_control(
+          exec_ctx, t, s, GRPC_SLICE_LENGTH(*bs->next_action.slice),
+          cur_length);
+    }
     gpr_mu_lock(&bs->slice_mu);
-    size_t cur_length = bs->slices.length;
+    if (bs->slices.length >= GRPC_SLICE_LENGTH(*bs->next_action.slice)) {
+      grpc_slice_buffer_move_first_into_buffer(
+          &bs->slices, GRPC_SLICE_LENGTH(*bs->next_action.slice),
+          GRPC_SLICE_START_PTR(*bs->next_action.slice));
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    } else if (bs->error != GRPC_ERROR_NONE) {
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete,
+                       GRPC_ERROR_REF(bs->error));
+    } else {
+      bs->on_next = bs->next_action.on_complete;
+      bs->next = bs->next_action.slice;
+      bs->next_is_direct_placement = true;
+    }
     gpr_mu_unlock(&bs->slice_mu);
-    incoming_byte_stream_update_flow_control(
-        exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
-  }
-  gpr_mu_lock(&bs->slice_mu);
-  if (bs->slices.count > 0) {
-    *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
-    grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
-  } else if (bs->error != GRPC_ERROR_NONE) {
-    grpc_closure_run(exec_ctx, bs->next_action.on_complete,
-                     GRPC_ERROR_REF(bs->error));
   } else {
-    bs->on_next = bs->next_action.on_complete;
-    bs->next = bs->next_action.slice;
+    if (bs->is_tail) {
+      gpr_mu_lock(&bs->slice_mu);
+      size_t cur_length = bs->slices.length;
+      gpr_mu_unlock(&bs->slice_mu);
+      incoming_byte_stream_update_flow_control(
+          exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
+    }
+    gpr_mu_lock(&bs->slice_mu);
+    if (bs->slices.count > 0) {
+      *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    } else if (bs->error != GRPC_ERROR_NONE) {
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete,
+                       GRPC_ERROR_REF(bs->error));
+    } else {
+      bs->on_next = bs->next_action.on_complete;
+      bs->next = bs->next_action.slice;
+      bs->next_is_direct_placement = false;
+    }
+    gpr_mu_unlock(&bs->slice_mu);
+    incoming_byte_stream_unref(exec_ctx, bs);
   }
-  gpr_mu_unlock(&bs->slice_mu);
-  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 static bool incoming_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
@@ -2067,9 +2094,20 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
   } else {
     bs->remaining_bytes -= (uint32_t)GRPC_SLICE_LENGTH(slice);
     if (bs->on_next != NULL) {
-      *bs->next = slice;
-      grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
-      bs->on_next = NULL;
+      if (bs->next_is_direct_placement) {
+        grpc_slice_buffer_add(&bs->slices, slice);
+        if (bs->slices.length >= GRPC_SLICE_LENGTH(*bs->next)) {
+          grpc_slice_buffer_move_first_into_buffer(
+              &bs->slices, GRPC_SLICE_LENGTH(*bs->next),
+              GRPC_SLICE_START_PTR(*bs->next));
+          grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
+          bs->on_next = NULL;
+        }
+      } else {
+        *bs->next = slice;
+        grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
+        bs->on_next = NULL;
+      }
     } else {
       grpc_slice_buffer_add(&bs->slices, slice);
     }

@@ -1170,17 +1170,37 @@ static void continue_incremental_recv_raw(grpc_exec_ctx *exec_ctx,
 
 static void noop_stream_ref(void *arg) {}
 static void noop_stream_unref(grpc_exec_ctx *exec_ctx, void *arg) {}
+static void continue_incremental_recv_iovec(grpc_exec_ctx *exec_ctx,
+                                            grpc_call *call);
+
+static const grpc_slice_refcount_vtable recv_vtable = {
+    noop_stream_ref, noop_stream_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
+static grpc_slice_refcount recv_refcount = {&recv_vtable, &recv_refcount};
+
+static void got_next_iovec_slice(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  grpc_call *call = arg;
+  gpr_mu_lock(&call->mu);
+  continue_incremental_recv_iovec(exec_ctx, call);
+  gpr_mu_unlock(&call->mu);
+}
 
 static void continue_incremental_recv_iovec(grpc_exec_ctx *exec_ctx,
                                             grpc_call *call) {
-  static const grpc_slice_refcount_vtable recv_vtable = {
-      noop_stream_ref, noop_stream_unref, grpc_slice_default_eq_impl,
-      grpc_slice_default_hash_impl};
-  static grpc_slice_refcount recv_refcount = {&recv_vtable, &recv_refcount};
-
   grpc_slice *slice = &call->receiving.incremental.next_slice;
 
+  grpc_closure_init(&call->receiving_next_step, got_next_iovec_slice, call);
   do {
+    if (call->receiving.incremental.buffer_progress.iovec.pull_idx ==
+        call->receiving.incremental.pull_target->data.iovec.elem_count) {
+      call->receiving.incremental.pull_target = NULL;
+      grpc_cq_end_op(exec_ctx, call->cq, call->receiving.incremental.pull_tag,
+                     GRPC_ERROR_NONE, pull_reaped, call,
+                     &call->receiving.incremental.cq_completion);
+      break;
+    }
+
     slice->refcount = &recv_refcount;
     grpc_bb_iovec_elem elem =
         call->receiving.incremental.pull_target->data.iovec.elems
@@ -1289,7 +1309,16 @@ static void iovec_slice_ref(void *p) {
   gpr_ref(&call->sending.incremental.buffer_progress.iovec.waiting_refs);
 }
 
-static void iovec_slice_unref(grpc_exec_ctx *exec_ctx, void *p) { abort(); }
+static void iovec_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
+  grpc_call *call = incwr_call_from_iovec_slice_refcount(p);
+  if (gpr_unref(
+          &call->sending.incremental.buffer_progress.iovec.waiting_refs)) {
+    GPR_ASSERT(call->sending.incremental.buffer == NULL);
+    grpc_cq_end_op(exec_ctx, call->cq, call->sending.incremental.tag,
+                   GRPC_ERROR_NONE, incwr_published_send, call,
+                   &call->sending.incremental.cq_completion);
+  }
+}
 
 static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                  grpc_slice *slice) {
@@ -1319,9 +1348,6 @@ static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
       slice->data.refcounted.length = elem.len;
       if (incwr_at_end_of_iovec(call)) {
         call->sending.incremental.buffer = NULL;
-        grpc_cq_end_op(exec_ctx, call->cq, call->sending.incremental.tag,
-                       GRPC_ERROR_NONE, incwr_published_send, call,
-                       &call->sending.incremental.cq_completion);
       }
       break;
   }
@@ -1353,6 +1379,10 @@ static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
   abort();
 }
 
+static const grpc_slice_refcount_vtable iovec_slice_vtable = {
+    iovec_slice_ref, iovec_slice_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
+
 grpc_call_error grpc_call_incremental_message_writer_push(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
   GRPC_API_TRACE(
@@ -1360,10 +1390,6 @@ grpc_call_error grpc_call_incremental_message_writer_push(
       "tag=%p)",
       4,
       (call, buffer, buffer ? (int)grpc_byte_buffer_length(buffer) : -1, tag));
-
-  static const grpc_slice_refcount_vtable iovec_slice_vtable = {
-      iovec_slice_ref, iovec_slice_unref, grpc_slice_default_eq_impl,
-      grpc_slice_default_hash_impl};
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&call->mu);
@@ -1396,6 +1422,9 @@ grpc_call_error grpc_call_incremental_message_writer_push(
       call->sending.incremental.buffer_progress.iovec.elem_index = 0;
       call->sending.incremental.buffer_progress.iovec.slice_refcount.vtable =
           &iovec_slice_vtable;
+      call->sending.incremental.buffer_progress.iovec.slice_refcount
+          .sub_refcount =
+          &call->sending.incremental.buffer_progress.iovec.slice_refcount;
       break;
   }
   if (call->sending.incremental.on_next != NULL) {

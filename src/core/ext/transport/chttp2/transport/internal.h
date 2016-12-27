@@ -173,6 +173,7 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_slice_buffer slices;
   grpc_closure *on_next;
   grpc_slice *next;
+  bool next_is_direct_placement;
   uint32_t remaining_bytes;
 
   struct {
