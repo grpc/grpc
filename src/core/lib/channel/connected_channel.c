@@ -114,12 +114,13 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *cd = (channel_data *)elem->channel_data;
   GPR_ASSERT(args->is_last);
   cd->transport = NULL;
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel_data */
