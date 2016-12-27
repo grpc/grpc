@@ -37,7 +37,7 @@
 #include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc/support/log.h>
 
-#include "src/cpp/server/default_health_check_service.h"
+#include "src/cpp/server/health/default_health_check_service.h"
 #include "third_party/nanopb/pb_encode.h"
 #include "third_party/nanopb/pb_decode.h"
 

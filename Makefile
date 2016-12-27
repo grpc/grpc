@@ -3804,10 +3804,11 @@ LIBGRPC++_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
-    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/health_check_service.cc \
-    src/cpp/server/health_check_service_server_builder_option.cc \
+    src/cpp/server/health/default_health_check_service.cc \
+    src/cpp/server/health/health.pb.c \
+    src/cpp/server/health/health_check_service.cc \
+    src/cpp/server/health/health_check_service_server_builder_option.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
@@ -3996,10 +3997,11 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
-    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/health_check_service.cc \
-    src/cpp/server/health_check_service_server_builder_option.cc \
+    src/cpp/server/health/default_health_check_service.cc \
+    src/cpp/server/health/health.pb.c \
+    src/cpp/server/health/health_check_service.cc \
+    src/cpp/server/health/health_check_service_server_builder_option.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
@@ -4710,10 +4712,11 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
-    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/health_check_service.cc \
-    src/cpp/server/health_check_service_server_builder_option.cc \
+    src/cpp/server/health/default_health_check_service.cc \
+    src/cpp/server/health/health.pb.c \
+    src/cpp/server/health/health_check_service.cc \
+    src/cpp/server/health/health_check_service_server_builder_option.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
@@ -7035,6 +7038,19 @@ endif
 
 
 LIBBENCHMARK_SRC = \
+    third_party/benchmark/src/benchmark.cc \
+    third_party/benchmark/src/benchmark_register.cc \
+    third_party/benchmark/src/colorprint.cc \
+    third_party/benchmark/src/commandlineflags.cc \
+    third_party/benchmark/src/complexity.cc \
+    third_party/benchmark/src/console_reporter.cc \
+    third_party/benchmark/src/csv_reporter.cc \
+    third_party/benchmark/src/json_reporter.cc \
+    third_party/benchmark/src/reporter.cc \
+    third_party/benchmark/src/sleep.cc \
+    third_party/benchmark/src/string_util.cc \
+    third_party/benchmark/src/sysinfo.cc \
+    third_party/benchmark/src/timers.cc \
 
 PUBLIC_HEADERS_CXX += \
 
