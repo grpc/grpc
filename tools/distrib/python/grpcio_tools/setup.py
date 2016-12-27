@@ -184,7 +184,7 @@ def extension_modules():
     return extensions
 
 setuptools.setup(
-  name='grpcio_tools',
+  name='grpcio-tools',
   version=grpc_version.VERSION,
   license='3-clause BSD',
   ext_modules=extension_modules(),

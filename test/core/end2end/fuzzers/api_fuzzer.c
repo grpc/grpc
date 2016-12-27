@@ -361,7 +361,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                        const char *default_port, grpc_closure *on_done,
+                        const char *default_port,
+                        grpc_pollset_set *interested_parties,
+                        grpc_closure *on_done,
                         grpc_resolved_addresses **addresses) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
