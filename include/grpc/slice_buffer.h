@@ -77,8 +77,14 @@ GPRAPI void grpc_slice_buffer_trim_end(grpc_slice_buffer *src, size_t n,
 /* move the first n bytes of src into dst */
 GPRAPI void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
                                          grpc_slice_buffer *dst);
+/* move the first n bytes of src into dst (copying them) */
+GPRAPI void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer *src,
+                                                     size_t n, void *dst);
 /* take the first slice in the slice buffer */
 GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer *src);
+/* undo the above with (a possibly different) \a slice */
+GPRAPI void grpc_slice_buffer_undo_take_first(grpc_slice_buffer *src,
+                                              grpc_slice slice);
 
 #ifdef __cplusplus
 }
