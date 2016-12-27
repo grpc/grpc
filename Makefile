@@ -3218,6 +3218,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    src/core/ext/debug/debugger_macros.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3333,6 +3334,45 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/transport/chttp2/alpn/alpn.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -16769,6 +16809,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/debug/debugger_macros.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)

@@ -1,7 +1,6 @@
-<%def name="end2end_selector(tests)">
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,55 +31,9 @@
  *
  */
 
-<% tests = sorted(tests) %>\
-/* This file is auto-generated */
+#ifndef DEBUGGER_MACROS_H
+#define DEBUGGER_MACROS_H
 
-#include "test/core/end2end/end2end_tests.h"
+void grpc_summon_debugger_macros();
 
-#include <stdbool.h>
-#include <string.h>
-
-#include <grpc/support/log.h>
-
-#include "src/core/ext/debug/debugger_macros.h"
-
-static bool g_pre_init_called = false;
-
-% for test in tests:
-extern void ${test}(grpc_end2end_test_config config);
-extern void ${test}_pre_init(void);
-% endfor
-
-void grpc_end2end_tests_pre_init(void) {
-  GPR_ASSERT(!g_pre_init_called);
-  g_pre_init_called = true;
-  grpc_summon_debugger_macros();
-% for test in tests:
-  ${test}_pre_init();
-% endfor
-}
-
-void grpc_end2end_tests(int argc, char **argv,
-                        grpc_end2end_test_config config) {
-  int i;
-
-  GPR_ASSERT(g_pre_init_called);
-
-  if (argc <= 1) {
-% for test in tests:
-    ${test}(config);
-% endfor
-    return;
-  }
-
-  for (i = 1; i < argc; i++) {
-% for test in tests:
-    if (0 == strcmp("${test}", argv[i])) {
-      ${test}(config);
-      continue;
-    }
-% endfor
-    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
-    abort();
-  }
-}</%def>
+#endif

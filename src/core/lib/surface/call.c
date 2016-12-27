@@ -1198,6 +1198,10 @@ static void continue_incremental_recv_iovec(grpc_exec_ctx *exec_ctx,
       grpc_cq_end_op(exec_ctx, call->cq, call->receiving.incremental.pull_tag,
                      GRPC_ERROR_NONE, pull_reaped, call,
                      &call->receiving.incremental.cq_completion);
+      if (call->receiving.incremental.remaining == 0) {
+        grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
+        call->receiving_stream = NULL;
+      }
       break;
     }
 
@@ -1207,6 +1211,7 @@ static void continue_incremental_recv_iovec(grpc_exec_ctx *exec_ctx,
             [call->receiving.incremental.buffer_progress.iovec.pull_idx++];
     slice->data.refcounted.bytes = elem.base;
     slice->data.refcounted.length = elem.len;
+    call->receiving.incremental.remaining -= (uint32_t)elem.len;
   } while (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream, slice,
                                        GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT,
                                        &call->receiving_next_step));

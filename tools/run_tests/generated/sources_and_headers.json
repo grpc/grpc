@@ -5003,6 +5003,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc_base", 
+      "grpc_debug_macros", 
       "grpc_test_util_base"
     ], 
     "headers": [
@@ -7101,6 +7102,26 @@
       "include/grpc/impl/codegen/grpc_types.h", 
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/status.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "src/core/ext/debug/debugger_macros.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_debug_macros", 
+    "src": [
+      "src/core/ext/debug/debugger_macros.c", 
+      "src/core/ext/debug/debugger_macros.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

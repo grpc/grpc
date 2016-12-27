@@ -435,6 +435,15 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_debug_macros
+  headers:
+  - src/core/ext/debug/debugger_macros.h
+  src:
+  - src/core/ext/debug/debugger_macros.c
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_transport_chttp2
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/grpclb.h
@@ -960,6 +969,7 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
+  - grpc_debug_macros
   - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
