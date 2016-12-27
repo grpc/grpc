@@ -67,3 +67,5 @@ RSpec.configure do |config|
 end
 
 RSpec::Expectations.configuration.warn_about_potential_false_positives = false
+
+Thread.abort_on_exception = true
