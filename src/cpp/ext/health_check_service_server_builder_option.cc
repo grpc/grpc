@@ -36,14 +36,15 @@
 namespace grpc {
 
 HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
-    std::unique_ptr<HealthCheckServiceInterface> hc) : hc_(std::move(hc)) { }
+    std::unique_ptr<HealthCheckServiceInterface> hc)
+    : hc_(std::move(hc)) {}
 
-HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) override {
+HealthCheckServiceServerBuilderOption::UpdateArguments(
+    ChannelArguments* args) override {
   args->SetPointer(DefaultHealthCheckServiceInterfaceArg(), hc_.release());
 }
 
-void HealthCheckServiceServerBuilderOption::UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
-}
+void HealthCheckServiceServerBuilderOption::UpdatePlugins(
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {}
 
 }  // namespace grpc
-
