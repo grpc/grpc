@@ -47,7 +47,7 @@ class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
   // Use nullptr to disable default service.
   explicit HealthCheckServiceServerBuilderOption(
       std::unique_ptr<HealthCheckServiceInterface> hc);
-  ~HealthCheckServiceServerBuilderOption() {}
+  ~HealthCheckServiceServerBuilderOption() override {}
   void UpdateArguments(ChannelArguments* args) override;
   void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
  private:

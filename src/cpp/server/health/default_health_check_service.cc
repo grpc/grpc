@@ -35,6 +35,7 @@
 #include <mutex>
 
 #include <grpc++/impl/codegen/method_handler_impl.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/cpp/server/health/default_health_check_service.h"
@@ -65,18 +66,18 @@ Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
   // Decode request.
   std::vector<Slice> slices;
   request->Dump(&slices);
-  const uint8_t* request_bytes = nullptr;
+  uint8_t* request_bytes = nullptr;
   bool request_bytes_owned = false;
   size_t request_size = 0;
   grpc_health_v1_HealthCheckRequest request_struct;
   if (slices.empty()) {
     request_struct.has_service = false;
   } else if (slices.size() == 1) {
-    request_bytes = slices[0].begin();
+    request_bytes = const_cast<uint8_t*>(slices[0].begin());
     request_size = slices[0].size();
   } else {
     request_bytes_owned = true;
-    request_bytes = gpr_malloc(request->Length());
+    request_bytes = static_cast<uint8_t*>(gpr_malloc(request->Length()));
     uint8_t* copy_to = request_bytes;
     for (size_t i = 0; i < slices.size(); i++) {
       memcpy(copy_to, slices[i].begin(), slices[i].size());
