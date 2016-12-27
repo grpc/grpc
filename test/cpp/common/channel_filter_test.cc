@@ -41,14 +41,24 @@ namespace testing {
 
 class MyChannelData : public ChannelData {
  public:
-  MyChannelData(const grpc_channel_args& args, const char* peer)
-      : ChannelData(args, peer) {}
+  MyChannelData() {}
+
+  grpc_error* Init(grpc_exec_ctx* exec_ctx,
+                   grpc_channel_element_args* args) override {
+    (void)args->channel_args;  // Make sure field is available.
+    return GRPC_ERROR_NONE;
+  }
 };
 
 class MyCallData : public CallData {
  public:
-  explicit MyCallData(const ChannelData& channel_data)
-      : CallData(channel_data) {}
+  MyCallData() {}
+
+  grpc_error* Init(grpc_exec_ctx* exec_ctx, ChannelData* channel_data,
+                   grpc_call_element_args* args) override {
+    (void)args->path;  // Make sure field is available.
+    return GRPC_ERROR_NONE;
+  }
 };
 
 // This test ensures that when we make changes to the filter API in
