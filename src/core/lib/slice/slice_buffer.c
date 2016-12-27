@@ -254,7 +254,6 @@ void grpc_slice_buffer_move_into(grpc_slice_buffer *src,
 
 void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
                                   grpc_slice_buffer *dst) {
-  size_t src_idx;
   size_t output_len = dst->length + n;
   size_t new_input_len = src->length - n;
   GPR_ASSERT(src->length >= n);
@@ -263,32 +262,51 @@ void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
     return;
   }
 
-  src_idx = 0;
-  while (src_idx < src->count) {
-    grpc_slice slice = src->slices[src_idx];
+  while (src->count > 0) {
+    grpc_slice slice = grpc_slice_buffer_take_first(src);
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
     if (n > slice_len) {
       grpc_slice_buffer_add(dst, slice);
       n -= slice_len;
-      src_idx++;
     } else if (n == slice_len) {
       grpc_slice_buffer_add(dst, slice);
-      src_idx++;
       break;
     } else { /* n < slice_len */
-      src->slices[src_idx] = grpc_slice_split_tail(&slice, n);
+      grpc_slice_buffer_undo_take_first(src, grpc_slice_split_tail(&slice, n));
       GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
-      GPR_ASSERT(GRPC_SLICE_LENGTH(src->slices[src_idx]) == slice_len - n);
       grpc_slice_buffer_add(dst, slice);
       break;
     }
   }
   GPR_ASSERT(dst->length == output_len);
-  memmove(src->slices, src->slices + src_idx,
-          sizeof(grpc_slice) * (src->count - src_idx));
-  src->count -= src_idx;
-  src->length = new_input_len;
+  GPR_ASSERT(src->length == new_input_len);
   GPR_ASSERT(src->count > 0);
+}
+
+void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer *src, size_t n,
+                                              void *dst) {
+  char *dstp = dst;
+  GPR_ASSERT(src->length >= n);
+
+  while (n > 0) {
+    grpc_slice slice = grpc_slice_buffer_take_first(src);
+    size_t slice_len = GRPC_SLICE_LENGTH(slice);
+    if (slice_len > n) {
+      memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
+      grpc_slice_buffer_undo_take_first(
+          src, grpc_slice_sub_no_ref(slice, n, slice_len));
+      n = 0;
+    } else if (slice_len == n) {
+      memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
+      grpc_slice_unref(slice);
+      n = 0;
+    } else {
+      memcpy(dstp, GRPC_SLICE_START_PTR(slice), slice_len);
+      dstp += slice_len;
+      n -= slice_len;
+      grpc_slice_unref(slice);
+    }
+  }
 }
 
 void grpc_slice_buffer_trim_end(grpc_slice_buffer *sb, size_t n,
@@ -324,4 +342,12 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer *sb) {
   sb->length -= GRPC_SLICE_LENGTH(slice);
 
   return slice;
+}
+
+void grpc_slice_buffer_undo_take_first(grpc_slice_buffer *sb,
+                                       grpc_slice slice) {
+  sb->slices--;
+  sb->slices[0] = slice;
+  sb->count++;
+  sb->length += GRPC_SLICE_LENGTH(slice);
 }
