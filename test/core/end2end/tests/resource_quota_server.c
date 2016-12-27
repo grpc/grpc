@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -95,16 +95,21 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a gpr_slice containing random alphanumeric characters. */
-static gpr_slice generate_random_slice() {
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
+static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char output[1024 * 1024];
-  for (i = 0; i < GPR_ARRAY_SIZE(output) - 1; ++i) {
+  char *output;
+  const size_t output_size = 1024 * 1024;
+  output = gpr_malloc(output_size);
+  for (i = 0; i < output_size - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
-  output[GPR_ARRAY_SIZE(output) - 1] = '\0';
-  return gpr_slice_from_copied_string(output);
+  output[output_size - 1] = '\0';
+  grpc_slice out = grpc_slice_from_copied_string(output);
+  gpr_free(output);
+  return out;
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
@@ -131,19 +136,24 @@ void resource_quota_server(grpc_end2end_test_config config) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  gpr_slice request_payload_slice = generate_random_slice();
+  grpc_slice request_payload_slice = generate_random_slice();
 
-  grpc_call *client_calls[NUM_CALLS];
-  grpc_call *server_calls[NUM_CALLS];
-  grpc_metadata_array initial_metadata_recv[NUM_CALLS];
-  grpc_metadata_array trailing_metadata_recv[NUM_CALLS];
-  grpc_metadata_array request_metadata_recv[NUM_CALLS];
-  grpc_call_details call_details[NUM_CALLS];
-  grpc_status_code status[NUM_CALLS];
-  char *details[NUM_CALLS];
-  size_t details_capacity[NUM_CALLS];
-  grpc_byte_buffer *request_payload_recv[NUM_CALLS];
-  int was_cancelled[NUM_CALLS];
+  grpc_call **client_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_call **server_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_metadata_array *initial_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array *trailing_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array *request_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_call_details *call_details =
+      malloc(sizeof(grpc_call_details) * NUM_CALLS);
+  grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
+  char **details = malloc(sizeof(char *) * NUM_CALLS);
+  size_t *details_capacity = malloc(sizeof(size_t) * NUM_CALLS);
+  grpc_byte_buffer **request_payload_recv =
+      malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
+  int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);
   grpc_call_error error;
   int pending_client_calls = 0;
   int pending_server_start_calls = 0;
@@ -224,7 +234,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   while (pending_client_calls + pending_server_recv_calls +
              pending_server_end_calls >
          0) {
-    grpc_event ev = grpc_completion_queue_next(f.cq, n_seconds_time(10), NULL);
+    grpc_event ev = grpc_completion_queue_next(f.cq, n_seconds_time(60), NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
     int ev_tag = (int)(intptr_t)ev.tag;
@@ -349,8 +359,20 @@ void resource_quota_server(grpc_end2end_test_config config) {
   GPR_ASSERT(cancelled_calls_on_server >= 0.9 * cancelled_calls_on_client);
 
   grpc_byte_buffer_destroy(request_payload);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
+
+  free(client_calls);
+  free(server_calls);
+  free(initial_metadata_recv);
+  free(trailing_metadata_recv);
+  free(request_metadata_recv);
+  free(call_details);
+  free(status);
+  free(details);
+  free(details_capacity);
+  free(request_payload_recv);
+  free(was_cancelled);
 
   end_test(&f);
   config.tear_down_data(&f);

@@ -84,91 +84,15 @@ void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
 grpc_resource_quota *grpc_resource_quota_from_channel_args(
     const grpc_channel_args *channel_args);
 
-/* Resource users are kept in (potentially) several intrusive linked lists
-   at once. These are the list names. */
-typedef enum {
-  /* Resource users that are waiting for an allocation */
-  GRPC_RULIST_AWAITING_ALLOCATION,
-  /* Resource users that have free memory available for internal reclamation */
-  GRPC_RULIST_NON_EMPTY_FREE_POOL,
-  /* Resource users that have published a benign reclamation is available */
-  GRPC_RULIST_RECLAIMER_BENIGN,
-  /* Resource users that have published a destructive reclamation is
-     available */
-  GRPC_RULIST_RECLAIMER_DESTRUCTIVE,
-  /* Number of lists: must be last */
-  GRPC_RULIST_COUNT
-} grpc_rulist;
-
 typedef struct grpc_resource_user grpc_resource_user;
 
-/* Internal linked list pointers for a resource user */
-typedef struct {
-  grpc_resource_user *next;
-  grpc_resource_user *prev;
-} grpc_resource_user_link;
-
-struct grpc_resource_user {
-  /* The quota this resource user consumes from */
-  grpc_resource_quota *resource_quota;
-
-  /* Closure to schedule an allocation under the resource quota combiner lock */
-  grpc_closure allocate_closure;
-  /* Closure to publish a non empty free pool under the resource quota combiner
-     lock */
-  grpc_closure add_to_free_pool_closure;
-
-  gpr_mu mu;
-  /* Total allocated memory outstanding by this resource user in bytes;
-     always positive */
-  int64_t allocated;
-  /* The amount of memory (in bytes) this user has cached for its own use: to
-     avoid quota contention, each resource user can keep some memory in
-     addition to what it is immediately using (e.g., for caching), and the quota
-     can pull it back under memory pressure.
-     This value can become negative if more memory has been requested than
-     existed in the free pool, at which point the quota is consulted to bring
-     this value non-negative (asynchronously). */
-  int64_t free_pool;
-  /* A list of closures to call once free_pool becomes non-negative - ie when
-     all outstanding allocations have been granted. */
-  grpc_closure_list on_allocated;
-  /* True if we are currently trying to allocate from the quota, false if not */
-  bool allocating;
-  /* True if we are currently trying to add ourselves to the non-free quota
-     list, false otherwise */
-  bool added_to_free_pool;
-
-  /* Reclaimers: index 0 is the benign reclaimer, 1 is the destructive reclaimer
-   */
-  grpc_closure *reclaimers[2];
-  /* Trampoline closures to finish reclamation and re-enter the quota combiner
-     lock */
-  grpc_closure post_reclaimer_closure[2];
-
-  /* Closure to execute under the quota combiner to de-register and shutdown the
-     resource user */
-  grpc_closure destroy_closure;
-  /* User supplied closure to call once the user has finished shutting down AND
-     all outstanding allocations have been freed. Real type is grpc_closure*,
-     but it's stored as an atomic to avoid a mutex on some fast paths. */
-  gpr_atm on_done_destroy_closure;
-
-  /* Links in the various grpc_rulist lists */
-  grpc_resource_user_link links[GRPC_RULIST_COUNT];
-
-  /* The name of this resource user, for debugging/tracing */
-  char *name;
-};
-
-void grpc_resource_user_init(grpc_resource_user *resource_user,
-                             grpc_resource_quota *resource_quota,
-                             const char *name);
+grpc_resource_user *grpc_resource_user_create(
+    grpc_resource_quota *resource_quota, const char *name);
+void grpc_resource_user_ref(grpc_resource_user *resource_user);
+void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
+                              grpc_resource_user *resource_user);
 void grpc_resource_user_shutdown(grpc_exec_ctx *exec_ctx,
-                                 grpc_resource_user *resource_user,
-                                 grpc_closure *on_done);
-void grpc_resource_user_destroy(grpc_exec_ctx *exec_ctx,
-                                grpc_resource_user *resource_user);
+                                 grpc_resource_user *resource_user);
 
 /* Allocate from the resource user (and its quota).
    If optional_on_done is NULL, then allocate immediately. This may push the
@@ -203,7 +127,7 @@ typedef struct grpc_resource_user_slice_allocator {
   /* Number of slices to allocate on the current request */
   size_t count;
   /* Destination for slices to allocate on the current request */
-  gpr_slice_buffer *dest;
+  grpc_slice_buffer *dest;
   /* Parent resource user */
   grpc_resource_user *resource_user;
 } grpc_resource_user_slice_allocator;
@@ -219,6 +143,11 @@ void grpc_resource_user_slice_allocator_init(
 void grpc_resource_user_alloc_slices(
     grpc_exec_ctx *exec_ctx,
     grpc_resource_user_slice_allocator *slice_allocator, size_t length,
-    size_t count, gpr_slice_buffer *dest);
+    size_t count, grpc_slice_buffer *dest);
+
+/* Allocate one slice of length \a size synchronously. */
+grpc_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
+                                           grpc_resource_user *resource_user,
+                                           size_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

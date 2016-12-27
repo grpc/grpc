@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -68,7 +69,7 @@ typedef struct call_data {
   grpc_closure *recv_message_ready;
   grpc_closure *on_complete;
   grpc_byte_stream **pp_recv_message;
-  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer read_slice_buffer;
   grpc_slice_buffer_stream read_stream;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
@@ -85,6 +86,23 @@ typedef struct {
   grpc_call_element *elem;
   grpc_exec_ctx *exec_ctx;
 } server_filter_args;
+
+static grpc_mdelem *server_filter_outgoing_metadata(void *user_data,
+                                                    grpc_mdelem *md) {
+  if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
+    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
+        md->value->slice, grpc_compatible_percent_encoding_unreserved_bytes);
+    if (grpc_slice_is_equivalent(pct_encoded_msg, md->value->slice)) {
+      grpc_slice_unref(pct_encoded_msg);
+      return md;
+    } else {
+      return grpc_mdelem_from_metadata_strings(
+          GRPC_MDSTR_GRPC_MESSAGE, grpc_mdstr_from_slice(pct_encoded_msg));
+    }
+  } else {
+    return md;
+  }
+}
 
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   server_filter_args *a = user_data;
@@ -162,9 +180,8 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
-    gpr_slice_buffer_init(&calld->read_slice_buffer);
-    gpr_slice_buffer_add(&calld->read_slice_buffer,
-                         gpr_slice_ref(md->value->slice));
+    grpc_slice_buffer_add(&calld->read_slice_buffer,
+                          grpc_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
@@ -255,7 +272,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
   }
 }
 
-static void hs_mutate_op(grpc_call_element *elem,
+static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -291,6 +308,12 @@ static void hs_mutate_op(grpc_call_element *elem,
       op->on_complete = &calld->hs_on_complete;
     }
   }
+
+  if (op->send_trailing_metadata) {
+    server_filter_args a = {elem, exec_ctx};
+    grpc_metadata_batch_filter(op->send_trailing_metadata,
+                               server_filter_outgoing_metadata, &a);
+  }
 }
 
 static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -298,7 +321,7 @@ static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   GPR_TIMER_BEGIN("hs_start_transport_op", 0);
-  hs_mutate_op(elem, op);
+  hs_mutate_op(exec_ctx, elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
   GPR_TIMER_END("hs_start_transport_op", 0);
 }
@@ -314,19 +337,24 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
   grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
   grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
+  grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {}
+                              void *ignored) {
+  call_data *calld = elem->call_data;
+  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
+}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   GPR_ASSERT(!args->is_last);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */
@@ -344,4 +372,5 @@ const grpc_channel_filter grpc_http_server_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "http-server"};

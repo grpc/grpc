@@ -103,7 +103,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s = gpr_slice_from_copied_buffer(
+      grpc_slice s = grpc_slice_from_copied_buffer(
           buf.get(), payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       *req = ByteBuffer(&slice, 1);
@@ -113,7 +113,7 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
-class HistogramEntry GRPC_FINAL {
+class HistogramEntry final {
  public:
   HistogramEntry() : value_used_(false), status_used_(false) {}
   bool value_used() const { return value_used_; }
@@ -163,10 +163,9 @@ class Client {
 
     MaybeStartRequests();
 
-    // avoid std::vector for old compilers that expect a copy constructor
     if (reset) {
-      Histogram* to_merge = new Histogram[threads_.size()];
-      StatusHistogram* to_merge_status = new StatusHistogram[threads_.size()];
+      std::vector<Histogram> to_merge(threads_.size());
+      std::vector<StatusHistogram> to_merge_status(threads_.size());
 
       for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i]->BeginSwap(&to_merge[i], &to_merge_status[i]);
@@ -177,8 +176,6 @@ class Client {
         latencies.Merge(to_merge[i]);
         MergeStatusHistogram(to_merge_status[i], &statuses);
       }
-      delete[] to_merge;
-      delete[] to_merge_status;
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram

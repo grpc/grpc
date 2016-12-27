@@ -2,6 +2,6 @@ include grpc_version.py
 include protoc_deps.py
 include protoc_lib_deps.py
 include README.rst
-graft grpc
+graft grpc_tools
 graft grpc_root
 graft third_party

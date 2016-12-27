@@ -77,7 +77,7 @@ namespace compiler {
 typedef GRPC_CUSTOM_DISKSOURCETREE DiskSourceTree;
 typedef GRPC_CUSTOM_IMPORTER Importer;
 typedef GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR MultiFileErrorCollector;
-}  // namespace importer
+}  // namespace compiler
 
 }  // namespace protobuf
 }  // namespace grpc

@@ -39,8 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/service_config.h"
+
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -62,7 +65,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d use_service_config=%d",
           wait_for_ready, use_service_config);
 
-  grpc_fake_resolver_init();
   grpc_init();
 
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -70,21 +72,31 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cq = grpc_completion_queue_create(NULL);
   cqv = cq_verifier_create(cq);
 
+  /* if using service config, create channel args */
+  grpc_channel_args *args = NULL;
+  if (use_service_config) {
+    GPR_ASSERT(wait_for_ready);
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
+        "{\n"
+        "  \"methodConfig\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"waitForReady\": true\n"
+        "  } ]\n"
+        "}";
+    args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  }
+
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
   char *addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
-  if (use_service_config) {
-    GPR_ASSERT(wait_for_ready);
-    char *server_uri;
-    gpr_asprintf(&server_uri,
-                 "test:%s?method_name=/service/method&wait_for_ready=1", addr);
-    gpr_free(addr);
-    addr = server_uri;
-  }
   gpr_log(GPR_INFO, "server: %s", addr);
-
-  chan = grpc_insecure_channel_create(addr, NULL, NULL);
+  chan = grpc_insecure_channel_create(addr, args, NULL);
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/service/method", "nonexistant", deadline,
                                   NULL);
@@ -132,6 +144,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   gpr_free(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
+
+  if (args != NULL) grpc_channel_args_destroy(args);
 
   grpc_shutdown();
 }

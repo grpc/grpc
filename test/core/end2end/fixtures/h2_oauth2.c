@@ -150,9 +150,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 }
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
-    const char *query_args) {
-  GPR_ASSERT(query_args == NULL);
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   grpc_call_credentials *oauth2_creds =
@@ -218,7 +216,9 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_with_oauth2_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
