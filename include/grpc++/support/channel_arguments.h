@@ -79,11 +79,23 @@ class ChannelArguments {
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
+  /// Set the socket mutator for the channel.
+  void SetSocketMutator(grpc_socket_mutator* mutator);
+
   /// The given string will be sent at the front of the user agent string.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
   /// The given buffer pool will be attached to the constructed channel
   void SetResourceQuota(const ResourceQuota& resource_quota);
+
+  /// Set LB policy name.
+  /// Note that if the name resolver returns only balancer addresses, the
+  /// grpclb LB policy will be used, regardless of what is specified here.
+  void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
+
+  /// Set service config in JSON form.
+  /// Primarily meant for use in unit tests.
+  void SetServiceConfigJSON(const grpc::string& service_config_json);
 
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
@@ -98,6 +110,15 @@ class ChannelArguments {
 
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
+
+  /// Return (by value) a c grpc_channel_args structure which points to
+  /// arguments owned by this ChannelArguments instance
+  grpc_channel_args c_channel_args() {
+    grpc_channel_args out;
+    out.num_args = args_.size();
+    out.args = args_.empty() ? NULL : &args_[0];
+    return out;
+  }
 
  private:
   friend class SecureChannelCredentials;

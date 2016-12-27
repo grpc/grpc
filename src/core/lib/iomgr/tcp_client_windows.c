@@ -37,12 +37,13 @@
 
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -61,13 +62,16 @@ typedef struct {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint **endpoint;
+  grpc_resource_quota *resource_quota;
 } async_connect;
 
-static void async_connect_unlock_and_cleanup(async_connect *ac,
+static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
+                                             async_connect *ac,
                                              grpc_winsocket *socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
+    grpc_resource_quota_internal_unref(exec_ctx, ac->resource_quota);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
@@ -83,7 +87,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   if (socket != NULL) {
     grpc_winsocket_shutdown(socket);
   }
-  async_connect_unlock_and_cleanup(ac, socket);
+  async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
@@ -103,22 +107,26 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 
   gpr_mu_lock(&ac->mu);
 
-  if (error == GRPC_ERROR_NONE && socket != NULL) {
-    DWORD transfered_bytes = 0;
-    DWORD flags;
-    BOOL wsa_success =
-        WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-                               &transfered_bytes, FALSE, &flags);
-    GPR_ASSERT(transfered_bytes == 0);
-    if (!wsa_success) {
-      error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+  if (error == GRPC_ERROR_NONE) {
+    if (socket != NULL) {
+      DWORD transfered_bytes = 0;
+      DWORD flags;
+      BOOL wsa_success =
+          WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
+                                 &transfered_bytes, FALSE, &flags);
+      GPR_ASSERT(transfered_bytes == 0);
+      if (!wsa_success) {
+        error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+      } else {
+        *ep = grpc_tcp_create(socket, ac->resource_quota, ac->addr_name);
+        socket = NULL;
+      }
     } else {
-      *ep = grpc_tcp_create(socket, ac->addr_name);
-      socket = NULL;
+      error = GRPC_ERROR_CREATE("socket is null");
     }
   }
 
-  async_connect_unlock_and_cleanup(ac, socket);
+  async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
   grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
@@ -129,6 +137,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
                              gpr_timespec deadline) {
   SOCKET sock = INVALID_SOCKET;
@@ -143,6 +152,17 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info *info;
   grpc_error *error = GRPC_ERROR_NONE;
+
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_internal_ref(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
 
   *endpoint = NULL;
 
@@ -177,8 +197,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status =
-      bind(sock, (struct sockaddr *)&local_address.addr, local_address.len);
+  status = bind(sock, (struct sockaddr *)&local_address.addr,
+                (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -206,6 +226,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->refs = 2;
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
+  ac->resource_quota = resource_quota;
   grpc_closure_init(&ac->on_connect, on_connect, ac);
 
   grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
@@ -225,6 +246,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   grpc_exec_ctx_sched(exec_ctx, on_done, final_error, NULL);
 }
 

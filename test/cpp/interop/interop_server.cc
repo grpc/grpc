@@ -344,7 +344,7 @@ void grpc::testing::interop::RunServer(
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!g_got_sigint) {
+  while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
     sleep(5);
   }
 }

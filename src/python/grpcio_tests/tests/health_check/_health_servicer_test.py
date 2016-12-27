@@ -27,14 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests of grpc.health.v1.health."""
+"""Tests of grpc_health.v1.health."""
 
 import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-from grpc.health.v1 import health
-from grpc.health.v1 import health_pb2
+from grpc_health.v1 import health
+from grpc_health.v1 import health_pb2
 
 from tests.unit.framework.common import test_constants
 

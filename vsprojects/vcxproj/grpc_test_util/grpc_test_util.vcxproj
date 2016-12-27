@@ -153,6 +153,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
@@ -211,7 +213,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -235,6 +236,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
@@ -261,6 +263,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -277,7 +281,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\method_config.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
@@ -372,8 +377,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
@@ -415,6 +418,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
     </ClCompile>
@@ -482,6 +487,14 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.c">
@@ -528,7 +541,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\method_config.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\service_config.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
     </ClCompile>

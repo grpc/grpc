@@ -191,6 +191,10 @@ class RPCTest(unittest.TestCase):
 
     self._channel = grpc.insecure_channel('localhost:%d' % port)
 
+  def tearDown(self):
+    self._server.stop(None)
+    self._server_pool.shutdown(wait=True)
+
   def testUnrecognizedMethod(self):
     request = b'abc'
 

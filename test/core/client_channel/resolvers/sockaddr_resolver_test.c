@@ -49,11 +49,6 @@ typedef struct on_resolution_arg {
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  const grpc_arg *channel_arg =
-      grpc_channel_args_find(res->resolver_result, GRPC_ARG_SERVER_NAME);
-  GPR_ASSERT(channel_arg != NULL);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-  GPR_ASSERT(strcmp(res->expected_server_name, channel_arg->value.string) == 0);
   grpc_channel_args_destroy(res->resolver_result);
 }
 
@@ -67,7 +62,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver != NULL);
 
   on_resolution_arg on_res_arg;
@@ -93,7 +88,7 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
   grpc_exec_ctx_finish(&exec_ctx);

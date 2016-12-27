@@ -283,6 +283,8 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
           rb_eArgError,
           "Failed to convert compression level value to name for value: %d",
           (int)compression_value);
+      /* return something to avoid compiler error about no return */
+      return Qnil;
   }
 }
 

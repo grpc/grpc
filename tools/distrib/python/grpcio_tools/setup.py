@@ -108,7 +108,7 @@ PROTO_FILES = [
 CC_INCLUDE = os.path.normpath(protoc_lib_deps.CC_INCLUDE)
 PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
 
-GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
+GRPC_PYTHON_TOOLS_PACKAGE = 'grpc_tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
 DEFINE_MACROS = ()
@@ -154,16 +154,16 @@ def package_data():
 
 def extension_modules():
   if BUILD_WITH_CYTHON:
-    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')]
+    plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.pyx')]
   else:
-    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.cpp')]
+    plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.cpp')]
   plugin_sources += [
-    os.path.join('grpc', 'tools', 'main.cc'),
+    os.path.join('grpc_tools', 'main.cc'),
     os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
     os.path.join(CC_INCLUDE, cc_file)
     for cc_file in CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.tools._protoc_compiler',
+      name='grpc_tools._protoc_compiler',
       sources=plugin_sources,
       include_dirs=[
           '.',
@@ -184,12 +184,11 @@ def extension_modules():
     return extensions
 
 setuptools.setup(
-  name='grpcio_tools',
+  name='grpcio-tools',
   version=grpc_version.VERSION,
   license='3-clause BSD',
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
-  namespace_packages=['grpc'],
   install_requires=[
     'protobuf>=3.0.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),

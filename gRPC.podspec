@@ -30,7 +30,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.0.0'
+  version = '1.0.2'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{version}",
+    :tag => "objective-c-v#{version}",
   }
 
   s.ios.deployment_target = '7.1'

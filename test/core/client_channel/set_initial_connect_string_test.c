@@ -40,15 +40,16 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/thd.h>
 
 #include "src/core/ext/client_channel/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -61,8 +62,8 @@ struct rpc_state {
   grpc_channel *channel;
   grpc_call *call;
   grpc_op op;
-  gpr_slice_buffer incoming_buffer;
-  gpr_slice_buffer temp_incoming_buffer;
+  grpc_slice_buffer incoming_buffer;
+  grpc_slice_buffer temp_incoming_buffer;
   grpc_endpoint *tcp;
   gpr_atm done_atm;
 };
@@ -74,8 +75,8 @@ static grpc_closure on_read;
 
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
-                             &state.incoming_buffer);
+  grpc_slice_buffer_move_into(&state.temp_incoming_buffer,
+                              &state.incoming_buffer);
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, magic is %" PRIuPTR " bytes",
           state.incoming_buffer.length, strlen(magic_connect_string));
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
@@ -91,32 +92,33 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
-  gpr_slice_buffer_init(&state.incoming_buffer);
-  gpr_slice_buffer_init(&state.temp_incoming_buffer);
+  grpc_slice_buffer_init(&state.incoming_buffer);
+  grpc_slice_buffer_init(&state.temp_incoming_buffer);
   state.tcp = tcp;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
   grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
 }
 
 static void set_magic_initial_string(grpc_resolved_address **addr,
-                                     gpr_slice *connect_string) {
+                                     grpc_slice *connect_string) {
   GPR_ASSERT(addr);
   GPR_ASSERT((*addr)->len);
-  *connect_string = gpr_slice_from_copied_string(magic_connect_string);
+  *connect_string = grpc_slice_from_copied_string(magic_connect_string);
 }
 
 static void reset_addr_and_set_magic_string(grpc_resolved_address **addr,
-                                            gpr_slice *connect_string) {
+                                            grpc_slice *connect_string) {
   struct sockaddr_in target;
-  *connect_string = gpr_slice_from_copied_string(magic_connect_string);
+  *connect_string = grpc_slice_from_copied_string(magic_connect_string);
   gpr_free(*addr);
   target.sin_family = AF_INET;
   target.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   target.sin_port = htons((uint16_t)server_port);
-  (*addr)->len = sizeof(target);
   *addr = (grpc_resolved_address *)gpr_malloc(sizeof(grpc_resolved_address));
+  (*addr)->len = sizeof(target);
   memcpy((*addr)->addr, &target, sizeof(target));
 }
 
@@ -154,8 +156,8 @@ static void start_rpc(int use_creds, int target_port) {
 
 static void cleanup_rpc(void) {
   grpc_event ev;
-  gpr_slice_buffer_destroy(&state.incoming_buffer);
-  gpr_slice_buffer_destroy(&state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy(&state.incoming_buffer);
+  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
   grpc_channel_credentials_unref(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
@@ -200,13 +202,13 @@ static void poll_server_until_read_done(test_tcp_server *server,
   gpr_thd_new(&id, actually_poll_server, pa, NULL);
 }
 
-static void match_initial_magic_string(gpr_slice_buffer *buffer) {
+static void match_initial_magic_string(grpc_slice_buffer *buffer) {
   size_t i, j, cmp_length;
   size_t magic_length = strlen(magic_connect_string);
   GPR_ASSERT(buffer->length >= magic_length);
   for (i = 0, j = 0; i < state.incoming_buffer.count && j < magic_length; i++) {
     char *dump =
-        gpr_dump_slice(state.incoming_buffer.slices[i], GPR_DUMP_ASCII);
+        grpc_dump_slice(state.incoming_buffer.slices[i], GPR_DUMP_ASCII);
     cmp_length = GPR_MIN(strlen(dump), magic_length - j);
     GPR_ASSERT(strncmp(dump, magic_connect_string + j, cmp_length) == 0);
     j += cmp_length;

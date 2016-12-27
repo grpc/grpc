@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -45,6 +46,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/passthru_endpoint.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,6 +56,21 @@ bool squelch = true;
 bool leak_check = true;
 
 static void dont_log(gpr_log_func_args *args) {}
+
+////////////////////////////////////////////////////////////////////////////////
+// global state
+
+static gpr_timespec g_now;
+static grpc_server *g_server;
+static grpc_channel *g_channel;
+static grpc_resource_quota *g_resource_quota;
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
+static gpr_timespec now_impl(gpr_clock_type clock_type) {
+  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  return g_now;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // input_stream: allows easy access to input bytes, and allows reading a little
@@ -137,10 +154,10 @@ static uint32_t read_uint32(input_stream *inp) {
 }
 
 static grpc_byte_buffer *read_message(input_stream *inp) {
-  gpr_slice slice = gpr_slice_malloc(read_uint22(inp));
-  memset(GPR_SLICE_START_PTR(slice), 0, GPR_SLICE_LENGTH(slice));
+  grpc_slice slice = grpc_slice_malloc(read_uint22(inp));
+  memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
   grpc_byte_buffer *out = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return out;
 }
 
@@ -150,13 +167,28 @@ static grpc_channel_args *read_args(input_stream *inp) {
   size_t n = next_byte(inp);
   grpc_arg *args = gpr_malloc(sizeof(*args) * n);
   for (size_t i = 0; i < n; i++) {
-    bool is_string = next_byte(inp) & 1;
-    args[i].type = is_string ? GRPC_ARG_STRING : GRPC_ARG_INTEGER;
-    args[i].key = read_string(inp);
-    if (is_string) {
-      args[i].value.string = read_string(inp);
-    } else {
-      args[i].value.integer = read_int(inp);
+    switch (next_byte(inp)) {
+      case 1:
+        args[i].type = GRPC_ARG_STRING;
+        args[i].key = read_string(inp);
+        args[i].value.string = read_string(inp);
+        break;
+      case 2:
+        args[i].type = GRPC_ARG_INTEGER;
+        args[i].key = read_string(inp);
+        args[i].value.integer = read_int(inp);
+        break;
+      case 3:
+        args[i].type = GRPC_ARG_POINTER;
+        args[i].key = gpr_strdup(GRPC_ARG_RESOURCE_QUOTA);
+        args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+        args[i].value.pointer.p = g_resource_quota;
+        grpc_resource_quota_ref(g_resource_quota);
+        break;
+      default:
+        end(inp);
+        n = i;
+        break;
     }
   }
   grpc_channel_args *a = gpr_malloc(sizeof(*a));
@@ -165,22 +197,137 @@ static grpc_channel_args *read_args(input_stream *inp) {
   return a;
 }
 
-static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
+typedef struct cred_artifact_ctx {
+  int num_release;
+  char *release[3];
+} cred_artifact_ctx;
+#define CRED_ARTIFACT_CTX_INIT \
+  {                            \
+    0, { 0 }                   \
+  }
 
-////////////////////////////////////////////////////////////////////////////////
-// global state
-
-static gpr_timespec g_now;
-static grpc_server *g_server;
-static grpc_channel *g_channel;
-static grpc_resource_quota *g_resource_quota;
-
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-
-static gpr_timespec now_impl(gpr_clock_type clock_type) {
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  return g_now;
+static void cred_artifact_ctx_finish(cred_artifact_ctx *ctx) {
+  for (int i = 0; i < ctx->num_release; i++) {
+    gpr_free(ctx->release[i]);
+  }
 }
+
+static const char *read_cred_artifact(cred_artifact_ctx *ctx, input_stream *inp,
+                                      const char **builtins,
+                                      size_t num_builtins) {
+  uint8_t b = next_byte(inp);
+  if (b == 0) return NULL;
+  if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp);
+  if (b >= num_builtins + 1) {
+    end(inp);
+    return NULL;
+  }
+  return builtins[b - 1];
+}
+
+static grpc_channel_credentials *read_ssl_channel_creds(input_stream *inp) {
+  cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
+  static const char *builtin_root_certs[] = {test_root_cert};
+  static const char *builtin_private_keys[] = {
+      test_server1_key, test_self_signed_client_key, test_signed_client_key};
+  static const char *builtin_cert_chains[] = {
+      test_server1_cert, test_self_signed_client_cert, test_signed_client_cert};
+  const char *root_certs = read_cred_artifact(
+      &ctx, inp, builtin_root_certs, GPR_ARRAY_SIZE(builtin_root_certs));
+  const char *private_key = read_cred_artifact(
+      &ctx, inp, builtin_private_keys, GPR_ARRAY_SIZE(builtin_private_keys));
+  const char *certs = read_cred_artifact(&ctx, inp, builtin_cert_chains,
+                                         GPR_ARRAY_SIZE(builtin_cert_chains));
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
+  grpc_channel_credentials *creds = grpc_ssl_credentials_create(
+      root_certs, private_key != NULL && certs != NULL ? &key_cert_pair : NULL,
+      NULL);
+  cred_artifact_ctx_finish(&ctx);
+  return creds;
+}
+
+static grpc_call_credentials *read_call_creds(input_stream *inp) {
+  switch (next_byte(inp)) {
+    default:
+      end(inp);
+      return NULL;
+    case 0:
+      return NULL;
+    case 1: {
+      grpc_call_credentials *c1 = read_call_creds(inp);
+      grpc_call_credentials *c2 = read_call_creds(inp);
+      if (c1 != NULL && c2 != NULL) {
+        grpc_call_credentials *out =
+            grpc_composite_call_credentials_create(c1, c2, NULL);
+        grpc_call_credentials_release(c1);
+        grpc_call_credentials_release(c2);
+        return out;
+      } else if (c1 != NULL) {
+        return c1;
+      } else if (c2 != NULL) {
+        return c2;
+      } else {
+        return NULL;
+      }
+      GPR_UNREACHABLE_CODE(return NULL);
+    }
+    case 2: {
+      cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
+      const char *access_token = read_cred_artifact(&ctx, inp, NULL, 0);
+      grpc_call_credentials *out =
+          access_token == NULL ? NULL : grpc_access_token_credentials_create(
+                                            access_token, NULL);
+      cred_artifact_ctx_finish(&ctx);
+      return out;
+    }
+    case 3: {
+      cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
+      const char *auth_token = read_cred_artifact(&ctx, inp, NULL, 0);
+      const char *auth_selector = read_cred_artifact(&ctx, inp, NULL, 0);
+      grpc_call_credentials *out = auth_token == NULL || auth_selector == NULL
+                                       ? NULL
+                                       : grpc_google_iam_credentials_create(
+                                             auth_token, auth_selector, NULL);
+      cred_artifact_ctx_finish(&ctx);
+      return out;
+    }
+      /* TODO(ctiller): more cred types here */
+  }
+}
+
+static grpc_channel_credentials *read_channel_creds(input_stream *inp) {
+  switch (next_byte(inp)) {
+    case 0:
+      return read_ssl_channel_creds(inp);
+      break;
+    case 1: {
+      grpc_channel_credentials *c1 = read_channel_creds(inp);
+      grpc_call_credentials *c2 = read_call_creds(inp);
+      if (c1 != NULL && c2 != NULL) {
+        grpc_channel_credentials *out =
+            grpc_composite_channel_credentials_create(c1, c2, NULL);
+        grpc_channel_credentials_release(c1);
+        grpc_call_credentials_release(c2);
+        return out;
+      } else if (c1) {
+        return c1;
+      } else if (c2) {
+        grpc_call_credentials_release(c2);
+        return NULL;
+      } else {
+        return NULL;
+      }
+      GPR_UNREACHABLE_CODE(return NULL);
+    }
+    case 2:
+      return NULL;
+    default:
+      end(inp);
+      return NULL;
+  }
+}
+
+static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -214,7 +361,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                        const char *default_port, grpc_closure *on_done,
+                        const char *default_port,
+                        grpc_pollset_set *interested_parties,
+                        grpc_closure *on_done,
                         grpc_resolved_addresses **addresses) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
@@ -945,6 +1094,25 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // resize the buffer pool
       case 21: {
         grpc_resource_quota_resize(g_resource_quota, read_uint22(&inp));
+        break;
+      }
+      // create a secure channel
+      case 22: {
+        if (g_channel == NULL) {
+          char *target = read_string(&inp);
+          char *target_uri;
+          gpr_asprintf(&target_uri, "dns:%s", target);
+          grpc_channel_args *args = read_args(&inp);
+          grpc_channel_credentials *creds = read_channel_creds(&inp);
+          g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
+          GPR_ASSERT(g_channel != NULL);
+          grpc_channel_args_destroy(args);
+          gpr_free(target_uri);
+          gpr_free(target);
+          grpc_channel_credentials_release(creds);
+        } else {
+          end(&inp);
+        }
         break;
       }
     }

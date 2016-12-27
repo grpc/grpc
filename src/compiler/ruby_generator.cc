@@ -119,6 +119,43 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
 
 }  // namespace
 
+// The following functions are copied directly from the source for the protoc
+// ruby generator
+// to ensure compatibility (with the exception of int and string type changes).
+// See
+// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// TODO: keep up to date with protoc code generation, though this behavior isn't
+// expected to change
+bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
+
+char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
+
+// Package names in protobuf are snake_case by convention, but Ruby module
+// names must be PascalCased.
+//
+//   foo_bar_baz -> FooBarBaz
+grpc::string PackageToModule(const grpc::string &name) {
+  bool next_upper = true;
+  grpc::string result;
+  result.reserve(name.size());
+
+  for (grpc::string::size_type i = 0; i < name.size(); i++) {
+    if (name[i] == '_') {
+      next_upper = true;
+    } else {
+      if (next_upper) {
+        result.push_back(ToUpper(name[i]));
+      } else {
+        result.push_back(name[i]);
+      }
+      next_upper = false;
+    }
+  }
+
+  return result;
+}
+// end copying of protoc generator for ruby code
+
 grpc::string GetServices(const FileDescriptor *file) {
   grpc::string output;
   {
@@ -162,7 +199,7 @@ grpc::string GetServices(const FileDescriptor *file) {
     std::vector<grpc::string> modules = Split(file->package(), '.');
     for (size_t i = 0; i < modules.size(); ++i) {
       std::map<grpc::string, grpc::string> module_vars = ListToDict({
-          "module.name", CapitalizeFirst(modules[i]),
+          "module.name", PackageToModule(modules[i]),
       });
       out.Print(module_vars, "module $module.name$\n");
       out.Indent();
