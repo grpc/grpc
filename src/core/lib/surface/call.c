@@ -1248,6 +1248,13 @@ grpc_call_error grpc_call_incremental_message_reader_pull(
   grpc_cq_begin_op(call->cq, tag);
   call->receiving.incremental.pull_target = buffer;
   call->receiving.incremental.pull_tag = tag;
+  switch (call->receiving.incremental.pull_target->type) {
+    case GRPC_BB_RAW:
+      break;
+    case GRPC_BB_IOVEC:
+      call->receiving.incremental.buffer_progress.iovec.pull_idx = 0;
+      break;
+  }
   maybe_continue_incremental_recv(&exec_ctx, call);
   gpr_mu_unlock(&call->mu);
   grpc_exec_ctx_finish(&exec_ctx);
