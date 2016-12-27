@@ -51,7 +51,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
-#include "src/cpp/server/default_health_check_service.h"
+#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
