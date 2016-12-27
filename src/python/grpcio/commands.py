@@ -62,6 +62,7 @@ napoleon_numpy_docstring = True
 napoleon_include_special_with_doc = True
 
 html_theme = 'sphinx_rtd_theme'
+copyright = "2016, The gRPC Authors"
 """
 
 API_GLOSSARY = """
