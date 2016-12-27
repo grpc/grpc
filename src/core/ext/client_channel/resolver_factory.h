@@ -37,6 +37,7 @@
 #include "src/core/ext/client_channel/client_channel_factory.h"
 #include "src/core/ext/client_channel/resolver.h"
 #include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 typedef struct grpc_resolver_factory grpc_resolver_factory;
 typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
@@ -48,6 +49,7 @@ struct grpc_resolver_factory {
 typedef struct grpc_resolver_args {
   grpc_uri *uri;
   const grpc_channel_args *args;
+  grpc_pollset_set *pollset_set;
 } grpc_resolver_args;
 
 struct grpc_resolver_factory_vtable {
