@@ -58,7 +58,7 @@ typedef enum _grpc_health_v1_HealthCheckResponse_ServingStatus {
 /* Struct definitions */
 typedef struct _grpc_health_v1_HealthCheckRequest {
     bool has_service;
-    char service[2048];
+    char service[200];
 /* @@protoc_insertion_point(struct:grpc_health_v1_HealthCheckRequest) */
 } grpc_health_v1_HealthCheckRequest;
 
@@ -85,7 +85,7 @@ extern const pb_field_t grpc_health_v1_HealthCheckRequest_fields[2];
 extern const pb_field_t grpc_health_v1_HealthCheckResponse_fields[2];
 
 /* Maximum encoded size of messages (where known) */
-#define grpc_health_v1_HealthCheckRequest_size   2051
+#define grpc_health_v1_HealthCheckRequest_size   203
 #define grpc_health_v1_HealthCheckResponse_size  2
 
 /* Message IDs (where set with "msgid" option) */

@@ -38,8 +38,9 @@
 #include <grpc/support/log.h>
 
 #include "src/cpp/server/health/default_health_check_service.h"
-#include "third_party/nanopb/pb_encode.h"
+#include "src/cpp/server/health/health.pb.h"
 #include "third_party/nanopb/pb_decode.h"
+#include "third_party/nanopb/pb_encode.h"
 
 namespace grpc {
 namespace {
@@ -61,7 +62,60 @@ DefaultHealthCheckService::SyncHealthCheckServiceImpl::
 
 Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
     ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
+  // Decode request.
+  std::vector<Slice> slices;
+  request->Dump(&slices);
+  const uint8_t* request_bytes = nullptr;
+  size_t request_size = 0;
+  grpc_health_v1_HealthCheckRequest request_struct;
+  if (slices.empty()) {
+    request_struct.has_service = false;
+  } else if (slices.size() == 1) {
+    request_bytes = slices[0].begin();
+    request_size = slices[0].size();
+  } else {
+    abort();  // TODO
+  }
 
+  if (request_bytes != nullptr) {
+    pb_istream_t istream = pb_istream_from_buffer(request_bytes, request_size);
+    bool decode_status = pb_decode(
+        &istream, grpc_health_v1_HealthCheckRequest_fields, &request_struct);
+    if (!decode_status) {
+      return Status(StatusCode::INVALID_ARGUMENT, "");
+    }
+  }
+
+  // Check status from the associated default health checking service.
+  DefaultHealthCheckService::ServingStatus serving_status =
+      service_->GetServingStatus(
+          request_struct.has_service ? request_struct.service : "");
+  if (serving_status == DefaultHealthCheckService::NOT_FOUND) {
+    return Status(StatusCode::NOT_FOUND, "");
+  }
+
+  // Encode response
+  grpc_health_v1_HealthCheckResponse response_struct;
+  response_struct.has_status = true;
+  response_struct.status =
+      serving_status == DefaultHealthCheckService::SERVING
+          ? grpc_health_v1_HealthCheckResponse_ServingStatus_SERVING
+          : grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING;
+  pb_ostream_t ostream;
+  memset(&ostream, 0, sizeof(ostream));
+  pb_encode(&ostream, grpc_health_v1_HealthCheckResponse_fields,
+            &response_struct);
+  grpc_slice response_slice = grpc_slice_malloc(ostream.bytes_written);
+  ostream = pb_ostream_from_buffer(GRPC_SLICE_START_PTR(response_slice),
+                                   GRPC_SLICE_LENGTH(response_slice));
+  bool encode_status = pb_encode(
+      &ostream, grpc_health_v1_HealthCheckResponse_fields, &response_struct);
+  if (!encode_status) {
+    return Status(StatusCode::INTERNAL, "Failed to encode response.");
+  }
+  Slice encoded_response(response_slice, Slice::STEAL_REF);
+  ByteBuffer response_buffer(&encoded_response, 1);
+  response->Swap(&response_buffer);
   return Status::OK;
 }
 
@@ -84,7 +138,8 @@ void DefaultHealthCheckService::SetServingStatus(bool serving) {
 }
 
 DefaultHealthCheckService::ServingStatus
-DefaultHealthCheckService::GetServingStatus(const grpc::string& service_name) {
+DefaultHealthCheckService::GetServingStatus(
+    const grpc::string& service_name) const {
   std::lock_guard<std::mutex> lock(mu_);
   const auto& iter = services_map_.find(service_name);
   if (iter == services_map_.end()) {

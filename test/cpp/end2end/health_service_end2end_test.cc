@@ -85,7 +85,6 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   void ResetStubs() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
     hc_stub_ = grpc::health::v1::Health::NewStub(channel);
   }
 
@@ -98,14 +97,12 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     ClientContext context;
     Status s = hc_stub_->Check(&context, request, &response);
     EXPECT_EQ(expected_status.error_code(), s.error_code());
-    //    EXPECT_EQ(expected_status.error_details(), s.error_details());
     if (s.ok()) {
       EXPECT_EQ(expected_serving_status, response.status());
     }
   }
 
   TestServiceImpl echo_test_service_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Health::Stub> hc_stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
@@ -129,6 +126,8 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   EXPECT_TRUE(default_service != nullptr);
   const grpc::string kHealthyService("healthy_service");
   const grpc::string kUnhealthyService("unhealthy_service");
+  const grpc::string kNotRegisteredService("not_registered");
+  const grpc::string kTooLongServiceName(201, 'x');
   default_service->SetServingStatus(kHealthyService, true);
   default_service->SetServingStatus(kUnhealthyService, false);
 
@@ -138,12 +137,20 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   SendHealthCheckRpc(kHealthyService, Status::OK, HealthCheckResponse::SERVING);
   SendHealthCheckRpc(kUnhealthyService, Status::OK,
                      HealthCheckResponse::NOT_SERVING);
+  SendHealthCheckRpc(kNotRegisteredService, Status(StatusCode::NOT_FOUND, ""),
+                     HealthCheckResponse::NOT_SERVING);
+  SendHealthCheckRpc(kTooLongServiceName, Status(StatusCode::INVALID_ARGUMENT, ""),
+                     HealthCheckResponse::NOT_SERVING);
 
   default_service->SetServingStatus(false);
   SendHealthCheckRpc("", Status::OK, HealthCheckResponse::NOT_SERVING);
   SendHealthCheckRpc(kHealthyService, Status::OK,
                      HealthCheckResponse::NOT_SERVING);
   SendHealthCheckRpc(kUnhealthyService, Status::OK,
+                     HealthCheckResponse::NOT_SERVING);
+  SendHealthCheckRpc(kNotRegisteredService, Status(StatusCode::NOT_FOUND, ""),
+                     HealthCheckResponse::NOT_SERVING);
+  SendHealthCheckRpc(kTooLongServiceName, Status(StatusCode::INVALID_ARGUMENT, ""),
                      HealthCheckResponse::NOT_SERVING);
 }
 
