@@ -7454,6 +7454,26 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "src/core/ext/debug/debugger_macros.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_debug_macros", 
+    "src": [
+      "src/core/ext/debug/debugger_macros.c", 
+      "src/core/ext/debug/debugger_macros.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
       "nanopb"
     ], 
     "headers": [
@@ -7643,8 +7663,10 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_debug_macros"
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 

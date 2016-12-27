@@ -1,7 +1,6 @@
-<%def name="end2end_selector(tests)">
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,55 +31,41 @@
  *
  */
 
-<% tests = sorted(tests) %>\
-/* This file is auto-generated */
+/*
+ * A collection of 'macros' that help navigating the grpc object hierarchy
+ * Not intended to be robust for main-line code, often cuts across abstraction
+ * boundaries.
+ */
 
-#include "test/core/end2end/end2end_tests.h"
+#include <stdio.h>
 
-#include <stdbool.h>
-#include <string.h>
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/surface/call.h"
 
-#include <grpc/support/log.h>
+void grpc_summon_debugger_macros() {}
 
-#include "src/core/ext/debug/debugger_macros.h"
-
-static bool g_pre_init_called = false;
-
-% for test in tests:
-extern void ${test}(grpc_end2end_test_config config);
-extern void ${test}_pre_init(void);
-% endfor
-
-void grpc_end2end_tests_pre_init(void) {
-  GPR_ASSERT(!g_pre_init_called);
-  g_pre_init_called = true;
-  grpc_summon_debugger_macros();
-% for test in tests:
-  ${test}_pre_init();
-% endfor
+grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
+  grpc_call_stack *cs = grpc_call_get_call_stack(call);
+  for (;;) {
+    grpc_call_element *el = grpc_call_stack_element(cs, cs->count - 1);
+    if (el->filter == &grpc_client_channel_filter) {
+      grpc_subchannel_call *scc = grpc_client_channel_get_subchannel_call(el);
+      if (scc == NULL) {
+        fprintf(stderr, "No subchannel-call");
+        return NULL;
+      }
+      cs = grpc_subchannel_call_get_call_stack(scc);
+    } else if (el->filter == &grpc_connected_filter) {
+      return grpc_connected_channel_get_stream(el);
+    } else {
+      fprintf(stderr, "Unrecognized filter: %s", el->filter->name);
+      return NULL;
+    }
+  }
 }
 
-void grpc_end2end_tests(int argc, char **argv,
-                        grpc_end2end_test_config config) {
-  int i;
-
-  GPR_ASSERT(g_pre_init_called);
-
-  if (argc <= 1) {
-% for test in tests:
-    ${test}(config);
-% endfor
-    return;
-  }
-
-  for (i = 1; i < argc; i++) {
-% for test in tests:
-    if (0 == strcmp("${test}", argv[i])) {
-      ${test}(config);
-      continue;
-    }
-% endfor
-    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
-    abort();
-  }
-}</%def>
+grpc_chttp2_stream *grpc_chttp2_stream_from_call(grpc_call *call) {
+  return (grpc_chttp2_stream *)grpc_transport_stream_from_call(call);
+}
