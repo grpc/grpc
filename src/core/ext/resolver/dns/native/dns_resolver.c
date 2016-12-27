@@ -182,7 +182,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(addresses);
     result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
     grpc_resolved_addresses_destroy(r->addresses);
-    grpc_lb_addresses_destroy(addresses);
+    grpc_lb_addresses_destroy(exec_ctx, addresses);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -203,7 +203,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                     now);
   }
   if (r->resolved_result != NULL) {
-    grpc_channel_args_destroy(r->resolved_result);
+    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
   r->resolved_result = result;
   r->resolved_version++;
@@ -241,12 +241,12 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   if (r->resolved_result != NULL) {
-    grpc_channel_args_destroy(r->resolved_result);
+    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
   grpc_pollset_set_destroy(r->interested_parties);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
-  grpc_channel_args_destroy(r->channel_args);
+  grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
 }
 
