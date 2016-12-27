@@ -66,6 +66,7 @@ Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
   std::vector<Slice> slices;
   request->Dump(&slices);
   const uint8_t* request_bytes = nullptr;
+  bool request_bytes_owned = false;
   size_t request_size = 0;
   grpc_health_v1_HealthCheckRequest request_struct;
   if (slices.empty()) {
@@ -74,13 +75,22 @@ Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
     request_bytes = slices[0].begin();
     request_size = slices[0].size();
   } else {
-    abort();  // TODO
+    request_bytes_owned = true;
+    request_bytes = gpr_malloc(request->Length());
+    uint8_t* copy_to = request_bytes;
+    for (size_t i = 0; i < slices.size(); i++) {
+      memcpy(copy_to, slices[i].begin(), slices[i].size());
+      copy_to += slices[i].size();
+    }
   }
 
   if (request_bytes != nullptr) {
     pb_istream_t istream = pb_istream_from_buffer(request_bytes, request_size);
     bool decode_status = pb_decode(
         &istream, grpc_health_v1_HealthCheckRequest_fields, &request_struct);
+    if (request_bytes_owned) {
+      gpr_free(request_bytes);
+    }
     if (!decode_status) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
