@@ -53,23 +53,23 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 cdef extern from "grpc/grpc.h":
 
-  ctypedef struct gpr_slice:
-    # don't worry about writing out the members of gpr_slice; we never access
+  ctypedef struct grpc_slice:
+    # don't worry about writing out the members of grpc_slice; we never access
     # them directly.
     pass
 
-  gpr_slice gpr_slice_ref(gpr_slice s) nogil
-  void gpr_slice_unref(gpr_slice s) nogil
-  gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
-  gpr_slice gpr_slice_new_with_len(
+  grpc_slice grpc_slice_ref(grpc_slice s) nogil
+  void grpc_slice_unref(grpc_slice s) nogil
+  grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
+  grpc_slice grpc_slice_new_with_len(
       void *p, size_t len, void (*destroy)(void *, size_t)) nogil
-  gpr_slice gpr_slice_malloc(size_t length) nogil
-  gpr_slice gpr_slice_from_copied_string(const char *source) nogil
-  gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len) nogil
+  grpc_slice grpc_slice_malloc(size_t length) nogil
+  grpc_slice grpc_slice_from_copied_string(const char *source) nogil
+  grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
 
   # Declare functions for function-like macros (because Cython)...
-  void *gpr_slice_start_ptr "GPR_SLICE_START_PTR" (gpr_slice s) nogil
-  size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s) nogil
+  void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
+  size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
@@ -101,7 +101,7 @@ cdef extern from "grpc/grpc.h":
     # We don't care about the internals.
     pass
 
-  grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+  grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
                                                 size_t nslices) nogil
   size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
   void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
@@ -109,7 +109,7 @@ cdef extern from "grpc/grpc.h":
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                    grpc_byte_buffer *buffer) nogil
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                   gpr_slice *slice) nogil
+                                   grpc_slice *slice) nogil
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
 
   ctypedef enum grpc_status_code:

@@ -35,7 +35,7 @@ import sys
 
 import setuptools
 
-import grpc.tools.command
+import grpc_tools.command
 
 PY3 = sys.version_info.major == 3
 
@@ -68,7 +68,7 @@ COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
 
-    'build_package_protos': grpc.tools.command.BuildPackageProtos,
+    'build_package_protos': grpc_tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
@@ -80,8 +80,14 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin': [
-        'protoc_plugin_test.proto',
+    'tests.protoc_plugin.protos.invocation_testing': [
+        'same.proto',
+    ],
+    'tests.protoc_plugin.protos.invocation_testing.split_messages': [
+        'messages.proto',
+    ],
+    'tests.protoc_plugin.protos.invocation_testing.split_services': [
+        'services.proto',
     ],
     'tests.unit': [
         'credentials/ca.pem',

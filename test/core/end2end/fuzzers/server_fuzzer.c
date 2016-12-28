@@ -41,7 +41,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(gpr_slice slice) {}
+static void discard_write(grpc_slice slice) {}
 
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 static int detag(void *p) { return (int)(uintptr_t)p; }
@@ -63,7 +63,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
-      gpr_slice_from_copied_buffer((const char *)data, size));
+      grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_server *server = grpc_server_create(NULL, NULL);
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);

@@ -46,6 +46,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
@@ -54,18 +56,16 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(gpr_slice *slices, size_t nslices);
+typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(grpc_slice *slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 #define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
-typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
+typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression);
 extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
 #define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
 typedef grpc_byte_buffer *(*grpc_byte_buffer_copy_type)(grpc_byte_buffer *bb);
@@ -83,10 +83,10 @@ extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
 typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
 extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
 #define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
-typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, gpr_slice *slice);
+typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, grpc_slice *slice);
 extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
 #define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
-typedef gpr_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
+typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
 extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
 #define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
 typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
@@ -281,6 +281,9 @@ extern grpc_census_call_get_context_type grpc_census_call_get_context_import;
 typedef char *(*grpc_channel_get_target_type)(grpc_channel *channel);
 extern grpc_channel_get_target_type grpc_channel_get_target_import;
 #define grpc_channel_get_target grpc_channel_get_target_import
+typedef void(*grpc_channel_get_info_type)(grpc_channel *channel, const grpc_channel_info *channel_info);
+extern grpc_channel_get_info_type grpc_channel_get_info_import;
+#define grpc_channel_get_info grpc_channel_get_info_import
 typedef grpc_channel *(*grpc_insecure_channel_create_type)(const char *target, const grpc_channel_args *args, void *reserved);
 extern grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
 #define grpc_insecure_channel_create grpc_insecure_channel_create_import
@@ -467,6 +470,96 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
+typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
+extern grpc_slice_ref_type grpc_slice_ref_import;
+#define grpc_slice_ref grpc_slice_ref_import
+typedef void(*grpc_slice_unref_type)(grpc_slice s);
+extern grpc_slice_unref_type grpc_slice_unref_import;
+#define grpc_slice_unref grpc_slice_unref_import
+typedef grpc_slice(*grpc_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
+extern grpc_slice_new_type grpc_slice_new_import;
+#define grpc_slice_new grpc_slice_new_import
+typedef grpc_slice(*grpc_slice_new_with_user_data_type)(void *p, size_t len, void (*destroy)(void *), void *user_data);
+extern grpc_slice_new_with_user_data_type grpc_slice_new_with_user_data_import;
+#define grpc_slice_new_with_user_data grpc_slice_new_with_user_data_import
+typedef grpc_slice(*grpc_slice_new_with_len_type)(void *p, size_t len, void (*destroy)(void *, size_t));
+extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
+#define grpc_slice_new_with_len grpc_slice_new_with_len_import
+typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
+extern grpc_slice_malloc_type grpc_slice_malloc_import;
+#define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_from_copied_string_type)(const char *source);
+extern grpc_slice_from_copied_string_type grpc_slice_from_copied_string_import;
+#define grpc_slice_from_copied_string grpc_slice_from_copied_string_import
+typedef grpc_slice(*grpc_slice_from_copied_buffer_type)(const char *source, size_t len);
+extern grpc_slice_from_copied_buffer_type grpc_slice_from_copied_buffer_import;
+#define grpc_slice_from_copied_buffer grpc_slice_from_copied_buffer_import
+typedef grpc_slice(*grpc_slice_from_static_string_type)(const char *source);
+extern grpc_slice_from_static_string_type grpc_slice_from_static_string_import;
+#define grpc_slice_from_static_string grpc_slice_from_static_string_import
+typedef grpc_slice(*grpc_slice_sub_type)(grpc_slice s, size_t begin, size_t end);
+extern grpc_slice_sub_type grpc_slice_sub_import;
+#define grpc_slice_sub grpc_slice_sub_import
+typedef grpc_slice(*grpc_slice_sub_no_ref_type)(grpc_slice s, size_t begin, size_t end);
+extern grpc_slice_sub_no_ref_type grpc_slice_sub_no_ref_import;
+#define grpc_slice_sub_no_ref grpc_slice_sub_no_ref_import
+typedef grpc_slice(*grpc_slice_split_tail_type)(grpc_slice *s, size_t split);
+extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
+#define grpc_slice_split_tail grpc_slice_split_tail_import
+typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
+extern grpc_slice_split_head_type grpc_slice_split_head_import;
+#define grpc_slice_split_head grpc_slice_split_head_import
+typedef grpc_slice(*gpr_empty_slice_type)(void);
+extern gpr_empty_slice_type gpr_empty_slice_import;
+#define gpr_empty_slice gpr_empty_slice_import
+typedef int(*grpc_slice_cmp_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_cmp_type grpc_slice_cmp_import;
+#define grpc_slice_cmp grpc_slice_cmp_import
+typedef int(*grpc_slice_str_cmp_type)(grpc_slice a, const char *b);
+extern grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
+#define grpc_slice_str_cmp grpc_slice_str_cmp_import
+typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
+#define grpc_slice_is_equivalent grpc_slice_is_equivalent_import
+typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
+extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
+#define grpc_slice_buffer_init grpc_slice_buffer_init_import
+typedef void(*grpc_slice_buffer_destroy_type)(grpc_slice_buffer *sb);
+extern grpc_slice_buffer_destroy_type grpc_slice_buffer_destroy_import;
+#define grpc_slice_buffer_destroy grpc_slice_buffer_destroy_import
+typedef void(*grpc_slice_buffer_add_type)(grpc_slice_buffer *sb, grpc_slice slice);
+extern grpc_slice_buffer_add_type grpc_slice_buffer_add_import;
+#define grpc_slice_buffer_add grpc_slice_buffer_add_import
+typedef size_t(*grpc_slice_buffer_add_indexed_type)(grpc_slice_buffer *sb, grpc_slice slice);
+extern grpc_slice_buffer_add_indexed_type grpc_slice_buffer_add_indexed_import;
+#define grpc_slice_buffer_add_indexed grpc_slice_buffer_add_indexed_import
+typedef void(*grpc_slice_buffer_addn_type)(grpc_slice_buffer *sb, grpc_slice *slices, size_t n);
+extern grpc_slice_buffer_addn_type grpc_slice_buffer_addn_import;
+#define grpc_slice_buffer_addn grpc_slice_buffer_addn_import
+typedef uint8_t *(*grpc_slice_buffer_tiny_add_type)(grpc_slice_buffer *sb, size_t len);
+extern grpc_slice_buffer_tiny_add_type grpc_slice_buffer_tiny_add_import;
+#define grpc_slice_buffer_tiny_add grpc_slice_buffer_tiny_add_import
+typedef void(*grpc_slice_buffer_pop_type)(grpc_slice_buffer *sb);
+extern grpc_slice_buffer_pop_type grpc_slice_buffer_pop_import;
+#define grpc_slice_buffer_pop grpc_slice_buffer_pop_import
+typedef void(*grpc_slice_buffer_reset_and_unref_type)(grpc_slice_buffer *sb);
+extern grpc_slice_buffer_reset_and_unref_type grpc_slice_buffer_reset_and_unref_import;
+#define grpc_slice_buffer_reset_and_unref grpc_slice_buffer_reset_and_unref_import
+typedef void(*grpc_slice_buffer_swap_type)(grpc_slice_buffer *a, grpc_slice_buffer *b);
+extern grpc_slice_buffer_swap_type grpc_slice_buffer_swap_import;
+#define grpc_slice_buffer_swap grpc_slice_buffer_swap_import
+typedef void(*grpc_slice_buffer_move_into_type)(grpc_slice_buffer *src, grpc_slice_buffer *dst);
+extern grpc_slice_buffer_move_into_type grpc_slice_buffer_move_into_import;
+#define grpc_slice_buffer_move_into grpc_slice_buffer_move_into_import
+typedef void(*grpc_slice_buffer_trim_end_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *garbage);
+extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
+#define grpc_slice_buffer_trim_end grpc_slice_buffer_trim_end_import
+typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
+extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
+#define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer *src);
+extern grpc_slice_buffer_take_first_type grpc_slice_buffer_take_first_import;
+#define grpc_slice_buffer_take_first grpc_slice_buffer_take_first_import
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
@@ -596,7 +689,7 @@ extern gpr_join_host_port_type gpr_join_host_port_import;
 typedef int(*gpr_split_host_port_type)(const char *name, char **host, char **port);
 extern gpr_split_host_port_type gpr_split_host_port_import;
 #define gpr_split_host_port gpr_split_host_port_import
-typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
+typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
 typedef void(*gpr_log_message_type)(const char *file, int line, gpr_log_severity severity, const char *message);
@@ -614,97 +707,10 @@ extern gpr_set_log_function_type gpr_set_log_function_import;
 typedef char *(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import
-typedef gpr_slice(*gpr_slice_ref_type)(gpr_slice s);
-extern gpr_slice_ref_type gpr_slice_ref_import;
-#define gpr_slice_ref gpr_slice_ref_import
-typedef void(*gpr_slice_unref_type)(gpr_slice s);
-extern gpr_slice_unref_type gpr_slice_unref_import;
-#define gpr_slice_unref gpr_slice_unref_import
-typedef gpr_slice(*gpr_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
-extern gpr_slice_new_type gpr_slice_new_import;
-#define gpr_slice_new gpr_slice_new_import
-typedef gpr_slice(*gpr_slice_new_with_user_data_type)(void *p, size_t len, void (*destroy)(void *), void *user_data);
-extern gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
-#define gpr_slice_new_with_user_data gpr_slice_new_with_user_data_import
-typedef gpr_slice(*gpr_slice_new_with_len_type)(void *p, size_t len, void (*destroy)(void *, size_t));
-extern gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
-#define gpr_slice_new_with_len gpr_slice_new_with_len_import
-typedef gpr_slice(*gpr_slice_malloc_type)(size_t length);
-extern gpr_slice_malloc_type gpr_slice_malloc_import;
-#define gpr_slice_malloc gpr_slice_malloc_import
-typedef gpr_slice(*gpr_slice_from_copied_string_type)(const char *source);
-extern gpr_slice_from_copied_string_type gpr_slice_from_copied_string_import;
-#define gpr_slice_from_copied_string gpr_slice_from_copied_string_import
-typedef gpr_slice(*gpr_slice_from_copied_buffer_type)(const char *source, size_t len);
-extern gpr_slice_from_copied_buffer_type gpr_slice_from_copied_buffer_import;
-#define gpr_slice_from_copied_buffer gpr_slice_from_copied_buffer_import
-typedef gpr_slice(*gpr_slice_from_static_string_type)(const char *source);
-extern gpr_slice_from_static_string_type gpr_slice_from_static_string_import;
-#define gpr_slice_from_static_string gpr_slice_from_static_string_import
-typedef gpr_slice(*gpr_slice_sub_type)(gpr_slice s, size_t begin, size_t end);
-extern gpr_slice_sub_type gpr_slice_sub_import;
-#define gpr_slice_sub gpr_slice_sub_import
-typedef gpr_slice(*gpr_slice_sub_no_ref_type)(gpr_slice s, size_t begin, size_t end);
-extern gpr_slice_sub_no_ref_type gpr_slice_sub_no_ref_import;
-#define gpr_slice_sub_no_ref gpr_slice_sub_no_ref_import
-typedef gpr_slice(*gpr_slice_split_tail_type)(gpr_slice *s, size_t split);
-extern gpr_slice_split_tail_type gpr_slice_split_tail_import;
-#define gpr_slice_split_tail gpr_slice_split_tail_import
-typedef gpr_slice(*gpr_slice_split_head_type)(gpr_slice *s, size_t split);
-extern gpr_slice_split_head_type gpr_slice_split_head_import;
-#define gpr_slice_split_head gpr_slice_split_head_import
-typedef gpr_slice(*gpr_empty_slice_type)(void);
-extern gpr_empty_slice_type gpr_empty_slice_import;
-#define gpr_empty_slice gpr_empty_slice_import
-typedef int(*gpr_slice_cmp_type)(gpr_slice a, gpr_slice b);
-extern gpr_slice_cmp_type gpr_slice_cmp_import;
-#define gpr_slice_cmp gpr_slice_cmp_import
-typedef int(*gpr_slice_str_cmp_type)(gpr_slice a, const char *b);
-extern gpr_slice_str_cmp_type gpr_slice_str_cmp_import;
-#define gpr_slice_str_cmp gpr_slice_str_cmp_import
-typedef void(*gpr_slice_buffer_init_type)(gpr_slice_buffer *sb);
-extern gpr_slice_buffer_init_type gpr_slice_buffer_init_import;
-#define gpr_slice_buffer_init gpr_slice_buffer_init_import
-typedef void(*gpr_slice_buffer_destroy_type)(gpr_slice_buffer *sb);
-extern gpr_slice_buffer_destroy_type gpr_slice_buffer_destroy_import;
-#define gpr_slice_buffer_destroy gpr_slice_buffer_destroy_import
-typedef void(*gpr_slice_buffer_add_type)(gpr_slice_buffer *sb, gpr_slice slice);
-extern gpr_slice_buffer_add_type gpr_slice_buffer_add_import;
-#define gpr_slice_buffer_add gpr_slice_buffer_add_import
-typedef size_t(*gpr_slice_buffer_add_indexed_type)(gpr_slice_buffer *sb, gpr_slice slice);
-extern gpr_slice_buffer_add_indexed_type gpr_slice_buffer_add_indexed_import;
-#define gpr_slice_buffer_add_indexed gpr_slice_buffer_add_indexed_import
-typedef void(*gpr_slice_buffer_addn_type)(gpr_slice_buffer *sb, gpr_slice *slices, size_t n);
-extern gpr_slice_buffer_addn_type gpr_slice_buffer_addn_import;
-#define gpr_slice_buffer_addn gpr_slice_buffer_addn_import
-typedef uint8_t *(*gpr_slice_buffer_tiny_add_type)(gpr_slice_buffer *sb, size_t len);
-extern gpr_slice_buffer_tiny_add_type gpr_slice_buffer_tiny_add_import;
-#define gpr_slice_buffer_tiny_add gpr_slice_buffer_tiny_add_import
-typedef void(*gpr_slice_buffer_pop_type)(gpr_slice_buffer *sb);
-extern gpr_slice_buffer_pop_type gpr_slice_buffer_pop_import;
-#define gpr_slice_buffer_pop gpr_slice_buffer_pop_import
-typedef void(*gpr_slice_buffer_reset_and_unref_type)(gpr_slice_buffer *sb);
-extern gpr_slice_buffer_reset_and_unref_type gpr_slice_buffer_reset_and_unref_import;
-#define gpr_slice_buffer_reset_and_unref gpr_slice_buffer_reset_and_unref_import
-typedef void(*gpr_slice_buffer_swap_type)(gpr_slice_buffer *a, gpr_slice_buffer *b);
-extern gpr_slice_buffer_swap_type gpr_slice_buffer_swap_import;
-#define gpr_slice_buffer_swap gpr_slice_buffer_swap_import
-typedef void(*gpr_slice_buffer_move_into_type)(gpr_slice_buffer *src, gpr_slice_buffer *dst);
-extern gpr_slice_buffer_move_into_type gpr_slice_buffer_move_into_import;
-#define gpr_slice_buffer_move_into gpr_slice_buffer_move_into_import
-typedef void(*gpr_slice_buffer_trim_end_type)(gpr_slice_buffer *src, size_t n, gpr_slice_buffer *garbage);
-extern gpr_slice_buffer_trim_end_type gpr_slice_buffer_trim_end_import;
-#define gpr_slice_buffer_trim_end gpr_slice_buffer_trim_end_import
-typedef void(*gpr_slice_buffer_move_first_type)(gpr_slice_buffer *src, size_t n, gpr_slice_buffer *dst);
-extern gpr_slice_buffer_move_first_type gpr_slice_buffer_move_first_import;
-#define gpr_slice_buffer_move_first gpr_slice_buffer_move_first_import
-typedef gpr_slice(*gpr_slice_buffer_take_first_type)(gpr_slice_buffer *src);
-extern gpr_slice_buffer_take_first_type gpr_slice_buffer_take_first_import;
-#define gpr_slice_buffer_take_first gpr_slice_buffer_take_first_import
 typedef char *(*gpr_strdup_type)(const char *src);
 extern gpr_strdup_type gpr_strdup_import;
 #define gpr_strdup gpr_strdup_import
-typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(2, 3);
+typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPR_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
 typedef const char *(*gpr_subprocess_binary_extension_type)();

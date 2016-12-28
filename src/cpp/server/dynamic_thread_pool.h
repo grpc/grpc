@@ -34,24 +34,25 @@
 #ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 #define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
+#include <condition_variable>
 #include <list>
 #include <memory>
+#include <mutex>
 #include <queue>
+#include <thread>
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
 #include <grpc++/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
+class DynamicThreadPool final : public ThreadPoolInterface {
  public:
   explicit DynamicThreadPool(int reserve_threads);
   ~DynamicThreadPool();
 
-  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
+  void Add(const std::function<void()>& callback) override;
 
  private:
   class DynamicThread {
@@ -61,12 +62,12 @@ class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
 
    private:
     DynamicThreadPool* pool_;
-    std::unique_ptr<grpc::thread> thd_;
+    std::unique_ptr<std::thread> thd_;
     void ThreadFunc();
   };
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  grpc::condition_variable shutdown_cv_;
+  std::mutex mu_;
+  std::condition_variable cv_;
+  std::condition_variable shutdown_cv_;
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
   int reserve_threads_;

@@ -77,7 +77,7 @@ typedef struct _grpc_lb_v1_Server {
     bool has_port;
     int32_t port;
     bool has_load_balance_token;
-    char load_balance_token[65];
+    char load_balance_token[50];
     bool has_drop_request;
     bool drop_request;
 /* @@protoc_insertion_point(struct:grpc_lb_v1_Server) */
@@ -172,7 +172,7 @@ extern const pb_field_t grpc_lb_v1_Server_fields[5];
 #define grpc_lb_v1_LoadBalanceResponse_size      (98 + grpc_lb_v1_ServerList_size)
 #define grpc_lb_v1_InitialLoadBalanceResponse_size 90
 /* grpc_lb_v1_ServerList_size depends on runtime parameters */
-#define grpc_lb_v1_Server_size                   98
+#define grpc_lb_v1_Server_size                   83
 
 /* Message IDs (where set with "msgid" option) */
 #ifdef PB_MSGID
