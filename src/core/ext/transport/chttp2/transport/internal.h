@@ -75,6 +75,19 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
+typedef enum {
+  GRPC_CHTTP2_PING_ON_NEXT_WRITE = 0,
+  GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
+  GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
+} grpc_chttp2_ping_type;
+
+typedef struct {
+  grpc_closure_list next_queue;
+  grpc_closure_list initiate_queue;
+  grpc_closure_list inflight_queue;
+  uint64_t inflight_id;
+} grpc_chttp2_ping_queue;
+
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
   /* prefix: one entry per http2 connection prefix byte */
@@ -146,14 +159,6 @@ typedef enum {
   GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
   GRPC_CHTTP2_GOAWAY_SENT,
 } grpc_chttp2_sent_goaway_state;
-
-/* Outstanding ping request data */
-typedef struct grpc_chttp2_outstanding_ping {
-  uint8_t id[8];
-  grpc_closure *on_recv;
-  struct grpc_chttp2_outstanding_ping *next;
-  struct grpc_chttp2_outstanding_ping *prev;
-} grpc_chttp2_outstanding_ping;
 
 typedef struct grpc_chttp2_write_cb {
   int64_t call_at_byte;
@@ -271,10 +276,9 @@ struct grpc_chttp2_transport {
   /** last new stream id */
   uint32_t last_new_stream_id;
 
-  /** pings awaiting responses */
-  grpc_chttp2_outstanding_ping pings;
-  /** next payload for an outgoing ping */
-  uint64_t ping_counter;
+  /** ping queues for various ping insertion points */
+  grpc_chttp2_ping_queue ping_queues[GRPC_CHTTP2_PING_TYPE_COUNT];
+  uint64_t ping_ctr; /* unique id for pings */
 
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
@@ -684,7 +688,7 @@ void grpc_chttp2_incoming_byte_stream_finished(
     grpc_error *error);
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                          const uint8_t *opaque_8bytes);
+                          uint64_t id);
 
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
