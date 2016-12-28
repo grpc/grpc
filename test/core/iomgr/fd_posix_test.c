@@ -546,7 +546,7 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(g_pollset);

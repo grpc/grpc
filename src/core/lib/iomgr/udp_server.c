@@ -126,7 +126,7 @@ grpc_udp_server *grpc_udp_server_create(void) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);

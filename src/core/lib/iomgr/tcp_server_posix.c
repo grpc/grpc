@@ -208,7 +208,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -760,7 +760,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }

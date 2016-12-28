@@ -316,7 +316,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -460,11 +460,10 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_sched(exec_ctx, cb,
-                        grpc_fd_is_shutdown(tcp->em_fd)
-                            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
-                            : GRPC_ERROR_NONE,
-                        NULL);
+    grpc_closure_sched(exec_ctx, cb,
+                       grpc_fd_is_shutdown(tcp->em_fd)
+                           ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
+                           : GRPC_ERROR_NONE);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -484,7 +483,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       gpr_log(GPR_DEBUG, "write: %s", str);
       grpc_error_free_string(str);
     }
-    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+    grpc_closure_sched(exec_ctx, cb, error);
   }
 
   GPR_TIMER_END("tcp_write", 0);
