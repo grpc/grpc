@@ -138,6 +138,10 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_error *error);
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_chttp2_ping_type ping_type,
+                             grpc_closure *on_initiate,
+                             grpc_closure *on_complete);
 
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -230,8 +234,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
-  t->ping_counter = 1;
-  t->pings.next = t->pings.prev = &t->pings;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -1214,53 +1216,48 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_error *error) {
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */
-  while (t->pings.next != &t->pings) {
-    grpc_chttp2_outstanding_ping *ping = t->pings.next;
-    grpc_exec_ctx_sched(exec_ctx, ping->on_recv, GRPC_ERROR_REF(error), NULL);
-    ping->next->prev = ping->prev;
-    ping->prev->next = ping->next;
-    gpr_free(ping);
+  for (size_t i = 0; i < GRPC_CHTTP2_PING_TYPE_COUNT; i++) {
+    grpc_chttp2_ping_queue *pq = &t->ping_queues[i];
+    grpc_closure_list_fail_all(&pq->next_queue, GRPC_ERROR_REF(error));
+    grpc_closure_list_fail_all(&pq->initiate_queue, GRPC_ERROR_REF(error));
+    grpc_closure_list_fail_all(&pq->inflight_queue, GRPC_ERROR_REF(error));
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pq->next_queue, NULL);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pq->initiate_queue, NULL);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pq->inflight_queue, NULL);
   }
   GRPC_ERROR_UNREF(error);
 }
 
-static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_closure *on_recv) {
-  grpc_chttp2_outstanding_ping *p = gpr_malloc(sizeof(*p));
-  p->next = &t->pings;
-  p->prev = p->next->prev;
-  p->prev->next = p->next->prev = p;
-  p->id[0] = (uint8_t)((t->ping_counter >> 56) & 0xff);
-  p->id[1] = (uint8_t)((t->ping_counter >> 48) & 0xff);
-  p->id[2] = (uint8_t)((t->ping_counter >> 40) & 0xff);
-  p->id[3] = (uint8_t)((t->ping_counter >> 32) & 0xff);
-  p->id[4] = (uint8_t)((t->ping_counter >> 24) & 0xff);
-  p->id[5] = (uint8_t)((t->ping_counter >> 16) & 0xff);
-  p->id[6] = (uint8_t)((t->ping_counter >> 8) & 0xff);
-  p->id[7] = (uint8_t)(t->ping_counter & 0xff);
-  t->ping_counter++;
-  p->on_recv = on_recv;
-  grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_ping_create(0, p->id));
-  grpc_chttp2_initiate_write(exec_ctx, t, true, "send_ping");
+static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_transport *t,
+                                grpc_chttp2_ping_type ping_type,
+                                grpc_slice_buffer *buf) {
+  grpc_chttp2_ping_queue *pq = &t->ping_queues[ping_type];
+  if (grpc_closure_list_empty(pq->next_queue)) {
+    /* no ping needed: wait */
+    return;
+  }
+  if (!grpc_closure_list_empty(pq->inflight_queue)) {
+    /* ping already in-flight: wait */
+    return;
+  }
+  pq->inflight_id = t->ping_ctr * GRPC_CHTTP2_PING_TYPE_COUNT + ping_type;
+  t->ping_ctr++;
+  grpc_exec_ctx_enqueue_list(exec_ctx, &pq->initiate_queue, NULL);
+  grpc_slice_buffer_add(buf, grpc_chttp2_ping_create(false, pq->inflight_id));
 }
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                          const uint8_t *opaque_8bytes) {
-  grpc_chttp2_outstanding_ping *ping;
-  for (ping = t->pings.next; ping != &t->pings; ping = ping->next) {
-    if (0 == memcmp(opaque_8bytes, ping->id, 8)) {
-      grpc_exec_ctx_sched(exec_ctx, ping->on_recv, GRPC_ERROR_NONE, NULL);
-      ping->next->prev = ping->prev;
-      ping->prev->next = ping->next;
-      gpr_free(ping);
-      return;
-    }
+                          uint64_t id) {
+  grpc_chttp2_ping_queue *pq =
+      &t->ping_queues[id % GRPC_CHTTP2_PING_TYPE_COUNT];
+  if (pq->inflight_id != id) {
+    char *from = grpc_endpoint_get_peer(t->ep);
+    gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64, from, id);
+    gpr_free(from);
+    return;
   }
-  char *msg = gpr_dump((const char *)opaque_8bytes, 8, GPR_DUMP_HEX);
-  char *from = grpc_endpoint_get_peer(t->ep);
-  gpr_log(GPR_DEBUG, "Unknown ping response from %s: %s", from, msg);
-  gpr_free(from);
-  gpr_free(msg);
+  grpc_exec_ctx_enqueue_list(exec_ctx, &pq->inflight_queue, NULL);
 }
 
 static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1305,7 +1302,8 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   }
 
   if (op->send_ping) {
-    send_ping_locked(exec_ctx, t, op->send_ping);
+    send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE, NULL,
+                     op->send_ping);
   }
 
   if (close_transport != GRPC_ERROR_NONE) {
@@ -1915,8 +1913,10 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   gpr_time_from_millis(100, GPR_TIMESPAN)),
                      gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-      grpc_bdp_estimator_start_ping(&t->bdp_estimator);
-      send_ping_locked(exec_ctx, t, &t->finish_bdp_ping);
+      grpc_bdp_estimator_schedule_ping(&t->bdp_estimator);
+      send_ping_locked(exec_ctx, t,
+                       GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
+                       &t->start_bdp_ping, &t->finish_bdp_ping);
     }
 
     int64_t estimate = -1;
@@ -1933,7 +1933,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     double memory_pressure = grpc_resource_quota_get_memory_pressure(
         grpc_resource_user_get_quota(grpc_endpoint_get_resource_user(t->ep)));
     if (memory_pressure > 0.8) {
-      bdp_error = -(memory_pressure - 0.8) * 5 * 32768;
+      bdp_error -= GPR_MAX(0, t->bdp_guess) * (memory_pressure - 0.8) / 0.2;
     }
     if (t->bdp_guess < 1e-6 && bdp_error < 0) {
       bdp_error = 0;
