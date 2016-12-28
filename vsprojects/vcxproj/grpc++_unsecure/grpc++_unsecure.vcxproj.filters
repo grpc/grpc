@@ -129,9 +129,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_interface.h">
-      <Filter>include\grpc++\ext</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_server_builder_option.h">
       <Filter>include\grpc++\ext</Filter>
     </ClInclude>
@@ -142,6 +139,9 @@
       <Filter>include\grpc++\generic</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\health_check_service_interface.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h">
