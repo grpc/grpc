@@ -42,4 +42,4 @@ then
   flags="-use_traces=1 $flags"
 fi
 
-bins/$config/percent_encode_fuzzer $flags fuzzer_output test/core/support/percent_encode_corpus
+bins/$config/percent_encode_fuzzer $flags fuzzer_output test/core/slice/percent_encode_corpus

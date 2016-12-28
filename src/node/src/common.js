@@ -141,8 +141,14 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
     binaryAsBase64 = options.binaryAsBase64;
     longsAsStrings = options.longsAsStrings;
   }
-  return _.object(_.map(service.children, function(method) {
-    return [_.camelCase(method.name), {
+  /* This slightly awkward construction is used to make sure we only use
+     lodash@3.10.1-compatible functions. A previous version used
+     _.fromPairs, which would be cleaner, but was introduced in lodash
+     version 4 */
+  return _.zipObject(_.map(service.children, function(method) {
+    return _.camelCase(method.name);
+  }), _.map(service.children, function(method) {
+    return {
       path: prefix + method.name,
       requestStream: method.requestStream,
       responseStream: method.responseStream,
@@ -150,11 +156,11 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
       responseType: method.resolvedResponseType,
       requestSerialize: serializeCls(method.resolvedRequestType.build()),
       requestDeserialize: deserializeCls(method.resolvedRequestType.build(),
-                                     binaryAsBase64, longsAsStrings),
+                                         binaryAsBase64, longsAsStrings),
       responseSerialize: serializeCls(method.resolvedResponseType.build()),
       responseDeserialize: deserializeCls(method.resolvedResponseType.build(),
-                                     binaryAsBase64, longsAsStrings)
-    }];
+                                          binaryAsBase64, longsAsStrings)
+    };
   }));
 };
 

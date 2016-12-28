@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -181,7 +182,7 @@ typedef struct grpc_transport_op {
   bool send_goaway;
   /** what should the goaway contain? */
   grpc_status_code goaway_status;
-  gpr_slice *goaway_message;
+  grpc_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
@@ -249,11 +250,11 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 
 void grpc_transport_stream_op_add_cancellation_with_message(
     grpc_transport_stream_op *op, grpc_status_code status,
-    gpr_slice *optional_message);
+    grpc_slice *optional_message);
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         grpc_status_code status,
-                                        gpr_slice *optional_message);
+                                        grpc_slice *optional_message);
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
@@ -283,7 +284,7 @@ void grpc_transport_ping(grpc_transport *transport, grpc_closure *cb);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
-                           gpr_slice debug_data);
+                           grpc_slice debug_data);
 
 /* Close a transport. Aborts all open streams. */
 void grpc_transport_close(grpc_transport *transport);
@@ -294,6 +295,10 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 /* Get the transports peer */
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
+
+/* Get the endpoint used by \a transport */
+grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                           grpc_transport *transport);
 
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */

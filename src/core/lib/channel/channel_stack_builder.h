@@ -146,16 +146,15 @@ bool grpc_channel_stack_builder_append_filter(
 void grpc_channel_stack_builder_iterator_destroy(
     grpc_channel_stack_builder_iterator *iterator);
 
-/// Destroy the builder, return the freshly minted channel stack
+/// Destroy the builder, return the freshly minted channel stack in \a result.
 /// Allocates \a prefix_bytes bytes before the channel stack
 /// Returns the base pointer of the allocated block
 /// \a initial_refs, \a destroy, \a destroy_arg are as per
 /// grpc_channel_stack_init
-void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
-                                        grpc_channel_stack_builder *builder,
-                                        size_t prefix_bytes, int initial_refs,
-                                        grpc_iomgr_cb_func destroy,
-                                        void *destroy_arg);
+grpc_error *grpc_channel_stack_builder_finish(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    size_t prefix_bytes, int initial_refs, grpc_iomgr_cb_func destroy,
+    void *destroy_arg, void **result);
 
 /// Destroy the builder without creating a channel stack
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder);

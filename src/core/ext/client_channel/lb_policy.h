@@ -109,10 +109,16 @@ struct grpc_lb_policy_vtable {
 
 /*#define GRPC_LB_POLICY_REFCOUNT_DEBUG*/
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+
+/* Strong references: the policy will shutdown when they reach zero */
 #define GRPC_LB_POLICY_REF(p, r) \
   grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_LB_POLICY_UNREF(exec_ctx, p, r) \
   grpc_lb_policy_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
+
+/* Weak references: they don't prevent the shutdown of the LB policy. When no
+ * strong references are left but there are still weak ones, shutdown is called.
+ * Once the weak reference also reaches zero, the LB policy is destroyed. */
 #define GRPC_LB_POLICY_WEAK_REF(p, r) \
   grpc_lb_policy_weak_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, p, r) \

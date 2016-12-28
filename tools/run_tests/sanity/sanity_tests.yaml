@@ -2,6 +2,7 @@
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_sources_and_headers.py
 - script: tools/run_tests/sanity/check_submodules.sh
+- script: tools/run_tests/sanity/check_test_filtering.py
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
@@ -11,4 +12,3 @@
 - script: tools/distrib/check_nanopb_output.sh
 - script: tools/distrib/check_include_guards.py
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/distrib/check_generated_pb_files.sh

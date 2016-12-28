@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>
 
@@ -202,9 +202,15 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
     Only one operation of each type can be active at once in any given
-    batch. You must call grpc_completion_queue_next or
-    grpc_completion_queue_pluck on the completion queue associated with 'call'
-    for work to be performed.
+    batch.
+    If a call to grpc_call_start_batch returns GRPC_CALL_OK you must call
+    grpc_completion_queue_next or grpc_completion_queue_pluck on the completion
+    queue associated with 'call' for work to be performed. If a call to
+    grpc_call_start_batch returns any value other than GRPC_CALL_OK it is
+    guaranteed that no state associated with 'call' is changed and it is not
+    appropriate to call grpc_completion_queue_next or
+    grpc_completion_queue_pluck consequent to the failed grpc_call_start_batch
+    call.
     THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
@@ -236,6 +242,13 @@ GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
 /** Return a newly allocated string representing the target a channel was
     created for. */
 GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
+
+/** Request info about the channel.
+    \a channel_info indicates what information is being requested and
+    how that information will be returned.
+    \a channel_info is owned by the caller. */
+GRPCAPI void grpc_channel_get_info(grpc_channel *channel,
+                                   const grpc_channel_info *channel_info);
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most

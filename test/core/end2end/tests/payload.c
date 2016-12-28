@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -95,8 +95,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a gpr_slice containing random alphanumeric characters. */
-static gpr_slice generate_random_slice() {
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
+static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char *output;
@@ -106,17 +107,18 @@ static gpr_slice generate_random_slice() {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
   output[output_size - 1] = '\0';
-  gpr_slice out = gpr_slice_from_copied_string(output);
+  grpc_slice out = grpc_slice_from_copied_string(output);
   gpr_free(output);
   return out;
 }
 
-static void request_response_with_payload(grpc_end2end_test_fixture f) {
+static void request_response_with_payload(grpc_end2end_test_config config,
+                                          grpc_end2end_test_fixture f) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  gpr_slice request_payload_slice = generate_random_slice();
-  gpr_slice response_payload_slice = generate_random_slice();
+  grpc_slice request_payload_slice = generate_random_slice();
+  grpc_slice response_payload_slice = generate_random_slice();
 
   grpc_call *c;
   grpc_call *s;
@@ -124,7 +126,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(60);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -140,8 +142,10 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -240,7 +244,8 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   GPR_ASSERT(
@@ -269,7 +274,7 @@ static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(
       config, "test_invoke_request_response_with_payload", NULL, NULL);
-  request_response_with_payload(f);
+  request_response_with_payload(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -280,7 +285,7 @@ static void test_invoke_10_request_response_with_payload(
   grpc_end2end_test_fixture f = begin_test(
       config, "test_invoke_10_request_response_with_payload", NULL, NULL);
   for (i = 0; i < 10; i++) {
-    request_response_with_payload(f);
+    request_response_with_payload(config, f);
   }
   end_test(&f);
   config.tear_down_data(&f);

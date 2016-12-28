@@ -35,9 +35,9 @@
 #include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/compress_filter.h"
@@ -50,7 +50,7 @@
 int grpc_compression_trace = 0;
 
 typedef struct call_data {
-  gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
+  grpc_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;
   uint32_t remaining_slice_bytes;
@@ -63,7 +63,7 @@ typedef struct call_data {
   grpc_transport_stream_op *send_op;
   uint32_t send_length;
   uint32_t send_flags;
-  gpr_slice incoming_slice;
+  grpc_slice incoming_slice;
   grpc_slice_buffer_stream replacement_stream;
   grpc_closure *post_send;
   grpc_closure send_done;
@@ -111,9 +111,13 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static int skip_compression(grpc_call_element *elem) {
+static int skip_compression(grpc_call_element *elem, uint32_t flags) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
+
+  if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
+    return 1;
+  }
   if (calld->has_compression_algorithm) {
     if (calld->compression_algorithm == GRPC_COMPRESS_NONE) {
       return 1;
@@ -157,7 +161,7 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_reset_and_unref(&calld->slices);
+  grpc_slice_buffer_reset_and_unref(&calld->slices);
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
@@ -165,8 +169,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   int did_compress;
-  gpr_slice_buffer tmp;
-  gpr_slice_buffer_init(&tmp);
+  grpc_slice_buffer tmp;
+  grpc_slice_buffer_init(&tmp);
   did_compress =
       grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
   if (did_compress) {
@@ -181,7 +185,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
                          " bytes (%.2f%% savings)",
               algo_name, before_size, after_size, 100 * savings_ratio);
     }
-    gpr_slice_buffer_swap(&calld->slices, &tmp);
+    grpc_slice_buffer_swap(&calld->slices, &tmp);
     calld->send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
   } else {
     if (grpc_compression_trace) {
@@ -195,7 +199,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  gpr_slice_buffer_destroy(&tmp);
+  grpc_slice_buffer_destroy(&tmp);
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
@@ -209,7 +213,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
+  grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
   if (calld->send_length == calld->slices.length) {
     finish_send_message(exec_ctx, elem);
   } else {
@@ -223,7 +227,7 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   while (grpc_byte_stream_next(exec_ctx, calld->send_op->send_message,
                                &calld->incoming_slice, ~(size_t)0,
                                &calld->got_slice)) {
-    gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
+    grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
       finish_send_message(exec_ctx, elem);
       break;
@@ -241,8 +245,8 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   if (op->send_initial_metadata) {
     process_send_initial_metadata(elem, op->send_initial_metadata);
   }
-  if (op->send_message != NULL && !skip_compression(elem) &&
-      0 == (op->send_message->flags & GRPC_WRITE_NO_COMPRESS)) {
+  if (op->send_message != NULL &&
+      !skip_compression(elem, op->send_message->flags)) {
     calld->send_op = op;
     calld->send_length = op->send_message->length;
     calld->send_flags = op->send_message->flags;
@@ -263,7 +267,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
 
   /* initialize members */
-  gpr_slice_buffer_init(&calld->slices);
+  grpc_slice_buffer_init(&calld->slices);
   calld->has_compression_algorithm = 0;
   grpc_closure_init(&calld->got_slice, got_slice, elem);
   grpc_closure_init(&calld->send_done, send_done, elem);
@@ -277,13 +281,13 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_destroy(&calld->slices);
+  grpc_slice_buffer_destroy(&calld->slices);
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *channeld = elem->channel_data;
 
   channeld->enabled_algorithms_bitset =
@@ -311,6 +315,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   }
 
   GPR_ASSERT(!args->is_last);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */
@@ -328,4 +333,5 @@ const grpc_channel_filter grpc_compress_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "compress"};

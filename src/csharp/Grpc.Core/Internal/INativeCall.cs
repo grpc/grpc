@@ -31,6 +31,7 @@
 #endregion
 
 using System;
+using Grpc.Core;
 
 namespace Grpc.Core.Internal
 {
@@ -54,19 +55,19 @@ namespace Grpc.Core.Internal
     {
         void Cancel();
 
-        void CancelWithStatus(Grpc.Core.Status status);
+        void CancelWithStatus(Status status);
 
         string GetPeer();
 
-        void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, Grpc.Core.WriteFlags writeFlags);
+        void StartUnary(UnaryResponseClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartUnary(BatchContextSafeHandle ctx, byte[] payload, MetadataArraySafeHandle metadataArray, Grpc.Core.WriteFlags writeFlags);
+        void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray);
+        void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, Grpc.Core.WriteFlags writeFlags);
+        void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray);
+        void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
         void StartReceiveMessage(ReceivedMessageHandler callback);
 
@@ -74,11 +75,11 @@ namespace Grpc.Core.Internal
 
         void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray);
 
-        void StartSendMessage(SendCompletionHandler callback, byte[] payload, Grpc.Core.WriteFlags writeFlags, bool sendEmptyInitialMetadata);
+        void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata);
 
         void StartSendCloseFromClient(SendCompletionHandler callback);
 
-        void StartSendStatusFromServer(SendCompletionHandler callback, Grpc.Core.Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata, byte[] optionalPayload, Grpc.Core.WriteFlags writeFlags);
+        void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata, byte[] optionalPayload, WriteFlags writeFlags);
 
         void StartServerSide(ReceivedCloseOnServerHandler callback);
     }

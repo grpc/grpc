@@ -38,21 +38,18 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/resolver_registry.h"
-#include "src/core/ext/client_channel/resolver_result.h"
+#include "src/core/lib/channel/channel_args.h"
 
 #include "test/core/util/test_config.h"
 
 typedef struct on_resolution_arg {
   char *expected_server_name;
-  grpc_resolver_result *resolver_result;
+  grpc_channel_args *resolver_result;
 } on_resolution_arg;
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  const char *server_name =
-      grpc_resolver_result_get_server_name(res->resolver_result);
-  GPR_ASSERT(strcmp(res->expected_server_name, server_name) == 0);
-  grpc_resolver_result_unref(exec_ctx, res->resolver_result);
+  grpc_channel_args_destroy(res->resolver_result);
 }
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
@@ -65,7 +62,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver != NULL);
 
   on_resolution_arg on_res_arg;
@@ -91,7 +88,7 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
   grpc_exec_ctx_finish(&exec_ctx);

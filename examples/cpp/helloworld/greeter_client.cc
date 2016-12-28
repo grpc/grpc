@@ -51,7 +51,7 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assambles the client's payload, sends it and presents the response back
+  // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.

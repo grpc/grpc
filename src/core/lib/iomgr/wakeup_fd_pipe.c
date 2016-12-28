@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_WAKEUP_FD
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
@@ -95,6 +95,8 @@ static void pipe_destroy(grpc_wakeup_fd* fd_info) {
 
 static int pipe_check_availability(void) {
   grpc_wakeup_fd fd;
+  fd.read_fd = fd.write_fd = -1;
+
   if (pipe_init(&fd) == GRPC_ERROR_NONE) {
     pipe_destroy(&fd);
     return 1;
