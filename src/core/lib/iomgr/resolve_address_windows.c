@@ -154,7 +154,7 @@ static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
   } else {
     GRPC_ERROR_REF(error);
   }
-  grpc_exec_ctx_sched(exec_ctx, r->on_done, error, NULL);
+  grpc_closure_sched(exec_ctx, r->on_done, error);
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);
@@ -173,7 +173,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addresses) {
   request *r = gpr_malloc(sizeof(request));
-  grpc_closure_init(&r->request_closure, do_request_thread, r);
+  grpc_closure_init(&r->request_closure, do_request_thread, r, grpc_schedule_on_exec_ctx);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
