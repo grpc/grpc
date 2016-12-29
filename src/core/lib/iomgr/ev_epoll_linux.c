@@ -1420,7 +1420,9 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
         workqueue_maybe_wakeup(pi);
       }
       grpc_closure *c = (grpc_closure *)n;
-      grpc_closure_run(exec_ctx, c, c->error_data.error);
+      grpc_error *error = c->error_data.error;
+      c->cb(exec_ctx, c->cb_arg, error);
+      GRPC_ERROR_UNREF(error);
       return true;
     } else if (gpr_atm_no_barrier_load(&pi->workqueue_item_count) > 0) {
       /* n == NULL might mean there's work but it's not available to be popped

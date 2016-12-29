@@ -66,8 +66,10 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
       while (c != NULL) {
         grpc_closure *next = c->next_data.next;
+        grpc_error *error = c->error_data.error;
         did_something = true;
-        grpc_closure_run(exec_ctx, c, c->error_data.error);
+        c->cb(exec_ctx, c->cb_arg, error);
+        GRPC_ERROR_UNREF(error);
         c = next;
       }
     } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
