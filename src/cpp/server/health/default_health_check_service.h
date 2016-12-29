@@ -56,6 +56,18 @@ class DefaultHealthCheckService : public HealthCheckServiceInterface {
     const DefaultHealthCheckService* service_;
   };
 
+  class AsyncHealthCheckServiceImpl : public Service {
+   public:
+    explicit AsyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
+    Status Check(ServerContext* context, const ByteBuffer* request,
+                 ByteBuffer* response);
+    const RpcServiceMethod* method() const { return method_; }
+
+   private:
+    const DefaultHealthCheckService* service_;
+    const RpcServiceMethod* method_;
+  };
+
   DefaultHealthCheckService();
   void SetServingStatus(const grpc::string& service_name, bool serving) final;
   void SetServingStatus(bool serving) final;
@@ -64,11 +76,15 @@ class DefaultHealthCheckService : public HealthCheckServiceInterface {
   SyncHealthCheckServiceImpl* GetSyncHealthCheckService() const {
     return sync_service_.get();
   }
+  AsyncHealthCheckServiceImpl* GetAsyncHealthCheckService() const {
+    return async_service_.get();
+  }
 
  private:
   mutable std::mutex mu_;
   std::map<grpc::string, bool> services_map_;
   std::unique_ptr<SyncHealthCheckServiceImpl> sync_service_;
+  std::unique_ptr<AsyncHealthCheckServiceImpl> async_service_;
 };
 
 }  // namespace grpc
