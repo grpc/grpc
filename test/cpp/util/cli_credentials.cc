@@ -33,10 +33,15 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
+#include <fstream>
+#include <sstream>
 #include <gflags/gflags.h>
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
+DEFINE_string(ssl_server_ca_file, "", "Path to server CA file.");
+DEFINE_string(ssl_client_cert_file, "", "Path to client certificate file.");
+DEFINE_string(ssl_client_key_file, "", "Path to client key file.");
 
 namespace grpc {
 namespace testing {
@@ -49,7 +54,31 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
     if (FLAGS_use_auth) {
       return grpc::GoogleDefaultCredentials();
     } else {
-      return grpc::SslCredentials(grpc::SslCredentialsOptions());
+      auto options = grpc::SslCredentialsOptions();
+      if (!FLAGS_ssl_server_ca_file.empty()) {
+        std::stringstream ca_buffer;
+        ca_buffer << std::ifstream(FLAGS_ssl_server_ca_file).rdbuf();
+
+        if (ca_buffer.str().empty()) {
+          exit(2);
+        }
+        options.pem_root_certs = ca_buffer.str();
+      }
+      if (!FLAGS_ssl_client_cert_file.empty() && !FLAGS_ssl_client_key_file.empty()) {
+        std::stringstream cert_buffer;
+        cert_buffer << std::ifstream(FLAGS_ssl_client_cert_file).rdbuf();
+
+        std::stringstream key_buffer;
+        key_buffer << std::ifstream(FLAGS_ssl_client_key_file).rdbuf();
+
+        if (cert_buffer.str().empty() || key_buffer.str().empty()) {
+          exit(2);
+        }
+
+        options.pem_cert_chain = cert_buffer.str();
+        options.pem_private_key = key_buffer.str();
+      }
+      return grpc::SslCredentials(options);
     }
   }
 }
