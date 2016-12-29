@@ -441,8 +441,8 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   orphan_channel(chand);
   server_ref(chand->server);
   maybe_finish_shutdown(exec_ctx, chand->server);
-  chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
-  chand->finish_destroy_channel_closure.cb_arg = chand;
+  grpc_closure_init(&chand->finish_destroy_channel_closure,
+                    finish_destroy_channel, chand, grpc_schedule_on_exec_ctx);
 
   if (grpc_server_channel_trace && error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);

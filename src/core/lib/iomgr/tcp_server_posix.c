@@ -254,8 +254,8 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
-      sp->destroyed_closure.cb = destroyed_port;
-      sp->destroyed_closure.cb_arg = s;
+      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+                        grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "tcp_listener_shutdown");
     }
@@ -723,8 +723,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
-        sp->read_closure.cb = on_read;
-        sp->read_closure.cb_arg = sp;
+        grpc_closure_init(&sp->read_closure, on_read, sp,
+                          grpc_schedule_on_exec_ctx);
         grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
         s->active_ports++;
         sp = sp->next;
@@ -733,8 +733,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
       }
-      sp->read_closure.cb = on_read;
-      sp->read_closure.cb_arg = sp;
+      grpc_closure_init(&sp->read_closure, on_read, sp,
+                        grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
       s->active_ports++;
       sp = sp->next;

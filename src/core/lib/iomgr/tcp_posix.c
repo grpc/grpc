@@ -551,10 +551,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  tcp->read_closure.cb = tcp_handle_read;
-  tcp->read_closure.cb_arg = tcp;
-  tcp->write_closure.cb = tcp_handle_write;
-  tcp->write_closure.cb_arg = tcp;
+  grpc_closure_init(&tcp->read_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&tcp->write_closure, tcp_handle_write, tcp,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(
