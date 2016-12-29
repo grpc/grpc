@@ -34,6 +34,8 @@
 
 namespace Grpc;
 
+use Grpc\Exception\GrpcException;
+
 /**
  * Base class for generated client stubs. Stub methods are expected to call
  * _simpleRequest or _streamRequest and return the result.
@@ -54,6 +56,7 @@ class BaseStub
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
      * @param $channel Channel An already created Channel object
+     * @throws GrpcException
      */
     public function __construct($hostname, $opts, $channel = null)
     {
@@ -82,13 +85,13 @@ class BaseStub
         $opts['grpc.primary_user_agent'] .=
             'grpc-php/'.$package_config['version'];
         if (!array_key_exists('credentials', $opts)) {
-            throw new \Exception("The opts['credentials'] key is now ".
+            throw new GrpcException("The opts['credentials'] key is now ".
                                  'required. Please see one of the '.
                                  'ChannelCredentials::create methods');
         }
         if ($channel) {
             if (!is_a($channel, 'Channel')) {
-                throw new \Exception('The channel argument is not a'.
+                throw new GrpcException('The channel argument is not a'.
                                      'Channel object');
             }
             $this->channel = $channel;
@@ -119,7 +122,7 @@ class BaseStub
      * @param int $timeout in microseconds
      *
      * @return bool true if channel is ready
-     * @throw Exception if channel is in FATAL_ERROR state
+     * @throw GrpcException if channel is in FATAL_ERROR state
      */
     public function waitForReady($timeout)
     {
@@ -151,7 +154,7 @@ class BaseStub
             return true;
         }
         if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
-            throw new \Exception('Failed to connect to server');
+            throw new GrpcException('Failed to connect to server');
         }
 
         return false;
