@@ -242,69 +242,69 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
   SendHealthCheckRpc("", Status(StatusCode::UNIMPLEMENTED, ""));
 }
 
-TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
-  EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(true, false, nullptr);
-  VerifyHealthCheckService();
-
-  // The default service has a size limit of the service name.
-  const grpc::string kTooLongServiceName(201, 'x');
-  SendHealthCheckRpc(kTooLongServiceName,
-                     Status(StatusCode::INVALID_ARGUMENT, ""));
-}
-
-void LoopCompletionQueue(ServerCompletionQueue* cq) {
-  void* tag;
-  bool ok;
-  while (cq->Next(&tag, &ok)) {
-    gpr_log(GPR_ERROR, "next %p %d", tag, ok);
-  }
-  gpr_log(GPR_ERROR, "returning from thread");
-}
-
-TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsync) {
-  EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(false, false, nullptr);
-  cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
-  VerifyHealthCheckService();
-
-  // The default service has a size limit of the service name.
-  const grpc::string kTooLongServiceName(201, 'x');
-  SendHealthCheckRpc(kTooLongServiceName,
-                     Status(StatusCode::INVALID_ARGUMENT, ""));
-}
-
-// Provide an empty service to disable the default service.
-TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
-  EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  std::unique_ptr<HealthCheckServiceInterface> empty_service;
-  SetUpServer(true, true, std::move(empty_service));
-  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
-  EXPECT_TRUE(service == nullptr);
-
-  ResetStubs();
-
-  SendHealthCheckRpc("", Status(StatusCode::UNIMPLEMENTED, ""));
-}
-
-// Provide an explicit override of health checking service interface.
-TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
-  EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  std::unique_ptr<HealthCheckServiceInterface> override_service(
-      new CustomHealthCheckService(&health_check_service_impl_));
-  HealthCheckServiceInterface* underlying_service = override_service.get();
-  SetUpServer(false, true, std::move(override_service));
-  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
-  EXPECT_TRUE(service == underlying_service);
-
-  ResetStubs();
-
-  VerifyHealthCheckService();
-}
+// TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
+//   EnableDefaultHealthCheckService(true);
+//   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+//   SetUpServer(true, false, nullptr);
+//   VerifyHealthCheckService();
+//
+//   // The default service has a size limit of the service name.
+//   const grpc::string kTooLongServiceName(201, 'x');
+//   SendHealthCheckRpc(kTooLongServiceName,
+//                      Status(StatusCode::INVALID_ARGUMENT, ""));
+// }
+//
+// void LoopCompletionQueue(ServerCompletionQueue* cq) {
+//   void* tag;
+//   bool ok;
+//   while (cq->Next(&tag, &ok)) {
+//     abort();  // Nothing should come out of the cq.
+//   }
+//   gpr_log(GPR_ERROR, "returning from thread");
+// }
+//
+// TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsync) {
+//  EnableDefaultHealthCheckService(true);
+//  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+//  SetUpServer(false, false, nullptr);
+//  cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
+//  VerifyHealthCheckService();
+//
+//  // The default service has a size limit of the service name.
+//  const grpc::string kTooLongServiceName(201, 'x');
+//  SendHealthCheckRpc(kTooLongServiceName,
+//                     Status(StatusCode::INVALID_ARGUMENT, ""));
+// }
+//
+// // Provide an empty service to disable the default service.
+// TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
+//   EnableDefaultHealthCheckService(true);
+//   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+//   std::unique_ptr<HealthCheckServiceInterface> empty_service;
+//   SetUpServer(true, true, std::move(empty_service));
+//   HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+//   EXPECT_TRUE(service == nullptr);
+//
+//   ResetStubs();
+//
+//   SendHealthCheckRpc("", Status(StatusCode::UNIMPLEMENTED, ""));
+// }
+//
+// // Provide an explicit override of health checking service interface.
+// TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
+//   EnableDefaultHealthCheckService(true);
+//   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+//   std::unique_ptr<HealthCheckServiceInterface> override_service(
+//       new CustomHealthCheckService(&health_check_service_impl_));
+//   HealthCheckServiceInterface* underlying_service = override_service.get();
+//   SetUpServer(false, true, std::move(override_service));
+//   HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+//   EXPECT_TRUE(service == underlying_service);
+//
+//   ResetStubs();
+//
+//   VerifyHealthCheckService();
+// }
 
 }  // namespace
 }  // namespace testing
