@@ -40,11 +40,16 @@
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
+typedef enum {
+  GRPC_BDP_PING_UNSCHEDULED,
+  GRPC_BDP_PING_SCHEDULED,
+  GRPC_BDP_PING_STARTED
+} grpc_bdp_estimator_ping_state;
+
 typedef struct grpc_bdp_estimator {
   uint8_t num_samples;
   uint8_t first_sample_idx;
-  bool scheduled;
-  bool sampling;
+  grpc_bdp_estimator_ping_state ping_state;
   int64_t samples[GRPC_BDP_SAMPLES];
 } grpc_bdp_estimator;
 
@@ -53,12 +58,15 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator);
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
                                      int64_t *estimate);
-// Returns true if the user should start a ping
+// Returns true if the user should schedule a ping
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
-// Schedule a ping
+// Schedule a ping: call in response to receiving a true from
+// grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
+// transport (but not necessarily started)
 void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator);
-// Start a ping
+// Start a ping: call after calling grpc_bdp_estimator_schedule_ping and once
+// the ping is on the wire
 void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
 // Completes a previously started ping
 void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator);

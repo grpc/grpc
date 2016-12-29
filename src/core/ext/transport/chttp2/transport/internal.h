@@ -81,10 +81,15 @@ typedef enum {
   GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
 } grpc_chttp2_ping_type;
 
+typedef enum {
+  GRPC_CHTTP2_PCL_NEXT = 0,
+  GRPC_CHTTP2_PCL_INITIATE,
+  GRPC_CHTTP2_PCL_INFLIGHT,
+  GRPC_CHTTP2_PCL_COUNT /* must be last */
+} grpc_chttp2_ping_closure_list;
+
 typedef struct {
-  grpc_closure_list next_queue;
-  grpc_closure_list initiate_queue;
-  grpc_closure_list inflight_queue;
+  grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT];
   uint64_t inflight_id;
 } grpc_chttp2_ping_queue;
 

@@ -41,7 +41,7 @@
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator) {
   estimator->num_samples = 0;
   estimator->first_sample_idx = 0;
-  estimator->sampling = false;
+  estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
 }
 
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
@@ -68,17 +68,26 @@ static int64_t *sampling(grpc_bdp_estimator *estimator) {
 
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes) {
-  if (estimator->sampling) {
-    *sampling(estimator) += num_bytes;
-    return false;
-  } else {
-    return true;
+  switch (estimator->ping_state) {
+    case GRPC_BDP_PING_UNSCHEDULED:
+      return true;
+    case GRPC_BDP_PING_SCHEDULED:
+      return false;
+    case GRPC_BDP_PING_STARTED:
+      *sampling(estimator) += num_bytes;
+      return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator) {
+  GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_UNSCHEDULED);
+  estimator->ping_state = GRPC_BDP_PING_SCHEDULED;
 }
 
 void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
-  GPR_ASSERT(!estimator->sampling);
-  estimator->sampling = true;
+  GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_SCHEDULED);
+  estimator->ping_state = GRPC_BDP_PING_STARTED;
   if (estimator->num_samples == GRPC_BDP_SAMPLES) {
     estimator->first_sample_idx++;
     estimator->num_samples--;
@@ -87,7 +96,7 @@ void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
 }
 
 void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
-  GPR_ASSERT(estimator->sampling);
+  GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_STARTED);
   estimator->num_samples++;
-  estimator->sampling = false;
+  estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
 }

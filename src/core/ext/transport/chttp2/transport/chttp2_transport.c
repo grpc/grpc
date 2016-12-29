@@ -244,6 +244,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->destructive_reclaimer_locked,
                     destructive_reclaimer_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->start_bdp_ping_locked, start_bdp_ping_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
 
@@ -1204,33 +1206,24 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      and maybe they hold resources that need to be freed */
   for (size_t i = 0; i < GRPC_CHTTP2_PING_TYPE_COUNT; i++) {
     grpc_chttp2_ping_queue *pq = &t->ping_queues[i];
-    grpc_closure_list_fail_all(&pq->next_queue, GRPC_ERROR_REF(error));
-    grpc_closure_list_fail_all(&pq->initiate_queue, GRPC_ERROR_REF(error));
-    grpc_closure_list_fail_all(&pq->inflight_queue, GRPC_ERROR_REF(error));
-    grpc_closure_list_sched(exec_ctx, &pq->next_queue);
-    grpc_closure_list_sched(exec_ctx, &pq->initiate_queue);
-    grpc_closure_list_sched(exec_ctx, &pq->inflight_queue);
+    for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
+      grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
+      grpc_closure_list_sched(exec_ctx, &pq->lists[j]);
+    }
   }
   GRPC_ERROR_UNREF(error);
 }
 
-static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                grpc_chttp2_ping_type ping_type,
-                                grpc_slice_buffer *buf) {
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_chttp2_ping_type ping_type,
+                             grpc_closure *on_initiate, grpc_closure *on_ack) {
   grpc_chttp2_ping_queue *pq = &t->ping_queues[ping_type];
-  if (grpc_closure_list_empty(pq->next_queue)) {
-    /* no ping needed: wait */
-    return;
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
+                           GRPC_ERROR_NONE);
+  if (grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
+                               GRPC_ERROR_NONE)) {
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "send_ping");
   }
-  if (!grpc_closure_list_empty(pq->inflight_queue)) {
-    /* ping already in-flight: wait */
-    return;
-  }
-  pq->inflight_id = t->ping_ctr * GRPC_CHTTP2_PING_TYPE_COUNT + ping_type;
-  t->ping_ctr++;
-  grpc_closure_list_sched(exec_ctx, &pq->initiate_queue);
-  grpc_slice_buffer_add(buf, grpc_chttp2_ping_create(false, pq->inflight_id));
 }
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1243,7 +1236,10 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     gpr_free(from);
     return;
   }
-  grpc_closure_list_sched(exec_ctx, &pq->inflight_queue);
+  grpc_closure_list_sched(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
+  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "continue_pings");
+  }
 }
 
 static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1940,6 +1936,12 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
+}
+
+static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                  grpc_error *error) {
+  grpc_chttp2_transport *t = tp;
+  grpc_bdp_estimator_start_ping(&t->bdp_estimator);
 }
 
 /*******************************************************************************
