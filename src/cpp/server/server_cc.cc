@@ -617,10 +617,8 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
     if (!sync_server_cqs_->empty()) {  // Has sync methods.
-      gpr_log(GPR_ERROR, "register sync");  // XXX
       RegisterService(nullptr, default_hc_service->GetSyncHealthCheckService());
     } else {
-      gpr_log(GPR_ERROR, "register async");  // XXX
       async_health_service = default_hc_service->GetAsyncHealthCheckService();
       RegisterService(nullptr, async_health_service);
     }
