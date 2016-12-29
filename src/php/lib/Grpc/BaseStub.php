@@ -48,14 +48,14 @@ class BaseStub
     private $update_metadata;
 
     /**
-     * @param $hostname string
-     * @param $opts array
+     * @param string  $hostname
+     * @param array   $opts
      *  - 'update_metadata': (optional) a callback function which takes in a
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
-     * @param $channel Channel An already created Channel object
+     * @param Channel $channel An already created Channel object (optional)
      */
-    public function __construct($hostname, $opts, $channel = null)
+    public function __construct($hostname, $opts, Channel $channel = null)
     {
         $ssl_roots = file_get_contents(
             dirname(__FILE__).'/../../../../etc/roots.pem');
@@ -98,7 +98,7 @@ class BaseStub
     }
 
     /**
-     * @return string The URI of the endpoint.
+     * @return string The URI of the endpoint
      */
     public function getTarget()
     {
@@ -106,7 +106,7 @@ class BaseStub
     }
 
     /**
-     * @param $try_to_connect bool
+     * @param bool $try_to_connect (optional)
      *
      * @return int The grpc connectivity state
      */
@@ -145,6 +145,12 @@ class BaseStub
         return $this->_checkConnectivityState($new_state);
     }
 
+    /**
+     * @param $new_state Connect state
+     *
+     * @return bool true if state is CHANNEL_READY
+     * @throw Exception if state is CHANNEL_FATAL_FAILURE
+     */
     private function _checkConnectivityState($new_state)
     {
         if ($new_state == \Grpc\CHANNEL_READY) {
@@ -167,6 +173,10 @@ class BaseStub
 
     /**
      * constructs the auth uri for the jwt.
+     *
+     * @param string $method The method string
+     *
+     * @return string The URL string
      */
     private function _get_jwt_aud_uri($method)
     {
@@ -191,7 +201,7 @@ class BaseStub
      *
      * @param array $metadata The metadata map
      *
-     * @return $metadata Validated and key-normalized metadata map
+     * @return array $metadata Validated and key-normalized metadata map
      * @throw InvalidArgumentException if key contains invalid characters
      */
     private function _validate_and_normalize_metadata($metadata)
@@ -220,14 +230,16 @@ class BaseStub
      * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return SimpleSurfaceActiveCall The active call object
      */
     public function _simpleRequest($method,
                                    $argument,
                                    $deserialize,
-                                   $metadata = [],
-                                   $options = [])
+                                   array $metadata = [],
+                                   array $options = [])
     {
         $call = new UnaryCall($this->channel,
                               $method,
@@ -251,17 +263,17 @@ class BaseStub
      * output.
      *
      * @param string   $method      The name of the method to call
-     * @param array    $arguments   An array or Traversable of arguments to stream to the
-     *                              server
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return ClientStreamingSurfaceActiveCall The active call object
      */
     public function _clientStreamRequest($method,
                                          callable $deserialize,
-                                         $metadata = [],
-                                         $options = [])
+                                         array $metadata = [],
+                                         array $options = [])
     {
         $call = new ClientStreamingCall($this->channel,
                                         $method,
@@ -281,21 +293,23 @@ class BaseStub
     }
 
     /**
-     * Call a remote method that takes a single argument and returns a stream of
-     * responses.
+     * Call a remote method that takes a single argument and returns a stream
+     * of responses.
      *
      * @param string   $method      The name of the method to call
      * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return ServerStreamingSurfaceActiveCall The active call object
      */
     public function _serverStreamRequest($method,
                                          $argument,
                                          callable $deserialize,
-                                         $metadata = [],
-                                         $options = [])
+                                         array $metadata = [],
+                                         array $options = [])
     {
         $call = new ServerStreamingCall($this->channel,
                                         $method,
@@ -320,13 +334,15 @@ class BaseStub
      * @param string   $method      The name of the method to call
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return BidiStreamingSurfaceActiveCall The active call object
      */
     public function _bidiRequest($method,
                                  callable $deserialize,
-                                 $metadata = [],
-                                 $options = [])
+                                 array $metadata = [],
+                                 array $options = [])
     {
         $call = new BidiStreamingCall($this->channel,
                                       $method,
