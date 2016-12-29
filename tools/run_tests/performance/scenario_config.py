@@ -114,7 +114,8 @@ def _ping_pong_scenario(name, rpc_type,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
-                        outstanding=None):
+                        outstanding=None,
+                        resource_quota_size=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -141,6 +142,8 @@ def _ping_pong_scenario(name, rpc_type,
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
   }
+  if resource_quota_size:
+    scenario['server_config']['resource_quota_size'] = resource_quota_size
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
@@ -229,6 +232,15 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories + [SCALABLE])
 
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='SYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
@@ -247,6 +259,16 @@ class CXXLanguage:
               unconstrained_client=synchronicity,
               secure=secure,
               categories=smoketest_categories+[SCALABLE])
+
+          yield _ping_pong_scenario(
+              'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
+              rpc_type=rpc_type.upper(),
+              client_type='%s_CLIENT' % synchronicity.upper(),
+              server_type='%s_SERVER' % synchronicity.upper(),
+              unconstrained_client=synchronicity,
+              secure=secure,
+              categories=smoketest_categories+[SCALABLE],
+              resource_quota_size=500*1024)
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):
@@ -348,7 +370,8 @@ class NodeLanguage:
     self.safename = str(self)
 
   def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_node.sh']
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=grpc']
 
   def worker_port_offset(self):
     return 200
@@ -651,11 +674,40 @@ class GoLanguage:
   def __str__(self):
     return 'go'
 
+class NodeExpressLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=express']
+
+  def worker_port_offset(self):
+    return 700
+
+  def scenarios(self):
+    yield _ping_pong_scenario(
+        'node_express_json_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SCALABLE, SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'node_express_json_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        categories=[SCALABLE, SMOKETEST])
+
+  def __str__(self):
+    return 'node_express'
+
 
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),

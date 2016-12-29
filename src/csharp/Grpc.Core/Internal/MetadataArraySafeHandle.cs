@@ -48,22 +48,19 @@ namespace Grpc.Core.Internal
             
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
-            using (Profilers.ForCurrentThread().NewScope("MetadataArraySafeHandle.Create"))
+            if (metadata.Count == 0)
             {
-                if (metadata.Count == 0)
-                {
-                    return new MetadataArraySafeHandle();
-                }
-
-                // TODO(jtattermusch): we might wanna check that the metadata is readonly 
-                var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
-                for (int i = 0; i < metadata.Count; i++)
-                {
-                    var valueBytes = metadata[i].GetSerializedValueUnsafe();
-                    Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
-                }
-                return metadataArray;
+                return new MetadataArraySafeHandle();
             }
+
+            // TODO(jtattermusch): we might wanna check that the metadata is readonly
+            var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+            for (int i = 0; i < metadata.Count; i++)
+            {
+                var valueBytes = metadata[i].GetSerializedValueUnsafe();
+                Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+            }
+            return metadataArray;
         }
 
         /// <summary>

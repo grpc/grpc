@@ -33,7 +33,6 @@ import enum
 import json
 import os
 import threading
-import time
 
 from oauth2client import client as oauth2client_client
 
@@ -196,16 +195,6 @@ def _server_streaming(stub):
         response, messages_pb2.COMPRESSABLE, sizes[index])
 
 
-def _cancel_after_begin(stub):
-  sizes = (27182, 8, 1828, 45904,)
-  payloads = (messages_pb2.Payload(body=b'\x00' * size) for size in sizes)
-  requests = (messages_pb2.StreamingInputCallRequest(payload=payload)
-              for payload in payloads)
-  response_future = stub.StreamingInputCall.future(requests)
-  response_future.cancel()
-  if not response_future.cancelled():
-    raise ValueError('expected call to be cancelled')
-
 
 class _Pipe(object):
 
@@ -265,6 +254,16 @@ def _ping_pong(stub):
           response, messages_pb2.COMPRESSABLE, response_size)
 
 
+def _cancel_after_begin(stub):
+  with _Pipe() as pipe:
+    response_future = stub.StreamingInputCall.future(pipe)
+    response_future.cancel()
+    if not response_future.cancelled():
+      raise ValueError('expected cancelled method to return True')
+    if response_future.code() is not grpc.StatusCode.CANCELLED:
+      raise ValueError('expected status code CANCELLED')
+
+
 def _cancel_after_first_response(stub):
   request_response_sizes = (31415, 9, 2653, 58979,)
   request_payload_sizes = (27182, 8, 1828, 45904,)
@@ -302,7 +301,6 @@ def _timeout_on_sleeping_server(stub):
         response_type=messages_pb2.COMPRESSABLE,
         payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
     pipe.add(request)
-    time.sleep(0.1)
     try:
       next(response_iterator)
     except grpc.RpcError as rpc_error:

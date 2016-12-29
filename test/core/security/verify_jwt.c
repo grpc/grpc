@@ -36,10 +36,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   char *aud = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  grpc_init();
   cl = gpr_cmdline_create("JWT verifier tool");
   gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
   gpr_cmdline_add_string(cl, "aud", "Audience for the JWT", &aud);
@@ -131,5 +132,6 @@ int main(int argc, char **argv) {
 
   grpc_jwt_verifier_destroy(verifier);
   gpr_cmdline_destroy(cl);
+  grpc_shutdown();
   return !sync.success;
 }

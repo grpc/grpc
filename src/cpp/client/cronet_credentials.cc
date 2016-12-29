@@ -40,12 +40,12 @@
 
 namespace grpc {
 
-class CronetChannelCredentialsImpl GRPC_FINAL : public ChannelCredentials {
+class CronetChannelCredentialsImpl final : public ChannelCredentials {
  public:
   CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 
   std::shared_ptr<grpc::Channel> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
+      const string& target, const grpc::ChannelArguments& args) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return CreateChannelInternal(
@@ -53,9 +53,7 @@ class CronetChannelCredentialsImpl GRPC_FINAL : public ChannelCredentials {
                                               &channel_args, nullptr));
   }
 
-  SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE {
-    return nullptr;
-  }
+  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
 
  private:
   void* engine_;

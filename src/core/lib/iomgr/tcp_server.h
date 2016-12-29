@@ -52,7 +52,8 @@ typedef struct grpc_tcp_server_acceptor {
   unsigned fd_index;
 } grpc_tcp_server_acceptor;
 
-/* Called for newly connected TCP connections. */
+/* Called for newly connected TCP connections.
+   Takes ownership of acceptor. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_endpoint *ep,
                                    grpc_pollset *accepting_pollset,
@@ -61,7 +62,8 @@ typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
    grpc_tcp_server_unref() when the ref count reaches zero. */
-grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
+                                   grpc_closure *shutdown_complete,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server);
 

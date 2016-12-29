@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(NULL, NULL);
-  config.init_client(&f, NULL, NULL);
+  config.init_client(&f, NULL);
   if (fail_server_auth_check) {
     grpc_arg fail_auth_arg = {
         GRPC_ARG_STRING, FAIL_AUTH_CHECK_SERVER_ARG_NAME, {NULL}};
@@ -135,8 +135,10 @@ static void request_response_with_payload_and_call_creds(
     override_mode mode) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
@@ -164,8 +166,10 @@ static void request_response_with_payload_and_call_creds(
   f = begin_test(config, test_name, 0);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
   GPR_ASSERT(creds != NULL);
@@ -294,7 +298,8 @@ static void request_response_with_payload_and_call_creds(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
@@ -389,7 +394,8 @@ static void test_request_with_server_rejecting_client_creds(
   char *details = NULL;
   size_t details_capacity = 0;
   grpc_byte_buffer *response_payload_recv = NULL;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_call_credentials *creds;
@@ -397,8 +403,10 @@ static void test_request_with_server_rejecting_client_creds(
   f = begin_test(config, "test_request_with_server_rejecting_client_creds", 1);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);

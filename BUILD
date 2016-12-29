@@ -1,3 +1,4 @@
+# gRPC Bazel BUILD file.
 #
 # Copyright 2016, Google Inc.
 # All rights reserved.
@@ -37,6 +38,8 @@ package(default_visibility = ["//visibility:public"])
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
 g_stands_for = "good"
+
+core_version = "2.0.0-dev"
 
 version = "1.1.0-dev"
 
@@ -319,9 +322,6 @@ grpc_cc_library(
         "src/core/lib/support/log_windows.c",
         "src/core/lib/support/mpscq.c",
         "src/core/lib/support/murmur_hash.c",
-        "src/core/lib/support/percent_encoding.c",
-        "src/core/lib/support/slice.c",
-        "src/core/lib/support/slice_buffer.c",
         "src/core/lib/support/stack_lockfree.c",
         "src/core/lib/support/string.c",
         "src/core/lib/support/string_posix.c",
@@ -352,7 +352,6 @@ grpc_cc_library(
         "src/core/lib/support/env.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
-        "src/core/lib/support/percent_encoding.h",
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
@@ -375,8 +374,6 @@ grpc_cc_library(
         "include/grpc/support/log.h",
         "include/grpc/support/log_windows.h",
         "include/grpc/support/port_platform.h",
-        "include/grpc/support/slice.h",
-        "include/grpc/support/slice_buffer.h",
         "include/grpc/support/string_util.h",
         "include/grpc/support/subprocess.h",
         "include/grpc/support/sync.h",
@@ -440,7 +437,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll_linux.c",
-        "src/core/lib/iomgr/ev_poll_and_epoll_posix.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
         "src/core/lib/iomgr/exec_ctx.c",
@@ -448,27 +444,40 @@ grpc_cc_library(
         "src/core/lib/iomgr/iocp_windows.c",
         "src/core/lib/iomgr/iomgr.c",
         "src/core/lib/iomgr/iomgr_posix.c",
+        "src/core/lib/iomgr/iomgr_uv.c",
         "src/core/lib/iomgr/iomgr_windows.c",
         "src/core/lib/iomgr/load_file.c",
         "src/core/lib/iomgr/network_status_tracker.c",
         "src/core/lib/iomgr/polling_entity.c",
+        "src/core/lib/iomgr/pollset_set_uv.c",
         "src/core/lib/iomgr/pollset_set_windows.c",
+        "src/core/lib/iomgr/pollset_uv.c",
         "src/core/lib/iomgr/pollset_windows.c",
         "src/core/lib/iomgr/resolve_address_posix.c",
+        "src/core/lib/iomgr/resolve_address_uv.c",
         "src/core/lib/iomgr/resolve_address_windows.c",
+        "src/core/lib/iomgr/resource_quota.c",
         "src/core/lib/iomgr/sockaddr_utils.c",
+        "src/core/lib/iomgr/socket_mutator.c",
         "src/core/lib/iomgr/socket_utils_common_posix.c",
         "src/core/lib/iomgr/socket_utils_linux.c",
         "src/core/lib/iomgr/socket_utils_posix.c",
+        "src/core/lib/iomgr/socket_utils_uv.c",
+        "src/core/lib/iomgr/socket_utils_windows.c",
         "src/core/lib/iomgr/socket_windows.c",
         "src/core/lib/iomgr/tcp_client_posix.c",
+        "src/core/lib/iomgr/tcp_client_uv.c",
         "src/core/lib/iomgr/tcp_client_windows.c",
         "src/core/lib/iomgr/tcp_posix.c",
         "src/core/lib/iomgr/tcp_server_posix.c",
+        "src/core/lib/iomgr/tcp_server_uv.c",
         "src/core/lib/iomgr/tcp_server_windows.c",
+        "src/core/lib/iomgr/tcp_uv.c",
         "src/core/lib/iomgr/tcp_windows.c",
         "src/core/lib/iomgr/time_averaged_stats.c",
+        "src/core/lib/iomgr/timer_generic.c",
         "src/core/lib/iomgr/timer_heap.c",
+        "src/core/lib/iomgr/timer_uv.c",
         "src/core/lib/iomgr/udp_server.c",
         "src/core/lib/iomgr/unix_sockets_posix.c",
         "src/core/lib/iomgr/unix_sockets_posix_noop.c",
@@ -477,11 +486,16 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.c",
         "src/core/lib/iomgr/wakeup_fd_pipe.c",
         "src/core/lib/iomgr/wakeup_fd_posix.c",
+        "src/core/lib/iomgr/workqueue_uv.c",
         "src/core/lib/iomgr/workqueue_windows.c",
         "src/core/lib/json/json.c",
         "src/core/lib/json/json_reader.c",
         "src/core/lib/json/json_string.c",
         "src/core/lib/json/json_writer.c",
+        "src/core/lib/slice/percent_encoding.c",
+        "src/core/lib/slice/slice.c",
+        "src/core/lib/slice/slice_buffer.c",
+        "src/core/lib/slice/slice_string_helpers.c",
         "src/core/lib/surface/alarm.c",
         "src/core/lib/surface/api_trace.c",
         "src/core/lib/surface/byte_buffer.c",
@@ -505,6 +519,8 @@ grpc_cc_library(
         "src/core/lib/transport/mdstr_hash_table.c",
         "src/core/lib/transport/metadata.c",
         "src/core/lib/transport/metadata_batch.c",
+        "src/core/lib/transport/pid_controller.c",
+        "src/core/lib/transport/service_config.c",
         "src/core/lib/transport/static_metadata.c",
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
@@ -533,7 +549,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair.h",
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/ev_epoll_linux.h",
-        "src/core/lib/iomgr/ev_poll_and_epoll_posix.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
@@ -552,14 +567,17 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/resolve_address.h",
+        "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_utils.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
+        "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
         "src/core/lib/iomgr/tcp_client.h",
+        "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_uv.h",
@@ -581,6 +599,8 @@ grpc_cc_library(
         "src/core/lib/json/json_common.h",
         "src/core/lib/json/json_reader.h",
         "src/core/lib/json/json_writer.h",
+        "src/core/lib/slice/percent_encoding.h",
+        "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -597,7 +617,9 @@ grpc_cc_library(
         "src/core/lib/transport/mdstr_hash_table.h",
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
-        "src/core/lib/transport/method_config.h",
+        "src/core/lib/transport/pid_controller.h",
+        "src/core/lib/transport/service_config.h",
+        "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
@@ -613,6 +635,8 @@ grpc_cc_library(
         "include/grpc/grpc.h",
         "include/grpc/grpc_posix.h",
         "include/grpc/grpc_security_constants.h",
+        "include/grpc/slice.h",
+        "include/grpc/slice_buffer.h",
         "include/grpc/status.h",
     ],
     deps = [
@@ -622,14 +646,44 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_client_config",
+    name = "grpc_client_channel",
     srcs = [
-        "src/core/ext/client_config/message_size_filter.c",
+        "src/core/ext/client_channel/channel_connectivity.c",
+        "src/core/ext/client_channel/client_channel.c",
+        "src/core/ext/client_channel/client_channel_factory.c",
+        "src/core/ext/client_channel/client_channel_plugin.c",
+        "src/core/ext/client_channel/connector.c",
+        "src/core/ext/client_channel/default_initial_connect_string.c",
+        "src/core/ext/client_channel/http_connect_handshaker.c",
+        "src/core/ext/client_channel/initial_connect_string.c",
+        "src/core/ext/client_channel/lb_policy.c",
+        "src/core/ext/client_channel/lb_policy_factory.c",
+        "src/core/ext/client_channel/lb_policy_registry.c",
+        "src/core/ext/client_channel/parse_address.c",
+        "src/core/ext/client_channel/resolver.c",
+        "src/core/ext/client_channel/resolver_factory.c",
+        "src/core/ext/client_channel/resolver_registry.c",
+        "src/core/ext/client_channel/subchannel.c",
+        "src/core/ext/client_channel/subchannel_index.c",
+        "src/core/ext/client_channel/uri_parser.c",
     ],
     hdrs = [
-        "src/core/ext/client_config/message_size_filter.h",
+        "src/core/ext/client_channel/client_channel.h",
+        "src/core/ext/client_channel/client_channel_factory.h",
+        "src/core/ext/client_channel/connector.h",
+        "src/core/ext/client_channel/http_connect_handshaker.h",
+        "src/core/ext/client_channel/initial_connect_string.h",
+        "src/core/ext/client_channel/lb_policy.h",
+        "src/core/ext/client_channel/lb_policy_factory.h",
+        "src/core/ext/client_channel/lb_policy_registry.h",
+        "src/core/ext/client_channel/parse_address.h",
+        "src/core/ext/client_channel/resolver.h",
+        "src/core/ext/client_channel/resolver_factory.h",
+        "src/core/ext/client_channel/resolver_registry.h",
+        "src/core/ext/client_channel/subchannel.h",
+        "src/core/ext/client_channel/subchannel_index.h",
+        "src/core/ext/client_channel/uri_parser.h",
     ],
-    language = "c",
     deps = [
         "grpc_base",
     ],
@@ -669,7 +723,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
     ],
 )
 
@@ -681,7 +735,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
     ],
 )
 
@@ -693,7 +747,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
     ],
 )
 
@@ -721,7 +775,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
     ],
 )
 
@@ -733,7 +787,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
     ],
 )
 
@@ -746,6 +800,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/credentials.c",
         "src/core/lib/security/credentials/credentials_metadata.c",
         "src/core/lib/security/credentials/fake/fake_credentials.c",
+        "src/core/lib/security/credentials/google_default/credentials_generic.c",
         "src/core/lib/security/credentials/google_default/google_default_credentials.c",
         "src/core/lib/security/credentials/iam/iam_credentials.c",
         "src/core/lib/security/credentials/jwt/json_token.c",
@@ -755,9 +810,9 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.c",
         "src/core/lib/security/credentials/ssl/ssl_credentials.c",
         "src/core/lib/security/transport/client_auth_filter.c",
-        "src/core/lib/security/transport/handshake.c",
         "src/core/lib/security/transport/secure_endpoint.c",
         "src/core/lib/security/transport/security_connector.c",
+        "src/core/lib/security/transport/security_handshaker.c",
         "src/core/lib/security/transport/server_auth_filter.c",
         "src/core/lib/security/transport/tsi_error.c",
         "src/core/lib/security/util/b64.c",
@@ -778,9 +833,9 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/transport/auth_filters.h",
-        "src/core/lib/security/transport/handshake.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_connector.h",
+        "src/core/lib/security/transport/security_handshaker.h",
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/b64.h",
         "src/core/lib/security/util/json_util.h",
@@ -865,6 +920,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+  name = "grpc_transport_chttp2_client_connector",
+  hdrs = [
+   "src/core/ext/transport/chttp2/client/chttp2_connector.h",
+  ],
+  srcs = [
+   "src/core/ext/transport/chttp2/client/chttp2_connector.c",
+  ],
+  language = "c",
+  deps = [
+   "grpc_transport_chttp2",
+   "grpc_base",
+   "grpc_client_channel",
+  ],
+)
+
+
+grpc_cc_library(
     name = "grpc_transport_chttp2_client_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/client/insecure/channel_create.c",
@@ -873,8 +945,9 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
         "grpc_transport_chttp2",
+        "grpc_transport_chttp2_client_connector",
     ],
 )
 
@@ -886,8 +959,24 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_client_config",
+        "grpc_client_channel",
         "grpc_secure",
+        "grpc_transport_chttp2",
+        "grpc_transport_chttp2_client_connector",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_transport_chttp2_server",
+    srcs = [
+        "src/core/ext/transport/chttp2/server/chttp2_server.c",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/server/chttp2_server.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
         "grpc_transport_chttp2",
     ],
 )
@@ -902,6 +991,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_transport_chttp2",
+        "grpc_transport_chttp2_server",
     ],
 )
 
@@ -915,6 +1005,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_secure",
         "grpc_transport_chttp2",
+        "grpc_transport_chttp2_server",
     ],
 )
 
@@ -997,6 +1088,7 @@ grpc_cc_library(
         "src/cpp/common/channel_filter.h",
         "src/cpp/server/dynamic_thread_pool.h",
         "src/cpp/server/thread_pool_interface.h",
+        "src/cpp/thread_manager/thread_manager.h",
     ],
     language = "c++",
     public_hdrs = [
@@ -1021,12 +1113,9 @@ grpc_cc_library(
         "include/grpc++/impl/server_builder_plugin.h",
         "include/grpc++/impl/server_initializer.h",
         "include/grpc++/impl/service_type.h",
-        "include/grpc++/impl/sync.h",
         "include/grpc++/impl/sync_cxx11.h",
         "include/grpc++/impl/sync_no_cxx11.h",
-        "include/grpc++/impl/thd.h",
-        "include/grpc++/impl/thd_cxx11.h",
-        "include/grpc++/impl/thd_no_cxx11.h",
+        "include/grpc++/resource_quota.h",
         "include/grpc++/security/auth_context.h",
         "include/grpc++/security/auth_metadata_processor.h",
         "include/grpc++/security/credentials.h",
@@ -1084,9 +1173,6 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/status_helper.h",
         "include/grpc++/impl/codegen/string_ref.h",
         "include/grpc++/impl/codegen/stub_options.h",
-        "include/grpc++/impl/codegen/sync.h",
-        "include/grpc++/impl/codegen/sync_cxx11.h",
-        "include/grpc++/impl/codegen/sync_no_cxx11.h",
         "include/grpc++/impl/codegen/sync_stream.h",
         "include/grpc++/impl/codegen/time.h",
     ],

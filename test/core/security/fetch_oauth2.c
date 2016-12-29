@@ -36,10 +36,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/load_file.h"
@@ -48,12 +48,12 @@
 
 static grpc_call_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
-  gpr_slice refresh_token;
+  grpc_slice refresh_token;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
       grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
-      (const char *)GPR_SLICE_START_PTR(refresh_token), NULL);
+      (const char *)GRPC_SLICE_START_PTR(refresh_token), NULL);
 }
 
 int main(int argc, char **argv) {

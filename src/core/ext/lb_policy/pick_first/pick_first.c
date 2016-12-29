@@ -209,7 +209,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   /* Check atomically for a selected channel */
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected != NULL) {
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   }
 
@@ -218,7 +218,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   selected = GET_SELECTED(p);
   if (selected) {
     gpr_mu_unlock(&p->mu);
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   } else {
     if (!p->started_picking) {
@@ -292,6 +292,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
   loop:
     switch (p->checking_connectivity) {
+      case GRPC_CHANNEL_INIT:
+        GPR_UNREACHABLE_CODE(return );
       case GRPC_CHANNEL_READY:
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                     GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
@@ -310,7 +312,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         /* update any calls that were waiting for a pick */
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
-          *pp->target = selected;
+          *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
           grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
           gpr_free(pp);
         }
@@ -436,15 +438,10 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
 
-  /* Get server name. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char *server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
-
   /* Find the number of backend addresses. We ignore balancer
    * addresses, since we don't know how to handle them. */
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
@@ -470,9 +467,6 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    /* server_name will be copied as part of the subchannel creation. This makes
-     * the copying of server_name (a borrowed pointer) OK. */
-    sc_args.server_name = server_name;
     sc_args.addr = &addresses->addresses[i].address;
     sc_args.args = args->args;
 
