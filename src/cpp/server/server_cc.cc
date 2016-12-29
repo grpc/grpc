@@ -144,14 +144,14 @@ class Server::HealthCheckAsyncRequest final
       public RegisteredAsyncRequest {
  public:
   HealthCheckAsyncRequest(
-      DefaultHealthCheckService::AsyncHealthCheckServiceImpl* service,
+      DefaultHealthCheckService::HealthCheckServiceImpl* service,
       Server* server, ServerCompletionQueue* cq)
       : RegisteredAsyncRequest(server, &server_context_, &rpc_, cq, this,
                                false),
         service_(service),
         server_(server),
         cq_(cq) {
-    IssueRequest(service->method()->server_tag(), &payload_, cq);
+    IssueRequest(service->server_tag(), &payload_, cq);
   }
 
   bool FinalizeResult(void** tag, bool* status) override;
@@ -161,7 +161,7 @@ class Server::HealthCheckAsyncRequest final
   ServerContext* server_context() { return &server_context_; }
 
  private:
-  DefaultHealthCheckService::AsyncHealthCheckServiceImpl* service_;
+  DefaultHealthCheckService::HealthCheckServiceImpl* service_;
   Server* const server_;
   ServerCompletionQueue* const cq_;
   grpc_byte_buffer* payload_;
@@ -610,18 +610,14 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
-  DefaultHealthCheckService::AsyncHealthCheckServiceImpl* async_health_service =
-      nullptr;
+  DefaultHealthCheckService::HealthCheckServiceImpl* health_service = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
-    if (!sync_server_cqs_->empty()) {  // Has sync methods.
-      RegisterService(nullptr, default_hc_service->GetSyncHealthCheckService());
-    } else {
-      async_health_service = default_hc_service->GetAsyncHealthCheckService();
-      RegisterService(nullptr, async_health_service);
-    }
+    health_service =
+        default_hc_service->GetHealthCheckService(!sync_server_cqs_->empty());
+    RegisterService(nullptr, health_service);
   }
 
   grpc_server_start(server_);
@@ -638,10 +634,10 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     }
   }
 
-  if (async_health_service) {
+  if (health_service && !health_service->sync()) {
     for (size_t i = 0; i < num_cqs; i++) {
       if (cqs[i]->IsFrequentlyPolled()) {
-        new HealthCheckAsyncRequest(async_health_service, this, cqs[i]);
+        new HealthCheckAsyncRequest(health_service, this, cqs[i]);
       }
     }
   }

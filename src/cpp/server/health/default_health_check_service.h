@@ -44,47 +44,40 @@ namespace grpc {
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
-class DefaultHealthCheckService : public HealthCheckServiceInterface {
+class DefaultHealthCheckService final : public HealthCheckServiceInterface {
  public:
-  class SyncHealthCheckServiceImpl : public Service {
+  // The service impl to register with the server.
+  class HealthCheckServiceImpl : public Service {
    public:
-    explicit SyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
+    HealthCheckServiceImpl(DefaultHealthCheckService* service, bool sync);
+
     Status Check(ServerContext* context, const ByteBuffer* request,
                  ByteBuffer* response);
 
-   private:
-    const DefaultHealthCheckService* service_;
-  };
+    bool sync() { return sync_; }
 
-  class AsyncHealthCheckServiceImpl : public Service {
-   public:
-    explicit AsyncHealthCheckServiceImpl(DefaultHealthCheckService* service);
-    Status Check(ServerContext* context, const ByteBuffer* request,
-                 ByteBuffer* response);
-    const RpcServiceMethod* method() const { return method_; }
+    // This is only useful for the async mode. It should be called after
+    // RegisterService returns.
+    void* server_tag() const { return method_->server_tag(); }
 
    private:
-    const DefaultHealthCheckService* service_;
-    const RpcServiceMethod* method_;
+    const DefaultHealthCheckService* const service_;
+    RpcServiceMethod* method_;
+    const bool sync_;
   };
 
   DefaultHealthCheckService();
-  void SetServingStatus(const grpc::string& service_name, bool serving) final;
-  void SetServingStatus(bool serving) final;
+  void SetServingStatus(const grpc::string& service_name,
+                        bool serving) override;
+  void SetServingStatus(bool serving) override;
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
   ServingStatus GetServingStatus(const grpc::string& service_name) const;
-  SyncHealthCheckServiceImpl* GetSyncHealthCheckService() const {
-    return sync_service_.get();
-  }
-  AsyncHealthCheckServiceImpl* GetAsyncHealthCheckService() const {
-    return async_service_.get();
-  }
+  HealthCheckServiceImpl* GetHealthCheckService(bool sync);
 
  private:
   mutable std::mutex mu_;
   std::map<grpc::string, bool> services_map_;
-  std::unique_ptr<SyncHealthCheckServiceImpl> sync_service_;
-  std::unique_ptr<AsyncHealthCheckServiceImpl> async_service_;
+  std::unique_ptr<HealthCheckServiceImpl> impl_;
 };
 
 }  // namespace grpc

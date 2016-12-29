@@ -45,12 +45,25 @@
 
 namespace grpc {
 namespace {
-
 const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
+}  // namespace
 
-Status CheckHealth(const DefaultHealthCheckService* service,
-                   ServerContext* context, const ByteBuffer* request,
-                   ByteBuffer* response) {
+DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
+    DefaultHealthCheckService* service, bool sync)
+    : service_(service), method_(nullptr), sync_(sync) {
+  MethodHandler* handler = nullptr;
+  if (sync_) {
+    handler =
+        new RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
+            std::mem_fn(&HealthCheckServiceImpl::Check), this);
+  }
+  method_ = new RpcServiceMethod(kHealthCheckMethodName, RpcMethod::NORMAL_RPC,
+                                 handler);
+  AddMethod(method_);
+}
+
+Status DefaultHealthCheckService::HealthCheckServiceImpl::Check(
+    ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
   // Decode request.
   std::vector<Slice> slices;
   request->Dump(&slices);
@@ -87,7 +100,7 @@ Status CheckHealth(const DefaultHealthCheckService* service,
 
   // Check status from the associated default health checking service.
   DefaultHealthCheckService::ServingStatus serving_status =
-      service->GetServingStatus(
+      service_->GetServingStatus(
           request_struct.has_service ? request_struct.service : "");
   if (serving_status == DefaultHealthCheckService::NOT_FOUND) {
     return Status(StatusCode::NOT_FOUND, "");
@@ -117,41 +130,8 @@ Status CheckHealth(const DefaultHealthCheckService* service,
   response->Swap(&response_buffer);
   return Status::OK;
 }
-}  // namespace
 
-DefaultHealthCheckService::SyncHealthCheckServiceImpl::
-    SyncHealthCheckServiceImpl(DefaultHealthCheckService* service)
-    : service_(service) {
-  auto* handler =
-      new RpcMethodHandler<SyncHealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
-          std::mem_fn(&SyncHealthCheckServiceImpl::Check), this);
-  auto* method = new RpcServiceMethod(kHealthCheckMethodName,
-                                      RpcMethod::NORMAL_RPC, handler);
-  AddMethod(method);
-}
-
-Status DefaultHealthCheckService::SyncHealthCheckServiceImpl::Check(
-    ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
-  return CheckHealth(service_, context, request, response);
-}
-
-DefaultHealthCheckService::AsyncHealthCheckServiceImpl::
-    AsyncHealthCheckServiceImpl(DefaultHealthCheckService* service)
-    : service_(service) {
-  auto* method = new RpcServiceMethod(kHealthCheckMethodName,
-                                      RpcMethod::NORMAL_RPC, nullptr);
-  AddMethod(method);
-  method_ = method;
-}
-
-Status DefaultHealthCheckService::AsyncHealthCheckServiceImpl::Check(
-    ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
-  return CheckHealth(service_, context, request, response);
-}
-
-DefaultHealthCheckService::DefaultHealthCheckService()
-    : sync_service_(new SyncHealthCheckServiceImpl(this)),
-      async_service_(new AsyncHealthCheckServiceImpl(this)) {
+DefaultHealthCheckService::DefaultHealthCheckService() {
   services_map_.emplace("", true);
 }
 
@@ -177,6 +157,13 @@ DefaultHealthCheckService::GetServingStatus(
     return NOT_FOUND;
   }
   return iter->second ? SERVING : NOT_SERVING;
+}
+
+DefaultHealthCheckService::HealthCheckServiceImpl*
+DefaultHealthCheckService::GetHealthCheckService(bool sync) {
+  GPR_ASSERT(impl_ == nullptr);
+  impl_.reset(new HealthCheckServiceImpl(this, sync));
+  return impl_.get();
 }
 
 }  // namespace grpc
