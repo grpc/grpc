@@ -132,7 +132,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
  protected:
   HealthServiceEnd2endTest() {}
 
-  void SetUpServer(bool register_sync_test_service,
+  void SetUpServer(bool register_sync_test_service, bool add_async_cq,
                    bool explicit_health_service,
                    std::unique_ptr<HealthCheckServiceInterface> service) {
     int port = grpc_pick_unused_port_or_die();
@@ -157,18 +157,21 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     if (register_sync_health_service_impl) {
       builder.RegisterService(&health_check_service_impl_);
     }
-    cq_ = builder.AddCompletionQueue();
+    if (add_async_cq) {
+      cq_ = builder.AddCompletionQueue();
+    }
     server_ = builder.BuildAndStart();
   }
 
   void TearDown() override {
     if (server_) {
       server_->Shutdown();
-      cq_->Shutdown();
+      if (cq_ != nullptr) {
+        cq_->Shutdown();
+      }
       if (cq_thread_.joinable()) {
         cq_thread_.join();
       }
-      LoopCompletionQueue(cq_.get());
     }
   }
 
@@ -241,7 +244,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
 TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
   EnableDefaultHealthCheckService(false);
   EXPECT_FALSE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(true, false, nullptr);
+  SetUpServer(true, false, false, nullptr);
   HealthCheckServiceInterface* default_service =
       server_->GetHealthCheckService();
   EXPECT_TRUE(default_service == nullptr);
@@ -254,7 +257,7 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
 TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   EnableDefaultHealthCheckService(true);
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(true, false, nullptr);
+  SetUpServer(true, false, false, nullptr);
   VerifyHealthCheckService();
 
   // The default service has a size limit of the service name.
@@ -263,11 +266,13 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
                      Status(StatusCode::INVALID_ARGUMENT, ""));
 }
 
-TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsync) {
+// The server has no sync service.
+TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsyncOnly) {
   EnableDefaultHealthCheckService(true);
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(false, false, nullptr);
+  SetUpServer(false, true, false, nullptr);
   cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
+
   VerifyHealthCheckService();
 
   // The default service has a size limit of the service name.
@@ -281,7 +286,7 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
   EnableDefaultHealthCheckService(true);
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> empty_service;
-  SetUpServer(true, true, std::move(empty_service));
+  SetUpServer(true, false, true, std::move(empty_service));
   HealthCheckServiceInterface* service = server_->GetHealthCheckService();
   EXPECT_TRUE(service == nullptr);
 
@@ -297,7 +302,7 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
   std::unique_ptr<HealthCheckServiceInterface> override_service(
       new CustomHealthCheckService(&health_check_service_impl_));
   HealthCheckServiceInterface* underlying_service = override_service.get();
-  SetUpServer(false, true, std::move(override_service));
+  SetUpServer(false, false, true, std::move(override_service));
   HealthCheckServiceInterface* service = server_->GetHealthCheckService();
   EXPECT_TRUE(service == underlying_service);
 
