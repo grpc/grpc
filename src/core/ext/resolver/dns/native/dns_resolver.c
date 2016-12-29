@@ -112,8 +112,8 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion,
-                        GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion,
+                       GRPC_ERROR_CREATE("Resolver Shutdown"));
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -219,9 +219,10 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->addresses = NULL;
-  grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
-                       r->interested_parties,
-                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
+  grpc_resolve_address(
+      exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
+      grpc_closure_create(dns_on_resolved, r, grpc_schedule_on_exec_ctx),
+      &r->addresses);
 }
 
 static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -231,7 +232,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = r->resolved_result == NULL
                             ? NULL
                             : grpc_channel_args_copy(r->resolved_result);
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }

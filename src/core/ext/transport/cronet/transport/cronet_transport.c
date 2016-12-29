@@ -849,16 +849,16 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                            OP_RECV_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
+      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                           GRPC_ERROR_CANCELLED, NULL);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, stream_op->recv_initial_metadata_ready,
           make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."), NULL);
     } else {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.initial_metadata, stream_op->recv_initial_metadata);
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
+      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                           GRPC_ERROR_NONE, NULL);
     }
     stream_state->state_op_done[OP_RECV_INITIAL_METADATA] = true;
@@ -910,13 +910,13 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_MESSAGE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
+      grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
                           GRPC_ERROR_CANCELLED, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       CRONET_LOG(GPR_DEBUG, "Stream failed.");
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, stream_op->recv_message_ready,
           make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."), NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
@@ -924,7 +924,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     } else if (stream_state->rs.read_stream_closed == true) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
+      grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
                           GRPC_ERROR_NONE, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
@@ -958,7 +958,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                         &stream_state->rs.read_slice_buffer, 0);
           *((grpc_byte_buffer **)stream_op->recv_message) =
               (grpc_byte_buffer *)&stream_state->rs.sbs;
-          grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
+          grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
                               GRPC_ERROR_NONE, NULL);
           stream_state->state_op_done[OP_RECV_MESSAGE] = true;
           oas->state.state_op_done[OP_RECV_MESSAGE] = true;
@@ -993,7 +993,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                     &stream_state->rs.read_slice_buffer, 0);
       *((grpc_byte_buffer **)stream_op->recv_message) =
           (grpc_byte_buffer *)&stream_state->rs.sbs;
-      grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
+      grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
                           GRPC_ERROR_NONE, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
@@ -1055,17 +1055,17 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                            OP_ON_COMPLETE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete,
+      grpc_closure_sched(exec_ctx, stream_op->on_complete,
                           GRPC_ERROR_REF(stream_state->cancel_error), NULL);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, stream_op->on_complete,
           make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."), NULL);
     } else {
       /* All actions in this stream_op are complete. Call the on_complete
        * callback
        */
-      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
+      grpc_closure_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
                           NULL);
     }
     oas->state.state_op_done[OP_ON_COMPLETE] = true;

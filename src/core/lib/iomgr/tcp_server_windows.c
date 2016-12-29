@@ -162,10 +162,10 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
 static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s),
+  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s),
                       GRPC_ERROR_NONE, NULL);
 }
 
@@ -204,7 +204,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting, NULL);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
@@ -465,7 +465,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   sp->new_socket = INVALID_SOCKET;
   sp->port = port;
   sp->port_index = port_index;
-  grpc_closure_init(&sp->on_accept, on_accept, sp);
+  grpc_closure_init(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;

@@ -376,15 +376,20 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   gpr_ref_init(&conn->refcount, 1);
   conn->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
-  grpc_closure_init(&conn->on_read_request_done, on_read_request_done, conn);
-  grpc_closure_init(&conn->on_server_connect_done, on_server_connect_done,
-                    conn);
-  grpc_closure_init(&conn->on_write_response_done, on_write_response_done,
-                    conn);
-  grpc_closure_init(&conn->on_client_read_done, on_client_read_done, conn);
-  grpc_closure_init(&conn->on_client_write_done, on_client_write_done, conn);
-  grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn);
-  grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn);
+  grpc_closure_init(&conn->on_read_request_done, on_read_request_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_server_connect_done, on_server_connect_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_write_response_done, on_write_response_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_client_read_done, on_client_read_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_client_write_done, on_client_write_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
   grpc_slice_buffer_init(&conn->client_write_buffer);
@@ -471,7 +476,8 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   gpr_free(proxy->proxy_name);
   grpc_channel_args_destroy(proxy->channel_args);
   grpc_closure destroyed;
-  grpc_closure_init(&destroyed, destroy_pollset, proxy->pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, proxy->pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset, &destroyed);
   gpr_free(proxy);
   grpc_exec_ctx_finish(&exec_ctx);

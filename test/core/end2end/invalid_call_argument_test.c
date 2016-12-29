@@ -573,6 +573,29 @@ static void test_recv_close_on_server_twice() {
   cleanup_test();
 }
 
+static void test_invalid_initial_metadata_reserved_key() {
+  gpr_log(GPR_INFO, "test_invalid_initial_metadata_reserved_key");
+
+  grpc_metadata metadata;
+  metadata.key = ":start_with_colon";
+  metadata.value = "value";
+  metadata.value_length = 6;
+
+  grpc_op *op;
+  prepare_test(1);
+  op = g_state.ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = &metadata;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  GPR_ASSERT(GRPC_CALL_ERROR_INVALID_METADATA ==
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops), tag(1), NULL));
+  cleanup_test();
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -595,6 +618,7 @@ int main(int argc, char **argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
+  test_invalid_initial_metadata_reserved_key();
   grpc_shutdown();
 
   return 0;
