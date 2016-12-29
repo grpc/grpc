@@ -119,6 +119,9 @@ class Server::UnimplementedAsyncResponse final
   UnimplementedAsyncRequest* const request_;
 };
 
+// This is a dummy implementation of the interface so that
+// HealthCheckAsyncRequest can get Call from RegisteredAsyncRequest. It does not
+// do any reading or writing.
 class HealthCheckAsyncResponseWriter final
     : public ServerAsyncStreamingInterface {
  public:
@@ -188,47 +191,6 @@ class Server::HealthCheckAsyncResponse final
  private:
   HealthCheckAsyncRequest* const request_;
 };
-
-bool Server::HealthCheckAsyncRequest::FinalizeResult(void** tag, bool* status) {
-  bool serialization_status =
-      *status && payload_ &&
-      SerializationTraits<ByteBuffer>::Deserialize(
-          payload_, &request_, server_->max_receive_message_size())
-          .ok();
-  RegisteredAsyncRequest::FinalizeResult(tag, status);
-  *status = serialization_status && *status;
-  if (*status) {
-    new HealthCheckAsyncRequest(service_, server_, cq_);
-    status_ = service_->Check(&server_context_, &request_, &response_);
-    new HealthCheckAsyncResponse(this);
-    return false;
-  } else {
-    delete this;
-    return false;
-  }
-}
-
-Server::HealthCheckAsyncResponse::HealthCheckAsyncResponse(
-    HealthCheckAsyncRequest* request)
-    : request_(request) {
-  ServerContext* context = request_->server_context();
-  if (!context->sent_initial_metadata_) {
-    SendInitialMetadata(context->initial_metadata_,
-                        context->initial_metadata_flags());
-    if (context->compression_level_set()) {
-      set_compression_level(context->compression_level());
-    }
-    context->sent_initial_metadata_ = true;
-  }
-  Status* status = request_->status();
-  if (status->ok()) {
-    ServerSendStatus(context->trailing_metadata_,
-                     SendMessage(*request_->response()));
-  } else {
-    ServerSendStatus(context->trailing_metadata_, *status);
-  }
-  request_->call()->PerformOps(this);
-}
 
 class ShutdownTag : public CompletionQueueTag {
  public:
@@ -490,8 +452,8 @@ Server::Server(
   args->SetChannelArgs(&channel_args);
 
   for (size_t i = 0; i < channel_args.num_args; i++) {
-    if (0 == strcmp(channel_args.args[i].key,
-                    kDefaultHealthCheckServiceInterfaceArg)) {
+    if (0 ==
+        strcmp(channel_args.args[i].key, kHealthCheckServiceInterfaceArg)) {
       if (channel_args.args[i].value.pointer.p == nullptr) {
         health_check_service_disabled_ = true;
       } else {
@@ -820,6 +782,47 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
   Status status(StatusCode::UNIMPLEMENTED, "");
   UnknownMethodHandler::FillOps(request_->context(), this);
   request_->stream()->call_.PerformOps(this);
+}
+
+bool Server::HealthCheckAsyncRequest::FinalizeResult(void** tag, bool* status) {
+  bool serialization_status =
+      *status && payload_ &&
+      SerializationTraits<ByteBuffer>::Deserialize(
+          payload_, &request_, server_->max_receive_message_size())
+          .ok();
+  RegisteredAsyncRequest::FinalizeResult(tag, status);
+  *status = serialization_status && *status;
+  if (*status) {
+    new HealthCheckAsyncRequest(service_, server_, cq_);
+    status_ = service_->Check(&server_context_, &request_, &response_);
+    new HealthCheckAsyncResponse(this);
+    return false;
+  } else {
+    delete this;
+    return false;
+  }
+}
+
+Server::HealthCheckAsyncResponse::HealthCheckAsyncResponse(
+    HealthCheckAsyncRequest* request)
+    : request_(request) {
+  ServerContext* context = request_->server_context();
+  if (!context->sent_initial_metadata_) {
+    SendInitialMetadata(context->initial_metadata_,
+                        context->initial_metadata_flags());
+    if (context->compression_level_set()) {
+      set_compression_level(context->compression_level());
+    }
+    context->sent_initial_metadata_ = true;
+  }
+  Status* status = request_->status();
+  if (status->ok()) {
+    ServerSendStatus(context->trailing_metadata_,
+                     SendMessage(*request_->response()));
+  } else {
+    ServerSendStatus(context->trailing_metadata_, *status);
+  }
+  request_->call()->PerformOps(this);
 }
 
 ServerInitializer* Server::initializer() { return server_initializer_.get(); }

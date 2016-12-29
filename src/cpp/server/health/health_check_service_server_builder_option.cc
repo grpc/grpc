@@ -41,7 +41,7 @@ HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
 // Hand over hc_ to the server.
 void HealthCheckServiceServerBuilderOption::UpdateArguments(
     ChannelArguments* args) {
-  args->SetPointer(kDefaultHealthCheckServiceInterfaceArg, hc_.release());
+  args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
 }
 
 void HealthCheckServiceServerBuilderOption::UpdatePlugins(
