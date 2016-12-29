@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Insecure client-server interoperability as a unit test."""
+"""Secure client-server interoperability as a unit test."""
 
 from concurrent import futures
 import unittest
@@ -35,23 +35,30 @@ import unittest
 import grpc
 from src.proto.grpc.testing import test_pb2
 
-from tests.interop import _interop_test_case
+from tests.interop import _intraop_test_case
 from tests.interop import methods
-from tests.interop import server
+from tests.interop import resources
+
+_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
-class InsecureInteropTest(
-    _interop_test_case.InteropTestCase,
+class SecureIntraopTest(
+    _intraop_test_case.IntraopTestCase,
     unittest.TestCase):
 
   def setUp(self):
     self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     test_pb2.add_TestServiceServicer_to_server(
         methods.TestService(), self.server)
-    port = self.server.add_insecure_port('[::]:0')
+    port = self.server.add_secure_port(
+        '[::]:0', grpc.ssl_server_credentials(
+            [(resources.private_key(), resources.certificate_chain())]))
     self.server.start()
     self.stub = test_pb2.TestServiceStub(
-        grpc.insecure_channel('localhost:{}'.format(port)))
+        grpc.secure_channel(
+            'localhost:{}'.format(port),
+            grpc.ssl_channel_credentials(resources.test_root_certificates()),
+            (('grpc.ssl_target_name_override', _SERVER_HOST_OVERRIDE,),)))
 
 
 if __name__ == '__main__':
