@@ -121,6 +121,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   class HealthCheckAsyncRequestContext;
   class HealthCheckAsyncRequest;
+  class HealthCheckAsyncResponse;
 
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
