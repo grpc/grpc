@@ -45,6 +45,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -148,12 +149,17 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     if (register_sync_health_service_impl) {
       builder.RegisterService(&health_check_service_impl_);
     }
+    cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
 
   void TearDown() override {
     if (server_) {
       server_->Shutdown();
+      cq_->Shutdown();
+      if (cq_thread_.joinable()) {
+        cq_thread_.join();
+      }
     }
   }
 
@@ -219,6 +225,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   std::unique_ptr<Health::Stub> hc_stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
+  std::unique_ptr<ServerCompletionQueue> cq_;
+  std::thread cq_thread_;
 };
 
 TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
@@ -238,6 +246,28 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   EnableDefaultHealthCheckService(true);
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   SetUpServer(true, false, nullptr);
+  VerifyHealthCheckService();
+
+  // The default service has a size limit of the service name.
+  const grpc::string kTooLongServiceName(201, 'x');
+  SendHealthCheckRpc(kTooLongServiceName,
+                     Status(StatusCode::INVALID_ARGUMENT, ""));
+}
+
+void LoopCompletionQueue(ServerCompletionQueue* cq) {
+  void* tag;
+  bool ok;
+  while (cq->Next(&tag, &ok)) {
+    gpr_log(GPR_ERROR, "next %p %d", tag, ok);
+  }
+  gpr_log(GPR_ERROR, "returning from thread");
+}
+
+TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsync) {
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+  SetUpServer(false, false, nullptr);
+  cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
   VerifyHealthCheckService();
 
   // The default service has a size limit of the service name.

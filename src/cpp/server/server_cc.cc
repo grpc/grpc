@@ -37,6 +37,7 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
@@ -117,6 +118,67 @@ class Server::UnimplementedAsyncResponse final
  private:
   UnimplementedAsyncRequest* const request_;
 };
+
+class Server::HealthCheckAsyncRequestContext {
+ protected:
+  HealthCheckAsyncRequestContext() : rpc_(&server_context_) {}
+  ServerContext server_context_;
+  ServerAsyncResponseWriter<ByteBuffer> rpc_;
+};
+
+class Server::HealthCheckAsyncRequest final
+    : public HealthCheckAsyncRequestContext,
+      public RegisteredAsyncRequest {
+ public:
+  HealthCheckAsyncRequest(
+      DefaultHealthCheckService::AsyncHealthCheckServiceImpl* service,
+      Server* server, ServerCompletionQueue* cq)
+      : RegisteredAsyncRequest(server, &server_context_, &rpc_, cq, this,
+                               false),
+        service_(service),
+        server_(server),
+        cq_(cq),
+        had_request_(false) {
+    IssueRequest(service->method()->server_tag(), &payload_, cq);
+  }
+
+  bool FinalizeResult(void** tag, bool* status) override;
+
+ private:
+  DefaultHealthCheckService::AsyncHealthCheckServiceImpl* service_;
+  Server* const server_;
+  ServerCompletionQueue* const cq_;
+  grpc_byte_buffer* payload_;
+  bool had_request_;
+  ByteBuffer request_;
+  ByteBuffer response_;
+};
+
+bool Server::HealthCheckAsyncRequest::FinalizeResult(void** tag, bool* status) {
+  if (!had_request_) {
+    had_request_ = true;
+    bool serialization_status =
+        *status && payload_ &&
+        SerializationTraits<ByteBuffer>::Deserialize(
+            payload_, &request_, server_->max_receive_message_size())
+            .ok();
+    RegisteredAsyncRequest::FinalizeResult(tag, status);
+    *status = serialization_status && *status;
+    if (*status) {
+      new HealthCheckAsyncRequest(service_, server_, cq_);
+      Status s = service_->Check(&server_context_, &request_, &response_);
+      rpc_.Finish(response_, s, this);
+      return false;
+    } else {
+      // TODO what to do here
+      delete this;
+      return false;
+    }
+  } else {
+    delete this;
+    return false;
+  }
+}
 
 class ShutdownTag : public CompletionQueueTag {
  public:
@@ -498,12 +560,18 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
+  DefaultHealthCheckService::AsyncHealthCheckServiceImpl* async_health_service =
+      nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
     if (!sync_server_cqs_->empty()) {  // Has sync methods.
       RegisterService(nullptr, default_hc_service->GetSyncHealthCheckService());
+    }
+    if (sync_server_cqs_->empty()) {  // No sync methods.
+      async_health_service = default_hc_service->GetAsyncHealthCheckService();
+      RegisterService(nullptr, async_health_service);
     }
   }
 
@@ -517,6 +585,14 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     for (size_t i = 0; i < num_cqs; i++) {
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
+      }
+    }
+  }
+
+  if (async_health_service) {
+    for (size_t i = 0; i < num_cqs; i++) {
+      if (cqs[i]->IsFrequentlyPolled()) {
+        new HealthCheckAsyncRequest(async_health_service, this, cqs[i]);
       }
     }
   }
@@ -641,8 +717,10 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
+    bool delete_on_finalize)
+    : BaseAsyncRequest(server, context, stream, call_cq, tag,
+                       delete_on_finalize) {}
 
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,

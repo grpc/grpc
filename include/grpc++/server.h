@@ -119,6 +119,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
 
+  class HealthCheckAsyncRequestContext;
+  class HealthCheckAsyncRequest;
+
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
   /// \param max_message_size Maximum message length that the channel can
