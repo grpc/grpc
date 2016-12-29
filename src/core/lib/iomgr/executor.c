@@ -115,6 +115,8 @@ static void maybe_spawn_locked() {
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error) {
   gpr_mu_lock(&g_executor.mu);
+  GPR_ASSERT(closure->scheduler == grpc_executor_scheduler);
+  closure->scheduler = grpc_schedule_on_exec_ctx;
   if (g_executor.shutting_down == 0) {
     grpc_closure_list_append(&g_executor.closures, closure, error);
     maybe_spawn_locked();

@@ -342,8 +342,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  ac->write_closure.cb = on_writable;
-  ac->write_closure.cb_arg = ac;
+  grpc_closure_init(&ac->write_closure, on_writable, ac,
+                    grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
   if (grpc_tcp_trace) {
