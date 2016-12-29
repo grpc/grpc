@@ -107,27 +107,6 @@ cc_test(
 )
 
 cc_test(
-    name = "percent_encoding_test",
-    srcs = ["percent_encoding_test.c"],
-    deps = ["//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_buffer_test",
-    srcs = ["slice_buffer_test.c"],
-    deps = ["//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_test",
-    srcs = ["slice_test.c"],
-    deps = ["//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
     name = "stack_lockfree_test",
     srcs = ["stack_lockfree_test.c"],
     deps = ["//:gpr", "//test/core/util:gpr_test_util"],
@@ -175,19 +154,3 @@ cc_test(
     deps = ["//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
-
-grpc_fuzzer(
-  name = "percent_encode_fuzzer",
-  srcs = ["percent_encode_fuzzer.c"],
-  deps = ["//:gpr"],
-  corpus = "percent_encode_corpus"
-)
-
-
-grpc_fuzzer(
-    name = "percent_decode_fuzzer",
-    srcs = ["percent_decode_fuzzer.c"],
-    deps = ["//:gpr"],
-    corpus = "percent_decode_corpus"
-)
-

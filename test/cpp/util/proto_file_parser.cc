@@ -61,7 +61,7 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   explicit ErrorPrinter(ProtoFileParser* parser) : parser_(parser) {}
 
   void AddError(const grpc::string& filename, int line, int column,
-                const grpc::string& message) GRPC_OVERRIDE {
+                const grpc::string& message) override {
     std::ostringstream oss;
     oss << "error " << filename << " " << line << " " << column << " "
         << message << "\n";
@@ -69,7 +69,7 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   }
 
   void AddWarning(const grpc::string& filename, int line, int column,
-                  const grpc::string& message) GRPC_OVERRIDE {
+                  const grpc::string& message) override {
     std::cerr << "warning " << filename << " " << line << " " << column << " "
               << message << std::endl;
   }
@@ -172,19 +172,19 @@ grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
   return method_descriptor->full_name();
 }
 
-grpc::string ProtoFileParser::GetFormatedMethodName(
+grpc::string ProtoFileParser::GetFormattedMethodName(
     const grpc::string& method) {
   has_error_ = false;
-  grpc::string formated_method_name = GetFullMethodName(method);
+  grpc::string formatted_method_name = GetFullMethodName(method);
   if (has_error_) {
     return "";
   }
-  size_t last_dot = formated_method_name.find_last_of('.');
+  size_t last_dot = formatted_method_name.find_last_of('.');
   if (last_dot != grpc::string::npos) {
-    formated_method_name[last_dot] = '/';
+    formatted_method_name[last_dot] = '/';
   }
-  formated_method_name.insert(formated_method_name.begin(), '/');
-  return formated_method_name;
+  formatted_method_name.insert(formatted_method_name.begin(), '/');
+  return formatted_method_name;
 }
 
 grpc::string ProtoFileParser::GetMessageTypeFromMethod(

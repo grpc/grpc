@@ -104,10 +104,12 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  config.init_client(f, client_args, NULL);
+  config.init_client(f, client_args);
 
-  c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -180,7 +182,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -197,21 +200,36 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
 static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
 
   gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_short", config.name);
   f = config.create_fixture(NULL, NULL);
-  simple_delayed_request_body(config, &f, NULL, NULL, 100000);
+
+  simple_delayed_request_body(config, &f, &client_args, NULL, 100000);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
 
   gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_long", config.name);
   f = config.create_fixture(NULL, NULL);
   /* This timeout should be longer than a single retry */
-  simple_delayed_request_body(config, &f, NULL, NULL, 1500000);
+  simple_delayed_request_body(config, &f, &client_args, NULL, 1500000);
   end_test(&f);
   config.tear_down_data(&f);
 }

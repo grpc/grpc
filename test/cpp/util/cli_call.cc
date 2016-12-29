@@ -41,8 +41,8 @@
 #include <grpc++/generic/generic_stub.h>
 #include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 
 namespace grpc {
 namespace testing {
@@ -72,7 +72,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
   cq.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 
-  gpr_slice s = gpr_slice_from_copied_string(request.c_str());
+  grpc_slice s = grpc_slice_from_copied_string(request.c_str());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
   call->Write(send_buffer, tag(2));

@@ -34,11 +34,12 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
@@ -48,9 +49,9 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-               gpr_slice_buffer *slices, grpc_closure *cb);
+               grpc_slice_buffer *slices, grpc_closure *cb);
   void (*write)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                gpr_slice_buffer *slices, grpc_closure *cb);
+                grpc_slice_buffer *slices, grpc_closure *cb);
   grpc_workqueue *(*get_workqueue)(grpc_endpoint *ep);
   void (*add_to_pollset)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          grpc_pollset *pollset);
@@ -58,7 +59,9 @@ struct grpc_endpoint_vtable {
                              grpc_pollset_set *pollset);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
+  int (*get_fd)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -67,9 +70,13 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                        gpr_slice_buffer *slices, grpc_closure *cb);
+                        grpc_slice_buffer *slices, grpc_closure *cb);
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
+
+/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
+   */
+int grpc_endpoint_get_fd(grpc_endpoint *ep);
 
 /* Retrieve a reference to the workqueue associated with this endpoint */
 grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
@@ -85,7 +92,7 @@ grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
    it is a valid slice buffer.
    */
 void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                         gpr_slice_buffer *slices, grpc_closure *cb);
+                         grpc_slice_buffer *slices, grpc_closure *cb);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
@@ -99,6 +106,8 @@ void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_endpoint *ep,
                                       grpc_pollset_set *pollset_set);
+
+grpc_resource_user *grpc_endpoint_get_resource_user(grpc_endpoint *endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;

@@ -54,33 +54,35 @@ DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
 DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
-DEFINE_string(test_case, "large_unary",
-              "Configure different test cases. Valid options are:\n\n"
-              "all : all test cases;\n"
-              "cancel_after_begin : cancel stream after starting it;\n"
-              "cancel_after_first_response: cancel on first response;\n"
-              "client_compressed_streaming : compressed request streaming with "
-              "client_compressed_unary : single compressed request;\n"
-              "client_streaming : request streaming with single response;\n"
-              "compute_engine_creds: large_unary with compute engine auth;\n"
-              "custom_metadata: server will echo custom metadata;\n"
-              "empty_stream : bi-di stream with no request/response;\n"
-              "empty_unary : empty (zero bytes) request and response;\n"
-              "half_duplex : half-duplex streaming;\n"
-              "jwt_token_creds: large_unary with JWT token auth;\n"
-              "large_unary : single request and (large) response;\n"
-              "oauth2_auth_token: raw oauth2 access token auth;\n"
-              "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
-              "ping_pong : full-duplex streaming;\n"
-              "response streaming;\n"
-              "server_compressed_streaming : single request with compressed "
-              "server_compressed_unary : single compressed response;\n"
-              "server_streaming : single request with response streaming;\n"
-              "slow_consumer : single request with response streaming with "
-              "slow client consumer;\n"
-              "status_code_and_message: verify status code & message;\n"
-              "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-              "unimplemented_method: client calls an unimplemented method;\n");
+DEFINE_string(
+    test_case, "large_unary",
+    "Configure different test cases. Valid options are:\n\n"
+    "all : all test cases;\n"
+    "cancel_after_begin : cancel stream after starting it;\n"
+    "cancel_after_first_response: cancel on first response;\n"
+    "client_compressed_streaming : compressed request streaming with "
+    "client_compressed_unary : single compressed request;\n"
+    "client_streaming : request streaming with single response;\n"
+    "compute_engine_creds: large_unary with compute engine auth;\n"
+    "custom_metadata: server will echo custom metadata;\n"
+    "empty_stream : bi-di stream with no request/response;\n"
+    "empty_unary : empty (zero bytes) request and response;\n"
+    "half_duplex : half-duplex streaming;\n"
+    "jwt_token_creds: large_unary with JWT token auth;\n"
+    "large_unary : single request and (large) response;\n"
+    "oauth2_auth_token: raw oauth2 access token auth;\n"
+    "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
+    "ping_pong : full-duplex streaming;\n"
+    "response streaming;\n"
+    "server_compressed_streaming : single request with compressed "
+    "server_compressed_unary : single compressed response;\n"
+    "server_streaming : single request with response streaming;\n"
+    "slow_consumer : single request with response streaming with "
+    "slow client consumer;\n"
+    "status_code_and_message: verify status code & message;\n"
+    "timeout_on_sleeping_server: deadline exceeds on stream;\n"
+    "unimplemented_method: client calls an unimplemented method;\n"
+    "unimplemented_service: client calls an unimplemented service;\n");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
@@ -152,6 +154,8 @@ int main(int argc, char** argv) {
     client.DoCustomMetadata();
   } else if (FLAGS_test_case == "unimplemented_method") {
     client.DoUnimplementedMethod();
+  } else if (FLAGS_test_case == "unimplemented_service") {
+    client.DoUnimplementedService();
   } else if (FLAGS_test_case == "cacheable_unary") {
     client.DoCacheableUnary();
   } else if (FLAGS_test_case == "all") {
@@ -172,6 +176,7 @@ int main(int argc, char** argv) {
     client.DoStatusWithMessage();
     client.DoCustomMetadata();
     client.DoUnimplementedMethod();
+    client.DoUnimplementedService();
     client.DoCacheableUnary();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
@@ -207,7 +212,8 @@ int main(int argc, char** argv) {
                                "server_streaming",
                                "status_code_and_message",
                                "timeout_on_sleeping_server",
-                               "unimplemented_method"};
+                               "unimplemented_method",
+                               "unimplemented_service"};
     char* joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 

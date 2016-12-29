@@ -37,14 +37,13 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 
 /* --- Constants. --- */
 
 #define GRPC_OPENID_CONFIG_URL_SUFFIX "/.well-known/openid-configuration"
-#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN \
-  "developer.gserviceaccount.com"
+#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN "gserviceaccount.com"
 #define GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX \
   "www.googleapis.com/robot/v1/metadata/x509"
 
@@ -57,6 +56,7 @@ typedef enum {
   GRPC_JWT_VERIFIER_BAD_AUDIENCE,
   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
   GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE,
+  GRPC_JWT_VERIFIER_BAD_SUBJECT,
   GRPC_JWT_VERIFIER_GENERIC_ERROR
 } grpc_jwt_verifier_status;
 
@@ -129,8 +129,9 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
 /* --- TESTING ONLY exposed functions. --- */
 
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, gpr_slice buffer);
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
+const char *grpc_jwt_issuer_email_domain(const char *issuer);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H */

@@ -408,21 +408,21 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         n = 20 # arbitrary, use as many to ensure the server pool is exceeded
         threads = []
-        bad_status_code = nil
+        one_failed_as_unavailable = false
         n.times do
           threads << Thread.new do
             stub = SlowStub.new(alt_host, :this_channel_is_insecure)
             begin
               stub.an_rpc(req)
-            rescue GRPC::BadStatus => e
-              bad_status_code = e.code
+            rescue GRPC::ResourceExhausted
+              one_failed_as_unavailable = true
             end
           end
         end
         threads.each(&:join)
         alt_srv.stop
         t.join
-        expect(bad_status_code).to be(StatusCodes::RESOURCE_EXHAUSTED)
+        expect(one_failed_as_unavailable).to be(true)
       end
     end
 
@@ -462,6 +462,7 @@ describe GRPC::RpcServer do
           'connect_k1' => 'connect_v1'
         }
         wanted_md.each do |key, value|
+          puts "key: #{key}"
           expect(op.metadata[key]).to eq(value)
         end
         @srv.stop

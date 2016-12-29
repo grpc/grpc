@@ -39,6 +39,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/ssl_types.h"
 
 #include <grpc/support/alloc.h>
@@ -85,18 +86,18 @@ static const EVP_MD *evp_md_from_alg(const char *alg) {
 }
 
 static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
-                                           gpr_slice *buffer) {
+                                           grpc_slice *buffer) {
   grpc_json *json;
 
   *buffer = grpc_base64_decode_with_len(str, len, 1);
-  if (GPR_SLICE_IS_EMPTY(*buffer)) {
+  if (GRPC_SLICE_IS_EMPTY(*buffer)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return NULL;
   }
-  json = grpc_json_parse_string_with_len((char *)GPR_SLICE_START_PTR(*buffer),
-                                         GPR_SLICE_LENGTH(*buffer));
+  json = grpc_json_parse_string_with_len((char *)GRPC_SLICE_START_PTR(*buffer),
+                                         GRPC_SLICE_LENGTH(*buffer));
   if (json == NULL) {
-    gpr_slice_unref(*buffer);
+    grpc_slice_unref(*buffer);
     gpr_log(GPR_ERROR, "JSON parsing error.");
   }
   return json;
@@ -129,16 +130,16 @@ typedef struct {
   const char *kid;
   const char *typ;
   /* TODO(jboeuf): Add others as needed (jku, jwk, x5u, x5c and so on...). */
-  gpr_slice buffer;
+  grpc_slice buffer;
 } jose_header;
 
 static void jose_header_destroy(jose_header *h) {
-  gpr_slice_unref(h->buffer);
+  grpc_slice_unref(h->buffer);
   gpr_free(h);
 }
 
 /* Takes ownership of json and buffer. */
-static jose_header *jose_header_from_json(grpc_json *json, gpr_slice buffer) {
+static jose_header *jose_header_from_json(grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
   jose_header *h = gpr_malloc(sizeof(jose_header));
   memset(h, 0, sizeof(jose_header));
@@ -190,12 +191,12 @@ struct grpc_jwt_claims {
   gpr_timespec nbf;
 
   grpc_json *json;
-  gpr_slice buffer;
+  grpc_slice buffer;
 };
 
 void grpc_jwt_claims_destroy(grpc_jwt_claims *claims) {
   grpc_json_destroy(claims->json);
-  gpr_slice_unref(claims->buffer);
+  grpc_slice_unref(claims->buffer);
   gpr_free(claims);
 }
 
@@ -240,7 +241,7 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims *claims) {
 }
 
 /* Takes ownership of json and buffer even in case of failure. */
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, gpr_slice buffer) {
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
   grpc_jwt_claims *claims = gpr_malloc(sizeof(grpc_jwt_claims));
   memset(claims, 0, sizeof(grpc_jwt_claims));
@@ -305,6 +306,17 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
 
+  /* This should be probably up to the upper layer to decide but let's harcode
+     the 99% use case here for email issuers, where the JWT must be self
+     issued. */
+  if (grpc_jwt_issuer_email_domain(claims->iss) != NULL &&
+      claims->sub != NULL && strcmp(claims->iss, claims->sub) != 0) {
+    gpr_log(GPR_ERROR,
+            "Email issuer (%s) cannot assert another subject (%s) than itself.",
+            claims->iss, claims->sub);
+    return GRPC_JWT_VERIFIER_BAD_SUBJECT;
+  }
+
   if (audience == NULL) {
     audience_ok = claims->aud == NULL;
   } else {
@@ -333,8 +345,8 @@ typedef struct {
   jose_header *header;
   grpc_jwt_claims *claims;
   char *audience;
-  gpr_slice signature;
-  gpr_slice signed_data;
+  grpc_slice signature;
+  grpc_slice signed_data;
   void *user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
@@ -343,7 +355,7 @@ typedef struct {
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx *verifier_cb_ctx_create(
     grpc_jwt_verifier *verifier, grpc_pollset *pollset, jose_header *header,
-    grpc_jwt_claims *claims, const char *audience, gpr_slice signature,
+    grpc_jwt_claims *claims, const char *audience, grpc_slice signature,
     const char *signed_jwt, size_t signed_jwt_len, void *user_data,
     grpc_jwt_verification_done_cb cb) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -355,7 +367,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
   ctx->audience = gpr_strdup(audience);
   ctx->claims = claims;
   ctx->signature = signature;
-  ctx->signed_data = gpr_slice_from_copied_buffer(signed_jwt, signed_jwt_len);
+  ctx->signed_data = grpc_slice_from_copied_buffer(signed_jwt, signed_jwt_len);
   ctx->user_data = user_data;
   ctx->user_cb = cb;
   grpc_exec_ctx_finish(&exec_ctx);
@@ -365,8 +377,8 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
 void verifier_cb_ctx_destroy(verifier_cb_ctx *ctx) {
   if (ctx->audience != NULL) gpr_free(ctx->audience);
   if (ctx->claims != NULL) grpc_jwt_claims_destroy(ctx->claims);
-  gpr_slice_unref(ctx->signature);
-  gpr_slice_unref(ctx->signed_data);
+  grpc_slice_unref(ctx->signature);
+  grpc_slice_unref(ctx->signed_data);
   jose_header_destroy(ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
@@ -449,17 +461,17 @@ end:
 
 static BIGNUM *bignum_from_base64(const char *b64) {
   BIGNUM *result = NULL;
-  gpr_slice bin;
+  grpc_slice bin;
 
   if (b64 == NULL) return NULL;
   bin = grpc_base64_decode(b64, 1);
-  if (GPR_SLICE_IS_EMPTY(bin)) {
+  if (GRPC_SLICE_IS_EMPTY(bin)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
   }
-  result = BN_bin2bn(GPR_SLICE_START_PTR(bin),
-                     TSI_SIZE_AS_SIZE(GPR_SLICE_LENGTH(bin)), NULL);
-  gpr_slice_unref(bin);
+  result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
+                     TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), NULL);
+  grpc_slice_unref(bin);
   return result;
 }
 
@@ -553,7 +565,7 @@ static EVP_PKEY *find_verification_key(const grpc_json *json,
 }
 
 static int verify_jwt_signature(EVP_PKEY *key, const char *alg,
-                                gpr_slice signature, gpr_slice signed_data) {
+                                grpc_slice signature, grpc_slice signed_data) {
   EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
   const EVP_MD *md = evp_md_from_alg(alg);
   int result = 0;
@@ -567,13 +579,13 @@ static int verify_jwt_signature(EVP_PKEY *key, const char *alg,
     gpr_log(GPR_ERROR, "EVP_DigestVerifyInit failed.");
     goto end;
   }
-  if (EVP_DigestVerifyUpdate(md_ctx, GPR_SLICE_START_PTR(signed_data),
-                             GPR_SLICE_LENGTH(signed_data)) != 1) {
+  if (EVP_DigestVerifyUpdate(md_ctx, GRPC_SLICE_START_PTR(signed_data),
+                             GRPC_SLICE_LENGTH(signed_data)) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
     goto end;
   }
-  if (EVP_DigestVerifyFinal(md_ctx, GPR_SLICE_START_PTR(signature),
-                            GPR_SLICE_LENGTH(signature)) != 1) {
+  if (EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(signature),
+                            GRPC_SLICE_LENGTH(signature)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
     goto end;
   }
@@ -657,11 +669,17 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
 
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       grpc_closure_create(on_keys_retrieved, ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -699,10 +717,26 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
   GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
 }
 
+/* Very non-sophisticated way to detect an email address. Should be good
+   enough for now... */
+const char *grpc_jwt_issuer_email_domain(const char *issuer) {
+  const char *at_sign = strchr(issuer, '@');
+  if (at_sign == NULL) return NULL;
+  const char *email_domain = at_sign + 1;
+  if (*email_domain == '\0') return NULL;
+  const char *dot = strrchr(email_domain, '.');
+  if (dot == NULL || dot == email_domain) return email_domain;
+  GPR_ASSERT(dot > email_domain);
+  /* There may be a subdomain, we just want the domain. */
+  dot = gpr_memrchr(email_domain, '.', (size_t)(dot - email_domain));
+  if (dot == NULL) return email_domain;
+  return dot + 1;
+}
+
 /* Takes ownership of ctx. */
 static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
                                     verifier_cb_ctx *ctx) {
-  const char *at_sign;
+  const char *email_domain;
   grpc_closure *http_cb;
   char *path_prefix = NULL;
   const char *iss;
@@ -727,13 +761,9 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
      Nobody seems to implement the account/email/webfinger part 2. of the spec
      so we will rely instead on email/url mappings if we detect such an issuer.
      Part 4, on the other hand is implemented by both google and salesforce. */
-
-  /* Very non-sophisticated way to detect an email address. Should be good
-     enough for now... */
-  at_sign = strchr(iss, '@');
-  if (at_sign != NULL) {
+  email_domain = grpc_jwt_issuer_email_domain(iss);
+  if (email_domain != NULL) {
     email_key_mapping *mapping;
-    const char *email_domain = at_sign + 1;
     GPR_ASSERT(ctx->verifier != NULL);
     mapping = verifier_get_mapping(ctx->verifier, email_domain);
     if (mapping == NULL) {
@@ -764,10 +794,16 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
     rsp_idx = HTTP_RESPONSE_OPENID;
   }
 
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, &ctx->responses[rsp_idx]);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;
@@ -787,9 +823,9 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   grpc_json *json;
   jose_header *header = NULL;
   grpc_jwt_claims *claims = NULL;
-  gpr_slice header_buffer;
-  gpr_slice claims_buffer;
-  gpr_slice signature;
+  grpc_slice header_buffer;
+  grpc_slice claims_buffer;
+  grpc_slice signature;
   size_t signed_jwt_len;
   const char *cur = jwt;
 
@@ -812,7 +848,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   signed_jwt_len = (size_t)(dot - jwt);
   cur = dot + 1;
   signature = grpc_base64_decode(cur, 1);
-  if (GPR_SLICE_IS_EMPTY(signature)) goto error;
+  if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
   retrieve_key_and_verify(
       exec_ctx,
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,

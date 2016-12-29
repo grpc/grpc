@@ -56,7 +56,7 @@ class TestAuthPropertyIterator : public AuthPropertyIterator {
 
 class AuthPropertyIteratorTest : public ::testing::Test {
  protected:
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     ctx_ = grpc_auth_context_create(NULL);
     grpc_auth_context_add_cstring_property(ctx_, "name", "chapi");
     grpc_auth_context_add_cstring_property(ctx_, "name", "chapo");
@@ -64,7 +64,7 @@ class AuthPropertyIteratorTest : public ::testing::Test {
     EXPECT_EQ(1,
               grpc_auth_context_set_peer_identity_property_name(ctx_, "name"));
   }
-  void TearDown() GRPC_OVERRIDE { grpc_auth_context_release(ctx_); }
+  void TearDown() override { grpc_auth_context_release(ctx_); }
   grpc_auth_context* ctx_;
 };
 

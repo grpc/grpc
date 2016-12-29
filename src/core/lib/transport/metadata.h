@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/useful.h>
 
 #ifdef __cplusplus
@@ -77,7 +77,7 @@ typedef struct grpc_mdelem grpc_mdelem;
 
 /* if changing this, make identical changes in internal_string in metadata.c */
 struct grpc_mdstr {
-  const gpr_slice slice;
+  const grpc_slice slice;
   const uint32_t hash;
   /* there is a private part to this in metadata.c */
 };
@@ -96,12 +96,12 @@ void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
    clients may have handy */
 grpc_mdstr *grpc_mdstr_from_string(const char *str);
 /* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
+grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
+grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
 
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
@@ -109,7 +109,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
                                                grpc_mdstr *value);
 grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
+grpc_mdelem *grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 const uint8_t *value,
                                                 size_t value_length);
@@ -120,8 +120,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
    is used as a type tag and is checked during user_data fetch. */
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
                                 void (*if_destroy_func)(void *));
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data);
+void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+                                void *user_data);
 
 /* Reference counting */
 //#define GRPC_METADATA_REFCOUNT_DEBUG
@@ -149,7 +149,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
 
-#define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
+#define GRPC_MDSTR_LENGTH(s) (GRPC_SLICE_LENGTH(s->slice))
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e) \
@@ -165,8 +165,8 @@ void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(void);
 
 /* Implementation provided by chttp2_transport */
-extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
-    gpr_slice input);
+extern grpc_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
+    grpc_slice input);
 
 #ifdef __cplusplus
 }

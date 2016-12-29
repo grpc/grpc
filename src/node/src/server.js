@@ -127,7 +127,14 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
         (new Metadata())._getCoreRepresentation();
     call.metadataSent = true;
   }
-  var message = serialize(value);
+  var message;
+  try {
+    message = serialize(value);
+  } catch (e) {
+    e.code = grpc.status.INTERNAL;
+    handleError(e);
+    return;
+  }
   message.grpcWriteFlags = flags;
   end_batch[grpc.opType.SEND_MESSAGE] = message;
   end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = status;
@@ -278,7 +285,14 @@ function _write(chunk, encoding, callback) {
         (new Metadata())._getCoreRepresentation();
     this.call.metadataSent = true;
   }
-  var message = this.serialize(chunk);
+  var message;
+  try {
+    message = this.serialize(chunk);
+  } catch (e) {
+    e.code = grpc.status.INTERNAL;
+    callback(e);
+    return;
+  }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
      * can get to checking that it is valid flags */
