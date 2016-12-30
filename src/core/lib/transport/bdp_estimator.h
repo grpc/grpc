@@ -47,10 +47,9 @@ typedef enum {
 } grpc_bdp_estimator_ping_state;
 
 typedef struct grpc_bdp_estimator {
-  uint8_t num_samples;
-  uint8_t first_sample_idx;
   grpc_bdp_estimator_ping_state ping_state;
-  int64_t samples[GRPC_BDP_SAMPLES];
+  int64_t accumulator;
+  int64_t estimate;
 } grpc_bdp_estimator;
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator);
