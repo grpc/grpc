@@ -39,31 +39,14 @@
 #include <grpc/support/useful.h>
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator) {
-  estimator->num_samples = 0;
-  estimator->first_sample_idx = 0;
+  estimator->estimate = 65536;
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
 }
 
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
                                      int64_t *estimate) {
-  if (estimator->num_samples < GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE) {
-    return false;
-  }
-
-  *estimate = -1;
-  for (uint8_t i = 0; i < estimator->num_samples; i++) {
-    *estimate = GPR_MAX(
-        *estimate,
-        estimator
-            ->samples[(estimator->first_sample_idx + i) % GRPC_BDP_SAMPLES]);
-  }
+  *estimate = estimator->estimate;
   return true;
-}
-
-static int64_t *sampling(grpc_bdp_estimator *estimator) {
-  return &estimator
-              ->samples[(estimator->first_sample_idx + estimator->num_samples) %
-                        GRPC_BDP_SAMPLES];
 }
 
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
@@ -74,7 +57,7 @@ bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
     case GRPC_BDP_PING_SCHEDULED:
       return false;
     case GRPC_BDP_PING_STARTED:
-      *sampling(estimator) += num_bytes;
+      estimator->accumulator += num_bytes;
       return false;
   }
   GPR_UNREACHABLE_CODE(return false);
@@ -88,15 +71,14 @@ void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator) {
 void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
   GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_SCHEDULED);
   estimator->ping_state = GRPC_BDP_PING_STARTED;
-  if (estimator->num_samples == GRPC_BDP_SAMPLES) {
-    estimator->first_sample_idx++;
-    estimator->num_samples--;
-  }
-  *sampling(estimator) = 0;
+  estimator->accumulator = 0;
 }
 
 void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
   GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_STARTED);
-  estimator->num_samples++;
+  if (estimator->accumulator > 2 * estimator->estimate / 3) {
+    estimator->estimate *= 2;
+    gpr_log(GPR_DEBUG, "est --> %" PRId64, estimator->estimate);
+  }
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
 }

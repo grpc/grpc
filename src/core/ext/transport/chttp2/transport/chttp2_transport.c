@@ -252,8 +252,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_bdp_estimator_init(&t->bdp_estimator);
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
   t->last_pid_update = t->last_bdp_ping_finished;
-  grpc_pid_controller_init(&t->pid_controller, 16, 8, 0);
-  t->bdp_guess = DEFAULT_WINDOW;
+  grpc_pid_controller_init(&t->pid_controller, 4, 4, 0);
+  t->log2_bdp_guess = log2(DEFAULT_WINDOW);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
@@ -1897,26 +1897,29 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     int64_t estimate = -1;
     double bdp_error = 0.0;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-      bdp_error = 2.0 * (double)estimate - t->bdp_guess;
+      double target = (double)estimate;
+      double memory_pressure = grpc_resource_quota_get_memory_pressure(
+          grpc_resource_user_get_quota(grpc_endpoint_get_resource_user(t->ep)));
+      if (memory_pressure > 0.8) {
+        target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+      }
+      bdp_error = target > 0 ? log2(target) - t->log2_bdp_guess
+                             : GPR_MIN(0, -t->log2_bdp_guess);
+      gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+      gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
+      double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+      if (dt > 3) {
+        grpc_pid_controller_reset(&t->pid_controller);
+      }
+      t->log2_bdp_guess +=
+          grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+      t->log2_bdp_guess = GPR_CLAMP(t->log2_bdp_guess, -5, 21);
+      gpr_log(GPR_DEBUG, "%s: err=%lf cur=%lf pressure=%lf target=%lf",
+              t->peer_string, bdp_error, t->log2_bdp_guess, memory_pressure,
+              target);
+      update_bdp(exec_ctx, t, pow(2, t->log2_bdp_guess));
+      t->last_pid_update = now;
     }
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-    double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-    if (dt > 3) {
-      grpc_pid_controller_reset(&t->pid_controller);
-    }
-    double memory_pressure = grpc_resource_quota_get_memory_pressure(
-        grpc_resource_user_get_quota(grpc_endpoint_get_resource_user(t->ep)));
-    if (memory_pressure > 0.8) {
-      bdp_error -= GPR_MAX(0, t->bdp_guess) * (memory_pressure - 0.8) / 0.2;
-    }
-    if (t->bdp_guess < 1e-6 && bdp_error < 0) {
-      bdp_error = 0;
-    }
-    t->bdp_guess +=
-        grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-    update_bdp(exec_ctx, t, t->bdp_guess);
-    t->last_pid_update = now;
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");
@@ -1929,19 +1932,21 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_TIMER_END("reading_action_locked", 0);
 }
 
+static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                  grpc_error *error) {
+  grpc_chttp2_transport *t = tp;
+  gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
+  grpc_bdp_estimator_start_ping(&t->bdp_estimator);
+}
+
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                    grpc_error *error) {
   grpc_chttp2_transport *t = tp;
+  gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
-}
-
-static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
-                                  grpc_error *error) {
-  grpc_chttp2_transport *t = tp;
-  grpc_bdp_estimator_start_ping(&t->bdp_estimator);
 }
 
 /*******************************************************************************
