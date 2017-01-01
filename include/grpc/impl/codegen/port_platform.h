@@ -281,6 +281,28 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__CYGWIN__)
+#define GPR_PLATFORM_STRING "cygwin"
+#define GPR_CYGWIN 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_CPU_POSIX 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_TIME 1
+#define GRPC_POSIX_SOCKET 1
+#define GRPC_POSIX_SOCKETADDR 1
+#ifdef __clang__
+#define GPR_PTHREAD_TLS 1
+#else /* __clang__ */
+#define GPR_GCC_TLS 1
+#endif /* __clang__ */
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #else
 #error "Could not auto-detect platform"
 #endif

@@ -116,6 +116,10 @@
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
 #define GRPC_TIMER_USE_GENERIC 1
+#elif defined(GPR_CYGWIN)
+#define GRPC_TIMER_USE_GENERIC 1
+#define GRPC_POSIX_WAKEUP_FD 1
+#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #elif !defined(GPR_NO_AUTODETECT_PLATFORM)
 #error "Platform not recognized"
 #endif
