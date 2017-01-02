@@ -1670,14 +1670,16 @@ function(protobuf_generate_grpc_cpp SRCS HDRS)
     # top level source directory. See comment above.
     file(RELATIVE_PATH REL_FIL ${CMAKE_SOURCE_DIR} ${ABS_FIL})
 
-    # OUT_DIR: The output directory
+    # OUT_DIR: where to put the generated files
     #
     # NOTE
     # ----
     # Even though we only feed ${CMAKE_BINARY_DIR} to the --grpc_out option
-    # below, the `protoc` will still recreate the subdirectory structure of
-    # ${CMAKE_SOURCE_DIR} below the ${CMAKE_BINARY_DIR}. We have to reflect
-    # this.
+    # below, THIS IS NOT where the generated files are placed. The `protoc`
+    # tool creates a subdirectory hierarchy below ${CMAKE_BINARY_DIR). The
+    # created paths start from the protoc's working directory -
+    # ${CMAKE_SOURCE_DIR} - and end at the location of the .proto file. We have
+    # to reflect this.
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(OUT_DIR "${CMAKE_BINARY_DIR}/${REL_DIR}")
 
