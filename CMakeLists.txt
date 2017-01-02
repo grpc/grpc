@@ -522,6 +522,10 @@ target_link_libraries(grpc
   ${_gRPC_ZLIB_LIBRARIES}
   gpr
 )
+if(UNIX)
+  find_package(Threads REQUIRED)
+  target_link_libraries(grpc Threads::Threads)
+endif()
 
 foreach(_hdr
   include/grpc/byte_buffer.h
