@@ -162,8 +162,8 @@ elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
 endif()
 
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11 -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 endif()
 
 if(WIN32 AND MSVC)
