@@ -1618,8 +1618,6 @@ if (gRPC_INSTALL)
   )
 endif()
 
-find_program(_gRPC_GRPC_CPP_PLUGIN grpc_cpp_plugin)
-
 #  protobuf_generate_grpc_cpp
 #  --------------------------
 #
@@ -1695,7 +1693,7 @@ function(protobuf_generate_grpc_cpp SRCS HDRS)
       COMMAND ${_gRPC_PROTOBUF_PROTOC}
       ARGS --grpc_out=${CMAKE_BINARY_DIR}
            --cpp_out=${CMAKE_BINARY_DIR}
-           --plugin=protoc-gen-grpc=${_gRPC_GRPC_CPP_PLUGIN}
+           --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
