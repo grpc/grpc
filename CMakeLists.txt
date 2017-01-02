@@ -260,15 +260,21 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
 )
@@ -1184,10 +1190,13 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue.h
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/config_protobuf.h
+  include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/grpc_library.h
   include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/rpc_method.h
   include/grpc++/impl/codegen/rpc_service_method.h
   include/grpc++/impl/codegen/security/auth_context.h
@@ -1195,12 +1204,14 @@ foreach(_hdr
   include/grpc++/impl/codegen/server_context.h
   include/grpc++/impl/codegen/server_interface.h
   include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/thrift_serializer.h
+  include/grpc++/impl/codegen/thrift_utils.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
