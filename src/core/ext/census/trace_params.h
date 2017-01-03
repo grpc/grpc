@@ -31,19 +31,25 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CENSUS_TRACE_STRING_H
-#define GRPC_CORE_EXT_CENSUS_TRACE_STRING_H
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_PARAMS_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_PARAMS_H
 
-#include <grpc/slice.h>
+/* TODO(jsking): The exact number and type of trace parameters are still
+   being defined, and are subject to change. */
 
-/* String struct for tracing messages. Since this is a C API, we do not have
-   access to a string class.  This is intended for use by higher level
-   languages which wrap around the C API, as most of them have a string class.
-   This will also be more efficient when copying, as we have an explicitly
-   specified length.  Also, grpc_slice has reference counting which allows for
-   interning. */
-typedef struct trace_string {
-  grpc_slice string_slice;
-} trace_string;
+/* Global parameters controlling tracing. */
+typedef struct trace_params {
+  /* Control sampling probability. The argument must be in the range [0.0, 1.0].
+     For all new traces, the probability the trace will be sampled is
+     1/probability (a value of 1.0 indicates all traces will be
+     sampled, a value of 0.0 that none of them will be). */
+  double sampling_probability;
+} trace_params;
+
+/* Get the current global tracing parameters. */
+trace_params trace_get_trace_params();
+
+/* Set the current global tracing parameters. */
+void trace_set_trace_params(trace_params *params);
 
 #endif

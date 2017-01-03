@@ -36,7 +36,7 @@
 
 #include "src/core/ext/census/trace_string.h"
 
-/* Stores a status code and status message for a trace. */
+/* Stores a status code and status message for a trace span. */
 typedef struct trace_status {
   int errorCode;
   trace_string errorMessage;

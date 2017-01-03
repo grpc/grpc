@@ -35,8 +35,12 @@
 #define GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H
 
 #include "src/core/ext/census/trace_string.h"
+#include <stdbool.h>
 
-/* Trace label (key/value pair) stores a label name and the label value. */
+/* Trace label (key/value pair) stores a label name and the label value. The
+   key is a string and the value will be one of either string, int64, or bool.
+   value_type marks which type is set.
+*/
 typedef struct trace_label {
   trace_string key;
   enum label_type {

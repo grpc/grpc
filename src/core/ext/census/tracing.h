@@ -34,11 +34,18 @@
 #ifndef GRPC_CORE_EXT_CENSUS_TRACING_H
 #define GRPC_CORE_EXT_CENSUS_TRACING_H
 
-#include <grpc/support/time.h>
-#include <stdbool.h>
 #include "src/core/ext/census/trace_context.h"
 #include "src/core/ext/census/trace_label.h"
 #include "src/core/ext/census/trace_status.h"
+#include <grpc/support/time.h>
+#include <stdbool.h>
+
+/* These API functions deal with the creation/termination and annotation of
+   trace spans.  Spans can be created from a previous span parent span
+   (remote/local) or a from a NULL parent in which case a new trace is created.
+   Annotations, labels, and network events can be added to the spans. The span
+   context contains all the relevant user information about a span, namely the
+   trace ID, span ID, and option flags. */
 
 typedef struct trace_span_context {
   /* Trace span context stores Span ID, Trace ID, and option flags. */
@@ -77,18 +84,15 @@ void trace_add_span_annotation(const trace_string description,
   to be used by RPC systems (either client or server), not by higher level
   applications. The timestamp type will be system-defined, the sent argument
   designates whether this is a network send event (client request, server
-  reply)or receive (server request, client reply). The id argument corresponds
-  to Span.Annotation.NetworkEvent.id from the data model, and serves to uniquely
-  identify each network
-  message. */
+  reply) or receive (server request, client reply). The id argument serves to
+  uniquely identify each network message. */
 void trace_add_span_network_event(const trace_string description,
                                   const trace_label *labels,
                                   const size_t n_labels,
                                   const gpr_timespec timestamp, bool sent,
                                   uint64_t id, trace_span_context *span_ctxt);
 
-/* Add a set of labels to the Span. These will correspond to the field
-Span.labels in the data model. */
+/* Add a set of labels to the Span. */
 void trace_add_span_labels(const trace_label *labels, const size_t n_labels,
                            trace_span_context *span_ctxt);
 
