@@ -124,7 +124,8 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
                                   grpc_transport_stream_op* op) {
   deadline_state->next_on_complete = op->on_complete;
-  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state);
+  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state,
+                    grpc_schedule_on_exec_ctx);
   op->on_complete = &deadline_state->on_complete;
 }
 
@@ -173,8 +174,9 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     struct start_timer_after_init_state* state = gpr_malloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
-    grpc_closure_init(&state->closure, start_timer_after_init, state);
-    grpc_exec_ctx_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_init(&state->closure, start_timer_after_init, state,
+                      grpc_schedule_on_exec_ctx);
+    grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -291,7 +293,8 @@ static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
       calld->next_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
       calld->recv_initial_metadata = op->recv_initial_metadata;
       grpc_closure_init(&calld->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, elem);
+                        recv_initial_metadata_ready, elem,
+                        grpc_schedule_on_exec_ctx);
       op->recv_initial_metadata_ready = &calld->recv_initial_metadata_ready;
     }
     // Make sure we know when the call is complete, so that we can cancel

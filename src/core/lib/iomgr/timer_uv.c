@@ -55,7 +55,7 @@ void run_expired_timer(uv_timer_t *handle) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GPR_ASSERT(!timer->triggered);
   timer->triggered = 1;
-  grpc_exec_ctx_sched(&exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(&exec_ctx, &timer->closure, GRPC_ERROR_NONE);
   stop_uv_timer(handle);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -65,10 +65,11 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      void *timer_cb_arg, gpr_timespec now) {
   uint64_t timeout;
   uv_timer_t *uv_timer;
-  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg);
+  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg,
+                    grpc_schedule_on_exec_ctx);
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
-    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE);
     return;
   }
   timer->triggered = 0;
@@ -83,7 +84,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   if (!timer->triggered) {
     timer->triggered = 1;
-    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
+    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED);
     stop_uv_timer((uv_timer_t *)timer->uv_timer);
   }
 }

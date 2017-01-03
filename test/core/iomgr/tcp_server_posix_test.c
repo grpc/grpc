@@ -104,7 +104,7 @@ static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
 static void server_weak_ref_init(server_weak_ref *weak_ref) {
   weak_ref->server = NULL;
   grpc_closure_init(&weak_ref->server_shutdown, server_weak_ref_shutdown,
-                    weak_ref);
+                    weak_ref, grpc_schedule_on_exec_ctx);
 }
 
 /* Make weak_ref->server_shutdown a shutdown_starting cb on server.
@@ -366,7 +366,8 @@ int main(int argc, char **argv) {
   test_connect(1);
   test_connect(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
