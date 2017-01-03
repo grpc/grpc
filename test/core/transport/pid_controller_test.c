@@ -45,7 +45,7 @@
 static void test_noop(void) {
   gpr_log(GPR_INFO, "test_noop");
   grpc_pid_controller pid;
-  grpc_pid_controller_init(&pid, 1, 1, 1);
+  grpc_pid_controller_init(&pid, 0, 1, 1, 1);
 }
 
 static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
@@ -55,15 +55,14 @@ static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
           "start=%lf",
           gain_p, gain_i, gain_d, dt, set_point, start);
   grpc_pid_controller pid;
-  grpc_pid_controller_init(&pid, 0.2, 0.1, 0.1);
-
-  double current = start;
+  grpc_pid_controller_init(&pid, start, 0.2, 0.1, 0.1);
 
   for (int i = 0; i < 1000; i++) {
-    current += grpc_pid_controller_update(&pid, set_point - current, 1);
+    grpc_pid_controller_update(&pid, set_point - grpc_pid_controller_last(&pid),
+                               1);
   }
 
-  GPR_ASSERT(fabs(set_point - current) < 0.1);
+  GPR_ASSERT(fabs(set_point - grpc_pid_controller_last(&pid)) < 0.1);
   GPR_ASSERT(fabs(pid.error_integral) < 0.1);
 }
 

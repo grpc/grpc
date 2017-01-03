@@ -252,8 +252,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_bdp_estimator_init(&t->bdp_estimator);
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
   t->last_pid_update = t->last_bdp_ping_finished;
-  grpc_pid_controller_init(&t->pid_controller, 4, 4, 0);
-  t->log2_bdp_guess = log2(DEFAULT_WINDOW);
+  grpc_pid_controller_init(&t->pid_controller, log2(DEFAULT_WINDOW), 4, 4, 0);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
@@ -1903,21 +1902,22 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       if (memory_pressure > 0.8) {
         target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
       }
-      bdp_error = target > 0 ? log2(target) - t->log2_bdp_guess
-                             : GPR_MIN(0, -t->log2_bdp_guess);
+      bdp_error =
+          target > 0
+              ? log2(target) - grpc_pid_controller_last(&t->pid_controller)
+              : GPR_MIN(0, -grpc_pid_controller_last(&t->pid_controller));
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
       double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
       if (dt > 3) {
         grpc_pid_controller_reset(&t->pid_controller);
       }
-      t->log2_bdp_guess +=
+      double log2_bdp_guess =
           grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-      t->log2_bdp_guess = GPR_CLAMP(t->log2_bdp_guess, -5, 21);
       gpr_log(GPR_DEBUG, "%s: err=%lf cur=%lf pressure=%lf target=%lf",
-              t->peer_string, bdp_error, t->log2_bdp_guess, memory_pressure,
+              t->peer_string, bdp_error, log2_bdp_guess, memory_pressure,
               target);
-      update_bdp(exec_ctx, t, pow(2, t->log2_bdp_guess));
+      update_bdp(exec_ctx, t, pow(2, log2_bdp_guess));
       t->last_pid_update = now;
     }
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");

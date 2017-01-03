@@ -47,18 +47,24 @@ typedef struct {
   double gain_d;
   double last_error;
   double error_integral;
+  double last_control_value;
+  double last_dc_dt;
 } grpc_pid_controller;
 
 /** Initialize the controller */
 void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              double gain_p, double gain_i, double gain_d);
+                              double initial_control_value, double gain_p,
+                              double gain_i, double gain_d);
 
 /** Reset the controller: useful when things have changed significantly */
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
 
 /** Update the controller: given a current error estimate, and the time since
-    the last update, returns a delta to the control value */
+    the last update, returns a new control value */
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt);
+
+/** Returns the last control value calculated */
+double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
 
 #endif
