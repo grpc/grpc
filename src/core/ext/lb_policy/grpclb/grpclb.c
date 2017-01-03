@@ -181,8 +181,7 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
   wrapped_rr_closure_arg *wc_arg = arg;
 
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-  grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
 
   if (wc_arg->rr_policy != NULL) {
     /* if *target is NULL, no pick has been made by the RR policy (eg, all
@@ -249,7 +248,8 @@ static void add_pending_pick(pending_pick **root,
       pick_args->lb_token_mdelem_storage;
   pp->wrapped_on_complete_arg.free_when_done = pp;
   grpc_closure_init(&pp->wrapped_on_complete_arg.wrapper_closure,
-                    wrapped_rr_closure, &pp->wrapped_on_complete_arg);
+                    wrapped_rr_closure, &pp->wrapped_on_complete_arg,
+                    grpc_schedule_on_exec_ctx);
   *root = pp;
 }
 
@@ -269,7 +269,8 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   pping->wrapped_notify_arg.free_when_done = pping;
   pping->next = *root;
   grpc_closure_init(&pping->wrapped_notify_arg.wrapper_closure,
-                    wrapped_rr_closure, &pping->wrapped_notify_arg);
+                    wrapped_rr_closure, &pping->wrapped_notify_arg,
+                    grpc_schedule_on_exec_ctx);
   *root = pping;
 }
 
@@ -669,7 +670,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
       gpr_malloc(sizeof(rr_connectivity_data));
   memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
   grpc_closure_init(&rr_connectivity->on_change, glb_rr_connectivity_changed,
-                    rr_connectivity);
+                    rr_connectivity, grpc_schedule_on_exec_ctx);
   rr_connectivity->glb_policy = glb_policy;
   rr_connectivity->state = new_rr_state;
 
@@ -910,15 +911,15 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+                       GRPC_ERROR_NONE);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+                       GRPC_ERROR_NONE);
     pping = next;
   }
 }
@@ -934,9 +935,9 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -959,9 +960,9 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->pick_args.initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -996,11 +997,10 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                     grpc_closure *on_complete) {
   if (pick_args->lb_token_mdelem_storage == NULL) {
     *target = NULL;
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, on_complete,
         GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
-                          "won't work without it. Failing"),
-        NULL);
+                          "won't work without it. Failing"));
     return 0;
   }
 
@@ -1019,7 +1019,8 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     wrapped_rr_closure_arg *wc_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
     memset(wc_arg, 0, sizeof(wrapped_rr_closure_arg));
 
-    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg);
+    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
+                      grpc_schedule_on_exec_ctx);
     wc_arg->rr_policy = glb_policy->rr_policy;
     wc_arg->target = target;
     wc_arg->wrapped_closure = on_complete;
@@ -1120,9 +1121,11 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
   glb_policy->lb_call_status_details_capacity = 0;
 
   grpc_closure_init(&glb_policy->lb_on_server_status_received,
-                    lb_on_server_status_received, glb_policy);
+                    lb_on_server_status_received, glb_policy,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&glb_policy->lb_on_response_received,
-                    lb_on_response_received, glb_policy);
+                    lb_on_response_received, glb_policy,
+                    grpc_schedule_on_exec_ctx);
 
   gpr_backoff_init(&glb_policy->lb_call_backoff_state,
                    GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS,
