@@ -830,7 +830,8 @@ static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 
 static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
   polling_island *pi = (polling_island *)workqueue;
-  return &pi->workqueue_scheduler;
+  return workqueue == NULL ? grpc_schedule_on_exec_ctx
+                           : &pi->workqueue_scheduler;
 }
 
 static grpc_error *polling_island_global_init() {

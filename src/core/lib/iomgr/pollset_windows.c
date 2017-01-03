@@ -167,8 +167,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_closure_sched(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE,
-                            NULL);
+        grpc_closure_sched(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE);
         pollset->on_shutdown = NULL;
       }
       goto done;
