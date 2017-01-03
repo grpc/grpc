@@ -1894,18 +1894,14 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     }
 
     int64_t estimate = -1;
-    double bdp_error = 0.0;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-      double target = (double)estimate;
+      double target = log2(estimate);
       double memory_pressure = grpc_resource_quota_get_memory_pressure(
           grpc_resource_user_get_quota(grpc_endpoint_get_resource_user(t->ep)));
       if (memory_pressure > 0.8) {
         target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
       }
-      bdp_error =
-          target > 0
-              ? log2(target) - grpc_pid_controller_last(&t->pid_controller)
-              : GPR_MIN(0, -grpc_pid_controller_last(&t->pid_controller));
+      double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
       double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
