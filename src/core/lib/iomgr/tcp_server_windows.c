@@ -165,8 +165,9 @@ static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
     grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s, grpc_schedule_on_exec_ctx),
-                      GRPC_ERROR_NONE);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {

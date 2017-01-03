@@ -244,7 +244,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (tcp->shutting_down) {
     grpc_closure_sched(exec_ctx, cb,
-                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
+                       GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
 
