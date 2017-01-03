@@ -165,8 +165,9 @@ static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
     grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s),
-                      GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
@@ -204,7 +205,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
