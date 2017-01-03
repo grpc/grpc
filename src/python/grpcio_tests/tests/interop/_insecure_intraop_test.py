@@ -27,38 +27,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Common code for unit tests of the interoperability test code."""
+"""Insecure client-server interoperability as a unit test."""
 
+from concurrent import futures
+import unittest
+
+import grpc
+from src.proto.grpc.testing import test_pb2
+
+from tests.interop import _intraop_test_case
 from tests.interop import methods
+from tests.interop import server
 
 
-class InteropTestCase(object):
-  """Unit test methods.
+class InsecureIntraopTest(
+    _intraop_test_case.IntraopTestCase,
+    unittest.TestCase):
 
-  This class must be mixed in with unittest.TestCase and a class that defines
-  setUp and tearDown methods that manage a stub attribute.
-  """
+  def setUp(self):
+    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    test_pb2.add_TestServiceServicer_to_server(
+        methods.TestService(), self.server)
+    port = self.server.add_insecure_port('[::]:0')
+    self.server.start()
+    self.stub = test_pb2.TestServiceStub(
+        grpc.insecure_channel('localhost:{}'.format(port)))
 
-  def testEmptyUnary(self):
-    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
 
-  def testLargeUnary(self):
-    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
-
-  def testServerStreaming(self):
-    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
-
-  def testClientStreaming(self):
-    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
-
-  def testPingPong(self):
-    methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
-
-  def testCancelAfterBegin(self):
-    methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
-
-  def testCancelAfterFirstResponse(self):
-    methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)
-
-  def testTimeoutOnSleepingServer(self):
-    methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(self.stub, None)
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

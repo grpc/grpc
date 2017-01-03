@@ -166,6 +166,13 @@ static const char claims_without_time_constraint[] =
     "  \"jti\": \"jwtuniqueid\","
     "  \"foo\": \"bar\"}";
 
+static const char claims_with_bad_subject[] =
+    "{ \"aud\": \"https://foo.com\","
+    "  \"iss\": \"evil@blah.foo.com\","
+    "  \"sub\": \"juju@blah.foo.com\","
+    "  \"jti\": \"jwtuniqueid\","
+    "  \"foo\": \"bar\"}";
+
 static const char invalid_claims[] =
     "{ \"aud\": \"https://foo.com\","
     "  \"iss\": 46," /* Issuer cannot be a number. */
@@ -178,6 +185,38 @@ typedef struct {
   const char *expected_issuer;
   const char *expected_subject;
 } verifier_test_config;
+
+static void test_jwt_issuer_email_domain(void) {
+  const char *d = grpc_jwt_issuer_email_domain("https://foo.com");
+  GPR_ASSERT(d == NULL);
+  d = grpc_jwt_issuer_email_domain("foo.com");
+  GPR_ASSERT(d == NULL);
+  d = grpc_jwt_issuer_email_domain("");
+  GPR_ASSERT(d == NULL);
+  d = grpc_jwt_issuer_email_domain("@");
+  GPR_ASSERT(d == NULL);
+  d = grpc_jwt_issuer_email_domain("bar@foo");
+  GPR_ASSERT(strcmp(d, "foo") == 0);
+  d = grpc_jwt_issuer_email_domain("bar@foo.com");
+  GPR_ASSERT(strcmp(d, "foo.com") == 0);
+  d = grpc_jwt_issuer_email_domain("bar@blah.foo.com");
+  GPR_ASSERT(strcmp(d, "foo.com") == 0);
+  d = grpc_jwt_issuer_email_domain("bar.blah@blah.foo.com");
+  GPR_ASSERT(strcmp(d, "foo.com") == 0);
+  d = grpc_jwt_issuer_email_domain("bar.blah@baz.blah.foo.com");
+  GPR_ASSERT(strcmp(d, "foo.com") == 0);
+
+  /* This is not a very good parser but make sure we do not crash on these weird
+     inputs. */
+  d = grpc_jwt_issuer_email_domain("@foo");
+  GPR_ASSERT(strcmp(d, "foo") == 0);
+  d = grpc_jwt_issuer_email_domain("bar@.");
+  GPR_ASSERT(d != NULL);
+  d = grpc_jwt_issuer_email_domain("bar@..");
+  GPR_ASSERT(d != NULL);
+  d = grpc_jwt_issuer_email_domain("bar@...");
+  GPR_ASSERT(d != NULL);
+}
 
 static void test_claims_success(void) {
   grpc_jwt_claims *claims;
@@ -248,6 +287,19 @@ static void test_bad_audience_claims_failure(void) {
              GRPC_JWT_VERIFIER_BAD_AUDIENCE);
   grpc_jwt_claims_destroy(&exec_ctx, claims);
   grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static void test_bad_subject_claims_failure(void) {
+  grpc_jwt_claims *claims;
+  grpc_slice s = grpc_slice_from_copied_string(claims_with_bad_subject);
+  grpc_json *json = grpc_json_parse_string_with_len(
+      (char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+  GPR_ASSERT(json != NULL);
+  claims = grpc_jwt_claims_from_json(json, s);
+  GPR_ASSERT(claims != NULL);
+  GPR_ASSERT(grpc_jwt_claims_check(claims, "https://foo.com") ==
+             GRPC_JWT_VERIFIER_BAD_SUBJECT);
+  grpc_jwt_claims_destroy(claims);
 }
 
 static char *json_key_str(const char *last_part) {
@@ -577,10 +629,12 @@ static void test_jwt_verifier_bad_format(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  test_jwt_issuer_email_domain();
   test_claims_success();
   test_expired_claims_failure();
   test_invalid_claims_failure();
   test_bad_audience_claims_failure();
+  test_bad_subject_claims_failure();
   test_jwt_verifier_google_email_issuer_success();
   test_jwt_verifier_custom_email_issuer_success();
   test_jwt_verifier_url_issuer_success();
