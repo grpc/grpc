@@ -37,6 +37,7 @@
 struct grpc_resource_quota;
 
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/grpc_library.h>
 
 namespace grpc {
 
@@ -44,7 +45,7 @@ namespace grpc {
 /// A ResourceQuota can be attached to a server (via ServerBuilder), or a client
 /// channel (via ChannelArguments). gRPC will attempt to keep memory used by
 /// all attached entities below the ResourceQuota bound.
-class ResourceQuota final {
+class ResourceQuota final : private GrpcLibraryCodegen {
  public:
   explicit ResourceQuota(const grpc::string& name);
   ResourceQuota();
