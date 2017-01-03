@@ -191,7 +191,8 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset, grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

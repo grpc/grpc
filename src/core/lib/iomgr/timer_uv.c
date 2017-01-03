@@ -65,7 +65,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      void *timer_cb_arg, gpr_timespec now) {
   uint64_t timeout;
   uv_timer_t *uv_timer;
-  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg, grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg,
+                    grpc_schedule_on_exec_ctx);
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
     grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE);
