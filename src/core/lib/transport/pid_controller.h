@@ -45,16 +45,23 @@ typedef struct {
   double gain_p;
   double gain_i;
   double gain_d;
+  double initial_control_value;
+  double min_control_value;
+  double max_control_value;
+  double integral_range;
+} grpc_pid_controller_args;
+
+typedef struct {
   double last_error;
   double error_integral;
   double last_control_value;
   double last_dc_dt;
+  grpc_pid_controller_args args;
 } grpc_pid_controller;
 
 /** Initialize the controller */
 void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              double initial_control_value, double gain_p,
-                              double gain_i, double gain_d);
+                              grpc_pid_controller_args args);
 
 /** Reset the controller: useful when things have changed significantly */
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
