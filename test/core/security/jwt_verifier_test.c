@@ -295,11 +295,13 @@ static void test_bad_subject_claims_failure(void) {
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != NULL);
-  claims = grpc_jwt_claims_from_json(json, s);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  claims = grpc_jwt_claims_from_json(&exec_ctx, json, s);
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://foo.com") ==
              GRPC_JWT_VERIFIER_BAD_SUBJECT);
-  grpc_jwt_claims_destroy(claims);
+  grpc_jwt_claims_destroy(&exec_ctx, claims);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static char *json_key_str(const char *last_part) {
