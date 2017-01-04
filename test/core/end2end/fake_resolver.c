@@ -87,7 +87,7 @@ static void fake_resolver_shutdown(grpc_exec_ctx* exec_ctx,
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -100,7 +100,7 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
     *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
   }
 }
@@ -140,7 +140,8 @@ static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
 
 static void do_nothing(void* ignored) {}
 
-static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
+static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
+                                           grpc_resolver_factory* factory,
                                            grpc_resolver_args* args) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
@@ -181,12 +182,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   // Instantiate resolver.
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
-  grpc_arg server_name_arg;
-  server_name_arg.type = GRPC_ARG_STRING;
-  server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = args->uri->path;
-  r->channel_args =
-      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
   r->addresses = addresses;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable);

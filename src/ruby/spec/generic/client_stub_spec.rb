@@ -190,15 +190,14 @@ describe 'ClientStub' do
         end
         creds = GRPC::Core::CallCredentials.new(failing_auth)
 
-        error_occured = false
+        unauth_error_occured = false
         begin
           get_response(stub, credentials: creds)
-        rescue GRPC::BadStatus => e
-          error_occured = true
-          expect(e.code).to eq(GRPC::Core::StatusCodes::UNAUTHENTICATED)
+        rescue GRPC::Unauthenticated => e
+          unauth_error_occured = true
           expect(e.details.include?(error_message)).to be true
         end
-        expect(error_occured).to eq(true)
+        expect(unauth_error_occured).to eq(true)
 
         # Kill the server thread so tests can complete
         th.kill

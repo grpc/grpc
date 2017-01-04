@@ -371,9 +371,9 @@ int main(int argc, char** argv) {
   }
 
   // Start metrics server before waiting for the stress test threads
+  std::unique_ptr<grpc::Server> metrics_server;
   if (FLAGS_metrics_port > 0) {
-    std::unique_ptr<grpc::Server> metrics_server =
-        metrics_service.StartServer(FLAGS_metrics_port);
+    metrics_server = metrics_service.StartServer(FLAGS_metrics_port);
   }
 
   // Wait for the stress test threads to complete

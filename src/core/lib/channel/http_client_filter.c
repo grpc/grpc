@@ -352,12 +352,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->send_message_blocked = false;
   grpc_slice_buffer_init(&calld->slices);
   grpc_closure_init(&calld->hc_on_recv_initial_metadata,
-                    hc_on_recv_initial_metadata, elem);
+                    hc_on_recv_initial_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&calld->hc_on_recv_trailing_metadata,
-                    hc_on_recv_trailing_metadata, elem);
-  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem);
-  grpc_closure_init(&calld->got_slice, got_slice, elem);
-  grpc_closure_init(&calld->send_done, send_done, elem);
+                    hc_on_recv_trailing_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->got_slice, got_slice, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->send_done, send_done, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
@@ -457,9 +462,9 @@ static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args,
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != NULL);
@@ -470,6 +475,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
       GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
                            args->optional_transport->vtable->name));
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */

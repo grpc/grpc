@@ -179,8 +179,8 @@ describe('Server.prototype.addProtoService', function() {
       call.on('data', function(value) {
         assert.fail('No messages expected');
       });
-      call.on('status', function(status) {
-        assert.strictEqual(status.code, grpc.status.UNIMPLEMENTED);
+      call.on('error', function(err) {
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
         done();
       });
       call.on('error', function(status) { /* Do nothing */ });
@@ -190,8 +190,8 @@ describe('Server.prototype.addProtoService', function() {
       call.on('data', function(value) {
         assert.fail('No messages expected');
       });
-      call.on('status', function(status) {
-        assert.strictEqual(status.code, grpc.status.UNIMPLEMENTED);
+      call.on('error', function(err) {
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
         done();
       });
       call.on('error', function(status) { /* Do nothing */ });

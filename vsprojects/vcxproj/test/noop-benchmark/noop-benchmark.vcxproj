@@ -164,8 +164,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\google_benchmark\google_benchmark.vcxproj">
-      <Project>{AAD4AEF3-DF1E-7A6D-EC35-233BD1031BF4}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\benchmark\benchmark.vcxproj">
+      <Project>{07978586-E47C-8709-A63E-895FBF3C3C7D}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

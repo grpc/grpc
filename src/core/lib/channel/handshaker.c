@@ -49,21 +49,21 @@ void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
   handshaker->vtable = vtable;
 }
 
-static void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
-                                    grpc_handshaker* handshaker) {
+void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                             grpc_handshaker* handshaker) {
   handshaker->vtable->destroy(exec_ctx, handshaker);
 }
 
-static void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                                     grpc_handshaker* handshaker) {
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker) {
   handshaker->vtable->shutdown(exec_ctx, handshaker);
 }
 
-static void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
-                                         grpc_handshaker* handshaker,
-                                         grpc_tcp_server_acceptor* acceptor,
-                                         grpc_closure* on_handshake_done,
-                                         grpc_handshaker_args* args) {
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
+                                  grpc_tcp_server_acceptor* acceptor,
+                                  grpc_closure* on_handshake_done,
+                                  grpc_handshaker_args* args) {
   handshaker->vtable->do_handshake(exec_ctx, handshaker, acceptor,
                                    on_handshake_done, args);
 }
@@ -157,14 +157,15 @@ static bool call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
                                         grpc_handshake_manager* mgr,
                                         grpc_error* error) {
   GPR_ASSERT(mgr->index <= mgr->count);
-  // If we got an error or we've been shut down or we've finished the last
-  // handshaker, invoke the on_handshake_done callback.  Otherwise, call the
-  // next handshaker.
-  if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->index == mgr->count) {
+  // If we got an error or we've been shut down or we're exiting early or
+  // we've finished the last handshaker, invoke the on_handshake_done
+  // callback.  Otherwise, call the next handshaker.
+  if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
+      mgr->index == mgr->count) {
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     grpc_timer_cancel(exec_ctx, &mgr->deadline_timer);
-    grpc_exec_ctx_sched(exec_ctx, &mgr->on_handshake_done, error, NULL);
+    grpc_closure_sched(exec_ctx, &mgr->on_handshake_done, error);
     mgr->shutdown = true;
   } else {
     grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->index],
@@ -217,8 +218,10 @@ void grpc_handshake_manager_do_handshake(
   grpc_slice_buffer_init(mgr->args.read_buffer);
   // Initialize state needed for calling handshakers.
   mgr->acceptor = acceptor;
-  grpc_closure_init(&mgr->call_next_handshaker, call_next_handshaker, mgr);
-  grpc_closure_init(&mgr->on_handshake_done, on_handshake_done, &mgr->args);
+  grpc_closure_init(&mgr->call_next_handshaker, call_next_handshaker, mgr,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&mgr->on_handshake_done, on_handshake_done, &mgr->args,
+                    grpc_schedule_on_exec_ctx);
   // Start deadline timer, which owns a ref.
   gpr_ref(&mgr->refs);
   grpc_timer_init(exec_ctx, &mgr->deadline_timer,

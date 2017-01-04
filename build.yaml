@@ -2850,7 +2850,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_fullstack.cc
   deps:
-  - google_benchmark
+  - benchmark
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -3300,7 +3300,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/noop-benchmark.cc
   deps:
-  - google_benchmark
+  - benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -3786,6 +3786,8 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
+  benchmark:
+    CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
       -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
@@ -3794,8 +3796,6 @@ defaults:
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
-  google_benchmark:
-    CPPFLAGS: -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
