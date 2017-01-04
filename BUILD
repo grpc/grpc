@@ -47,6 +47,8 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
   name = "gpr",
   srcs = [
+    "include/grpc/slice.h",
+    "include/grpc/slice_buffer.h",
     "src/core/lib/profiling/timers.h",
     "src/core/lib/support/backoff.h",
     "src/core/lib/support/block_annotate.h",
@@ -143,6 +145,7 @@ cc_library(
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
   ],
+  copts = ["-Wno-implicit-function-declaration"],
   includes = [
     "include",
     ".",
