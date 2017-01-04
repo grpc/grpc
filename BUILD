@@ -1991,28 +1991,6 @@ cc_library(
 
 
 cc_library(
-  name = "grpc++_reflection",
-  srcs = [
-    "src/cpp/ext/proto_server_reflection.h",
-    "src/cpp/ext/proto_server_reflection.cc",
-    "src/cpp/ext/proto_server_reflection_plugin.cc",
-    "src/proto/grpc/reflection/v1alpha/reflection.proto",
-  ],
-  hdrs = [
-    "include/grpc++/ext/proto_server_reflection_plugin.h",
-  ],
-  includes = [
-    "include",
-    ".",
-  ],
-  deps = [
-    ":grpc++",
-  ],
-)
-
-
-
-cc_library(
   name = "grpc++_unsecure",
   srcs = [
     "src/cpp/client/create_channel_internal.h",
