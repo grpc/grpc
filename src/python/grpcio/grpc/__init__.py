@@ -768,8 +768,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     gRPC runtime to determine the status code of the RPC.
 
     Args:
-      code: The integer status code of the RPC to be transmitted to the
-        invocation side of the RPC.
+      code: A StatusCode value to be transmitted to the invocation side of the
+        RPC as the status code of the RPC.
     """
     raise NotImplementedError()
 
@@ -781,8 +781,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     details to transmit.
 
     Args:
-      details: The details string of the RPC to be transmitted to
-        the invocation side of the RPC.
+      details: A string to be transmitted to the invocation side of the RPC as
+        the status details of the RPC.
     """
     raise NotImplementedError()
 

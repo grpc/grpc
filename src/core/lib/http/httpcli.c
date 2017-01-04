@@ -278,6 +278,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   grpc_polling_entity_add_to_pollset_set(exec_ctx, req->pollent,
                                          req->context->pollset_set);
   grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
+                       req->context->pollset_set,
                        grpc_closure_create(on_resolved, req), &req->addresses);
 }
 

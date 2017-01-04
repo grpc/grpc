@@ -86,87 +86,90 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *input_args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport *optional_transport) {
-  bool is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-
   grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_channel_stack_builder_set_channel_arguments(builder, input_args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  grpc_channel *channel;
-  grpc_channel_args *args;
   if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     return NULL;
-  } else {
-    args = grpc_channel_args_copy(
-        grpc_channel_stack_builder_get_channel_arguments(builder));
-    channel = grpc_channel_stack_builder_finish(
-        exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL);
+  }
+  grpc_channel_args *args = grpc_channel_args_copy(
+      grpc_channel_stack_builder_get_channel_arguments(builder));
+  grpc_channel *channel;
+  grpc_error *error = grpc_channel_stack_builder_finish(
+      exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
+      (void **)&channel);
+  if (error != GRPC_ERROR_NONE) {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "channel stack builder failed: %s", msg);
+    grpc_error_free_string(msg);
+    GRPC_ERROR_UNREF(error);
+    goto done;
   }
 
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
-  channel->is_client = is_client;
+  channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
   grpc_compression_options_init(&channel->compression_options);
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
-        if (args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                  GRPC_ARG_DEFAULT_AUTHORITY);
+
+  for (size_t i = 0; i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
+                GRPC_ARG_DEFAULT_AUTHORITY);
+      } else {
+        if (channel->default_authority) {
+          /* setting this takes precedence over anything else */
+          GRPC_MDELEM_UNREF(channel->default_authority);
+        }
+        channel->default_authority =
+            grpc_mdelem_from_strings(":authority", args->args[i].value.string);
+      }
+    } else if (0 ==
+               strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
+                GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+      } else {
+        if (channel->default_authority) {
+          /* other ways of setting this (notably ssl) take precedence */
+          gpr_log(GPR_ERROR,
+                  "%s ignored: default host already set some other way",
+                  GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
         } else {
-          if (channel->default_authority) {
-            /* setting this takes precedence over anything else */
-            GRPC_MDELEM_UNREF(channel->default_authority);
-          }
           channel->default_authority = grpc_mdelem_from_strings(
               ":authority", args->args[i].value.string);
         }
-      } else if (0 ==
-                 strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-        if (args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                  GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-        } else {
-          if (channel->default_authority) {
-            /* other ways of setting this (notably ssl) take precedence */
-            gpr_log(GPR_ERROR,
-                    "%s ignored: default host already set some other way",
-                    GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-          } else {
-            channel->default_authority = grpc_mdelem_from_strings(
-                ":authority", args->args[i].value.string);
-          }
-        }
-      } else if (0 == strcmp(args->args[i].key,
-                             GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
-        channel->compression_options.default_level.is_set = true;
-        GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                   args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
-        channel->compression_options.default_level.level =
-            (grpc_compression_level)args->args[i].value.integer;
-      } else if (0 == strcmp(args->args[i].key,
-                             GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
-        channel->compression_options.default_algorithm.is_set = true;
-        GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                   args->args[i].value.integer <
-                       GRPC_COMPRESS_ALGORITHMS_COUNT);
-        channel->compression_options.default_algorithm.algorithm =
-            (grpc_compression_algorithm)args->args[i].value.integer;
-      } else if (0 ==
-                 strcmp(args->args[i].key,
-                        GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
-        channel->compression_options.enabled_algorithms_bitset =
-            (uint32_t)args->args[i].value.integer |
-            0x1; /* always support no compression */
       }
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+      channel->compression_options.default_level.is_set = true;
+      GPR_ASSERT(args->args[i].value.integer >= 0 &&
+                 args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
+      channel->compression_options.default_level.level =
+          (grpc_compression_level)args->args[i].value.integer;
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
+      channel->compression_options.default_algorithm.is_set = true;
+      GPR_ASSERT(args->args[i].value.integer >= 0 &&
+                 args->args[i].value.integer < GRPC_COMPRESS_ALGORITHMS_COUNT);
+      channel->compression_options.default_algorithm.algorithm =
+          (grpc_compression_algorithm)args->args[i].value.integer;
+    } else if (0 ==
+               strcmp(args->args[i].key,
+                      GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
+      channel->compression_options.enabled_algorithms_bitset =
+          (uint32_t)args->args[i].value.integer |
+          0x1; /* always support no compression */
     }
-    grpc_channel_args_destroy(args);
   }
 
+done:
+  grpc_channel_args_destroy(args);
   return channel;
 }
 
