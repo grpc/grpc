@@ -316,7 +316,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -460,11 +460,10 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_sched(exec_ctx, cb,
-                        grpc_fd_is_shutdown(tcp->em_fd)
-                            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
-                            : GRPC_ERROR_NONE,
-                        NULL);
+    grpc_closure_sched(exec_ctx, cb,
+                       grpc_fd_is_shutdown(tcp->em_fd)
+                           ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
+                           : GRPC_ERROR_NONE);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -484,7 +483,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       gpr_log(GPR_DEBUG, "write: %s", str);
       grpc_error_free_string(str);
     }
-    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+    grpc_closure_sched(exec_ctx, cb, error);
   }
 
   GPR_TIMER_END("tcp_write", 0);
@@ -552,10 +551,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  tcp->read_closure.cb = tcp_handle_read;
-  tcp->read_closure.cb_arg = tcp;
-  tcp->write_closure.cb = tcp_handle_write;
-  tcp->write_closure.cb_arg = tcp;
+  grpc_closure_init(&tcp->read_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&tcp->write_closure, tcp_handle_write, tcp,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(

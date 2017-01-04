@@ -83,7 +83,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     // Drain any pending UV callbacks without blocking
     uv_run(uv_default_loop(), UV_RUN_NOWAIT);
   }
-  grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {
