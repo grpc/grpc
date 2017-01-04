@@ -217,9 +217,9 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                                        &message);
     grpc_call_next_op(exec_ctx, elem, op);
   }
-  grpc_exec_ctx_sched(
+  grpc_closure_sched(
       exec_ctx, calld->recv_im_ready,
-      GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
+      GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1));
 }
 
 static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
@@ -228,7 +228,8 @@ static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   if (op->recv_initial_metadata != NULL) {
     calld->recv_im_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = grpc_closure_create(recv_im_ready, elem);
+    op->recv_initial_metadata_ready =
+        grpc_closure_create(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
   }
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -243,9 +244,11 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *and_free_memory) {}
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {}
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}

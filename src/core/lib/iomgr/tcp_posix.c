@@ -107,6 +107,12 @@ typedef struct {
   grpc_resource_user_slice_allocator slice_allocator;
 } grpc_tcp;
 
+static grpc_error *tcp_annotate_error(grpc_error *src_error, grpc_tcp *tcp) {
+  return grpc_error_set_str(
+      grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+}
+
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                             grpc_error *error);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -230,13 +236,15 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
     } else {
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      call_read_cb(exec_ctx, tcp, GRPC_OS_ERROR(errno, "recvmsg"));
+      call_read_cb(exec_ctx, tcp,
+                   tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
       TCP_UNREF(exec_ctx, tcp, "read");
     }
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    call_read_cb(exec_ctx, tcp, GRPC_ERROR_CREATE("Socket closed"));
+    call_read_cb(exec_ctx, tcp,
+                 tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
@@ -308,7 +316,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -365,8 +373,13 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
         tcp->outgoing_slice_idx = unwind_slice_idx;
         tcp->outgoing_byte_idx = unwind_byte_idx;
         return false;
+      } else if (errno == EPIPE) {
+        *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
+                                    GRPC_ERROR_INT_GRPC_STATUS,
+                                    GRPC_STATUS_UNAVAILABLE);
+        return true;
       } else {
-        *error = GRPC_OS_ERROR(errno, "sendmsg");
+        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         return true;
       }
     }
@@ -447,10 +460,10 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_sched(exec_ctx, cb, grpc_fd_is_shutdown(tcp->em_fd)
-                                          ? GRPC_ERROR_CREATE("EOF")
-                                          : GRPC_ERROR_NONE,
-                        NULL);
+    grpc_closure_sched(exec_ctx, cb,
+                       grpc_fd_is_shutdown(tcp->em_fd)
+                           ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
+                           : GRPC_ERROR_NONE);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -470,7 +483,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       gpr_log(GPR_DEBUG, "write: %s", str);
       grpc_error_free_string(str);
     }
-    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+    grpc_closure_sched(exec_ctx, cb, error);
   }
 
   GPR_TIMER_END("tcp_write", 0);
@@ -538,10 +551,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  tcp->read_closure.cb = tcp_handle_read;
-  tcp->read_closure.cb_arg = tcp;
-  tcp->write_closure.cb = tcp_handle_write;
-  tcp->write_closure.cb_arg = tcp;
+  grpc_closure_init(&tcp->read_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&tcp->write_closure, tcp_handle_write, tcp,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(

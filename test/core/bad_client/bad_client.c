@@ -148,7 +148,8 @@ void grpc_run_bad_client_test(
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);
-  grpc_closure_init(&done_write_closure, done_write, &a);
+  grpc_closure_init(&done_write_closure, done_write, &a,
+                    grpc_schedule_on_exec_ctx);
 
   /* Write data */
   grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
@@ -175,7 +176,8 @@ void grpc_run_bad_client_test(
       grpc_slice_buffer_init(&args.incoming);
       gpr_event_init(&args.read_done);
       grpc_closure read_done_closure;
-      grpc_closure_init(&read_done_closure, read_done, &args);
+      grpc_closure_init(&read_done_closure, read_done, &args,
+                        grpc_schedule_on_exec_ctx);
       grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
                          &read_done_closure);
       grpc_exec_ctx_finish(&exec_ctx);

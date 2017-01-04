@@ -34,7 +34,9 @@
 #include "src/core/lib/support/string.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -189,6 +191,13 @@ int int64_ttoa(int64_t value, char *string) {
   return i;
 }
 
+int gpr_parse_nonnegative_int(const char *value) {
+  char *end;
+  long result = strtol(value, &end, 0);
+  if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
+  return (int)result;
+}
+
 char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
@@ -265,4 +274,16 @@ int gpr_stricmp(const char *a, const char *b) {
     ++b;
   } while (ca == cb && ca && cb);
   return ca - cb;
+}
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
 }

@@ -109,9 +109,9 @@ class RoundRobinEnd2endTest : public ::testing::Test {
       uri << "127.0.0.1:" << servers_[i]->port_ << ",";
     }
     uri << "127.0.0.1:" << servers_[servers_.size() - 1]->port_;
-    std::shared_ptr<Channel> channel =
+    channel_ =
         CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   void SendRpc(int num_rpcs) {
@@ -165,6 +165,7 @@ class RoundRobinEnd2endTest : public ::testing::Test {
 
   const grpc::string server_host_;
   CompletionQueue cli_cq_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
 };
@@ -186,6 +187,8 @@ TEST_F(RoundRobinEnd2endTest, PickFirst) {
     }
   }
   EXPECT_TRUE(found);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(RoundRobinEnd2endTest, RoundRobin) {
@@ -198,6 +201,8 @@ TEST_F(RoundRobinEnd2endTest, RoundRobin) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
 }  // namespace

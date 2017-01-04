@@ -77,6 +77,9 @@ NOTE: This function ensures sufficient bit width even on Win x64,
 where long is 32bit is size.*/
 int int64_ttoa(int64_t value, char *output);
 
+// Parses a non-negative number from a value string.  Returns -1 on error.
+int gpr_parse_nonnegative_int(const char *value);
+
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
 
@@ -114,6 +117,8 @@ char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
 /** Case insensitive string comparison... return <0 if lower(a)<lower(b), ==0 if
     lower(a)==lower(b), >0 if lower(a)>lower(b) */
 int gpr_stricmp(const char *a, const char *b);
+
+void *gpr_memrchr(const void *s, int c, size_t n);
 
 #ifdef __cplusplus
 }

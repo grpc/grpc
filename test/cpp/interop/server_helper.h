@@ -36,9 +36,11 @@
 
 #include <memory>
 
+#include <grpc/compression.h>
+#include <grpc/impl/codegen/atm.h>
+
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc/compression.h>
 
 namespace grpc {
 namespace testing {
@@ -62,7 +64,7 @@ class InteropServerContextInspector {
 
 namespace interop {
 
-extern bool g_got_sigint;
+extern gpr_atm g_got_sigint;
 void RunServer(std::shared_ptr<ServerCredentials> creds);
 
 }  // namespace interop
