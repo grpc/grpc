@@ -68,7 +68,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }
 }
 
@@ -82,7 +82,7 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg) {
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
-  grpc_closure_init(&refcount->destroy, cb, cb_arg);
+  grpc_closure_init(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
 }
 
 static void move64(uint64_t *from, uint64_t *to) {
@@ -168,11 +168,10 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
-  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
-                      NULL);
-  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
-                      GRPC_ERROR_REF(error), NULL);
-  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
+  grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error));
+  grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
+                     GRPC_ERROR_REF(error));
+  grpc_closure_sched(exec_ctx, op->on_complete, error);
 }
 
 typedef struct {
@@ -196,7 +195,8 @@ static void add_error(grpc_transport_stream_op *op, grpc_error **which,
   cmd = gpr_malloc(sizeof(*cmd));
   cmd->error = error;
   cmd->then_call = op->on_complete;
-  grpc_closure_init(&cmd->closure, free_message, cmd);
+  grpc_closure_init(&cmd->closure, free_message, cmd,
+                    grpc_schedule_on_exec_ctx);
   op->on_complete = &cmd->closure;
   *which = error;
 }
@@ -269,14 +269,14 @@ typedef struct {
 static void destroy_made_transport_op(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
   made_transport_op *op = arg;
-  grpc_exec_ctx_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
   gpr_free(op);
 }
 
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_complete) {
   made_transport_op *op = gpr_malloc(sizeof(*op));
-  grpc_closure_init(&op->outer_on_complete, destroy_made_transport_op, op);
+  grpc_closure_init(&op->outer_on_complete, destroy_made_transport_op, op,
+                    grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
   memset(&op->op, 0, sizeof(op->op));
   op->op.on_consumed = &op->outer_on_complete;
@@ -292,8 +292,7 @@ typedef struct {
 static void destroy_made_transport_stream_op(grpc_exec_ctx *exec_ctx, void *arg,
                                              grpc_error *error) {
   made_transport_stream_op *op = arg;
-  grpc_exec_ctx_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
   gpr_free(op);
 }
 
@@ -301,7 +300,7 @@ grpc_transport_stream_op *grpc_make_transport_stream_op(
     grpc_closure *on_complete) {
   made_transport_stream_op *op = gpr_malloc(sizeof(*op));
   grpc_closure_init(&op->outer_on_complete, destroy_made_transport_stream_op,
-                    op);
+                    op, grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
   memset(&op->op, 0, sizeof(op->op));
   op->op.on_complete = &op->outer_on_complete;

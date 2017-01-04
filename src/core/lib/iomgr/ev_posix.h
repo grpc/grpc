@@ -106,8 +106,7 @@ typedef struct grpc_event_engine_vtable {
   grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue);
   void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
-  void (*workqueue_enqueue)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error);
+  grpc_closure_scheduler *(*workqueue_scheduler)(grpc_workqueue *workqueue);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
