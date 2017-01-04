@@ -212,10 +212,8 @@ struct grpc_chttp2_transport {
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
   grpc_closure write_action_end_locked;
 
-  grpc_closure read_action_begin;
   grpc_closure read_action_locked;
 
   /** incoming read bytes */
@@ -336,10 +334,8 @@ struct grpc_chttp2_transport {
   /** have we scheduled a destructive cleanup? */
   bool destructive_reclaimer_registered;
   /** benign cleanup closure */
-  grpc_closure benign_reclaimer;
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
-  grpc_closure destructive_reclaimer;
   grpc_closure destructive_reclaimer_locked;
 };
 

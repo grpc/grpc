@@ -94,7 +94,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
   test_tcp_server *server = arg;
-  grpc_closure_init(&on_read, handle_read, NULL);
+  grpc_closure_init(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.incoming_buffer);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   state.tcp = tcp;

@@ -124,7 +124,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_free(message_string);
   }
   // Invoke the next callback.
-  grpc_exec_ctx_sched(exec_ctx, calld->next_recv_message_ready, error, NULL);
+  grpc_closure_sched(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
@@ -160,7 +160,8 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   channel_data* chand = elem->channel_data;
   call_data* calld = elem->call_data;
   calld->next_recv_message_ready = NULL;
-  grpc_closure_init(&calld->recv_message_ready, recv_message_ready, elem);
+  grpc_closure_init(&calld->recv_message_ready, recv_message_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response
