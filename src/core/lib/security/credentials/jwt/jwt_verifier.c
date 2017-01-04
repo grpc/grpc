@@ -490,16 +490,20 @@ static EVP_PKEY *pkey_from_jwk(const grpc_json *json, const char *kty) {
     gpr_log(GPR_ERROR, "Could not create rsa key.");
     goto end;
   }
+  const BIGNUM *n, *e;
   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
     if (strcmp(key_prop->key, "n") == 0) {
-      rsa->n = bignum_from_base64(validate_string_field(key_prop, "n"));
-      if (rsa->n == NULL) goto end;
+      RSA_set0_key(rsa, bignum_from_base64(validate_string_field(key_prop, "n")), NULL, NULL)
+      RSA_get0_key(rsa, &n, &e, NULL);
+      if (n == NULL) goto end;
     } else if (strcmp(key_prop->key, "e") == 0) {
-      rsa->e = bignum_from_base64(validate_string_field(key_prop, "e"));
-      if (rsa->e == NULL) goto end;
+      RSA_set0_key(rsa, NULL, bignum_from_base64(validate_string_field(key_prop, "e")), NULL)
+      RSA_get0_key(rsa, &n, &e, NULL);
+      if (e == NULL) goto end;
     }
   }
-  if (rsa->e == NULL || rsa->n == NULL) {
+  RSA_get0_key(rsa, &n, &e, NULL);
+  if (e == NULL || n == NULL) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
