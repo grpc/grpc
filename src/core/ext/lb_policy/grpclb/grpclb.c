@@ -106,6 +106,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/client_channel_factory.h"
 #include "src/core/ext/client_channel/lb_policy_factory.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
@@ -123,10 +124,11 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define BACKOFF_MULTIPLIER 1.6
-#define BACKOFF_JITTER 0.2
-#define BACKOFF_MIN_SECONDS 10
-#define BACKOFF_MAX_SECONDS 60
+#define GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS 20
+#define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
+#define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
+#define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 
 int grpc_lb_glb_trace = 0;
 
@@ -178,8 +180,7 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
   wrapped_rr_closure_arg *wc_arg = arg;
 
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-  grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
 
   if (wc_arg->rr_policy != NULL) {
     /* if *target is NULL, no pick has been made by the RR policy (eg, all
@@ -246,7 +247,8 @@ static void add_pending_pick(pending_pick **root,
       pick_args->lb_token_mdelem_storage;
   pp->wrapped_on_complete_arg.free_when_done = pp;
   grpc_closure_init(&pp->wrapped_on_complete_arg.wrapper_closure,
-                    wrapped_rr_closure, &pp->wrapped_on_complete_arg);
+                    wrapped_rr_closure, &pp->wrapped_on_complete_arg,
+                    grpc_schedule_on_exec_ctx);
   *root = pp;
 }
 
@@ -266,7 +268,8 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   pping->wrapped_notify_arg.free_when_done = pping;
   pping->next = *root;
   grpc_closure_init(&pping->wrapped_notify_arg.wrapper_closure,
-                    wrapped_rr_closure, &pping->wrapped_notify_arg);
+                    wrapped_rr_closure, &pping->wrapped_notify_arg,
+                    grpc_schedule_on_exec_ctx);
   *root = pping;
 }
 
@@ -665,7 +668,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
       gpr_malloc(sizeof(rr_connectivity_data));
   memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
   grpc_closure_init(&rr_connectivity->on_change, glb_rr_connectivity_changed,
-                    rr_connectivity);
+                    rr_connectivity, grpc_schedule_on_exec_ctx);
   rr_connectivity->glb_policy = glb_policy;
   rr_connectivity->state = new_rr_state;
 
@@ -742,12 +745,6 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
-  /* Get server name. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char *server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
-
   /* Count the number of gRPC-LB addresses. There must be at least one.
    * TODO(roth): For now, we ignore non-balancer addresses, but in the
    * future, we may change the behavior such that we fall back to using
@@ -755,7 +752,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * time, this should be changed to allow a list with no balancer addresses,
    * since the resolver might fail to return a balancer address even when
    * this is the right LB policy to use. */
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_grpclb_addrs = 0;
@@ -767,13 +765,25 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
   memset(glb_policy, 0, sizeof(*glb_policy));
 
+  /* Get server name. */
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(arg != NULL);
+  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  GPR_ASSERT(uri->path[0] != '\0');
+  glb_policy->server_name =
+      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  if (grpc_lb_glb_trace) {
+    gpr_log(GPR_INFO, "Will use '%s' as the server name for LB request.",
+            glb_policy->server_name);
+  }
+  grpc_uri_destroy(uri);
+
   /* All input addresses in addresses come from a resolver that claims
    * they are LB services. It's the resolver's responsibility to make sure
-   * this
-   * policy is only instantiated and used in that case.
+   * this policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
-  glb_policy->server_name = gpr_strdup(server_name);
   glb_policy->cc_factory = args->client_channel_factory;
   glb_policy->args = grpc_channel_args_copy(args->args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
@@ -817,9 +827,14 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * We need the LB channel to return addresses with is_balancer=false
    * so that it does not wind up recursively using the grpclb LB policy,
    * as per the special case logic in client_channel.c.
+   *
+   * Finally, we also strip out the channel arg for the server URI,
+   * since that will be different for the LB channel than for the parent
+   * channel.  (The client channel factory will re-add this arg with
+   * the right value.)
    */
-  static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
-                                         GRPC_ARG_LB_ADDRESSES};
+  static const char *keys_to_remove[] = {
+      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI};
   grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
       args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
@@ -894,15 +909,15 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+                       GRPC_ERROR_NONE);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+                       GRPC_ERROR_NONE);
     pping = next;
   }
 }
@@ -918,9 +933,9 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -943,9 +958,9 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->pick_args.initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -980,11 +995,10 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                     grpc_closure *on_complete) {
   if (pick_args->lb_token_mdelem_storage == NULL) {
     *target = NULL;
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, on_complete,
         GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
-                          "won't work without it. Failing"),
-        NULL);
+                          "won't work without it. Failing"));
     return 0;
   }
 
@@ -1003,7 +1017,8 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     wrapped_rr_closure_arg *wc_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
     memset(wc_arg, 0, sizeof(wrapped_rr_closure_arg));
 
-    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg);
+    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
+                      grpc_schedule_on_exec_ctx);
     wc_arg->rr_policy = glb_policy->rr_policy;
     wc_arg->target = target;
     wc_arg->wrapped_closure = on_complete;
@@ -1103,13 +1118,18 @@ static void lb_call_init_locked(glb_lb_policy *glb_policy) {
   glb_policy->lb_call_status_details_capacity = 0;
 
   grpc_closure_init(&glb_policy->lb_on_server_status_received,
-                    lb_on_server_status_received, glb_policy);
+                    lb_on_server_status_received, glb_policy,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&glb_policy->lb_on_response_received,
-                    lb_on_response_received, glb_policy);
+                    lb_on_response_received, glb_policy,
+                    grpc_schedule_on_exec_ctx);
 
-  gpr_backoff_init(&glb_policy->lb_call_backoff_state, BACKOFF_MULTIPLIER,
-                   BACKOFF_JITTER, BACKOFF_MIN_SECONDS * 1000,
-                   BACKOFF_MAX_SECONDS * 1000);
+  gpr_backoff_init(&glb_policy->lb_call_backoff_state,
+                   GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS,
+                   GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER,
+                   GRPC_GRPCLB_RECONNECT_JITTER,
+                   GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+                   GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
 }
 
 static void lb_call_destroy_locked(glb_lb_policy *glb_policy) {

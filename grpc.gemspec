@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.2'
+  s.add_dependency 'google-protobuf', '~> 3.1.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -295,9 +295,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.h )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )
-  s.files += %w( src/core/lib/security/transport/handshake.h )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.h )
   s.files += %w( src/core/lib/security/transport/security_connector.h )
+  s.files += %w( src/core/lib/security/transport/security_handshaker.h )
   s.files += %w( src/core/lib/security/transport/tsi_error.h )
   s.files += %w( src/core/lib/security/util/b64.h )
   s.files += %w( src/core/lib/security/util/json_util.h )
@@ -306,6 +306,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/tsi/ssl_types.h )
   s.files += %w( src/core/lib/tsi/transport_security.h )
   s.files += %w( src/core/lib/tsi/transport_security_interface.h )
+  s.files += %w( src/core/ext/transport/chttp2/server/chttp2_server.h )
   s.files += %w( src/core/ext/client_channel/client_channel.h )
   s.files += %w( src/core/ext/client_channel/client_channel_factory.h )
   s.files += %w( src/core/ext/client_channel/connector.h )
@@ -321,6 +322,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_channel/subchannel.h )
   s.files += %w( src/core/ext/client_channel/subchannel_index.h )
   s.files += %w( src/core/ext/client_channel/uri_parser.h )
+  s.files += %w( src/core/ext/transport/chttp2/client/chttp2_connector.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/grpclb.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h )
@@ -493,9 +495,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.c )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.c )
   s.files += %w( src/core/lib/security/transport/client_auth_filter.c )
-  s.files += %w( src/core/lib/security/transport/handshake.c )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.c )
   s.files += %w( src/core/lib/security/transport/security_connector.c )
+  s.files += %w( src/core/lib/security/transport/security_handshaker.c )
   s.files += %w( src/core/lib/security/transport/server_auth_filter.c )
   s.files += %w( src/core/lib/security/transport/tsi_error.c )
   s.files += %w( src/core/lib/security/util/b64.c )
@@ -504,6 +506,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/tsi/fake_transport_security.c )
   s.files += %w( src/core/lib/tsi/ssl_transport_security.c )
   s.files += %w( src/core/lib/tsi/transport_security.c )
+  s.files += %w( src/core/ext/transport/chttp2/server/chttp2_server.c )
   s.files += %w( src/core/ext/transport/chttp2/client/secure/secure_channel_create.c )
   s.files += %w( src/core/ext/client_channel/channel_connectivity.c )
   s.files += %w( src/core/ext/client_channel/client_channel.c )
@@ -523,6 +526,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_channel/subchannel.c )
   s.files += %w( src/core/ext/client_channel/subchannel_index.c )
   s.files += %w( src/core/ext/client_channel/uri_parser.c )
+  s.files += %w( src/core/ext/transport/chttp2/client/chttp2_connector.c )
   s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2.c )
   s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c )
   s.files += %w( src/core/ext/transport/chttp2/client/insecure/channel_create.c )
