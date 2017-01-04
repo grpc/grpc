@@ -198,7 +198,8 @@ void grpc_channel_watch_connectivity_state(
   grpc_cq_begin_op(cq, tag);
 
   gpr_mu_init(&w->mu);
-  grpc_closure_init(&w->on_complete, watch_complete, w);
+  grpc_closure_init(&w->on_complete, watch_complete, w,
+                    grpc_schedule_on_exec_ctx);
   w->phase = WAITING;
   w->state = last_observed_state;
   w->cq = cq;

@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   char *aud = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  grpc_init();
   cl = gpr_cmdline_create("JWT verifier tool");
   gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
   gpr_cmdline_add_string(cl, "aud", "Audience for the JWT", &aud);
@@ -131,5 +132,6 @@ int main(int argc, char **argv) {
 
   grpc_jwt_verifier_destroy(verifier);
   gpr_cmdline_destroy(cl);
+  grpc_shutdown();
   return !sync.success;
 }

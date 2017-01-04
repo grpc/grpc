@@ -37,7 +37,7 @@ readonly PROTOBUF_INSTALL_PREFIX="$(mktemp -d)"
 pushd third_party/protobuf
 ./autogen.sh
 ./configure --prefix="$PROTOBUF_INSTALL_PREFIX"
-make
+make -j 8
 make install
 #ldconfig
 popd
@@ -51,7 +51,7 @@ fi
 # stack up and change to nanopb's proto generator directory
 pushd third_party/nanopb/generator/proto
 export PATH="$PROTOC_BIN_PATH:$PATH"
-make
+make -j 8
 # back to the root directory
 popd
 
