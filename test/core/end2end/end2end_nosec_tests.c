@@ -137,8 +137,6 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
-extern void packet_coalescing(grpc_end2end_test_config config);
-extern void packet_coalescing_pre_init(void);
 
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
