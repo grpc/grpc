@@ -1,0 +1,8 @@
+[requires]
+OpenSSL/1.0.2h@lasote/stable
+
+[generators]
+cmake
+
+[imports]
+	bin, *.dll -> ./bin
