@@ -61,6 +61,8 @@ typedef struct {
   char *default_port;
   /** channel args. */
   grpc_channel_args *channel_args;
+  /** pollset_set to drive the name resolution process */
+  grpc_pollset_set *interested_parties;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -218,6 +220,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
+                       r->interested_parties,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
@@ -240,13 +243,15 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(r->resolved_result);
   }
+  grpc_pollset_set_destroy(r->interested_parties);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
 
-static grpc_resolver *dns_create(grpc_resolver_args *args,
+static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
+                                 grpc_resolver_args *args,
                                  const char *default_port) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
@@ -264,12 +269,12 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
-  grpc_arg server_name_arg;
-  server_name_arg.type = GRPC_ARG_STRING;
-  server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = (char *)path;
-  r->channel_args =
-      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
+  r->interested_parties = grpc_pollset_set_create();
+  if (args->pollset_set != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
+                                     args->pollset_set);
+  }
   gpr_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
                    GRPC_DNS_RECONNECT_JITTER,
@@ -287,8 +292,9 @@ static void dns_factory_ref(grpc_resolver_factory *factory) {}
 static void dns_factory_unref(grpc_resolver_factory *factory) {}
 
 static grpc_resolver *dns_factory_create_resolver(
-    grpc_resolver_factory *factory, grpc_resolver_args *args) {
-  return dns_create(args, "https");
+    grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,
+    grpc_resolver_args *args) {
+  return dns_create(exec_ctx, args, "https");
 }
 
 static char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,

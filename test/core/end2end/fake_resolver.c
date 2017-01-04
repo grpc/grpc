@@ -140,7 +140,8 @@ static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
 
 static void do_nothing(void* ignored) {}
 
-static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
+static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
+                                           grpc_resolver_factory* factory,
                                            grpc_resolver_args* args) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
@@ -181,12 +182,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   // Instantiate resolver.
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
-  grpc_arg server_name_arg;
-  server_name_arg.type = GRPC_ARG_STRING;
-  server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = args->uri->path;
-  r->channel_args =
-      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
   r->addresses = addresses;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable);

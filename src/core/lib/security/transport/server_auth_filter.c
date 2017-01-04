@@ -238,9 +238,9 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   grpc_auth_context *auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
   grpc_server_credentials *creds =
@@ -256,6 +256,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
   chand->creds = grpc_server_credentials_ref(creds);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */

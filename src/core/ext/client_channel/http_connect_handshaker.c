@@ -40,6 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/format_request.h"
@@ -51,7 +53,6 @@ typedef struct http_connect_handshaker {
   grpc_handshaker base;
 
   char* proxy_server;
-  char* server_name;
 
   gpr_refcount refcount;
   gpr_mu mu;
@@ -86,7 +87,6 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
       gpr_free(handshaker->read_buffer_to_destroy);
     }
     gpr_free(handshaker->proxy_server);
-    gpr_free(handshaker->server_name);
     grpc_slice_buffer_destroy(&handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
@@ -265,18 +265,27 @@ static void http_connect_handshaker_do_handshake(
     grpc_tcp_server_acceptor* acceptor, grpc_closure* on_handshake_done,
     grpc_handshaker_args* args) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
-  gpr_mu_lock(&handshaker->mu);
+  // Get server name from channel args.
+  const grpc_arg* arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(arg != NULL);
+  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
+  char* canonical_uri =
+      grpc_resolver_factory_add_default_prefix_if_needed(arg->value.string);
+  grpc_uri* uri = grpc_uri_parse(canonical_uri, 1);
+  char* server_name = uri->path;
+  if (server_name[0] == '/') ++server_name;
   // Save state in the handshaker object.
+  gpr_mu_lock(&handshaker->mu);
   handshaker->args = args;
   handshaker->on_handshake_done = on_handshake_done;
   // Send HTTP CONNECT request.
-  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s",
-          handshaker->server_name, handshaker->proxy_server);
+  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
+          handshaker->proxy_server);
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
-  request.host = handshaker->proxy_server;
+  request.host = server_name;
   request.http.method = "CONNECT";
-  request.http.path = handshaker->server_name;
+  request.http.path = server_name;
   request.handshaker = &grpc_httpcli_plaintext;
   grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
   grpc_slice_buffer_add(&handshaker->write_buffer, request_slice);
@@ -285,23 +294,23 @@ static void http_connect_handshaker_do_handshake(
   grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer,
                       &handshaker->request_done_closure);
   gpr_mu_unlock(&handshaker->mu);
+  // Clean up.
+  gpr_free(canonical_uri);
+  grpc_uri_destroy(uri);
 }
 
 static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     const char* server_name) {
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server) {
   GPR_ASSERT(proxy_server != NULL);
-  GPR_ASSERT(server_name != NULL);
   http_connect_handshaker* handshaker = gpr_malloc(sizeof(*handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
   handshaker->proxy_server = gpr_strdup(proxy_server);
-  handshaker->server_name = gpr_strdup(server_name);
   grpc_slice_buffer_init(&handshaker->write_buffer);
   grpc_closure_init(&handshaker->request_done_closure, on_write_done,
                     handshaker);

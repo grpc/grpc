@@ -207,10 +207,11 @@ void grpc_deadline_state_client_start_transport_stream_op(
 //
 
 // Constructor for channel_data.  Used for both client and server filters.
-static void init_channel_elem(grpc_exec_ctx* exec_ctx,
-                              grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
+static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_element* elem,
+                                     grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
+  return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.  Used for both client and server filters.

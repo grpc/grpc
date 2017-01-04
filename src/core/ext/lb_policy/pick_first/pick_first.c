@@ -438,15 +438,10 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
 
-  /* Get server name. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char *server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
-
   /* Find the number of backend addresses. We ignore balancer
    * addresses, since we don't know how to handle them. */
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
@@ -472,9 +467,6 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    /* server_name will be copied as part of the subchannel creation. This makes
-     * the copying of server_name (a borrowed pointer) OK. */
-    sc_args.server_name = server_name;
     sc_args.addr = &addresses->addresses[i].address;
     sc_args.args = args->args;
 
