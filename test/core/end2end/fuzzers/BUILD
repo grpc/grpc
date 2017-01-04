@@ -32,7 +32,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
   name = "api_fuzzer",
   srcs = ["api_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util", "//test/core/end2end:ssl_test_data"],
   corpus = "api_fuzzer_corpus",
   copts = ["-std=c99"],
 )
@@ -52,4 +52,3 @@ grpc_fuzzer(
   corpus = "server_fuzzer_corpus",
   copts = ["-std=c99"],
 )
-
