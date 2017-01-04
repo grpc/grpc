@@ -51,7 +51,6 @@ END2END_FIXTURES = {
     'h2_census': fixture_options(),
     'h2_load_reporting': fixture_options(),
     'h2_fakesec': fixture_options(),
-    'h2_fake_resolver': fixture_options(),
     'h2_fd': fixture_options(dns_resolver=False, fullstack=False,
                              platforms=['linux', 'mac', 'posix']),
     'h2_full': fixture_options(),
