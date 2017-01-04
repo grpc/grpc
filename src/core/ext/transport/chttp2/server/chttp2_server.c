@@ -53,13 +53,13 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-void grpc_chttp2_server_handshaker_factory_create_handshakers(
+void grpc_chttp2_server_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx,
     grpc_chttp2_server_handshaker_factory *handshaker_factory,
     grpc_handshake_manager *handshake_mgr) {
   if (handshaker_factory != NULL) {
-    handshaker_factory->vtable->create_handshakers(exec_ctx, handshaker_factory,
-                                                   handshake_mgr);
+    handshaker_factory->vtable->add_handshakers(exec_ctx, handshaker_factory,
+                                                handshake_mgr);
   }
 }
 
@@ -139,7 +139,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    if (error == GRPC_ERROR_NONE) {
+    if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
       // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -153,19 +153,26 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_free(args->read_buffer);
     }
   } else {
-    grpc_transport *transport =
-        grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
-    grpc_server_setup_transport(
-        exec_ctx, connection_state->server_state->server, transport,
-        connection_state->accepting_pollset, args->args);
-    grpc_chttp2_transport_start_reading(exec_ctx, transport, args->read_buffer);
-    grpc_channel_args_destroy(args->args);
+    // If the handshaking succeeded but there is no endpoint, then the
+    // handshaker may have handed off the connection to some external
+    // code, so we can just clean up here without creating a transport.
+    if (args->endpoint != NULL) {
+      grpc_transport *transport =
+          grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
+      grpc_server_setup_transport(
+          exec_ctx, connection_state->server_state->server, transport,
+          connection_state->accepting_pollset, args->args);
+      grpc_chttp2_transport_start_reading(exec_ctx, transport,
+                                          args->read_buffer);
+      grpc_channel_args_destroy(args->args);
+    }
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
                                           connection_state->handshake_mgr);
   gpr_mu_unlock(&connection_state->server_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp_server);
+  gpr_free(connection_state->acceptor);
   gpr_free(connection_state);
 }
 
@@ -177,6 +184,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
     grpc_endpoint_destroy(exec_ctx, tcp);
+    gpr_free(acceptor);
     return;
   }
   grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
@@ -189,7 +197,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
-  grpc_chttp2_server_handshaker_factory_create_handshakers(
+  grpc_chttp2_server_handshaker_factory_add_handshakers(
       exec_ctx, state->handshaker_factory, connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
@@ -273,7 +281,8 @@ grpc_error *grpc_chttp2_server_add_port(
   state = gpr_malloc(sizeof(*state));
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->tcp_server_shutdown_complete,
-                    tcp_server_shutdown_complete, state);
+                    tcp_server_shutdown_complete, state,
+                    grpc_schedule_on_exec_ctx);
   err = grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,
                                args, &tcp_server);
   if (err != GRPC_ERROR_NONE) {

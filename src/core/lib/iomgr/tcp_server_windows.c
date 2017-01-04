@@ -162,11 +162,12 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
 static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s),
-                      GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
@@ -204,7 +205,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
@@ -323,7 +324,6 @@ failure:
 /* Event manager callback when reads are ready. */
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_tcp_listener *sp = arg;
-  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -396,8 +396,13 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) {
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                             &acceptor);
+                             acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
@@ -461,7 +466,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   sp->new_socket = INVALID_SOCKET;
   sp->port = port;
   sp->port_index = port_index;
-  grpc_closure_init(&sp->on_accept, on_accept, sp);
+  grpc_closure_init(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;

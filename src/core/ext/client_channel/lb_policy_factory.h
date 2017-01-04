@@ -40,6 +40,9 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+// Channel arg key for grpc_lb_addresses.
+#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 

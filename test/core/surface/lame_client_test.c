@@ -62,7 +62,8 @@ void test_transport_op(grpc_channel *channel) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_closure_init(&transport_op_cb, verify_connectivity, &state);
+  grpc_closure_init(&transport_op_cb, verify_connectivity, &state,
+                    grpc_schedule_on_exec_ctx);
 
   op = grpc_make_transport_op(NULL);
   op->on_connectivity_state_change = &transport_op_cb;
@@ -71,7 +72,8 @@ void test_transport_op(grpc_channel *channel) {
   elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  grpc_closure_init(&transport_op_cb, do_nothing, NULL);
+  grpc_closure_init(&transport_op_cb, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);

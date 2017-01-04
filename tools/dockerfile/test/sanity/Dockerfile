@@ -97,17 +97,27 @@ RUN apt-get install -y openjdk-8-jdk
 # ./compile.sh without a local protoc dependency
 # TODO(mattkwong): install dependencies to support latest Bazel version if newer
 # version is needed
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel &&   cd /bazel && git checkout tags/0.4.1 && ./compile.sh
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel && \
+  cd /bazel && git checkout tags/0.4.1 && ./compile.sh
 RUN ln -s /bazel/output/bazel /bin/
 
-#===================
-# Docker "inception"
-# Note this is quite the ugly hack.
-# This makes sure that the docker binary we inject has its dependencies.
-RUN curl https://get.docker.com/ | sh
-RUN apt-get remove --purge -y docker-engine
+RUN apt-get update && apt-get -y install wget
+RUN echo deb http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
+RUN echo deb-src http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
+RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key| apt-key add -
+RUN apt-get update && apt-get -y install clang-format-3.8
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
 
 RUN mkdir /var/local/jenkins
+
 
 # Define the default command.
 CMD ["bash"]

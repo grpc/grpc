@@ -34,14 +34,13 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
-#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/transport/security_connector.h"
 
-/// Creates any necessary security handshakers and adds them to
-/// \a handshake_mgr.
-void grpc_security_create_handshakers(grpc_exec_ctx *exec_ctx,
-                                      tsi_handshaker *handshaker,
-                                      grpc_security_connector *connector,
-                                      grpc_handshake_manager *handshake_mgr);
+/// Creates a security handshaker using \a handshaker.
+grpc_handshaker *grpc_security_handshaker_create(
+    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
+    grpc_security_connector *connector);
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */

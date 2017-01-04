@@ -146,7 +146,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_sched(exec_ctx, ep->read_cb, error, NULL);
+  grpc_closure_sched(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -329,10 +329,9 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, cb,
-        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
-        NULL);
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result));
     GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
     return;
   }
@@ -372,7 +371,10 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
-static int endpoint_get_fd(grpc_endpoint *secure_ep) { return -1; }
+static int endpoint_get_fd(grpc_endpoint *secure_ep) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  return grpc_endpoint_get_fd(ep->wrapped_ep);
+}
 
 static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -414,7 +416,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep);
+  grpc_closure_init(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;
