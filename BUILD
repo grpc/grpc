@@ -647,6 +647,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_client_channel",
+    language = "c",
     srcs = [
         "src/core/ext/client_channel/channel_connectivity.c",
         "src/core/ext/client_channel/client_channel.c",
