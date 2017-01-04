@@ -460,9 +460,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\message_size_filter.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
@@ -1032,9 +1029,6 @@
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\message_size_filter.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h">

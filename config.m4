@@ -256,7 +256,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/message_size_filter.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \

@@ -2799,7 +2799,6 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/message_size_filter.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
@@ -3073,7 +3072,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/message_size_filter.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
@@ -3582,7 +3580,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/message_size_filter.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
@@ -4135,7 +4132,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/message_size_filter.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
