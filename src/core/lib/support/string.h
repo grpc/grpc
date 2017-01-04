@@ -121,6 +121,8 @@ char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
     lower(a)==lower(b), >0 if lower(a)>lower(b) */
 int gpr_stricmp(const char *a, const char *b);
 
+void *gpr_memrchr(const void *s, int c, size_t n);
+
 #ifdef __cplusplus
 }
 #endif

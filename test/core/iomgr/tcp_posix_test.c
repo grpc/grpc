@@ -196,7 +196,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state);
+  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -247,7 +247,7 @@ static void large_read_test(size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = (size_t)written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state);
+  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -386,7 +386,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_addn(&outgoing, slices, num_blocks);
-  grpc_closure_init(&write_done_closure, write_done, &state);
+  grpc_closure_init(&write_done_closure, write_done, &state,
+                    grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_write(&exec_ctx, ep, &outgoing, &write_done_closure);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
@@ -431,7 +432,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
-  grpc_closure_init(&fd_released_cb, &on_fd_released, &fd_released_done);
+  grpc_closure_init(&fd_released_cb, &on_fd_released, &fd_released_done,
+                    grpc_schedule_on_exec_ctx);
 
   gpr_log(GPR_INFO,
           "Release fd read_test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -454,7 +456,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state);
+  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -563,7 +565,8 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   run_tests();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

@@ -388,11 +388,11 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
     *r->addrs = addrs;
-    grpc_exec_ctx_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
+        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -437,7 +437,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
@@ -449,7 +449,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
 
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -460,8 +460,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, closure,
-                        GRPC_ERROR_CREATE("Connect deadline exceeded"), NULL);
+    grpc_closure_sched(exec_ctx, closure,
+                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
 
