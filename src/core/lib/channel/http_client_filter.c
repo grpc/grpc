@@ -393,12 +393,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->send_message_blocked = false;
   grpc_slice_buffer_init(&calld->slices);
   grpc_closure_init(&calld->hc_on_recv_initial_metadata,
-                    hc_on_recv_initial_metadata, elem);
+                    hc_on_recv_initial_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&calld->hc_on_recv_trailing_metadata,
-                    hc_on_recv_trailing_metadata, elem);
-  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem);
-  grpc_closure_init(&calld->got_slice, got_slice, elem);
-  grpc_closure_init(&calld->send_done, send_done, elem);
+                    hc_on_recv_trailing_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->got_slice, got_slice, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->send_done, send_done, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 

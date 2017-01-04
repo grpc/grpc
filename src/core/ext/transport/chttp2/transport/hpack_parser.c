@@ -1692,10 +1692,11 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          grpc_combiner_execute_finally(
-              exec_ctx, t->combiner,
-              grpc_closure_create(force_client_rst_stream, s), GRPC_ERROR_NONE,
-              false);
+          grpc_closure_sched(
+              exec_ctx, grpc_closure_create(force_client_rst_stream, s,
+                                            grpc_combiner_finally_scheduler(
+                                                t->combiner, false)),
+              GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
                                        GRPC_ERROR_NONE);
