@@ -93,6 +93,16 @@ typedef struct {
   uint64_t inflight_id;
 } grpc_chttp2_ping_queue;
 
+typedef struct {
+  gpr_timespec min_time_between_pings;
+  int max_pings_without_data;
+} grpc_chttp2_repeated_ping_policy;
+
+typedef struct {
+  gpr_timespec last_ping_sent_time;
+  int pings_before_data_required;
+} grpc_chttp2_repeated_ping_state;
+
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
   /* prefix: one entry per http2 connection prefix byte */
@@ -281,6 +291,8 @@ struct grpc_chttp2_transport {
 
   /** ping queues for various ping insertion points */
   grpc_chttp2_ping_queue ping_queues[GRPC_CHTTP2_PING_TYPE_COUNT];
+  grpc_chttp2_repeated_ping_policy ping_policy;
+  grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
 
   /** parser for headers */

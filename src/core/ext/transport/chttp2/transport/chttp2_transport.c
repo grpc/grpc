@@ -133,6 +133,9 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_initiate,
                              grpc_closure *on_complete);
 
+#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 100
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 1
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -302,6 +305,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                DEFAULT_MAX_HEADER_LIST_SIZE);
 
+  t->ping_policy = (grpc_chttp2_repeated_ping_policy){
+      .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
+      .min_time_between_pings =
+          gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
+  };
+
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key,
@@ -327,6 +336,19 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           grpc_chttp2_hpack_compressor_set_max_usable_size(&t->hpack_compressor,
                                                            (uint32_t)value);
         }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
+        t->ping_policy.max_pings_without_data = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS)) {
+        t->ping_policy.min_time_between_pings = gpr_time_from_millis(
+            grpc_channel_arg_get_integer(
+                &channel_args->args[i],
+                (grpc_integer_options){DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, 0,
+                                       INT_MAX}),
+            GPR_TIMESPAN);
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -1913,8 +1935,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
       double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-      if (dt > 3) {
-        grpc_pid_controller_reset(&t->pid_controller);
+      if (dt > 0.1) {
+        dt = 0.1;
       }
       double log2_bdp_guess =
           grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
