@@ -168,7 +168,8 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 #ifndef NDEBUG
   cc->outstanding_tag_count = 0;
 #endif
-  grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc);
+  grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc,
+                    grpc_schedule_on_exec_ctx);
 
   GPR_TIMER_END("grpc_completion_queue_create", 0);
 
