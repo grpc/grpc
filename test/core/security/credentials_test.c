@@ -598,7 +598,7 @@ static int compute_engine_httpcli_get_success_override(
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -608,7 +608,7 @@ static int compute_engine_httpcli_get_failure_override(
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -701,7 +701,7 @@ static int refresh_token_httpcli_post_success(
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -711,7 +711,7 @@ static int refresh_token_httpcli_post_failure(
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(403, "Not Authorized.");
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -954,7 +954,7 @@ static int default_creds_gce_detection_httpcli_get_success_override(
   response->hdrs = headers;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -1012,7 +1012,7 @@ static int default_creds_gce_detection_httpcli_get_failure_override(
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   *response = http_response(200, "");
-  grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 

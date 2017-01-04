@@ -116,9 +116,10 @@ static void md_only_test_get_request_metadata(
   if (c->is_async) {
     grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_executor_push(
-        grpc_closure_create(on_simulated_token_fetch_done, cb_arg),
-        GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx,
+                       grpc_closure_create(on_simulated_token_fetch_done,
+                                           cb_arg, grpc_executor_scheduler),
+                       GRPC_ERROR_NONE);
   } else {
     cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }

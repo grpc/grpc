@@ -142,7 +142,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   }
   grpc_closure *notify = c->notify;
   c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+  grpc_closure_sched(exec_ctx, notify, error);
   grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
   c->handshake_mgr = NULL;
   gpr_mu_unlock(&c->mu);
@@ -181,7 +181,7 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
     memset(c->result, 0, sizeof(*c->result));
     grpc_closure *notify = c->notify;
     c->notify = NULL;
-    grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+    grpc_closure_sched(exec_ctx, notify, error);
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, arg);
   } else {
@@ -204,7 +204,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     memset(c->result, 0, sizeof(*c->result));
     grpc_closure *notify = c->notify;
     c->notify = NULL;
-    grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+    grpc_closure_sched(exec_ctx, notify, error);
     if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, arg);
@@ -212,7 +212,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     GPR_ASSERT(c->endpoint != NULL);
     if (!GRPC_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
       grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
-                        c);
+                        c, grpc_schedule_on_exec_ctx);
       grpc_slice_buffer_init(&c->initial_string_buffer);
       grpc_slice_buffer_add(&c->initial_string_buffer,
                             c->args.initial_connect_string);
@@ -238,7 +238,7 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
   c->result = result;
   GPR_ASSERT(c->endpoint == NULL);
   chttp2_connector_ref(con);  // Ref taken for callback.
-  grpc_closure_init(&c->connected, connected, c);
+  grpc_closure_init(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(!c->connecting);
   c->connecting = true;
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->endpoint,

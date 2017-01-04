@@ -115,7 +115,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(calld, 0, sizeof(call_data));
 
   calld->id = (intptr_t)args->call_stack;
-  grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem);
+  grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem,
+                    grpc_schedule_on_exec_ctx);
 
   /* TODO(dgq): do something with the data
   channel_data *chand = elem->channel_data;
