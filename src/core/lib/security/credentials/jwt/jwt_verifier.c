@@ -39,6 +39,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/ssl_types.h"
 
 #include <grpc/support/alloc.h>
@@ -303,6 +304,17 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
   if (gpr_time_cmp(skewed_now, claims->exp) > 0) {
     gpr_log(GPR_ERROR, "JWT is expired.");
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
+  }
+
+  /* This should be probably up to the upper layer to decide but let's harcode
+     the 99% use case here for email issuers, where the JWT must be self
+     issued. */
+  if (grpc_jwt_issuer_email_domain(claims->iss) != NULL &&
+      claims->sub != NULL && strcmp(claims->iss, claims->sub) != 0) {
+    gpr_log(GPR_ERROR,
+            "Email issuer (%s) cannot assert another subject (%s) than itself.",
+            claims->iss, claims->sub);
+    return GRPC_JWT_VERIFIER_BAD_SUBJECT;
   }
 
   if (audience == NULL) {
@@ -665,7 +677,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      grpc_closure_create(on_keys_retrieved, ctx),
+      grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   grpc_json_destroy(json);
@@ -705,10 +717,26 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
   GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
 }
 
+/* Very non-sophisticated way to detect an email address. Should be good
+   enough for now... */
+const char *grpc_jwt_issuer_email_domain(const char *issuer) {
+  const char *at_sign = strchr(issuer, '@');
+  if (at_sign == NULL) return NULL;
+  const char *email_domain = at_sign + 1;
+  if (*email_domain == '\0') return NULL;
+  const char *dot = strrchr(email_domain, '.');
+  if (dot == NULL || dot == email_domain) return email_domain;
+  GPR_ASSERT(dot > email_domain);
+  /* There may be a subdomain, we just want the domain. */
+  dot = gpr_memrchr(email_domain, '.', (size_t)(dot - email_domain));
+  if (dot == NULL) return email_domain;
+  return dot + 1;
+}
+
 /* Takes ownership of ctx. */
 static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
                                     verifier_cb_ctx *ctx) {
-  const char *at_sign;
+  const char *email_domain;
   grpc_closure *http_cb;
   char *path_prefix = NULL;
   const char *iss;
@@ -733,13 +761,9 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
      Nobody seems to implement the account/email/webfinger part 2. of the spec
      so we will rely instead on email/url mappings if we detect such an issuer.
      Part 4, on the other hand is implemented by both google and salesforce. */
-
-  /* Very non-sophisticated way to detect an email address. Should be good
-     enough for now... */
-  at_sign = strchr(iss, '@');
-  if (at_sign != NULL) {
+  email_domain = grpc_jwt_issuer_email_domain(iss);
+  if (email_domain != NULL) {
     email_key_mapping *mapping;
-    const char *email_domain = at_sign + 1;
     GPR_ASSERT(ctx->verifier != NULL);
     mapping = verifier_get_mapping(ctx->verifier, email_domain);
     if (mapping == NULL) {
@@ -754,7 +778,8 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       *(path_prefix++) = '\0';
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
-    http_cb = grpc_closure_create(on_keys_retrieved, ctx);
+    http_cb =
+        grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
@@ -766,7 +791,8 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
-    http_cb = grpc_closure_create(on_openid_config_retrieved, ctx);
+    http_cb = grpc_closure_create(on_openid_config_retrieved, ctx,
+                                  grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_OPENID;
   }
 

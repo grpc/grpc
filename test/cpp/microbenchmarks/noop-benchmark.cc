@@ -31,10 +31,10 @@
  *
  */
 
-/* This benchmark exists to ensure that the google_benchmark integration is
+/* This benchmark exists to ensure that the benchmark integration is
  * working */
 
-#include "third_party/google_benchmark/include/benchmark/benchmark.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 static void BM_NoOp(benchmark::State& state) {
   while (state.KeepRunning()) {

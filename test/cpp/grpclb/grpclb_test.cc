@@ -523,9 +523,8 @@ static void perform_request(client_fixture *cf) {
 
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
+    gpr_log(GPR_INFO, "Client after sending msg %d / 4", i + 1);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, PAYLOAD));
-    GPR_ASSERT(grpc_channel_check_connectivity_state(
-                   cf->client, 0 /* try to connect */) == GRPC_CHANNEL_READY);
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload_recv);
@@ -546,16 +545,17 @@ static void perform_request(client_fixture *cf) {
   cq_verify(cqv);
   peer = grpc_call_get_peer(c);
   gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);
-  gpr_free(peer);
 
   grpc_call_destroy(c);
 
-  cq_verify_empty_timeout(cqv, 1);
+  cq_verify_empty_timeout(cqv, 1 /* seconds */);
   cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);
+  gpr_log(GPR_INFO, "Client call (peer %s) DESTROYED.", peer);
+  gpr_free(peer);
 }
 
 static void setup_client(const char *server_hostport, client_fixture *cf) {
@@ -659,7 +659,7 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   char *server_uri;
   // The grpclb LB policy will be automatically selected by virtue of
   // the fact that the returned addresses are balancer addresses.
-  gpr_asprintf(&server_uri, "test:%s?lb_enabled=1",
+  gpr_asprintf(&server_uri, "test:///%s?lb_enabled=1",
                tf.lb_server.servers_hostport);
   setup_client(server_uri, &tf.client);
   gpr_free(server_uri);
@@ -699,39 +699,42 @@ static test_fixture test_update(int lb_server_update_delay_ms) {
 
 TEST(GrpclbTest, Updates) {
   grpc::test_fixture tf_result;
-  // Clients take a bit over one second to complete a call (the last part of the
+  // Clients take at least one second to complete a call (the last part of the
   // call sleeps for 1 second while verifying the client's completion queue is
-  // empty). Therefore:
+  // empty), more if the system is under load. Therefore:
   //
   // If the LB server waits 800ms before sending an update, it will arrive
-  // before the first client request is done, skipping the second server from
-  // batch 1 altogether: the 2nd client request will go to the 1st server of
-  // batch 2 (ie, the third one out of the four total servers).
+  // before the first client request finishes, skipping the second server from
+  // batch 1. All subsequent picks will come from the second half of the
+  // backends, those coming in the LB update.
   tf_result = grpc::test_update(800);
   GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 1);
   GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 0);
-  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 2);
-  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced +
+                 tf_result.lb_backends[3].num_calls_serviced >
+             0);
+  int num_serviced_calls = 0;
+  for (int i = 0; i < 4; i++) {
+    num_serviced_calls += tf_result.lb_backends[i].num_calls_serviced;
+  }
+  GPR_ASSERT(num_serviced_calls == 4);
 
-  // If the LB server waits 1500ms, the update arrives after having picked the
-  // 2nd server from batch 1 but before the next pick for the first server of
-  // batch 2. All server are used.
-  tf_result = grpc::test_update(1500);
-  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 1);
-  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
-  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 1);
-  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 1);
-
-  // If the LB server waits > 2000ms, the update arrives after the first two
-  // request are done and the third pick is performed, which returns, in RR
-  // fashion, the 1st server of the 1st update. Therefore, the second server of
-  // batch 1 is hit at least one, whereas the first server of batch 2 is never
-  // hit.
+  // If the LB server waits 2500ms, the update arrives after two calls and three
+  // picks. The third pick will be the 1st server of the 1st update (RR policy
+  // going around). The fourth and final pick will come from the second LB
+  // update. In any case, the total number of serviced calls must again be equal
+  // to four across all the backends.
   tf_result = grpc::test_update(2500);
   GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced >= 1);
-  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced > 0);
-  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced > 0);
-  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 0);
+  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced +
+                 tf_result.lb_backends[3].num_calls_serviced >
+             0);
+  num_serviced_calls = 0;
+  for (int i = 0; i < 4; i++) {
+    num_serviced_calls += tf_result.lb_backends[i].num_calls_serviced;
+  }
+  GPR_ASSERT(num_serviced_calls == 4);
 }
 
 TEST(GrpclbTest, InvalidAddressInServerlist) {}

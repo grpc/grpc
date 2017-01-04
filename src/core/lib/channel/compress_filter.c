@@ -269,8 +269,10 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
   calld->has_compression_algorithm = 0;
-  grpc_closure_init(&calld->got_slice, got_slice, elem);
-  grpc_closure_init(&calld->send_done, send_done, elem);
+  grpc_closure_init(&calld->got_slice, got_slice, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->send_done, send_done, elem,
+                    grpc_schedule_on_exec_ctx);
 
   return GRPC_ERROR_NONE;
 }
@@ -285,9 +287,9 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *channeld = elem->channel_data;
 
   channeld->enabled_algorithms_bitset =
@@ -315,6 +317,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   }
 
   GPR_ASSERT(!args->is_last);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */

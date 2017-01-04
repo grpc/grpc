@@ -112,7 +112,7 @@
 }
 
 - (void)dealloc {
-  gpr_free(_op.data.send_message);
+  grpc_byte_buffer_destroy(_op.data.send_message);
 }
 
 @end
