@@ -75,6 +75,17 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     /* ping already in-flight: wait */
     return;
   }
+  if (t->ping_state.pings_before_data_required > 0 &&
+      t->ping_policy.max_pings_without_data != 0) {
+    /* need to send something of substance before sending a ping again */
+    return;
+  }
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  if (gpr_time_cmp(gpr_time_sub(now, t->ping_state.last_ping_sent_time),
+                   t->ping_policy.min_time_between_pings) < 0) {
+    /* not enough elapsed time between successive pings */
+    return;
+  }
   /* coalesce equivalent pings into this one */
   switch (ping_type) {
     case GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE:
@@ -92,6 +103,9 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
+  t->ping_state.last_ping_sent_time = now;
+  t->ping_state.pings_before_data_required -=
+      (t->ping_state.pings_before_data_required != 0);
 }
 
 static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -165,6 +179,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
       now_writing = true;
+      t->ping_state.pings_before_data_required =
+          t->ping_policy.max_pings_without_data;
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -202,6 +218,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                         send_bytes);
           GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, outgoing_window,
                                            send_bytes);
+          t->ping_state.pings_before_data_required =
+              t->ping_policy.max_pings_without_data;
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
