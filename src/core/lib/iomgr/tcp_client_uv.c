@@ -110,7 +110,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   if (done) {
     uv_tcp_connect_cleanup(&exec_ctx, connect);
   }
-  grpc_exec_ctx_sched(&exec_ctx, closure, error, NULL);
+  grpc_closure_sched(&exec_ctx, closure, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
