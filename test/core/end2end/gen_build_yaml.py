@@ -91,6 +91,7 @@ LOWCPU = 0.1
 
 # maps test names to options
 END2END_TESTS = {
+    'authority_not_supported': default_test_options,
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
     'resource_quota_server': default_test_options._replace(large_writes=True,
@@ -125,6 +126,7 @@ END2END_TESTS = {
     'network_status_change': default_test_options,
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
+    'packet_coalescing': default_test_options,
     'payload': default_test_options,
     'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options,
@@ -142,7 +144,6 @@ END2END_TESTS = {
     'simple_request': default_test_options,
     'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
-    'authority_not_supported': default_test_options,
 }
 
 
