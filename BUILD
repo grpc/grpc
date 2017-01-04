@@ -2844,7 +2844,46 @@ cc_binary(
   ],
 )
 
+cc_binary(
+  name = "grpc_cli",
+  srcs = [
+    "test/cpp/util/grpc_cli.cc",
+    "test/cpp/util/test_config.h",
+  ],
+  deps = [
+    ":grpc++",
+    ":test_cpp_util",
+    "//external:gflags",
+  ],
+)
 
+cc_library(
+  name = "test_cpp_util",
+  srcs = [
+    "test/cpp/util/cli_call.cc",
+    "test/cpp/util/cli_credentials.cc",
+    "test/cpp/util/grpc_tool.cc",
+    "test/cpp/util/proto_file_parser.cc",
+    "test/cpp/util/proto_reflection_descriptor_database.cc",
+    "test/cpp/util/service_describer.cc",
+    "test/cpp/util/test_config_cc.cc",
+  ],
+  hdrs = [
+    "test/cpp/util/cli_call.h",
+    "test/cpp/util/cli_credentials.h",
+    "test/cpp/util/config_grpc_cli.h",
+    "test/cpp/util/grpc_tool.h",
+    "test/cpp/util/proto_file_parser.h",
+    "test/cpp/util/proto_reflection_descriptor_database.h",
+    "test/cpp/util/service_describer.h",
+    "test/cpp/util/test_config.h",
+  ],
+  deps = [
+    ":grpc++",
+    ":grpc++_reflection",
+    "//external:gflags",
+  ],
+)
 
 
 
