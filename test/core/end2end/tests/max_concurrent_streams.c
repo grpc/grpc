@@ -488,21 +488,19 @@ static void test_max_concurrent_streams_with_timeout(
 
   /* perform a ping-pong to ensure that settings have had a chance to round
      trip */
-  simple_request_body(config, f);
+  simple_request_body(f);
   /* perform another one to make sure that the one stream case still works */
-  simple_request_body(config, f);
+  simple_request_body(f);
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  c1 = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/alpha",
-      get_host_override_string("foo.test.google.fr:1234", config),
-      n_seconds_time(3), NULL);
+  c1 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                                "/alpha", "foo.test.google.fr:1234",
+                                n_seconds_time(3), NULL);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/beta",
-      get_host_override_string("foo.test.google.fr:1234", config),
-      n_seconds_time(1000), NULL);
+  c2 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                                "/beta", "foo.test.google.fr:1234",
+                                n_seconds_time(1000), NULL);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -541,8 +539,8 @@ static void test_max_concurrent_streams_with_timeout(
   error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
+  cq_expect_completion(cqv, tag(101), 1);
+  cq_expect_completion(cqv, tag(301), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -581,10 +579,10 @@ static void test_max_concurrent_streams_with_timeout(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
 
-  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
+  cq_expect_completion(cqv, tag(302), 1);
   /* first request is finished, we should be able to start the second */
-  CQ_EXPECT_COMPLETION(cqv, tag(401), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
+  cq_expect_completion(cqv, tag(401), 1);
+  cq_expect_completion(cqv, tag(201), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -609,8 +607,8 @@ static void test_max_concurrent_streams_with_timeout(
   error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
+  cq_expect_completion(cqv, tag(402), 1);
+  cq_expect_completion(cqv, tag(202), 1);
   cq_verify(cqv);
 
   cq_verifier_destroy(cqv);
