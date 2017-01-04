@@ -86,6 +86,7 @@ def test_options(needs_fullstack=False, needs_dns=False, proxyable=True,
 END2END_TESTS = {
     'bad_hostname': test_options(),
     'binary_metadata': test_options(),
+    'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),
     'cancel_after_accept': test_options(),
     'cancel_after_client_done': test_options(),
@@ -128,6 +129,8 @@ END2END_TESTS = {
     'simple_request': test_options(),
     'streaming_error_response': test_options(),
     'trailing_metadata': test_options(),
+    'authority_not_supported': test_options(),
+    'filter_latency': test_options(),
 }
 
 
@@ -150,7 +153,7 @@ def compatible(fopt, topt):
 def grpc_end2end_tests():
   native.cc_library(
     name = 'end2end_tests',
-    srcs = ['end2end_tests.c'] + [
+    srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
              'tests/%s.c' % t
              for t in sorted(END2END_TESTS.keys())],
     hdrs = [
