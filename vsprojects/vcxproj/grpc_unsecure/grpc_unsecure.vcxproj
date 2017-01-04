@@ -415,7 +415,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\message_size_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h" />
@@ -750,8 +749,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
     </ClCompile>

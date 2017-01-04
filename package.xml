@@ -323,7 +323,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
@@ -528,7 +527,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
