@@ -30,8 +30,8 @@ bind(
 
 new_local_repository(
     name = "submodule_boringssl",
-    path = "third_party/boringssl",
-    build_file = "third_party/boringssl/BUILD",
+    path = "third_party/boringssl-with-bazel",
+    build_file = "third_party/boringssl-with-bazel/BUILD",
 )
 
 new_local_repository(
