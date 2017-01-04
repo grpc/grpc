@@ -32,6 +32,7 @@
 import sys
 import threading
 import time
+import logging
 
 import grpc
 from grpc import _common
@@ -197,7 +198,17 @@ def _consume_request_iterator(
   event_handler = _event_handler(state, call, None)
 
   def consume_request_iterator():
-    for request in request_iterator:
+    while True:
+      try:
+        request = next(request_iterator)
+      except StopIteration:
+        break
+      except Exception as e:
+        logging.exception("Exception iterating requests; {}".format(e))
+        call.cancel()
+        _abort(state, grpc.StatusCode.UNKNOWN, "Exception iterating requests!")
+        return
+
       serialized_request = _common.serialize(request, request_serializer)
       with state.condition:
         if state.code is None and not state.cancelled:
@@ -208,8 +219,8 @@ def _consume_request_iterator(
             return
           else:
             operations = (
-                cygrpc.operation_send_message(
-                    serialized_request, _EMPTY_FLAGS),
+              cygrpc.operation_send_message(
+                serialized_request, _EMPTY_FLAGS),
             )
             call.start_client_batch(cygrpc.Operations(operations),
                                     event_handler)
@@ -226,7 +237,7 @@ def _consume_request_iterator(
     with state.condition:
       if state.code is None:
         operations = (
-            cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
+          cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
         )
         call.start_client_batch(cygrpc.Operations(operations), event_handler)
         state.due.add(cygrpc.OperationType.send_close_from_client)
