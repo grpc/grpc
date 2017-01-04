@@ -793,7 +793,8 @@ static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   memset(&tc->op, 0, sizeof(tc->op));
   tc->op.cancel_error = tc->error;
   /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc);
+  grpc_closure_init(&tc->closure, done_termination, tc,
+                    grpc_schedule_on_exec_ctx);
   tc->op.on_complete = &tc->closure;
   execute_op(exec_ctx, tc->call, &tc->op);
 }
@@ -803,7 +804,8 @@ static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   memset(&tc->op, 0, sizeof(tc->op));
   tc->op.close_error = tc->error;
   /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc);
+  grpc_closure_init(&tc->closure, done_termination, tc,
+                    grpc_schedule_on_exec_ctx);
   tc->op.on_complete = &tc->closure;
   execute_op(exec_ctx, tc->call, &tc->op);
 }
@@ -814,13 +816,13 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
                         tc->error);
 
   if (tc->type == TC_CANCEL) {
-    grpc_closure_init(&tc->closure, send_cancel, tc);
+    grpc_closure_init(&tc->closure, send_cancel, tc, grpc_schedule_on_exec_ctx);
     GRPC_CALL_INTERNAL_REF(tc->call, "cancel");
   } else if (tc->type == TC_CLOSE) {
-    grpc_closure_init(&tc->closure, send_close, tc);
+    grpc_closure_init(&tc->closure, send_close, tc, grpc_schedule_on_exec_ctx);
     GRPC_CALL_INTERNAL_REF(tc->call, "close");
   }
-  grpc_exec_ctx_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE);
   return GRPC_CALL_OK;
 }
 
@@ -1142,8 +1144,8 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
     } else {
       *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
     }
-    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready,
-                      bctl);
+    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready, bctl,
+                      grpc_schedule_on_exec_ctx);
     continue_receiving_slices(exec_ctx, bctl);
   }
 }
@@ -1255,9 +1257,10 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   call->has_initial_md_been_received = true;
   if (call->saved_receiving_stream_ready_bctlp != NULL) {
     grpc_closure *saved_rsr_closure = grpc_closure_create(
-        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp);
+        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp,
+        grpc_schedule_on_exec_ctx);
     call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_exec_ctx_sched(exec_ctx, saved_rsr_closure, error, NULL);
+    grpc_closure_sched(exec_ctx, saved_rsr_closure, error);
   }
 
   gpr_mu_unlock(&call->mu);
@@ -1564,7 +1567,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->received_initial_metadata = 1;
         call->buffered_metadata[0] = op->data.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
-                          receiving_initial_metadata_ready, bctl);
+                          receiving_initial_metadata_ready, bctl,
+                          grpc_schedule_on_exec_ctx);
         bctl->recv_initial_metadata = 1;
         stream_op->recv_initial_metadata =
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1587,7 +1591,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->receiving_buffer = op->data.recv_message;
         stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
-                          bctl);
+                          bctl, grpc_schedule_on_exec_ctx);
         stream_op->recv_message_ready = &call->receiving_stream_ready;
         num_completion_callbacks_needed++;
         break;
@@ -1652,7 +1656,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 
   stream_op->context = call->context;
-  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl);
+  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
+                    grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
   gpr_mu_unlock(&call->mu);
 

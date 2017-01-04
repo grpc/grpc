@@ -56,9 +56,8 @@ grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 #endif
 
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error) {
-  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
+  return grpc_schedule_on_exec_ctx;
 }
 
 #endif /* GPR_WINDOWS */

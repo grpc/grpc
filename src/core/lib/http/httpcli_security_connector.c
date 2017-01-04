@@ -98,7 +98,7 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
     error = GRPC_ERROR_CREATE(msg);
     gpr_free(msg);
   }
-  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
+  grpc_closure_sched(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
