@@ -128,7 +128,7 @@ static void on_md_processing_done(
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
     }
     grpc_metadata_array_destroy(&calld->md);
-    grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE);
   } else {
     for (size_t i = 0; i < calld->md.count; i++) {
       grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
@@ -144,10 +144,10 @@ static void on_md_processing_done(
       calld->transport_op->send_message = NULL;
     }
     calld->transport_op->send_trailing_metadata = NULL;
-    grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv,
+    grpc_closure_sched(&exec_ctx, calld->on_done_recv,
                         grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                                           GRPC_ERROR_INT_GRPC_STATUS, status),
-                        NULL);
+                                           GRPC_ERROR_INT_GRPC_STATUS, status)
+                        );
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -167,8 +167,7 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       return;
     }
   }
-  grpc_exec_ctx_sched(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error));
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
@@ -207,7 +206,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
+  grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem,
+                    grpc_schedule_on_exec_ctx);
 
   if (args->context[GRPC_CONTEXT_SECURITY].value != NULL) {
     args->context[GRPC_CONTEXT_SECURITY].destroy(

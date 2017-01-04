@@ -138,7 +138,7 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
     h->shutdown = true;
   }
   // Invoke callback.
-  grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, error, NULL);
+  grpc_closure_sched(exec_ctx, h->on_handshake_done, error);
 }
 
 static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -175,7 +175,7 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_channel_args_copy_and_add(tmp_args, &auth_context_arg, 1);
   grpc_channel_args_destroy(exec_ctx, tmp_args);
   // Invoke callback.
-  grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, h->on_handshake_done, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   h->shutdown = true;
@@ -394,10 +394,13 @@ static grpc_handshaker *security_handshaker_create(
   h->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   h->handshake_buffer = gpr_malloc(h->handshake_buffer_size);
   grpc_closure_init(&h->on_handshake_data_sent_to_peer,
-                    on_handshake_data_sent_to_peer, h);
+                    on_handshake_data_sent_to_peer, h,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&h->on_handshake_data_received_from_peer,
-                    on_handshake_data_received_from_peer, h);
-  grpc_closure_init(&h->on_peer_checked, on_peer_checked, h);
+                    on_handshake_data_received_from_peer, h,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&h->on_peer_checked, on_peer_checked, h,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&h->left_overs);
   grpc_slice_buffer_init(&h->outgoing);
   return &h->base;
@@ -420,9 +423,8 @@ static void fail_handshaker_do_handshake(grpc_exec_ctx *exec_ctx,
                                          grpc_tcp_server_acceptor *acceptor,
                                          grpc_closure *on_handshake_done,
                                          grpc_handshaker_args *args) {
-  grpc_exec_ctx_sched(exec_ctx, on_handshake_done,
-                      GRPC_ERROR_CREATE("Failed to create security handshaker"),
-                      NULL);
+  grpc_closure_sched(exec_ctx, on_handshake_done,
+                     GRPC_ERROR_CREATE("Failed to create security handshaker"));
 }
 
 static const grpc_handshaker_vtable fail_handshaker_vtable = {

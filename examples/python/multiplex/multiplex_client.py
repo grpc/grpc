@@ -37,7 +37,9 @@ import time
 import grpc
 
 import helloworld_pb2
+import helloworld_pb2_grpc
 import route_guide_pb2
+import route_guide_pb2_grpc
 import route_guide_resources
 
 
@@ -120,8 +122,8 @@ def guide_route_chat(route_guide_stub):
 
 def run():
   channel = grpc.insecure_channel('localhost:50051')
-  greeter_stub = helloworld_pb2.GreeterStub(channel)
-  route_guide_stub = route_guide_pb2.RouteGuideStub(channel)
+  greeter_stub = helloworld_pb2_grpc.GreeterStub(channel)
+  route_guide_stub = route_guide_pb2_grpc.RouteGuideStub(channel)
   greeter_response = greeter_stub.SayHello(
       helloworld_pb2.HelloRequest(name='you'))
   print("Greeter client received: " + greeter_response.message)

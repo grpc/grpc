@@ -301,3 +301,15 @@ void gpr_string_split(const char *input, const char *sep, char ***strs,
   }
   add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
 }
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
+}

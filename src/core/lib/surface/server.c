@@ -282,7 +282,8 @@ static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
                           bool send_goaway, grpc_error *send_disconnect) {
   struct shutdown_cleanup_args *sc = gpr_malloc(sizeof(*sc));
-  grpc_closure_init(&sc->closure, shutdown_cleanup, sc);
+  grpc_closure_init(&sc->closure, shutdown_cleanup, sc,
+                    grpc_schedule_on_exec_ctx);
   grpc_transport_op *op = grpc_make_transport_op(&sc->closure);
   grpc_channel_element *elem;
 
@@ -352,9 +353,9 @@ static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&calld->mu_state);
     grpc_closure_init(
         &calld->kill_zombie_closure, kill_zombie,
-        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
-    grpc_exec_ctx_sched(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE,
-                        NULL);
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+        grpc_schedule_on_exec_ctx);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -446,8 +447,8 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   orphan_channel(chand);
   server_ref(chand->server);
   maybe_finish_shutdown(exec_ctx, chand->server);
-  chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
-  chand->finish_destroy_channel_closure.cb_arg = chand;
+  grpc_closure_init(&chand->finish_destroy_channel_closure,
+                    finish_destroy_channel, chand, grpc_schedule_on_exec_ctx);
 
   if (grpc_server_channel_trace && error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
@@ -537,8 +538,9 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&calld->mu_state);
     grpc_closure_init(
         &calld->kill_zombie_closure, kill_zombie,
-        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
-    grpc_exec_ctx_sched(exec_ctx, &calld->kill_zombie_closure, error, NULL);
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+        grpc_schedule_on_exec_ctx);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, error);
     return;
   }
 
@@ -582,9 +584,9 @@ static void finish_start_new_rpc(
     gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
     gpr_mu_unlock(&calld->mu_state);
-    grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
-    grpc_exec_ctx_sched(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE,
-                        NULL);
+    grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem,
+                      grpc_schedule_on_exec_ctx);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE);
     return;
   }
 
@@ -599,7 +601,8 @@ static void finish_start_new_rpc(
       memset(&op, 0, sizeof(op));
       op.op = GRPC_OP_RECV_MESSAGE;
       op.data.recv_message = &calld->payload;
-      grpc_closure_init(&calld->publish, publish_new_rpc, elem);
+      grpc_closure_init(&calld->publish, publish_new_rpc, elem,
+                        grpc_schedule_on_exec_ctx);
       grpc_call_start_batch_and_execute(exec_ctx, calld->call, &op, 1,
                                         &calld->publish);
       break;
@@ -808,9 +811,10 @@ static void got_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
     if (calld->state == NOT_STARTED) {
       calld->state = ZOMBIED;
       gpr_mu_unlock(&calld->mu_state);
-      grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
-      grpc_exec_ctx_sched(exec_ctx, &calld->kill_zombie_closure,
-                          GRPC_ERROR_NONE, NULL);
+      grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem,
+                        grpc_schedule_on_exec_ctx);
+      grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure,
+                         GRPC_ERROR_NONE);
     } else if (calld->state == PENDING) {
       calld->state = ZOMBIED;
       gpr_mu_unlock(&calld->mu_state);
@@ -846,7 +850,8 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
   op.data.recv_initial_metadata = &calld->initial_metadata;
-  grpc_closure_init(&calld->got_initial_metadata, got_initial_metadata, elem);
+  grpc_closure_init(&calld->got_initial_metadata, got_initial_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
   grpc_call_start_batch_and_execute(exec_ctx, call, &op, 1,
                                     &calld->got_initial_metadata);
 }
@@ -882,7 +887,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_init(&calld->mu_state);
 
   grpc_closure_init(&calld->server_on_recv_initial_metadata,
-                    server_on_recv_initial_metadata, elem);
+                    server_on_recv_initial_metadata, elem,
+                    grpc_schedule_on_exec_ctx);
 
   server_ref(chand->server);
   return GRPC_ERROR_NONE;
@@ -921,7 +927,8 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
   grpc_closure_init(&chand->channel_connectivity_changed,
-                    channel_connectivity_changed, chand);
+                    channel_connectivity_changed, chand,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
@@ -1279,7 +1286,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* Shutdown listeners */
   for (l = server->listeners; l; l = l->next) {
-    grpc_closure_init(&l->destroy_done, listener_destroy_done, server);
+    grpc_closure_init(&l->destroy_done, listener_destroy_done, server,
+                      grpc_schedule_on_exec_ctx);
     l->destroy(&exec_ctx, server, l->arg, &l->destroy_done);
   }
 
@@ -1385,9 +1393,10 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
         gpr_mu_unlock(&calld->mu_state);
         grpc_closure_init(
             &calld->kill_zombie_closure, kill_zombie,
-            grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
-        grpc_exec_ctx_sched(exec_ctx, &calld->kill_zombie_closure,
-                            GRPC_ERROR_NONE, NULL);
+            grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+            grpc_schedule_on_exec_ctx);
+        grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure,
+                           GRPC_ERROR_NONE);
       } else {
         GPR_ASSERT(calld->state == PENDING);
         calld->state = ACTIVATED;

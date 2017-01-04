@@ -46,7 +46,9 @@ static void inc_int_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
 static void set_bool_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   *(bool *)a = true;
 }
-grpc_closure *set_bool(bool *p) { return grpc_closure_create(set_bool_cb, p); }
+grpc_closure *set_bool(bool *p) {
+  return grpc_closure_create(set_bool_cb, p, grpc_schedule_on_exec_ctx);
+}
 
 typedef struct {
   size_t size;
@@ -68,7 +70,7 @@ grpc_closure *make_reclaimer(grpc_resource_user *resource_user, size_t size,
   a->size = size;
   a->resource_user = resource_user;
   a->then = then;
-  return grpc_closure_create(reclaimer_cb, a);
+  return grpc_closure_create(reclaimer_cb, a, grpc_schedule_on_exec_ctx);
 }
 
 static void unused_reclaimer_cb(grpc_exec_ctx *exec_ctx, void *arg,
@@ -77,7 +79,8 @@ static void unused_reclaimer_cb(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure_run(exec_ctx, arg, GRPC_ERROR_NONE);
 }
 grpc_closure *make_unused_reclaimer(grpc_closure *then) {
-  return grpc_closure_create(unused_reclaimer_cb, then);
+  return grpc_closure_create(unused_reclaimer_cb, then,
+                             grpc_schedule_on_exec_ctx);
 }
 
 static void destroy_user(grpc_resource_user *usr) {

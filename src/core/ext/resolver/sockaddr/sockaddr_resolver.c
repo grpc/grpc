@@ -90,7 +90,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -124,7 +124,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
     *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
   }
 }

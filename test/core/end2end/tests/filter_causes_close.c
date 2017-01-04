@@ -208,13 +208,12 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  grpc_exec_ctx_sched(
+  grpc_closure_sched(
       exec_ctx, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
                              "Failure that's not preventable.", &error, 1),
                          GRPC_ERROR_INT_GRPC_STATUS,
-                         GRPC_STATUS_PERMISSION_DENIED),
-      NULL);
+                         GRPC_STATUS_PERMISSION_DENIED));
 }
 
 static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
@@ -223,7 +222,8 @@ static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   if (op->recv_initial_metadata != NULL) {
     calld->recv_im_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = grpc_closure_create(recv_im_ready, elem);
+    op->recv_initial_metadata_ready =
+        grpc_closure_create(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
   }
   grpc_call_next_op(exec_ctx, elem, op);
 }

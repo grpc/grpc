@@ -608,7 +608,8 @@ static void send_termination(grpc_exec_ctx *exec_ctx, void *tcp,
   memset(&tc->op, 0, sizeof(tc->op));
   tc->op.cancel_error = tc->error;
   /* reuse closure to catch completion */
-  grpc_closure_init(&tc->closure, done_termination, tc);
+  grpc_closure_init(&tc->closure, done_termination, tc,
+                    grpc_schedule_on_exec_ctx);
   tc->op.on_complete = &tc->closure;
   execute_op(exec_ctx, tc->call, &tc->op);
 }
@@ -617,9 +618,10 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
                                              termination_closure *tc) {
   set_status_from_error(exec_ctx, tc->call, STATUS_FROM_API_OVERRIDE,
                         GRPC_ERROR_REF(tc->error));
-  grpc_closure_init(&tc->closure, send_termination, tc);
+  grpc_closure_init(&tc->closure, send_termination, tc,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CALL_INTERNAL_REF(tc->call, "termination");
-  grpc_exec_ctx_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE);
   return GRPC_CALL_OK;
 }
 
@@ -1037,7 +1039,8 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       }
       return;
     }
-    grpc_closure_init(&call->receiving_next_step, receiving_slice_ready, bctl);
+    grpc_closure_init(&call->receiving_next_step, receiving_slice_ready, bctl,
+                      grpc_schedule_on_exec_ctx);
     if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
                                     &call->receiving.full.slice, remaining,
                                     &call->receiving_next_step)) {
@@ -1135,7 +1138,8 @@ static void continue_incremental_recv_raw(grpc_exec_ctx *exec_ctx,
           NEXT_SLICE_EMPTY;
     /* fall through */
     case NEXT_SLICE_EMPTY:
-      grpc_closure_init(&call->receiving_next_step, got_next_incr_slice, call);
+      grpc_closure_init(&call->receiving_next_step, got_next_incr_slice, call,
+                        grpc_schedule_on_exec_ctx);
       while (call->receiving.incremental.remaining != 0) {
         if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
                                         &call->receiving.incremental.next_slice,
@@ -1190,7 +1194,8 @@ static void continue_incremental_recv_iovec(grpc_exec_ctx *exec_ctx,
                                             grpc_call *call) {
   grpc_slice *slice = &call->receiving.incremental.next_slice;
 
-  grpc_closure_init(&call->receiving_next_step, got_next_iovec_slice, call);
+  grpc_closure_init(&call->receiving_next_step, got_next_iovec_slice, call,
+                    grpc_schedule_on_exec_ctx);
   do {
     if (call->receiving.incremental.buffer_progress.iovec.pull_idx ==
         call->receiving.incremental.pull_target->data.iovec.elem_count) {
@@ -1441,8 +1446,8 @@ grpc_call_error grpc_call_incremental_message_writer_push(
   }
   if (call->sending.incremental.on_next != NULL) {
     incwr_complete_slice(&exec_ctx, call, call->sending.incremental.next_slice);
-    grpc_exec_ctx_sched(&exec_ctx, call->sending.incremental.on_next,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(&exec_ctx, call->sending.incremental.on_next,
+                       GRPC_ERROR_NONE);
     call->sending.incremental.on_next = NULL;
   }
   gpr_mu_unlock(&call->mu);
@@ -1684,10 +1689,12 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   call->has_initial_md_been_received = true;
   if (call->saved_receiving_stream_ready_bctlp != NULL) {
-    grpc_closure *saved_rsr_closure = grpc_closure_create(
-        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp);
     call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_exec_ctx_sched(exec_ctx, saved_rsr_closure, error, NULL);
+    grpc_closure_sched(
+        exec_ctx, grpc_closure_create(receiving_stream_ready,
+                                      call->saved_receiving_stream_ready_bctlp,
+                                      grpc_schedule_on_exec_ctx),
+        error);
   }
 
   gpr_mu_unlock(&call->mu);
@@ -1947,7 +1954,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->received_initial_metadata = 1;
         call->buffered_metadata[0] = op->data.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
-                          receiving_initial_metadata_ready, bctl);
+                          receiving_initial_metadata_ready, bctl,
+                          grpc_schedule_on_exec_ctx);
         bctl->recv_initial_metadata = 1;
         stream_op->recv_initial_metadata =
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1970,7 +1978,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->receiving.full.buffer = op->data.recv_message;
         stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_next_step, receiving_stream_ready,
-                          bctl);
+                          bctl, grpc_schedule_on_exec_ctx);
         stream_op->recv_message_ready = &call->receiving_next_step;
         num_completion_callbacks_needed++;
         break;
@@ -1990,7 +1998,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             op->data.recv_message_incremental_start.message_length;
         stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_next_step, receiving_stream_ready,
-                          bctl);
+                          bctl, grpc_schedule_on_exec_ctx);
         stream_op->recv_message_ready = &call->receiving_next_step;
         num_completion_callbacks_needed++;
         break;
@@ -2053,7 +2061,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 
   stream_op->context = call->context;
-  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl);
+  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
+                    grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
   gpr_mu_unlock(&call->mu);
 

@@ -108,16 +108,18 @@ int main(int argc, char **argv) {
   grpc_resolver *resolver = create_resolver(&exec_ctx, "dns:test");
   gpr_event ev1;
   gpr_event_init(&ev1);
-  grpc_resolver_next(&exec_ctx, resolver, &result,
-                     grpc_closure_create(on_done, &ev1));
+  grpc_resolver_next(
+      &exec_ctx, resolver, &result,
+      grpc_closure_create(on_done, &ev1, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(result == NULL);
 
   gpr_event ev2;
   gpr_event_init(&ev2);
-  grpc_resolver_next(&exec_ctx, resolver, &result,
-                     grpc_closure_create(on_done, &ev2));
+  grpc_resolver_next(
+      &exec_ctx, resolver, &result,
+      grpc_closure_create(on_done, &ev2, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);

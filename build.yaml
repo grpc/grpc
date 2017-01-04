@@ -980,6 +980,7 @@ libs:
   - gpr_test_util
   - grpc_unsecure
   filegroups:
+  - grpc_debug_macros
   - grpc_test_util_base
   secure: false
   vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
