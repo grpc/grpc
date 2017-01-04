@@ -94,18 +94,6 @@ describe GRPC::Pool do
       expect(q.pop).to be(o)
       p.stop
     end
-
-    it 'it throws an error if all of the workers have tasks to do' do
-      p = Pool.new(5)
-      p.start
-      job = proc {}
-      5.times do
-        expect(p.ready_for_work?).to be(true)
-        p.schedule(&job)
-      end
-      expect { p.schedule(&job) }.to raise_error
-      expect { p.schedule(&job) }.to raise_error
-    end
   end
 
   describe '#stop' do
