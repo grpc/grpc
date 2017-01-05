@@ -144,6 +144,7 @@ END2END_TESTS = {
     'trailing_metadata': default_test_options,
     'authority_not_supported': default_test_options,
     'write_buffering': default_test_options,
+    'write_buffering_at_end': default_test_options,
 }
 
 
