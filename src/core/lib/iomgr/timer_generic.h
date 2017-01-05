@@ -43,7 +43,7 @@ struct grpc_timer {
   int triggered;
   struct grpc_timer *next;
   struct grpc_timer *prev;
-  grpc_closure closure;
+  grpc_closure *closure;
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H */

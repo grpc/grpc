@@ -46,6 +46,7 @@ typedef struct grpc_deadline_state {
   bool timer_pending;
   // The deadline timer.
   grpc_timer timer;
+  grpc_closure timer_callback;
   // Closure to invoke when the call is complete.
   // We use this to cancel the timer.
   grpc_closure on_complete;

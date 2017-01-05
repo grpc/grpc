@@ -49,15 +49,15 @@
 
 typedef struct grpc_timer grpc_timer;
 
-/* Initialize *timer. When expired or canceled, timer_cb will be called with
-   *timer_cb_arg and error set to indicate if it expired (GRPC_ERROR_NONE) or
-   was canceled (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called
-   exactly once, and application code should check the error to determine
-   how it was invoked. The application callback is also responsible for
-   maintaining information about when to free up any user-level state. */
+/* Initialize *timer. When expired or canceled, closure will be called with
+   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
+   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+   application code should check the error to determine how it was invoked. The
+   application callback is also responsible for maintaining information about
+   when to free up any user-level state. */
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now);
+                     gpr_timespec deadline, grpc_closure *closure,
+                     gpr_timespec now);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
