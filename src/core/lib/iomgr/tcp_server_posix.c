@@ -167,18 +167,18 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
         s->so_reuseport =
             has_so_reuseport && (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
                                  " must be an integer");
       }
     } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         s->resource_quota =
-            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
+            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
                                  " must be a pointer to a buffer pool");
@@ -219,7 +219,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     gpr_free(sp);
   }
 
-  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
 
   gpr_free(s);
 }

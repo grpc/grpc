@@ -83,8 +83,12 @@ static void *method_parameters_copy(void *value) {
   return new_value;
 }
 
+static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *p) {
+  gpr_free(p);
+}
+
 static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
-    gpr_free, method_parameters_copy};
+    method_parameters_free, method_parameters_copy};
 
 static void *method_parameters_create_from_json(const grpc_json *json) {
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
@@ -328,7 +332,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
           grpc_service_config_create(service_config_json);
       if (service_config != NULL) {
         method_params_table = grpc_service_config_create_method_config_table(
-            service_config, method_parameters_create_from_json,
+            exec_ctx, service_config, method_parameters_create_from_json,
             &method_parameters_vtable);
         grpc_service_config_destroy(service_config);
       }
@@ -337,7 +341,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // be pointing to data inside chand->resolver_result.
     // The copy will be saved in chand->lb_policy_name below.
     lb_policy_name = gpr_strdup(lb_policy_name);
-    grpc_channel_args_destroy(chand->resolver_result);
+    grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = NULL;
   }
 
@@ -358,7 +362,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     chand->service_config_json = service_config_json;
   }
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(chand->method_params_table);
+    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
   if (lb_policy != NULL) {
@@ -554,7 +558,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   gpr_free(chand->lb_policy_name);
   gpr_free(chand->service_config_json);
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(chand->method_params_table);
+    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -1001,8 +1005,8 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&chand->mu);
     // If the method config table was present, use it.
     if (method_params_table != NULL) {
-      const method_parameters *method_params =
-          grpc_method_config_table_get(method_params_table, calld->path);
+      const method_parameters *method_params = grpc_method_config_table_get(
+          exec_ctx, method_params_table, calld->path);
       if (method_params != NULL) {
         const bool have_method_timeout =
             gpr_time_cmp(method_params->timeout, gpr_time_0(GPR_TIMESPAN)) != 0;
@@ -1025,7 +1029,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_mu_unlock(&calld->mu);
         }
       }
-      grpc_mdstr_hash_table_unref(method_params_table);
+      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
@@ -1066,8 +1070,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
       grpc_mdstr_hash_table *method_params_table =
           grpc_mdstr_hash_table_ref(chand->method_params_table);
       gpr_mu_unlock(&chand->mu);
-      method_parameters *method_params =
-          grpc_method_config_table_get(method_params_table, args->path);
+      method_parameters *method_params = grpc_method_config_table_get(
+          exec_ctx, method_params_table, args->path);
       if (method_params != NULL) {
         if (gpr_time_cmp(method_params->timeout,
                          gpr_time_0(GPR_CLOCK_MONOTONIC)) != 0) {
@@ -1080,7 +1084,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
               method_params->wait_for_ready;
         }
       }
-      grpc_mdstr_hash_table_unref(method_params_table);
+      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
     } else {
       gpr_mu_unlock(&chand->mu);
     }
@@ -1109,7 +1113,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
   grpc_deadline_state_destroy(exec_ctx, elem);
-  GRPC_MDSTR_UNREF(calld->path);
+  GRPC_MDSTR_UNREF(exec_ctx, calld->path);
   GRPC_ERROR_UNREF(calld->cancel_error);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {

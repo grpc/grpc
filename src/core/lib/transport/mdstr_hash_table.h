@@ -49,7 +49,7 @@
 typedef struct grpc_mdstr_hash_table grpc_mdstr_hash_table;
 
 typedef struct grpc_mdstr_hash_table_vtable {
-  void (*destroy_value)(void* value);
+  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
   void* (*copy_value)(void* value);
 } grpc_mdstr_hash_table_vtable;
 
@@ -66,7 +66,8 @@ grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
     size_t num_entries, grpc_mdstr_hash_table_entry* entries);
 
 grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
-void grpc_mdstr_hash_table_unref(grpc_mdstr_hash_table* table);
+void grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                 grpc_mdstr_hash_table* table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */

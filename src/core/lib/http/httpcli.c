@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
@@ -111,14 +112,14 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   if (req->ep != NULL) {
     grpc_endpoint_destroy(exec_ctx, req->ep);
   }
-  grpc_slice_unref(req->request_text);
+  grpc_slice_unref_internal(exec_ctx, req->request_text);
   gpr_free(req->host);
   gpr_free(req->ssl_host_override);
   grpc_iomgr_unregister_object(&req->iomgr_obj);
-  grpc_slice_buffer_destroy(&req->incoming);
-  grpc_slice_buffer_destroy(&req->outgoing);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &req->incoming);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_internal_unref(exec_ctx, req->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, req->resource_quota);
   gpr_free(req);
 }
 
@@ -178,7 +179,7 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void start_write(grpc_exec_ctx *exec_ctx, internal_request *req) {
-  grpc_slice_ref(req->request_text);
+  grpc_slice_ref_internal(req->request_text);
   grpc_slice_buffer_add(&req->outgoing, req->request_text);
   grpc_endpoint_write(exec_ctx, req->ep, &req->outgoing, &req->done_write);
 }
@@ -266,7 +267,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->resource_quota = grpc_resource_quota_internal_ref(resource_quota);
+  req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   grpc_closure_init(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   grpc_closure_init(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);

@@ -239,7 +239,7 @@ int main(int argc, char **argv) {
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
   return 0;
 }
 

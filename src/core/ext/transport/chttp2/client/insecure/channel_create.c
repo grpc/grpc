@@ -72,7 +72,7 @@ static grpc_channel *client_channel_factory_create_channel(
   grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
-  grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(exec_ctx, new_args);
   return channel;
 }
 
@@ -105,7 +105,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
-  grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_client_channel_factory_unref(&exec_ctx, factory);
   grpc_exec_ctx_finish(&exec_ctx);
   return channel != NULL ? channel : grpc_lame_client_channel_create(

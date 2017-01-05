@@ -45,6 +45,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -86,26 +87,27 @@ static void security_handshaker_unref(grpc_exec_ctx *exec_ctx,
       grpc_endpoint_destroy(exec_ctx, h->endpoint_to_destroy);
     }
     if (h->read_buffer_to_destroy != NULL) {
-      grpc_slice_buffer_destroy(h->read_buffer_to_destroy);
+      grpc_slice_buffer_destroy_internal(exec_ctx, h->read_buffer_to_destroy);
       gpr_free(h->read_buffer_to_destroy);
     }
     gpr_free(h->handshake_buffer);
-    grpc_slice_buffer_destroy(&h->left_overs);
-    grpc_slice_buffer_destroy(&h->outgoing);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &h->left_overs);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &h->outgoing);
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
-    GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
+    GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, h->connector, "handshake");
     gpr_free(h);
   }
 }
 
 // Set args fields to NULL, saving the endpoint and read buffer for
 // later destruction.
-static void cleanup_args_for_failure_locked(security_handshaker *h) {
+static void cleanup_args_for_failure_locked(grpc_exec_ctx *exec_ctx,
+                                            security_handshaker *h) {
   h->endpoint_to_destroy = h->args->endpoint;
   h->args->endpoint = NULL;
   h->read_buffer_to_destroy = h->args->read_buffer;
   h->args->read_buffer = NULL;
-  grpc_channel_args_destroy(h->args->args);
+  grpc_channel_args_destroy(exec_ctx, h->args->args);
   h->args->args = NULL;
 }
 
@@ -130,7 +132,7 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
     grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
     // Not shutting down, so the write failed.  Clean up before
     // invoking the callback.
-    cleanup_args_for_failure_locked(h);
+    cleanup_args_for_failure_locked(exec_ctx, h);
     // Set shutdown to true so that subsequent calls to
     // security_handshaker_shutdown() do nothing.
     h->shutdown = true;
@@ -165,13 +167,13 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   h->left_overs.length = 0;
   // Clear out the read buffer before it gets passed to the transport,
   // since any excess bytes were already copied to h->left_overs.
-  grpc_slice_buffer_reset_and_unref(h->args->read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, h->args->read_buffer);
   // Add auth context to channel args.
   grpc_arg auth_context_arg = grpc_auth_context_to_arg(h->auth_context);
   grpc_channel_args *tmp_args = h->args->args;
   h->args->args =
       grpc_channel_args_copy_and_add(tmp_args, &auth_context_arg, 1);
-  grpc_channel_args_destroy(tmp_args);
+  grpc_channel_args_destroy(exec_ctx, tmp_args);
   // Invoke callback.
   grpc_closure_sched(exec_ctx, h->on_handshake_done, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
@@ -218,7 +220,7 @@ static grpc_error *send_handshake_bytes_to_peer_locked(grpc_exec_ctx *exec_ctx,
   // Send data.
   grpc_slice to_send =
       grpc_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
-  grpc_slice_buffer_reset_and_unref(&h->outgoing);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
   grpc_slice_buffer_add(&h->outgoing, to_send);
   grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
                       &h->on_handshake_data_sent_to_peer);
@@ -287,7 +289,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
           grpc_slice_split_tail(&h->args->read_buffer->slices[i],
                                 consumed_slice_size));
       /* split_tail above increments refcount. */
-      grpc_slice_unref(h->args->read_buffer->slices[i]);
+      grpc_slice_unref_internal(exec_ctx, h->args->read_buffer->slices[i]);
     }
     grpc_slice_buffer_addn(
         &h->left_overs, &h->args->read_buffer->slices[i + 1],
@@ -350,7 +352,7 @@ static void security_handshaker_shutdown(grpc_exec_ctx *exec_ctx,
   if (!h->shutdown) {
     h->shutdown = true;
     grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
-    cleanup_args_for_failure_locked(h);
+    cleanup_args_for_failure_locked(exec_ctx, h);
   }
   gpr_mu_unlock(&h->mu);
 }
