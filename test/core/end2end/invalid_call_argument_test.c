@@ -576,9 +576,8 @@ static void test_invalid_initial_metadata_reserved_key() {
   gpr_log(GPR_INFO, "test_invalid_initial_metadata_reserved_key");
 
   grpc_metadata metadata;
-  metadata.key = ":start_with_colon";
-  metadata.value = "value";
-  metadata.value_length = 6;
+  metadata.key = grpc_slice_from_static_string(":start_with_colon");
+  metadata.value = grpc_slice_from_static_string("value");
 
   grpc_op *op;
   prepare_test(1);
