@@ -1,4 +1,8 @@
-# Copyright 2016, Google Inc.
+#!/bin/sh
+
+# Test runner for end2end tests from bazel
+
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,18 +30,4 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
-  native.cc_binary(
-    name = '%s/one_entry.bin' % name,
-    srcs = srcs,
-    deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],
-    **kwargs
-  )
-  for entry in native.glob(['%s/*' % corpus]):
-    native.sh_test(
-      name = '%s/one_entry/%s' % (name, entry),
-      data = [':%s/one_entry.bin' % name, entry],
-      srcs = ['//test/core/util:fuzzer_one_entry_runner'],
-      args = ['$(location :%s/one_entry.bin)' % name, '$(location %s)' % entry]
-    )
+$1 $2
