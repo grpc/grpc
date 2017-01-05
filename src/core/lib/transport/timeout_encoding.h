@@ -34,7 +34,9 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/support/string.h"
 
 #define GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
