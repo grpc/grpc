@@ -47,7 +47,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct {
