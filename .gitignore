@@ -103,3 +103,10 @@ Pods/
 
 # IDE specific folder for JetBrains IDEs
 .idea/
+
+# Blaze files
+bazel-bin
+bazel-genfiles
+bazel-grpc
+bazel-out
+bazel-testlogs
