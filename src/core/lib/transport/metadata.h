@@ -37,6 +37,8 @@
 #include <grpc/slice.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,7 +98,7 @@ void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
    clients may have handy */
 grpc_mdstr *grpc_mdstr_from_string(const char *str);
 /* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice);
+grpc_mdstr *grpc_mdstr_from_slice(grpc_exec_ctx *exec_ctx, grpc_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
@@ -105,12 +107,16 @@ grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
 
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
-grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
+grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_exec_ctx *exec_ctx,
+                                               grpc_mdstr *key,
                                                grpc_mdstr *value);
-grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
+grpc_mdelem *grpc_mdelem_from_strings(grpc_exec_ctx *exec_ctx, const char *key,
+                                      const char *value);
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
-grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
+grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
+                                     grpc_slice value);
+grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_exec_ctx *exec_ctx,
+                                                const char *key,
                                                 const uint8_t *value,
                                                 size_t value_length);
 
@@ -127,22 +133,26 @@ void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
 //#define GRPC_METADATA_REFCOUNT_DEBUG
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
 #define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s), __FILE__, __LINE__)
-#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)
+#define GRPC_MDSTR_UNREF(exec_ctx, s) \
+  grpc_mdstr_unref((exec_ctx), (s), __FILE__, __LINE__)
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
-#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
+#define GRPC_MDELEM_UNREF(exec_ctx, s) \
+  grpc_mdelem_unref((exec_ctx), (s), __FILE__, __LINE__)
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s, const char *file, int line);
-void grpc_mdstr_unref(grpc_mdstr *s, const char *file, int line);
+void grpc_mdstr_unref(grpc_exec_ctx *exec_ctx, grpc_mdstr *s, const char *file,
+                      int line);
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md, const char *file, int line);
-void grpc_mdelem_unref(grpc_mdelem *md, const char *file, int line);
+void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *md,
+                       const char *file, int line);
 #else
 #define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s))
-#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s))
+#define GRPC_MDSTR_UNREF(exec_ctx, s) grpc_mdstr_unref((exec_ctx), (s))
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
-#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
+#define GRPC_MDELEM_UNREF(exec_ctx, s) grpc_mdelem_unref((exec_ctx), (s))
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s);
-void grpc_mdstr_unref(grpc_mdstr *s);
+void grpc_mdstr_unref(grpc_exec_ctx *exec_ctx, grpc_mdstr *s);
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
-void grpc_mdelem_unref(grpc_mdelem *md);
+void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *md);
 #endif
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
@@ -162,7 +172,7 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
 void grpc_mdctx_global_init(void);
-void grpc_mdctx_global_shutdown(void);
+void grpc_mdctx_global_shutdown(grpc_exec_ctx *exec_ctx);
 
 /* Implementation provided by chttp2_transport */
 extern grpc_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(

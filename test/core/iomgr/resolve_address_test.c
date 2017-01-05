@@ -252,7 +252,11 @@ int main(int argc, char **argv) {
   test_ipv6_without_port();
   test_invalid_ip_addresses();
   test_unparseable_hostports();
-  grpc_iomgr_shutdown();
-  grpc_executor_shutdown();
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_executor_shutdown(&exec_ctx);
+    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return 0;
 }

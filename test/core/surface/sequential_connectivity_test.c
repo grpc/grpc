@@ -39,6 +39,7 @@
 #include <grpc/support/thd.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -162,7 +163,11 @@ static grpc_channel *secure_test_create_channel(const char *addr) {
       grpc_channel_args_copy_and_add(NULL, &ssl_name_override, 1);
   grpc_channel *channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_channel_credentials_release(ssl_creds);
   return channel;
 }

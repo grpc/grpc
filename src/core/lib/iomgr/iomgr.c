@@ -83,11 +83,10 @@ static void dump_objects(const char *kind) {
   }
 }
 
-void grpc_iomgr_shutdown(void) {
+void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
   gpr_timespec shutdown_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_iomgr_platform_flush();
 
@@ -104,10 +103,9 @@ void grpc_iomgr_shutdown(void) {
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
-    if (grpc_timer_check(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC),
-                         NULL)) {
+    if (grpc_timer_check(exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
       gpr_mu_unlock(&g_mu);
-      grpc_exec_ctx_flush(&exec_ctx);
+      grpc_exec_ctx_flush(exec_ctx);
       grpc_iomgr_platform_flush();
       gpr_mu_lock(&g_mu);
       continue;
@@ -139,8 +137,8 @@ void grpc_iomgr_shutdown(void) {
   }
   gpr_mu_unlock(&g_mu);
 
-  grpc_timer_list_shutdown(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_timer_list_shutdown(exec_ctx);
+  grpc_exec_ctx_flush(exec_ctx);
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock(&g_mu);

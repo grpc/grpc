@@ -322,7 +322,8 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool maybe_add_filter(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_stack_builder *builder, void *arg) {
   grpc_channel_filter *filter = arg;
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
