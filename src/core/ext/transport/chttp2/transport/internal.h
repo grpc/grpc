@@ -249,6 +249,9 @@ struct grpc_chttp2_transport {
   int64_t announce_incoming_window;
   /** how much window would we like to have for incoming_window */
   uint32_t connection_window_target;
+  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+   */
+  uint32_t write_buffer_size;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
@@ -403,6 +406,9 @@ struct grpc_chttp2_stream {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  /** Are we buffering writes on this stream? If yes, we won't become writable
+      until there's enough queued up in the flow_controlled_buffer */
+  bool write_buffering;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
