@@ -50,3 +50,9 @@ cc_library(
   deps = [":gpr_test_util", "//:grpc"],
   visibility = ["//test:__subpackages__"],
 )
+
+sh_library(
+  name = "fuzzer_one_entry_runner",
+  srcs = ["fuzzer_one_entry_runner.sh"],
+  visibility = ["//test:__subpackages__"],
+)

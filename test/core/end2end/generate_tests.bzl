@@ -175,8 +175,8 @@ def grpc_end2end_tests():
   )
 
   for f, fopt in END2END_FIXTURES.items():
-    native.cc_library(
-      name = '%s_test_lib' % f,
+    native.cc_binary(
+      name = '%s_test' % f,
       srcs = ['fixtures/%s.c' % f],
       copts = ['-std=c99'],
       deps = [':end2end_tests']
@@ -184,8 +184,9 @@ def grpc_end2end_tests():
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      native.cc_test(
+      native.sh_test(
         name = '%s_test@%s' % (f, t),
-        args = [t],
-        deps = [':%s_test_lib' % f],
+        srcs = ['end2end_test.sh'],
+        args = ['$(location %s_test)' % f, t],
+        data = [':%s_test' % f],
       )
