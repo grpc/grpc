@@ -37,6 +37,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
                           grpc_byte_stream *byte_stream, grpc_slice *slice,
                           size_t max_size_hint, grpc_closure *on_complete) {
@@ -57,7 +59,8 @@ static int slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *on_complete) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
-  *slice = grpc_slice_ref(stream->backing_buffer->slices[stream->cursor]);
+  *slice =
+      grpc_slice_ref_internal(stream->backing_buffer->slices[stream->cursor]);
   stream->cursor++;
   return 1;
 }

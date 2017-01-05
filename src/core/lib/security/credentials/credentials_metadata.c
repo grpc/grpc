@@ -37,6 +37,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 static void store_ensure_capacity(grpc_credentials_md_store *store) {
   if (store->num_entries == store->allocated) {
     store->allocated = (store->allocated == 0) ? 1 : store->allocated * 2;
@@ -62,8 +64,8 @@ void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
                                    grpc_slice key, grpc_slice value) {
   if (store == NULL) return;
   store_ensure_capacity(store);
-  store->entries[store->num_entries].key = grpc_slice_ref(key);
-  store->entries[store->num_entries].value = grpc_slice_ref(value);
+  store->entries[store->num_entries].key = grpc_slice_ref_internal(key);
+  store->entries[store->num_entries].value = grpc_slice_ref_internal(value);
   store->num_entries++;
 }
 
@@ -85,14 +87,15 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
   return store;
 }
 
-void grpc_credentials_md_store_unref(grpc_credentials_md_store *store) {
+void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_credentials_md_store *store) {
   if (store == NULL) return;
   if (gpr_unref(&store->refcount)) {
     if (store->entries != NULL) {
       size_t i;
       for (i = 0; i < store->num_entries; i++) {
-        grpc_slice_unref(store->entries[i].key);
-        grpc_slice_unref(store->entries[i].value);
+        grpc_slice_unref_internal(exec_ctx, store->entries[i].key);
+        grpc_slice_unref_internal(exec_ctx, store->entries[i].value);
       }
       gpr_free(store->entries);
     }

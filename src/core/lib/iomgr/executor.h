@@ -46,6 +46,6 @@ void grpc_executor_init();
 extern grpc_closure_scheduler *grpc_executor_scheduler;
 
 /** Shutdown the executor, running all pending work as part of the call */
-void grpc_executor_shutdown();
+void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

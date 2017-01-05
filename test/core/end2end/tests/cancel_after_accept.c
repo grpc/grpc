@@ -251,7 +251,11 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  if (args != NULL) grpc_channel_args_destroy(args);
+  if (args != NULL) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   cq_verifier_destroy(cqv);
   end_test(&f);

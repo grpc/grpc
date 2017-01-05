@@ -36,6 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 static void inc_int_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
@@ -634,7 +635,11 @@ static void test_one_slice(void) {
     GPR_ASSERT(num_allocs == start_allocs + 1);
   }
 
-  grpc_slice_buffer_destroy(&buffer);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   destroy_user(usr);
   grpc_resource_quota_unref(q);
 }
@@ -670,7 +675,11 @@ static void test_one_slice_deleted_late(void) {
   }
 
   grpc_resource_quota_unref(q);
-  grpc_slice_buffer_destroy(&buffer);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 int main(int argc, char **argv) {

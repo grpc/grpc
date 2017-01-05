@@ -47,7 +47,7 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input);
 /* equivalent to:
    grpc_slice x = grpc_chttp2_base64_encode(input);
    grpc_slice y = grpc_chttp2_huffman_compress(x);
-   grpc_slice_unref(x);
+   grpc_slice_unref_internal(exec_ctx, x);
    return y; */
 grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
     grpc_slice input);

@@ -61,12 +61,10 @@ static void* factory_arg_copy(void* factory) {
   return factory;
 }
 
-static void factory_arg_destroy(void* factory) {
+static void factory_arg_destroy(grpc_exec_ctx* exec_ctx, void* factory) {
   // TODO(roth): Remove local exec_ctx when
   // https://github.com/grpc/grpc/pull/8705 is merged.
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_client_channel_factory_unref(&exec_ctx, factory);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_client_channel_factory_unref(exec_ctx, factory);
 }
 
 static int factory_arg_cmp(void* factory1, void* factory2) {

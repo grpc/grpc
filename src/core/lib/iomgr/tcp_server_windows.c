@@ -116,11 +116,11 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         s->resource_quota =
-            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
+            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
                                  " must be a pointer to a buffer pool");
@@ -155,7 +155,7 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
   gpr_free(s);
 }
 

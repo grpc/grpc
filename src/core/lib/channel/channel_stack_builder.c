@@ -138,9 +138,10 @@ void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder *builder,
 }
 
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_channel_stack_builder *builder, const grpc_channel_args *args) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    const grpc_channel_args *args) {
   if (builder->args != NULL) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   builder->args = grpc_channel_args_copy(args);
 }
@@ -213,7 +214,8 @@ bool grpc_channel_stack_builder_add_filter_after(
   return true;
 }
 
-void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder) {
+void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_stack_builder *builder) {
   filter_node *p = builder->begin.next;
   while (p != &builder->end) {
     filter_node *next = p->next;
@@ -221,7 +223,7 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder) {
     p = next;
   }
   if (builder->args != NULL) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   gpr_free(builder->target);
   gpr_free(builder);
@@ -276,7 +278,7 @@ grpc_error *grpc_channel_stack_builder_finish(
     }
   }
 
-  grpc_channel_stack_builder_destroy(builder);
+  grpc_channel_stack_builder_destroy(exec_ctx, builder);
   gpr_free((grpc_channel_filter **)filters);
 
   return error;

@@ -99,8 +99,10 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hptbl table;
 };
 
-void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p);
-void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser *p);
+void grpc_chttp2_hpack_parser_init(grpc_exec_ctx *exec_ctx,
+                                   grpc_chttp2_hpack_parser *p);
+void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_hpack_parser *p);
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 

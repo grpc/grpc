@@ -37,6 +37,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
+
 /* Slice API
 
    A slice represents a contiguous reference counted array of bytes.
@@ -57,7 +59,7 @@
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
   void (*ref)(void *);
-  void (*unref)(void *);
+  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
 } grpc_slice_refcount;
 
 #define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)

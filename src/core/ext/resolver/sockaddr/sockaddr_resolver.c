@@ -47,6 +47,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -131,8 +132,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_lb_addresses_destroy(r->addresses);
-  grpc_channel_args_destroy(r->channel_args);
+  grpc_lb_addresses_destroy(exec_ctx, r->addresses);
+  grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
 }
 
@@ -161,7 +162,8 @@ char *unix_get_default_authority(grpc_resolver_factory *factory,
 
 static void do_nothing(void *ignored) {}
 
-static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
+static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
+                                      grpc_resolver_args *args,
                                       int parse(grpc_uri *uri,
                                                 grpc_resolved_address *dst)) {
   if (0 != strcmp(args->uri->authority, "")) {
@@ -188,10 +190,10 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
     gpr_free(part_str);
     if (errors_found) break;
   }
-  grpc_slice_buffer_destroy(&path_parts);
-  grpc_slice_unref(path_slice);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
+  grpc_slice_unref_internal(exec_ctx, path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(addresses);
+    grpc_lb_addresses_destroy(exec_ctx, addresses);
     return NULL;
   }
   /* Instantiate resolver. */
@@ -216,7 +218,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,              \
       grpc_resolver_args *args) {                                           \
-    return sockaddr_create(args, parse_##name);                             \
+    return sockaddr_create(exec_ctx, args, parse_##name);                   \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
