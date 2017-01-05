@@ -130,7 +130,8 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_get(
       &exec_ctx, &context, &detector.pollent, resource_quota, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-      grpc_closure_create(on_compute_engine_detection_http_response, &detector),
+      grpc_closure_create(on_compute_engine_detection_http_response, &detector,
+                          grpc_schedule_on_exec_ctx),
       &detector.response);
   grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
 
@@ -155,7 +156,8 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_closure, destroy_pollset,
-                    grpc_polling_entity_pollset(&detector.pollent));
+                    grpc_polling_entity_pollset(&detector.pollent),
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx,
                         grpc_polling_entity_pollset(&detector.pollent),
                         &destroy_closure);

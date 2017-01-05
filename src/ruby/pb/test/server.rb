@@ -200,15 +200,12 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def streaming_input_call(call)
-    maybe_echo_metadata(call)
     sizes = call.each_remote_read.map { |x| x.payload.body.length }
     sum = sizes.inject(0) { |s, x| s + x }
     StreamingInputCallResponse.new(aggregated_payload_size: sum)
   end
 
   def streaming_output_call(req, _call)
-    maybe_echo_metadata(_call)
-    maybe_echo_status_and_message(req)
     cls = StreamingOutputCallResponse
     req.response_parameters.map do |p|
       cls.new(payload: Payload.new(type: req.response_type,
