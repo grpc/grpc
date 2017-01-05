@@ -66,6 +66,6 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
 /// Caller does NOT own a reference to the result.
 void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
                                    const grpc_slice_hash_table* table,
-                                   const grpc_slice path);
+                                   grpc_slice path);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */
