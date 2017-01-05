@@ -44,6 +44,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
@@ -99,23 +100,36 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
   return hosts;
 }
 
-static deque<string> get_workers(const string& name) {
-  char* env = gpr_getenv(name.c_str());
-  if (!env || strlen(env) == 0) return deque<string>();
-
+static deque<string> get_workers(const string& env_name) {
+  char* env = gpr_getenv(env_name.c_str());
+  if (!env) {
+    env = gpr_strdup("");
+  }
   deque<string> out;
   char* p = env;
-  for (;;) {
-    char* comma = strchr(p, ',');
-    if (comma) {
-      out.emplace_back(p, comma);
-      p = comma + 1;
-    } else {
-      out.emplace_back(p);
-      gpr_free(env);
-      return out;
+  if (strlen(env) != 0) {
+    for (;;) {
+      char* comma = strchr(p, ',');
+      if (comma) {
+        out.emplace_back(p, comma);
+        p = comma + 1;
+      } else {
+        out.emplace_back(p);
+        break;
+      }
     }
   }
+  if (out.size() == 0) {
+    gpr_log(GPR_ERROR,
+            "Environment variable \"%s\" does not contain a list of QPS "
+            "workers to use. Set it to a comma-separated list of "
+            "hostname:port pairs, starting with hosts that should act as "
+            "servers. E.g. export "
+            "%s=\"serverhost1:1234,clienthost1:1234,clienthost2:1234\"",
+            env_name.c_str(), env_name.c_str());
+  }
+  gpr_free(env);
+  return out;
 }
 
 // helpers for postprocess_scenario_result
@@ -241,6 +255,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
+  GPR_ASSERT(workers.size() != 0);
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -560,6 +575,9 @@ bool RunQuit() {
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
+  if (workers.size() == 0) {
+    return false;
+  }
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));

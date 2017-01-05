@@ -43,9 +43,7 @@
  * non-blocking solution available. */
 void grpc_executor_init();
 
-/** Enqueue \a closure for its eventual execution of \a f(arg) on a separate
- * thread */
-void grpc_executor_push(grpc_closure *closure, grpc_error *error);
+extern grpc_closure_scheduler *grpc_executor_scheduler;
 
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown();

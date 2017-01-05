@@ -110,7 +110,7 @@ module GRPC
         rpc_descs[name] = RpcDesc.new(name, input, output,
                                       marshal_class_method,
                                       unmarshal_class_method)
-        define_method(GenericService.underscore(name.to_s).to_sym) do
+        define_method(GenericService.underscore(name.to_s).to_sym) do |_, _|
           fail GRPC::BadStatus.new_status_exception(
             GRPC::Core::StatusCodes::UNIMPLEMENTED)
         end

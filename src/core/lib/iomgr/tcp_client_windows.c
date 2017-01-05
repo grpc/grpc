@@ -129,7 +129,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
+  grpc_closure_sched(exec_ctx, on_done, error);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
@@ -227,7 +227,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
   ac->resource_quota = resource_quota;
-  grpc_closure_init(&ac->on_connect, on_connect, ac);
+  grpc_closure_init(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
                   gpr_now(GPR_CLOCK_MONOTONIC));
@@ -247,7 +247,7 @@ failure:
     closesocket(sock);
   }
   grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-  grpc_exec_ctx_sched(exec_ctx, on_done, final_error, NULL);
+  grpc_closure_sched(exec_ctx, on_done, final_error);
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */
