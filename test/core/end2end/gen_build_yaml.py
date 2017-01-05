@@ -143,6 +143,7 @@ END2END_TESTS = {
     'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
     'authority_not_supported': default_test_options,
+    'write_buffering': default_test_options,
 }
 
 
