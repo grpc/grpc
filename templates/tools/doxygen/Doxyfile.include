@@ -9,6 +9,7 @@
 <%
   import itertools
   import glob
+  import os
   targets = []
   docpackage = packagename.replace('+', 'p').lower()
   for libname in libnames:
@@ -18,6 +19,11 @@
         target = p
     assert(target)
     targets.append(target)
+  srcdoc = []
+  for dirpath, dirnames, filenames in os.walk('src/%s' % docpackage):
+    for filename in filenames:
+      if os.path.splitext(filename)[1] == '.md':
+        srcdoc.append(os.path.join(dirpath, filename))
 %>
 # Doxyfile 1.8.9.1
 
@@ -790,7 +796,8 @@ INPUT                  = ${
     				     else target.headers + target.src)
     			      for target in targets),
             glob.glob('doc/*.md'),
-            glob.glob('doc/%s/*.md' % docpackage))
+            glob.glob('doc/%s/*.md' % docpackage),
+            [] if not internal else srcdoc)
     )
 }
 
