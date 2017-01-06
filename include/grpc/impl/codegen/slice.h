@@ -37,8 +37,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/gpr_slice.h>
 
 /* Slice API
 
