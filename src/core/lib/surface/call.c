@@ -991,6 +991,9 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
         exec_ctx,
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
+  if (bctl->send_message) {
+    call->sending_message = false;
+  }
   if (bctl->send_final_op) {
     grpc_metadata_batch_destroy(
         exec_ctx,
