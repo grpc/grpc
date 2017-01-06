@@ -168,6 +168,9 @@ static grpc_end2end_test_config configs[] = {
      chttp2_tear_down_secure_fullstack},
 };
 
+extern void packet_coalescing(grpc_end2end_test_config config);
+extern void packet_coalescing_pre_init(void);
+
 static char *roots_filename;
 
 @interface CoreCronetEnd2EndTests : XCTestCase
@@ -347,7 +350,11 @@ static char *roots_filename;
 }
 
 - (void)testPacketCoalescing {
-  [self testIndividualCase:"packet_coalescing"];
+  // Directly invoke the test function since the test is for Cronet only and thus not included in
+  // end2end_tests.c
+  // TODO (mxyan): Do the same to all test cases so that this file will no longer depend on
+  // end2end_tests.c
+  packet_coalescing(configs[0]);
 }
 
 - (void)testPayload {

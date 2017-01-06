@@ -7199,7 +7199,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
-    test/core/end2end/tests/packet_coalescing.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
@@ -7286,7 +7285,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
-    test/core/end2end/tests/packet_coalescing.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \

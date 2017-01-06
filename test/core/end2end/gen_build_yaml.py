@@ -126,7 +126,6 @@ END2END_TESTS = {
     'network_status_change': default_test_options,
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
-    'packet_coalescing': default_test_options,
     'payload': default_test_options,
     'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options,
