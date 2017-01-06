@@ -49,6 +49,7 @@
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   uv_tcp_t *tcp_handle;
   grpc_closure *closure;
   grpc_endpoint **endpoint;
@@ -148,9 +149,11 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
                  (const struct sockaddr *)resolved_addr->addr,
                  uv_tc_on_connect);
+  grpc_closure_init(&connect->on_alarm, uv_tc_on_alarm, connect,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &connect->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  uv_tc_on_alarm, connect, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &connect->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // overridden by api_fuzzer.c
