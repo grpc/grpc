@@ -215,8 +215,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\packet_coalescing.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping.c">
