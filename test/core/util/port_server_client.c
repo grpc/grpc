@@ -152,7 +152,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     failed = 1;
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]", msg);
-    
+
   } else if (response->status != 200) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",

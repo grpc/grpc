@@ -453,7 +453,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   if (grpc_server_channel_trace && error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Disconnected client: %s", msg);
-    
   }
   GRPC_ERROR_UNREF(error);
 
