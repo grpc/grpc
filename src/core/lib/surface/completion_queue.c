@@ -253,7 +253,6 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (grpc_trace_operation_failures && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
-    
   }
 
   storage->tag = tag;
@@ -294,7 +293,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (kick_error != GRPC_ERROR_NONE) {
       const char *msg = grpc_error_string(kick_error);
       gpr_log(GPR_ERROR, "Kick failed: %s", msg);
-      
+
       GRPC_ERROR_UNREF(kick_error);
     }
   } else {
@@ -461,7 +460,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
@@ -647,7 +646,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;

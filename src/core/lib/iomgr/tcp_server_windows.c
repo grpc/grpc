@@ -345,7 +345,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s", msg);
-    
+
     gpr_mu_unlock(&sp->server->mu);
     return;
   }
