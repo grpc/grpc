@@ -312,6 +312,9 @@ function customMetadata(client, done) {
     }
   };
   var streaming_arg = {
+    response_parameters: [
+     {size: 314159}
+    ],
     payload: {
       body: zeroBuffer(271828)
     }
