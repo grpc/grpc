@@ -833,22 +833,25 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
 
 static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                grpc_metadata_batch *b) {
-  uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
-  grpc_error *error =
-      status_code == GRPC_STATUS_OK
-          ? GRPC_ERROR_NONE
-          : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
-                               GRPC_ERROR_INT_GRPC_STATUS, status_code);
+  if (b->idx.named.grpc_status != NULL) {
+    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
+    grpc_error *error =
+        status_code == GRPC_STATUS_OK
+            ? GRPC_ERROR_NONE
+            : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
+                                 GRPC_ERROR_INT_GRPC_STATUS, status_code);
 
-  if (b->idx.named.grpc_message != NULL) {
-    char *msg =
-        grpc_slice_to_c_string(GRPC_MDVALUE(b->idx.named.grpc_message->md));
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
-    gpr_free(msg);
-    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
+    if (b->idx.named.grpc_message != NULL) {
+      char *msg =
+          grpc_slice_to_c_string(GRPC_MDVALUE(b->idx.named.grpc_message->md));
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+      gpr_free(msg);
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
+    }
+
+    set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
   }
-
-  set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
 }
 
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
@@ -1187,6 +1190,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
+  cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
   bctl->errors[idx] = error;
 }
