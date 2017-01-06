@@ -1276,7 +1276,34 @@ src/core/lib/support/tls_pthread.c \
 src/core/lib/support/tmpfile_msys.c \
 src/core/lib/support/tmpfile_posix.c \
 src/core/lib/support/tmpfile_windows.c \
-src/core/lib/support/wrap_memcpy.c
+src/core/lib/support/wrap_memcpy.c \
+doc/fail_fast.md \
+doc/compression.md \
+doc/environment_variables.md \
+doc/stress_test_framework.md \
+doc/PROTOCOL-WEB.md \
+doc/cpp-style-guide.md \
+doc/http-grpc-status-mapping.md \
+doc/wait-for-ready.md \
+doc/command_line_tool.md \
+doc/c-style-guide.md \
+doc/server_reflection_tutorial.md \
+doc/health-checking.md \
+doc/connection-backoff-interop-test-description.md \
+doc/epoll-polling-engine.md \
+doc/naming.md \
+doc/binary-logging.md \
+doc/connectivity-semantics-and-api.md \
+doc/connection-backoff.md \
+doc/compression_cookbook.md \
+doc/PROTOCOL-HTTP2.md \
+doc/load-balancing.md \
+doc/negative-http2-interop-test-descriptions.md \
+doc/server-reflection.md \
+doc/interop-test-descriptions.md \
+doc/statuscodes.md \
+doc/g_stands_for.md \
+doc/core/pending_api_cleanups.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
