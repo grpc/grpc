@@ -240,7 +240,7 @@ if __name__ == '__main__':
       multi_callable = channel.stream_unary(method)
       future = multi_callable.future(infinite_request_iterator())
       result, call = multi_callable.with_call(
-          [REQUEST] * test_constants.STREAM_LENGTH)
+          iter([REQUEST] * test_constants.STREAM_LENGTH))
     elif (args.scenario == IN_FLIGHT_STREAM_STREAM_CALL or
           args.scenario == IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL):
       multi_callable = channel.stream_stream(method)
