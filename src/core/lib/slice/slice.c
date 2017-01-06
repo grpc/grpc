@@ -31,11 +31,15 @@
  *
  */
 
+#include "src/core/lib/slice/slice_internal.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include <string.h>
+
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 grpc_slice gpr_empty_slice(void) {
   grpc_slice out;
@@ -44,25 +48,37 @@ grpc_slice gpr_empty_slice(void) {
   return out;
 }
 
-grpc_slice grpc_slice_ref(grpc_slice slice) {
+grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   if (slice.refcount) {
     slice.refcount->ref(slice.refcount);
   }
   return slice;
 }
 
-void grpc_slice_unref(grpc_slice slice) {
+void grpc_slice_unref_internal(grpc_exec_ctx *exec_ctx, grpc_slice slice) {
   if (slice.refcount) {
-    slice.refcount->unref(slice.refcount);
+    slice.refcount->unref(exec_ctx, slice.refcount);
   }
+}
+
+/* Public API */
+grpc_slice grpc_slice_ref(grpc_slice slice) {
+  return grpc_slice_ref_internal(slice);
+}
+
+/* Public API */
+void grpc_slice_unref(grpc_slice slice) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_unref_internal(&exec_ctx, slice);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-static void noop_ref_or_unref(void *unused) {}
+static void noop_ref(void *unused) {}
+static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 
-static grpc_slice_refcount noop_refcount = {noop_ref_or_unref,
-                                            noop_ref_or_unref};
+static grpc_slice_refcount noop_refcount = {noop_ref, noop_unref};
 
 grpc_slice grpc_slice_from_static_string(const char *s) {
   grpc_slice slice;
@@ -86,7 +102,7 @@ static void new_slice_ref(void *p) {
   gpr_ref(&r->refs);
 }
 
-static void new_slice_unref(void *p) {
+static void new_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   new_slice_refcount *r = p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data);
@@ -131,7 +147,7 @@ static void new_with_len_ref(void *p) {
   gpr_ref(&r->refs);
 }
 
-static void new_with_len_unref(void *p) {
+static void new_with_len_unref(grpc_exec_ctx *exec_ctx, void *p) {
   new_with_len_slice_refcount *r = p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data, r->user_length);
@@ -177,7 +193,7 @@ static void malloc_ref(void *p) {
   gpr_ref(&r->refs);
 }
 
-static void malloc_unref(void *p) {
+static void malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
   malloc_refcount *r = p;
   if (gpr_unref(&r->refs)) {
     gpr_free(r);

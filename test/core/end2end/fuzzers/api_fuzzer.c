@@ -349,11 +349,11 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
     *r->addrs = addrs;
-    grpc_exec_ctx_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
+        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -361,7 +361,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                        const char *default_port, grpc_closure *on_done,
+                        const char *default_port,
+                        grpc_pollset_set *interested_parties,
+                        grpc_closure *on_done,
                         grpc_resolved_addresses **addresses) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
@@ -396,7 +398,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
@@ -408,7 +410,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
 
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -419,8 +421,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, closure,
-                        GRPC_ERROR_CREATE("Connect deadline exceeded"), NULL);
+    grpc_closure_sched(exec_ctx, closure,
+                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
 
@@ -744,7 +746,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           g_channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
         } else {
@@ -768,7 +774,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           g_server = grpc_server_create(args, NULL);
           GPR_ASSERT(g_server != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           grpc_server_register_completion_queue(g_server, cq, NULL);
           grpc_server_start(g_server);
           server_shutdown = false;
@@ -1104,7 +1114,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_credentials *creds = read_channel_creds(&inp);
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
           grpc_channel_credentials_release(creds);

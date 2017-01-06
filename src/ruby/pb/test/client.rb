@@ -459,11 +459,8 @@ class NamedTests
     deadline = GRPC::Core::TimeConsts::from_relative_time(1)
     resps = @stub.full_duplex_call(enum.each_item, deadline: deadline)
     resps.each { } # wait to receive each request (or timeout)
-    fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
-  rescue GRPC::BadStatus => e
-    assert("#{__callee__}: status was wrong") do
-      e.code == GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
-    end
+    fail 'Should have raised GRPC::DeadlineExceeded'
+  rescue GRPC::DeadlineExceeded
   end
 
   def empty_stream

@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
@@ -148,8 +149,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       // point this can be removed.
       grpc_endpoint_shutdown(exec_ctx, args->endpoint);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
-      grpc_channel_args_destroy(args->args);
-      grpc_slice_buffer_destroy(args->read_buffer);
+      grpc_channel_args_destroy(exec_ctx, args->args);
+      grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
       gpr_free(args->read_buffer);
     }
   } else {
@@ -164,7 +165,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
           connection_state->accepting_pollset, args->args);
       grpc_chttp2_transport_start_reading(exec_ctx, transport,
                                           args->read_buffer);
-      grpc_channel_args_destroy(args->args);
+      grpc_channel_args_destroy(exec_ctx, args->args);
     }
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
@@ -238,7 +239,7 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
     destroy_done->cb(exec_ctx, destroy_done->cb_arg, GRPC_ERROR_REF(error));
     grpc_exec_ctx_flush(exec_ctx);
   }
-  grpc_channel_args_destroy(state->args);
+  grpc_channel_args_destroy(exec_ctx, state->args);
   gpr_mu_destroy(&state->mu);
   gpr_free(state);
 }
@@ -281,7 +282,8 @@ grpc_error *grpc_chttp2_server_add_port(
   state = gpr_malloc(sizeof(*state));
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->tcp_server_shutdown_complete,
-                    tcp_server_shutdown_complete, state);
+                    tcp_server_shutdown_complete, state,
+                    grpc_schedule_on_exec_ctx);
   err = grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,
                                args, &tcp_server);
   if (err != GRPC_ERROR_NONE) {
@@ -345,7 +347,7 @@ error:
   if (tcp_server) {
     grpc_tcp_server_unref(exec_ctx, tcp_server);
   } else {
-    grpc_channel_args_destroy(args);
+    grpc_channel_args_destroy(exec_ctx, args);
     grpc_chttp2_server_handshaker_factory_destroy(exec_ctx, handshaker_factory);
     gpr_free(state);
   }

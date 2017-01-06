@@ -184,22 +184,22 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   shard_type *shard = &g_shards[shard_idx(timer)];
   GPR_ASSERT(deadline.clock_type == g_clock_type);
   GPR_ASSERT(now.clock_type == g_clock_type);
-  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg);
+  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg,
+                    grpc_schedule_on_exec_ctx);
   timer->deadline = deadline;
   timer->triggered = 0;
 
   if (!g_initialized) {
     timer->triggered = 1;
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, &timer->closure,
-        GRPC_ERROR_CREATE("Attempt to create timer before initialization"),
-        NULL);
+        GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
-    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE);
     return;
   }
 
@@ -251,7 +251,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
   if (!timer->triggered) {
-    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
+    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED);
     timer->triggered = 1;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -317,7 +317,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_REF(error));
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

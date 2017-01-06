@@ -116,11 +116,11 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         s->resource_quota =
-            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
+            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
                                  " must be a pointer to a buffer pool");
@@ -155,18 +155,19 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
   gpr_free(s);
 }
 
 static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s),
-                      GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(destroy_server, s,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
@@ -204,7 +205,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
@@ -465,7 +466,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   sp->new_socket = INVALID_SOCKET;
   sp->port = port;
   sp->port_index = port_index;
-  grpc_closure_init(&sp->on_accept, on_accept, sp);
+  grpc_closure_init(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;
