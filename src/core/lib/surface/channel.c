@@ -102,9 +102,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
       exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
       (void **)&channel);
   if (error != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "channel stack builder failed: %s", msg);
-    grpc_error_free_string(msg);
+    gpr_log(GPR_ERROR, "channel stack builder failed: %s",
+            grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     goto done;
   }
