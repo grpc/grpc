@@ -109,6 +109,9 @@ struct grpc_subchannel {
   /** callback for connection finishing */
   grpc_closure connected;
 
+  /** callback for our alarm */
+  grpc_closure on_alarm;
+
   /** pollset_set tracking who's interested in a connection
       being setup */
   grpc_pollset_set *pollset_set;
@@ -483,7 +486,8 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
               time_til_next.tv_sec, time_til_next.tv_nsec);
     }
-    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
+    grpc_closure_init(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm, now);
   }
 }
 
