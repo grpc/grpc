@@ -1303,7 +1303,28 @@ doc/server-reflection.md \
 doc/interop-test-descriptions.md \
 doc/statuscodes.md \
 doc/g_stands_for.md \
-doc/core/pending_api_cleanups.md
+doc/core/pending_api_cleanups.md \
+src/core/README.md \
+src/core/ext/README.md \
+src/core/ext/transport/README.md \
+src/core/ext/transport/chttp2/README.md \
+src/core/ext/transport/chttp2/client/secure/README.md \
+src/core/ext/transport/chttp2/client/insecure/README.md \
+src/core/ext/transport/chttp2/transport/README.md \
+src/core/ext/transport/chttp2/server/secure/README.md \
+src/core/ext/transport/chttp2/server/insecure/README.md \
+src/core/ext/client_channel/README.md \
+src/core/ext/resolver/README.md \
+src/core/ext/resolver/sockaddr/README.md \
+src/core/ext/resolver/dns/native/README.md \
+src/core/ext/census/README.md \
+src/core/ext/census/gen/README.md \
+src/core/lib/README.md \
+src/core/lib/tsi/README.md \
+src/core/lib/channel/README.md \
+src/core/lib/transport/README.md \
+src/core/lib/iomgr/README.md \
+src/core/lib/surface/README.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
