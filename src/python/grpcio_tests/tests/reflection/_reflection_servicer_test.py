@@ -27,14 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests of grpc.reflection.v1alpha.reflection."""
+"""Tests of grpc_reflection.v1alpha.reflection."""
 
 import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-from grpc.reflection.v1alpha import reflection
-from grpc.reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection
+from grpc_reflection.v1alpha import reflection_pb2
 
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2

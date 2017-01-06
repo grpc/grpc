@@ -67,8 +67,8 @@ static void server_security_handshaker_factory_destroy(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_server_handshaker_factory *hf) {
   server_security_handshaker_factory *handshaker_factory =
       (server_security_handshaker_factory *)hf;
-  GRPC_SECURITY_CONNECTOR_UNREF(&handshaker_factory->security_connector->base,
-                                "server");
+  GRPC_SECURITY_CONNECTOR_UNREF(
+      exec_ctx, &handshaker_factory->security_connector->base, "server");
   gpr_free(hf);
 }
 
@@ -94,7 +94,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     goto done;
   }
   grpc_security_status status =
-      grpc_server_credentials_create_security_connector(creds, &sc);
+      grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
   if (status != GRPC_SECURITY_OK) {
     char *msg;
     gpr_asprintf(&msg,

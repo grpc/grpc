@@ -36,9 +36,8 @@
 
 #include "src/core/lib/channel/handshaker.h"
 
-/// Does NOT take ownership of \a proxy_server or \a server_name.
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     const char* server_name);
+/// Does NOT take ownership of \a proxy_server.
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server);
 
 /// Returns the name of the proxy to use, or NULL if no proxy is configured.
 /// Caller takes ownership of result.

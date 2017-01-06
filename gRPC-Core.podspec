@@ -35,7 +35,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.0.1'
+  version = '1.0.2'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -44,7 +44,9 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{version}",
+    # TODO(mxyan): Change back to "v#{version}" for next release
+    #:tag => "v#{version}",
+    :tag => "objective-c-v#{version}",
     # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
     :submodules => true,
   }
@@ -166,6 +168,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
                       'include/grpc/impl/codegen/connectivity_state.h',
+                      'include/grpc/impl/codegen/exec_ctx_fwd.h',
                       'include/grpc/impl/codegen/grpc_types.h',
                       'include/grpc/impl/codegen/propagation_bits.h',
                       'include/grpc/impl/codegen/status.h',
@@ -321,6 +324,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_writer.h',
                       'src/core/lib/slice/percent_encoding.h',
+                      'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -728,6 +732,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_writer.h',
                               'src/core/lib/slice/percent_encoding.h',
+                              'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',

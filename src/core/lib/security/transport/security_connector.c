@@ -134,9 +134,9 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, on_peer_checked,
-        GRPC_ERROR_CREATE("cannot check peer -- no security connector"), NULL);
+        GRPC_ERROR_CREATE("cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
   } else {
     sc->vtable->check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
@@ -172,7 +172,8 @@ grpc_security_connector *grpc_security_connector_ref(
 }
 
 #ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
-void grpc_security_connector_unref(grpc_security_connector *sc,
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc,
                                    const char *file, int line,
                                    const char *reason) {
   if (sc == NULL) return;
@@ -180,14 +181,15 @@ void grpc_security_connector_unref(grpc_security_connector *sc,
           "SECURITY_CONNECTOR:%p unref %d -> %d %s", sc,
           (int)sc->refcount.count, (int)sc->refcount.count - 1, reason);
 #else
-void grpc_security_connector_unref(grpc_security_connector *sc) {
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc) {
   if (sc == NULL) return;
 #endif
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(exec_ctx, sc);
 }
 
-static void connector_pointer_arg_destroy(void *p) {
-  GRPC_SECURITY_CONNECTOR_UNREF(p, "connector_pointer_arg_destroy");
+static void connector_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, "connector_pointer_arg_destroy");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
@@ -233,13 +235,17 @@ grpc_security_connector *grpc_find_security_connector_in_args(
 
 /* -- Fake implementation. -- */
 
-static void fake_channel_destroy(grpc_security_connector *sc) {
+static void fake_channel_destroy(grpc_exec_ctx *exec_ctx,
+                                 grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
-  grpc_call_credentials_unref(c->request_metadata_creds);
+  grpc_call_credentials_unref(exec_ctx, c->request_metadata_creds);
   gpr_free(sc);
 }
 
-static void fake_server_destroy(grpc_security_connector *sc) { gpr_free(sc); }
+static void fake_server_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_security_connector *sc) {
+  gpr_free(sc);
+}
 
 static void fake_check_peer(grpc_exec_ctx *exec_ctx,
                             grpc_security_connector *sc, tsi_peer peer,
@@ -273,7 +279,7 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 
 end:
-  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
+  grpc_closure_sched(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -351,10 +357,11 @@ typedef struct {
   tsi_ssl_handshaker_factory *handshaker_factory;
 } grpc_ssl_server_security_connector;
 
-static void ssl_channel_destroy(grpc_security_connector *sc) {
+static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_security_connector *sc) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
-  grpc_call_credentials_unref(c->base.request_metadata_creds);
+  grpc_call_credentials_unref(exec_ctx, c->base.request_metadata_creds);
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
@@ -363,7 +370,8 @@ static void ssl_channel_destroy(grpc_security_connector *sc) {
   gpr_free(sc);
 }
 
-static void ssl_server_destroy(grpc_security_connector *sc) {
+static void ssl_server_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_security_connector *sc) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
@@ -508,7 +516,7 @@ static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                              ? c->overridden_target_name
                                              : c->target_name,
                                      &peer, auth_context);
-  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
+  grpc_closure_sched(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -518,7 +526,7 @@ static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *on_peer_checked) {
   grpc_error *error = ssl_check_peer(sc, NULL, &peer, auth_context);
   tsi_peer_destruct(&peer);
-  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
+  grpc_closure_sched(exec_ctx, on_peer_checked, error);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,
@@ -669,7 +677,7 @@ size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds,
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *request_metadata_creds,
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
@@ -730,7 +738,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
-    ssl_channel_destroy(&c->base.base);
+    ssl_channel_destroy(exec_ctx, &c->base.base);
     *sc = NULL;
     goto error;
   }
@@ -746,7 +754,8 @@ error:
 }
 
 grpc_security_status grpc_ssl_server_security_connector_create(
-    const grpc_ssl_server_config *config, grpc_server_security_connector **sc) {
+    grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_server_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const unsigned char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);
@@ -786,7 +795,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
-    ssl_server_destroy(&c->base.base);
+    ssl_server_destroy(exec_ctx, &c->base.base);
     *sc = NULL;
     goto error;
   }

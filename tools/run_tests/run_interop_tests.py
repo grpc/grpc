@@ -34,19 +34,20 @@ from __future__ import print_function
 
 import argparse
 import atexit
-import dockerjob
 import itertools
-import jobset
 import json
 import multiprocessing
 import os
 import re
-import report_utils
 import subprocess
 import sys
 import tempfile
 import time
 import uuid
+
+import python_utils.dockerjob as dockerjob
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
 
 # Docker doesn't clean up after itself, so we do it on exit.
 atexit.register(lambda: subprocess.call(['stty', 'echo']))

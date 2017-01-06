@@ -59,7 +59,7 @@ typedef struct grpc_uv_tcp_connect {
 
 static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
                                    grpc_uv_tcp_connect *connect) {
-  grpc_resource_quota_internal_unref(exec_ctx, connect->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, connect->resource_quota);
   gpr_free(connect);
 }
 
@@ -110,7 +110,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   if (done) {
     uv_tcp_connect_cleanup(&exec_ctx, connect);
   }
-  grpc_exec_ctx_sched(&exec_ctx, closure, error, NULL);
+  grpc_closure_sched(&exec_ctx, closure, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -128,8 +128,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_internal_ref(
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       }
     }

@@ -31,9 +31,14 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
@@ -44,6 +49,13 @@ void test_unknown_scheme_target(void) {
 
   chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
   GPR_ASSERT(chan != NULL);
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_channel_element *elem =
+      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
+  grpc_exec_ctx_finish(&exec_ctx);
+
   grpc_channel_destroy(chan);
 }
 
