@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
@@ -84,6 +85,7 @@ void grpc_client_channel_init(void) {
                                    set_default_host_if_unset, NULL);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
                                    (void *)&grpc_client_channel_filter);
+  grpc_http_connect_register_handshaker_factory();
 }
 
 void grpc_client_channel_shutdown(void) {
