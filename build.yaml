@@ -237,6 +237,7 @@ filegroups:
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -421,6 +422,7 @@ filegroups:
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h

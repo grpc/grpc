@@ -41,9 +41,9 @@
 
 #include "test/core/util/test_config.h"
 
-static void channel_init_func(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *channel_init_func(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   GPR_ASSERT(args->channel_args->num_args == 1);
   GPR_ASSERT(args->channel_args->args[0].type == GRPC_ARG_INTEGER);
   GPR_ASSERT(0 == strcmp(args->channel_args->args[0].key, "test_key"));
@@ -51,6 +51,7 @@ static void channel_init_func(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
   *(int *)(elem->channel_data) = 0;
+  return GRPC_ERROR_NONE;
 }
 
 static grpc_error *call_init_func(grpc_exec_ctx *exec_ctx,
@@ -156,8 +157,8 @@ static void test_create_channel_stack(void) {
 
   GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
 
+  GRPC_MDSTR_UNREF(&exec_ctx, path);
   grpc_exec_ctx_finish(&exec_ctx);
-  GRPC_MDSTR_UNREF(path);
 }
 
 int main(int argc, char **argv) {

@@ -275,9 +275,8 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 }
 #endif
 
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error) {
-  g_event_engine->workqueue_enqueue(exec_ctx, workqueue, closure, error);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
+  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

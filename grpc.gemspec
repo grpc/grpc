@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.2'
+  s.add_dependency 'google-protobuf', '~> 3.1.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -148,6 +148,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
+  s.files += %w( include/grpc/impl/codegen/exec_ctx_fwd.h )
   s.files += %w( include/grpc/impl/codegen/grpc_types.h )
   s.files += %w( include/grpc/impl/codegen/propagation_bits.h )
   s.files += %w( include/grpc/impl/codegen/status.h )
@@ -238,6 +239,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/json/json_reader.h )
   s.files += %w( src/core/lib/json/json_writer.h )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
+  s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )

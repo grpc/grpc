@@ -156,6 +156,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/exec_ctx_fwd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
@@ -246,6 +247,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />

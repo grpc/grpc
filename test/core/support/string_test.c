@@ -243,6 +243,8 @@ static void test_int64toa() {
 static void test_leftpad() {
   char *padded;
 
+  LOG_TEST_NAME("test_leftpad");
+
   padded = gpr_leftpad("foo", ' ', 5);
   GPR_ASSERT(0 == strcmp("  foo", padded));
   gpr_free(padded);
@@ -273,10 +275,23 @@ static void test_leftpad() {
 }
 
 static void test_stricmp(void) {
+  LOG_TEST_NAME("test_stricmp");
+
   GPR_ASSERT(0 == gpr_stricmp("hello", "hello"));
   GPR_ASSERT(0 == gpr_stricmp("HELLO", "hello"));
   GPR_ASSERT(gpr_stricmp("a", "b") < 0);
   GPR_ASSERT(gpr_stricmp("b", "a") > 0);
+}
+
+static void test_memrchr(void) {
+  LOG_TEST_NAME("test_memrchr");
+
+  GPR_ASSERT(NULL == gpr_memrchr(NULL, 'a', 0));
+  GPR_ASSERT(NULL == gpr_memrchr("", 'a', 0));
+  GPR_ASSERT(NULL == gpr_memrchr("hello", 'b', 5));
+  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'h', 5), "hello"));
+  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'o', 5), "o"));
+  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'l', 5), "lo"));
 }
 
 int main(int argc, char **argv) {
@@ -291,5 +306,6 @@ int main(int argc, char **argv) {
   test_int64toa();
   test_leftpad();
   test_stricmp();
+  test_memrchr();
   return 0;
 }

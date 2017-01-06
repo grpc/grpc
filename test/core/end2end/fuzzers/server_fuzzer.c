@@ -60,7 +60,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_resource_quota_create("server_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
       grpc_slice_from_copied_buffer((const char *)data, size));
