@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,36 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
+#define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/transport/security_connector.h"
 
-/// Creates a security handshaker using \a handshaker.
-grpc_handshaker *grpc_security_handshaker_create(
-    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
-    grpc_security_connector *connector);
+// A handshaker factory is used to create handshakers.
 
-/// Registers security handshaker factories.
-void grpc_security_register_handshaker_factories();
+typedef struct grpc_handshaker_factory grpc_handshaker_factory;
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */
+typedef struct {
+  void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
+                          grpc_handshaker_factory *handshaker_factory,
+                          const grpc_channel_args *args,
+                          grpc_handshake_manager *handshake_mgr);
+  void (*destroy)(grpc_exec_ctx *exec_ctx,
+                  grpc_handshaker_factory *handshaker_factory);
+} grpc_handshaker_factory_vtable;
+
+struct grpc_handshaker_factory {
+  const grpc_handshaker_factory_vtable *vtable;
+};
+
+void grpc_handshaker_factory_add_handshakers(
+    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory,
+    const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr);
+
+void grpc_handshaker_factory_destroy(
+    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory);
+
+#endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */

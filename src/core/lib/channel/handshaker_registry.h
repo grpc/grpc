@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,33 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H
+#define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H
 
-#include "src/core/lib/channel/handshaker.h"
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/transport/security_connector.h"
 
-/// Creates a security handshaker using \a handshaker.
-grpc_handshaker *grpc_security_handshaker_create(
-    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
-    grpc_security_connector *connector);
+typedef enum {
+  HANDSHAKER_CLIENT = 0,
+  HANDSHAKER_SERVER,
+  NUM_HANDSHAKER_TYPES,  // Must be last.
+} grpc_handshaker_type;
 
-/// Registers security handshaker factories.
-void grpc_security_register_handshaker_factories();
+void grpc_handshaker_factory_registry_init();
+void grpc_handshaker_factory_registry_shutdown(grpc_exec_ctx* exec_ctx);
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */
+/// Registers a new handshaker factory.  Takes ownership.
+/// If \a at_start is true, the new handshaker will be at the beginning of
+/// the list.  Otherwise, it will be added to the end.
+void grpc_handshaker_factory_register(bool at_start,
+                                      grpc_handshaker_type handshaker_type,
+                                      grpc_handshaker_factory* factory);
+
+void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
+                          grpc_handshaker_type handshaker_type,
+                          const grpc_channel_args* args,
+                          grpc_handshake_manager* handshake_mgr);
+
+#endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */
