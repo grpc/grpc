@@ -173,6 +173,7 @@ void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
   grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
                      GRPC_ERROR_REF(error));
   grpc_closure_sched(exec_ctx, op->on_complete, error);
+  GRPC_ERROR_UNREF(op->cancel_error);
 }
 
 typedef struct {
