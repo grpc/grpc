@@ -536,7 +536,6 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
                              grpc_error *error) {
   termination_closure *tc = tcp;
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "termination");
-  GRPC_ERROR_UNREF(tc->error);
   gpr_free(tc);
 }
 
@@ -966,9 +965,14 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
-    return GRPC_ERROR_REF(bctl->errors[0]);
+    return bctl->errors[0];
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+    grpc_error *error =
+        GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+    for (size_t i = 0; i < n; i++) {
+      GRPC_ERROR_UNREF(bctl->errors[i]);
+    }
+    return error;
   }
 }
 
