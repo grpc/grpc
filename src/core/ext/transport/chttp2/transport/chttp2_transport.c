@@ -1015,7 +1015,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->cancel_error != GRPC_ERROR_NONE) {
-    grpc_chttp2_cancel_stream(exec_ctx, t, s, GRPC_ERROR_REF(op->cancel_error));
+    grpc_chttp2_cancel_stream(exec_ctx, t, s, op->cancel_error);
   }
 
   if (op->send_initial_metadata != NULL) {
@@ -1066,8 +1066,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         s->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_initial_metadata_finished,
-            GRPC_ERROR_CREATE(
-                "Attempt to send initial metadata after stream was closed"),
+            GRPC_ERROR_CREATE_REFERENCING(
+                "Attempt to send initial metadata after stream was closed",
+                &s->write_closed_error, 1),
             "send_initial_metadata_finished");
       }
     }
@@ -1562,11 +1563,6 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
   if (close_reads && !s->read_closed) {
     s->read_closed_error = GRPC_ERROR_REF(error);
     s->read_closed = true;
-    for (int i = 0; i < 2; i++) {
-      if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
-        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
-      }
-    }
     closed_read = true;
   }
   if (close_writes && !s->write_closed) {
@@ -1589,6 +1585,11 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     }
   }
   if (closed_read) {
+    for (int i = 0; i < 2; i++) {
+      if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
+        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
+      }
+    }
     decrement_active_streams_locked(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
