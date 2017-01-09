@@ -32,9 +32,15 @@ set -ex
 
 # change to root directory
 cd $(dirname $0)/../..
+REPO_ROOT=$(pwd)
 
-# build clang-format docker image
-docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
+if [ "$CLANG_FORMAT_SKIP_DOCKER" == "" ]
+then
+  # build clang-format docker image
+  docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
-# run clang-format against the checked out codebase
-docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" --rm=true -v ${HOST_GIT_ROOT:-`pwd`}:/local-code -t grpc_clang_format /clang_format_all_the_things.sh
+  # run clang-format against the checked out codebase
+  docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_FORMAT_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code -t grpc_clang_format /clang_format_all_the_things.sh
+else
+  CLANG_FORMAT_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_format/clang_format_all_the_things.sh
+fi

@@ -35,21 +35,21 @@ from __future__ import print_function
 import argparse
 import collections
 import itertools
-import jobset
 import json
 import multiprocessing
 import os
-import performance.scenario_config as scenario_config
 import pipes
 import re
-import report_utils
 import subprocess
 import sys
 import tempfile
 import time
 import traceback
 import uuid
-import report_utils
+
+import performance.scenario_config as scenario_config
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))

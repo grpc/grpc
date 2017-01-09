@@ -40,6 +40,9 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+// Channel arg key for grpc_lb_addresses.
+#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
@@ -61,7 +64,7 @@ typedef struct grpc_lb_address {
 
 typedef struct grpc_lb_user_data_vtable {
   void *(*copy)(void *);
-  void (*destroy)(void *);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *);
   int (*cmp)(void *, void *);
 } grpc_lb_user_data_vtable;
 
@@ -93,7 +96,8 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
                           const grpc_lb_addresses *addresses2);
 
 /** Destroys \a addresses. */
-void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
+void grpc_lb_addresses_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_lb_addresses *addresses);
 
 /** Returns a channel arg containing \a addresses. */
 grpc_arg grpc_lb_addresses_create_channel_arg(

@@ -114,20 +114,17 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  ChannelDataImpl(const grpc_channel_args& args, const char* peer)
-      : ChannelData(args, peer) {
+  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element_args* args) {
     IncrementConnectionCounter();
+    return GRPC_ERROR_NONE;
   }
 };
 
 class CallDataImpl : public CallData {
  public:
-  explicit CallDataImpl(const ChannelDataImpl& channel_data)
-      : CallData(channel_data) {}
-
   void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               TransportStreamOp* op) override {
-    // Incrementing the counter could be done from the ctor, but we want
+    // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
     grpc_call_next_op(exec_ctx, elem, op->op());
