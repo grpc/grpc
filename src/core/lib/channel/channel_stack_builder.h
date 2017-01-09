@@ -73,7 +73,8 @@ grpc_transport *grpc_channel_stack_builder_get_transport(
 
 /// Set channel arguments: copies args
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_channel_stack_builder *builder, const grpc_channel_args *args);
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    const grpc_channel_args *args);
 
 /// Return a borrowed pointer to the channel arguments
 const grpc_channel_args *grpc_channel_stack_builder_get_channel_arguments(
@@ -157,7 +158,8 @@ grpc_error *grpc_channel_stack_builder_finish(
     void *destroy_arg, void **result);
 
 /// Destroy the builder without creating a channel stack
-void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder);
+void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_stack_builder *builder);
 
 extern int grpc_trace_channel_stack_builder;
 

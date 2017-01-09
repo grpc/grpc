@@ -130,9 +130,8 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   gpr_mu_unlock(&g_executor.mu);
 }
 
-void grpc_executor_shutdown() {
+void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
   int pending_join;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock(&g_executor.mu);
   pending_join = g_executor.pending_join;
@@ -147,11 +146,11 @@ void grpc_executor_shutdown() {
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error_data.error;
-    c->cb(&exec_ctx, c->cb_arg, error);
+    c->cb(exec_ctx, c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
     c = next;
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(exec_ctx);
   GPR_ASSERT(grpc_closure_list_empty(g_executor.closures));
   if (pending_join) {
     gpr_thd_join(g_executor.tid);

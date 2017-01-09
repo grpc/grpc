@@ -249,10 +249,11 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status);
 
 void grpc_transport_stream_op_add_cancellation_with_message(
-    grpc_transport_stream_op *op, grpc_status_code status,
-    grpc_slice *optional_message);
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op,
+    grpc_status_code status, grpc_slice *optional_message);
 
-void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
+void grpc_transport_stream_op_add_close(grpc_exec_ctx *exec_ctx,
+                                        grpc_transport_stream_op *op,
                                         grpc_status_code status,
                                         grpc_slice *optional_message);
 

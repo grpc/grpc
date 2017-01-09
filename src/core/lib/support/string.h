@@ -36,8 +36,6 @@
 
 #include <stddef.h>
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
@@ -97,6 +95,9 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
    if it is non-null. */
 char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
                       size_t *total_length);
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
