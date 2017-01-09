@@ -1053,12 +1053,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl,
-                              const char *but_why) {
-  gpr_log(GPR_DEBUG,
-          "finish_batch_step: call=%p bctl=%p why='%s' still_needed=%" PRIdPTR,
-          bctl->call, bctl, but_why,
-          gpr_atm_no_barrier_load(&bctl->steps_to_complete.count));
+static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl) {
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
   }
@@ -1074,7 +1069,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       call->receiving_message = 0;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
-      finish_batch_step(exec_ctx, bctl, "continue_receiving_slices");
+      finish_batch_step(exec_ctx, bctl);
       return;
     }
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
@@ -1105,7 +1100,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = NULL;
-    finish_batch_step(exec_ctx, bctl, "receiving_slice_ready with error");
+    finish_batch_step(exec_ctx, bctl);
   }
 }
 
@@ -1115,7 +1110,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
   if (call->receiving_stream == NULL) {
     *call->receiving_buffer = NULL;
     call->receiving_message = 0;
-    finish_batch_step(exec_ctx, bctl, "no message");
+    finish_batch_step(exec_ctx, bctl);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
@@ -1141,11 +1136,12 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
   if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
+    gpr_mu_unlock(&bctl->call->mu);
     process_data_after_md(exec_ctx, bctlp);
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
+    gpr_mu_unlock(&bctl->call->mu);
   }
-  gpr_mu_unlock(&bctl->call->mu);
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
@@ -1243,7 +1239,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_unlock(&call->mu);
 
-  finish_batch_step(exec_ctx, bctl, "receiving_initial_metadata_ready");
+  finish_batch_step(exec_ctx, bctl);
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
@@ -1251,7 +1247,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
 
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error));
-  finish_batch_step(exec_ctx, bctl, "finish_batch");
+  finish_batch_step(exec_ctx, bctl);
 }
 
 static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,

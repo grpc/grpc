@@ -351,10 +351,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
    * the client has received it. This means that we should see strictly more
    * failures on the client than on the server. */
   GPR_ASSERT(cancelled_calls_on_client >= cancelled_calls_on_server);
-  /* However, we shouldn't see radically more... 0.9 is a guessed bound on what
-   * we'd want that ratio to be... to at least trigger some investigation should
-   * that ratio become much higher. */
-  GPR_ASSERT(cancelled_calls_on_server >= 0.9 * cancelled_calls_on_client);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);

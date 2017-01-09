@@ -47,8 +47,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
                  (server, addr));
   grpc_error *err = grpc_chttp2_server_add_port(
       &exec_ctx, server, addr,
-      grpc_channel_args_copy(grpc_server_get_channel_args(server)),
-      NULL /* handshaker_factory */, &port_num);
+      grpc_channel_args_copy(grpc_server_get_channel_args(server)), &port_num);
   if (err != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
