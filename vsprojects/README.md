@@ -2,7 +2,7 @@ This directory contains MS Visual Studio project & solution files.
 
 #Supported Visual Studio versions
 
-Currently supported versions are Visual Studio 2013 (our primary focus) and 2010.
+Currently supported versions are Visual Studio 2013 (our primary focus).
 
 #Building
 We are using [NuGet](http://www.nuget.org) to pull zlib and openssl dependencies.
