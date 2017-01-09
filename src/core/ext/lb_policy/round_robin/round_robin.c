@@ -284,7 +284,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "rr_destroy");
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
-      sd->user_data_vtable->destroy(sd->user_data);
+      sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
     }
     gpr_free(sd);
   }
@@ -321,8 +321,8 @@ static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
-                        GRPC_ERROR_CREATE("Channel Shutdown"), NULL);
+    grpc_closure_sched(exec_ctx, pp->on_complete,
+                       GRPC_ERROR_CREATE("Channel Shutdown"));
     gpr_free(pp);
   }
   grpc_connectivity_state_set(
@@ -348,9 +348,9 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -376,9 +376,9 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       *pp->target = NULL;
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -581,7 +581,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                   "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                   (void *)selected->subchannel, (void *)selected);
         }
-        grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
+        grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
       }
       update_lb_connectivity_status(exec_ctx, sd, error);
@@ -634,7 +634,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = NULL;
-          grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
+          grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
           gpr_free(pp);
         }
       }
@@ -684,8 +684,8 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
     gpr_mu_unlock(&p->mu);
-    grpc_exec_ctx_sched(exec_ctx, closure,
-                        GRPC_ERROR_CREATE("Round Robin not connected"), NULL);
+    grpc_closure_sched(exec_ctx, closure,
+                       GRPC_ERROR_CREATE("Round Robin not connected"));
   }
 }
 
@@ -749,7 +749,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       }
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
-                        rr_connectivity_changed, sd);
+                        rr_connectivity_changed, sd, grpc_schedule_on_exec_ctx);
     }
   }
   if (subchannel_idx == 0) {

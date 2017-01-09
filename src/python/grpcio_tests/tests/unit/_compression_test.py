@@ -125,7 +125,7 @@ class CompressionTest(unittest.TestCase):
     compressed_channel = grpc.insecure_channel('localhost:%d' % self._port,
         options=[('grpc.default_compression_algorithm', 1)])
     multi_callable = compressed_channel.stream_stream(_STREAM_STREAM)
-    call = multi_callable([request] * test_constants.STREAM_LENGTH)
+    call = multi_callable(iter([request] * test_constants.STREAM_LENGTH))
     for response in call:
       self.assertEqual(request, response)
 

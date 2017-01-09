@@ -120,7 +120,7 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
     gpr_free(pp);
     pp = next;
   }
@@ -138,9 +138,9 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -165,9 +165,9 @@ static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_exec_ctx_sched(
+      grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -306,14 +306,15 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         /* drop the pick list: we are connected now */
         GRPC_LB_POLICY_WEAK_REF(&p->base, "destroy_subchannels");
         gpr_atm_rel_store(&p->selected, (gpr_atm)selected);
-        grpc_exec_ctx_sched(exec_ctx,
-                            grpc_closure_create(destroy_subchannels, p),
-                            GRPC_ERROR_NONE, NULL);
+        grpc_closure_sched(exec_ctx,
+                           grpc_closure_create(destroy_subchannels, p,
+                                               grpc_schedule_on_exec_ctx),
+                           GRPC_ERROR_NONE);
         /* update any calls that were waiting for a pick */
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
-          grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
+          grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
           gpr_free(pp);
         }
         grpc_connected_subchannel_notify_on_state_change(
@@ -366,8 +367,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           while ((pp = p->pending_picks)) {
             p->pending_picks = pp->next;
             *pp->target = NULL;
-            grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE,
-                                NULL);
+            grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
             gpr_free(pp);
           }
           GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base,
@@ -419,8 +419,7 @@ static void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (selected) {
     grpc_connected_subchannel_ping(exec_ctx, selected, closure);
   } else {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CREATE("Not connected"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("Not connected"));
   }
 }
 
@@ -485,7 +484,8 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   p->num_subchannels = subchannel_idx;
 
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
-  grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed, p);
+  grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed, p,
+                    grpc_schedule_on_exec_ctx);
   gpr_mu_init(&p->mu);
   return &p->base;
 }
