@@ -859,7 +859,8 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
         status_code == GRPC_STATUS_OK
             ? GRPC_ERROR_NONE
             : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS, status_code);
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 (intptr_t)status_code);
 
     if (b->idx.named.grpc_message != NULL) {
       char *msg =
