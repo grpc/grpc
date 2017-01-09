@@ -46,6 +46,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
@@ -80,11 +81,11 @@ static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;
   grpc_endpoint_destroy(exec_ctx, ep->wrapped_ep);
   tsi_frame_protector_destroy(ep->protector);
-  grpc_slice_buffer_destroy(&ep->leftover_bytes);
-  grpc_slice_unref(ep->read_staging_buffer);
-  grpc_slice_unref(ep->write_staging_buffer);
-  grpc_slice_buffer_destroy(&ep->output_buffer);
-  grpc_slice_buffer_destroy(&ep->source_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->leftover_bytes);
+  grpc_slice_unref_internal(exec_ctx, ep->read_staging_buffer);
+  grpc_slice_unref_internal(exec_ctx, ep->write_staging_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->output_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->source_buffer);
   gpr_mu_destroy(&ep->protector_mu);
   gpr_free(ep);
 }
@@ -146,7 +147,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_sched(exec_ctx, ep->read_cb, error, NULL);
+  grpc_closure_sched(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -160,7 +161,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   uint8_t *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice_buffer_reset_and_unref(ep->read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
     call_read_cb(exec_ctx, ep, GRPC_ERROR_CREATE_REFERENCING(
                                    "Secure read failed", &error, 1));
     return;
@@ -215,10 +216,10 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
      helps latency */
-  grpc_slice_buffer_reset_and_unref(&ep->source_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->source_buffer);
 
   if (result != TSI_OK) {
-    grpc_slice_buffer_reset_and_unref(ep->read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
     call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
                                    GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
@@ -232,7 +233,7 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_buffer = slices;
-  grpc_slice_buffer_reset_and_unref(ep->read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
 
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
@@ -264,7 +265,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   uint8_t *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
   uint8_t *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
-  grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
 
   if (grpc_trace_secure_endpoint) {
     for (i = 0; i < slices->count; i++) {
@@ -328,11 +329,10 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
-    grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_exec_ctx_sched(
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
+    grpc_closure_sched(
         exec_ctx, cb,
-        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
-        NULL);
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result));
     GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
     return;
   }
@@ -410,14 +410,14 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->leftover_bytes);
   for (i = 0; i < leftover_nslices; i++) {
     grpc_slice_buffer_add(&ep->leftover_bytes,
-                          grpc_slice_ref(leftover_slices[i]));
+                          grpc_slice_ref_internal(leftover_slices[i]));
   }
   ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
   ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep);
+  grpc_closure_init(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

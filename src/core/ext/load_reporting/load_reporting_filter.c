@@ -68,7 +68,8 @@ typedef struct {
   grpc_exec_ctx *exec_ctx;
 } recv_md_filter_args;
 
-static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                   grpc_mdelem *md) {
   recv_md_filter_args *a = user_data;
   grpc_call_element *elem = a->elem;
   call_data *calld = elem->call_data;
@@ -92,8 +93,8 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     recv_md_filter_args a;
     a.elem = elem;
     a.exec_ctx = exec_ctx;
-    grpc_metadata_batch_filter(calld->recv_initial_metadata, recv_md_filter,
-                               &a);
+    grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                               recv_md_filter, &a);
     if (calld->service_method == NULL) {
       err =
           grpc_error_add_child(err, GRPC_ERROR_CREATE("Missing :path header"));
@@ -114,7 +115,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(calld, 0, sizeof(call_data));
 
   calld->id = (intptr_t)args->call_stack;
-  grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem);
+  grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem,
+                    grpc_schedule_on_exec_ctx);
 
   /* TODO(dgq): do something with the data
   channel_data *chand = elem->channel_data;
@@ -191,7 +193,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
-static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
+                                          void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
@@ -215,7 +218,7 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
   } else if (op->send_trailing_metadata) {
-    grpc_metadata_batch_filter(op->send_trailing_metadata,
+    grpc_metadata_batch_filter(exec_ctx, op->send_trailing_metadata,
                                lr_trailing_md_filter, elem);
   }
   grpc_call_next_op(exec_ctx, elem, op);
