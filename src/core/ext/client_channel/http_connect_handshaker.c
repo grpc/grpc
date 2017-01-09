@@ -377,9 +377,9 @@ static void handshaker_factory_add_handshakers(
     const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
   char* proxy_name = grpc_get_http_proxy_server();
   if (proxy_name != NULL) {
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_http_connect_handshaker_create(proxy_name,
-                                                                   NULL, 0));
+    grpc_handshake_manager_add(
+        handshake_mgr,
+        grpc_http_connect_handshaker_create(proxy_name, NULL, 0));
     gpr_free(proxy_name);
   }
 }
