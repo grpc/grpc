@@ -147,6 +147,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                          GRPC_ERROR_INT_GRPC_STATUS,
                                          GRPC_STATUS_INVALID_ARGUMENT));
     gpr_free(message_string);
+    return;
   }
   // Inject callback for receiving a message.
   if (op->recv_message_ready != NULL) {
