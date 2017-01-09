@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <grpc/impl/codegen/gpr_slice.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 
 /* Slice API
 
@@ -59,7 +59,7 @@
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
   void (*ref)(void *);
-  void (*unref)(void *);
+  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
 } grpc_slice_refcount;
 
 #define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
@@ -116,23 +116,5 @@ typedef struct {
 #define GRPC_SLICE_END_PTR(slice) \
   GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(slice)
 #define GRPC_SLICE_IS_EMPTY(slice) (GRPC_SLICE_LENGTH(slice) == 0)
-
-#ifdef GRPC_ALLOW_GPR_SLICE_FUNCTIONS
-
-/* Duplicate GPR_* definitions */
-#define GPR_SLICE_START_PTR(slice)                  \
-  ((slice).refcount ? (slice).data.refcounted.bytes \
-                    : (slice).data.inlined.bytes)
-#define GPR_SLICE_LENGTH(slice)                      \
-  ((slice).refcount ? (slice).data.refcounted.length \
-                    : (slice).data.inlined.length)
-#define GPR_SLICE_SET_LENGTH(slice, newlen)                               \
-  ((slice).refcount ? ((slice).data.refcounted.length = (size_t)(newlen)) \
-                    : ((slice).data.inlined.length = (uint8_t)(newlen)))
-#define GPR_SLICE_END_PTR(slice) \
-  GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(slice)
-#define GPR_SLICE_IS_EMPTY(slice) (GRPC_SLICE_LENGTH(slice) == 0)
-
-#endif /* GRPC_ALLOW_GPR_SLICE_FUNCTIONS */
 
 #endif /* GRPC_IMPL_CODEGEN_SLICE_H */

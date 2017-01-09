@@ -38,7 +38,7 @@ cd /d %~dp0
 @call "%VS120COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
 
 @rem Build third_party/protobuf
-msbuild ..\third_party\protobuf\cmake\protobuf.sln /p:Configuration=Release || goto :error
+msbuild ..\third_party\protobuf\cmake\build\solution\protobuf.sln /p:Configuration=Release || goto :error
 
 @rem Build the C# protoc plugins
 msbuild grpc_protoc_plugins.sln /p:Configuration=Release || goto :error

@@ -94,13 +94,14 @@ grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table) {
   return table;
 }
 
-void grpc_mdstr_hash_table_unref(grpc_mdstr_hash_table* table) {
+void grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                 grpc_mdstr_hash_table* table) {
   if (table != NULL && gpr_unref(&table->refs)) {
     for (size_t i = 0; i < table->size; ++i) {
       grpc_mdstr_hash_table_entry* entry = &table->entries[i];
       if (entry->key != NULL) {
-        GRPC_MDSTR_UNREF(entry->key);
-        entry->vtable->destroy_value(entry->value);
+        GRPC_MDSTR_UNREF(exec_ctx, entry->key);
+        entry->vtable->destroy_value(exec_ctx, entry->value);
       }
     }
     gpr_free(table->entries);
