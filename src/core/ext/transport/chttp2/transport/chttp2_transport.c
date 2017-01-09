@@ -889,12 +889,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch *batch) {
-  grpc_linked_mdelem *l;
-  for (l = batch->list.head; l; l = l->next) {
-    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDSTR_GRPC_STATUS) &&
-        !grpc_mdelem_eq(l->md, GRPC_MDELEM_GRPC_STATUS_0)) {
-      return true;
-    }
+  if (batch->idx.named.grpc_status != NULL) {
+    return !grpc_mdelem_eq(batch->idx.named.grpc_status->md,
+                           GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }
@@ -1078,9 +1075,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
+      gpr_log(GPR_DEBUG, "write_closed_error=%s",
+              grpc_error_string(s->write_closed_error));
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished,
-          GRPC_ERROR_CREATE("Attempt to send message after stream was closed"),
+          GRPC_ERROR_CREATE_REFERENCING(
+              "Attempt to send message after stream was closed",
+              &s->write_closed_error, 1),
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
