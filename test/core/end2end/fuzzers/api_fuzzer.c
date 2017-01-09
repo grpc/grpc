@@ -369,10 +369,11 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addresses;
-  grpc_timer_init(exec_ctx, &r->timer,
-                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(1, GPR_TIMESPAN)),
-                  finish_resolve, r, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(
+      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
+      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,10 +431,11 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   fc->closure = closure;
   fc->ep = ep;
   fc->deadline = deadline;
-  grpc_timer_init(exec_ctx, &fc->timer,
-                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_millis(1, GPR_TIMESPAN)),
-                  do_connect, fc, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(
+      exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         gpr_time_from_millis(1, GPR_TIMESPAN)),
+      grpc_closure_create(do_connect, fc, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
