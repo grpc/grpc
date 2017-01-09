@@ -517,35 +517,30 @@ class NamedTests
   def unimplemented_method
     begin
       resp = @stub.unimplemented_call(Empty.new)
-    rescue GRPC::BadStatus => e
-      if e.code != GRPC::Core::StatusCodes::UNIMPLEMENTED
-        fail AssertionError,
-          "Expected status 12 (UNIMPLEMENTED). Received: #{e.code}"
-      end
+    rescue GRPC::Unimplemented => e
+      return
     rescue Exception => e
       fail AssertionError, "Expected BadStatus. Received: #{e.inspect}"
     end
+    fail AssertionError, "GRPC::Unimplemented should have been raised. Was not."
   end
 
   def unimplemented_service
     begin
       resp = @stub.unimplemented_call(Empty.new)
-    rescue GRPC::BadStatus => e
-      if e.code != GRPC::Core::StatusCodes::UNIMPLEMENTED
-        fail AssertionError,
-          "Expected status 12 (UNIMPLEMENTED). Received: #{e.code}"
-      end
+    rescue GRPC::Unimplemented => e
+      return
     rescue Exception => e
       fail AssertionError, "Expected BadStatus. Received: #{e.inspect}"
     end
+    fail AssertionError, "GRPC::Unimplemented should have been raised. Was not."
   end
 
   def status_code_and_message
 
     # Function wide constants.
     message = "test status method"
-    code = 2
-    status = GRPC::Core::StatusCodes::UNKNOWN
+    code = GRPC::Core::StatusCodes::UNKNOWN
 
     # Testing with UnaryCall.
     payload = Payload.new(type: :COMPRESSABLE, body: nulls(1))
@@ -557,11 +552,8 @@ class NamedTests
     seen_correct_exception = false
     begin
       resp = @stub.unary_call(req)
-    rescue GRPC::BadStatus => e
-      if e.code != status
-        fail AssertionError,
-	        "Expected status 2 (UNKOWN). Received: #{e.code}"
-      elsif e.details != message
+    rescue GRPC::Unknown => e
+      if e.details != message
 	      fail AssertionError,
 	        "Expected message #{message}. Received: #{e.details}"
       end
@@ -584,11 +576,8 @@ class NamedTests
     begin
       resp = @stub.full_duplex_call([duplex_req])
       resp.next # triggers initial req to be sent
-    rescue GRPC::BadStatus => e
-      if e.code != status
-        fail AssertionError,
-          "Expected status 2 (UNKOWN). Received: #{e.code}"
-      elsif e.details != message
+    rescue GRPC::Unknown => e
+      if e.details != message
         fail AssertionError,
           "Expected message #{message}. Received: #{e.details}"
       end
@@ -607,6 +596,7 @@ class NamedTests
   def custom_metadata
 
     # Function wide constants
+    req_size, wanted_response_size = 271_828, 314_159
     initial_metadata_key = "x-grpc-test-echo-initial"
     initial_metadata_value = "test_initial_metadata_value"
     trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
@@ -618,9 +608,9 @@ class NamedTests
     }
 
     # Testing with UnaryCall
-    payload = Payload.new(type: :COMPRESSABLE, body: nulls(1))
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
     req = SimpleRequest.new(response_type: :COMPRESSABLE,
-			    response_size: 1,
+			    response_size: wanted_response_size,
 			    payload: payload)
 
     op = @stub.unary_call(req, metadata: metadata, return_op: true)
@@ -643,9 +633,9 @@ class NamedTests
 
     # Testing with FullDuplex
     req_cls, p_cls = StreamingOutputCallRequest, ResponseParameters
-    duplex_req = req_cls.new(payload: Payload.new(body: nulls(1)),
+    duplex_req = req_cls.new(payload: Payload.new(body: nulls(req_size)),
                   response_type: :COMPRESSABLE,
-                  response_parameters: [p_cls.new(size: 1)])
+                  response_parameters: [p_cls.new(size: wanted_response_size)])
 
     duplex_op = @stub.full_duplex_call([duplex_req], metadata: metadata,
                                         return_op: true)
