@@ -848,34 +848,34 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+doc/command_line_tool.md \
+doc/statuscodes.md \
+doc/interop-test-descriptions.md \
 doc/fail_fast.md \
-doc/compression.md \
-doc/environment_variables.md \
+doc/server-reflection.md \
+doc/c-style-guide.md \
+doc/load-balancing.md \
+doc/compression_cookbook.md \
+doc/connectivity-semantics-and-api.md \
+doc/PROTOCOL-HTTP2.md \
+doc/health-checking.md \
+doc/binary-logging.md \
 doc/stress_test_framework.md \
-doc/PROTOCOL-WEB.md \
+doc/negative-http2-interop-test-descriptions.md \
+doc/compression.md \
+doc/server_reflection_tutorial.md \
 doc/cpp-style-guide.md \
+doc/environment_variables.md \
+doc/PROTOCOL-WEB.md \
+doc/naming.md \
+doc/epoll-polling-engine.md \
+doc/connection-backoff.md \
+doc/connection-backoff-interop-test-description.md \
+doc/g_stands_for.md \
 doc/http-grpc-status-mapping.md \
 doc/wait-for-ready.md \
-doc/command_line_tool.md \
-doc/c-style-guide.md \
-doc/server_reflection_tutorial.md \
-doc/health-checking.md \
-doc/connection-backoff-interop-test-description.md \
-doc/epoll-polling-engine.md \
-doc/naming.md \
-doc/binary-logging.md \
-doc/connectivity-semantics-and-api.md \
-doc/connection-backoff.md \
-doc/compression_cookbook.md \
-doc/PROTOCOL-HTTP2.md \
-doc/load-balancing.md \
-doc/negative-http2-interop-test-descriptions.md \
-doc/server-reflection.md \
-doc/interop-test-descriptions.md \
-doc/statuscodes.md \
-doc/g_stands_for.md \
-doc/cpp/perf_notes.md \
-doc/cpp/pending_api_cleanups.md
+doc/cpp/pending_api_cleanups.md \
+doc/cpp/perf_notes.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
