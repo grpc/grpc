@@ -2034,6 +2034,8 @@ static void incoming_byte_stream_publish_error(
   grpc_closure_sched(exec_ctx, bs->on_next, GRPC_ERROR_REF(error));
   bs->on_next = NULL;
   GRPC_ERROR_UNREF(bs->error);
+  grpc_chttp2_cancel_stream(exec_ctx, bs->transport, bs->stream,
+                            GRPC_ERROR_REF(error));
   bs->error = error;
 }
 
