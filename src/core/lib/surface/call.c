@@ -595,25 +595,46 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
  * FINAL STATUS CODE MANIPULATION
  */
 
+static void get_final_status_from(grpc_call *call, status_source from_source,
+                                  void (*set_value)(grpc_status_code code,
+                                                    void *user_data),
+                                  void *set_value_user_data,
+                                  grpc_slice *details) {
+  grpc_status_code code;
+  const char *msg = NULL;
+  grpc_error_get_status(call->status[from_source].error, call->send_deadline,
+                        &code, &msg, NULL);
+
+  set_value(code, set_value_user_data);
+  if (details != NULL) {
+    *details = grpc_slice_from_copied_string(msg);
+  }
+}
+
 static void get_final_status(grpc_call *call,
                              void (*set_value)(grpc_status_code code,
                                                void *user_data),
                              void *set_value_user_data, grpc_slice *details) {
   int i;
+  /* search for the best status we can present: ideally the error we use has a
+     clearly defined grpc-status, and we'll prefer that. */
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
-      grpc_status_code code;
-      const char *msg = NULL;
-      grpc_error_get_status(call->status[i].error, call->send_deadline, &code,
-                            &msg, NULL);
-
-      set_value(code, set_value_user_data);
-      if (details != NULL) {
-        *details = grpc_slice_from_copied_string(msg);
-      }
+    if (call->status[i].is_set &&
+        grpc_error_has_clear_grpc_status(call->status[i].error)) {
+      get_final_status_from(call, (status_source)i, set_value,
+                            set_value_user_data, details);
       return;
     }
   }
+  /* If no clearly defined status exists, search for 'anything' */
+  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+    if (call->status[i].is_set) {
+      get_final_status_from(call, (status_source)i, set_value,
+                            set_value_user_data, details);
+      return;
+    }
+  }
+  /* If nothing exists, set some default */
   if (call->is_client) {
     set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
   } else {
