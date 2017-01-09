@@ -327,6 +327,9 @@ typedef struct glb_lb_policy {
   /* A response from the LB server has been received. Process it */
   grpc_closure lb_on_response_received;
 
+  /* LB call retry timer callback. */
+  grpc_closure lb_on_call_retry;
+
   grpc_call *lb_call; /* streaming call to the LB server, */
 
   grpc_metadata_array lb_initial_metadata_recv; /* initial MD from LB server */
@@ -1364,8 +1367,10 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
       }
     }
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
+    grpc_closure_init(&glb_policy->lb_on_call_retry, lb_call_on_retry_timer,
+                      glb_policy, grpc_schedule_on_exec_ctx);
     grpc_timer_init(exec_ctx, &glb_policy->lb_call_retry_timer, next_try,
-                    lb_call_on_retry_timer, glb_policy, now);
+                    &glb_policy->lb_on_call_retry, now);
   }
   gpr_mu_unlock(&glb_policy->mu);
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
