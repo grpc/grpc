@@ -73,7 +73,6 @@ class H2ProtocolBaseServer(twisted.internet.protocol.Protocol):
 
   def on_connection_lost(self, reason):
     logging.info('Disconnected %s' % reason)
-    twisted.internet.reactor.callFromThread(twisted.internet.reactor.stop)
 
   def dataReceived(self, data):
     try:
