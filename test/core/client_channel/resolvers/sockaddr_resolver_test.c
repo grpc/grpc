@@ -49,7 +49,7 @@ typedef struct on_resolution_arg {
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  grpc_channel_args_destroy(res->resolver_result);
+  grpc_channel_args_destroy(exec_ctx, res->resolver_result);
 }
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {

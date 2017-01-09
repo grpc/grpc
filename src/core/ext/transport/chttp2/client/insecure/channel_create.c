@@ -53,8 +53,7 @@ static void client_channel_factory_unref(
 static grpc_subchannel *client_channel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const grpc_subchannel_args *args) {
-  grpc_connector *connector = grpc_chttp2_connector_create(
-      exec_ctx, NULL /* add_handshakers */, NULL /* user_data */);
+  grpc_connector *connector = grpc_chttp2_connector_create();
   grpc_subchannel *s = grpc_subchannel_create(exec_ctx, connector, args);
   grpc_connector_unref(exec_ctx, connector);
   return s;
@@ -72,7 +71,7 @@ static grpc_channel *client_channel_factory_create_channel(
   grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
-  grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(exec_ctx, new_args);
   return channel;
 }
 
@@ -96,17 +95,16 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
       "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(reserved == NULL);
-  grpc_client_channel_factory *factory =
-      (grpc_client_channel_factory *)&client_channel_factory;
   // Add channel arg containing the client channel factory.
-  grpc_arg arg = grpc_client_channel_factory_create_channel_arg(factory);
+  grpc_arg arg =
+      grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
   grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   // Create channel.
   grpc_channel *channel = client_channel_factory_create_channel(
-      &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
+      &exec_ctx, &client_channel_factory, target,
+      GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
-  grpc_channel_args_destroy(new_args);
-  grpc_client_channel_factory_unref(&exec_ctx, factory);
+  grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_exec_ctx_finish(&exec_ctx);
   return channel != NULL ? channel : grpc_lame_client_channel_create(
                                          target, GRPC_STATUS_INTERNAL,

@@ -451,10 +451,21 @@ function customMetadata($stub)
 
     $streaming_request = new grpc\testing\StreamingOutputCallRequest();
     $streaming_request->setPayload($payload);
+    $response_parameters = new grpc\testing\ResponseParameters();
+    $response_parameters->setSize($response_len);
+    $streaming_request->getResponseParameters()[] = $response_parameters;
     $streaming_call->write($streaming_request);
     $streaming_call->writesDone();
+    $result = $streaming_call->read();
 
     hardAssertIfStatusOk($streaming_call->getStatus());
+
+    $streaming_initial_metadata = $streaming_call->getMetadata();
+    hardAssert(array_key_exists($ECHO_INITIAL_KEY, $streaming_initial_metadata),
+               'Initial metadata does not contain expected key');
+    hardAssert(
+        $streaming_initial_metadata[$ECHO_INITIAL_KEY][0] === $ECHO_INITIAL_VALUE,
+        'Incorrect initial metadata value');
 
     $streaming_trailing_metadata = $streaming_call->getTrailingMetadata();
     hardAssert(array_key_exists($ECHO_TRAILING_KEY,

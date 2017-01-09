@@ -44,6 +44,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -93,7 +94,8 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   call_data *calld = elem->call_data;
   gpr_log(GPR_ERROR, "Client side authentication failure: %s", error_msg);
   grpc_slice error_slice = grpc_slice_from_copied_string(error_msg);
-  grpc_transport_stream_op_add_close(&calld->op, status, &error_slice);
+  grpc_transport_stream_op_add_close(exec_ctx, &calld->op, status,
+                                     &error_slice);
   grpc_call_next_op(exec_ctx, elem, &calld->op);
 }
 
@@ -121,8 +123,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   for (i = 0; i < num_md; i++) {
     grpc_metadata_batch_add_tail(
         mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(grpc_slice_ref(md_elems[i].key),
-                                grpc_slice_ref(md_elems[i].value)));
+        grpc_mdelem_from_slices(exec_ctx,
+                                grpc_slice_ref_internal(md_elems[i].key),
+                                grpc_slice_ref_internal(md_elems[i].value)));
   }
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -248,10 +251,10 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       /* Pointer comparison is OK for md_elems created from the same context.
        */
       if (md->key == GRPC_MDSTR_AUTHORITY) {
-        if (calld->host != NULL) GRPC_MDSTR_UNREF(calld->host);
+        if (calld->host != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->host);
         calld->host = GRPC_MDSTR_REF(md->value);
       } else if (md->key == GRPC_MDSTR_PATH) {
-        if (calld->method != NULL) GRPC_MDSTR_UNREF(calld->method);
+        if (calld->method != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->method);
         calld->method = GRPC_MDSTR_REF(md->value);
       }
     }
@@ -292,12 +295,12 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  grpc_call_credentials_unref(calld->creds);
+  grpc_call_credentials_unref(exec_ctx, calld->creds);
   if (calld->host != NULL) {
-    GRPC_MDSTR_UNREF(calld->host);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
   }
   if (calld->method != NULL) {
-    GRPC_MDSTR_UNREF(calld->method);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
 }
@@ -337,7 +340,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   grpc_channel_security_connector *sc = chand->security_connector;
   if (sc != NULL) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "client_auth_filter");
+    GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &sc->base, "client_auth_filter");
   }
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }

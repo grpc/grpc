@@ -94,8 +94,10 @@ class ServerContext;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
-/// A thin wrapper around \a grpc_completion_queue (see / \a
-/// src/core/surface/completion_queue.h).
+/// A thin wrapper around \ref grpc_completion_queue (see \ref
+/// src/core/lib/surface/completion_queue.h).
+/// See \ref doc/cpp/perf_notes.md for notes on best practices for high
+/// performance servers.
 class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue

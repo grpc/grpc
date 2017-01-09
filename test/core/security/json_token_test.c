@@ -44,6 +44,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
@@ -220,6 +221,7 @@ static void test_parse_json_key_failure_no_private_key(void) {
 
 static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
                                            char **scratchpad) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *b64;
   char *decoded;
   grpc_json *json;
@@ -227,7 +229,7 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   b64 = gpr_malloc(len + 1);
   strncpy(b64, str, len);
   b64[len] = '\0';
-  slice = grpc_base64_decode(b64, 1);
+  slice = grpc_base64_decode(&exec_ctx, b64, 1);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
   decoded = gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
   strncpy(decoded, (const char *)GRPC_SLICE_START_PTR(slice),
@@ -237,6 +239,7 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   gpr_free(b64);
   *scratchpad = decoded;
   grpc_slice_unref(slice);
+  grpc_exec_ctx_finish(&exec_ctx);
   return json;
 }
 
@@ -338,10 +341,12 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
                                 const char *signed_data,
                                 size_t signed_data_size) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
   EVP_PKEY *key = EVP_PKEY_new();
 
-  grpc_slice sig = grpc_base64_decode(b64_signature, 1);
+  grpc_slice sig = grpc_base64_decode(&exec_ctx, b64_signature, 1);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(sig));
   GPR_ASSERT(GRPC_SLICE_LENGTH(sig) == 128);
 
@@ -355,9 +360,11 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
                                    GRPC_SLICE_LENGTH(sig)) == 1);
 
-  grpc_slice_unref(sig);
+  grpc_slice_unref_internal(&exec_ctx, sig);
   if (key != NULL) EVP_PKEY_free(key);
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static char *service_account_creds_jwt_encode_and_sign(
