@@ -49,7 +49,7 @@ typedef struct {
 void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer);
 void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_chttp2_incoming_metadata_buffer *buffer);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer);
 void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch);
 

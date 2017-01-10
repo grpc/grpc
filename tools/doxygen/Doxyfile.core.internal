@@ -772,6 +772,7 @@ include/grpc/status.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
+include/grpc/impl/codegen/exec_ctx_fwd.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/status.h \
@@ -796,6 +797,8 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/deadline_filter.h \
 src/core/lib/channel/handshaker.h \
+src/core/lib/channel/handshaker_factory.h \
+src/core/lib/channel/handshaker_registry.h \
 src/core/lib/channel/http_client_filter.h \
 src/core/lib/channel/http_server_filter.h \
 src/core/lib/channel/message_size_filter.h \
@@ -862,6 +865,7 @@ src/core/lib/json/json_common.h \
 src/core/lib/json/json_reader.h \
 src/core/lib/json/json_writer.h \
 src/core/lib/slice/percent_encoding.h \
+src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/call.h \
@@ -975,6 +979,8 @@ src/core/lib/channel/compress_filter.c \
 src/core/lib/channel/connected_channel.c \
 src/core/lib/channel/deadline_filter.c \
 src/core/lib/channel/handshaker.c \
+src/core/lib/channel/handshaker_factory.c \
+src/core/lib/channel/handshaker_registry.c \
 src/core/lib/channel/http_client_filter.c \
 src/core/lib/channel/http_server_filter.c \
 src/core/lib/channel/message_size_filter.c \
@@ -1274,7 +1280,55 @@ src/core/lib/support/tls_pthread.c \
 src/core/lib/support/tmpfile_msys.c \
 src/core/lib/support/tmpfile_posix.c \
 src/core/lib/support/tmpfile_windows.c \
-src/core/lib/support/wrap_memcpy.c
+src/core/lib/support/wrap_memcpy.c \
+doc/wait-for-ready.md \
+doc/stress_test_framework.md \
+doc/binary-logging.md \
+doc/load-balancing.md \
+doc/g_stands_for.md \
+doc/connectivity-semantics-and-api.md \
+doc/negative-http2-interop-test-descriptions.md \
+doc/c-style-guide.md \
+doc/fail_fast.md \
+doc/PROTOCOL-WEB.md \
+doc/server_reflection_tutorial.md \
+doc/server-reflection.md \
+doc/naming.md \
+doc/compression_cookbook.md \
+doc/health-checking.md \
+doc/http-grpc-status-mapping.md \
+doc/connection-backoff-interop-test-description.md \
+doc/command_line_tool.md \
+doc/connection-backoff.md \
+doc/cpp-style-guide.md \
+doc/compression.md \
+doc/environment_variables.md \
+doc/PROTOCOL-HTTP2.md \
+doc/statuscodes.md \
+doc/epoll-polling-engine.md \
+doc/interop-test-descriptions.md \
+doc/core/pending_api_cleanups.md \
+src/core/README.md \
+src/core/lib/README.md \
+src/core/lib/channel/README.md \
+src/core/lib/transport/README.md \
+src/core/lib/tsi/README.md \
+src/core/lib/iomgr/README.md \
+src/core/lib/surface/README.md \
+src/core/ext/README.md \
+src/core/ext/transport/README.md \
+src/core/ext/transport/chttp2/README.md \
+src/core/ext/transport/chttp2/server/secure/README.md \
+src/core/ext/transport/chttp2/server/insecure/README.md \
+src/core/ext/transport/chttp2/transport/README.md \
+src/core/ext/transport/chttp2/client/secure/README.md \
+src/core/ext/transport/chttp2/client/insecure/README.md \
+src/core/ext/census/README.md \
+src/core/ext/census/gen/README.md \
+src/core/ext/client_channel/README.md \
+src/core/ext/resolver/README.md \
+src/core/ext/resolver/dns/native/README.md \
+src/core/ext/resolver/sockaddr/README.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

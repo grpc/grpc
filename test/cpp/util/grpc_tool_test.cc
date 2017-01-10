@@ -86,9 +86,18 @@ using grpc::testing::EchoResponse;
   "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
   "{}\n"
 
+#define ECHO_RESPONSE_MESSAGE \
+  "message: \"echo\"\n"       \
+  "param {\n"                 \
+  "  host: \"localhost\"\n"   \
+  "  peer: \"peer\"\n"        \
+  "}\n\n"
+
 namespace grpc {
 namespace testing {
 
+DECLARE_bool(binary_input);
+DECLARE_bool(binary_output);
 DECLARE_bool(l);
 
 namespace {
@@ -335,6 +344,47 @@ TEST_F(GrpcToolTest, CallCommand) {
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(NULL !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, ParseCommand) {
+  // Test input "grpc_cli parse localhost:<port> grpc.testing.EchoResponse
+  // ECHO_RESPONSE_MESSAGE"
+  std::stringstream output_stream;
+  std::stringstream binary_output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "parse", server_address.c_str(),
+                        "grpc.testing.EchoResponse", ECHO_RESPONSE_MESSAGE};
+
+  FLAGS_binary_input = false;
+  FLAGS_binary_output = false;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: ECHO_RESPONSE_MESSAGE
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), ECHO_RESPONSE_MESSAGE));
+
+  // Parse text message to binary message and then parse it back to text message
+  output_stream.str(grpc::string());
+  output_stream.clear();
+  FLAGS_binary_output = true;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  grpc::string binary_data = output_stream.str();
+  output_stream.str(grpc::string());
+  output_stream.clear();
+  argv[4] = binary_data.c_str();
+  FLAGS_binary_input = true;
+  FLAGS_binary_output = false;
+  EXPECT_TRUE(0 == GrpcToolMainLib(5, argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: ECHO_RESPONSE_MESSAGE
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), ECHO_RESPONSE_MESSAGE));
+
   ShutdownServer();
 }
 

@@ -45,5 +45,5 @@ def main(command_arguments):
   return _protoc_compiler.run_main(command_arguments)
 
 if __name__ == '__main__':
-  proto_include = pkg_resources.resource_filename('grpc.tools', '_proto')
+  proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
   sys.exit(main(sys.argv + ['-I{}'.format(proto_include)]))

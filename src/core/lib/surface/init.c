@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/deadline_filter.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/channel/message_size_filter.h"
@@ -80,17 +81,20 @@ static void do_basic_init(void) {
   g_initializations = 0;
 }
 
-static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool append_filter(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_append_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
-static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool prepend_filter(grpc_exec_ctx *exec_ctx,
+                           grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_prepend_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
-static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
+static bool maybe_add_http_filter(grpc_exec_ctx *exec_ctx,
+                                  grpc_channel_stack_builder *builder,
                                   void *arg) {
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
   if (t && strstr(t->vtable->name, "http")) {
@@ -201,6 +205,8 @@ void grpc_init(void) {
     grpc_executor_init();
     gpr_timers_global_init();
     grpc_cq_global_init();
+    grpc_handshaker_factory_registry_init();
+    grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != NULL) {
         g_all_of_the_plugins[i].init();
@@ -221,11 +227,12 @@ void grpc_init(void) {
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_executor_shutdown();
+    grpc_executor_shutdown(&exec_ctx);
     grpc_cq_global_shutdown();
-    grpc_iomgr_shutdown();
+    grpc_iomgr_shutdown(&exec_ctx);
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     for (i = g_number_of_plugins; i >= 0; i--) {
@@ -233,9 +240,11 @@ void grpc_shutdown(void) {
         g_all_of_the_plugins[i].destroy();
       }
     }
-    grpc_mdctx_global_shutdown();
+    grpc_mdctx_global_shutdown(&exec_ctx);
+    grpc_handshaker_factory_registry_shutdown(&exec_ctx);
   }
   gpr_mu_unlock(&g_init_mu);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int grpc_is_initialized(void) {
