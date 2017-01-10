@@ -188,29 +188,26 @@ static void client_validator(grpc_slice_buffer *incoming) {
   grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
-  // Construct expected frame.
-  grpc_slice expected = grpc_slice_malloc(13);
-  uint8_t *p = GRPC_SLICE_START_PTR(expected);
-  // Length.
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 4;
-  // Frame type (RST_STREAM).
-  *p++ = 3;
-  // Flags.
-  *p++ = 0;
+  const uint8_t *p = GRPC_SLICE_START_PTR(last_frame);
+  // Length = 4
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 4);
+  // Frame type (RST_STREAM)
+  GPR_ASSERT(*p++ == 3);
+  // Flags
+  GPR_ASSERT(*p++ == 0);
   // Stream ID.
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 1;
-  // Payload (error code).
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 11;
-  // Compare actual and expected.
-  GPR_ASSERT(grpc_slice_eq(last_frame, expected));
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 1);
+  // Payload (error code)
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p++ == 0);
+  GPR_ASSERT(*p == 0 || *p == 11);
+
   grpc_slice_buffer_destroy(&last_frame_buffer);
 }
 
