@@ -73,8 +73,11 @@ grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice) {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  if (GRPC_SLICE_LENGTH(slice) == 0 || GRPC_SLICE_START_PTR(slice)[0] == ':') {
-    return 0;
+  if (GRPC_SLICE_LENGTH(slice) == 0) {
+    return GRPC_ERROR_CREATE("Metadata keys cannot be zero length");
+  }
+  if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
+    return GRPC_ERROR_CREATE("Metadata keys cannot start with :");
   }
   return conforms_to(slice, legal_header_bits, "Illegal header key");
 }
