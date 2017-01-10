@@ -3810,6 +3810,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_builder_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/server/server_builder_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - gpr_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: server_context_test_spouse_test
   gtest: true
   build: test
