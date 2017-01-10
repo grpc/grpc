@@ -83,7 +83,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_status_code status;
-  grpc_slice details;
+  grpc_slice details = grpc_empty_slice();
 
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));

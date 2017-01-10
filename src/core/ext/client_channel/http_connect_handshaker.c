@@ -44,6 +44,7 @@
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -346,4 +347,33 @@ done:
   gpr_free(uri_str);
   grpc_uri_destroy(uri);
   return proxy_name;
+}
+
+//
+// handshaker factory
+//
+
+static void handshaker_factory_add_handshakers(
+    grpc_exec_ctx* exec_ctx, grpc_handshaker_factory* factory,
+    const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
+  char* proxy_name = grpc_get_http_proxy_server();
+  if (proxy_name != NULL) {
+    grpc_handshake_manager_add(handshake_mgr,
+                               grpc_http_connect_handshaker_create(proxy_name));
+    gpr_free(proxy_name);
+  }
+}
+
+static void handshaker_factory_destroy(grpc_exec_ctx* exec_ctx,
+                                       grpc_handshaker_factory* factory) {}
+
+static const grpc_handshaker_factory_vtable handshaker_factory_vtable = {
+    handshaker_factory_add_handshakers, handshaker_factory_destroy};
+
+static grpc_handshaker_factory handshaker_factory = {
+    &handshaker_factory_vtable};
+
+void grpc_http_connect_register_handshaker_factory() {
+  grpc_handshaker_factory_register(true /* at_start */, HANDSHAKER_CLIENT,
+                                   &handshaker_factory);
 }

@@ -45,6 +45,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
@@ -403,7 +404,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
     }
-    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
+    if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
     }
@@ -888,12 +889,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch *batch) {
-  grpc_linked_mdelem *l;
-  for (l = batch->list.head; l; l = l->next) {
-    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDSTR_GRPC_STATUS) &&
-        !grpc_mdelem_eq(l->md, GRPC_MDELEM_GRPC_STATUS_0)) {
-      return true;
-    }
+  if (batch->idx.named.grpc_status != NULL) {
+    return !grpc_mdelem_eq(batch->idx.named.grpc_status->md,
+                           GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }
@@ -1016,7 +1014,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->cancel_error != GRPC_ERROR_NONE) {
-    grpc_chttp2_cancel_stream(exec_ctx, t, s, GRPC_ERROR_REF(op->cancel_error));
+    grpc_chttp2_cancel_stream(exec_ctx, t, s, op->cancel_error);
   }
 
   if (op->send_initial_metadata != NULL) {
@@ -1067,8 +1065,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         s->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_initial_metadata_finished,
-            GRPC_ERROR_CREATE(
-                "Attempt to send initial metadata after stream was closed"),
+            GRPC_ERROR_CREATE_REFERENCING(
+                "Attempt to send initial metadata after stream was closed",
+                &s->write_closed_error, 1),
             "send_initial_metadata_finished");
       }
     }
@@ -1078,9 +1077,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
+      gpr_log(GPR_DEBUG, "write_closed_error=%s",
+              grpc_error_string(s->write_closed_error));
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished,
-          GRPC_ERROR_CREATE("Attempt to send message after stream was closed"),
+          GRPC_ERROR_CREATE_REFERENCING(
+              "Attempt to send message after stream was closed",
+              &s->write_closed_error, 1),
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
@@ -1563,11 +1566,6 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
   if (close_reads && !s->read_closed) {
     s->read_closed_error = GRPC_ERROR_REF(error);
     s->read_closed = true;
-    for (int i = 0; i < 2; i++) {
-      if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
-        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
-      }
-    }
     closed_read = true;
   }
   if (close_writes && !s->write_closed) {
@@ -1590,6 +1588,11 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     }
   }
   if (closed_read) {
+    for (int i = 0; i < 2; i++) {
+      if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
+        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
+      }
+    }
     decrement_active_streams_locked(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
@@ -1648,8 +1651,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   if (msg != NULL) {
     size_t msg_len = strlen(msg);
-    GPR_ASSERT(msg_len < 127);
-    message_pfx = grpc_slice_malloc(15);
+    GPR_ASSERT(msg_len <= UINT32_MAX);
+    uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 0);
+    message_pfx = grpc_slice_malloc(14 + msg_len_len);
     p = GRPC_SLICE_START_PTR(message_pfx);
     *p++ = 0x40;
     *p++ = 12; /* len(grpc-message) */
@@ -1665,7 +1669,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     *p++ = 'a';
     *p++ = 'g';
     *p++ = 'e';
-    *p++ = (uint8_t)msg_len;
+    GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 0, 0, p, (uint32_t)msg_len_len);
+    p += msg_len_len;
     GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
     len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
     len += (uint32_t)msg_len;
@@ -1770,8 +1775,10 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
   if (parse_error == GRPC_ERROR_NONE &&
       (parse_error = grpc_http_parser_eof(&parser)) == GRPC_ERROR_NONE) {
     error = grpc_error_set_int(
-        GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-        GRPC_ERROR_INT_HTTP_STATUS, response.status);
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
+            GRPC_ERROR_INT_HTTP_STATUS, response.status),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   }
   GRPC_ERROR_UNREF(parse_error);
 
@@ -2060,6 +2067,8 @@ static void incoming_byte_stream_publish_error(
   grpc_closure_sched(exec_ctx, bs->on_next, GRPC_ERROR_REF(error));
   bs->on_next = NULL;
   GRPC_ERROR_UNREF(bs->error);
+  grpc_chttp2_cancel_stream(exec_ctx, bs->transport, bs->stream,
+                            GRPC_ERROR_REF(error));
   bs->error = error;
 }
 

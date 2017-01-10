@@ -84,8 +84,11 @@ static void start_timer_if_needed_locked(grpc_exec_ctx* exec_ctx,
     // Take a reference to the call stack, to be owned by the timer.
     GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
     deadline_state->timer_pending = true;
-    grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, timer_callback,
-                    elem, gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_closure_init(&deadline_state->timer_callback, timer_callback, elem,
+                      grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &deadline_state->timer, deadline,
+                    &deadline_state->timer_callback,
+                    gpr_now(GPR_CLOCK_MONOTONIC));
   }
 }
 static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,

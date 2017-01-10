@@ -297,6 +297,7 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
 static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error);
+static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 
 /*******************************************************************************
  * OVERALL CALL CONSTRUCTION/DESTRUCTION
@@ -598,7 +599,6 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
                              grpc_error *error) {
   termination_closure *tc = tcp;
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "termination");
-  GRPC_ERROR_UNREF(tc->error);
   gpr_free(tc);
 }
 
@@ -658,25 +658,46 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
  * FINAL STATUS CODE MANIPULATION
  */
 
+static void get_final_status_from(grpc_call *call, status_source from_source,
+                                  void (*set_value)(grpc_status_code code,
+                                                    void *user_data),
+                                  void *set_value_user_data,
+                                  grpc_slice *details) {
+  grpc_status_code code;
+  const char *msg = NULL;
+  grpc_error_get_status(call->status[from_source].error, call->send_deadline,
+                        &code, &msg, NULL);
+
+  set_value(code, set_value_user_data);
+  if (details != NULL) {
+    *details = grpc_slice_from_copied_string(msg);
+  }
+}
+
 static void get_final_status(grpc_call *call,
                              void (*set_value)(grpc_status_code code,
                                                void *user_data),
                              void *set_value_user_data, grpc_slice *details) {
   int i;
+  /* search for the best status we can present: ideally the error we use has a
+     clearly defined grpc-status, and we'll prefer that. */
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
-      grpc_status_code code;
-      const char *msg = NULL;
-      grpc_error_get_status(call->status[i].error, call->send_deadline, &code,
-                            &msg, NULL);
-
-      set_value(code, set_value_user_data);
-      if (details != NULL) {
-        *details = grpc_slice_from_copied_string(msg);
-      }
+    if (call->status[i].is_set &&
+        grpc_error_has_clear_grpc_status(call->status[i].error)) {
+      get_final_status_from(call, (status_source)i, set_value,
+                            set_value_user_data, details);
       return;
     }
   }
+  /* If no clearly defined status exists, search for 'anything' */
+  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+    if (call->status[i].is_set) {
+      get_final_status_from(call, (status_source)i, set_value,
+                            set_value_user_data, details);
+      return;
+    }
+  }
+  /* If nothing exists, set some default */
   if (call->is_client) {
     set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
   } else {
@@ -915,7 +936,8 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
         status_code == GRPC_STATUS_OK
             ? GRPC_ERROR_NONE
             : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS, status_code);
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 (intptr_t)status_code);
 
     if (b->idx.named.grpc_message != NULL) {
       char *msg =
@@ -1034,9 +1056,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       call->recv_mode = SENDRECV_IDLE;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
-      if (gpr_unref(&bctl->steps_to_complete)) {
-        post_batch_completion(exec_ctx, bctl);
-      }
+      finish_batch_step(exec_ctx, bctl);
       return;
     }
     grpc_closure_init(&call->receiving_next_step, receiving_slice_ready, bctl,
@@ -1071,9 +1091,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving.full.buffer);
     *call->receiving.full.buffer = NULL;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
+    finish_batch_step(exec_ctx, bctl);
   }
 }
 
@@ -1083,9 +1101,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
   if (call->receiving_stream == NULL) {
     *call->receiving.full.buffer = NULL;
     call->recv_mode = SENDRECV_IDLE;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
+    finish_batch_step(exec_ctx, bctl);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
@@ -1284,9 +1300,7 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
     call->receiving.incremental.length_target = NULL;
     maybe_continue_incremental_recv(exec_ctx, call);
   }
-  if (gpr_unref(&bctl->steps_to_complete)) {
-    post_batch_completion(exec_ctx, bctl);
-  }
+  finish_batch_step(exec_ctx, bctl);
 }
 
 /*******************************************************************************
@@ -1451,9 +1465,8 @@ grpc_call_error grpc_call_incremental_message_writer_push(
     call->sending.incremental.on_next = NULL;
   }
   gpr_mu_unlock(&call->mu);
-  if (send_done &&
-      gpr_unref(&call->sending.incremental.bctl->steps_to_complete)) {
-    post_batch_completion(&exec_ctx, call->sending.incremental.bctl);
+  if (send_done) {
+    finish_batch_step(&exec_ctx, call->sending.incremental.bctl);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   return GRPC_CALL_OK;
@@ -1603,6 +1616,12 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl) {
+  if (gpr_unref(&bctl->steps_to_complete)) {
+    post_batch_completion(exec_ctx, bctl);
+  }
+}
+
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
                                        batch_control *bctl) {
   grpc_call *call = bctl->call;
@@ -1699,9 +1718,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_unlock(&call->mu);
 
-  if (gpr_unref(&bctl->steps_to_complete)) {
-    post_batch_completion(exec_ctx, bctl);
-  }
+  finish_batch_step(exec_ctx, bctl);
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
@@ -1709,10 +1726,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
 
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error));
-
-  if (gpr_unref(&bctl->steps_to_complete)) {
-    post_batch_completion(exec_ctx, bctl);
-  }
+  finish_batch_step(exec_ctx, bctl);
 }
 
 static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,

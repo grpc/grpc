@@ -134,6 +134,8 @@ class TransportOp {
     return op_->disconnect_with_error;
   }
 
+  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+
   // TODO(roth): Add methods for additional fields as needed.
 
  private:

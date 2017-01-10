@@ -170,7 +170,7 @@ bool grpc_error_is_special(grpc_error *err) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
-  if (is_special(err)) return err;
+  if (grpc_error_is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count + 1, file, line, func);
   gpr_ref(&err->refs);
@@ -197,7 +197,7 @@ static void error_destroy(grpc_error *err) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
-  if (is_special(err)) return;
+  if (grpc_error_is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count - 1, file, line, func);
   if (gpr_unref(&err->refs)) {
@@ -549,6 +549,12 @@ const char *grpc_error_string(grpc_error *err) {
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
   if (err == GRPC_ERROR_END_OF_STREAM) return end_of_stream_error_string;
+
+  void *p = (void *)gpr_atm_acq_load(&err->error_string);
+  if (p != NULL) {
+    GPR_TIMER_END("grpc_error_string", 0);
+    return p;
+  }
 
   void *p = (void *)gpr_atm_acq_load(&err->error_string);
   if (p != NULL) {

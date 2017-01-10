@@ -25,6 +25,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -765,6 +771,12 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">

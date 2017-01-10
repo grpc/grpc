@@ -65,6 +65,7 @@ typedef struct {
   grpc_fd *fd;
   gpr_timespec deadline;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
@@ -350,9 +351,10 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   gpr_mu_lock(&ac->mu);
+  grpc_closure_init(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
