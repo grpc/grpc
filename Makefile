@@ -2631,6 +2631,8 @@ LIBGRPC_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -2852,6 +2854,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -2930,6 +2933,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3122,6 +3127,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3219,6 +3225,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3338,6 +3346,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3436,6 +3445,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3628,6 +3639,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3872,6 +3884,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4015,6 +4028,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -4234,6 +4249,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4589,6 +4605,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4767,6 +4784,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -6999,19 +7017,6 @@ endif
 
 
 LIBBENCHMARK_SRC = \
-    third_party/benchmark/src/benchmark.cc \
-    third_party/benchmark/src/benchmark_register.cc \
-    third_party/benchmark/src/colorprint.cc \
-    third_party/benchmark/src/commandlineflags.cc \
-    third_party/benchmark/src/complexity.cc \
-    third_party/benchmark/src/console_reporter.cc \
-    third_party/benchmark/src/csv_reporter.cc \
-    third_party/benchmark/src/json_reporter.cc \
-    third_party/benchmark/src/reporter.cc \
-    third_party/benchmark/src/sleep.cc \
-    third_party/benchmark/src/string_util.cc \
-    third_party/benchmark/src/sysinfo.cc \
-    third_party/benchmark/src/timers.cc \
 
 PUBLIC_HEADERS_CXX += \
 

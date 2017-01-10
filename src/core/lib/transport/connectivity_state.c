@@ -81,7 +81,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
     } else {
       error = GRPC_ERROR_CREATE("Shutdown connectivity owner");
     }
-    grpc_exec_ctx_sched(exec_ctx, w->notify, error, NULL);
+    grpc_closure_sched(exec_ctx, w->notify, error);
     gpr_free(w);
   }
   GRPC_ERROR_UNREF(tracker->current_error);
@@ -121,7 +121,7 @@ bool grpc_connectivity_state_notify_on_state_change(
   if (current == NULL) {
     grpc_connectivity_state_watcher *w = tracker->watchers;
     if (w != NULL && w->notify == notify) {
-      grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
+      grpc_closure_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED);
       tracker->watchers = w->next;
       gpr_free(w);
       return false;
@@ -129,7 +129,7 @@ bool grpc_connectivity_state_notify_on_state_change(
     while (w != NULL) {
       grpc_connectivity_state_watcher *rm_candidate = w->next;
       if (rm_candidate != NULL && rm_candidate->notify == notify) {
-        grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
+        grpc_closure_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED);
         w->next = w->next->next;
         gpr_free(rm_candidate);
         return false;
@@ -140,8 +140,8 @@ bool grpc_connectivity_state_notify_on_state_change(
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
-      grpc_exec_ctx_sched(exec_ctx, notify,
-                          GRPC_ERROR_REF(tracker->current_error), NULL);
+      grpc_closure_sched(exec_ctx, notify,
+                         GRPC_ERROR_REF(tracker->current_error));
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;
@@ -191,8 +191,8 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "NOTIFY: %p %s: %p", tracker, tracker->name,
               w->notify);
     }
-    grpc_exec_ctx_sched(exec_ctx, w->notify,
-                        GRPC_ERROR_REF(tracker->current_error), NULL);
+    grpc_closure_sched(exec_ctx, w->notify,
+                       GRPC_ERROR_REF(tracker->current_error));
     gpr_free(w);
   }
 }

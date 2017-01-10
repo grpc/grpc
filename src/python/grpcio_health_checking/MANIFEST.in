@@ -1,4 +1,4 @@
 include grpc_version.py
 include health_commands.py
-graft grpc
+graft grpc_health
 global-exclude *.pyc
