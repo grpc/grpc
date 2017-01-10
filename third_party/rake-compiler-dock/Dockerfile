@@ -122,13 +122,16 @@ RUN echo "gem: --no-ri --no-rdoc" >> ~/.gemrc && \
         rvm 2.4.0 do gem install mini_portile2 && \
         find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
 
+RUN bash -c "gem env"
+RUN bash -c "gem list rake-compiler"
+
 # Install rake-compiler's cross rubies in global dir instead of /root
 RUN sudo mkdir -p /usr/local/rake-compiler && \
     sudo chown rvm.rvm /usr/local/rake-compiler && \
     ln -s /usr/local/rake-compiler ~/.rake-compiler
 
 # Patch rake-compiler to avoid build of ruby extensions
-RUN cd /usr/local/rvm/gems/ruby-2.4.0/gems/rake-compiler-0.9.5 && git apply /home/rvm/patches/rake-compiler-0.9.5/*.diff ; \
+RUN cd /usr/local/rvm/gems/ruby-2.4.0/gems/rake-compiler-1.0.3 && git apply /home/rvm/patches/rake-compiler-1.0.3/*.diff ; \
     true
 
 RUN bash -c "rvm use 2.4.0 --default && \
@@ -203,6 +206,10 @@ RUN cp /tmp/build/runas /usr/local/bin/
 
 # Install sudoers configuration
 RUN cp /tmp/build/sudoers /etc/sudoers.d/rake-compiler-dock
+
+# Fixup Ruby 2.4 'static' compilation issue.
+RUN echo '!<arch>' > /usr/local/rake-compiler/ruby/x86_64-linux-gnu/ruby-2.4.0/lib/libruby.a
+RUN echo '!<arch>' > /usr/local/rake-compiler/ruby/i686-linux-gnu/ruby-2.4.0/lib/libruby.a
 
 ENV RUBY_CC_VERSION 2.4.0:2.3.0:2.2.2:2.1.5:2.0.0
 
