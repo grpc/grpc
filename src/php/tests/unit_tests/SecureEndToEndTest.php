@@ -35,12 +35,14 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+        $ca_data = file_get_contents(dirname(__FILE__).'/../data/ca.pem');
+        $key_data = file_get_contents(dirname(__FILE__).'/../data/server1.key');
+        $pem_data = file_get_contents(dirname(__FILE__).'/../data/server1.pem');
+        $credentials = Grpc\ChannelCredentials::createSsl($ca_data);
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
-            file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            [['private_key' => $key_data,
+              'cert_chain' => $pem_data, ]]);
         $this->server = new Grpc\Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
