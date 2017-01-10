@@ -3919,6 +3919,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
+    src/cpp/server/channel_argument_option.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
     src/cpp/server/health/default_health_check_service.cc \
@@ -3951,6 +3952,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/health_check_service_interface.h \
     include/grpc++/impl/call.h \
+    include/grpc++/impl/channel_argument_option.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/codegen/core_codegen.h \
     include/grpc++/impl/grpc_library.h \
@@ -4118,6 +4120,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
+    src/cpp/server/channel_argument_option.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
     src/cpp/server/health/default_health_check_service.cc \
@@ -4333,6 +4336,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/health_check_service_interface.h \
     include/grpc++/impl/call.h \
+    include/grpc++/impl/channel_argument_option.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/codegen/core_codegen.h \
     include/grpc++/impl/grpc_library.h \
@@ -4801,6 +4805,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
+    src/cpp/server/channel_argument_option.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
     src/cpp/server/health/default_health_check_service.cc \
@@ -4833,6 +4838,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/health_check_service_interface.h \
     include/grpc++/impl/call.h \
+    include/grpc++/impl/channel_argument_option.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/codegen/core_codegen.h \
     include/grpc++/impl/grpc_library.h \
