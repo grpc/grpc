@@ -49,7 +49,7 @@ server. The client should handle the goaway by switching to a new stream without
 the user application having to do a thing.
 
 Client Procedure:
- 1. Client sends two UnaryCall requests with:
+ 1. Client sends two UnaryCall requests (and sleeps for 1 second in-between).
  
     ```
     {
