@@ -131,7 +131,7 @@ RUN sudo mkdir -p /usr/local/rake-compiler && \
     ln -s /usr/local/rake-compiler ~/.rake-compiler
 
 # Patch rake-compiler to avoid build of ruby extensions
-RUN cd /usr/local/rvm/gems/ruby-2.4.0/gems/rake-compiler-1.0.3 && git apply /home/rvm/patches/rake-compiler-1.0.3/*.diff ; \
+RUN cd /usr/local/rvm/gems/ruby-2.4.0/gems/rake-compiler-0.9.5 && git apply /home/rvm/patches/rake-compiler-0.9.5/*.diff ; \
     true
 
 RUN bash -c "rvm use 2.4.0 --default && \
