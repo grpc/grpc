@@ -97,6 +97,8 @@ struct grpc_tcp_listener {
   int is_sibling;
 };
 
+typedef enum { REUSE_ANY, REUSE_CHECK, NO_REUSE } so_reuseport_mode;
+
 /* the overall server */
 struct grpc_tcp_server {
   gpr_refcount refs;
@@ -114,7 +116,7 @@ struct grpc_tcp_server {
   /* is this server shutting down? */
   bool shutdown;
   /* use SO_REUSEPORT */
-  bool so_reuseport;
+  so_reuseport_mode so_reuseport_mode;
 
   /* linked list of server ports */
   grpc_tcp_listener *head;
@@ -139,14 +141,14 @@ struct grpc_tcp_server {
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
-static bool has_so_reuseport = false;
+static bool g_has_so_reuseport = false;
 
 static void init(void) {
 #ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s >= 0) {
-    has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
-                                         grpc_set_socket_reuse_port(s, 1));
+    g_has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
+                                           grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
 #endif
@@ -159,18 +161,34 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   gpr_once_init(&check_init, init);
 
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
-  s->so_reuseport = has_so_reuseport;
+  bool allow_reuse_port = true;
+  so_reuseport_mode reuse_port_mode = REUSE_CHECK;
   s->resource_quota = grpc_resource_quota_create(NULL);
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport =
-            has_so_reuseport && (args->args[i].value.integer != 0);
+        allow_reuse_port = (args->args[i].value.integer != 0);
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
                                  " must be an integer");
+      }
+    } else if (0 == strcmp(GRPC_ARG_REUSEPORT_MODE, args->args[i].key)) {
+      if (args->args[i].type == GRPC_ARG_STRING) {
+        if (0 == strcmp("reuse_any", args->args[i].value.string)) {
+          reuse_port_mode = REUSE_ANY;
+        } else if (0 == strcmp("reuse_check", args->args[i].value.string)) {
+          reuse_port_mode = REUSE_CHECK;
+        } else if (0 == strcmp("no", args->args[i].value.string)) {
+          reuse_port_mode = NO_REUSE;
+        } else {
+          grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+          gpr_free(s);
+          return GRPC_ERROR_CREATE(
+              GRPC_ARG_REUSEPORT_MODE
+              " must be one of 'reuse_any', 'reuse_check', or 'no'");
+        }
       }
     } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
@@ -187,6 +205,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   }
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
+  s->so_reuseport_mode =
+      g_has_so_reuseport && allow_reuse_port ? reuse_port_mode : NO_REUSE;
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = false;
@@ -320,15 +340,47 @@ static int get_max_accept_queue_size(void) {
 
 /* Prepare a recently-created socket for listening. */
 static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
-                                  bool so_reuseport, int *port) {
+                                  so_reuseport_mode reuse_port_mode,
+                                  int *port) {
   grpc_resolved_address sockname_temp;
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport && !grpc_is_unix_socket(addr)) {
-    err = grpc_set_socket_reuse_port(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
+  if (grpc_is_unix_socket(addr)) {
+    reuse_port_mode = NO_REUSE;
+  }
+
+  switch (reuse_port_mode) {
+    case REUSE_CHECK:
+      if (grpc_sockaddr_get_port(addr) != 0) {
+        int s;
+        grpc_dualstack_mode dsmode;
+        err = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &s);
+        if (err != GRPC_ERROR_NONE) {
+          grpc_error *err2 = GRPC_ERROR_CREATE_REFERENCING(
+              "Failed to create canary socket", &err, 1);
+          GRPC_ERROR_UNREF(err);
+          err = err2;
+          goto error;
+        }
+        if (bind(s, (struct sockaddr *)addr->addr, (socklen_t)addr->len) < 0) {
+          err = GRPC_OS_ERROR(errno, "bind.canary");
+          char *addrtxt = grpc_sockaddr_to_uri(addr);
+          err = grpc_error_set_str(err, GRPC_ERROR_STR_TARGET_ADDRESS, addrtxt);
+          gpr_free(addrtxt);
+          close(s);
+          goto error;
+        }
+        close(s);
+      }
+    /* fall through */
+    case REUSE_ANY:
+      err = grpc_set_socket_reuse_port(fd, 1);
+      if (err != GRPC_ERROR_NONE) goto error;
+      break;
+    case NO_REUSE:
+      break;
   }
 
   err = grpc_set_socket_nonblocking(fd, 1);
@@ -468,7 +520,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
   char *addr_str;
   char *name;
 
-  grpc_error *err = prepare_socket(fd, addr, s->so_reuseport, &port);
+  grpc_error *err = prepare_socket(fd, addr, s->so_reuseport_mode, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
     grpc_sockaddr_to_string(&addr_str, addr, 1);
@@ -523,7 +575,7 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
     if (err != GRPC_ERROR_NONE) return err;
-    err = prepare_socket(fd, &listener->addr, true, &port);
+    err = prepare_socket(fd, &listener->addr, REUSE_ANY, &port);
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);
@@ -717,7 +769,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
   s->pollset_count = pollset_count;
   sp = s->head;
   while (sp != NULL) {
-    if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
+    if (s->so_reuseport_mode != NO_REUSE && !grpc_is_unix_socket(&sp->addr) &&
         pollset_count > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
