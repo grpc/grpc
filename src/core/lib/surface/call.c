@@ -56,6 +56,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -768,16 +769,13 @@ static int prepare_application_metadata(
         get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    if (!grpc_header_key_is_legal(md->key)) {
-      char *str = grpc_slice_to_c_string(md->key);
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
-      gpr_free(str);
+    if (!GRPC_LOG_IF_ERROR("validate_metadata",
+                           grpc_validate_header_key_is_legal(md->key))) {
       break;
     } else if (!grpc_is_binary_header(md->key) &&
-               !grpc_header_nonbin_value_is_legal(md->value)) {
-      char *str = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
-      gpr_free(str);
+               !GRPC_LOG_IF_ERROR(
+                   "validate_metadata",
+                   grpc_validate_header_nonbin_value_is_legal(md->value))) {
       break;
     }
     l->md = grpc_mdelem_from_grpc_metadata(exec_ctx, (grpc_metadata *)md);
