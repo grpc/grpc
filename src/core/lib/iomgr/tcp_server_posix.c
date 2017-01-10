@@ -364,6 +364,14 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
           err = err2;
           goto error;
         }
+        err = grpc_set_socket_reuse_addr(s, 1);
+        if (err != GRPC_ERROR_NONE) {
+          grpc_error *err2 = GRPC_ERROR_CREATE_REFERENCING(
+              "Failed to set SO_REUSEADDR on canary socket", &err, 1);
+          GRPC_ERROR_UNREF(err);
+          err = err2;
+          goto error;
+        }
         if (bind(s, (struct sockaddr *)addr->addr, (socklen_t)addr->len) < 0) {
           err = GRPC_OS_ERROR(errno, "bind.canary");
           char *addrtxt = grpc_sockaddr_to_uri(addr);
