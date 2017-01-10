@@ -607,7 +607,8 @@ static void get_final_status_from(grpc_call *call, status_source from_source,
 
   set_value(code, set_value_user_data);
   if (details != NULL) {
-    *details = grpc_slice_from_copied_string(msg);
+    *details =
+        msg == NULL ? grpc_empty_slice() : grpc_slice_from_copied_string(msg);
   }
 }
 
@@ -868,6 +869,8 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(msg);
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
+    } else {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
 
     set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
