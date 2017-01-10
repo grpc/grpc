@@ -770,6 +770,7 @@ include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
 include/grpc++/impl/call.h \
+include/grpc++/impl/channel_argument_option.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/grpc_library.h \
@@ -848,34 +849,34 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
-doc/binary-logging.md \
-doc/c-style-guide.md \
-doc/command_line_tool.md \
-doc/compression.md \
-doc/compression_cookbook.md \
-doc/connection-backoff-interop-test-description.md \
-doc/connection-backoff.md \
-doc/connectivity-semantics-and-api.md \
-doc/cpp-style-guide.md \
-doc/environment_variables.md \
-doc/epoll-polling-engine.md \
 doc/fail_fast.md \
-doc/g_stands_for.md \
-doc/health-checking.md \
-doc/http-grpc-status-mapping.md \
-doc/interop-test-descriptions.md \
-doc/load-balancing.md \
-doc/naming.md \
-doc/negative-http2-interop-test-descriptions.md \
-doc/PROTOCOL-HTTP2.md \
-doc/PROTOCOL-WEB.md \
-doc/server-reflection.md \
-doc/server_reflection_tutorial.md \
-doc/statuscodes.md \
+doc/compression.md \
+doc/environment_variables.md \
 doc/stress_test_framework.md \
+doc/PROTOCOL-WEB.md \
+doc/cpp-style-guide.md \
+doc/http-grpc-status-mapping.md \
 doc/wait-for-ready.md \
-doc/cpp/pending_api_cleanups.md \
-doc/cpp/perf_notes.md
+doc/command_line_tool.md \
+doc/c-style-guide.md \
+doc/server_reflection_tutorial.md \
+doc/health-checking.md \
+doc/connection-backoff-interop-test-description.md \
+doc/epoll-polling-engine.md \
+doc/naming.md \
+doc/binary-logging.md \
+doc/connectivity-semantics-and-api.md \
+doc/connection-backoff.md \
+doc/compression_cookbook.md \
+doc/PROTOCOL-HTTP2.md \
+doc/load-balancing.md \
+doc/negative-http2-interop-test-descriptions.md \
+doc/server-reflection.md \
+doc/interop-test-descriptions.md \
+doc/statuscodes.md \
+doc/g_stands_for.md \
+doc/cpp/perf_notes.md \
+doc/cpp/pending_api_cleanups.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
