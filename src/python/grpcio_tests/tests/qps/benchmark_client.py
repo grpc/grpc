@@ -68,12 +68,8 @@ class BenchmarkClient:
     else:
       channel = grpc.insecure_channel(server)
 
-    connected_event = threading.Event()
-    def wait_for_ready(connectivity):
-      if connectivity == grpc.ChannelConnectivity.READY:
-        connected_event.set()
-    channel.subscribe(wait_for_ready, try_to_connect=True)
-    connected_event.wait()
+    # waits for the channel to be ready before we start sending messages
+    grpc.channel_ready_future(channel).result()
 
     if config.payload_config.WhichOneof('payload') == 'simple_params':
       self._generic = False
