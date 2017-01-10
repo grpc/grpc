@@ -597,6 +597,7 @@ static void test_invalid_initial_metadata_reserved_key() {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();
   test_non_null_reserved_on_op();
   test_send_initial_metadata_more_than_once();
@@ -616,7 +617,6 @@ int main(int argc, char **argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
-  test_invalid_initial_metadata_reserved_key();
   grpc_shutdown();
 
   return 0;
