@@ -622,6 +622,7 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.h",
         "src/core/lib/surface/event_string.h",
         "src/core/lib/surface/init.h",
+        "src/core/lib/surface/validate_metadata.h",
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/transport/byte_stream.h",
