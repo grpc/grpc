@@ -556,12 +556,6 @@ const char *grpc_error_string(grpc_error *err) {
     return p;
   }
 
-  void *p = (void *)gpr_atm_acq_load(&err->error_string);
-  if (p != NULL) {
-    GPR_TIMER_END("grpc_error_string", 0);
-    return p;
-  }
-
   kv_pairs kvs;
   memset(&kvs, 0, sizeof(kvs));
 
