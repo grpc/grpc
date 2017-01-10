@@ -68,7 +68,7 @@ Server Procedure:
   1. Server sends a GOAWAY after receiving the first UnaryCall.
 
 Server asserts:
-* Two different were used from the client.
+* Two different connections were used from the client.
 
 ### rst_after_header
 
