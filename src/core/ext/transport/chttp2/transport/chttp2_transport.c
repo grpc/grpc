@@ -404,7 +404,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
     }
-    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
+    if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
     }
@@ -1773,8 +1773,10 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
   if (parse_error == GRPC_ERROR_NONE &&
       (parse_error = grpc_http_parser_eof(&parser)) == GRPC_ERROR_NONE) {
     error = grpc_error_set_int(
-        GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-        GRPC_ERROR_INT_HTTP_STATUS, response.status);
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
+            GRPC_ERROR_INT_HTTP_STATUS, response.status),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   }
   GRPC_ERROR_UNREF(parse_error);
 
