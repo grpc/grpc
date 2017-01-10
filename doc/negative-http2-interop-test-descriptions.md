@@ -61,14 +61,14 @@ Client Procedure:
     ```
 
 Client asserts:
-* Call was successful.
+* Both calls are successful.
 * Response payload body is 314159 bytes in size.
 
 Server Procedure:
   1. Server sends a GOAWAY after receiving the first UnaryCall.
 
 Server asserts:
-* The second UnaryCall has a different stream_id than the first one.
+* Two different were used from the client.
 
 ### rst_after_header
 
