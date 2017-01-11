@@ -1100,7 +1100,7 @@ grpc_cc_library(
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
         "src/cpp/server/dynamic_thread_pool.h",
-        "src/cpp/server/health/defult_health_check_service.h",
+        "src/cpp/server/health/default_health_check_service.h",
         "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
