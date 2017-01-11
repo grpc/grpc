@@ -247,7 +247,8 @@ static grpc_error *prepare_socket(SOCKET sock,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *tgtaddr = grpc_sockaddr_to_uri(addr);
-  grpc_error_set_int(grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
+  grpc_error_set_int(
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
                              "Failed to prepare server socket", &error, 1),
                          GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
