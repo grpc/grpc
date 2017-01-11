@@ -27,20 +27,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\ReleaseSigned</OutputPath>
-    <DefineConstants>SIGNED</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\keys\Grpc.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Interactive.Async">
-      <HintPath>..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
+      <HintPath>..\packages\System.Interactive.Async.3.1.1\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -140,9 +130,9 @@
     <Compile Include="Logging\LogLevelFilterLogger.cs" />
     <Compile Include="Internal\RequestCallContextSafeHandle.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
+    <Compile Include="Internal\CallFlags.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Grpc.Core.nuspec" />
     <None Include="Grpc.Core.project.json" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -234,7 +234,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   while (pending_client_calls + pending_server_recv_calls +
              pending_server_end_calls >
          0) {
-    grpc_event ev = grpc_completion_queue_next(f.cq, n_seconds_time(10), NULL);
+    grpc_event ev = grpc_completion_queue_next(f.cq, n_seconds_time(60), NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
     int ev_tag = (int)(intptr_t)ev.tag;

@@ -510,12 +510,6 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     ShutdownTag shutdown_tag;  // Dummy shutdown tag
     grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
 
-    // Shutdown all ThreadManagers. This will try to gracefully stop all the
-    // threads in the ThreadManagers (once they process any inflight requests)
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();  // ThreadManager's Shutdown()
-    }
-
     shutdown_cq.Shutdown();
 
     void* tag;
@@ -530,6 +524,12 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     }
     // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
     // successfully shutdown
+
+    // Shutdown all ThreadManagers. This will try to gracefully stop all the
+    // threads in the ThreadManagers (once they process any inflight requests)
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->Shutdown();  // ThreadManager's Shutdown()
+    }
 
     // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
@@ -575,7 +575,12 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       tag_(tag),
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
+  call_cq_->RegisterAvalanching();  // This op will trigger more ops
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
+}
+
+ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
+  call_cq_->CompleteAvalanching();
 }
 
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,

@@ -34,10 +34,10 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
-
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
@@ -96,7 +96,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void *(*copy)(void *p);
-  void (*destroy)(void *p);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *p);
   int (*cmp)(void *p, void *q);
 } grpc_arg_pointer_vtable;
 
@@ -206,18 +206,12 @@ typedef struct {
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
 /** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
-   to fetch an appropriate pointer arg vtable */
+   to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
-/** Service config data, to be passed to subchannels.
-    Not intended for external use. */
+/** Service config data in JSON form. Not intended for use outside of tests. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
-/** Server name. Not intended for external use. */
-#define GRPC_ARG_SERVER_NAME "grpc.server_name"
-/** Resolved addresses in a form used by the LB policy.
-    Not intended for external use. */
-#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
@@ -260,6 +254,11 @@ typedef enum grpc_call_error {
   /** payload type requested is not the type registered */
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
+
+/* Default send/receive message size limits in bytes. -1 for unlimited. */
+/* TODO(roth) Make this match the default receive limit after next release */
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 /* Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
@@ -478,6 +477,9 @@ typedef struct {
   /* If non-NULL, will be set to point to a string indicating the LB
    * policy name.  Caller takes ownership. */
   char **lb_policy_name;
+  /* If non-NULL, will be set to point to a string containing the
+   * service config used by the channel in JSON form. */
+  char **service_config_json;
 } grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;

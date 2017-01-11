@@ -48,6 +48,7 @@
 #include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/profiling/timers.h"
 
@@ -60,6 +61,35 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
 }
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
+
+namespace {
+
+grpc::string GetChannelInfoField(grpc_channel* channel,
+                                 grpc_channel_info* channel_info,
+                                 char*** channel_info_field) {
+  char* value = NULL;
+  memset(channel_info, 0, sizeof(*channel_info));
+  *channel_info_field = &value;
+  grpc_channel_get_info(channel, channel_info);
+  if (value == NULL) return "";
+  grpc::string result = value;
+  gpr_free(value);
+  return result;
+}
+
+}  // namespace
+
+grpc::string Channel::GetLoadBalancingPolicyName() const {
+  grpc_channel_info channel_info;
+  return GetChannelInfoField(c_channel_, &channel_info,
+                             &channel_info.lb_policy_name);
+}
+
+grpc::string Channel::GetServiceConfigJSON() const {
+  grpc_channel_info channel_info;
+  return GetChannelInfoField(c_channel_, &channel_info,
+                             &channel_info.service_config_json);
+}
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {

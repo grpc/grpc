@@ -38,8 +38,11 @@
 #include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+extern "C" {
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+}
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
@@ -94,13 +97,15 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
   grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
   bool replaced = false;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == mutator_arg.type &&
         grpc::string(it->key) == grpc::string(mutator_arg.key)) {
-      it->value.pointer.vtable->destroy(it->value.pointer.p);
+      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
       it->value.pointer = mutator_arg.value.pointer;
     }
   }
+  grpc_exec_ctx_finish(&exec_ctx);
   if (!replaced) {
     args_.push_back(mutator_arg);
   }
@@ -141,6 +146,11 @@ void ChannelArguments::SetResourceQuota(
 void ChannelArguments::SetLoadBalancingPolicyName(
     const grpc::string& lb_policy_name) {
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
+}
+
+void ChannelArguments::SetServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
 }
 
 void ChannelArguments::SetInt(const grpc::string& key, int value) {

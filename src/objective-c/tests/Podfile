@@ -84,9 +84,9 @@ post_install do |installer|
     end
 
     # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
-    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core.'
+    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
     # and require the same error suppresion.
-    if target.name == 'gRPC-Core' or target.name.start_with?('gRPC-Core.') 
+    if target.name.start_with?('gRPC-Core')
       target.build_configurations.each do |config|
         # TODO(zyc): Remove this setting after the issue is resolved
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
