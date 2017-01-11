@@ -146,14 +146,14 @@ static grpc_error *process_send_initial_metadata(
 
   /* hint compression algorithm */
   error = grpc_metadata_batch_add_tail(
-      initial_metadata, &calld->compression_algorithm_storage,
+      exec_ctx, initial_metadata, &calld->compression_algorithm_storage,
       grpc_compression_encoding_mdelem(calld->compression_algorithm));
 
   if (error != GRPC_ERROR_NONE) return error;
 
   /* convey supported compression algorithms */
   error = grpc_metadata_batch_add_tail(
-      initial_metadata, &calld->accept_encoding_storage,
+      exec_ctx, initial_metadata, &calld->accept_encoding_storage,
       GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
           channeld->supported_compression_algorithms));
 

@@ -100,17 +100,17 @@ void grpc_metadata_batch_set_value(grpc_exec_ctx *exec_ctx,
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-grpc_error *grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
-                                          grpc_linked_mdelem *storage)
-    GRPC_MUST_USE_RESULT;
+grpc_error *grpc_metadata_batch_link_head(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage) GRPC_MUST_USE_RESULT;
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-grpc_error *grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
-                                          grpc_linked_mdelem *storage)
-    GRPC_MUST_USE_RESULT;
+grpc_error *grpc_metadata_batch_link_tail(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage) GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the first element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -119,8 +119,8 @@ grpc_error *grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
 grpc_error *grpc_metadata_batch_add_head(
-    grpc_metadata_batch *batch, grpc_linked_mdelem *storage,
-    grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -128,8 +128,8 @@ grpc_error *grpc_metadata_batch_add_head(
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
 grpc_error *grpc_metadata_batch_add_tail(
-    grpc_metadata_batch *batch, grpc_linked_mdelem *storage,
-    grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
 grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md);
 

@@ -136,7 +136,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
       } else {
         add_error(&error,
                   grpc_metadata_batch_add_tail(
-                      mdb, &calld->md_links[i],
+                      exec_ctx, mdb, &calld->md_links[i],
                       grpc_mdelem_from_slices(
                           exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
                           grpc_slice_ref_internal(md_elems[i].value))));
