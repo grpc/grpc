@@ -40,6 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 /* --- Constants. --- */
 
 static const int8_t base64_bytes[] = {
@@ -120,8 +122,9 @@ char *grpc_base64_encode(const void *vdata, size_t data_size, int url_safe,
   return result;
 }
 
-grpc_slice grpc_base64_decode(const char *b64, int url_safe) {
-  return grpc_base64_decode_with_len(b64, strlen(b64), url_safe);
+grpc_slice grpc_base64_decode(grpc_exec_ctx *exec_ctx, const char *b64,
+                              int url_safe) {
+  return grpc_base64_decode_with_len(exec_ctx, b64, strlen(b64), url_safe);
 }
 
 static void decode_one_char(const unsigned char *codes, unsigned char *result,
@@ -182,8 +185,8 @@ static int decode_group(const unsigned char *codes, size_t num_codes,
   return 1;
 }
 
-grpc_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
-                                       int url_safe) {
+grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx *exec_ctx, const char *b64,
+                                       size_t b64_len, int url_safe) {
   grpc_slice result = grpc_slice_malloc(b64_len);
   unsigned char *current = GRPC_SLICE_START_PTR(result);
   size_t result_size = 0;
@@ -228,6 +231,6 @@ grpc_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
   return result;
 
 fail:
-  grpc_slice_unref(result);
+  grpc_slice_unref_internal(exec_ctx, result);
   return gpr_empty_slice();
 }

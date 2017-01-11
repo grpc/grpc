@@ -181,7 +181,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
   TCP_REF(tcp, "read");
   // TODO(murgatroid99): figure out what the return value here means
   status =

@@ -20,3 +20,6 @@
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark
+[submodule "third_party/boringssl-with-bazel"]
+	path = third_party/boringssl-with-bazel
+	url = https://boringssl.googlesource.com/boringssl

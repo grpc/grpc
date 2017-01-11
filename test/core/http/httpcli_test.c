@@ -94,7 +94,7 @@ static void test_get(int port) {
       &exec_ctx, &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
       grpc_closure_create(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
@@ -136,7 +136,7 @@ static void test_post(int port) {
       n_seconds_time(15),
       grpc_closure_create(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;

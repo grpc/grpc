@@ -46,6 +46,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -107,6 +108,9 @@ struct grpc_subchannel {
 
   /** callback for connection finishing */
   grpc_closure connected;
+
+  /** callback for our alarm */
+  grpc_closure on_alarm;
 
   /** pollset_set tracking who's interested in a connection
       being setup */
@@ -206,9 +210,9 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_subchannel *c = arg;
   gpr_free((void *)c->filters);
-  grpc_channel_args_destroy(c->args);
+  grpc_channel_args_destroy(exec_ctx, c->args);
   gpr_free(c->addr);
-  grpc_slice_unref(c->initial_connect_string);
+  grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(c->pollset_set);
@@ -482,7 +486,8 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
               time_til_next.tv_sec, time_til_next.tv_nsec);
     }
-    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
+    grpc_closure_init(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm, now);
   }
 }
 
@@ -603,13 +608,13 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* construct channel stack */
   grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_channel_stack_builder_set_channel_arguments(
-      builder, c->connecting_result.channel_args);
+      exec_ctx, builder, c->connecting_result.channel_args);
   grpc_channel_stack_builder_set_transport(builder,
                                            c->connecting_result.transport);
 
   if (!grpc_channel_init_create_stack(exec_ctx, builder,
                                       GRPC_CLIENT_SUBCHANNEL)) {
-    grpc_channel_stack_builder_destroy(builder);
+    grpc_channel_stack_builder_destroy(exec_ctx, builder);
     abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
   }
   grpc_error *error = grpc_channel_stack_builder_finish(
@@ -689,7 +694,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   }
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connected");
-  grpc_channel_args_destroy(delete_channel_args);
+  grpc_channel_args_destroy(exec_ctx, delete_channel_args);
 }
 
 /*
