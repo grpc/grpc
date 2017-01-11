@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,16 +26,17 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Test basic Bazel features
-#
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
-cd /var/local/git/grpc
-bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/cpp/...
+cc_binary(
+    name = "greeter_client",
+    srcs = ["greeter_client.cc"],
+    deps = ["//examples/protos:helloworld"],
+    defines = ["BAZEL_BUILD"],
+)
+
+cc_binary(
+    name = "greeter_server",
+    srcs = ["greeter_server.cc"],
+    deps = ["//examples/protos:helloworld"],
+    defines = ["BAZEL_BUILD"],
+)
