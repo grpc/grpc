@@ -1259,6 +1259,7 @@ libs:
   src:
   - test/cpp/interop/server_helper.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
