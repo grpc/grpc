@@ -147,6 +147,7 @@ DEFINE_bool(do_not_abort_on_transient_failures, true,
 // Options from client.cc (for compatibility with interop test).
 // TODO(sreek): Consolidate overlapping options
 DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
@@ -371,9 +372,9 @@ int main(int argc, char** argv) {
   }
 
   // Start metrics server before waiting for the stress test threads
+  std::unique_ptr<grpc::Server> metrics_server;
   if (FLAGS_metrics_port > 0) {
-    std::unique_ptr<grpc::Server> metrics_server =
-        metrics_service.StartServer(FLAGS_metrics_port);
+    metrics_server = metrics_service.StartServer(FLAGS_metrics_port);
   }
 
   // Wait for the stress test threads to complete

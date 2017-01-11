@@ -123,12 +123,12 @@ class EmptyMessageTest(unittest.TestCase):
 
   def testStreamUnary(self):
     response = self._channel.stream_unary(_STREAM_UNARY)(
-        [_REQUEST] * test_constants.STREAM_LENGTH)
+        iter([_REQUEST] * test_constants.STREAM_LENGTH))
     self.assertEqual(_RESPONSE, response)
 
   def testStreamStream(self):
     response_iterator = self._channel.stream_stream(_STREAM_STREAM)(
-        [_REQUEST] * test_constants.STREAM_LENGTH)
+        iter([_REQUEST] * test_constants.STREAM_LENGTH))
     self.assertSequenceEqual(
         [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator))
 

@@ -99,7 +99,18 @@ function ClientWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
-  var message = this.serialize(chunk);
+  var message;
+  try {
+    message = this.serialize(chunk);
+  } catch (e) {
+    /* Sending this error to the server and emitting it immediately on the
+       client may put the call in a slightly weird state on the client side,
+       but passing an object that causes a serialization failure is a misuse
+       of the API anyway, so that's OK. The primary purpose here is to give the
+       programmer a useful error and to stop the stream properly */
+    this.call.cancelWithStatus(grpc.status.INTERNAL, "Serialization failure");
+    callback(e);
+  }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
      * can get to checking that it is valid flags */

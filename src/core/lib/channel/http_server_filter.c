@@ -38,6 +38,7 @@
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/percent_encoding.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -82,31 +83,28 @@ typedef struct call_data {
 
 typedef struct channel_data { uint8_t unused; } channel_data;
 
-typedef struct {
-  grpc_call_element *elem;
-  grpc_exec_ctx *exec_ctx;
-} server_filter_args;
-
-static grpc_mdelem *server_filter_outgoing_metadata(void *user_data,
+static grpc_mdelem *server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
+                                                    void *user_data,
                                                     grpc_mdelem *md) {
   if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
         md->value->slice, grpc_compatible_percent_encoding_unreserved_bytes);
     if (grpc_slice_is_equivalent(pct_encoded_msg, md->value->slice)) {
-      grpc_slice_unref(pct_encoded_msg);
+      grpc_slice_unref_internal(exec_ctx, pct_encoded_msg);
       return md;
     } else {
       return grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_GRPC_MESSAGE, grpc_mdstr_from_slice(pct_encoded_msg));
+          exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+          grpc_mdstr_from_slice(exec_ctx, pct_encoded_msg));
     }
   } else {
     return md;
   }
 }
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
-  server_filter_args *a = user_data;
-  grpc_call_element *elem = a->elem;
+static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
   /* Check if it is one of the headers we care about. */
@@ -157,7 +155,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
        on the wire here. */
-    grpc_call_element_send_cancel(a->exec_ctx, elem);
+    grpc_call_element_send_cancel(exec_ctx, elem);
     return NULL;
   } else if (md->key == GRPC_MDSTR_PATH) {
     if (calld->seen_path) {
@@ -173,7 +171,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
+        exec_ctx, GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
     calld->seen_authority = 1;
     return authority;
   } else if (md->key == GRPC_MDSTR_GRPC_PAYLOAD_BIN) {
@@ -181,7 +179,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        header field */
     calld->seen_payload_bin = 1;
     grpc_slice_buffer_add(&calld->read_slice_buffer,
-                          grpc_slice_ref(md->value->slice));
+                          grpc_slice_ref_internal(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
@@ -195,10 +193,8 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (err == GRPC_ERROR_NONE) {
-    server_filter_args a;
-    a.elem = elem;
-    a.exec_ctx = exec_ctx;
-    grpc_metadata_batch_filter(calld->recv_initial_metadata, server_filter, &a);
+    grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                               server_filter, elem);
     /* Have we seen the required http2 transport headers?
        (:method, :scheme, content-type, with :path and :authority covered
        at the channel level right now) */
@@ -310,9 +306,8 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
 
   if (op->send_trailing_metadata) {
-    server_filter_args a = {elem, exec_ctx};
-    grpc_metadata_batch_filter(op->send_trailing_metadata,
-                               server_filter_outgoing_metadata, &a);
+    grpc_metadata_batch_filter(exec_ctx, op->send_trailing_metadata,
+                               server_filter_outgoing_metadata, elem);
   }
 }
 
@@ -334,9 +329,12 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
-  grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
-  grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
+  grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
@@ -346,7 +344,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &calld->read_slice_buffer);
 }
 
 /* Constructor for channel_data */

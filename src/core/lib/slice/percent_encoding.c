@@ -35,6 +35,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 const uint8_t grpc_url_percent_encoding_unreserved_bytes[256 / 8] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff,
     0x87, 0xfe, 0xff, 0xff, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -66,7 +68,7 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
   }
   // no unreserved bytes: return the string unmodified
   if (!any_reserved_bytes) {
-    return grpc_slice_ref(slice);
+    return grpc_slice_ref_internal(slice);
   }
   // second pass: actually encode
   grpc_slice out = grpc_slice_malloc(output_length);
@@ -119,7 +121,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
     }
   }
   if (!any_percent_encoded_stuff) {
-    *slice_out = grpc_slice_ref(slice_in);
+    *slice_out = grpc_slice_ref_internal(slice_in);
     return true;
   }
   p = GRPC_SLICE_START_PTR(slice_in);
@@ -158,7 +160,7 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
     }
   }
   if (!any_percent_encoded_stuff) {
-    return grpc_slice_ref(slice_in);
+    return grpc_slice_ref_internal(slice_in);
   }
   p = GRPC_SLICE_START_PTR(slice_in);
   grpc_slice out = grpc_slice_malloc(out_length);

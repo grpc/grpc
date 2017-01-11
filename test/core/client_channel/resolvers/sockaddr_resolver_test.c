@@ -49,7 +49,7 @@ typedef struct on_resolution_arg {
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  grpc_channel_args_destroy(res->resolver_result);
+  grpc_channel_args_destroy(exec_ctx, res->resolver_result);
 }
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
@@ -68,8 +68,8 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_server_name = uri->path;
-  grpc_closure *on_resolution =
-      grpc_closure_create(on_resolution_cb, &on_res_arg);
+  grpc_closure *on_resolution = grpc_closure_create(
+      on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
 
   grpc_resolver_next(&exec_ctx, resolver, &on_res_arg.resolver_result,
                      on_resolution);
