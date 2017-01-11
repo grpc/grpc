@@ -748,9 +748,9 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != NULL);
     GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != NULL);
-    calld->path = grpc_slice_ref(
+    calld->path = grpc_slice_ref_internal(
         GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
-    calld->host = grpc_slice_ref(
+    calld->host = grpc_slice_ref_internal(
         GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
     calld->path_set = true;
     calld->host_set = true;

@@ -97,8 +97,8 @@ static void plugin_md_request_metadata_ready(void *request,
     } else if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
-        md_array[i].key = grpc_slice_ref(md[i].key);
-        md_array[i].value = grpc_slice_ref(md[i].value);
+        md_array[i].key = grpc_slice_ref_internal(md[i].key);
+        md_array[i].value = grpc_slice_ref_internal(md[i].value);
       }
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);
