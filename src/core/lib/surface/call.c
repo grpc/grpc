@@ -1357,6 +1357,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   /* TODO(ctiller): this feels like it could be made lock-free */
   gpr_mu_lock(&call->mu);
   bctl = allocate_batch_control(call);
+  if(!bctl) {
+    error = GRPC_CALL_ERROR_BATCH_TOO_BIG;
+    goto done_with_error;
+  }
   memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
   bctl->notify_tag = notify_tag;
