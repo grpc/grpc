@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_ERROR_UTILS_H
-#define GRPC_ERROR_UTILS_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#define GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -53,4 +53,4 @@ void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
 /// GRPC_ERROR_CANCELLED
 bool grpc_error_has_clear_grpc_status(grpc_error *error);
 
-#endif
+#endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */
