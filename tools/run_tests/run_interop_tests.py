@@ -350,10 +350,10 @@ class RubyLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_SERVER_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'ruby'
