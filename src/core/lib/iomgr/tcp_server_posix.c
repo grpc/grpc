@@ -362,6 +362,9 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
               "Failed to create canary socket", &err, 1);
           GRPC_ERROR_UNREF(err);
           err = err2;
+          char *addrtxt = grpc_sockaddr_to_uri(addr);
+          err = grpc_error_set_str(err, GRPC_ERROR_STR_TARGET_ADDRESS, addrtxt);
+          gpr_free(addrtxt);
           goto error;
         }
         err = grpc_set_socket_reuse_addr(s, 1);
@@ -370,6 +373,10 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
               "Failed to set SO_REUSEADDR on canary socket", &err, 1);
           GRPC_ERROR_UNREF(err);
           err = err2;
+          char *addrtxt = grpc_sockaddr_to_uri(addr);
+          err = grpc_error_set_str(err, GRPC_ERROR_STR_TARGET_ADDRESS, addrtxt);
+          gpr_free(addrtxt);
+          close(s);
           goto error;
         }
         if (bind(s, (struct sockaddr *)addr->addr, (socklen_t)addr->len) < 0) {

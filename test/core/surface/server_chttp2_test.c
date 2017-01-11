@@ -113,8 +113,8 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_unparsable_target();
-  test_add_same_port_twice("no", true, false);
   test_add_same_port_twice("reuse_check", true, false);
+  test_add_same_port_twice("no", true, false);
   test_add_same_port_twice("reuse_any", true, true);
   test_add_same_port_twice(NULL, true, false);
   test_add_same_port_twice("garbage", false, false);
