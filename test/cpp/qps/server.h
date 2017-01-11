@@ -51,7 +51,7 @@ namespace testing {
 class Server {
  public:
   explicit Server(const ServerConfig& config) : timer_(new UsageTimer) {
-    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
+    cores_ = gpr_cpu_num_cores();
     if (config.port()) {
       port_ = config.port();
 
