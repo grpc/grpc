@@ -70,9 +70,6 @@ DEFINE_double(error_tolerance, 0.01,
 DEFINE_string(qps_server_target_override, "",
               "Override QPS server target to configure in client configs."
               "Only applicable if there is a single benchmark server.");
-DEFINE_bool(configure_core_lists, true,
-            "Provide 'core_list' parameters to workers. Value determined "
-            "by cores available and 'core_limit' parameters of the scenarios.");
 
 namespace grpc {
 namespace testing {
@@ -85,7 +82,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
       scenario.server_config(), scenario.num_servers(),
       scenario.warmup_seconds(), scenario.benchmark_seconds(),
       scenario.spawn_local_worker_count(),
-      FLAGS_qps_server_target_override.c_str(), FLAGS_configure_core_lists);
+      FLAGS_qps_server_target_override.c_str());
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
