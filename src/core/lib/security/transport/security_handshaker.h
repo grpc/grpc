@@ -43,4 +43,7 @@ grpc_handshaker *grpc_security_handshaker_create(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector);
 
+/// Registers security handshaker factories.
+void grpc_security_register_handshaker_factories();
+
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */

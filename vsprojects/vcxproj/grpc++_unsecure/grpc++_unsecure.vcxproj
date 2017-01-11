@@ -333,6 +333,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />

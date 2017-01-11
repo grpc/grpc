@@ -292,6 +292,8 @@ add_library(grpc
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -530,6 +532,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -573,6 +576,8 @@ add_library(grpc_cronet
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -781,6 +786,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -825,6 +831,8 @@ add_library(grpc_unsecure
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -1032,6 +1040,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1201,6 +1210,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1302,6 +1312,8 @@ add_library(grpc++_cronet
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -1540,6 +1552,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1752,6 +1765,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h

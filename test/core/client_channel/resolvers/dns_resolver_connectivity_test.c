@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);
 
-  grpc_channel_args_destroy(result);
+  grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 

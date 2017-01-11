@@ -35,6 +35,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
                                               size_t nslices) {
   return grpc_raw_compressed_byte_buffer_create(slices, nslices,
@@ -50,7 +52,7 @@ grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
   bb->data.raw.compression = compression;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
   for (i = 0; i < nslices; i++) {
-    grpc_slice_ref(slices[i]);
+    grpc_slice_ref_internal(slices[i]);
     grpc_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
   }
   return bb;
@@ -82,12 +84,14 @@ grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
   if (!bb) return;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   switch (bb->type) {
     case GRPC_BB_RAW:
-      grpc_slice_buffer_destroy(&bb->data.raw.slice_buffer);
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &bb->data.raw.slice_buffer);
       break;
   }
   gpr_free(bb);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) {

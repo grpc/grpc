@@ -47,6 +47,7 @@
 #include <grpc/support/thd.h>
 
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -227,10 +228,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verifier_destroy(cqv);
 }
 
-static void cleanup_rpc(void) {
+static void cleanup_rpc(grpc_exec_ctx *exec_ctx) {
   grpc_event ev;
-  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_slice_buffer_destroy(&state.outgoing_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
@@ -299,8 +300,8 @@ static void run_test(const char *response_payload,
   /* clean up */
   grpc_endpoint_shutdown(&exec_ctx, state.tcp);
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
+  cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  cleanup_rpc();
   test_tcp_server_destroy(&test_server);
 
   grpc_shutdown();

@@ -549,9 +549,10 @@ int main(int argc, char **argv) {
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 
