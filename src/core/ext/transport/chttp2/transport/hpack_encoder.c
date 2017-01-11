@@ -296,7 +296,7 @@ static grpc_slice get_wire_value(grpc_mdelem elem, uint8_t *huffman_prefix) {
   }
   /* TODO(ctiller): opportunistically compress non-binary headers */
   *huffman_prefix = 0x00;
-  return grpc_slice_ref(GRPC_MDVALUE(elem));
+  return grpc_slice_ref_internal(GRPC_MDVALUE(elem));
 }
 
 static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,

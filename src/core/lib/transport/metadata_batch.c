@@ -74,7 +74,7 @@ static void assert_valid_callouts(grpc_metadata_batch *batch) {
     if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
       GPR_ASSERT(batch->idx.array[callout_idx] == l);
     }
-    grpc_slice_unref(key_interned);
+    grpc_slice_unref_internal(exec_ctx, key_interned);
   }
 #endif
 }
@@ -242,8 +242,8 @@ void grpc_metadata_batch_set_value(grpc_exec_ctx *exec_ctx,
                                    grpc_linked_mdelem *storage,
                                    grpc_slice value) {
   grpc_mdelem old = storage->md;
-  grpc_mdelem new =
-      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref(GRPC_MDKEY(old)), value);
+  grpc_mdelem new = grpc_mdelem_from_slices(
+      exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(old)), value);
   storage->md = new;
   GRPC_MDELEM_UNREF(exec_ctx, old);
 }

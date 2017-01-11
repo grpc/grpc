@@ -75,7 +75,7 @@ static void grpc_slice_hash_table_add(
       grpc_slice_hash_table_find_index(table, key, true /* find_empty */);
   GPR_ASSERT(idx != table->size);  // Table should never be full.
   grpc_slice_hash_table_entry* entry = &table->entries[idx];
-  entry->key = grpc_slice_ref(key);
+  entry->key = grpc_slice_ref_internal(key);
   entry->value = vtable->copy_value(value);
   entry->vtable = vtable;
 }
