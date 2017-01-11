@@ -297,7 +297,8 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
   op->cancel_error = GRPC_ERROR_CANCELLED;
-  op->on_complete = grpc_closure_create(destroy_op, op);
+  op->on_complete =
+      grpc_closure_create(destroy_op, op, grpc_schedule_on_exec_ctx);
   elem->filter->start_transport_stream_op(exec_ctx, elem, op);
 }
 
@@ -307,8 +308,9 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
-  op->on_complete = grpc_closure_create(destroy_op, op);
-  grpc_transport_stream_op_add_cancellation_with_message(op, status,
+  op->on_complete =
+      grpc_closure_create(destroy_op, op, grpc_schedule_on_exec_ctx);
+  grpc_transport_stream_op_add_cancellation_with_message(exec_ctx, op, status,
                                                          optional_message);
   elem->filter->start_transport_stream_op(exec_ctx, elem, op);
 }
@@ -319,7 +321,8 @@ void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
                                                grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
-  op->on_complete = grpc_closure_create(destroy_op, op);
-  grpc_transport_stream_op_add_close(op, status, optional_message);
+  op->on_complete =
+      grpc_closure_create(destroy_op, op, grpc_schedule_on_exec_ctx);
+  grpc_transport_stream_op_add_close(exec_ctx, op, status, optional_message);
   elem->filter->start_transport_stream_op(exec_ctx, elem, op);
 }

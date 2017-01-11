@@ -44,6 +44,7 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -82,7 +83,8 @@ typedef struct channel_data {
 /** For each \a md element from the incoming metadata, filter out the entry for
  * "grpc-encoding", using its value to populate the call data's
  * compression_algorithm field. */
-static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *compression_md_filter(grpc_exec_ctx *exec_ctx,
+                                          void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -130,12 +132,14 @@ static int skip_compression(grpc_call_element *elem, uint32_t flags) {
 
 /** Filter initial metadata */
 static void process_send_initial_metadata(
-    grpc_call_element *elem, grpc_metadata_batch *initial_metadata) {
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_metadata_batch *initial_metadata) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   /* Parse incoming request for compression. If any, it'll be available
    * at calld->compression_algorithm */
-  grpc_metadata_batch_filter(initial_metadata, compression_md_filter, elem);
+  grpc_metadata_batch_filter(exec_ctx, initial_metadata, compression_md_filter,
+                             elem);
   if (!calld->has_compression_algorithm) {
     /* If no algorithm was found in the metadata and we aren't
      * exceptionally skipping compression, fall back to the channel
@@ -161,7 +165,7 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_reset_and_unref(&calld->slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &calld->slices);
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
@@ -171,8 +175,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   int did_compress;
   grpc_slice_buffer tmp;
   grpc_slice_buffer_init(&tmp);
-  did_compress =
-      grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
+  did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
+                                   &calld->slices, &tmp);
   if (did_compress) {
     if (grpc_compression_trace) {
       char *algo_name;
@@ -199,7 +203,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  grpc_slice_buffer_destroy(&tmp);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &tmp);
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
@@ -243,7 +247,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("compress_start_transport_stream_op", 0);
 
   if (op->send_initial_metadata) {
-    process_send_initial_metadata(elem, op->send_initial_metadata);
+    process_send_initial_metadata(exec_ctx, elem, op->send_initial_metadata);
   }
   if (op->send_message != NULL &&
       !skip_compression(elem, op->send_message->flags)) {
@@ -269,8 +273,10 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
   calld->has_compression_algorithm = 0;
-  grpc_closure_init(&calld->got_slice, got_slice, elem);
-  grpc_closure_init(&calld->send_done, send_done, elem);
+  grpc_closure_init(&calld->got_slice, got_slice, elem,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&calld->send_done, send_done, elem,
+                    grpc_schedule_on_exec_ctx);
 
   return GRPC_ERROR_NONE;
 }
@@ -281,7 +287,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_destroy(&calld->slices);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &calld->slices);
 }
 
 /* Constructor for channel_data */

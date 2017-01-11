@@ -38,6 +38,7 @@
 
 struct grpc_alarm {
   grpc_timer alarm;
+  grpc_closure on_alarm;
   grpc_cq_completion completion;
   /** completion queue where events about this alarm will be posted */
   grpc_completion_queue *cq;
@@ -64,9 +65,11 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   alarm->tag = tag;
 
   grpc_cq_begin_op(cq, tag);
+  grpc_closure_init(&alarm->on_alarm, alarm_cb, alarm,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(&exec_ctx, &alarm->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  alarm_cb, alarm, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &alarm->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_exec_ctx_finish(&exec_ctx);
   return alarm;
 }

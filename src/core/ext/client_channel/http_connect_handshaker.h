@@ -35,12 +35,18 @@
 #define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/http/parser.h"
 
-/// Does NOT take ownership of \a proxy_server.
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server);
+/// Creates a new HTTP CONNECT handshaker.
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
+                                                     grpc_http_header* headers,
+                                                     size_t num_headers);
 
 /// Returns the name of the proxy to use, or NULL if no proxy is configured.
 /// Caller takes ownership of result.
 char* grpc_get_http_proxy_server();
+
+/// Registers handshaker factory.
+void grpc_http_connect_register_handshaker_factory();
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
