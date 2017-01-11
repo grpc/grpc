@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_ERROR_INTERNAL_H
-#define GRPC_ERROR_INTERNAL_H
+#ifndef GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
+#define GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -51,4 +51,4 @@ struct grpc_error {
 
 bool grpc_error_is_special(grpc_error *err);
 
-#endif
+#endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */
