@@ -876,7 +876,7 @@ try:
   if args.http2_badserver_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
-    spec = server_jobspec(Http2Server(), docker_images.get(lang))
+    spec = server_jobspec(http2InteropServer, docker_images.get(lang))
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost', _DEFAULT_SERVER_PORT)
