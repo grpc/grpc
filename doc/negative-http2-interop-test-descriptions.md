@@ -50,6 +50,7 @@ the user application having to do a thing.
 
 Client Procedure:
  1. Client sends two UnaryCall requests (and sleeps for 1 second in-between).
+ TODO: resolve [9300](https://github.com/grpc/grpc/issues/9300) and remove the 1 second sleep
  
     ```
     {
