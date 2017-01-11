@@ -575,7 +575,7 @@ class NamedTests
     seen_correct_exception = false
     begin
       resp = @stub.full_duplex_call([duplex_req])
-      resp.next # triggers initial req to be sent
+      resp.each { |r| }
     rescue GRPC::Unknown => e
       if e.details != message
         fail AssertionError,

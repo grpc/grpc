@@ -110,10 +110,13 @@ def _get_channel(target, args):
     channel_credentials = grpc.ssl_channel_credentials(
         root_certificates=root_certificates)
     options = (('grpc.ssl_target_name_override', args.server_host_override,),)
-    return grpc.secure_channel(
-        target, channel_credentials, options=options)
+    channel = grpc.secure_channel(target, channel_credentials, options=options)
   else:
-    return grpc.insecure_channel(target)
+    channel = grpc.insecure_channel(target)
+
+  # waits for the channel to be ready before we start sending messages
+  grpc.channel_ready_future(channel).result()
+  return channel
 
 def run_test(args):
   test_cases = _parse_weighted_test_cases(args.test_cases)
