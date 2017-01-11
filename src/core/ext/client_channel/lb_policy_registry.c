@@ -35,6 +35,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/support/string.h"
+
 #define MAX_POLICIES 10
 
 static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
@@ -52,8 +54,8 @@ void grpc_lb_policy_registry_shutdown(void) {
 void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
   int i;
   for (i = 0; i < g_number_of_lb_policies; i++) {
-    GPR_ASSERT(0 != strcmp(factory->vtable->name,
-                           g_all_of_the_lb_policies[i]->vtable->name));
+    GPR_ASSERT(0 != gpr_stricmp(factory->vtable->name,
+                                g_all_of_the_lb_policies[i]->vtable->name));
   }
   GPR_ASSERT(g_number_of_lb_policies != MAX_POLICIES);
   grpc_lb_policy_factory_ref(factory);
@@ -66,7 +68,7 @@ static grpc_lb_policy_factory *lookup_factory(const char *name) {
   if (name == NULL) return NULL;
 
   for (i = 0; i < g_number_of_lb_policies; i++) {
-    if (0 == strcmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
+    if (0 == gpr_stricmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
       return g_all_of_the_lb_policies[i];
     }
   }

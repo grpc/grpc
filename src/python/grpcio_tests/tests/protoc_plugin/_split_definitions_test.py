@@ -44,7 +44,7 @@ import threading
 import unittest
 
 import grpc
-from grpc.tools import protoc
+from grpc_tools import protoc
 from tests.unit.framework.common import test_constants
 
 _MESSAGES_IMPORT = b'import "messages.proto";'
@@ -167,7 +167,7 @@ class SameSeparateTest(unittest.TestCase, SeparateTestMixin):
         '',
         '--proto_path={}'.format(self.proto_directory),
         '--python_out={}'.format(self.python_out_directory),
-        '--grpc_python_out={}'.format(self.grpc_python_out_directory),
+        '--grpc_python_out=grpc_2_0:{}'.format(self.grpc_python_out_directory),
         same_proto_file,
     ])
     if protoc_result != 0:
@@ -241,7 +241,7 @@ class SplitCommonTest(unittest.TestCase, CommonTestMixin):
         '',
         '--proto_path={}'.format(self.proto_directory),
         '--python_out={}'.format(self.python_out_directory),
-        '--grpc_python_out={}'.format(self.python_out_directory),
+        '--grpc_python_out={}'.format(self.grpc_python_out_directory),
         services_proto_file,
         messages_proto_file,
     ])
@@ -285,7 +285,7 @@ class SplitSeparateTest(unittest.TestCase, SeparateTestMixin):
         '',
         '--proto_path={}'.format(self.proto_directory),
         '--python_out={}'.format(self.python_out_directory),
-        '--grpc_python_out={}'.format(self.grpc_python_out_directory),
+        '--grpc_python_out=grpc_2_0:{}'.format(self.grpc_python_out_directory),
         services_proto_file,
         messages_proto_file,
     ])

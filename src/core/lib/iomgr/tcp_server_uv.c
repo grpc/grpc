@@ -89,11 +89,11 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         s->resource_quota =
-            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
+            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
                                  " must be a pointer to a buffer pool");
@@ -126,7 +126,7 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -136,7 +136,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     gpr_free(sp->handle);
     gpr_free(sp);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
   gpr_free(s);
 }
 
@@ -170,7 +170,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting, NULL);
+    grpc_closure_list_sched(&local_exec_ctx, &s->shutdown_starting);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush(&local_exec_ctx);
       tcp_server_destroy(&local_exec_ctx, s);
@@ -188,7 +188,6 @@ static void accepted_connection_close_cb(uv_handle_t *handle) {
 
 static void on_connect(uv_stream_t *server, int status) {
   grpc_tcp_listener *sp = (grpc_tcp_listener *)server->data;
-  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   uv_tcp_t *client;
   grpc_endpoint *ep = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -201,6 +200,7 @@ static void on_connect(uv_stream_t *server, int status) {
             uv_strerror(status));
     return;
   }
+
   client = gpr_malloc(sizeof(uv_tcp_t));
   uv_tcp_init(uv_default_loop(), client);
   // UV documentation says this is guaranteed to succeed
@@ -220,8 +220,13 @@ static void on_connect(uv_stream_t *server, int status) {
       gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(status));
     }
     ep = grpc_tcp_create(client, sp->server->resource_quota, peer_name_string);
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                             &acceptor);
+                             acceptor);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 }

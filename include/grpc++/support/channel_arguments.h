@@ -93,6 +93,10 @@ class ChannelArguments {
   /// grpclb LB policy will be used, regardless of what is specified here.
   void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
 
+  /// Set service config in JSON form.
+  /// Primarily meant for use in unit tests.
+  void SetServiceConfigJSON(const grpc::string& service_config_json);
+
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
@@ -123,7 +127,7 @@ class ChannelArguments {
   /// Default pointer argument operations.
   struct PointerVtableMembers {
     static void* Copy(void* in) { return in; }
-    static void Destroy(void* in) {}
+    static void Destroy(grpc_exec_ctx* exec_ctx, void* in) {}
     static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;

@@ -44,7 +44,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/method_config.h"
+#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -134,19 +134,19 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   grpc_channel_args *args = NULL;
   if (use_service_config) {
-    gpr_timespec timeout = {5, 0, GPR_TIMESPAN};
-    grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
-        grpc_method_config_create(NULL, &timeout, NULL, NULL),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(entry.method_name);
-    grpc_method_config_unref(entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
+        "{\n"
+        "  \"methodConfig\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"timeout\": \"5s\"\n"
+        "  } ]\n"
+        "}";
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_method_config_table_unref(method_config_table);
   }
 
   grpc_end2end_test_fixture f =
@@ -251,7 +251,11 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  if (args != NULL) grpc_channel_args_destroy(args);
+  if (args != NULL) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   cq_verifier_destroy(cqv);
   end_test(&f);

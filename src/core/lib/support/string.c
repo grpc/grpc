@@ -34,7 +34,9 @@
 #include "src/core/lib/support/string.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -189,6 +191,13 @@ int int64_ttoa(int64_t value, char *string) {
   return i;
 }
 
+int gpr_parse_nonnegative_int(const char *value) {
+  char *end;
+  long result = strtol(value, &end, 0);
+  if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
+  return (int)result;
+}
+
 char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
@@ -265,4 +274,42 @@ int gpr_stricmp(const char *a, const char *b) {
     ++b;
   } while (ca == cb && ca && cb);
   return ca - cb;
+}
+
+static void add_string_to_split(const char *beg, const char *end, char ***strs,
+                                size_t *nstrs, size_t *capstrs) {
+  char *out = gpr_malloc((size_t)(end - beg) + 1);
+  memcpy(out, beg, (size_t)(end - beg));
+  out[end - beg] = 0;
+  if (*nstrs == *capstrs) {
+    *capstrs = GPR_MAX(8, 2 * *capstrs);
+    *strs = gpr_realloc(*strs, sizeof(*strs) * *capstrs);
+  }
+  (*strs)[*nstrs] = out;
+  ++*nstrs;
+}
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {
+  char *next;
+  *strs = NULL;
+  *nstrs = 0;
+  size_t capstrs = 0;
+  while ((next = strstr(input, sep))) {
+    add_string_to_split(input, next, strs, nstrs, &capstrs);
+    input = next + strlen(sep);
+  }
+  add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
+}
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
 }

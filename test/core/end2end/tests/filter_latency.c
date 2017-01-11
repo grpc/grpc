@@ -226,18 +226,6 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_call_destroy(s);
   grpc_call_destroy(c);
 
-  const gpr_timespec end_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
-
-  gpr_mu_lock(&g_mu);
-  GPR_ASSERT(gpr_time_cmp(max_latency, g_client_latency) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) < 0);
-  GPR_ASSERT(gpr_time_cmp(max_latency, g_server_latency) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) < 0);
-  // Server latency should always be smaller than client latency.
-  GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
-  gpr_mu_unlock(&g_mu);
-
   cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
@@ -245,6 +233,24 @@ static void test_request(grpc_end2end_test_config config) {
 
   end_test(&f);
   config.tear_down_data(&f);
+
+  const gpr_timespec end_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
+
+  // Perform checks after test tear-down
+  // Guards against the case that there's outstanding channel-related work on a
+  // call prior to verification
+  gpr_mu_lock(&g_mu);
+  GPR_ASSERT(gpr_time_cmp(max_latency, g_client_latency) >= 0);
+  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) <= 0);
+  GPR_ASSERT(gpr_time_cmp(max_latency, g_server_latency) >= 0);
+  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) <= 0);
+  // Server latency should always be smaller than client latency, however since
+  // we only calculate latency at destruction time, and that might mean that we
+  // need to wait for outstanding channel-related work, this isn't verifiable
+  // right now (the server MAY hold on to the call for longer than the client).
+  // GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
+  gpr_mu_unlock(&g_mu);
 }
 
 /*******************************************************************************
@@ -275,9 +281,11 @@ static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&g_mu);
 }
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {}
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
@@ -314,7 +322,8 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool maybe_add_filter(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_stack_builder *builder, void *arg) {
   grpc_channel_filter *filter = arg;
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make

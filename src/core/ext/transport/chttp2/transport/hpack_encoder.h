@@ -83,13 +83,15 @@ typedef struct {
 } grpc_chttp2_hpack_compressor;
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c);
-void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
+void grpc_chttp2_hpack_compressor_destroy(grpc_exec_ctx *exec_ctx,
+                                          grpc_chttp2_hpack_compressor *c);
 void grpc_chttp2_hpack_compressor_set_max_table_size(
     grpc_chttp2_hpack_compressor *c, uint32_t max_table_size);
 void grpc_chttp2_hpack_compressor_set_max_usable_size(
     grpc_chttp2_hpack_compressor *c, uint32_t max_table_size);
 
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
+void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
                                size_t max_frame_size,
                                grpc_transport_one_way_stats *stats,

@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Routeguide {
 
   /// <summary>Holder for reflection information generated from route_guide.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class RouteGuideReflection {
 
     #region Descriptor
@@ -59,30 +58,35 @@ namespace Routeguide {
   ///  Latitudes should be in the range +/- 90 degrees and longitude should be in
   ///  the range +/- 180 degrees (inclusive).
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Point : pb::IMessage<Point> {
     private static readonly pb::MessageParser<Point> _parser = new pb::MessageParser<Point>(() => new Point());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Point> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.MessageTypes[0]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Point() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Point(Point other) : this() {
       latitude_ = other.latitude_;
       longitude_ = other.longitude_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Point Clone() {
       return new Point(this);
     }
@@ -90,6 +94,7 @@ namespace Routeguide {
     /// <summary>Field number for the "latitude" field.</summary>
     public const int LatitudeFieldNumber = 1;
     private int latitude_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Latitude {
       get { return latitude_; }
       set {
@@ -100,6 +105,7 @@ namespace Routeguide {
     /// <summary>Field number for the "longitude" field.</summary>
     public const int LongitudeFieldNumber = 2;
     private int longitude_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Longitude {
       get { return longitude_; }
       set {
@@ -107,10 +113,12 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Point);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Point other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -123,6 +131,7 @@ namespace Routeguide {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Latitude != 0) hash ^= Latitude.GetHashCode();
@@ -130,10 +139,12 @@ namespace Routeguide {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Latitude != 0) {
         output.WriteRawTag(8);
@@ -145,6 +156,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Latitude != 0) {
@@ -156,6 +168,7 @@ namespace Routeguide {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Point other) {
       if (other == null) {
         return;
@@ -168,6 +181,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -193,30 +207,35 @@ namespace Routeguide {
   ///  A latitude-longitude rectangle, represented as two diagonally opposite
   ///  points "lo" and "hi".
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Rectangle : pb::IMessage<Rectangle> {
     private static readonly pb::MessageParser<Rectangle> _parser = new pb::MessageParser<Rectangle>(() => new Rectangle());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Rectangle> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.MessageTypes[1]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Rectangle() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Rectangle(Rectangle other) : this() {
       Lo = other.lo_ != null ? other.Lo.Clone() : null;
       Hi = other.hi_ != null ? other.Hi.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Rectangle Clone() {
       return new Rectangle(this);
     }
@@ -227,6 +246,7 @@ namespace Routeguide {
     /// <summary>
     ///  One corner of the rectangle.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Lo {
       get { return lo_; }
       set {
@@ -240,6 +260,7 @@ namespace Routeguide {
     /// <summary>
     ///  The other corner of the rectangle.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Hi {
       get { return hi_; }
       set {
@@ -247,10 +268,12 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Rectangle);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Rectangle other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -263,6 +286,7 @@ namespace Routeguide {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (lo_ != null) hash ^= Lo.GetHashCode();
@@ -270,10 +294,12 @@ namespace Routeguide {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (lo_ != null) {
         output.WriteRawTag(10);
@@ -285,6 +311,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (lo_ != null) {
@@ -296,6 +323,7 @@ namespace Routeguide {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Rectangle other) {
       if (other == null) {
         return;
@@ -314,6 +342,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -346,30 +375,35 @@ namespace Routeguide {
   ///
   ///  If a feature could not be named, the name is empty.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Feature : pb::IMessage<Feature> {
     private static readonly pb::MessageParser<Feature> _parser = new pb::MessageParser<Feature>(() => new Feature());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Feature> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.MessageTypes[2]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Feature() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Feature(Feature other) : this() {
       name_ = other.name_;
       Location = other.location_ != null ? other.Location.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Feature Clone() {
       return new Feature(this);
     }
@@ -380,6 +414,7 @@ namespace Routeguide {
     /// <summary>
     ///  The name of the feature.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Name {
       get { return name_; }
       set {
@@ -393,6 +428,7 @@ namespace Routeguide {
     /// <summary>
     ///  The point where the feature is detected.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Location {
       get { return location_; }
       set {
@@ -400,10 +436,12 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Feature);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Feature other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -416,6 +454,7 @@ namespace Routeguide {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Name.Length != 0) hash ^= Name.GetHashCode();
@@ -423,10 +462,12 @@ namespace Routeguide {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Name.Length != 0) {
         output.WriteRawTag(10);
@@ -438,6 +479,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Name.Length != 0) {
@@ -449,6 +491,7 @@ namespace Routeguide {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Feature other) {
       if (other == null) {
         return;
@@ -464,6 +507,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -491,30 +535,35 @@ namespace Routeguide {
   /// <summary>
   ///  A RouteNote is a message sent while at a given point.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class RouteNote : pb::IMessage<RouteNote> {
     private static readonly pb::MessageParser<RouteNote> _parser = new pb::MessageParser<RouteNote>(() => new RouteNote());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<RouteNote> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.MessageTypes[3]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteNote() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteNote(RouteNote other) : this() {
       Location = other.location_ != null ? other.Location.Clone() : null;
       message_ = other.message_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteNote Clone() {
       return new RouteNote(this);
     }
@@ -525,6 +574,7 @@ namespace Routeguide {
     /// <summary>
     ///  The location from which the message is sent.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Location {
       get { return location_; }
       set {
@@ -538,6 +588,7 @@ namespace Routeguide {
     /// <summary>
     ///  The message to be sent.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Message {
       get { return message_; }
       set {
@@ -545,10 +596,12 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RouteNote);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(RouteNote other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -561,6 +614,7 @@ namespace Routeguide {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (location_ != null) hash ^= Location.GetHashCode();
@@ -568,10 +622,12 @@ namespace Routeguide {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (location_ != null) {
         output.WriteRawTag(10);
@@ -583,6 +639,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (location_ != null) {
@@ -594,6 +651,7 @@ namespace Routeguide {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(RouteNote other) {
       if (other == null) {
         return;
@@ -609,6 +667,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -640,25 +699,29 @@ namespace Routeguide {
   ///  detected features, and the total distance covered as the cumulative sum of
   ///  the distance between each point.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class RouteSummary : pb::IMessage<RouteSummary> {
     private static readonly pb::MessageParser<RouteSummary> _parser = new pb::MessageParser<RouteSummary>(() => new RouteSummary());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<RouteSummary> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.MessageTypes[4]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteSummary() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteSummary(RouteSummary other) : this() {
       pointCount_ = other.pointCount_;
       featureCount_ = other.featureCount_;
@@ -666,6 +729,7 @@ namespace Routeguide {
       elapsedTime_ = other.elapsedTime_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public RouteSummary Clone() {
       return new RouteSummary(this);
     }
@@ -676,6 +740,7 @@ namespace Routeguide {
     /// <summary>
     ///  The number of points received.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int PointCount {
       get { return pointCount_; }
       set {
@@ -689,6 +754,7 @@ namespace Routeguide {
     /// <summary>
     ///  The number of known features passed while traversing the route.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int FeatureCount {
       get { return featureCount_; }
       set {
@@ -702,6 +768,7 @@ namespace Routeguide {
     /// <summary>
     ///  The distance covered in metres.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Distance {
       get { return distance_; }
       set {
@@ -715,6 +782,7 @@ namespace Routeguide {
     /// <summary>
     ///  The duration of the traversal in seconds.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ElapsedTime {
       get { return elapsedTime_; }
       set {
@@ -722,10 +790,12 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RouteSummary);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(RouteSummary other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -740,6 +810,7 @@ namespace Routeguide {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (PointCount != 0) hash ^= PointCount.GetHashCode();
@@ -749,10 +820,12 @@ namespace Routeguide {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (PointCount != 0) {
         output.WriteRawTag(8);
@@ -772,6 +845,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (PointCount != 0) {
@@ -789,6 +863,7 @@ namespace Routeguide {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(RouteSummary other) {
       if (other == null) {
         return;
@@ -807,6 +882,7 @@ namespace Routeguide {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {

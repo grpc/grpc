@@ -39,6 +39,7 @@
 
 #include <errno.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -50,6 +51,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port_server_client.h"
 
@@ -115,55 +118,68 @@ static void chose_port(int port) {
   chosen_ports[num_chosen_ports - 1] = port;
 }
 
-static int is_port_available(int *port, int is_tcp) {
-  const int proto = is_tcp ? IPPROTO_TCP : 0;
-  const int fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
-  int one = 1;
-  struct sockaddr_in addr;
-  socklen_t alen = sizeof(addr);
-  int actual_port;
-
+static bool is_port_available(int *port, bool is_tcp) {
   GPR_ASSERT(*port >= 0);
   GPR_ASSERT(*port <= 65535);
-  if (fd < 0) {
+
+  /* For a port to be considered available, the kernel must support
+     at least one of (IPv6, IPv4), and the port must be available
+     on each supported family. */
+  bool got_socket = false;
+  for (int is_ipv6 = 1; is_ipv6 >= 0; is_ipv6--) {
+    const int fd =
+        socket(is_ipv6 ? AF_INET6 : AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM,
+               is_tcp ? IPPROTO_TCP : 0);
+    if (fd >= 0) {
+      got_socket = true;
+    } else {
+      continue;
+    }
+
+    /* Reuseaddr lets us start up a server immediately after it exits */
+    const int one = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {
+      gpr_log(GPR_ERROR, "setsockopt() failed: %s", strerror(errno));
+      close(fd);
+      return false;
+    }
+
+    /* Try binding to port */
+    grpc_resolved_address addr;
+    if (is_ipv6) {
+      grpc_sockaddr_make_wildcard6(*port, &addr); /* [::]:port */
+    } else {
+      grpc_sockaddr_make_wildcard4(*port, &addr); /* 0.0.0.0:port */
+    }
+    if (bind(fd, (struct sockaddr *)addr.addr, (socklen_t)addr.len) < 0) {
+      gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
+      close(fd);
+      return false;
+    }
+
+    /* Get the bound port number */
+    if (getsockname(fd, (struct sockaddr *)addr.addr, (socklen_t *)&addr.len) <
+        0) {
+      gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
+      close(fd);
+      return false;
+    }
+    GPR_ASSERT(addr.len <= sizeof(addr.addr));
+    const int actual_port = grpc_sockaddr_get_port(&addr);
+    GPR_ASSERT(actual_port > 0);
+    if (*port == 0) {
+      *port = actual_port;
+    } else {
+      GPR_ASSERT(*port == actual_port);
+    }
+
+    close(fd);
+  }
+  if (!got_socket) {
     gpr_log(GPR_ERROR, "socket() failed: %s", strerror(errno));
-    return 0;
+    return false;
   }
-
-  /* Reuseaddr lets us start up a server immediately after it exits */
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {
-    gpr_log(GPR_ERROR, "setsockopt() failed: %s", strerror(errno));
-    close(fd);
-    return 0;
-  }
-
-  /* Try binding to port */
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons((uint16_t)*port);
-  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
-    close(fd);
-    return 0;
-  }
-
-  /* Get the bound port number */
-  if (getsockname(fd, (struct sockaddr *)&addr, &alen) < 0) {
-    gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
-    close(fd);
-    return 0;
-  }
-  GPR_ASSERT(alen <= sizeof(addr));
-  actual_port = ntohs(addr.sin_port);
-  GPR_ASSERT(actual_port > 0);
-  if (*port == 0) {
-    *port = actual_port;
-  } else {
-    GPR_ASSERT(*port == actual_port);
-  }
-
-  close(fd);
-  return 1;
+  return true;
 }
 
 int grpc_pick_unused_port(void) {
@@ -180,7 +196,7 @@ int grpc_pick_unused_port(void) {
      UDP ports and they are scarcer. */
 
   /* Type of port to first pick in next iteration */
-  int is_tcp = 1;
+  bool is_tcp = true;
   int trial = 0;
 
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");

@@ -150,3 +150,19 @@ sudo tar -C /usr/local -xzf go$GO_VERSION.$OS-$ARCH.tar.gz
 # Put go on the PATH, keep the usual installation dir
 sudo ln -s /usr/local/go/bin/go /usr/bin/go
 rm go$GO_VERSION.$OS-$ARCH.tar.gz
+
+# Install perf, to profile benchmarks. (need to get the right linux-tools-<> for kernel version)
+sudo apt-get install -y linux-tools-common linux-tools-generic linux-tools-`uname -r`
+# see http://unix.stackexchange.com/questions/14227/do-i-need-root-admin-permissions-to-run-userspace-perf-tool-perf-events-ar
+echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid
+# see http://stackoverflow.com/questions/21284906/perf-couldnt-record-kernel-reference-relocation-symbol
+echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+
+# qps workers under perf appear to need a lot of mmap pages under certain scenarios and perf args in
+# order to not lose perf events or time out
+echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
+
+# Fetch scripts to generate flame graphs from perf data collected
+# on benchmarks
+git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
+

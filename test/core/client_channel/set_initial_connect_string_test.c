@@ -92,8 +92,9 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   test_tcp_server *server = arg;
-  grpc_closure_init(&on_read, handle_read, NULL);
+  grpc_closure_init(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.incoming_buffer);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   state.tcp = tcp;
@@ -157,7 +158,7 @@ static void cleanup_rpc(void) {
   grpc_event ev;
   grpc_slice_buffer_destroy(&state.incoming_buffer);
   grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_channel_credentials_unref(state.creds);
+  grpc_channel_credentials_release(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {

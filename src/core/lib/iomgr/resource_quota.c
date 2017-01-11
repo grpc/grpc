@@ -104,6 +104,9 @@ struct grpc_resource_user {
   /* Reclaimers: index 0 is the benign reclaimer, 1 is the destructive reclaimer
    */
   grpc_closure *reclaimers[2];
+  /* Reclaimers just posted: once we're in the combiner lock, we'll move them
+     to the array above */
+  grpc_closure *new_reclaimers[2];
   /* Trampoline closures to finish reclamation and re-enter the quota combiner
      lock */
   grpc_closure post_reclaimer_closure[2];
@@ -140,6 +143,12 @@ struct grpc_resource_quota {
   grpc_closure rq_step_closure;
   /* Closure around rq_reclamation_done */
   grpc_closure rq_reclamation_done_closure;
+
+  /* This is only really usable for debugging: it's always a stale pointer, but
+     a stale pointer that might just be fresh enough to guide us to where the
+     reclamation system is stuck */
+  grpc_closure *debug_only_last_initiated_reclaimer;
+  grpc_resource_user *debug_only_last_reclaimer_resource_user;
 
   /* Roots of all resource user lists */
   grpc_resource_user *roots[GRPC_RULIST_COUNT];
@@ -222,6 +231,7 @@ static void rulist_remove(grpc_resource_user *resource_user, grpc_rulist list) {
       resource_user->links[list].prev;
   resource_user->links[list].prev->links[list].next =
       resource_user->links[list].next;
+  resource_user->links[list].next = resource_user->links[list].prev = NULL;
 }
 
 /*******************************************************************************
@@ -247,17 +257,16 @@ static void rq_step(grpc_exec_ctx *exec_ctx, void *rq, grpc_error *error) {
   }
 
 done:
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 }
 
 static void rq_step_sched(grpc_exec_ctx *exec_ctx,
                           grpc_resource_quota *resource_quota) {
   if (resource_quota->step_scheduled) return;
   resource_quota->step_scheduled = true;
-  grpc_resource_quota_internal_ref(resource_quota);
-  grpc_combiner_execute_finally(exec_ctx, resource_quota->combiner,
-                                &resource_quota->rq_step_closure,
-                                GRPC_ERROR_NONE, false);
+  grpc_resource_quota_ref_internal(resource_quota);
+  grpc_closure_sched(exec_ctx, &resource_quota->rq_step_closure,
+                     GRPC_ERROR_NONE);
 }
 
 /* returns true if all allocations are completed */
@@ -284,7 +293,7 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
     }
     if (resource_user->free_pool >= 0) {
       resource_user->allocating = false;
-      grpc_exec_ctx_enqueue_list(exec_ctx, &resource_user->on_allocated, NULL);
+      grpc_closure_list_sched(exec_ctx, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
       rulist_add_head(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);
@@ -335,8 +344,11 @@ static bool rq_reclaim(grpc_exec_ctx *exec_ctx,
             destructive ? "destructive" : "benign");
   }
   resource_quota->reclaiming = true;
-  grpc_resource_quota_internal_ref(resource_quota);
+  grpc_resource_quota_ref_internal(resource_quota);
   grpc_closure *c = resource_user->reclaimers[destructive];
+  GPR_ASSERT(c);
+  resource_quota->debug_only_last_reclaimer_resource_user = resource_user;
+  resource_quota->debug_only_last_initiated_reclaimer = c;
   resource_user->reclaimers[destructive] = NULL;
   grpc_closure_run(exec_ctx, c, GRPC_ERROR_NONE);
   return true;
@@ -358,21 +370,10 @@ static void ru_slice_ref(void *p) {
   gpr_ref(&rc->refs);
 }
 
-static void ru_slice_unref(void *p) {
+static void ru_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   ru_slice_refcount *rc = p;
   if (gpr_unref(&rc->refs)) {
-    /* TODO(ctiller): this is dangerous, but I think safe for now:
-       we have no guarantee here that we're at a safe point for creating an
-       execution context, but we have no way of writing this code otherwise.
-       In the future: consider lifting grpc_slice to grpc, and offering an
-       internal_{ref,unref} pair that is execution context aware.
-       Alternatively,
-       make exec_ctx be thread local and 'do the right thing' (whatever that
-       is)
-       if NULL */
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_free(&exec_ctx, rc->resource_user, rc->size);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_resource_user_free(exec_ctx, rc->resource_user, rc->size);
     gpr_free(rc);
   }
 }
@@ -418,9 +419,25 @@ static void ru_add_to_free_pool(grpc_exec_ctx *exec_ctx, void *ru,
   rulist_add_tail(resource_user, GRPC_RULIST_NON_EMPTY_FREE_POOL);
 }
 
+static bool ru_post_reclaimer(grpc_exec_ctx *exec_ctx,
+                              grpc_resource_user *resource_user,
+                              bool destructive) {
+  grpc_closure *closure = resource_user->new_reclaimers[destructive];
+  GPR_ASSERT(closure != NULL);
+  resource_user->new_reclaimers[destructive] = NULL;
+  GPR_ASSERT(resource_user->reclaimers[destructive] == NULL);
+  if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CANCELLED);
+    return false;
+  }
+  resource_user->reclaimers[destructive] = closure;
+  return true;
+}
+
 static void ru_post_benign_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
                                      grpc_error *error) {
   grpc_resource_user *resource_user = ru;
+  if (!ru_post_reclaimer(exec_ctx, resource_user, false)) return;
   if (!rulist_empty(resource_user->resource_quota,
                     GRPC_RULIST_AWAITING_ALLOCATION) &&
       rulist_empty(resource_user->resource_quota,
@@ -435,6 +452,7 @@ static void ru_post_benign_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
 static void ru_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
                                           grpc_error *error) {
   grpc_resource_user *resource_user = ru;
+  if (!ru_post_reclaimer(exec_ctx, resource_user, true)) return;
   if (!rulist_empty(resource_user->resource_quota,
                     GRPC_RULIST_AWAITING_ALLOCATION) &&
       rulist_empty(resource_user->resource_quota,
@@ -450,12 +468,14 @@ static void ru_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
 
 static void ru_shutdown(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
   grpc_resource_user *resource_user = ru;
-  grpc_exec_ctx_sched(exec_ctx, resource_user->reclaimers[0],
-                      GRPC_ERROR_CANCELLED, NULL);
-  grpc_exec_ctx_sched(exec_ctx, resource_user->reclaimers[1],
-                      GRPC_ERROR_CANCELLED, NULL);
+  grpc_closure_sched(exec_ctx, resource_user->reclaimers[0],
+                     GRPC_ERROR_CANCELLED);
+  grpc_closure_sched(exec_ctx, resource_user->reclaimers[1],
+                     GRPC_ERROR_CANCELLED);
   resource_user->reclaimers[0] = NULL;
   resource_user->reclaimers[1] = NULL;
+  rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
+  rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_DESTRUCTIVE);
 }
 
 static void ru_destroy(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
@@ -464,15 +484,15 @@ static void ru_destroy(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     rulist_remove(resource_user, (grpc_rulist)i);
   }
-  grpc_exec_ctx_sched(exec_ctx, resource_user->reclaimers[0],
-                      GRPC_ERROR_CANCELLED, NULL);
-  grpc_exec_ctx_sched(exec_ctx, resource_user->reclaimers[1],
-                      GRPC_ERROR_CANCELLED, NULL);
+  grpc_closure_sched(exec_ctx, resource_user->reclaimers[0],
+                     GRPC_ERROR_CANCELLED);
+  grpc_closure_sched(exec_ctx, resource_user->reclaimers[1],
+                     GRPC_ERROR_CANCELLED);
   if (resource_user->free_pool != 0) {
     resource_user->resource_quota->free_pool += resource_user->free_pool;
     rq_step_sched(exec_ctx, resource_user->resource_quota);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, resource_user->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_user->resource_quota);
   gpr_mu_destroy(&resource_user->mu);
   gpr_free(resource_user->name);
   gpr_free(resource_user);
@@ -508,7 +528,7 @@ static void rq_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   a->resource_quota->size += delta;
   a->resource_quota->free_pool += delta;
   rq_step_sched(exec_ctx, a->resource_quota);
-  grpc_resource_quota_internal_unref(exec_ctx, a->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, a->resource_quota);
   gpr_free(a);
 }
 
@@ -517,7 +537,7 @@ static void rq_reclamation_done(grpc_exec_ctx *exec_ctx, void *rq,
   grpc_resource_quota *resource_quota = rq;
   resource_quota->reclaiming = false;
   rq_step_sched(exec_ctx, resource_quota);
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 }
 
 /*******************************************************************************
@@ -539,16 +559,19 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
     gpr_asprintf(&resource_quota->name, "anonymous_pool_%" PRIxPTR,
                  (intptr_t)resource_quota);
   }
-  grpc_closure_init(&resource_quota->rq_step_closure, rq_step, resource_quota);
+  grpc_closure_init(
+      &resource_quota->rq_step_closure, rq_step, resource_quota,
+      grpc_combiner_finally_scheduler(resource_quota->combiner, true));
   grpc_closure_init(&resource_quota->rq_reclamation_done_closure,
-                    rq_reclamation_done, resource_quota);
+                    rq_reclamation_done, resource_quota,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_quota->roots[i] = NULL;
   }
   return resource_quota;
 }
 
-void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
+void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_resource_quota *resource_quota) {
   if (gpr_unref(&resource_quota->refs)) {
     grpc_combiner_destroy(exec_ctx, resource_quota->combiner);
@@ -560,11 +583,11 @@ void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
 /* Public API */
 void grpc_resource_quota_unref(grpc_resource_quota *resource_quota) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-grpc_resource_quota *grpc_resource_quota_internal_ref(
+grpc_resource_quota *grpc_resource_quota_ref_internal(
     grpc_resource_quota *resource_quota) {
   gpr_ref(&resource_quota->refs);
   return resource_quota;
@@ -572,7 +595,7 @@ grpc_resource_quota *grpc_resource_quota_internal_ref(
 
 /* Public API */
 void grpc_resource_quota_ref(grpc_resource_quota *resource_quota) {
-  grpc_resource_quota_internal_ref(resource_quota);
+  grpc_resource_quota_ref_internal(resource_quota);
 }
 
 /* Public API */
@@ -580,11 +603,10 @@ void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
                                 size_t size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   rq_resize_args *a = gpr_malloc(sizeof(*a));
-  a->resource_quota = grpc_resource_quota_internal_ref(resource_quota);
+  a->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   a->size = (int64_t)size;
-  grpc_closure_init(&a->closure, rq_resize, a);
-  grpc_combiner_execute(&exec_ctx, resource_quota->combiner, &a->closure,
-                        GRPC_ERROR_NONE, false);
+  grpc_closure_init(&a->closure, rq_resize, a, grpc_schedule_on_exec_ctx);
+  grpc_closure_sched(&exec_ctx, &a->closure, GRPC_ERROR_NONE);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -597,7 +619,7 @@ grpc_resource_quota *grpc_resource_quota_from_channel_args(
   for (size_t i = 0; i < channel_args->num_args; i++) {
     if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
       if (channel_args->args[i].type == GRPC_ARG_POINTER) {
-        return grpc_resource_quota_internal_ref(
+        return grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       } else {
         gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
@@ -612,7 +634,9 @@ static void *rq_copy(void *rq) {
   return rq;
 }
 
-static void rq_destroy(void *rq) { grpc_resource_quota_unref(rq); }
+static void rq_destroy(grpc_exec_ctx *exec_ctx, void *rq) {
+  grpc_resource_quota_unref_internal(exec_ctx, rq);
+}
 
 static int rq_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
 
@@ -629,17 +653,21 @@ grpc_resource_user *grpc_resource_user_create(
     grpc_resource_quota *resource_quota, const char *name) {
   grpc_resource_user *resource_user = gpr_malloc(sizeof(*resource_user));
   resource_user->resource_quota =
-      grpc_resource_quota_internal_ref(resource_quota);
+      grpc_resource_quota_ref_internal(resource_quota);
   grpc_closure_init(&resource_user->allocate_closure, &ru_allocate,
-                    resource_user);
+                    resource_user,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
   grpc_closure_init(&resource_user->add_to_free_pool_closure,
-                    &ru_add_to_free_pool, resource_user);
+                    &ru_add_to_free_pool, resource_user,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
   grpc_closure_init(&resource_user->post_reclaimer_closure[0],
-                    &ru_post_benign_reclaimer, resource_user);
+                    &ru_post_benign_reclaimer, resource_user,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
   grpc_closure_init(&resource_user->post_reclaimer_closure[1],
-                    &ru_post_destructive_reclaimer, resource_user);
-  grpc_closure_init(&resource_user->destroy_closure, &ru_destroy,
-                    resource_user);
+                    &ru_post_destructive_reclaimer, resource_user,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
+  grpc_closure_init(&resource_user->destroy_closure, &ru_destroy, resource_user,
+                    grpc_combiner_scheduler(resource_quota->combiner, false));
   gpr_mu_init(&resource_user->mu);
   gpr_atm_rel_store(&resource_user->refs, 1);
   gpr_atm_rel_store(&resource_user->shutdown, 0);
@@ -649,6 +677,8 @@ grpc_resource_user *grpc_resource_user_create(
   resource_user->added_to_free_pool = false;
   resource_user->reclaimers[0] = NULL;
   resource_user->reclaimers[1] = NULL;
+  resource_user->new_reclaimers[0] = NULL;
+  resource_user->new_reclaimers[1] = NULL;
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_user->links[i].next = resource_user->links[i].prev = NULL;
   }
@@ -672,9 +702,8 @@ static void ru_unref_by(grpc_exec_ctx *exec_ctx,
   gpr_atm old = gpr_atm_full_fetch_add(&resource_user->refs, -amount);
   GPR_ASSERT(old >= amount);
   if (old == amount) {
-    grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
-                          &resource_user->destroy_closure, GRPC_ERROR_NONE,
-                          false);
+    grpc_closure_sched(exec_ctx, &resource_user->destroy_closure,
+                       GRPC_ERROR_NONE);
   }
 }
 
@@ -690,9 +719,12 @@ void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
 void grpc_resource_user_shutdown(grpc_exec_ctx *exec_ctx,
                                  grpc_resource_user *resource_user) {
   if (gpr_atm_full_fetch_add(&resource_user->shutdown, 1) == 0) {
-    grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
-                          grpc_closure_create(ru_shutdown, resource_user),
-                          GRPC_ERROR_NONE, false);
+    grpc_closure_sched(exec_ctx,
+                       grpc_closure_create(
+                           ru_shutdown, resource_user,
+                           grpc_combiner_scheduler(
+                               resource_user->resource_quota->combiner, false)),
+                       GRPC_ERROR_NONE);
   }
 }
 
@@ -712,12 +744,11 @@ void grpc_resource_user_alloc(grpc_exec_ctx *exec_ctx,
                              GRPC_ERROR_NONE);
     if (!resource_user->allocating) {
       resource_user->allocating = true;
-      grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
-                            &resource_user->allocate_closure, GRPC_ERROR_NONE,
-                            false);
+      grpc_closure_sched(exec_ctx, &resource_user->allocate_closure,
+                         GRPC_ERROR_NONE);
     }
   } else {
-    grpc_exec_ctx_sched(exec_ctx, optional_on_done, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, optional_on_done, GRPC_ERROR_NONE);
   }
   gpr_mu_unlock(&resource_user->mu);
 }
@@ -736,9 +767,8 @@ void grpc_resource_user_free(grpc_exec_ctx *exec_ctx,
   if (is_bigger_than_zero && was_zero_or_negative &&
       !resource_user->added_to_free_pool) {
     resource_user->added_to_free_pool = true;
-    grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
-                          &resource_user->add_to_free_pool_closure,
-                          GRPC_ERROR_NONE, false);
+    grpc_closure_sched(exec_ctx, &resource_user->add_to_free_pool_closure,
+                       GRPC_ERROR_NONE);
   }
   gpr_mu_unlock(&resource_user->mu);
   ru_unref_by(exec_ctx, resource_user, (gpr_atm)size);
@@ -748,15 +778,11 @@ void grpc_resource_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
                                        grpc_resource_user *resource_user,
                                        bool destructive,
                                        grpc_closure *closure) {
-  GPR_ASSERT(resource_user->reclaimers[destructive] == NULL);
-  if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CANCELLED, NULL);
-    return;
-  }
-  resource_user->reclaimers[destructive] = closure;
-  grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
-                        &resource_user->post_reclaimer_closure[destructive],
-                        GRPC_ERROR_NONE, false);
+  GPR_ASSERT(resource_user->new_reclaimers[destructive] == NULL);
+  resource_user->new_reclaimers[destructive] = closure;
+  grpc_closure_sched(exec_ctx,
+                     &resource_user->post_reclaimer_closure[destructive],
+                     GRPC_ERROR_NONE);
 }
 
 void grpc_resource_user_finish_reclamation(grpc_exec_ctx *exec_ctx,
@@ -765,18 +791,20 @@ void grpc_resource_user_finish_reclamation(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG, "RQ %s %s: reclamation complete",
             resource_user->resource_quota->name, resource_user->name);
   }
-  grpc_combiner_execute(
-      exec_ctx, resource_user->resource_quota->combiner,
-      &resource_user->resource_quota->rq_reclamation_done_closure,
-      GRPC_ERROR_NONE, false);
+  grpc_closure_sched(
+      exec_ctx, &resource_user->resource_quota->rq_reclamation_done_closure,
+      GRPC_ERROR_NONE);
 }
 
 void grpc_resource_user_slice_allocator_init(
     grpc_resource_user_slice_allocator *slice_allocator,
     grpc_resource_user *resource_user, grpc_iomgr_cb_func cb, void *p) {
-  grpc_closure_init(&slice_allocator->on_allocated, ru_allocated_slices,
-                    slice_allocator);
-  grpc_closure_init(&slice_allocator->on_done, cb, p);
+  grpc_closure_init(
+      &slice_allocator->on_allocated, ru_allocated_slices, slice_allocator,
+      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
+  grpc_closure_init(
+      &slice_allocator->on_done, cb, p,
+      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
   slice_allocator->resource_user = resource_user;
 }
 

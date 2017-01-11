@@ -60,7 +60,8 @@ grpc_method_config* grpc_method_config_create(
     int32_t* max_request_message_bytes, int32_t* max_response_message_bytes);
 
 grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config);
-void grpc_method_config_unref(grpc_method_config* method_config);
+void grpc_method_config_unref(grpc_exec_ctx* exec_ctx,
+                              grpc_method_config* method_config);
 
 /// Compares two grpc_method_configs.
 /// The sort order is stable but undefined.
@@ -95,7 +96,8 @@ grpc_method_config_table* grpc_method_config_table_create(
 
 grpc_method_config_table* grpc_method_config_table_ref(
     grpc_method_config_table* table);
-void grpc_method_config_table_unref(grpc_method_config_table* table);
+void grpc_method_config_table_unref(grpc_exec_ctx* exec_ctx,
+                                    grpc_method_config_table* table);
 
 /// Compares two grpc_method_config_tables.
 /// The sort order is stable but undefined.
@@ -110,7 +112,8 @@ int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
 /// Note: This returns a void* instead of a grpc_method_config* so that
 /// it can also be used for tables constructed via
 /// grpc_method_config_table_convert().
-void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
+void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
+                                   const grpc_mdstr_hash_table* table,
                                    const grpc_mdstr* path);
 
 /// Returns a channel arg containing \a table.
@@ -129,7 +132,7 @@ grpc_arg grpc_method_config_table_create_channel_arg(
 /// the grpc_method_config, and \a vtable provides the methods for
 /// operating on the struct type.
 grpc_mdstr_hash_table* grpc_method_config_table_convert(
-    const grpc_method_config_table* table,
+    grpc_exec_ctx* exec_ctx, const grpc_method_config_table* table,
     void* (*convert_value)(const grpc_method_config* method_config),
     const grpc_mdstr_hash_table_vtable* vtable);
 
