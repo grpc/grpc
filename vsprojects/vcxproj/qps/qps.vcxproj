@@ -151,7 +151,6 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h" />

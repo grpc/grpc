@@ -60,9 +60,6 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h">
-      <Filter>test\cpp\qps</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
