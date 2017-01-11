@@ -124,11 +124,12 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void cronet_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+  grpc_exec_ctx ctx = GRPC_EXEC_CTX_INIT;
   cronet_engine *cronetEngine = [Cronet getGlobalEngine];
 
   grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);
   cronet_init_client_secure_fullstack(f, new_client_args, cronetEngine);
-  grpc_channel_args_destroy(new_client_args);
+  grpc_channel_args_destroy(&ctx, new_client_args);
 }
 
 static int fail_server_auth_check(grpc_channel_args *server_args) {
