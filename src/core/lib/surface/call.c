@@ -796,14 +796,15 @@ static int prepare_application_metadata(
       for (i = 0; i < call->send_extra_metadata_count; i++) {
         GRPC_LOG_IF_ERROR("prepare_application_metadata",
                           grpc_metadata_batch_link_tail(
-                              batch, &call->send_extra_metadata[i]));
+                              exec_ctx, batch, &call->send_extra_metadata[i]));
       }
     }
   }
   for (i = 0; i < total_count; i++) {
     grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    GRPC_LOG_IF_ERROR("prepare_application_metadata",
-                      grpc_metadata_batch_link_tail(batch, linked_from_md(md)));
+    GRPC_LOG_IF_ERROR(
+        "prepare_application_metadata",
+        grpc_metadata_batch_link_tail(exec_ctx, batch, linked_from_md(md)));
   }
   call->send_extra_metadata_count = 0;
 

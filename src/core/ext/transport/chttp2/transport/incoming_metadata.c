@@ -96,9 +96,9 @@ void grpc_chttp2_incoming_metadata_buffer_publish(
     size_t i;
     for (i = 0; i < buffer->count; i++) {
       /* TODO(ctiller): do something better here */
-      if (!GRPC_LOG_IF_ERROR(
-              "grpc_chttp2_incoming_metadata_buffer_publish",
-              grpc_metadata_batch_link_tail(batch, &buffer->elems[i]))) {
+      if (!GRPC_LOG_IF_ERROR("grpc_chttp2_incoming_metadata_buffer_publish",
+                             grpc_metadata_batch_link_tail(
+                                 exec_ctx, batch, &buffer->elems[i]))) {
         GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
       }
     }
