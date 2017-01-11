@@ -90,7 +90,7 @@ void MaybeEchoMetadata(ServerContext* context) {
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
-    context->AddInitialMetadata(kEchoInitialMetadataKey, iter->second.data());
+    context->AddInitialMetadata(kEchoInitialMetadataKey, grpc::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
