@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,10 +27,53 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
+require 'socket'
+require 'facter'
 
-cd $(dirname $0)/../../..
+this_dir = File.expand_path(File.dirname(__FILE__))
+worker_path = File.join(this_dir, "multiprocess_server_worker.rb")
 
-set -ex
+class BenchmarkMultiprocessServer
+  def initialize(config, port)
+    @worker_pids = []
+    if port == 0
+      server = TCPServer.new 0
+      @port = server.local_address.ip_port
+      server.close
+    else
+      @port = port
+    end
+    worker_args = ["--port=#{@port}"]
+    if config.security_params
+      worker_args.push('--tls')
+    end
+    this_dir = File.expand_path(File.dirname(__FILE__))
+    worker_path = File.join(this_dir, "multiprocess_server_worker.rb")
+    @start_time = Time.now
+    process_count = config.async_server_threads
+    if process_count == 0
+      process_count = Facter.value('processors')['count']
+    end
+    process_count.times do
+      @worker_pids.push(Process.spawn(RbConfig.ruby, worker_path, *worker_args))
+    end
+  end
 
-ruby src/ruby/qps/worker.rb $@
+  def mark(reset)
+    s = Grpc::Testing::ServerStats.new(time_elapsed:
+                                       (Time.now-@start_time).to_f)
+    @start_time = Time.now if reset
+    s
+  end
+
+  def get_port
+    @port
+  end
+
+  def stop
+    @worker_pids.each do |pid|
+      Process.kill('USR1', pid)
+      Process.wait(pid)
+    end
+  end
+end

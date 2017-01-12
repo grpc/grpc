@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,10 +27,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
+this_dir = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
-cd $(dirname $0)/../../..
+require 'optparse'
+require 'thread'
 
-set -ex
+require 'server'
 
-ruby src/ruby/qps/worker.rb $@
+class SimpleServerConfig
+  attr_accessor :security_params
+end
+
+def main
+  config = SimpleServerConfig.new
+  config.security_params = false
+  port = 0
+  OptionParser.new do |opts|
+    opts.on('--port=P', Integer) do |p|
+      port = p
+    end
+    opts.on('--tls') do
+      config.security_params = true
+    end
+  end.parse!
+  p "Server worker listening on port #{port}"
+  bms = BenchmarkServer.new(config, port)
+  stopping = false
+  stop_mutex = Mutex.new
+  stop_cv = ConditionVariable.new
+  Signal.trap("USR1") do
+    stopping = true
+    stop_cv.signal
+  end
+  stop_mutex.synchronize {
+    until stopping
+      stop_cv.wait(stop_mutex)
+    end
+  }
+  bms.stop
+  bms.wait
+end
+
+main
