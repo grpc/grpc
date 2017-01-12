@@ -194,14 +194,19 @@
   endif()
 
   % for lib in libs:
-  % if lib.build in ["all", "protoc", "tool"]:
+  % if lib.build in ["all", "protoc", "tool"] and lib.language in ['c', 'c++']:
+  ## TODO(jtattermusch): grpc++_reflection includes .proto files
+  ## which is not yet supported and thus fails the entire build.
+  ## Re-enable once fixed.
+  % if lib.name != 'grpc++_reflection':
     ${cc_library(lib)}
     ${cc_install(lib)}
+  % endif
   % endif
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool"]:
+  % if tgt.build in ["all", "protoc", "tool"] and tgt.language in ['c', 'c++']:
   ${cc_binary(tgt)}
   ${cc_install(tgt)}
   % endif

@@ -1589,45 +1589,6 @@ if (gRPC_INSTALL)
 endif()
 
   
-add_library(grpc++_reflection
-  src/cpp/ext/proto_server_reflection.cc
-  src/cpp/ext/proto_server_reflection_plugin.cc
-  src/proto/grpc/reflection/v1alpha/reflection.proto
-)
-
-target_include_directories(grpc++_reflection
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc++_reflection
-  grpc++
-)
-
-foreach(_hdr
-  include/grpc++/ext/proto_server_reflection_plugin.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-if (gRPC_INSTALL)
-  install(TARGETS grpc++_reflection EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-  
 add_library(grpc++_unsecure
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
@@ -1822,35 +1783,6 @@ endforeach()
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-  
-add_library(grpc_csharp_ext
-  src/csharp/ext/grpc_csharp_ext.c
-)
-
-target_include_directories(grpc_csharp_ext
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_csharp_ext
-  grpc
-  gpr
-)
-
-
-  
-if (gRPC_INSTALL)
-  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
