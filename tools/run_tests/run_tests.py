@@ -377,6 +377,7 @@ class NodeLanguage(object):
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3'])
     if self.args.compiler == 'default':
+      self.runtime = 'node'
       self.node_version = '4'
     else:
       if self.args.compiler.startswith('electron'):
