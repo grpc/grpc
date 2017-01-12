@@ -66,3 +66,32 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_deps = [], has_ser
     proto_only = not has_services,
   )
 
+# The following macros are for internal test only targets,
+def grpc_test_cc_library(name, srcs = [], hdrs = [], copts = [], deps = [], visibility = []):
+  native.cc_library(
+    name = name,
+    srcs = srcs,
+    hdrs = hdrs,
+    deps = deps,
+    copts = copts,
+    visibility = visibility,
+  )
+
+def grpc_test_cc_test(name, srcs = [], copts = [], deps = [], data = []):
+  native.cc_binary(
+    name = name,
+    srcs = srcs,
+    hdrs = hdrs,
+    deps = deps,
+    copts = copts,
+  )
+
+def grpc_test_cc_binary(name, srcs = [], copts = [], deps = [], data = []):
+  native.cc_test(
+    name = name,
+    srcs = srcs,
+    hdrs = hdrs,
+    deps = deps,
+    copts = copts,
+  )
+

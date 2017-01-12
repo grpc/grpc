@@ -29,8 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Generates the appropriate build.json data for all the bad_client tests."""
+"""Generates the appropriate targets for all the bad_client tests."""
 
+load("//bazel:grpc_build_system.bzl", "grpc_test_cc_library", "grpc_test_cc_test")
 
 def test_options():
   return struct()
@@ -51,7 +52,7 @@ BAD_CLIENT_TESTS = {
 }
 
 def grpc_bad_client_tests():
-  native.cc_library(
+  grpc_test_cc_library(
       name = 'bad_client_test',
       srcs = ['bad_client.c'],
       hdrs = ['bad_client.h'],
@@ -59,7 +60,7 @@ def grpc_bad_client_tests():
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']
   )
   for t, topt in BAD_CLIENT_TESTS.items():
-    native.cc_test(
+    grpc_test_cc_test(
         name = '%s_bad_client_test' % t,
         srcs = ['tests/%s.c' % t],
         deps = [':bad_client_test'],

@@ -1,6 +1,7 @@
 
+load("//bazel:grpc_build_system.bzl", "grpc_test_cc_library", "grpc_test_cc_test")
 
-cc_library(
+grpc_test_cc_library(
     name = "gpr_test_util",
     srcs = [
         "test_config.c",
@@ -14,7 +15,7 @@ cc_library(
     visibility = ["//:__subpackages__"],
 )
 
-cc_library(
+grpc_test_cc_library(
     name = "grpc_test_util",
     srcs = [
         "grpc_profiler.c",
@@ -44,7 +45,7 @@ cc_library(
     copts = ["-std=c99"],
 )
 
-cc_library(
+grpc_test_cc_library(
   name = "one_corpus_entry_fuzzer",
   srcs = ["one_corpus_entry_fuzzer.c"],
   deps = [":gpr_test_util", "//:grpc"],
