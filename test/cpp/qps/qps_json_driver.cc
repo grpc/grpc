@@ -77,12 +77,12 @@ namespace testing {
 static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                                                     bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
-  auto result = RunScenario(
-      scenario.client_config(), scenario.num_clients(),
-      scenario.server_config(), scenario.num_servers(),
-      scenario.warmup_seconds(), scenario.benchmark_seconds(),
-      scenario.spawn_local_worker_count(),
-      FLAGS_qps_server_target_override.c_str());
+  auto result =
+      RunScenario(scenario.client_config(), scenario.num_clients(),
+                  scenario.server_config(), scenario.num_servers(),
+                  scenario.warmup_seconds(), scenario.benchmark_seconds(),
+                  scenario.spawn_local_worker_count(),
+                  FLAGS_qps_server_target_override.c_str());
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
