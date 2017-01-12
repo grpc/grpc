@@ -103,7 +103,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_http_response *response,
+    grpc_exec_ctx *exec_ctx, const struct grpc_http_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

@@ -213,8 +213,8 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_slice message =
         grpc_slice_from_copied_string("Failure that's not preventable.");
     grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
-    grpc_transport_stream_op_add_close(op, GRPC_STATUS_PERMISSION_DENIED,
-                                       &message);
+    grpc_transport_stream_op_add_close(exec_ctx, op,
+                                       GRPC_STATUS_PERMISSION_DENIED, &message);
     grpc_call_next_op(exec_ctx, elem, op);
   }
   grpc_closure_sched(
@@ -271,7 +271,8 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool maybe_add_filter(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_stack_builder *builder, void *arg) {
   if (g_enable_filter) {
     return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
                                                      NULL, NULL);

@@ -168,8 +168,12 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
   f = begin_test(config, "test_max_request_message_length", client_args,
                  server_args);
-  if (client_args != NULL) grpc_channel_args_destroy(client_args);
-  if (server_args != NULL) grpc_channel_args_destroy(server_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    if (client_args != NULL) grpc_channel_args_destroy(&exec_ctx, client_args);
+    if (server_args != NULL) grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   cqv = cq_verifier_create(f.cq);
 
@@ -342,9 +346,12 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   f = begin_test(config, "test_max_response_message_length", client_args,
                  server_args);
-  if (client_args != NULL) grpc_channel_args_destroy(client_args);
-  if (server_args != NULL) grpc_channel_args_destroy(server_args);
-
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    if (client_args != NULL) grpc_channel_args_destroy(&exec_ctx, client_args);
+    if (server_args != NULL) grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,

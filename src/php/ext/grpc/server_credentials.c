@@ -113,9 +113,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, &pem_key_cert_pair, 1,
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-  zval *creds_object;
-  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
-  creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 

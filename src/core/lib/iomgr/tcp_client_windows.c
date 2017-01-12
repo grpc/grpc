@@ -58,6 +58,7 @@ typedef struct {
   grpc_winsocket *socket;
   gpr_timespec deadline;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   char *addr_name;
   int refs;
   grpc_closure on_connect;
@@ -71,7 +72,7 @@ static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_resource_quota_internal_unref(exec_ctx, ac->resource_quota);
+    grpc_resource_quota_unref_internal(exec_ctx, ac->resource_quota);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
@@ -157,8 +158,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_internal_ref(
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       }
     }
@@ -229,7 +230,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->resource_quota = resource_quota;
   grpc_closure_init(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
+  grpc_closure_init(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm,
                   gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;
@@ -246,7 +248,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_closure_sched(exec_ctx, on_done, final_error);
 }
 
