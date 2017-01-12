@@ -44,6 +44,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/validate_metadata.h"
 
 typedef struct {
   void *user_data;
@@ -78,14 +79,14 @@ static void plugin_md_request_metadata_ready(void *request,
     bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
-      if (!grpc_header_key_is_legal(md[i].key)) {
-        char *key = grpc_slice_to_c_string(md[i].key);
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", key);
-        gpr_free(key);
+      if (!GRPC_LOG_IF_ERROR("validate_metadata_from_plugin",
+                             grpc_validate_header_key_is_legal(md[i].key))) {
         seen_illegal_header = true;
         break;
       } else if (!grpc_is_binary_header(md[i].key) &&
-                 !grpc_header_nonbin_value_is_legal(md[i].value)) {
+                 !GRPC_LOG_IF_ERROR(
+                     "validate_metadata_from_plugin",
+                     grpc_validate_header_nonbin_value_is_legal(md[i].value))) {
         gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
         seen_illegal_header = true;
         break;
