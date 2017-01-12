@@ -405,8 +405,8 @@
   SHARED_EXT_CSHARP = dll
   SHARED_PREFIX =
   SHARED_VERSION_CORE = -${settings.core_version.major}
-  SHARED_VERSION_CPP = -${settings.cpp_version.major}
-  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
+  SHARED_VERSION_CPP = 
+  SHARED_VERSION_CSHARP = 
   else ifeq ($(SYSTEM),Darwin)
   EXECUTABLE_SUFFIX = 
   SHARED_EXT_CORE = dylib
