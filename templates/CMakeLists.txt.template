@@ -83,8 +83,12 @@
 
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
+  include(cmake/debug_postfix.cmake)
+
   if (MSVC)
     add_definitions( -D_WIN32_WINNT=0x600 )
+    include(cmake/msvc_static_runtime.cmake)
+    include(cmake/msvc_disable_deprecation.cmake)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
@@ -108,7 +112,7 @@
         message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
     endif()
   elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
-    find_package(ZLIB)
+    find_package(ZLIB REQUIRED <%text>${_gRPC_ZLIB_PACKAGE_MODE}</%text>)
     if(TARGET ZLIB::ZLIB)
       set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
     endif()
@@ -138,7 +142,7 @@
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(protobuf CONFIG)
+    find_package(protobuf REQUIRED <%text>${_gRPC_PROTOBUF_PACKAGE_MODE}</%text>)
     if(protobuf_FOUND)
       if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
@@ -166,7 +170,7 @@
         message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
     endif()
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
-    find_package(OpenSSL)
+    find_package(OpenSSL REQUIRED <%text>${_gRPC_SSL_PACKAGE_MODE}</%text>)
     if(TARGET OpenSSL::SSL)
       set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
     endif()

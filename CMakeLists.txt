@@ -65,8 +65,13 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
+include(cmake/debug_postfix.cmake)
+include(cmake/package_config_mode.cmake)
+
 if (MSVC)
   add_definitions( -D_WIN32_WINNT=0x600 )
+  include(cmake/msvc_static_runtime.cmake)
+  include(cmake/msvc_disable_deprecation.cmake)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -90,7 +95,7 @@ if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
       message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
   endif()
 elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
-  find_package(ZLIB)
+  find_package(ZLIB REQUIRED ${_gRPC_ZLIB_PACKAGE_MODE})
   if(TARGET ZLIB::ZLIB)
     set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
   endif()
@@ -120,7 +125,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
       message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
   endif()
 elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
-  find_package(protobuf CONFIG)
+  find_package(protobuf REQUIRED ${_gRPC_PROTOBUF_PACKAGE_MODE})
   if(protobuf_FOUND)
     if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
       set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
@@ -148,7 +153,7 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
       message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
   endif()
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
-  find_package(OpenSSL)
+  find_package(OpenSSL REQUIRED ${_gRPC_SSL_PACKAGE_MODE})
   if(TARGET OpenSSL::SSL)
     set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
   endif()
@@ -169,7 +174,7 @@ if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
   set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
 endif()
 
-  
+
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
@@ -222,7 +227,7 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -273,7 +278,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS gpr EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -282,7 +287,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -508,7 +513,7 @@ target_include_directories(grpc
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -557,7 +562,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -566,7 +571,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -763,7 +768,7 @@ target_include_directories(grpc_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -811,7 +816,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -820,7 +825,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
@@ -1018,7 +1023,7 @@ target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1064,7 +1069,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1073,7 +1078,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
@@ -1119,7 +1124,7 @@ target_include_directories(grpc++
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1227,7 +1232,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1236,7 +1241,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_cronet
   src/cpp/client/cronet_credentials.cc
   src/cpp/client/insecure_credentials.cc
@@ -1455,7 +1460,7 @@ target_include_directories(grpc++_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1573,7 +1578,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1582,7 +1587,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
@@ -1594,7 +1599,7 @@ target_include_directories(grpc++_reflection
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1612,7 +1617,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1621,7 +1626,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_unsecure
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
@@ -1662,7 +1667,7 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1770,7 +1775,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1779,7 +1784,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -1795,7 +1800,7 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1813,7 +1818,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1822,7 +1827,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
@@ -1832,7 +1837,7 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
+  # PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -1842,7 +1847,7 @@ target_link_libraries(grpc_csharp_ext
 )
 
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
