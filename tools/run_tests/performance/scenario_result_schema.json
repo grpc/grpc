@@ -213,5 +213,27 @@
     "name": "requestResults",
     "type": "STRING",
     "mode": "NULLABLE"
+  },
+  {
+    "name": "serverCpuStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "totalCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "idleCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverCpuUsage",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
   }
 ]
