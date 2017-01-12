@@ -1075,8 +1075,6 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
-      gpr_log(GPR_DEBUG, "write_closed_error=%s",
-              grpc_error_string(s->write_closed_error));
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished,
           GRPC_ERROR_CREATE_REFERENCING(
