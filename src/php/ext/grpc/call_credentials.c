@@ -52,9 +52,7 @@
 #include <grpc/grpc_security.h>
 
 zend_class_entry *grpc_ce_call_credentials;
-#if PHP_MAJOR_VERSION >= 7
-static zend_object_handlers call_credentials_ce_handlers;
-#endif
+PHP_GRPC_DECLARE_OBJECT_HANDLER(call_credentials_ce_handlers)
 
 /* Frees and destroys an instance of wrapped_grpc_call_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call_credentials)
@@ -80,7 +78,8 @@ zval *grpc_php_wrap_call_credentials(grpc_call_credentials
   PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_call_credentials);
   wrapped_grpc_call_credentials *credentials =
-    Z_WRAPPED_GRPC_CALL_CREDS_P(credentials_object);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call_credentials,
+                                credentials_object);
   credentials->wrapped = wrapped;
   return credentials_object;
 }
@@ -105,12 +104,12 @@ PHP_METHOD(CallCredentials, createComposite) {
     return;
   }
   wrapped_grpc_call_credentials *cred1 =
-    Z_WRAPPED_GRPC_CALL_CREDS_P(cred1_obj);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call_credentials, cred1_obj);
   wrapped_grpc_call_credentials *cred2 =
-    Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call_credentials, cred2_obj);
   grpc_call_credentials *creds =
-      grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
-                                             NULL);
+    grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
+                                           NULL);
   zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
