@@ -17,6 +17,8 @@ See [INSTALL](INSTALL.md) for installation instructions for various platforms.
 
 See [tools/run_tests](tools/run_tests) for more guidance on how to run various test suites (e.g. unit tests, interop tests, benchmarks)
 
+See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5712453606309888) for the performance numbers for v1.0.x.
+
 #Repository Structure & Status
 
 This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
