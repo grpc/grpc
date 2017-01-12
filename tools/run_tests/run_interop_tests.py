@@ -169,6 +169,9 @@ class JavaLanguage:
   def client_cmd(self, args):
     return ['./run-test-client.sh'] + args
 
+  def client_cmd_http2interop(self, args):
+    return ['./run-http2-client.sh'] + args
+
   def cloud_to_prod_env(self):
     return {}
 
@@ -217,6 +220,33 @@ class GoLanguage:
   def __str__(self):
     return 'go'
 
+class Http2Server:
+  """Represents the HTTP/2 Interop Test server
+
+  This pretends to be a language in order to be built and run, but really it
+  isn't.
+  """
+  def __init__(self):
+    self.server_cwd = None
+    self.safename = str(self)
+
+  def server_cmd(self, args):
+    return ['python test/http2_test/http2_test_server.py']
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _TEST_CASES
+
+  def unimplemented_test_cases_server(self):
+    return _TEST_CASES
+
+  def __str__(self):
+    return 'http2'
 
 class Http2Client:
   """Represents the HTTP/2 Interop Test
@@ -375,6 +405,11 @@ class PythonLanguage:
         '--args="{}"'.format(' '.join(args))
     ]
 
+  def client_cmd_http2interop(self, args):
+    return [ 'py27/bin/python',
+              'src/python/grpcio_tests/tests/http2/_negative_http2_client.py',
+           ] + args
+
   def cloud_to_prod_env(self):
     return {}
 
@@ -429,7 +464,10 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
 
-_HTTP2_TEST_CASES = ["tls", "framing"]
+_HTTP2_TEST_CASES = ['tls', 'framing']
+
+_HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
+                     'goaway', 'ping', 'max_streams']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
@@ -550,13 +588,25 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_cmdline(language.client_cmd([
+  interop_only_options = [
       '--server_host_override=foo.test.google.fr',
       '--use_tls=true',
       '--use_test_ca=true',
+  ]
+  common_options = [
       '--test_case=%s' % test_case,
       '--server_host=%s' % server_host,
-      '--server_port=%s' % server_port]))
+  ]
+  if test_case in _HTTP2_BADSERVER_TEST_CASES:
+    # We are running the http2_badserver_interop test. Adjust command line accordingly.
+    offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
+    client_options = common_options + ['--server_port=%s' %
+                                       (int(server_port)+offset)]
+    cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
+  else:
+    client_options = interop_only_options + common_options + ['--server_port=%s' % server_port]
+    cmdline = bash_cmdline(language.client_cmd(client_options))
+
   cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
@@ -590,13 +640,30 @@ def server_jobspec(language, docker_image):
   cmdline = bash_cmdline(
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
+  if language.safename == 'http2':
+    # we are running the http2 interop server. Open next N ports beginning
+    # with the server port. These ports are used for http2 interop test
+    # (one test case per port). We also attach the docker container running
+    # the server to local network, so we don't have to mess with port mapping
+    port_args = [
+      '-p', str(_DEFAULT_SERVER_PORT+0),
+      '-p', str(_DEFAULT_SERVER_PORT+1),
+      '-p', str(_DEFAULT_SERVER_PORT+2),
+      '-p', str(_DEFAULT_SERVER_PORT+3),
+      '-p', str(_DEFAULT_SERVER_PORT+4),
+      '-p', str(_DEFAULT_SERVER_PORT+5),
+      '-p', str(_DEFAULT_SERVER_PORT+6),
+      '--net=host',
+    ]
+  else:
+    port_args = ['-p', str(_DEFAULT_SERVER_PORT)]
+
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
                                       environ=environ,
-                                      docker_args=['-p', str(_DEFAULT_SERVER_PORT),
-                                                   '--name', container_name])
-
+                                      docker_args=port_args +
+                                        ['--name', container_name])
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
@@ -730,7 +797,12 @@ argp.add_argument('--http2_interop',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Enable HTTP/2 interop tests')
+                  help='Enable HTTP/2 client edge case testing. (Bad client, good server)')
+argp.add_argument('--http2_badserver_interop',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Enable HTTP/2 server edge case testing. (Good client, bad server)')
 
 args = argp.parse_args()
 
@@ -757,6 +829,7 @@ languages = set(_LANGUAGES[l]
                       for x in args.language))
 
 http2Interop = Http2Client() if args.http2_interop else None
+http2InteropServer = Http2Server() if args.http2_badserver_interop else None
 
 docker_images={}
 if args.use_docker:
@@ -765,6 +838,9 @@ if args.use_docker:
                                                     [s for s in servers]))
   if args.http2_interop:
     languages_to_build.add(http2Interop)
+
+  if args.http2_badserver_interop:
+    languages_to_build.add(http2InteropServer)
 
   build_jobs = []
   for l in languages_to_build:
@@ -796,6 +872,14 @@ try:
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
+
+  if args.http2_badserver_interop:
+    # launch a HTTP2 server emulator that creates edge cases
+    lang = str(http2InteropServer)
+    spec = server_jobspec(http2InteropServer, docker_images.get(lang))
+    job = dockerjob.DockerJob(spec)
+    server_jobs[lang] = job
+    server_addresses[lang] = ('localhost', _DEFAULT_SERVER_PORT)
 
   jobs = []
   if args.cloud_to_prod:
@@ -840,17 +924,18 @@ try:
     skip_server = []  # test cases unimplemented by server
     if server_language:
       skip_server = server_language.unimplemented_test_cases_server()
-    for language in languages:
-      for test_case in _TEST_CASES:
-        if not test_case in language.unimplemented_test_cases():
-          if not test_case in skip_server:
-            test_job = cloud_to_cloud_jobspec(language,
-                                              test_case,
-                                              server_name,
-                                              server_host,
-                                              server_port,
-                                              docker_image=docker_images.get(str(language)))
-            jobs.append(test_job)
+    if not args.http2_badserver_interop:
+      for language in languages:
+        for test_case in _TEST_CASES:
+          if not test_case in language.unimplemented_test_cases():
+            if not test_case in skip_server:
+              test_job = cloud_to_cloud_jobspec(language,
+                                                test_case,
+                                                server_name,
+                                                server_host,
+                                                server_port,
+                                                docker_image=docker_images.get(str(language)))
+              jobs.append(test_job)
 
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
@@ -864,6 +949,17 @@ try:
                                           server_port,
                                           docker_image=docker_images.get(str(http2Interop)))
         jobs.append(test_job)
+
+    if args.http2_badserver_interop:
+      for language in languages:
+        for test_case in _HTTP2_BADSERVER_TEST_CASES:
+          test_job = cloud_to_cloud_jobspec(language,
+                                            test_case,
+                                            server_name,
+                                            server_host,
+                                            server_port,
+                                            docker_image=docker_images.get(str(language)))
+          jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
