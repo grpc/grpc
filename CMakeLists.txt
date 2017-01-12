@@ -1600,6 +1600,7 @@ target_include_directories(grpc++_reflection
 
 target_link_libraries(grpc++_reflection
   grpc++
+  grpc
 )
 
 foreach(_hdr

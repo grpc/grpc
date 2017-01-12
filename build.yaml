@@ -1080,6 +1080,7 @@ libs:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1095,6 +1096,7 @@ libs:
   - src/cpp/ext/proto_server_reflection_plugin.cc
   deps:
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
 - name: grpc++_test
@@ -1106,6 +1108,7 @@ libs:
   - src/cpp/test/server_context_test_spouse.cc
   deps:
   - grpc++
+  - grpc
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1135,6 +1138,7 @@ libs:
   - test/cpp/util/test_credentials_provider.cc
   deps:
   - grpc++
+  - grpc
   - grpc_test_util
   filegroups:
   - grpc++_codegen_base
@@ -1179,6 +1183,7 @@ libs:
   deps:
   - grpc++_proto_reflection_desc_db
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1324,6 +1329,7 @@ libs:
   - grpc_test_util
   - grpc++_test_util
   - grpc++
+  - grpc
 - name: grpc_csharp_ext
   build: all
   language: csharp
@@ -3001,6 +3007,7 @@ targets:
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
+  - grpc
 - name: cxx_time_test
   gtest: true
   build: test
@@ -3187,8 +3194,8 @@ targets:
   deps:
   - gpr
   - gpr_test_util
-  - grpc
   - grpc++
+  - grpc
   - grpc++_test_util
   - grpc_test_util
 - name: hybrid_end2end_test

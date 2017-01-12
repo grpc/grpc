@@ -62,6 +62,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++_reflection", "vcxpro
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{C187A093-A0FE-489D-A40A-6E33DE0F9FEB} = {C187A093-A0FE-489D-A40A-6E33DE0F9FEB}
+		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++_unsecure", "vcxproj\.\grpc++_unsecure\grpc++_unsecure.vcxproj", "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
