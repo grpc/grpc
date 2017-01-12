@@ -46,7 +46,32 @@ set(PACKAGE_VERSION   "1.1.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+
 project(${PACKAGE_NAME} C CXX)
+
+
+function(JOIN VALUES GLUE OUTPUT)
+  string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+  string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+  set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+endfunction()
+
+
+include(CheckFunctionExists)
+
+CHECK_FUNCTION_EXISTS(pow HAS_POW)
+if(NOT HAS_POW)
+  list(APPEND CMAKE_REQUIRED_INCLUDES math.h)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+  CHECK_FUNCTION_EXISTS(pow HAS_POW_INCLUDED)
+
+  if(HAS_POW_INCLUDED)
+    set(libMath m)
+  else()
+    message(FATAL_ERROR "No pow() found")
+  endif()
+endif()
 
 if (NOT MSVC)
   set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
@@ -54,105 +79,75 @@ else()
   set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
 endif()
 
-set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
-set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
-
-set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
-set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
-
-set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
-set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
-
-set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
-
 if (MSVC)
   add_definitions( -D_WIN32_WINNT=0x600 )
 endif()
 
-if (gRPC_USE_PROTO_LITE)
-  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
-  add_definitions("-DGRPC_USE_PROTO_LITE")
-else()
-  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-endif()
-
-if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
-  if(NOT ZLIB_ROOT_DIR)
+find_package(ZLIB)
+if (NOT ZLIB_FOUND)
+  if (NOT ZLIB_ROOT_DIR)
     set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
   endif()
-  set(ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}")
-  if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
-      add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
-      if(TARGET zlibstatic)
-          set(_gRPC_ZLIB_LIBRARIES zlibstatic)
-      endif()
+  set(ZLIB_INCLUDE_DIRS "${ZLIB_ROOT_DIR}")
+
+  if (EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
+    add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+
+    if (TARGET zlibstatic)
+      set(ZLIB_LIBRARIES zlibstatic)
+    endif()
   else()
-      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+    message(FATAL "Zlib not found")
   endif()
-elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
-  find_package(ZLIB)
-  if(TARGET ZLIB::ZLIB)
-    set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
-  endif()
-  set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
 endif()
 
-if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
-  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-  # Disable them unless they are explicitly requested from the cmake command line (when we assume
-  # gmock is downloaded to the right location inside protobuf).
-  if(NOT protobuf_BUILD_TESTS)
-    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+find_package(OpenSSL)
+if (NOT OPENSSL_FOUND)
+  if (NOT BORINGSSL_ROOT_DIR)
+      set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
-  if(NOT PROTOBUF_ROOT_DIR)
+  set(OPENSSL_INCLUDE_DIR "${BORINGSSL_ROOT_DIR}")
+
+  if (EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
+    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
+
+    if (TARGET ssl)
+      set(OPENSSL_LIBRARIES ssl)
+    endif()
+  else()
+    message(FATAL "OpenSSL or BoringSSL not found")
+  endif()
+endif()
+
+find_package(Protobuf)
+if (NOT Protobuf_FOUND)
+  if (NOT Protobuf_BUILD_TESTS)
+    set(Protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  endif()
+
+  if (NOT PROTOBUF_ROOT_DIR)
     set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
   endif()
-  if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
+  set(Protobuf_INCLUDE_DIRS "${PROTOBUF_ROOT_DIR}")
+
+  if (EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
     set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
     add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
-    if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
-      set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
-    endif()
-    if(TARGET libprotoc)
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
-    endif()
-  else()
-      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
-  endif()
-elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
-  find_package(protobuf CONFIG)
-  if(protobuf_FOUND)
-    if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
-      set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
-    endif()
-    if(TARGET protobuf::libprotoc)
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
-    endif()
-    set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
-  else()
-    find_package(Protobuf MODULE)
-    set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
-  endif()
-endif()
 
-if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
-  if(NOT BORINGSSL_ROOT_DIR)
-    set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
-  endif()
-  if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
-    if(TARGET ssl)
-      set(_gRPC_SSL_LIBRARIES ssl)
+    if (TARGET libprotobuf)
+      set(Protobuf_LIBRARIES libprotobuf)
+    endif()
+
+    if (TARGET libprotobuf-lite)
+      set(Protobuf_LITE_LIBRARIES libprotobuf-lite)
+    endif()
+
+    if (TARGET libprotoc)
+      set(Protobuf_PROTOC_LIBRARIES libprotoc)
     endif()
   else()
-      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    message(FATAL "Protobuf not found")
   endif()
-elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
-  find_package(OpenSSL)
-  if(TARGET OpenSSL::SSL)
-    set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
-  endif()
-  set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
 endif()
 
 if(NOT MSVC)
@@ -226,6 +221,10 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
+target_link_libraries(gpr
+  ${Protobuf_LIBRARIES}
+  ${libMath}
+)
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -272,6 +271,7 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
 
   
 if (gRPC_INSTALL)
@@ -514,8 +514,8 @@ target_include_directories(grpc
 
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${ZLIB_LIBRARIES}
   gpr
 )
 
@@ -556,6 +556,31 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc")
+  set(PKG_CONFIG_DESCRIPTION "High performance general RPC framework")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  if (ZLIB_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+  endif()
+  if (OPENSSL_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "openssl")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lssl')
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lcrypto')
+  endif()
+  set(PKG_CONFIG_LIB "-lgrpc")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
 
   
 if (gRPC_INSTALL)
@@ -769,7 +794,7 @@ target_include_directories(grpc_cronet
 
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
   gpr
 )
 
@@ -810,6 +835,7 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
 
   
 if (gRPC_INSTALL)
@@ -1064,6 +1090,25 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc_unsecure")
+  set(PKG_CONFIG_DESCRIPTION "High performance general RPC framework without SSL")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  if (ZLIB_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+  endif()
+  set(PKG_CONFIG_LIB "-lgrpc")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
@@ -1125,8 +1170,8 @@ target_include_directories(grpc++
 
 target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${Protobuf_LIBRARIES}
   grpc
 )
 
@@ -1226,6 +1271,21 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc++")
+  set(PKG_CONFIG_DESCRIPTION "C++ Wrapper for grpc")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE grpc)
+  set(PKG_CONFIG_LIB "-lgrpc++")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
 
   
 if (gRPC_INSTALL)
@@ -1612,6 +1672,7 @@ foreach(_hdr
   )
 endforeach()
 
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
@@ -1668,7 +1729,7 @@ target_include_directories(grpc++_unsecure
 
 target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${Protobuf_LIBRARIES}
   gpr
   grpc_unsecure
 )
@@ -1770,6 +1831,21 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc++_unsecure")
+  set(PKG_CONFIG_DESCRIPTION "C++ Wrapper for grpc_unsecure")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE grpc_unsecure)
+  set(PKG_CONFIG_LIB "-lgrpc++")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
@@ -1800,7 +1876,8 @@ target_include_directories(grpc_plugin_support
 )
 
 target_link_libraries(grpc_plugin_support
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
+  ${Protobuf_LIBRARIES}
 )
 
 foreach(_hdr
@@ -1812,6 +1889,7 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
 
   
 if (gRPC_INSTALL)
@@ -1840,6 +1918,7 @@ target_link_libraries(grpc_csharp_ext
   grpc
   gpr
 )
+
 
 
   
@@ -1943,7 +2022,7 @@ target_include_directories(grpc_create_jwt
 )
 
 target_link_libraries(grpc_create_jwt
-  ${_gRPC_SSL_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
   grpc
   gpr
 )
@@ -2028,7 +2107,7 @@ target_include_directories(grpc_cpp_plugin
 )
 
 target_link_libraries(grpc_cpp_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -2056,7 +2135,7 @@ target_include_directories(grpc_csharp_plugin
 )
 
 target_link_libraries(grpc_csharp_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -2084,7 +2163,7 @@ target_include_directories(grpc_node_plugin
 )
 
 target_link_libraries(grpc_node_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -2112,7 +2191,7 @@ target_include_directories(grpc_objective_c_plugin
 )
 
 target_link_libraries(grpc_objective_c_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -2168,7 +2247,7 @@ target_include_directories(grpc_python_plugin
 )
 
 target_link_libraries(grpc_python_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -2196,7 +2275,7 @@ target_include_directories(grpc_ruby_plugin
 )
 
 target_link_libraries(grpc_ruby_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${Protobuf_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 

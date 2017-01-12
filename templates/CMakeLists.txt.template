@@ -45,16 +45,47 @@
     if target_dict.get('baselib', False):
       deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
-      deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
+      deps.append("${Protobuf_PROTOC_LIBRARIES}")
     if target_dict.get('secure', False):
-      deps.append("${_gRPC_SSL_LIBRARIES}")
-    if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
-      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+      deps.append("${OPENSSL_LIBRARIES}")
+    if target_dict['name'] in [
+        'grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib', 'gpr',
+        'grpc_plugin_support']:
+      deps.append("${Protobuf_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
-      deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      deps.append("${ZLIB_LIBRARIES}")
+
+    if target_dict['name'] in ['gpr']:
+      deps.append("${libMath}")
+
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
+
+  def get_desc_pc(target_dict):
+    d_map = {
+      'grpc': {
+        'desc': 'High performance general RPC framework',
+        'libs': ['grpc'],
+        'deps': ['zlib', 'openssl']
+      },
+      'grpc_unsecure': {
+        'desc': 'High performance general RPC framework without SSL',
+        'libs': ['grpc'],
+        'deps': ['zlib']
+      },
+      'grpc++': {
+        'desc': 'C++ Wrapper for grpc',
+        'libs': ['grpc++'],
+        'deps': ['grpc'],
+      },
+      'grpc++_unsecure': {
+        'desc': 'C++ Wrapper for grpc_unsecure',
+        'libs': ['grpc++'],
+        'deps': ['grpc_unsecure'],
+      }
+    }
+    return d_map.get(target_dict['name'], None)
   %>
 
   cmake_minimum_required(VERSION 2.8)
@@ -64,7 +95,32 @@
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
+
+  <%text>
+  function(JOIN VALUES GLUE OUTPUT)
+    string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+    string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+    set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+  endfunction()
+  </%text>
+
+  include(CheckFunctionExists)
+
+  CHECK_FUNCTION_EXISTS(pow HAS_POW)
+  if(NOT HAS_POW)
+    list(APPEND CMAKE_REQUIRED_INCLUDES math.h)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+    CHECK_FUNCTION_EXISTS(pow HAS_POW_INCLUDED)
+
+    if(HAS_POW_INCLUDED)
+      set(libMath m)
+    else()
+      message(FATAL_ERROR "No pow() found")
+    endif()
+  endif()
 
   if (NOT MSVC)
     set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
@@ -72,105 +128,75 @@
     set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
   endif()
 
-  set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
-  set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
-
-  set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
-  set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
-
-  set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
-  set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
-
-  set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
-
   if (MSVC)
     add_definitions( -D_WIN32_WINNT=0x600 )
   endif()
 
-  if (gRPC_USE_PROTO_LITE)
-    set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
-    add_definitions("-DGRPC_USE_PROTO_LITE")
-  else()
-    set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-  endif()
-
-  if("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "module")
-    if(NOT ZLIB_ROOT_DIR)
+  find_package(ZLIB)
+  if (NOT ZLIB_FOUND)
+    if (NOT ZLIB_ROOT_DIR)
       set(ZLIB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/zlib)
     endif()
-    set(ZLIB_INCLUDE_DIR "<%text>${ZLIB_ROOT_DIR}</%text>")
-    if(EXISTS "<%text>${ZLIB_ROOT_DIR}</%text>/CMakeLists.txt")
-        add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
-        if(TARGET zlibstatic)
-            set(_gRPC_ZLIB_LIBRARIES zlibstatic)
-        endif()
+    set(ZLIB_INCLUDE_DIRS "<%text>${ZLIB_ROOT_DIR}</%text>")
+
+    if (EXISTS "<%text>${ZLIB_ROOT_DIR}</%text>/CMakeLists.txt")
+      add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
+
+      if (TARGET zlibstatic)
+        set(ZLIB_LIBRARIES zlibstatic)
+      endif()
     else()
-        message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+      message(FATAL "Zlib not found")
     endif()
-  elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
-    find_package(ZLIB)
-    if(TARGET ZLIB::ZLIB)
-      set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
-    endif()
-    set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
   endif()
 
-  if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
-    # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-    # Disable them unless they are explicitly requested from the cmake command line (when we assume
-    # gmock is downloaded to the right location inside protobuf).
-    if(NOT protobuf_BUILD_TESTS)
-      set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  find_package(OpenSSL)
+  if (NOT OPENSSL_FOUND)
+    if (NOT BORINGSSL_ROOT_DIR)
+        set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
     endif()
-    if(NOT PROTOBUF_ROOT_DIR)
+    set(OPENSSL_INCLUDE_DIR "<%text>${BORINGSSL_ROOT_DIR}</%text>")
+
+    if (EXISTS "<%text>${BORINGSSL_ROOT_DIR}</%text>/CMakeLists.txt")
+      add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
+
+      if (TARGET ssl)
+        set(OPENSSL_LIBRARIES ssl)
+      endif()
+    else()
+      message(FATAL "OpenSSL or BoringSSL not found")
+    endif()
+  endif()
+
+  find_package(Protobuf)
+  if (NOT Protobuf_FOUND)
+    if (NOT Protobuf_BUILD_TESTS)
+      set(Protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+    endif()
+
+    if (NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
-    if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
+    set(Protobuf_INCLUDE_DIRS "<%text>${PROTOBUF_ROOT_DIR}</%text>")
+
+    if (EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
-      if(TARGET <%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
-        set(_gRPC_PROTOBUF_LIBRARIES <%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
-      endif()
-      if(TARGET libprotoc)
-        set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
-      endif()
-    else()
-        message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
-    endif()
-  elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(protobuf CONFIG)
-    if(protobuf_FOUND)
-      if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
-        set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
-      endif()
-      if(TARGET protobuf::libprotoc)
-        set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
-      endif()
-      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
-    else()
-      find_package(Protobuf MODULE)
-      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
-    endif()
-  endif()
 
-  if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
-    if(NOT BORINGSSL_ROOT_DIR)
-      set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
-    endif()
-    if(EXISTS "<%text>${BORINGSSL_ROOT_DIR}</%text>/CMakeLists.txt")
-      add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
-      if(TARGET ssl)
-        set(_gRPC_SSL_LIBRARIES ssl)
+      if (TARGET libprotobuf)
+        set(Protobuf_LIBRARIES libprotobuf)
+      endif()
+
+      if (TARGET libprotobuf-lite)
+        set(Protobuf_LITE_LIBRARIES libprotobuf-lite)
+      endif()
+
+      if (TARGET libprotoc)
+        set(Protobuf_PROTOC_LIBRARIES libprotoc)
       endif()
     else()
-        message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+      message(FATAL "Protobuf not found")
     endif()
-  elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
-    find_package(OpenSSL)
-    if(TARGET OpenSSL::SSL)
-      set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
-    endif()
-    set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
   if(NOT MSVC)
@@ -238,6 +264,42 @@
     )
   endforeach()
   % endif
+
+  % if get_desc_pc(lib):
+  if (BUILD_SHARED_LIBS)
+    set(PKG_CONFIG_LIBNAME "${lib.name}")
+    set(PKG_CONFIG_DESCRIPTION "${get_desc_pc(lib)['desc']}")
+    unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+    unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+    % for dep in get_desc_pc(lib)['deps']:
+    % if dep == 'openssl':
+    if (OPENSSL_FOUND)
+      LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "openssl")
+    else()
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lssl')
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lcrypto')
+    endif()
+    % elif dep == 'zlib':
+    if (ZLIB_FOUND)
+      LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+    else()
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+    endif()
+    % elif dep in ['grpc', 'grpc_unsecure']:
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE ${dep})
+    % endif
+    % endfor
+    % for library in get_desc_pc(lib)['libs']:
+    set(PKG_CONFIG_LIB "-l${library}")
+    % endfor
+
+    JOIN("<%text>${_PKG_CONFIG_REQUIRES_PRIVATE}</%text>" " " PKG_CONFIG_REQUIRES_PRIVATE)
+    JOIN("<%text>${_PKG_CONFIG_LIBS_PRIVATE}</%text>" " " PKG_CONFIG_LIBS_PRIVATE)
+    configure_file(tools/cmake/pkg-config.pc.in "<%text>${PKG_CONFIG_LIBNAME}</%text>.pc" @ONLY)
+    install(FILES "<%text>${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}</%text>.pc" DESTINATION lib/pkgconfig)
+  endif()
+  %endif
   </%def>
 
   <%def name="cc_binary(tgt)">
