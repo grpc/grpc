@@ -104,7 +104,6 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads)
 
 void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
   for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
-    gpr_log(GPR_DEBUG, "delete %p", *t);
     delete *t;
   }
 }
