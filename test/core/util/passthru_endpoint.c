@@ -39,6 +39,8 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include "src/core/lib/slice/slice_internal.h"
+
 typedef struct passthru_endpoint passthru_endpoint;
 
 typedef struct {
@@ -130,8 +132,8 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
-    grpc_slice_buffer_destroy(&p->client.read_buffer);
-    grpc_slice_buffer_destroy(&p->server.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->client.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->server.read_buffer);
     grpc_resource_user_unref(exec_ctx, p->client.resource_user);
     grpc_resource_user_unref(exec_ctx, p->server.resource_user);
     gpr_free(p);

@@ -59,7 +59,7 @@ static void print_usage_and_exit(gpr_cmdline *cl, const char *argv0) {
   exit(1);
 }
 
-static void on_jwt_verification_done(void *user_data,
+static void on_jwt_verification_done(grpc_exec_ctx *exec_ctx, void *user_data,
                                      grpc_jwt_verifier_status status,
                                      grpc_jwt_claims *claims) {
   synchronizer *sync = user_data;
@@ -72,7 +72,7 @@ static void on_jwt_verification_done(void *user_data,
         grpc_json_dump_to_string((grpc_json *)grpc_jwt_claims_json(claims), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
-    grpc_jwt_claims_destroy(claims);
+    grpc_jwt_claims_destroy(exec_ctx, claims);
   } else {
     GPR_ASSERT(claims == NULL);
     fprintf(stderr, "Verification failed with error %s\n",

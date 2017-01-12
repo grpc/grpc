@@ -49,7 +49,8 @@ server. The client should handle the goaway by switching to a new stream without
 the user application having to do a thing.
 
 Client Procedure:
- 1. Client sends two UnaryCall requests with:
+ 1. Client sends two UnaryCall requests (and sleeps for 1 second in-between).
+ TODO: resolve [9300](https://github.com/grpc/grpc/issues/9300) and remove the 1 second sleep
  
     ```
     {
@@ -61,14 +62,14 @@ Client Procedure:
     ```
 
 Client asserts:
-* Call was successful.
+* Both calls are successful.
 * Response payload body is 314159 bytes in size.
 
 Server Procedure:
   1. Server sends a GOAWAY after receiving the first UnaryCall.
 
 Server asserts:
-* The second UnaryCall has a different stream_id than the first one.
+* Two different connections were used from the client.
 
 ### rst_after_header
 

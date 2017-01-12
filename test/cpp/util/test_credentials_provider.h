@@ -59,23 +59,39 @@ class CredentialTypeProvider {
   virtual std::shared_ptr<ServerCredentials> GetServerCredentials() = 0;
 };
 
-// Add a secure type in addition to the defaults above
-// (kInsecureCredentialsType, kTlsCredentialsType) that can be returned from the
-// functions below.
-void AddSecureType(const grpc::string& type,
-                   std::unique_ptr<CredentialTypeProvider> type_provider);
+// Provide test credentials. Thread-safe.
+class CredentialsProvider {
+ public:
+  virtual ~CredentialsProvider() {}
 
-// Provide channel credentials according to the given type. Alter the channel
-// arguments if needed.
-std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args);
+  // Add a secure type in addition to the defaults. The default provider has
+  // (kInsecureCredentialsType, kTlsCredentialsType).
+  virtual void AddSecureType(
+      const grpc::string& type,
+      std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
 
-// Provide server credentials according to the given type.
-std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type);
+  // Provide channel credentials according to the given type. Alter the channel
+  // arguments if needed. Return nullptr if type is not registered.
+  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
+      const grpc::string& type, ChannelArguments* args) = 0;
 
-// Provide a list of secure credentials type.
-std::vector<grpc::string> GetSecureCredentialsTypeList();
+  // Provide server credentials according to the given type.
+  // Return nullptr if type is not registered.
+  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
+      const grpc::string& type) = 0;
+
+  // Provide a list of secure credentials type.
+  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
+};
+
+// Get the current provider. Create a default one if not set.
+// Not thread-safe.
+CredentialsProvider* GetCredentialsProvider();
+
+// Set the global provider. Takes ownership. The previous set provider will be
+// destroyed.
+// Not thread-safe.
+void SetCredentialsProvider(CredentialsProvider* provider);
 
 }  // namespace testing
 }  // namespace grpc
