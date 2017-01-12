@@ -101,6 +101,6 @@ void grpc_exec_ctx_global_init(void) {}
 void grpc_exec_ctx_global_shutdown(void) {}
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
-    exec_ctx_run, exec_ctx_sched};
+    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
 grpc_closure_scheduler *grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;

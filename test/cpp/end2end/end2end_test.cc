@@ -1302,6 +1302,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
+
 TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   ResetStub();
   EchoRequest request;

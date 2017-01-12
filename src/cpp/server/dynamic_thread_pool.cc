@@ -31,12 +31,16 @@
  *
  */
 
+#include "src/cpp/server/dynamic_thread_pool.h"
+
 #include <mutex>
 #include <thread>
 
-#include "src/cpp/server/dynamic_thread_pool.h"
+#include <grpc/support/log.h>
 
 namespace grpc {
+static thread_local bool g_is_dynamic_thread_pool_thread;
+
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
       thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
@@ -47,6 +51,7 @@ DynamicThreadPool::DynamicThread::~DynamicThread() {
 }
 
 void DynamicThreadPool::DynamicThread::ThreadFunc() {
+  g_is_dynamic_thread_pool_thread = true;
   pool_->ThreadFunc();
   // Now that we have killed ourselves, we should reduce the thread count
   std::unique_lock<std::mutex> lock(pool_->mu_);
@@ -99,11 +104,13 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads)
 
 void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
   for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
+    gpr_log(GPR_DEBUG, "delete %p", *t);
     delete *t;
   }
 }
 
 DynamicThreadPool::~DynamicThreadPool() {
+  GPR_ASSERT(!g_is_dynamic_thread_pool_thread);
   std::unique_lock<std::mutex> lock(mu_);
   shutdown_ = true;
   cv_.notify_all();

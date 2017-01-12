@@ -123,24 +123,12 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
     GPR_ASSERT(op->send_initial_metadata != NULL);
     mdb = op->send_initial_metadata;
     for (i = 0; i < num_md; i++) {
-      if (!grpc_header_key_is_legal(md_elems[i].key)) {
-        char *str = grpc_slice_to_c_string(md_elems[i].key);
-        gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
-        gpr_free(str);
-      } else if (!grpc_is_binary_header(md_elems[i].key) &&
-                 !grpc_header_nonbin_value_is_legal(md_elems[i].value)) {
-        char *str =
-            grpc_dump_slice(md_elems[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
-        gpr_free(str);
-      } else {
-        add_error(&error,
-                  grpc_metadata_batch_add_tail(
-                      exec_ctx, mdb, &calld->md_links[i],
-                      grpc_mdelem_from_slices(
-                          exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
-                          grpc_slice_ref_internal(md_elems[i].value))));
-      }
+      add_error(&error,
+                grpc_metadata_batch_add_tail(
+                    exec_ctx, mdb, &calld->md_links[i],
+                    grpc_mdelem_from_slices(
+                        exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
+                        grpc_slice_ref_internal(md_elems[i].value))));
     }
   }
   if (error == GRPC_ERROR_NONE) {
