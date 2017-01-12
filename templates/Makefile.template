@@ -1495,15 +1495,14 @@
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
-    common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
+    common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
     lib_deps = ' $(ZLIB_DEP)'
-    mingw_libs = ''
     mingw_lib_deps = ' $(ZLIB_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
-      mingw_lib_deps += ' $(PROTOBUF_DEP)'
+      mingw_lib_deps = mingw_lib_deps + ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
         lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
@@ -1518,9 +1517,9 @@
             dep_lib = dl
         assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
         link_libs = link_libs + ' -l' + dep
+        common = common + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
-        mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
 
     security = lib.get('secure', 'check')
     if security == True:
@@ -1539,6 +1538,7 @@
       lib_deps = lib_deps + ' $(OPENSSL_DEP)'
       mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
 
+    common = common + ' $(LDLIBS)'
     if lib.language == 'c++':
       common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
 
@@ -1552,7 +1552,7 @@
   ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}
   else
   ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
