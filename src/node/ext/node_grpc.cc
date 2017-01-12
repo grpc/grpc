@@ -31,7 +31,7 @@
  *
  */
 
-#include <list>
+#include <queue>
 
 #include <node.h>
 #include <nan.h>
@@ -66,7 +66,7 @@ typedef struct log_args {
 
 typedef struct logger_state {
   Nan::Callback *callback;
-  std::list<log_args *> *pending_args;
+  std::queue<log_args *> *pending_args;
   uv_mutex_t mutex;
   uv_async_t async;
   // Indicates that a logger has been set
@@ -334,14 +334,14 @@ NAN_METHOD(SetDefaultRootsPem) {
 
 NAUV_WORK_CB(LogMessagesCallback) {
   Nan::HandleScope scope;
-  std::list<log_args *> args;
+  std::queue<log_args *> args;
   uv_mutex_lock(&grpc_logger_state.mutex);
-  args.splice(args.begin(), *grpc_logger_state.pending_args);
+  grpc_logger_state.pending_args->swap(args);
   uv_mutex_unlock(&grpc_logger_state.mutex);
   /* Call the callback with each log message */
   while (!args.empty()) {
     log_args *arg = args.front();
-    args.pop_front();
+    args.pop();
     Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
     Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
     Local<Value> severity = Nan::New(
@@ -368,7 +368,7 @@ void node_log_func(gpr_log_func_args *args) {
   args_copy->timestamp = gpr_now(GPR_CLOCK_REALTIME);
 
   uv_mutex_lock(&grpc_logger_state.mutex);
-  grpc_logger_state.pending_args->push_back(args_copy);
+  grpc_logger_state.pending_args->push(args_copy);
   uv_mutex_unlock(&grpc_logger_state.mutex);
 
   uv_async_send(&grpc_logger_state.async);
@@ -376,7 +376,7 @@ void node_log_func(gpr_log_func_args *args) {
 
 void init_logger() {
   memset(&grpc_logger_state, 0, sizeof(logger_state));
-  grpc_logger_state.pending_args = new std::list<log_args *>();
+  grpc_logger_state.pending_args = new std::queue<log_args *>();
   uv_mutex_init(&grpc_logger_state.mutex);
   uv_async_init(uv_default_loop(),
                 &grpc_logger_state.async,
