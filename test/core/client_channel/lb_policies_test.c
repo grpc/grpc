@@ -64,9 +64,11 @@ typedef struct servers_fixture {
 } servers_fixture;
 
 typedef struct request_sequences {
-  size_t n;
-  int *connections;
-  int *connectivity_states;
+  size_t n;         /* number of iterations */
+  int *connections; /* indexed by the interation number, value is the index of
+                       the server it connected to or -1 if none */
+  int *connectivity_states; /* indexed by the interation number, value is the
+                               client connectivity state */
 } request_sequences;
 
 typedef void (*verifier_fn)(const servers_fixture *, grpc_channel *,
@@ -239,6 +241,8 @@ static request_sequences request_sequences_create(size_t n) {
   res.n = n;
   res.connections = gpr_malloc(sizeof(*res.connections) * n);
   res.connectivity_states = gpr_malloc(sizeof(*res.connectivity_states) * n);
+  memset(res.connections, 0, sizeof(*res.connections) * n);
+  memset(res.connectivity_states, 0, sizeof(*res.connectivity_states) * n);
   return res;
 }
 
@@ -481,7 +485,7 @@ void run_spec(const test_spec *spec) {
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
@@ -519,7 +523,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
@@ -641,7 +645,11 @@ static void test_get_channel_info() {
   arg.value.string = "{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}";
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
-  grpc_channel_args_destroy(args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // Now request the service config again.
@@ -780,15 +788,15 @@ static void verify_total_carnage_round_robin(const servers_fixture *f,
     }
   }
 
-  /* no server is ever available. The persistent state is TRANSIENT_FAILURE */
+  /* No server is ever available. There should be no READY states (or SHUTDOWN).
+   * Note that all other states (IDLE, CONNECTING, TRANSIENT_FAILURE) are still
+   * possible, as the policy transitions while attempting to reconnect. */
   for (size_t i = 0; i < sequences->n; i++) {
     const grpc_connectivity_state actual = sequences->connectivity_states[i];
-    const grpc_connectivity_state expected = GRPC_CHANNEL_TRANSIENT_FAILURE;
-    if (actual != expected) {
+    if (actual == GRPC_CHANNEL_READY || actual == GRPC_CHANNEL_SHUTDOWN) {
       gpr_log(GPR_ERROR,
-              "CONNECTIVITY STATUS SEQUENCE FAILURE: expected '%s', got '%s' "
-              "at iteration #%d",
-              grpc_connectivity_state_name(expected),
+              "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
+              "'%s' at iteration #%d.",
               grpc_connectivity_state_name(actual), (int)i);
       abort();
     }
@@ -825,8 +833,7 @@ static void verify_partial_carnage_round_robin(
   }
 
   /* We can assert that the first client channel state should be READY, when all
-   * servers were available; and that the last one should be TRANSIENT_FAILURE,
-   * after all servers are gone. */
+   * servers were available */
   grpc_connectivity_state actual = sequences->connectivity_states[0];
   grpc_connectivity_state expected = GRPC_CHANNEL_READY;
   if (actual != expected) {
@@ -838,17 +845,19 @@ static void verify_partial_carnage_round_robin(
     abort();
   }
 
+  /* ... and that the last one shouldn't be READY (or SHUTDOWN): all servers are
+   * gone. It may be all other states (IDLE, CONNECTING, TRANSIENT_FAILURE), as
+   * the policy transitions while attempting to reconnect. */
   actual = sequences->connectivity_states[num_iters - 1];
-  expected = GRPC_CHANNEL_TRANSIENT_FAILURE;
-  if (actual != expected) {
-    gpr_log(GPR_ERROR,
-            "CONNECTIVITY STATUS SEQUENCE FAILURE: expected '%s', got '%s' "
-            "at iteration #%d",
-            grpc_connectivity_state_name(expected),
-            grpc_connectivity_state_name(actual), (int)num_iters - 1);
-    abort();
+  for (i = 0; i < sequences->n; i++) {
+    if (actual == GRPC_CHANNEL_READY || actual == GRPC_CHANNEL_SHUTDOWN) {
+      gpr_log(GPR_ERROR,
+              "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
+              "'%s' at iteration #%d.",
+              grpc_connectivity_state_name(actual), (int)i);
+      abort();
+    }
   }
-
   gpr_free(expected_connection_sequence);
 }
 
@@ -873,68 +882,21 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
                                        grpc_channel *client,
                                        const request_sequences *sequences,
                                        const size_t num_iters) {
-  int *expected_connection_sequence;
-  size_t i, j, unique_seq_last_idx, unique_seq_first_idx;
-  const size_t expected_seq_length = f->num_servers;
-  int *seen_elements;
-
   dump_array("actual_connection_sequence", sequences->connections, num_iters);
-
-  /* verify conn. seq. expectation */
-  /* get the first unique run of length "num_servers". */
-  expected_connection_sequence = gpr_malloc(sizeof(int) * expected_seq_length);
-  seen_elements = gpr_malloc(sizeof(int) * expected_seq_length);
-
-  unique_seq_last_idx = ~(size_t)0;
-
-  memset(seen_elements, 0, sizeof(int) * expected_seq_length);
-  for (i = 0; i < num_iters; i++) {
-    if (sequences->connections[i] < 0 ||
-        seen_elements[sequences->connections[i]] != 0) {
-      /* if anything breaks the uniqueness of the run, back to square zero */
-      memset(seen_elements, 0, sizeof(int) * expected_seq_length);
-      continue;
-    }
-    seen_elements[sequences->connections[i]] = 1;
-    for (j = 0; j < expected_seq_length; j++) {
-      if (seen_elements[j] == 0) break;
-    }
-    if (j == expected_seq_length) { /* seen all the elements */
-      unique_seq_last_idx = i;
-      break;
-    }
-  }
-  /* make sure we found a valid run */
-  dump_array("seen_elements", seen_elements, expected_seq_length);
-  for (j = 0; j < expected_seq_length; j++) {
-    GPR_ASSERT(seen_elements[j] != 0);
-  }
-
-  GPR_ASSERT(unique_seq_last_idx != ~(size_t)0);
-
-  unique_seq_first_idx = (unique_seq_last_idx - expected_seq_length + 1);
-  memcpy(expected_connection_sequence,
-         sequences->connections + unique_seq_first_idx,
-         sizeof(int) * expected_seq_length);
 
   /* first iteration succeeds */
   GPR_ASSERT(sequences->connections[0] != -1);
   /* then we fail for a while... */
   GPR_ASSERT(sequences->connections[1] == -1);
-  /* ... but should be up at "unique_seq_first_idx" */
-  GPR_ASSERT(sequences->connections[unique_seq_first_idx] != -1);
-
-  for (j = 0, i = unique_seq_first_idx; i < num_iters; i++) {
-    const int actual = sequences->connections[i];
-    const int expected =
-        expected_connection_sequence[j++ % expected_seq_length];
-    if (actual != expected) {
-      print_failed_expectations(expected_connection_sequence,
-                                sequences->connections, expected_seq_length,
-                                num_iters);
-      abort();
+  /* ... but should be up eventually */
+  size_t first_iter_back_up = ~0ul;
+  for (size_t i = 2; i < sequences->n; ++i) {
+    if (sequences->connections[i] != -1) {
+      first_iter_back_up = i;
+      break;
     }
   }
+  GPR_ASSERT(first_iter_back_up != ~0ul);
 
   /* We can assert that the first client channel state should be READY, when all
    * servers were available; same thing for the last one. In the middle
@@ -962,7 +924,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   }
 
   bool found_failure_status = false;
-  for (i = 1; i < sequences->n - 1; i++) {
+  for (size_t i = 1; i < sequences->n - 1; i++) {
     if (sequences->connectivity_states[i] == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       found_failure_status = true;
       break;
@@ -974,14 +936,11 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
         "CONNECTIVITY STATUS SEQUENCE FAILURE: "
         "GRPC_CHANNEL_TRANSIENT_FAILURE status not found. Got the following "
         "instead:");
-    for (i = 0; i < num_iters; i++) {
+    for (size_t i = 0; i < num_iters; i++) {
       gpr_log(GPR_ERROR, "[%d]: %s", (int)i,
               grpc_connectivity_state_name(sequences->connectivity_states[i]));
     }
   }
-
-  gpr_free(expected_connection_sequence);
-  gpr_free(seen_elements);
 }
 
 int main(int argc, char **argv) {
@@ -991,8 +950,8 @@ int main(int argc, char **argv) {
   const size_t NUM_ITERS = 10;
   const size_t NUM_SERVERS = 4;
 
-  grpc_test_init(argc, argv);
   grpc_init();
+  grpc_test_init(argc, argv);
   grpc_tracer_set_enabled("round_robin", 1);
 
   GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",

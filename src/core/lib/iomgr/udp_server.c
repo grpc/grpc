@@ -126,7 +126,7 @@ grpc_udp_server *grpc_udp_server_create(void) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -170,8 +170,8 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
 
-      sp->destroyed_closure.cb = destroyed_port;
-      sp->destroyed_closure.cb_arg = s;
+      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+                        grpc_schedule_on_exec_ctx);
 
       /* Call the orphan_cb to signal that the FD is about to be closed and
        * should no longer be used. */
@@ -388,7 +388,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
     /* Try listening on IPv6 first. */
     addr = &wild6;
     // TODO(rjshade): Test and propagate the returned grpc_error*:
-    grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
+    GRPC_ERROR_UNREF(grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP,
+                                                  &dsmode, &fd));
     allocated_port1 = add_socket_to_server(s, fd, addr, read_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
@@ -402,7 +403,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
   }
 
   // TODO(rjshade): Test and propagate the returned grpc_error*:
-  grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
+  GRPC_ERROR_UNREF(grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP,
+                                                &dsmode, &fd));
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
   }
@@ -444,8 +446,8 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     for (i = 0; i < pollset_count; i++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
     }
-    sp->read_closure.cb = on_read;
-    sp->read_closure.cb_arg = sp;
+    grpc_closure_init(&sp->read_closure, on_read, sp,
+                      grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
 
     s->active_ports++;

@@ -43,8 +43,8 @@ class Struct
         GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
-        fail GRPC::BadStatus.new(status.code, status.details, md),
-             "status code: #{status.code}, details: #{status.details}"
+        fail GRPC::BadStatus.new_status_exception(
+          status.code, status.details, md)
       end
       status
     end

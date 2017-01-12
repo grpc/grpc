@@ -49,10 +49,11 @@ extern "C" {
 #endif
 
 extern double g_fixture_slowdown_factor;
+extern double g_poller_slowdown_factor;
 
 #define GRPC_TEST_SLOWDOWN_FACTOR                                        \
   (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR * \
-   g_fixture_slowdown_factor)
+   g_fixture_slowdown_factor * g_poller_slowdown_factor)
 
 #define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                                  \
   gpr_time_add(                                                              \

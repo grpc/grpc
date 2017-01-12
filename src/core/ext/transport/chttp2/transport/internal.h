@@ -212,10 +212,8 @@ struct grpc_chttp2_transport {
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
   grpc_closure write_action_end_locked;
 
-  grpc_closure read_action_begin;
   grpc_closure read_action_locked;
 
   /** incoming read bytes */
@@ -327,16 +325,17 @@ struct grpc_chttp2_transport {
    */
   grpc_error *close_transport_on_writes_finished;
 
+  /* a list of closures to run after writes are finished */
+  grpc_closure_list run_after_write;
+
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;
   /** have we scheduled a destructive cleanup? */
   bool destructive_reclaimer_registered;
   /** benign cleanup closure */
-  grpc_closure benign_reclaimer;
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
-  grpc_closure destructive_reclaimer;
   grpc_closure destructive_reclaimer_locked;
 };
 
@@ -493,6 +492,8 @@ void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                  grpc_chttp2_stream **s);
+void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                     grpc_chttp2_stream *s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
@@ -688,5 +689,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s);
+
+void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s, grpc_error *error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

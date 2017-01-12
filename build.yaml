@@ -175,6 +175,8 @@ filegroups:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
+  - src/core/lib/channel/handshaker_factory.h
+  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/channel/message_size_filter.h
@@ -242,6 +244,7 @@ filegroups:
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -273,6 +276,8 @@ filegroups:
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
+  - src/core/lib/channel/handshaker_factory.c
+  - src/core/lib/channel/handshaker_registry.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/channel/message_size_filter.c
@@ -427,6 +432,7 @@ filegroups:
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
@@ -501,9 +507,9 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/handshake.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/b64.h
   - src/core/lib/security/util/json_util.h
@@ -524,9 +530,9 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.c
   - src/core/lib/security/credentials/ssl/ssl_credentials.c
   - src/core/lib/security/transport/client_auth_filter.c
-  - src/core/lib/security/transport/handshake.c
   - src/core/lib/security/transport/secure_endpoint.c
   - src/core/lib/security/transport/security_connector.c
+  - src/core/lib/security/transport/security_handshaker.c
   - src/core/lib/security/transport/server_auth_filter.c
   - src/core/lib/security/transport/tsi_error.c
   - src/core/lib/security/util/b64.c
@@ -627,11 +633,20 @@ filegroups:
   - src/core/ext/transport/chttp2/alpn/alpn.c
   deps:
   - gpr
+- name: grpc_transport_chttp2_client_connector
+  headers:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.h
+  src:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
   - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   uses:
+  - grpc_transport_chttp2_client_connector
   - grpc_transport_chttp2
   - grpc_base
   - grpc_client_channel
@@ -643,6 +658,15 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_secure
+  - grpc_transport_chttp2_client_connector
+- name: grpc_transport_chttp2_server
+  headers:
+  - src/core/ext/transport/chttp2/server/chttp2_server.h
+  src:
+  - src/core/ext/transport/chttp2/server/chttp2_server.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -650,6 +674,7 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
+  - grpc_transport_chttp2_server
 - name: grpc_transport_chttp2_server_secure
   src:
   - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
@@ -657,6 +682,7 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+  - grpc_transport_chttp2_server
 - name: grpc_transport_cronet_client_secure
   public_headers:
   - include/grpc/grpc_cronet.h
@@ -1045,6 +1071,9 @@ libs:
   - grpc++_base
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  - grpc_transport_chttp2_client_insecure
+  - grpc_transport_chttp2_server_insecure
+  - census
   platforms:
   - linux
   secure: true
@@ -1194,6 +1223,22 @@ libs:
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
   - protoc
+- name: http2_client_main
+  build: private
+  language: c++
+  headers:
+  - test/cpp/interop/http2_client.h
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/http2_client.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
 - name: interop_client_helper
   build: private
   language: c++
@@ -1236,6 +1281,7 @@ libs:
   src:
   - test/cpp/interop/server_helper.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -2833,7 +2879,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_fullstack.cc
   deps:
-  - google_benchmark
+  - benchmark
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -3168,6 +3214,22 @@ targets:
   - grpc++
   - grpc++_test_util
   - grpc_test_util
+- name: http2_client
+  build: test
+  run: false
+  language: c++
+  src: []
+  deps:
+  - http2_client_main
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -3283,7 +3345,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/noop-benchmark.cc
   deps:
-  - google_benchmark
+  - benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -3769,6 +3831,8 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
+  benchmark:
+    CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
       -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
@@ -3777,8 +3841,6 @@ defaults:
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
-  google_benchmark:
-    CPPFLAGS: -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

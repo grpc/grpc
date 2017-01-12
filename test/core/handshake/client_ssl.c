@@ -212,7 +212,7 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   // and port picking.
   int port = -1;
   int server_socket = -1;
-  int socket_retries = 10;
+  int socket_retries = 30;
   while (server_socket == -1 && socket_retries-- > 0) {
     port = grpc_pick_unused_port_or_die();
     server_socket = create_socket(port);

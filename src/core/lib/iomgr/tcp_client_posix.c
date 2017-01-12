@@ -66,6 +66,7 @@ typedef struct {
   grpc_fd *fd;
   gpr_timespec deadline;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
@@ -129,7 +130,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
-    grpc_channel_args_destroy(ac->channel_args);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
 }
@@ -149,8 +150,8 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
             &channel_args->args[i], options);
       } else if (0 ==
                  strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_internal_ref(
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       }
     }
@@ -158,7 +159,7 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
 
   grpc_endpoint *ep =
       grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   return ep;
 }
 
@@ -263,10 +264,10 @@ finish:
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
-    grpc_channel_args_destroy(ac->channel_args);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
-  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+  grpc_closure_sched(exec_ctx, closure, error);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
@@ -295,7 +296,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+    grpc_closure_sched(exec_ctx, closure, error);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -304,7 +305,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr = &addr4_copy;
   }
   if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+    grpc_closure_sched(exec_ctx, closure, error);
     return;
   }
 
@@ -322,14 +323,13 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (err >= 0) {
     *ep =
         grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
 
@@ -344,8 +344,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  ac->write_closure.cb = on_writable;
-  ac->write_closure.cb_arg = ac;
+  grpc_closure_init(&ac->write_closure, on_writable, ac,
+                    grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
   if (grpc_tcp_trace) {
@@ -354,9 +354,10 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   gpr_mu_lock(&ac->mu);
+  grpc_closure_init(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 

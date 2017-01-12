@@ -279,6 +279,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
@@ -305,6 +306,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h" />
@@ -372,6 +375,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
@@ -429,9 +433,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
@@ -440,6 +444,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_types.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h" />
@@ -455,6 +460,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
@@ -492,6 +498,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
     </ClCompile>
@@ -783,11 +793,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
     </ClCompile>
@@ -804,6 +814,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
     </ClCompile>
@@ -842,6 +854,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
     </ClCompile>

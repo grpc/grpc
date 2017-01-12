@@ -37,7 +37,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/useful.h>
 #include <gtest/gtest.h>
+
+extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+}
 
 namespace grpc {
 namespace testing {
@@ -228,7 +232,11 @@ TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   EXPECT_FALSE(HasArg(arg0));
 
   // arg0 is destroyed by grpc_socket_mutator_to_arg(mutator1)
-  arg1.value.pointer.vtable->destroy(arg1.value.pointer.p);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    arg1.value.pointer.vtable->destroy(&exec_ctx, arg1.value.pointer.p);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {

@@ -292,10 +292,17 @@ AR = libtool -no_warning_for_no_symbols -o
 endif
 STRIP ?= strip -x
 else
+ifeq ($(SYSTEM),MINGW32)
+ifeq ($(origin AR), default)
+AR = ar rcs
+endif
+STRIP ?= strip --strip-unneeded
+else
 ifeq ($(origin AR), default)
 AR = ar rcs
 endif
 STRIP ?= strip
+endif
 endif
 endif
 INSTALL ?= install
@@ -492,6 +499,7 @@ CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix
 CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
 ifeq ($(SYSTEM),MINGW32)
+EXECUTABLE_SUFFIX = .exe
 SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
@@ -500,6 +508,7 @@ SHARED_VERSION_CORE = -2
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -1
 else ifeq ($(SYSTEM),Darwin)
+EXECUTABLE_SUFFIX = 
 SHARED_EXT_CORE = dylib
 SHARED_EXT_CPP = dylib
 SHARED_EXT_CSHARP = dylib
@@ -508,6 +517,7 @@ SHARED_VERSION_CORE =
 SHARED_VERSION_CPP =
 SHARED_VERSION_CSHARP =
 else
+EXECUTABLE_SUFFIX = 
 SHARED_EXT_CORE = so.$(CORE_VERSION)
 SHARED_EXT_CPP = so.$(CPP_VERSION)
 SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -1098,6 +1108,7 @@ grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 grpclb_test: $(BINDIR)/$(CONFIG)/grpclb_test
+http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
@@ -1273,9 +1284,9 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 else
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
 
 
@@ -1480,6 +1491,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
+  $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
@@ -1573,6 +1585,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
+  $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
@@ -2052,7 +2065,7 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: src/proto/grpc/lb/v1/load_ba
 $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2067,7 +2080,7 @@ $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: src/proto/grpc/ref
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2082,7 +2095,7 @@ $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc: src/proto/grpc/testing/com
 $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc: src/proto/grpc/testing/compiler_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2097,7 +2110,7 @@ $(GENDIR)/src/proto/grpc/testing/control.pb.cc: src/proto/grpc/testing/control.p
 $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2112,7 +2125,7 @@ $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc: src/proto/grpc/
 $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2127,7 +2140,7 @@ $(GENDIR)/src/proto/grpc/testing/echo.pb.cc: src/proto/grpc/testing/echo.proto $
 $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2142,7 +2155,7 @@ $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc: src/proto/grpc/testing/ech
 $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2157,7 +2170,7 @@ $(GENDIR)/src/proto/grpc/testing/empty.pb.cc: src/proto/grpc/testing/empty.proto
 $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2172,7 +2185,7 @@ $(GENDIR)/src/proto/grpc/testing/messages.pb.cc: src/proto/grpc/testing/messages
 $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2187,7 +2200,7 @@ $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc: src/proto/grpc/testing/metrics.p
 $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2202,7 +2215,7 @@ $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc: src/proto/grpc/testing/payloads
 $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2217,7 +2230,7 @@ $(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2232,7 +2245,7 @@ $(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto
 $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2247,7 +2260,7 @@ $(GENDIR)/src/proto/grpc/testing/test.pb.cc: src/proto/grpc/testing/test.proto $
 $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 
@@ -2443,9 +2456,6 @@ endif
 
 
 install-plugins: $(PROTOC_PLUGINS)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) false
-else
 	$(E) "[INSTALL] Installing grpc protoc plugins"
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
@@ -2461,7 +2471,6 @@ else
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
-endif
 
 install-pkg-config_c: pc_c pc_c_unsecure
 	$(E) "[INSTALL] Installing C pkg-config files"
@@ -2595,7 +2604,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared gpr.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
@@ -2652,6 +2661,8 @@ LIBGRPC_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -2797,9 +2808,9 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
     src/core/lib/security/util/b64.c \
@@ -2808,6 +2819,7 @@ LIBGRPC_SRC = \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_channel/channel_connectivity.c \
     src/core/ext/client_channel/client_channel.c \
@@ -2827,6 +2839,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -2872,6 +2885,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -2918,7 +2932,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -2954,6 +2968,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3120,9 +3136,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
     src/core/lib/security/util/b64.c \
@@ -3131,6 +3147,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3146,6 +3163,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3192,7 +3210,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -3247,6 +3265,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3367,6 +3387,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3465,6 +3486,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3595,8 +3618,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/client_channel/channel_connectivity.c \
     src/core/ext/client_channel/client_channel.c \
     src/core/ext/client_channel/client_channel_factory.c \
@@ -3656,6 +3681,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3690,7 +3716,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -3904,6 +3930,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -3957,7 +3984,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -4020,6 +4047,184 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
     src/cpp/codegen/codegen_init.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/transport/chttp2/client/chttp2_connector.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/lib/channel/channel_args.c \
+    src/core/lib/channel/channel_stack.c \
+    src/core/lib/channel/channel_stack_builder.c \
+    src/core/lib/channel/compress_filter.c \
+    src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
+    src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
+    src/core/lib/channel/http_client_filter.c \
+    src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/message_size_filter.c \
+    src/core/lib/compression/compression.c \
+    src/core/lib/compression/message_compress.c \
+    src/core/lib/debug/trace.c \
+    src/core/lib/http/format_request.c \
+    src/core/lib/http/httpcli.c \
+    src/core/lib/http/parser.c \
+    src/core/lib/iomgr/closure.c \
+    src/core/lib/iomgr/combiner.c \
+    src/core/lib/iomgr/endpoint.c \
+    src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
+    src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/error.c \
+    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
+    src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/exec_ctx.c \
+    src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/iocp_windows.c \
+    src/core/lib/iomgr/iomgr.c \
+    src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
+    src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
+    src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
+    src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
+    src/core/lib/iomgr/pollset_windows.c \
+    src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
+    src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
+    src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_mutator.c \
+    src/core/lib/iomgr/socket_utils_common_posix.c \
+    src/core/lib/iomgr/socket_utils_hpux.c \
+    src/core/lib/iomgr/socket_utils_linux.c \
+    src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
+    src/core/lib/iomgr/socket_windows.c \
+    src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
+    src/core/lib/iomgr/tcp_client_windows.c \
+    src/core/lib/iomgr/tcp_posix.c \
+    src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
+    src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
+    src/core/lib/iomgr/tcp_windows.c \
+    src/core/lib/iomgr/time_averaged_stats.c \
+    src/core/lib/iomgr/timer_generic.c \
+    src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
+    src/core/lib/iomgr/udp_server.c \
+    src/core/lib/iomgr/unix_sockets_posix.c \
+    src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
+    src/core/lib/iomgr/wakeup_fd_eventfd.c \
+    src/core/lib/iomgr/wakeup_fd_nospecial.c \
+    src/core/lib/iomgr/wakeup_fd_pipe.c \
+    src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
+    src/core/lib/iomgr/workqueue_windows.c \
+    src/core/lib/json/json.c \
+    src/core/lib/json/json_reader.c \
+    src/core/lib/json/json_string.c \
+    src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
+    src/core/lib/surface/alarm.c \
+    src/core/lib/surface/api_trace.c \
+    src/core/lib/surface/byte_buffer.c \
+    src/core/lib/surface/byte_buffer_reader.c \
+    src/core/lib/surface/call.c \
+    src/core/lib/surface/call_details.c \
+    src/core/lib/surface/call_log_batch.c \
+    src/core/lib/surface/channel.c \
+    src/core/lib/surface/channel_init.c \
+    src/core/lib/surface/channel_ping.c \
+    src/core/lib/surface/channel_stack_type.c \
+    src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/metadata_array.c \
+    src/core/lib/surface/server.c \
+    src/core/lib/surface/validate_metadata.c \
+    src/core/lib/surface/version.c \
+    src/core/lib/transport/byte_stream.c \
+    src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
+    src/core/lib/transport/metadata.c \
+    src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/pid_controller.c \
+    src/core/lib/transport/service_config.c \
+    src/core/lib/transport/static_metadata.c \
+    src/core/lib/transport/timeout_encoding.c \
+    src/core/lib/transport/transport.c \
+    src/core/lib/transport/transport_op_string.c \
+    src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
+    src/core/ext/census/base_resources.c \
+    src/core/ext/census/context.c \
+    src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
+    src/core/ext/census/grpc_context.c \
+    src/core/ext/census/grpc_filter.c \
+    src/core/ext/census/grpc_plugin.c \
+    src/core/ext/census/initialize.c \
+    src/core/ext/census/mlog.c \
+    src/core/ext/census/operation.c \
+    src/core/ext/census/placeholders.c \
+    src/core/ext/census/resource.c \
+    src/core/ext/census/trace_context.c \
+    src/core/ext/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
@@ -4095,6 +4300,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4109,6 +4315,16 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/byte_buffer.h \
+    include/grpc/byte_buffer_reader.h \
+    include/grpc/compression.h \
+    include/grpc/grpc.h \
+    include/grpc/grpc_posix.h \
+    include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
+    include/grpc/status.h \
+    include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
 
@@ -4148,7 +4364,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_cronet.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_cronet-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_cronet-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -4275,7 +4491,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_reflection.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -4448,6 +4664,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4626,6 +4843,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
@@ -4669,7 +4887,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
@@ -4795,6 +5013,59 @@ endif
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_PLUGIN_SUPPORT_OBJS:.o=.dep)
 endif
+
+
+LIBHTTP2_CLIENT_MAIN_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
+    test/cpp/interop/http2_client.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBHTTP2_CLIENT_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBHTTP2_CLIENT_MAIN_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: openssl_dep_error
+
+
+else
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBHTTP2_CLIENT_MAIN_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBHTTP2_CLIENT_MAIN_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
+endif
+
+
+
+
+endif
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBHTTP2_CLIENT_MAIN_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/http2_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 LIBINTEROP_CLIENT_HELPER_SRC = \
@@ -5163,7 +5434,7 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared grpc_csharp_ext.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
@@ -6865,43 +7136,30 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBGOOGLE_BENCHMARK_SRC = \
-    third_party/google_benchmark/src/benchmark.cc \
-    third_party/google_benchmark/src/benchmark_register.cc \
-    third_party/google_benchmark/src/colorprint.cc \
-    third_party/google_benchmark/src/commandlineflags.cc \
-    third_party/google_benchmark/src/complexity.cc \
-    third_party/google_benchmark/src/console_reporter.cc \
-    third_party/google_benchmark/src/csv_reporter.cc \
-    third_party/google_benchmark/src/json_reporter.cc \
-    third_party/google_benchmark/src/reporter.cc \
-    third_party/google_benchmark/src/sleep.cc \
-    third_party/google_benchmark/src/string_util.cc \
-    third_party/google_benchmark/src/sysinfo.cc \
-    third_party/google_benchmark/src/timers.cc \
+LIBBENCHMARK_SRC = \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBGOOGLE_BENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGOOGLE_BENCHMARK_SRC))))
+LIBBENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBENCHMARK_SRC))))
 
-$(LIBGOOGLE_BENCHMARK_OBJS): CPPFLAGS += -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
+$(LIBBENCHMARK_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libbenchmark.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBGOOGLE_BENCHMARK_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBGOOGLE_BENCHMARK_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
 
 
@@ -6910,7 +7168,7 @@ endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBGOOGLE_BENCHMARK_OBJS:.o=.dep)
+-include $(LIBBENCHMARK_OBJS:.o=.dep)
 endif
 
 
@@ -11603,16 +11861,16 @@ $(BINDIR)/$(CONFIG)/bm_fullstack: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/bm_fullstack: $(PROTOBUF_DEP) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/bm_fullstack: $(PROTOBUF_DEP) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack.o:  $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_bm_fullstack: $(BM_FULLSTACK_OBJS:.o=.dep)
 
@@ -12755,6 +13013,37 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/http2_client: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/http2_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/http2_client:  $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/http2_client
+
+endif
+
+endif
+
+
+
+
 HYBRID_END2END_TEST_SRC = \
     test/cpp/end2end/hybrid_end2end_test.cc \
 
@@ -13059,16 +13348,16 @@ $(BINDIR)/$(CONFIG)/noop-benchmark: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/noop-benchmark: $(PROTOBUF_DEP) $(NOOP-BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
+$(BINDIR)/$(CONFIG)/noop-benchmark: $(PROTOBUF_DEP) $(NOOP-BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(NOOP-BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/noop-benchmark
+	$(Q) $(LDXX) $(LDFLAGS) $(NOOP-BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/noop-benchmark
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/noop-benchmark.o:  $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/noop-benchmark.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a
 
 deps_noop-benchmark: $(NOOP-BENCHMARK_OBJS:.o=.dep)
 
@@ -16634,9 +16923,9 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/handshake.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/security_handshaker.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
 src/core/lib/security/util/b64.c: $(OPENSSL_DEP)
@@ -16672,6 +16961,7 @@ test/core/util/test_tcp_server.c: $(OPENSSL_DEP)
 test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)
+test/cpp/interop/http2_client.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_server.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_server_bootstrap.cc: $(OPENSSL_DEP)

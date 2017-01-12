@@ -393,7 +393,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_MUST_USE_RESULT
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define GRPC_MUST_USE_RESULT
