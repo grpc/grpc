@@ -39,10 +39,12 @@ protoc --proto_path=src/proto/math \
 
 # replace the Empty message with EmptyMessage
 # because Empty is a PHP reserved word
-sed -i 's/message Empty/message EmptyMessage/g' \
-    src/proto/grpc/testing/empty.proto
-sed -i 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
-    src/proto/grpc/testing/test.proto
+sed 's/message Empty/message EmptyMessage/g' \
+  src/proto/grpc/testing/empty.proto > empty.proto
+mv empty.proto ./src/proto/grpc/testing
+sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
+  src/proto/grpc/testing/test.proto > test.proto
+mv test.proto ./src/proto/grpc/testing
 
 protoc --proto_path=. \
        --php_out=src/php/tests/interop \
@@ -53,7 +55,10 @@ protoc --proto_path=. \
        src/proto/grpc/testing/test.proto
 
 # change it back
-sed -i 's/message EmptyMessage/message Empty/g' \
-    src/proto/grpc/testing/empty.proto
-sed -i 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
-    src/proto/grpc/testing/test.proto
+sed 's/message EmptyMessage/message Empty/g' \
+  src/proto/grpc/testing/empty.proto > empty.proto
+mv empty.proto ./src/proto/grpc/testing
+sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
+  src/proto/grpc/testing/test.proto > test.proto
+mv test.proto ./src/proto/grpc/testing
+
