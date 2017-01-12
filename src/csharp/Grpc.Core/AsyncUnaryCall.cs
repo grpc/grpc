@@ -49,7 +49,7 @@ namespace Grpc.Core
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        internal AsyncUnaryCall(Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        public AsyncUnaryCall(Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.responseAsync = responseAsync;
             this.responseHeadersAsync = responseHeadersAsync;
