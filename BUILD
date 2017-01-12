@@ -1117,7 +1117,7 @@ grpc_cc_library(
         "include/grpc++/generic/async_generic_service.h",
         "include/grpc++/generic/generic_stub.h",
         "include/grpc++/grpc++.h",
-        "include/grpc++/health_check_service_interfac.h",
+        "include/grpc++/health_check_service_interface.h",
         "include/grpc++/impl/call.h",
         "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/codegen/core_codegen.h",
