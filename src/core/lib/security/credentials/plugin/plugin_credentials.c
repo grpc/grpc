@@ -65,7 +65,9 @@ static void plugin_md_request_metadata_ready(void *request,
                                              grpc_status_code status,
                                              const char *error_details) {
   /* called from application code */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INITIALIZER(
+      GRPC_EXEC_CTX_FLAG_IS_FINISHED | GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP,
+      NULL, NULL);
   grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *)request;
   if (status != GRPC_STATUS_OK) {
     if (error_details != NULL) {

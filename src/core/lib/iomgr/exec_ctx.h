@@ -43,6 +43,13 @@
 typedef struct grpc_workqueue grpc_workqueue;
 typedef struct grpc_combiner grpc_combiner;
 
+/* This exec_ctx is ready to return: either pre-populated, or cached as soon as
+   the finish_check returns true */
+#define GRPC_EXEC_CTX_FLAG_IS_FINISHED 1
+/* The exec_ctx's thread is (potentially) owned by a call or channel: care
+   should be given to not delete said call/channel from this exec_ctx */
+#define GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP 2
+
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -69,20 +76,20 @@ struct grpc_exec_ctx {
   grpc_combiner *active_combiner;
   /** last active combiner in the active combiner list */
   grpc_combiner *last_combiner;
-  bool cached_ready_to_finish;
+  uintptr_t flags;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
 /* initializer for grpc_exec_ctx:
    prefer to use GRPC_EXEC_CTX_INIT whenever possible */
-#define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, NULL, NULL, false, finish_check_arg, finish_check }
+#define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg) \
+  { GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, finish_check_arg, finish_check }
 
 /* initialize an execution context at the top level of an API call into grpc
    (this is safe to use elsewhere, though possibly not as efficient) */
 #define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_always_ready_to_finish, NULL)
+  GRPC_EXEC_CTX_INITIALIZER(GRPC_EXEC_CTX_FLAG_IS_FINISHED, NULL, NULL)
 
 extern grpc_closure_scheduler *grpc_schedule_on_exec_ctx;
 

@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
@@ -69,6 +70,16 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
+    if (exec_ctx->flags & GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
+      /* Ick.
+         The thread we're running on MAY be owned (indirectly) by a call-stack.
+         If that's the case, destroying the call-stack MAY try to destroy the
+         thread, which is a tangled mess that we just don't want to ever have to
+         cope with.
+         Throw this over to the executor (on a core-owned thread) and process it
+         there. */
+      refcount->destroy.scheduler = grpc_executor_scheduler;
+    }
     grpc_closure_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }
 }
