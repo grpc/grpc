@@ -409,6 +409,7 @@ class ClientImpl : public Client {
       // old compilers happy with using this in std::vector
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
+      set_channel_args(config, &args);
       channel_ = CreateTestChannel(
           target, config.security_params().server_host_override(),
           config.has_security_params(), !config.security_params().use_test_ca(),
@@ -423,6 +424,18 @@ class ClientImpl : public Client {
     StubType* get_stub() { return stub_.get(); }
 
    private:
+    void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
+      for (auto channel_arg : config.channel_args()) {
+        if (channel_arg.value_case() == ChannelArg::kStrValue) {
+          args->SetString(channel_arg.name(), channel_arg.str_value());
+        } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
+          args->SetInt(channel_arg.name(), channel_arg.int_value());
+        } else {
+          gpr_log(GPR_ERROR, "Empty channel arg value.");
+        }
+      }
+    }
+
     std::shared_ptr<Channel> channel_;
     std::unique_ptr<StubType> stub_;
   };
