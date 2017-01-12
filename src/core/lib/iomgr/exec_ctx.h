@@ -63,7 +63,6 @@ typedef struct grpc_combiner grpc_combiner;
  *  - Instances are always passed as the first argument to a function that
  *    takes it, and always as a pointer (grpc_exec_ctx is never copied).
  */
-#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
   /** currently active combiner: updated only via combiner.c */
@@ -79,15 +78,6 @@ struct grpc_exec_ctx {
    prefer to use GRPC_EXEC_CTX_INIT whenever possible */
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
   { GRPC_CLOSURE_LIST_INIT, NULL, NULL, false, finish_check_arg, finish_check }
-#else
-struct grpc_exec_ctx {
-  bool cached_ready_to_finish;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
-};
-#define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { false, finish_check_arg, finish_check }
-#endif
 
 /* initialize an execution context at the top level of an API call into grpc
    (this is safe to use elsewhere, though possibly not as efficient) */
