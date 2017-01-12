@@ -482,6 +482,7 @@ PHP_METHOD(Call, startBatch) {
       gpr_free(status_details_text);
       add_property_zval(result, "status", recv_status);
       PHP_GRPC_DELREF(recv_status);
+      PHP_GRPC_FREE_STD_ZVAL(recv_status);
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       add_property_bool(result, "cancelled", cancelled);
@@ -504,6 +505,7 @@ cleanup:
     }
     if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
       grpc_byte_buffer_destroy(message);
+      PHP_GRPC_FREE_STD_ZVAL(message_str);
     }
   }
   RETURN_DESTROY_ZVAL(result);

@@ -263,7 +263,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
     // Setup server
     ServerBuilder builder;
-    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
+        GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
@@ -292,8 +293,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds =
-        GetChannelCredentials(GetParam().credentials_type, &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+        GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
         CreateCustomChannel(server_address_.str(), channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
@@ -901,8 +902,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  auto channel_creds =
-      GetChannelCredentials(GetParam().credentials_type, &args);
+  auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+      GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       CreateCustomChannel(server_address_.str(), channel_creds, args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
@@ -1413,11 +1414,15 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
 
-  credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetSecureCredentialsTypeList();
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
+                                                      nullptr) != nullptr) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
+  GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
   for (int sz = 1; sz < test_big_limit; sz *= 2) {
