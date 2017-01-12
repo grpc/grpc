@@ -64,7 +64,7 @@ abstract class AbstractCall
         $deserialize,
         array $options = []
     ) {
-        if (array_key_exists('timeout', $options) &&
+        if (isset($options['timeout']) &&
             is_numeric($timeout = $options['timeout'])
         ) {
             $now = Timeval::now();
@@ -77,7 +77,7 @@ abstract class AbstractCall
         $this->deserialize = $deserialize;
         $this->metadata = null;
         $this->trailing_metadata = null;
-        if (array_key_exists('call_credentials_callback', $options) &&
+        if (isset($options['call_credentials_callback']) &&
             is_callable($call_credentials_callback =
                 $options['call_credentials_callback'])
         ) {
