@@ -34,6 +34,8 @@
 #ifndef GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 #define GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 
+#include <stddef.h>
+
 struct grpc_memory_counters {
   size_t total_size_relative;
   size_t total_size_absolute;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,50 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_LOG_WINDOWS_H
-#define GRPC_SUPPORT_LOG_WINDOWS_H
+#ifndef GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <memory>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc++/channel.h>
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
-/* Returns a string allocated with gpr_malloc that contains a UTF-8
- * formatted error message, corresponding to the error messageid.
- * Use in conjunction with GetLastError() et al.
- */
-GPRAPI char *gpr_format_message(int messageid);
+namespace grpc {
+namespace testing {
 
-#ifdef __cplusplus
-}
-#endif
+class Http2Client {
+ public:
+  explicit Http2Client(std::shared_ptr<Channel> channel);
+  ~Http2Client() {}
 
-#endif /* GRPC_SUPPORT_LOG_WINDOWS_H */
+  bool DoRstAfterHeader();
+  bool DoRstAfterData();
+  bool DoRstDuringData();
+  bool DoGoaway();
+  bool DoPing();
+  bool DoMaxStreams();
+
+ private:
+  class ServiceStub {
+   public:
+    ServiceStub(std::shared_ptr<Channel> channel);
+
+    TestService::Stub* Get();
+
+   private:
+    std::unique_ptr<TestService::Stub> stub_;
+    std::shared_ptr<Channel> channel_;
+  };
+
+  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  ServiceStub serviceStub_;
+  std::shared_ptr<Channel> channel_;
+};
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H

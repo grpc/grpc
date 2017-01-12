@@ -252,7 +252,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     // Setup server
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
-    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
+        GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
@@ -280,8 +281,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    auto channel_creds =
-        GetChannelCredentials(GetParam().credentials_type, &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+        GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
@@ -1531,11 +1532,18 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   if (test_secure) {
-    credentials_types = GetSecureCredentialsTypeList();
+    credentials_types =
+        GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }
   if (test_insecure) {
-    credentials_types.push_back(kInsecureCredentialsType);
+    // Only add insecure credentials type when it is registered with the
+    // provider. User may create providers that do not have insecure.
+    if (GetCredentialsProvider()->GetChannelCredentials(
+            kInsecureCredentialsType, nullptr) != nullptr) {
+      credentials_types.push_back(kInsecureCredentialsType);
+    }
   }
+  GPR_ASSERT(!credentials_types.empty());
   for (auto it = credentials_types.begin(); it != credentials_types.end();
        ++it) {
     scenarios.emplace_back(false, *it);
@@ -1552,7 +1560,7 @@ INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                false)));
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(true, true,
