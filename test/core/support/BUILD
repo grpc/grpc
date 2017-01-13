@@ -27,8 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
-
 cc_test(
     name = "alloc_test",
     srcs = ["alloc_test.c"],

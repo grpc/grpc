@@ -73,18 +73,32 @@ class H2Factory(twisted.internet.protocol.Factory):
     else:
       return t().get_base_server()
 
+def parse_arguments():
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--base_port', type=int, default=8080,
+    help='base port to run the servers (default: 8080). One test server is '
+    'started on each incrementing port, beginning with base_port, in the '
+    'following order: goaway,max_streams,ping,rst_after_data,rst_after_header,'
+    'rst_during_data'
+    )
+  return parser.parse_args()
+
+def start_test_servers(base_port):
+  """ Start one server per test case on incrementing port numbers
+  beginning with base_port """
+  index = 0
+  for test_case in sorted(_TEST_CASE_MAPPING.keys()):
+    portnum = base_port + index
+    logging.warning('serving on port %d : %s'%(portnum, test_case))
+    endpoint = twisted.internet.endpoints.TCP4ServerEndpoint(
+      twisted.internet.reactor, portnum, backlog=128)
+    endpoint.listen(H2Factory(test_case))
+    index += 1
+
 if __name__ == '__main__':
   logging.basicConfig(
     format='%(levelname) -10s %(asctime)s %(module)s:%(lineno)s | %(message)s',
     level=logging.INFO)
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--test_case', choices=sorted(_TEST_CASE_MAPPING.keys()),
-    help='test case to run', required=True)
-  parser.add_argument('--port', type=int, default=8080,
-    help='port to run the server (default: 8080)')
-  args = parser.parse_args()
-  logging.info('Running test case %s on port %d' % (args.test_case, args.port))
-  endpoint = twisted.internet.endpoints.TCP4ServerEndpoint(
-    twisted.internet.reactor, args.port, backlog=128)
-  endpoint.listen(H2Factory(args.test_case))
+  args = parse_arguments()
+  start_test_servers(args.base_port)
   twisted.internet.reactor.run()
