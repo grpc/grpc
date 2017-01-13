@@ -54,7 +54,7 @@
           'GRPC_UV'
         ]
       }],
-      ['runtime=="electron"', {
+      ['OS!="win" && runtime=="electron"', {
         "defines": [
           'OPENSSL_NO_THREADS'
         ]
