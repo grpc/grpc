@@ -56,14 +56,18 @@
             'GRPC_UV'
           ]
         }],
+        ['runtime=="electron"', {
+          "defines": [
+            'OPENSSL_NO_THREADS'
+          ]
+        }],
         # This is the condition for using boringssl
         ['OS=="win" or runtime=="electron"', {
           "include_dirs": [
             "third_party/boringssl/include"
           ],
           "defines": [
-            'OPENSSL_NO_ASM',
-            'OPENSSL_NO_THREADS'
+            'OPENSSL_NO_ASM'
           ]
         }, {
           # Based on logic above, we know that this must be a non-Windows system
