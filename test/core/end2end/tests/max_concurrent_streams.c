@@ -678,9 +678,9 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   /* perform a ping-pong to ensure that settings have had a chance to round
      trip */
-  simple_request_body(config, f);
+  simple_request_body(f);
   /* perform another one to make sure that the one stream case still works */
-  simple_request_body(config, f);
+  simple_request_body(f);
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes , and the second request will timeout in the
@@ -730,8 +730,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
+  cq_expect_completion(cqv, tag(101), 1);
+  cq_expect_completion(cqv, tag(301), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -767,8 +767,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the second request is time out*/
-  CQ_EXPECT_COMPLETION(cqv, tag(401), 0);
-  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
+  cq_expect_completion(cqv, tag(401), 0);
+  cq_expect_completion(cqv, tag(402), 1);
   cq_verify(cqv);
 
   /* second request is finished because of time out, so destroy the second call
@@ -798,8 +798,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(302), 1);
+  cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
 
   cq_verifier_destroy(cqv);
