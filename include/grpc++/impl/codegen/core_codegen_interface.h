@@ -56,7 +56,8 @@ namespace grpc {
 class CoreCodegenInterface {
  public:
   /// Upon a failed assertion, log the error.
-  virtual void assert_fail(const char* failed_assertion) = 0;
+  virtual void assert_fail(const char* failed_assertion, const char* file,
+                           int line) = 0;
 
   virtual grpc_completion_queue* grpc_completion_queue_create(
       void* reserved) = 0;
@@ -117,11 +118,11 @@ class CoreCodegenInterface {
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Codegen specific version of \a GPR_ASSERT.
-#define GPR_CODEGEN_ASSERT(x)                          \
-  do {                                                 \
-    if (!(x)) {                                        \
-      grpc::g_core_codegen_interface->assert_fail(#x); \
-    }                                                  \
+#define GPR_CODEGEN_ASSERT(x)                                              \
+  do {                                                                     \
+    if (!(x)) {                                                            \
+      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
+    }                                                                      \
   } while (0)
 
 }  // namespace grpc

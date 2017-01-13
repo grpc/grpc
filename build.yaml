@@ -254,6 +254,7 @@ filegroups:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -834,6 +835,7 @@ filegroups:
   - include/grpc++/impl/codegen/server_context.h
   - include/grpc++/impl/codegen/server_interface.h
   - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/slice.h
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
   - include/grpc++/impl/codegen/status_helper.h
@@ -1232,6 +1234,22 @@ libs:
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
   - protoc
+- name: http2_client_main
+  build: private
+  language: c++
+  headers:
+  - test/cpp/interop/http2_client.h
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/http2_client.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
 - name: interop_client_helper
   build: private
   language: c++
@@ -1274,6 +1292,7 @@ libs:
   src:
   - test/cpp/interop/server_helper.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -3206,6 +3225,22 @@ targets:
   - grpc++
   - grpc++_test_util
   - grpc_test_util
+- name: http2_client
+  build: test
+  run: false
+  language: c++
+  src: []
+  deps:
+  - http2_client_main
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -3707,36 +3742,6 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  easan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=address
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
-  edbg:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-  etsan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=thread
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type

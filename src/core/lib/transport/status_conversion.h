@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
+#define GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
 
 #include <grpc/grpc.h>
 #include "src/core/lib/transport/http2_errors.h"
@@ -46,4 +46,4 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
 grpc_status_code grpc_http2_status_to_grpc_status(int status);
 int grpc_status_to_http2_status(grpc_status_code status);
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H */

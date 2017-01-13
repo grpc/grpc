@@ -43,6 +43,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -234,9 +235,9 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
   grpc_call *call = grpc_channel_create_call_internal(
       &exec_ctx, channel, parent_call, propagation_mask, cq, NULL,
       grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_PATH,
-                              grpc_slice_ref(method)),
+                              grpc_slice_ref_internal(method)),
       host != NULL ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref(*host))
+                                             grpc_slice_ref_internal(*host))
                    : GRPC_MDNULL,
       deadline);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -251,9 +252,9 @@ grpc_call *grpc_channel_create_pollset_set_call(
   return grpc_channel_create_call_internal(
       exec_ctx, channel, parent_call, propagation_mask, NULL, pollset_set,
       grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_PATH,
-                              grpc_slice_ref(method)),
+                              grpc_slice_ref_internal(method)),
       host != NULL ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref(*host))
+                                             grpc_slice_ref_internal(*host))
                    : GRPC_MDNULL,
       deadline);
 }

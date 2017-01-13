@@ -94,7 +94,8 @@ class CoreCodegen : public CoreCodegenInterface {
   virtual const Status& ok() override;
   virtual const Status& cancelled() override;
 
-  void assert_fail(const char* failed_assertion) override;
+  void assert_fail(const char* failed_assertion, const char* file,
+                   int line) override;
 };
 
 }  // namespace grpc

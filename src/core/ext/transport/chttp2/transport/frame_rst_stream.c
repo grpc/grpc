@@ -108,7 +108,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
                       (((uint32_t)p->reason_bytes[2]) << 8) |
                       (((uint32_t)p->reason_bytes[3]));
     grpc_error *error = GRPC_ERROR_NONE;
-    if (reason != GRPC_HTTP2_NO_ERROR) {
+    if (reason != GRPC_HTTP2_NO_ERROR || s->header_frames_received < 2) {
       error = grpc_error_set_int(GRPC_ERROR_CREATE("RST_STREAM"),
                                  GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
     }

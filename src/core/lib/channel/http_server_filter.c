@@ -199,12 +199,13 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   }
 
   if (b->idx.named.host != NULL) {
-    add_error(error_name, &error,
-              grpc_metadata_batch_substitute(
-                  exec_ctx, b, b->idx.named.host,
-                  grpc_mdelem_from_slices(
-                      exec_ctx, GRPC_MDSTR_AUTHORITY,
-                      grpc_slice_ref(GRPC_MDVALUE(b->idx.named.host->md)))));
+    add_error(
+        error_name, &error,
+        grpc_metadata_batch_substitute(
+            exec_ctx, b, b->idx.named.host,
+            grpc_mdelem_from_slices(
+                exec_ctx, GRPC_MDSTR_AUTHORITY,
+                grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.host->md)))));
   }
 
   if (b->idx.named.authority == NULL) {
@@ -278,11 +279,11 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_error *error = GRPC_ERROR_NONE;
     static const char *error_name = "Failed sending initial metadata";
     add_error(error_name, &error, grpc_metadata_batch_add_head(
-                                      op->send_initial_metadata, &calld->status,
-                                      GRPC_MDELEM_STATUS_200));
+                                      exec_ctx, op->send_initial_metadata,
+                                      &calld->status, GRPC_MDELEM_STATUS_200));
     add_error(error_name, &error,
               grpc_metadata_batch_add_tail(
-                  op->send_initial_metadata, &calld->content_type,
+                  exec_ctx, op->send_initial_metadata, &calld->content_type,
                   GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC));
     add_error(error_name, &error,
               server_filter_outgoing_metadata(exec_ctx, elem,

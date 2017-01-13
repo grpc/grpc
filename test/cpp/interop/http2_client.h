@@ -31,26 +31,50 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
-#define GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#ifndef GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
 
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include <memory>
 
-/// A utility function to get the status code and message to be returned
-/// to the application.  If not set in the top-level message, looks
-/// through child errors until it finds the first one with these attributes.
-/// All attributes are pulled from the same child error. If any of the
-/// attributes (code, msg, http_status) are unneeded, they can be passed as
-/// NULL.
-void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
-                           grpc_status_code *code, const char **msg,
-                           grpc_http2_error_code *http_status);
+#include <grpc++/channel.h>
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
-/// A utility function to check whether there is a clear status code that
-/// doesn't need to be guessed in \a error. This means that \a error or some
-/// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or
-/// GRPC_ERROR_CANCELLED
-bool grpc_error_has_clear_grpc_status(grpc_error *error);
+namespace grpc {
+namespace testing {
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */
+class Http2Client {
+ public:
+  explicit Http2Client(std::shared_ptr<Channel> channel);
+  ~Http2Client() {}
+
+  bool DoRstAfterHeader();
+  bool DoRstAfterData();
+  bool DoRstDuringData();
+  bool DoGoaway();
+  bool DoPing();
+  bool DoMaxStreams();
+
+ private:
+  class ServiceStub {
+   public:
+    ServiceStub(std::shared_ptr<Channel> channel);
+
+    TestService::Stub* Get();
+
+   private:
+    std::unique_ptr<TestService::Stub> stub_;
+    std::shared_ptr<Channel> channel_;
+  };
+
+  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  ServiceStub serviceStub_;
+  std::shared_ptr<Channel> channel_;
+};
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H

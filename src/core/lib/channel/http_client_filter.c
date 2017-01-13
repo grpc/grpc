@@ -298,8 +298,9 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
             exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
             grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
                                           op->send_message->length));
-        error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
-                                             &calld->payload_bin, payload_bin);
+        error =
+            grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
+                                         &calld->payload_bin, payload_bin);
         if (error != GRPC_ERROR_NONE) return error;
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
@@ -323,21 +324,22 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    error = grpc_metadata_batch_add_head(op->send_initial_metadata,
+    error = grpc_metadata_batch_add_head(exec_ctx, op->send_initial_metadata,
                                          &calld->method, method);
     if (error != GRPC_ERROR_NONE) return error;
-    error = grpc_metadata_batch_add_head(
-        op->send_initial_metadata, &calld->scheme, channeld->static_scheme);
+    error =
+        grpc_metadata_batch_add_head(exec_ctx, op->send_initial_metadata,
+                                     &calld->scheme, channeld->static_scheme);
     if (error != GRPC_ERROR_NONE) return error;
-    error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
+    error = grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
                                          &calld->te_trailers,
                                          GRPC_MDELEM_TE_TRAILERS);
     if (error != GRPC_ERROR_NONE) return error;
     error = grpc_metadata_batch_add_tail(
-        op->send_initial_metadata, &calld->content_type,
+        exec_ctx, op->send_initial_metadata, &calld->content_type,
         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
     if (error != GRPC_ERROR_NONE) return error;
-    error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
+    error = grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
                                          &calld->user_agent,
                                          GRPC_MDELEM_REF(channeld->user_agent));
     if (error != GRPC_ERROR_NONE) return error;

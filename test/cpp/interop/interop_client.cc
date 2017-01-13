@@ -109,7 +109,10 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
 
 UnimplementedService::Stub*
 InteropClient::ServiceStub::GetUnimplementedServiceStub() {
-  return UnimplementedService::NewStub(channel_).get();
+  if (unimplemented_service_stub_ == nullptr) {
+    unimplemented_service_stub_ = UnimplementedService::NewStub(channel_);
+  }
+  return unimplemented_service_stub_.get();
 }
 
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
@@ -943,7 +946,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
-    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    GPR_ASSERT(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
@@ -994,7 +997,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
-    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    GPR_ASSERT(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());

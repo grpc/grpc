@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 static void assert_valid_list(grpc_mdelem_list *list) {
@@ -65,7 +66,8 @@ static void assert_valid_list(grpc_mdelem_list *list) {
 #endif /* NDEBUG */
 }
 
-static void assert_valid_callouts(grpc_metadata_batch *batch) {
+static void assert_valid_callouts(grpc_exec_ctx *exec_ctx,
+                                  grpc_metadata_batch *batch) {
 #ifndef NDEBUG
   for (grpc_linked_mdelem *l = batch->list.head; l != NULL; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
@@ -74,7 +76,7 @@ static void assert_valid_callouts(grpc_metadata_batch *batch) {
     if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
       GPR_ASSERT(batch->idx.array[callout_idx] == l);
     }
-    grpc_slice_unref(key_interned);
+    grpc_slice_unref_internal(exec_ctx, key_interned);
   }
 #endif
 }
@@ -138,12 +140,13 @@ static void maybe_unlink_callout(grpc_metadata_batch *batch,
   batch->idx.array[idx] = NULL;
 }
 
-grpc_error *grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
+grpc_error *grpc_metadata_batch_add_head(grpc_exec_ctx *exec_ctx,
+                                         grpc_metadata_batch *batch,
                                          grpc_linked_mdelem *storage,
                                          grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  return grpc_metadata_batch_link_head(batch, storage);
+  return grpc_metadata_batch_link_head(exec_ctx, batch, storage);
 }
 
 static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -161,25 +164,27 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-grpc_error *grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
+grpc_error *grpc_metadata_batch_link_head(grpc_exec_ctx *exec_ctx,
+                                          grpc_metadata_batch *batch,
                                           grpc_linked_mdelem *storage) {
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
   grpc_error *err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
+    assert_valid_callouts(exec_ctx, batch);
     return err;
   }
   link_head(&batch->list, storage);
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
+grpc_error *grpc_metadata_batch_add_tail(grpc_exec_ctx *exec_ctx,
+                                         grpc_metadata_batch *batch,
                                          grpc_linked_mdelem *storage,
                                          grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  return grpc_metadata_batch_link_tail(batch, storage);
+  return grpc_metadata_batch_link_tail(exec_ctx, batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -198,16 +203,17 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-grpc_error *grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
+grpc_error *grpc_metadata_batch_link_tail(grpc_exec_ctx *exec_ctx,
+                                          grpc_metadata_batch *batch,
                                           grpc_linked_mdelem *storage) {
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
   grpc_error *err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
+    assert_valid_callouts(exec_ctx, batch);
     return err;
   }
   link_tail(&batch->list, storage);
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
   return GRPC_ERROR_NONE;
 }
 
@@ -231,19 +237,19 @@ static void unlink_storage(grpc_mdelem_list *list,
 void grpc_metadata_batch_remove(grpc_exec_ctx *exec_ctx,
                                 grpc_metadata_batch *batch,
                                 grpc_linked_mdelem *storage) {
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
   maybe_unlink_callout(batch, storage);
   unlink_storage(&batch->list, storage);
   GRPC_MDELEM_UNREF(exec_ctx, storage->md);
-  assert_valid_callouts(batch);
+  assert_valid_callouts(exec_ctx, batch);
 }
 
 void grpc_metadata_batch_set_value(grpc_exec_ctx *exec_ctx,
                                    grpc_linked_mdelem *storage,
                                    grpc_slice value) {
   grpc_mdelem old = storage->md;
-  grpc_mdelem new =
-      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref(GRPC_MDKEY(old)), value);
+  grpc_mdelem new = grpc_mdelem_from_slices(
+      exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(old)), value);
   storage->md = new;
   GRPC_MDELEM_UNREF(exec_ctx, old);
 }

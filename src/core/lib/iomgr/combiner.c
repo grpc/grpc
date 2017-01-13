@@ -87,13 +87,17 @@ static void combiner_finally_exec_covered(grpc_exec_ctx *exec_ctx,
                                           grpc_error *error);
 
 static const grpc_closure_scheduler_vtable scheduler_uncovered = {
-    combiner_exec_uncovered, combiner_exec_uncovered};
+    combiner_exec_uncovered, combiner_exec_uncovered,
+    "combiner:immediately:uncovered"};
 static const grpc_closure_scheduler_vtable scheduler_covered = {
-    combiner_exec_covered, combiner_exec_covered};
+    combiner_exec_covered, combiner_exec_covered,
+    "combiner:immediately:covered"};
 static const grpc_closure_scheduler_vtable finally_scheduler_uncovered = {
-    combiner_finally_exec_uncovered, combiner_finally_exec_uncovered};
+    combiner_finally_exec_uncovered, combiner_finally_exec_uncovered,
+    "combiner:finally:uncovered"};
 static const grpc_closure_scheduler_vtable finally_scheduler_covered = {
-    combiner_finally_exec_covered, combiner_finally_exec_covered};
+    combiner_finally_exec_covered, combiner_finally_exec_covered,
+    "combiner:finally:covered"};
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
