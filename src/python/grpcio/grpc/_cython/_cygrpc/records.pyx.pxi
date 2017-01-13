@@ -189,11 +189,11 @@ cdef class CallDetails:
 
   @property
   def method(self):
-    return Slice.from_slice(self.c_details.method).bytes()
+    return Slice.bytes_from_slice(self.c_details.method)
 
   @property
   def host(self):
-    return Slice.from_slice(self.c_details.host).bytes()
+    return Slice.bytes_from_slice(self.c_details.host)
 
   @property
   def deadline(self):
@@ -251,11 +251,15 @@ cdef class Slice:
     self._assign_slice(slice)
     return self
 
-  def bytes(self):
+  @staticmethod
+  cdef bytes bytes_from_slice(grpc_slice slice):
     with nogil:
-      pointer = grpc_slice_start_ptr(self.c_slice)
-      length = grpc_slice_length(self.c_slice)
+      pointer = grpc_slice_start_ptr(slice)
+      length = grpc_slice_length(slice)
     return (<char *>pointer)[:length]
+
+  def bytes(self):
+    return Slice.bytes_from_slice(self.c_slice)
 
   def __dealloc__(self):
     with nogil:
@@ -466,13 +470,14 @@ cdef class _MetadataIterator:
 cdef class Metadata:
 
   def __cinit__(self, metadata):
-    grpc_init()
+    with nogil:
+      grpc_init()
+      grpc_metadata_array_init(&self.c_metadata_array)
+    self.owns_metadata_slices = False
     self.metadata = list(metadata)
-    for metadatum in metadata:
+    for metadatum in self.metadata:
       if not isinstance(metadatum, Metadatum):
         raise TypeError("expected list of Metadatum")
-    with nogil:
-      grpc_metadata_array_init(&self.c_metadata_array)
     self.c_metadata_array.count = len(self.metadata)
     self.c_metadata_array.capacity = len(self.metadata)
     with nogil:
@@ -484,22 +489,42 @@ cdef class Metadata:
           (<Metadatum>self.metadata[i]).c_metadata)
 
   def __dealloc__(self):
-    # this frees the allocated memory for the grpc_metadata_array (although
-    # it'd be nice if that were documented somewhere...)
-    # TODO(atash): document this in the C core
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    grpc_shutdown()
+    with nogil:
+      self._drop_slice_ownership()
+      # this frees the allocated memory for the grpc_metadata_array (although
+      # it'd be nice if that were documented somewhere...)
+      # TODO(atash): document this in the C core
+      grpc_metadata_array_destroy(&self.c_metadata_array)
+      grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
 
   def __getitem__(self, size_t i):
+    if i >= self.c_metadata_array.count:
+      raise IndexError
     return Metadatum(
-        key=Slice.from_slice(self.c_metadata_array.metadata[i].key).bytes(),
-        value=Slice.from_slice(self.c_metadata_array.metadata[i].value).bytes())
+        key=Slice.bytes_from_slice(self.c_metadata_array.metadata[i].key),
+        value=Slice.bytes_from_slice(self.c_metadata_array.metadata[i].value))
 
   def __iter__(self):
     return _MetadataIterator(self)
+
+  cdef void _claim_slice_ownership(self) nogil:
+    if self.owns_metadata_slices:
+      return
+    for i in range(self.c_metadata_array.count):
+      grpc_slice_ref(self.c_metadata_array.metadata[i].key)
+      grpc_slice_ref(self.c_metadata_array.metadata[i].value)
+    self.owns_metadata_slices = True
+
+  cdef void _drop_slice_ownership(self) nogil:
+    if not self.owns_metadata_slices:
+      return
+    for i in range(self.c_metadata_array.count):
+      grpc_slice_unref(self.c_metadata_array.metadata[i].key)
+      grpc_slice_unref(self.c_metadata_array.metadata[i].value)
+    self.owns_metadata_slices = False
 
 
 cdef class Operation:
