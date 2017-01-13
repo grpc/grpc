@@ -731,11 +731,8 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     if (addresses->addresses[i].is_balancer) continue;
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    grpc_arg addr_arg;
-    addr_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
-    addr_arg.type = GRPC_ARG_STRING;
-    addr_arg.value.string =
-        grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+    grpc_arg addr_arg =
+        grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
     grpc_channel_args *new_args =
         grpc_channel_args_copy_and_add(args->args, &addr_arg, 1);
     gpr_free(addr_arg.value.string);

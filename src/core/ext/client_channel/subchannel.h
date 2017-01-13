@@ -174,7 +174,12 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args);
 
-/// Sets \a addr from \a uri_str.
-void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr);
+/// Sets \a addr from \a args.
+void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
+                                     grpc_resolved_address *addr);
+
+/// Returns a new channel arg encoding the subchannel address as a string.
+/// Caller is responsible for freeing the string.
+grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */
