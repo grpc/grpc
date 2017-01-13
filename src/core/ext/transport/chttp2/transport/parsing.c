@@ -336,7 +336,7 @@ static grpc_error *skip_parser(grpc_exec_ctx *exec_ctx, void *parser,
 }
 
 static void skip_header(grpc_exec_ctx *exec_ctx, void *tp, grpc_mdelem *md) {
-  GRPC_MDELEM_UNREF(md);
+  GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
 static grpc_error *init_skip_frame_parser(grpc_exec_ctx *exec_ctx,
@@ -482,7 +482,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &s->metadata_buffer[0],
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), *cached_timeout));
-    GRPC_MDELEM_UNREF(md);
+    GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
     const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
     const size_t metadata_size_limit =
@@ -500,7 +500,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
       grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
       s->seen_error = true;
-      GRPC_MDELEM_UNREF(md);
+      GRPC_MDELEM_UNREF(exec_ctx, md);
     } else {
       grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
     }
@@ -543,7 +543,7 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
     s->seen_error = true;
-    GRPC_MDELEM_UNREF(md);
+    GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[1], md);
   }
@@ -717,7 +717,7 @@ static grpc_error *init_settings_frame_parser(grpc_exec_ctx *exec_ctx,
     memcpy(t->settings[GRPC_ACKED_SETTINGS], t->settings[GRPC_SENT_SETTINGS],
            GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
     grpc_chttp2_hptbl_set_max_bytes(
-        &t->hpack_parser.table,
+        exec_ctx, &t->hpack_parser.table,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
     t->sent_local_settings = 0;

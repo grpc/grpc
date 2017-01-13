@@ -49,6 +49,7 @@
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   uv_tcp_t *tcp_handle;
   grpc_closure *closure;
   grpc_endpoint **endpoint;
@@ -59,7 +60,7 @@ typedef struct grpc_uv_tcp_connect {
 
 static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
                                    grpc_uv_tcp_connect *connect) {
-  grpc_resource_quota_internal_unref(exec_ctx, connect->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, connect->resource_quota);
   gpr_free(connect);
 }
 
@@ -128,8 +129,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_internal_ref(
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       }
     }
@@ -148,9 +149,11 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
                  (const struct sockaddr *)resolved_addr->addr,
                  uv_tc_on_connect);
+  grpc_closure_init(&connect->on_alarm, uv_tc_on_alarm, connect,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &connect->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  uv_tc_on_alarm, connect, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &connect->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // overridden by api_fuzzer.c

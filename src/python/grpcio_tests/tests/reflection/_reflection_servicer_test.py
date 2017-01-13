@@ -75,7 +75,7 @@ class ReflectionServicerTest(unittest.TestCase):
         file_by_filename='i-donut-exist'
       ),
     )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
+    responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
     expected_responses = (
       reflection_pb2.ServerReflectionResponse(
         valid_host='',
@@ -93,7 +93,7 @@ class ReflectionServicerTest(unittest.TestCase):
         )
       ),
     )
-    self.assertEqual(expected_responses, responses)
+    self.assertSequenceEqual(expected_responses, responses)
 
   def testFileBySymbol(self):
     requests = (
@@ -104,7 +104,7 @@ class ReflectionServicerTest(unittest.TestCase):
         file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
       ),
     )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
+    responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
     expected_responses = (
       reflection_pb2.ServerReflectionResponse(
         valid_host='',
@@ -122,7 +122,7 @@ class ReflectionServicerTest(unittest.TestCase):
         )
       ),
     )
-    self.assertEqual(expected_responses, responses)
+    self.assertSequenceEqual(expected_responses, responses)
 
   @unittest.skip('TODO(atash): implement file-containing-extension reflection '
                  '(see https://github.com/google/protobuf/issues/2248)')
@@ -141,7 +141,7 @@ class ReflectionServicerTest(unittest.TestCase):
         ),
       ),
     )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
+    responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
     expected_responses = (
       reflection_pb2.ServerReflectionResponse(
         valid_host='',
@@ -159,7 +159,7 @@ class ReflectionServicerTest(unittest.TestCase):
         )
       ),
     )
-    self.assertEqual(expected_responses, responses)
+    self.assertSequenceEqual(expected_responses, responses)
 
   def testListServices(self):
     requests = (
@@ -167,7 +167,7 @@ class ReflectionServicerTest(unittest.TestCase):
         list_services='',
       ),
     )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
+    responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
     expected_responses = (
       reflection_pb2.ServerReflectionResponse(
         valid_host='',
@@ -179,7 +179,7 @@ class ReflectionServicerTest(unittest.TestCase):
         )
       ),
     )
-    self.assertEqual(expected_responses, responses)
+    self.assertSequenceEqual(expected_responses, responses)
 
 if __name__ == '__main__':
   unittest.main(verbosity=2)

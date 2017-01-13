@@ -74,4 +74,4 @@ double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
 /** Returns the last control value calculated */
 double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
 
-#endif
+#endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */

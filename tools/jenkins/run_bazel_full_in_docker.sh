@@ -1,4 +1,5 @@
-# Copyright 2015, Google Inc.
+#!/usr/bin/env bash
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,33 +27,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Test full Bazel
+#
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-"""Insecure client-server interoperability as a unit test."""
-
-from concurrent import futures
-import unittest
-
-import grpc
-from src.proto.grpc.testing import test_pb2
-
-from tests.interop import _interop_test_case
-from tests.interop import methods
-from tests.interop import server
-
-
-class InsecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2.add_TestServiceServicer_to_server(
-        methods.TestService(), self.server)
-    port = self.server.add_insecure_port('[::]:0')
-    self.server.start()
-    self.stub = test_pb2.TestServiceStub(
-        grpc.insecure_channel('localhost:{}'.format(port)))
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
+cd /var/local/git/grpc/test
+bazel test --spawn_strategy=standalone --genrule_strategy=standalone ...
