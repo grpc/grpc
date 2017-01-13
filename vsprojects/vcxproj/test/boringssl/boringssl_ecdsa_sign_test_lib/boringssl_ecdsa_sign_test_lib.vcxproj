@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B1A55365-89BE-F8C0-61B7-C1C54D38C459}</ProjectGuid>
+    <ProjectGuid>{8F0F763A-31D1-6710-6286-FD91EAC75EDB}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -57,10 +57,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>boringssl_gcm_test_lib</TargetName>
+    <TargetName>boringssl_ecdsa_sign_test_lib</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>boringssl_gcm_test_lib</TargetName>
+    <TargetName>boringssl_ecdsa_sign_test_lib</TargetName>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\gcm_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ecdsa\ecdsa_sign_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
