@@ -231,6 +231,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='electron1.3',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
   return test_jobs
 
 

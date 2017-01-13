@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,32 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_TARGET_ARCH=$1
 source ~/.nvm/nvm.sh
 
-nvm use 4
+nvm use 6
 set -ex
 
-cd $(dirname $0)/../../..
+# change to grpc repo root
+cd $(dirname $0)/../..
 
-rm -rf build || true
+test_directory='src/node/test'
+timeout=8000
 
-mkdir -p artifacts
-
-npm update
-
-node_versions=( 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 7.0.0 )
-
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 )
-
-for version in ${node_versions[@]}
-do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
-done
-
-for version in ${electron_versions[@]}
-do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
-done
+JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
+  ./node_modules/.bin/xvfb-maybe \
+  ./node_modules/.bin/electron-mocha --timeout $timeout \
+  --reporter mocha-jenkins-reporter $test_directory
