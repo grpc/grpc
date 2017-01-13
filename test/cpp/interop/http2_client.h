@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,50 @@
  *
  */
 
-#include <grpc/census.h>
+#ifndef GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
 
-/* TODO(aveitch): These are all placeholder implementations. */
+#include <memory>
 
-int census_trace_mask(const census_context *context) {
-  return CENSUS_TRACE_MASK_NONE;
-}
+#include <grpc++/channel.h>
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
-void census_set_trace_mask(int trace_mask) {}
+namespace grpc {
+namespace testing {
 
-void census_trace_print(census_context *context, uint32_t type,
-                        const char *buffer, size_t n) {}
+class Http2Client {
+ public:
+  explicit Http2Client(std::shared_ptr<Channel> channel);
+  ~Http2Client() {}
+
+  bool DoRstAfterHeader();
+  bool DoRstAfterData();
+  bool DoRstDuringData();
+  bool DoGoaway();
+  bool DoPing();
+  bool DoMaxStreams();
+
+ private:
+  class ServiceStub {
+   public:
+    ServiceStub(std::shared_ptr<Channel> channel);
+
+    TestService::Stub* Get();
+
+   private:
+    std::unique_ptr<TestService::Stub> stub_;
+    std::shared_ptr<Channel> channel_;
+  };
+
+  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  ServiceStub serviceStub_;
+  std::shared_ptr<Channel> channel_;
+};
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
