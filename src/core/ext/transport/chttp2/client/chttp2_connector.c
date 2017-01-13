@@ -43,6 +43,7 @@
 
 #include "src/core/ext/client_channel/connector.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -220,6 +221,11 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
                                      grpc_connect_out_args *result,
                                      grpc_closure *notify) {
   chttp2_connector *c = (chttp2_connector *)con;
+  const grpc_arg *addr_arg =
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  GPR_ASSERT(addr_arg != NULL);  // Should have been set by LB policy.
+  grpc_resolved_address addr;
+  grpc_uri_to_sockaddr(addr_arg->value.string, &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == NULL);
   c->notify = notify;
@@ -231,8 +237,8 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!c->connecting);
   c->connecting = true;
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->endpoint,
-                          args->interested_parties, args->channel_args,
-                          args->addr, args->deadline);
+                          args->interested_parties, args->channel_args, &addr,
+                          args->deadline);
   gpr_mu_unlock(&c->mu);
 }
 
