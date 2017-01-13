@@ -39,23 +39,23 @@
 #include <grpc++/security/server_credentials.h>
 
 #include "src/core/lib/surface/call_test_only.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 DECLARE_bool(use_tls);
+DECLARE_string(custom_credentials_type);
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_use_tls) {
-    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                        test_server1_cert};
-    SslServerCredentialsOptions ssl_opts;
-    ssl_opts.pem_root_certs = "";
-    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-    return SslServerCredentials(ssl_opts);
+  if (!FLAGS_custom_credentials_type.empty()) {
+    return GetCredentialsProvider()->GetServerCredentials(
+        FLAGS_custom_credentials_type);
+  } else if (FLAGS_use_tls) {
+    return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
   } else {
-    return InsecureServerCredentials();
+    return GetCredentialsProvider()->GetServerCredentials(
+        kInsecureCredentialsType);
   }
 }
 
