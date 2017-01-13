@@ -183,6 +183,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.h" role="src" />
@@ -363,6 +365,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.c" role="src" />
