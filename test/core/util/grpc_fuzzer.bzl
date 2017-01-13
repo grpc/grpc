@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,39 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Secure client-server interoperability as a unit test."""
-
-from concurrent import futures
-import unittest
-
-import grpc
-from src.proto.grpc.testing import test_pb2
-
-from tests.interop import _interop_test_case
-from tests.interop import methods
-from tests.interop import resources
-
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
-
-
-class SecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2.add_TestServiceServicer_to_server(
-        methods.TestService(), self.server)
-    port = self.server.add_secure_port(
-        '[::]:0', grpc.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]))
-    self.server.start()
-    self.stub = test_pb2.TestServiceStub(
-        grpc.secure_channel(
-            'localhost:{}'.format(port),
-            grpc.ssl_channel_credentials(resources.test_root_certificates()),
-            (('grpc.ssl_target_name_override', _SERVER_HOST_OVERRIDE,),)))
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
+  native.cc_binary(
+    name = '%s/one_entry.bin' % name,
+    srcs = srcs,
+    deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],
+    **kwargs
+  )
+  for entry in native.glob(['%s/*' % corpus]):
+    native.sh_test(
+      name = '%s/one_entry/%s' % (name, entry),
+      data = [':%s/one_entry.bin' % name, entry],
+      srcs = ['//test/core/util:fuzzer_one_entry_runner'],
+      args = ['$(location :%s/one_entry.bin)' % name, '$(location %s)' % entry]
+    )

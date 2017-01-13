@@ -157,8 +157,8 @@ static void test_create_channel_stack(void) {
 
   GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
 
+  GRPC_MDSTR_UNREF(&exec_ctx, path);
   grpc_exec_ctx_finish(&exec_ctx);
-  GRPC_MDSTR_UNREF(path);
 }
 
 int main(int argc, char **argv) {

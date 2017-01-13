@@ -34,10 +34,10 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
-
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
@@ -96,7 +96,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void *(*copy)(void *p);
-  void (*destroy)(void *p);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *p);
   int (*cmp)(void *p, void *q);
 } grpc_arg_pointer_vtable;
 

@@ -47,10 +47,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
+#include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -146,13 +148,13 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
 
   grpc_endpoint_destroy(exec_ctx, t->ep);
 
-  grpc_slice_buffer_destroy(&t->qbuf);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &t->qbuf);
 
-  grpc_slice_buffer_destroy(&t->outbuf);
-  grpc_chttp2_hpack_compressor_destroy(&t->hpack_compressor);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &t->outbuf);
+  grpc_chttp2_hpack_compressor_destroy(exec_ctx, &t->hpack_compressor);
 
-  grpc_slice_buffer_destroy(&t->read_buffer);
-  grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &t->read_buffer);
+  grpc_chttp2_hpack_parser_destroy(exec_ctx, &t->hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
@@ -266,7 +268,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .integral_range = 10});
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
-  grpc_chttp2_hpack_parser_init(&t->hpack_parser);
+  grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
 
   grpc_slice_buffer_init(&t->read_buffer);
 
@@ -544,9 +546,11 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GPR_ASSERT(s->recv_message_ready == NULL);
   GPR_ASSERT(s->recv_trailing_metadata_finished == NULL);
   grpc_chttp2_data_parser_destroy(exec_ctx, &s->data_parser);
-  grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[0]);
-  grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[1]);
-  grpc_slice_buffer_destroy(&s->flow_controlled_buffer);
+  grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
+                                               &s->metadata_buffer[0]);
+  grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
+                                               &s->metadata_buffer[1]);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &s->flow_controlled_buffer);
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);
 
@@ -781,7 +785,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   char *msg = grpc_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
-  grpc_slice_unref(goaway_text);
+  grpc_slice_unref_internal(exec_ctx, goaway_text);
   t->seen_goaway = 1;
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
@@ -1295,7 +1299,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   if (op->send_goaway) {
     send_goaway(exec_ctx, t,
                 grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
-                grpc_slice_ref(*op->goaway_message));
+                grpc_slice_ref_internal(*op->goaway_message));
   }
 
   if (op->set_accept_stream) {
@@ -1527,21 +1531,22 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     grpc_chttp2_incoming_metadata_buffer_add(
-        &s->metadata_buffer[1],
-        grpc_mdelem_from_metadata_strings(
-            GRPC_MDSTR_GRPC_STATUS, grpc_mdstr_from_string(status_string)));
+        &s->metadata_buffer[1], grpc_mdelem_from_metadata_strings(
+                                    exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                                    grpc_mdstr_from_string(status_string)));
     if (slice) {
       grpc_chttp2_incoming_metadata_buffer_add(
           &s->metadata_buffer[1],
           grpc_mdelem_from_metadata_strings(
-              GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_mdstr_from_slice(grpc_slice_ref(*slice))));
+              exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+              grpc_mdstr_from_slice(exec_ctx,
+                                    grpc_slice_ref_internal(*slice))));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (slice) {
-    grpc_slice_unref(*slice);
+    grpc_slice_unref_internal(exec_ctx, *slice);
   }
 }
 
@@ -1697,8 +1702,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
     if (optional_message != NULL) {
       size_t msg_len = strlen(optional_message);
-      GPR_ASSERT(msg_len < 127);
-      message_pfx = grpc_slice_malloc(15);
+      GPR_ASSERT(msg_len <= UINT32_MAX);
+      uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 0);
+      message_pfx = grpc_slice_malloc(14 + msg_len_len);
       p = GRPC_SLICE_START_PTR(message_pfx);
       *p++ = 0x40;
       *p++ = 12; /* len(grpc-message) */
@@ -1714,7 +1720,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = 'a';
       *p++ = 'g';
       *p++ = 'e';
-      *p++ = (uint8_t)msg_len;
+      GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 0, 0, p,
+                               (uint32_t)msg_len_len);
+      p += msg_len_len;
       GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
       len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
       len += (uint32_t)msg_len;
@@ -1906,7 +1914,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     keep_reading = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
   }
-  grpc_slice_buffer_reset_and_unref(&t->read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &t->read_buffer);
 
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
@@ -2013,7 +2021,7 @@ static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
     GRPC_ERROR_UNREF(bs->error);
-    grpc_slice_buffer_destroy(&bs->slices);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &bs->slices);
     gpr_mu_destroy(&bs->slice_mu);
     gpr_free(bs);
   }

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,38 +27,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Common code for unit tests of the interoperability test code."""
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-from tests.interop import methods
+grpc_fuzzer(
+  name = "api_fuzzer",
+  srcs = ["api_fuzzer.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util", "//test/core/end2end:ssl_test_data"],
+  corpus = "api_fuzzer_corpus",
+  copts = ["-std=c99"],
+)
 
+grpc_fuzzer(
+  name = "client_fuzzer",
+  srcs = ["client_fuzzer.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  corpus = "client_fuzzer_corpus",
+  copts = ["-std=c99"],
+)
 
-class InteropTestCase(object):
-  """Unit test methods.
-
-  This class must be mixed in with unittest.TestCase and a class that defines
-  setUp and tearDown methods that manage a stub attribute.
-  """
-
-  def testEmptyUnary(self):
-    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
-
-  def testLargeUnary(self):
-    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
-
-  def testServerStreaming(self):
-    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
-
-  def testClientStreaming(self):
-    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
-
-  def testPingPong(self):
-    methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
-
-  def testCancelAfterBegin(self):
-    methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
-
-  def testCancelAfterFirstResponse(self):
-    methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)
-
-  def testTimeoutOnSleepingServer(self):
-    methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(self.stub, None)
+grpc_fuzzer(
+  name = "server_fuzzer",
+  srcs = ["server_fuzzer.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  corpus = "server_fuzzer_corpus",
+  copts = ["-std=c99"],
+)

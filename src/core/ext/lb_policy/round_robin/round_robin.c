@@ -284,7 +284,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "rr_destroy");
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
-      sd->user_data_vtable->destroy(sd->user_data);
+      sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
     }
     gpr_free(sd);
   }

@@ -77,9 +77,9 @@
 
 extern int grpc_resource_quota_trace;
 
-grpc_resource_quota *grpc_resource_quota_internal_ref(
+grpc_resource_quota *grpc_resource_quota_ref_internal(
     grpc_resource_quota *resource_quota);
-void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
+void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_resource_quota *resource_quota);
 grpc_resource_quota *grpc_resource_quota_from_channel_args(
     const grpc_channel_args *channel_args);

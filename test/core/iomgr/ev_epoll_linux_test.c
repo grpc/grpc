@@ -237,7 +237,11 @@ int main(int argc, char **argv) {
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }
-  grpc_iomgr_shutdown();
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

@@ -200,6 +200,7 @@ module GRPC
             if is_client
               batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
               @call.status = batch_result.status
+              @call.trailing_metadata = @call.status.metadata if @call.status
               batch_result.check_status
               GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
             end
