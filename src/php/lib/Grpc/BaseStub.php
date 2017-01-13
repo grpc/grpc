@@ -271,7 +271,7 @@ class BaseStub
      * @return ClientStreamingSurfaceActiveCall The active call object
      */
     public function _clientStreamRequest($method,
-                                         callable $deserialize,
+                                         $deserialize,
                                          array $metadata = [],
                                          array $options = [])
     {
@@ -307,7 +307,7 @@ class BaseStub
      */
     public function _serverStreamRequest($method,
                                          $argument,
-                                         callable $deserialize,
+                                         $deserialize,
                                          array $metadata = [],
                                          array $options = [])
     {
@@ -340,7 +340,7 @@ class BaseStub
      * @return BidiStreamingSurfaceActiveCall The active call object
      */
     public function _bidiRequest($method,
-                                 callable $deserialize,
+                                 $deserialize,
                                  array $metadata = [],
                                  array $options = [])
     {
