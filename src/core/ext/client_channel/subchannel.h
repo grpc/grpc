@@ -40,6 +40,9 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
+// Channel arg containing a grpc_resolved_address to connect to.
+#define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
+
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
@@ -164,13 +167,14 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
-  /** Address to connect to */
-  grpc_resolved_address *addr;
 };
 
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args);
+
+/// Sets \a addr from \a uri_str.
+void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */
