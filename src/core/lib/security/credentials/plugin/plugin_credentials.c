@@ -35,20 +35,22 @@
 
 #include <string.h>
 
-#include "src/core/lib/surface/api_trace.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/api_trace.h"
+
 typedef struct {
   void *user_data;
   grpc_credentials_metadata_cb cb;
 } grpc_metadata_plugin_request;
 
-static void plugin_destruct(grpc_call_credentials *creds) {
+static void plugin_destruct(grpc_exec_ctx *exec_ctx,
+                            grpc_call_credentials *creds) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
   if (c->plugin.state != NULL && c->plugin.destroy != NULL) {
     c->plugin.destroy(c->plugin.state);
@@ -100,8 +102,8 @@ static void plugin_md_request_metadata_ready(void *request,
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);
       for (i = 0; i < num_md; i++) {
-        grpc_slice_unref(md_array[i].key);
-        grpc_slice_unref(md_array[i].value);
+        grpc_slice_unref_internal(&exec_ctx, md_array[i].key);
+        grpc_slice_unref_internal(&exec_ctx, md_array[i].value);
       }
       gpr_free(md_array);
     } else if (num_md == 0) {

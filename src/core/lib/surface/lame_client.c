@@ -55,14 +55,15 @@ typedef struct {
   const char *error_message;
 } channel_data;
 
-static void fill_metadata(grpc_call_element *elem, grpc_metadata_batch *mdb) {
+static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                          grpc_metadata_batch *mdb) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_strings("grpc-status", tmp);
+  calld->status.md = grpc_mdelem_from_strings(exec_ctx, "grpc-status", tmp);
   calld->details.md =
-      grpc_mdelem_from_strings("grpc-message", chand->error_message);
+      grpc_mdelem_from_strings(exec_ctx, "grpc-message", chand->error_message);
   calld->status.prev = calld->details.next = NULL;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;
@@ -76,9 +77,9 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                            grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->recv_initial_metadata != NULL) {
-    fill_metadata(elem, op->recv_initial_metadata);
+    fill_metadata(exec_ctx, elem, op->recv_initial_metadata);
   } else if (op->recv_trailing_metadata != NULL) {
-    fill_metadata(elem, op->recv_trailing_metadata);
+    fill_metadata(exec_ctx, elem, op->recv_trailing_metadata);
   }
   grpc_transport_stream_op_finish_with_failure(
       exec_ctx, op, GRPC_ERROR_CREATE("lame client channel"));
@@ -98,16 +99,16 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->on_connectivity_state_change) {
     GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_SHUTDOWN);
     *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
-    grpc_exec_ctx_sched(exec_ctx, op->on_connectivity_state_change,
-                        GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, op->on_connectivity_state_change,
+                       GRPC_ERROR_NONE);
   }
   if (op->send_ping != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, op->send_ping,
-                        GRPC_ERROR_CREATE("lame client channel"), NULL);
+    grpc_closure_sched(exec_ctx, op->send_ping,
+                       GRPC_ERROR_CREATE("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
   }
 }
 
