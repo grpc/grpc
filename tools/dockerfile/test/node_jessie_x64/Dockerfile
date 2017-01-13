@@ -42,18 +42,12 @@ RUN apt-get update && apt-get install -y \
   git \
   golang \
   gyp \
-  libasound2 \
   lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libgconf-2-4 \
   libgtest-dev \
-  libgtk2.0-0 \
-  libnss3 \
   libtool \
-  libxss1\
-  libxtst6 \
   make \
   perl \
   strace \
@@ -63,12 +57,22 @@ RUN apt-get update && apt-get install -y \
   telnet \
   unzip \
   wget \
-  xvfb \
   zip && apt-get clean
 
 #================
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
+
+
+# Install Electron apt dependencies
+RUN apt-get update && apt-get install -y \
+  libasound \
+  libgconf-2-4 \
+  libgtk2.0-0 \
+  libnss3 \
+  libxss1 \
+  libxtst6 \
+  xvfb
 
 #====================
 # Python dependencies
