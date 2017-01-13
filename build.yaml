@@ -3851,7 +3851,6 @@ node_modules:
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
   - src/node/ext/completion_queue.h
-  - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
   - src/node/ext/timeval.h
@@ -3870,8 +3869,8 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue.cc
-  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/completion_queue_threadpool.cc
+  - src/node/ext/completion_queue_uv.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
