@@ -716,7 +716,9 @@ Procedure:
 
     ```
     {
-      response_size: 314159
+      response_parameters:{
+        size: 314159
+      }
       payload:{
         body: 271828 bytes of zeros
       }

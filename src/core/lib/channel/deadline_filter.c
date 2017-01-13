@@ -41,6 +41,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 //
 // grpc_deadline_state
@@ -58,7 +59,7 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice msg = grpc_slice_from_static_string("Deadline Exceeded");
     grpc_call_element_send_cancel_with_message(
         exec_ctx, elem, GRPC_STATUS_DEADLINE_EXCEEDED, &msg);
-    grpc_slice_unref(msg);
+    grpc_slice_unref_internal(exec_ctx, msg);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
@@ -82,8 +83,11 @@ static void start_timer_if_needed_locked(grpc_exec_ctx* exec_ctx,
     // Take a reference to the call stack, to be owned by the timer.
     GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
     deadline_state->timer_pending = true;
-    grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, timer_callback,
-                    elem, gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_closure_init(&deadline_state->timer_callback, timer_callback, elem,
+                      grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &deadline_state->timer, deadline,
+                    &deadline_state->timer_callback,
+                    gpr_now(GPR_CLOCK_MONOTONIC));
   }
 }
 static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
@@ -123,7 +127,8 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
                                   grpc_transport_stream_op* op) {
   deadline_state->next_on_complete = op->on_complete;
-  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state);
+  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state,
+                    grpc_schedule_on_exec_ctx);
   op->on_complete = &deadline_state->on_complete;
 }
 
@@ -172,8 +177,9 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     struct start_timer_after_init_state* state = gpr_malloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
-    grpc_closure_init(&state->closure, start_timer_after_init, state);
-    grpc_exec_ctx_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_init(&state->closure, start_timer_after_init, state,
+                      grpc_schedule_on_exec_ctx);
+    grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -290,7 +296,8 @@ static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
       calld->next_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
       calld->recv_initial_metadata = op->recv_initial_metadata;
       grpc_closure_init(&calld->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, elem);
+                        recv_initial_metadata_ready, elem,
+                        grpc_schedule_on_exec_ctx);
       op->recv_initial_metadata_ready = &calld->recv_initial_metadata_ready;
     }
     // Make sure we know when the call is complete, so that we can cancel

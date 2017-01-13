@@ -147,6 +147,7 @@ DEFINE_bool(do_not_abort_on_transient_failures, true,
 // Options from client.cc (for compatibility with interop test).
 // TODO(sreek): Consolidate overlapping options
 DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
