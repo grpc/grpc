@@ -36,43 +36,12 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-/// A server handshaker factory is used to create handshakers for server
-/// connections.
-typedef struct grpc_chttp2_server_handshaker_factory
-    grpc_chttp2_server_handshaker_factory;
-
-typedef struct {
-  void (*add_handshakers)(
-      grpc_exec_ctx *exec_ctx,
-      grpc_chttp2_server_handshaker_factory *handshaker_factory,
-      grpc_handshake_manager *handshake_mgr);
-  void (*destroy)(grpc_exec_ctx *exec_ctx,
-                  grpc_chttp2_server_handshaker_factory *handshaker_factory);
-} grpc_chttp2_server_handshaker_factory_vtable;
-
-struct grpc_chttp2_server_handshaker_factory {
-  const grpc_chttp2_server_handshaker_factory_vtable *vtable;
-};
-
-void grpc_chttp2_server_handshaker_factory_add_handshakers(
-    grpc_exec_ctx *exec_ctx,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory,
-    grpc_handshake_manager *handshake_mgr);
-
-void grpc_chttp2_server_handshaker_factory_destroy(
-    grpc_exec_ctx *exec_ctx,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory);
-
 /// Adds a port to \a server.  Sets \a port_num to the port number.
-/// If \a handshaker_factory is not NULL, it will be used to create
-/// handshakers for the port.
-/// Takes ownership of \a args and \a handshaker_factory.
-grpc_error *grpc_chttp2_server_add_port(
-    grpc_exec_ctx *exec_ctx, grpc_server *server, const char *addr,
-    grpc_channel_args *args,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory, int *port_num);
+/// Takes ownership of \a args.
+grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
+                                        grpc_server *server, const char *addr,
+                                        grpc_channel_args *args, int *port_num);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */
