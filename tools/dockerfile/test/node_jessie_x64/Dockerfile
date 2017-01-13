@@ -66,7 +66,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Install Electron apt dependencies
 RUN apt-get update && apt-get install -y \
-  libasound \
+  libasound2 \
   libgconf-2-4 \
   libgtk2.0-0 \
   libnss3 \
