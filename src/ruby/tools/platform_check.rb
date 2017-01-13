@@ -27,19 +27,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This is based on http://stackoverflow.com/a/171011/159388 by Aaron Hinni
-
 require 'rbconfig'
 
-module OS
-  def OS.os_name
+# This is based on http://stackoverflow.com/a/171011/159388 by Aaron Hinni
+
+module PLATFORM
+  def PLATFORM.os_name
     case RbConfig::CONFIG['host_os']
-    when /cygwin|mswin|mingw|bccwin|wince|emx/
-      'windows'
-    when /darwin/
-      'macos'
-    else
-      'linux'
+      when /cygwin|mswin|mingw|bccwin|wince|emx/
+        'windows'
+      when /darwin/
+        'macos'
+      else
+        'linux'
+    end
+  end
+
+  def PLATFORM.architecture
+    case RbConfig::CONFIG['host_cpu']
+      when /x86_64/
+        'x86_64'
+      else
+        'x86'
     end
   end
 end
