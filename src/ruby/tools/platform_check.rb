@@ -42,15 +42,13 @@ module PLATFORM
         'linux'
     end
   end
-  
+
   def PLATFORM.architecture
-    case RbConfig::CONFIG['target_cpu']
+    case RbConfig::CONFIG['host_cpu']
       when /x86_64/
         'x86_64'
-      when /x86|i386/
-        'x86'
       else
-        fail 'cpu architecture detection failed'
+        'x86'
     end
   end
 end
