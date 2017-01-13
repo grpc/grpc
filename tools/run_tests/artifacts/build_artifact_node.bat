@@ -51,7 +51,7 @@ for %%v in (%node_versions%) do (
 )
 
 for %%v in (%electron_versions%) do (
-  call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package testpackage --runtime=electron --target=%%v --target_arch=%1 || goto :error
+  cmd /V /C "set "HOME=%HOMEDRIVE%%HOMEPATH%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package testpackage --runtime=electron --target=%%v --target_arch=%1 --disturl=https://atom.io/download/electron" || goto :error
 
   xcopy /Y /I /S build\stage\* artifacts\ || goto :error
 )

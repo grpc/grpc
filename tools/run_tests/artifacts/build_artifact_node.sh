@@ -52,8 +52,8 @@ do
   cp -r build/stage/* artifacts/
 done
 
-for version in ${node_versions[@]}
+for version in ${electron_versions[@]}
 do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH
+  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
   cp -r build/stage/* artifacts/
 done
