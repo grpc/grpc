@@ -31,13 +31,18 @@
  *
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "test/core/util/mock_endpoint.h"
 
 #include <inttypes.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/iomgr/sockaddr.h"
 
 typedef struct grpc_mock_endpoint {
   grpc_endpoint base;
