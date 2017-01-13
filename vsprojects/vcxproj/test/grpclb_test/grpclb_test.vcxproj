@@ -178,11 +178,11 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\gpr_test_util\gpr_test_util.vcxproj">
       <Project>{EAB0A629-17A9-44DB-B5FF-E91A721FE037}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
-      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
       <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
+      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
       <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>

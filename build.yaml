@@ -1079,8 +1079,8 @@ libs:
   src:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1095,8 +1095,8 @@ libs:
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   filegroups:
   - grpc++_reflection_proto
 - name: grpc++_test
@@ -1107,8 +1107,8 @@ libs:
   src:
   - src/cpp/test/server_context_test_spouse.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1137,8 +1137,8 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - grpc_test_util
   filegroups:
   - grpc++_codegen_base
@@ -1182,8 +1182,8 @@ libs:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_proto_reflection_desc_db
-  - grpc++
   - grpc
+  - grpc++
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1235,8 +1235,8 @@ libs:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - grpc++_test_config
 - name: interop_client_helper
   build: private
@@ -1249,8 +1249,8 @@ libs:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: interop_client_main
   build: private
@@ -1267,8 +1267,8 @@ libs:
   - interop_client_helper
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -1282,8 +1282,8 @@ libs:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: interop_server_lib
   build: private
@@ -1297,8 +1297,8 @@ libs:
   - interop_server_helper
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -1345,8 +1345,8 @@ libs:
   deps:
   - grpc_test_util
   - grpc++_test_util
-  - grpc++
   - grpc
+  - grpc++
 - name: grpc_csharp_ext
   build: all
   language: csharp
@@ -2843,8 +2843,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: async_end2end_test
@@ -2856,8 +2856,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: auth_property_iterator_test
@@ -2869,8 +2869,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: bm_fullstack
@@ -2882,8 +2882,8 @@ targets:
   - benchmark
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: channel_arguments_test
@@ -2893,8 +2893,8 @@ targets:
   src:
   - test/cpp/common/channel_arguments_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: channel_filter_test
   gtest: true
@@ -2903,8 +2903,8 @@ targets:
   src:
   - test/cpp/common/channel_filter_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: cli_call_test
   gtest: true
@@ -2916,8 +2916,8 @@ targets:
   - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: client_crash_test
@@ -2930,8 +2930,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   platforms:
@@ -2947,8 +2947,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: codegen_test_full
@@ -2963,8 +2963,8 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
   filegroups:
   - grpc++_codegen_base
@@ -2989,8 +2989,8 @@ targets:
   src:
   - test/cpp/client/credentials_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: cxx_byte_buffer_test
   gtest: true
@@ -3000,8 +3000,8 @@ targets:
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: cxx_slice_test
@@ -3012,8 +3012,8 @@ targets:
   - test/cpp/util/slice_test.cc
   deps:
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: cxx_string_ref_test
@@ -3023,8 +3023,8 @@ targets:
   src:
   - test/cpp/util/string_ref_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
 - name: cxx_time_test
   gtest: true
   build: test
@@ -3033,8 +3033,8 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: end2end_test
@@ -3047,8 +3047,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: filter_end2end_test
@@ -3060,8 +3060,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: generic_end2end_test
@@ -3073,8 +3073,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: golden_file_test
@@ -3085,8 +3085,8 @@ targets:
   - src/proto/grpc/testing/compiler_test.proto
   - test/cpp/codegen/golden_file_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
 - name: grpc_cli
   build: test
@@ -3097,8 +3097,8 @@ targets:
   deps:
   - grpc_cli_libs
   - grpc++_proto_reflection_desc_db
-  - grpc++
   - grpc
+  - grpc++
   - gpr
   - grpc++_test_config
 - name: grpc_cpp_plugin
@@ -3183,8 +3183,8 @@ targets:
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   filegroups:
@@ -3199,8 +3199,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
 - name: grpclb_test
   gtest: false
   build: test
@@ -3211,8 +3211,8 @@ targets:
   deps:
   - gpr
   - gpr_test_util
-  - grpc++
   - grpc
+  - grpc++
   - grpc++_test_util
   - grpc_test_util
 - name: http2_client
@@ -3224,8 +3224,8 @@ targets:
   - http2_client_main
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - grpc++_test_config
   platforms:
   - mac
@@ -3240,8 +3240,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: interop_client
@@ -3254,8 +3254,8 @@ targets:
   - interop_client_helper
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3274,8 +3274,8 @@ targets:
   - interop_server_lib
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3308,8 +3308,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3323,8 +3323,8 @@ targets:
   - src/proto/grpc/testing/metrics.proto
   - test/cpp/interop/metrics_client.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
   - grpc++_test_config
 - name: mock_test
@@ -3336,8 +3336,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: noop-benchmark
@@ -3358,8 +3358,8 @@ targets:
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: qps_interarrival_test
@@ -3372,8 +3372,8 @@ targets:
   - qps
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   platforms:
@@ -3390,8 +3390,8 @@ targets:
   - qps
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3405,8 +3405,8 @@ targets:
   - qps
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3427,8 +3427,8 @@ targets:
   - qps
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3444,8 +3444,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3463,8 +3463,8 @@ targets:
   - test_tcp_server
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3477,8 +3477,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: secure_auth_context_test
@@ -3490,8 +3490,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: secure_sync_unary_ping_pong_test
@@ -3503,8 +3503,8 @@ targets:
   - qps
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   platforms:
@@ -3520,8 +3520,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: server_context_test_spouse_test
@@ -3533,8 +3533,8 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: server_crash_test
@@ -3547,8 +3547,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   platforms:
@@ -3564,8 +3564,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: shutdown_test
@@ -3577,8 +3577,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: status_test
@@ -3588,8 +3588,8 @@ targets:
   - test/cpp/util/status_test.cc
   deps:
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: streaming_throughput_test
@@ -3601,8 +3601,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   platforms:
@@ -3631,8 +3631,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
   - grpc++_test_config
@@ -3642,8 +3642,8 @@ targets:
   src:
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
-  - grpc++
   - grpc
+  - grpc++
   - gpr
   - grpc++_test_config
 - name: thread_stress_test
@@ -3656,8 +3656,8 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
-  - grpc++
   - grpc
+  - grpc++
   - gpr_test_util
   - gpr
 - name: public_headers_must_be_c89
