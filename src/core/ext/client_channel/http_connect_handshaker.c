@@ -55,6 +55,8 @@ typedef struct http_connect_handshaker {
   grpc_handshaker base;
 
   char* proxy_server;
+  grpc_http_header* headers;
+  size_t num_headers;
 
   gpr_refcount refcount;
   gpr_mu mu;
@@ -90,6 +92,11 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
       gpr_free(handshaker->read_buffer_to_destroy);
     }
     gpr_free(handshaker->proxy_server);
+    for (size_t i = 0; i < handshaker->num_headers; ++i) {
+      gpr_free(handshaker->headers[i].key);
+      gpr_free(handshaker->headers[i].value);
+    }
+    gpr_free(handshaker->headers);
     grpc_slice_buffer_destroy_internal(exec_ctx, &handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
@@ -290,6 +297,8 @@ static void http_connect_handshaker_do_handshake(
   request.host = server_name;
   request.http.method = "CONNECT";
   request.http.path = server_name;
+  request.http.hdrs = handshaker->headers;
+  request.http.hdr_count = handshaker->num_headers;
   request.handshaker = &grpc_httpcli_plaintext;
   grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
   grpc_slice_buffer_add(&handshaker->write_buffer, request_slice);
@@ -307,7 +316,9 @@ static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server) {
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
+                                                     grpc_http_header* headers,
+                                                     size_t num_headers) {
   GPR_ASSERT(proxy_server != NULL);
   http_connect_handshaker* handshaker = gpr_malloc(sizeof(*handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
@@ -315,6 +326,14 @@ grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server) {
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
   handshaker->proxy_server = gpr_strdup(proxy_server);
+  if (num_headers > 0) {
+    handshaker->headers = gpr_malloc(sizeof(grpc_http_header) * num_headers);
+    for (size_t i = 0; i < num_headers; ++i) {
+      handshaker->headers[i].key = gpr_strdup(headers[i].key);
+      handshaker->headers[i].value = gpr_strdup(headers[i].value);
+    }
+    handshaker->num_headers = num_headers;
+  }
   grpc_slice_buffer_init(&handshaker->write_buffer);
   grpc_closure_init(&handshaker->request_done_closure, on_write_done,
                     handshaker, grpc_schedule_on_exec_ctx);
@@ -358,8 +377,9 @@ static void handshaker_factory_add_handshakers(
     const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
   char* proxy_name = grpc_get_http_proxy_server();
   if (proxy_name != NULL) {
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_http_connect_handshaker_create(proxy_name));
+    grpc_handshake_manager_add(
+        handshake_mgr,
+        grpc_http_connect_handshaker_create(proxy_name, NULL, 0));
     gpr_free(proxy_name);
   }
 }
