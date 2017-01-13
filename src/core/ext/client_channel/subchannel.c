@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/initial_connect_string.h"
@@ -328,21 +329,16 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     c->filters = NULL;
   }
   c->pollset_set = grpc_pollset_set_create();
-  const grpc_arg *addr_arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_SUBCHANNEL_ADDRESS);
-  GPR_ASSERT(addr_arg != NULL);  // Should have been set by LB policy.
   grpc_resolved_address *addr = gpr_malloc(sizeof(*addr));
-  grpc_uri_to_sockaddr(addr_arg->value.string, addr);
+  grpc_get_subchannel_address_arg(args->args, addr);
   grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-  grpc_arg new_arg;
-  new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
-  new_arg.type = GRPC_ARG_STRING;
-  new_arg.value.string = grpc_sockaddr_to_uri(addr);
+  grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
   gpr_free(addr);
   c->args = grpc_channel_args_copy_and_add_and_remove(
       args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
   gpr_free(new_arg.value.string);
+
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c,
@@ -781,7 +777,7 @@ grpc_call_stack *grpc_subchannel_call_get_call_stack(
   return SUBCHANNEL_CALL_TO_CALL_STACK(subchannel_call);
 }
 
-void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
+static void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
   grpc_uri *uri = grpc_uri_parse(uri_str, 0 /* suppress_errors */);
   GPR_ASSERT(uri != NULL);
   if (strcmp(uri->scheme, "ipv4") == 0) {
@@ -792,4 +788,25 @@ void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
     GPR_ASSERT(parse_unix(uri, addr));
   }
   grpc_uri_destroy(uri);
+}
+
+void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
+                                     grpc_resolved_address *addr) {
+  const grpc_arg *addr_arg =
+      grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  GPR_ASSERT(addr_arg != NULL);  // Should have been set by LB policy.
+  GPR_ASSERT(addr_arg->type == GRPC_ARG_STRING);
+  memset(addr, 0, sizeof(*addr));
+  if (*addr_arg->value.string != '\0') {
+    grpc_uri_to_sockaddr(addr_arg->value.string, addr);
+  }
+}
+
+grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
+  grpc_arg new_arg;
+  new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
+  new_arg.type = GRPC_ARG_STRING;
+  new_arg.value.string =
+      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup("");
+  return new_arg;
 }
