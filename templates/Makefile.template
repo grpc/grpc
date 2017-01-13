@@ -1303,7 +1303,7 @@
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
   	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]})
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
   ifeq ($(SYSTEM),MINGW32)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
   else ifneq ($(SYSTEM),Darwin)
@@ -1520,7 +1520,7 @@
         link_libs = link_libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
         mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
 
     security = lib.get('secure', 'check')
     if security == True:
@@ -1558,11 +1558,11 @@
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
   % endif
