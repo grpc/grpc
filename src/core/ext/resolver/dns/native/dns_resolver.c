@@ -81,6 +81,7 @@ typedef struct {
   /** retry timer */
   bool have_retry_timer;
   grpc_timer retry_timer;
+  grpc_closure on_retry;
   /** retry backoff state */
   gpr_backoff backoff_state;
 
@@ -188,7 +189,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
     const char *msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
+    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s", msg);
     grpc_error_free_string(msg);
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
@@ -199,8 +200,9 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, dns_on_retry_timer, r,
-                    now);
+    grpc_closure_init(&r->on_retry, dns_on_retry_timer, r,
+                      grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
   }
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);

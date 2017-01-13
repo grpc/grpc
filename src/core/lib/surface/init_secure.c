@@ -41,6 +41,7 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
 
@@ -87,3 +88,5 @@ void grpc_register_security_filters(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_prepend_server_auth_filter, NULL);
 }
+
+void grpc_security_init() { grpc_security_register_handshaker_factories(); }

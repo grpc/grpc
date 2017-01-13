@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
+#include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
@@ -1689,8 +1690,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
     if (optional_message != NULL) {
       size_t msg_len = strlen(optional_message);
-      GPR_ASSERT(msg_len < 127);
-      message_pfx = grpc_slice_malloc(15);
+      GPR_ASSERT(msg_len <= UINT32_MAX);
+      uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 0);
+      message_pfx = grpc_slice_malloc(14 + msg_len_len);
       p = GRPC_SLICE_START_PTR(message_pfx);
       *p++ = 0x40;
       *p++ = 12; /* len(grpc-message) */
@@ -1706,7 +1708,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = 'a';
       *p++ = 'g';
       *p++ = 'e';
-      *p++ = (uint8_t)msg_len;
+      GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 0, 0, p,
+                               (uint32_t)msg_len_len);
+      p += msg_len_len;
       GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
       len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
       len += (uint32_t)msg_len;
