@@ -8266,12 +8266,12 @@ target_include_directories(grpclb_test
 )
 
 target_link_libraries(grpclb_test
-  gpr
-  gpr_test_util
-  grpc
-  grpc++
   grpc++_test_util
   grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
