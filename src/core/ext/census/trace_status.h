@@ -31,40 +31,15 @@
  *
  */
 
-#include "src/core/ext/census/tracing.h"
-#include <grpc/census.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <openssl/rand.h>
-#include "src/core/ext/census/mlog.h"
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H
 
-void trace_start_span(const trace_span_context *span_ctxt,
-                      const trace_string name, const start_span_options *opts,
-                      trace_span_context *new_span_ctxt,
-                      bool has_remote_parent) {
-  // Noop implementation.
-}
+#include "src/core/ext/census/trace_string.h"
 
-void trace_add_span_annotation(const trace_string description,
-                               const trace_label *labels, const size_t n_labels,
-                               trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+/* Stores a status code and status message for a trace span. */
+typedef struct trace_status {
+  int errorCode;
+  trace_string errorMessage;
+} trace_status;
 
-void trace_add_span_network_event_annotation(const trace_string description,
-                                             const trace_label *labels,
-                                             const size_t n_labels,
-                                             const gpr_timespec timestamp,
-                                             bool sent, uint64_t id,
-                                             trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
-
-void trace_add_span_labels(const trace_label *labels, const size_t n_labels,
-                           trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
-
-void trace_end_span(const trace_status *status, trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+#endif

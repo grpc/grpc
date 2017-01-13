@@ -31,40 +31,33 @@
  *
  */
 
-#include "src/core/ext/census/tracing.h"
-#include <grpc/census.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <openssl/rand.h>
-#include "src/core/ext/census/mlog.h"
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H
 
-void trace_start_span(const trace_span_context *span_ctxt,
-                      const trace_string name, const start_span_options *opts,
-                      trace_span_context *new_span_ctxt,
-                      bool has_remote_parent) {
-  // Noop implementation.
-}
+#include "src/core/ext/census/trace_string.h"
+#include <stdbool.h>
 
-void trace_add_span_annotation(const trace_string description,
-                               const trace_label *labels, const size_t n_labels,
-                               trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+/* Trace label (key/value pair) stores a label name and the label value. The
+   key is a string and the value will be one of either string, int64, or bool.
+   value_type marks which type is set.
+*/
+typedef struct trace_label {
+  trace_string key;
+  enum label_type {
+    /* A string value */
+    LABEL_STRING = 1,
+    /* An integer value. */
+    LABEL_INT = 2,
+    /* A boolean value. */
+    LABEL_BOOL = 3,
+  } value_type;
 
-void trace_add_span_network_event_annotation(const trace_string description,
-                                             const trace_label *labels,
-                                             const size_t n_labels,
-                                             const gpr_timespec timestamp,
-                                             bool sent, uint64_t id,
-                                             trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+  union value {
+    trace_string label_str;
+    int64_t label_int;
+    bool label_bool;
+  } value;
+  size_t val_len;
+} trace_label;
 
-void trace_add_span_labels(const trace_label *labels, const size_t n_labels,
-                           trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
-
-void trace_end_span(const trace_status *status, trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+#endif
