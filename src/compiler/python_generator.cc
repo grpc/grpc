@@ -49,7 +49,6 @@
 #include "src/compiler/schema_interface.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/protobuf_plugin.h"
-#include "src/compiler/python_generator.h"
 #include "src/compiler/python_private_generator.h"
 #include "src/compiler/python_generator_helpers.h"
 
@@ -75,6 +74,8 @@ using std::set;
 
 namespace grpc_python_generator {
 
+grpc::string generator_file_name;
+
 namespace {
 
 typedef vector<const Descriptor*> DescriptorVector;
@@ -82,8 +83,6 @@ typedef map<grpc::string, grpc::string> StringMap;
 typedef vector<grpc::string> StringVector;
 typedef tuple<grpc::string, grpc::string> StringPair;
 typedef set<StringPair> StringPairSet;
-
-grpc::string generator_file_name;
 
 // Provides RAII indentation handling. Use as:
 // {
@@ -577,7 +576,7 @@ bool PrivateGenerator::PrintPreamble() {
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i).get();
       for (int j = 0; j < service->method_count(); ++j) {
-        const MethodDescriptor* method = (MethodDescriptor*)service->method(j).get();
+        const MethodDescriptor* method = service->get_method(j).get();
         const Descriptor* types[2] = {method->input_type(),
                                       method->output_type()};
         for (int k = 0; k < 2; ++k) {
@@ -740,7 +739,8 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   }
   generator_file_name = file->name();
 
-  PrivateGenerator generator(config_, file);
+  ProtoBufFile pbfile(file);
+  PrivateGenerator generator(config_, &pbfile);
   if (parameter == "grpc_2_0") {
     return GenerateGrpc(context, generator, pb2_grpc_file_name, true);
   } else if (parameter == "") {

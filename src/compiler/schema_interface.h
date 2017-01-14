@@ -34,6 +34,8 @@
 #ifndef GRPC_INTERNAL_COMPILER_SCHEMA_INTERFACE_H
 #define GRPC_INTERNAL_COMPILER_SCHEMA_INTERFACE_H
 
+#include "src/compiler/config.h"
+
 #include <memory>
 #include <vector>
 
@@ -89,6 +91,7 @@ namespace grpc_generator {
 
     virtual int method_count() const = 0;
     virtual std::unique_ptr<const Method> method(int i) const = 0;
+    virtual std::unique_ptr<const grpc::protobuf::MethodDescriptor> get_method(int i) const = 0;
   };
 
   struct Printer {

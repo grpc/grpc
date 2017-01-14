@@ -10,8 +10,6 @@
 
 #include <vector>
 
-using grpc::protobuf::Descriptor;
-
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>
 inline grpc::string GetCommentsHelper(const DescriptorType *desc, bool leading,       
@@ -92,6 +90,10 @@ class ProtoBufService : public grpc_generator::Service {
    std::unique_ptr<const grpc_generator::Method> method(int i) const {
      return std::unique_ptr<const grpc_generator::Method>(
          new ProtoBufMethod(service_->method(i)));
+   };
+   std::unique_ptr<const grpc::protobuf::MethodDescriptor> get_method(int i) const {
+     return std::unique_ptr<const grpc::protobuf::MethodDescriptor>(
+      service_->method(i));
    };
 
    grpc::string GetLeadingComments(const grpc::string prefix) const {
