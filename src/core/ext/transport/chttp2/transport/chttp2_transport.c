@@ -62,7 +62,7 @@
 #define DEFAULT_WINDOW 65535
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
-
+#define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
@@ -326,7 +326,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {
         t->write_buffer_size = (uint32_t)grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){0, 0, 64 * 1024 * 1024});
+            (grpc_integer_options){0, 0, MAX_WRITE_BUFFER_SIZE});
       } else {
         static const struct {
           const char *channel_arg_name;
