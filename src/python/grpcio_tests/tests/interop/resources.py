@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Constants and functions for data used in interoperability testing."""
 
 import argparse
@@ -40,22 +39,22 @@ _CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
 
 def test_root_certificates():
-  return pkg_resources.resource_string(
-      __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
+    return pkg_resources.resource_string(__name__,
+                                         _ROOT_CERTIFICATES_RESOURCE_PATH)
 
 
 def private_key():
-  return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
+    return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
 
 def certificate_chain():
-  return pkg_resources.resource_string(
-      __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
+    return pkg_resources.resource_string(__name__,
+                                         _CERTIFICATE_CHAIN_RESOURCE_PATH)
 
 
 def parse_bool(value):
-  if value == 'true':
-    return True
-  if value == 'false':
-    return False
-  raise argparse.ArgumentTypeError('Only true/false allowed')
+    if value == 'true':
+        return True
+    if value == 'false':
+        return False
+    raise argparse.ArgumentTypeError('Only true/false allowed')
