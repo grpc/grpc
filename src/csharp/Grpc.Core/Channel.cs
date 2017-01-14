@@ -209,8 +209,15 @@ namespace Grpc.Core
                 {
                     throw new OperationCanceledException("Channel has reached Shutdown state.");
                 }
-                await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
-                currentState = GetConnectivityState(false);
+                if (currentState == ChannelState.Idle)
+                {
+                    currentState = GetConnectivityState(true);
+                }
+                else
+                {
+                    await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
+                    currentState = GetConnectivityState(false);
+                }
             }
         }
 
