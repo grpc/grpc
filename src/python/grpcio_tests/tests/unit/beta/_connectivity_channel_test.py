@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tests of grpc.beta._connectivity_channel."""
 
 import unittest
@@ -36,13 +35,13 @@ from grpc.beta import interfaces
 
 class ConnectivityStatesTest(unittest.TestCase):
 
-  def testBetaConnectivityStates(self):
-    self.assertIsNotNone(interfaces.ChannelConnectivity.IDLE)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.CONNECTING)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.READY)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.TRANSIENT_FAILURE)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.FATAL_FAILURE)
+    def testBetaConnectivityStates(self):
+        self.assertIsNotNone(interfaces.ChannelConnectivity.IDLE)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.CONNECTING)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.READY)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.TRANSIENT_FAILURE)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.FATAL_FAILURE)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)
