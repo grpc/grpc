@@ -77,6 +77,8 @@ cdef class Slice:
   cdef void _assign_slice(self, grpc_slice new_slice) nogil
   @staticmethod
   cdef Slice from_slice(grpc_slice slice)
+  @staticmethod
+  cdef bytes bytes_from_slice(grpc_slice slice)
 
 
 cdef class ByteBuffer:
@@ -113,7 +115,10 @@ cdef class Metadatum:
 cdef class Metadata:
 
   cdef grpc_metadata_array c_metadata_array
+  cdef bint owns_metadata_slices
   cdef object metadata
+  cdef void _claim_slice_ownership(self) nogil
+  cdef void _drop_slice_ownership(self) nogil
 
 
 cdef class Operation:
