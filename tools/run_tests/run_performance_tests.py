@@ -58,8 +58,6 @@ os.chdir(_ROOT)
 
 _REMOTE_HOST_USERNAME = 'jenkins'
 
-_PERF_REPORT_OUTPUT_DIR = 'perf_reports'
-
 
 class QpsWorkerJob:
   """Encapsulates a qps worker server job."""
@@ -302,11 +300,11 @@ def perf_report_processor_job(worker_host, perf_base_name, output_filename):
     user_at_host = "%s@%s" % (_REMOTE_HOST_USERNAME, worker_host)
     cmd = "USER_AT_HOST=%s OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%s\
          tools/run_tests/performance/process_remote_perf_flamegraphs.sh" \
-          % (user_at_host, output_filename, _PERF_REPORT_OUTPUT_DIR, perf_base_name)
+          % (user_at_host, output_filename, args.flame_graph_reports, perf_base_name)
   else:
     cmd = "OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%s\
           tools/run_tests/performance/process_local_perf_flamegraphs.sh" \
-          % (output_filename, _PERF_REPORT_OUTPUT_DIR, perf_base_name)
+          % (output_filename, args.flame_graph_reports, perf_base_name)
 
   return jobset.JobSpec(cmdline=cmd,
                         timeout_seconds=3*60,
@@ -475,7 +473,7 @@ argp.add_argument('--perf_args',
                         'with the arguments to perf specified here. '
                         '".svg" flame graph profiles will be '
                         'created for each Qps Worker on each scenario. '
-                        'Files will output to "<repo_root>/perf_reports" '
+                        'Files will output to "<repo_root>/<args.flame_graph_reports>" '
                         'directory. Output files from running the worker '
                         'under perf are saved in the repo root where its ran. '
                         'Note that the perf "-g" flag is necessary for '
@@ -495,6 +493,8 @@ argp.add_argument('--skip_generate_flamegraphs',
                   help=('Turn flame graph generation off. '
                         'May be useful if "perf_args" arguments do not make sense for '
                         'generating flamegraphs (e.g., "--perf_args=stat ...")'))
+argp.add_argument('-f', '--flame_graph_reports', default='perf_reports', type=str,
+                  help='Name of directory to output flame graph profiles to, if any are created.')
 
 args = argp.parse_args()
 
@@ -527,8 +527,9 @@ if not args.dry_run:
 
 perf_cmd = None
 if args.perf_args:
+  print('Running workers under perf profiler')
   # Expect /usr/bin/perf to be installed here, as is usual
-  perf_cmd = ['/usr/bin/perf'] 
+  perf_cmd = ['/usr/bin/perf']
   perf_cmd.extend(re.split('\s+', args.perf_args))
 
 qpsworker_jobs = create_qpsworkers(languages, args.remote_worker_host, perf_cmd=perf_cmd)
@@ -588,7 +589,7 @@ for scenario in scenarios:
 # 'profile_output_files' will only have names for scenarios that passed
 if perf_cmd and not args.skip_generate_flamegraphs:
   # write the index fil to the output dir, with all profiles from all scenarios/workers
-  report_utils.render_perf_profiling_results('%s/index.html' % _PERF_REPORT_OUTPUT_DIR, profile_output_files)
+  report_utils.render_perf_profiling_results('%s/index.html' % args.flame_graph_reports, profile_output_files)
 
 if total_scenario_failures > 0 or qps_workers_killed > 0:
   print('%s scenarios failed and %s qps worker jobs killed' % (total_scenario_failures, qps_workers_killed))
