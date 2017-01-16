@@ -543,6 +543,9 @@ class _DynamicStub(face.DynamicStub):
     else:
       raise AttributeError('_DynamicStub object has no attribute "%s"!' % attr)
 
+  def __dir__(self):
+    return self._cardinalities.keys()
+
   def __enter__(self):
     return self
 
