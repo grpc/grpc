@@ -296,6 +296,10 @@
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
 
+#if defined(__cplusplus) || defined(__MINGW32__)
+#define GPR_MINGW_PRINT_FORMAT_MACROS
+#endif
+
 #ifdef _MSC_VER
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
