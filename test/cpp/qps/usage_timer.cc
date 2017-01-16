@@ -39,7 +39,9 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#ifdef __linux__
 #include <sys/resource.h>
+#endif
 #include <sys/time.h>
 UsageTimer::UsageTimer() : start_(Sample()) {}
 
@@ -74,15 +76,22 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
 }
 
 UsageTimer::Result UsageTimer::Sample() {
-  struct rusage usage;
   struct timeval tv;
   gettimeofday(&tv, NULL);
+#ifdef __linux__
+  struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
+#endif
 
   Result r;
   r.wall = time_double(&tv);
+#ifdef __linux__
   r.user = time_double(&usage.ru_utime);
   r.system = time_double(&usage.ru_stime);
+#else
+  r.user = 0;
+  r.system = 0;
+#endif
   r.total_cpu_time = 0;
   r.idle_cpu_time = 0;
   get_cpu_usage(&r.total_cpu_time, &r.idle_cpu_time);
