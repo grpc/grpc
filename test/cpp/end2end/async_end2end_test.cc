@@ -31,7 +31,6 @@
  *
  */
 
-#include <cinttypes>
 #include <memory>
 #include <thread>
 
@@ -48,6 +47,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/support/print_format.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -229,10 +229,10 @@ class TestScenario {
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const {
-    gpr_log(
-        GPR_INFO,
-        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
-        disable_blocking, credentials_type.c_str(), message_content.size());
+    gpr_log(GPR_INFO,
+            "Scenario: disable_blocking %d, credentials %s, message size "
+            "%" GPR_PRIuPTR,
+            disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
   // Although the below grpc::string's are logically const, we can't declare

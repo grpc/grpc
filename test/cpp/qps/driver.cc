@@ -31,7 +31,6 @@
  *
  */
 
-#include <cinttypes>
 #include <deque>
 #include <list>
 #include <thread>
@@ -48,6 +47,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/print_format.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -283,7 +283,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     hosts_cores = get_hosts_and_cores(workers);
   }
   for (size_t i = 0; i < num_servers; i++) {
-    gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%" GPR_PRIuPTR ")",
             workers[i].c_str(), i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
@@ -358,7 +358,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%" GPR_PRIuPTR ")",
             worker.c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(worker, InsecureChannelCredentials()));
@@ -399,8 +399,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
         (client_config.client_channels() - channels_allocated) /
         (num_clients - i);
     channels_allocated += num_channels;
-    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
-            num_channels);
+    gpr_log(GPR_DEBUG, "Client %" GPR_PRIdPTR " gets %" GPR_PRIdPTR " channels",
+            i, num_channels);
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
