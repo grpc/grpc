@@ -65,7 +65,7 @@ cdef class Channel:
     if host is not None:
       host_c_string = host
     cdef Call operation_call = Call()
-    operation_call.references = [self, method, host, queue]
+    operation_call.references = [self]
     cdef grpc_call *parent_call = NULL
     if parent is not None:
       parent_call = parent.c_call
