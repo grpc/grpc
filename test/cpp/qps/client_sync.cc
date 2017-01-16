@@ -51,6 +51,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/print_format.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/interarrival.h"
@@ -155,7 +156,7 @@ class SynchronousStreamingClient final : public SynchronousClient {
         Status s = (*stream)->Finish();
         EXPECT_TRUE(s.ok());
         if (!s.ok()) {
-          gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
+          gpr_log(GPR_ERROR, "Stream %" GPR_PRIuPTR " received an error %s", i,
                   s.error_message().c_str());
         }
       }
