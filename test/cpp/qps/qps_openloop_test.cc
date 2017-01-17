@@ -56,7 +56,7 @@ static void RunQPS() {
   client_config.set_async_client_threads(8);
   client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_poisson()->set_offered_load(
-      1000.0 / GRPC_TEST_SLOWDOWN_FACTOR);
+      1000.0 / grpc_test_slowdown_factor());
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
