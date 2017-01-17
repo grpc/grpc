@@ -43,8 +43,6 @@ import threading
 import time
 import unittest
 
-import grpc
-from grpc.framework.foundation import logging_pool
 from tests.unit import _exit_scenarios
 
 SCENARIO_FILE = os.path.abspath(os.path.join(
@@ -54,7 +52,7 @@ BASE_COMMAND = [INTERPRETER, SCENARIO_FILE]
 BASE_SIGTERM_COMMAND = BASE_COMMAND + ['--wait_for_interrupt']
 
 INIT_TIME = 1.0
-SHUTDOWN_GRACE = 5.0
+
 
 processes = []
 process_lock = threading.Lock()
@@ -183,25 +181,6 @@ class ExitTest(unittest.TestCase):
         stdout=sys.stdout, stderr=sys.stderr)
     interrupt_and_wait(process)
 
-
-class _ShutDownHandler(object):
-
-  def __init__(self):
-    self.seen_handler_grace = None
-
-  def shutdown_handler(self, handler_grace):
-    self.seen_handler_grace = handler_grace
-
-  
-class ShutdownHandlerTest(unittest.TestCase):
-
-  def test_shutdown_handler(self):
-    server = grpc.server(logging_pool.pool(1))
-    handler = _ShutDownHandler()
-    server.add_shutdown_handler(handler.shutdown_handler)
-    server.start()
-    server.stop(0, shutdown_handler_grace=SHUTDOWN_GRACE).wait()
-    self.assertEqual(SHUTDOWN_GRACE, handler.seen_handler_grace)
 
 if __name__ == '__main__':
   unittest.main(verbosity=2)
