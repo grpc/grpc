@@ -281,9 +281,11 @@ static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&g_mu);
 }
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {}
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
@@ -320,7 +322,8 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool maybe_add_filter(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_stack_builder *builder, void *arg) {
   grpc_channel_filter *filter = arg;
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make

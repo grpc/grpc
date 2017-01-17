@@ -114,12 +114,13 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *cd = (channel_data *)elem->channel_data;
   GPR_ASSERT(args->is_last);
   cd->transport = NULL;
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel_data */
@@ -170,7 +171,8 @@ static void bind_transport(grpc_channel_stack *channel_stack,
   channel_stack->call_stack_size += grpc_transport_stream_size(t);
 }
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
+bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
+                               grpc_channel_stack_builder *builder,
                                void *arg_must_be_null) {
   GPR_ASSERT(arg_must_be_null == NULL);
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);

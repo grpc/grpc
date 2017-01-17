@@ -275,3 +275,41 @@ int gpr_stricmp(const char *a, const char *b) {
   } while (ca == cb && ca && cb);
   return ca - cb;
 }
+
+static void add_string_to_split(const char *beg, const char *end, char ***strs,
+                                size_t *nstrs, size_t *capstrs) {
+  char *out = gpr_malloc((size_t)(end - beg) + 1);
+  memcpy(out, beg, (size_t)(end - beg));
+  out[end - beg] = 0;
+  if (*nstrs == *capstrs) {
+    *capstrs = GPR_MAX(8, 2 * *capstrs);
+    *strs = gpr_realloc(*strs, sizeof(*strs) * *capstrs);
+  }
+  (*strs)[*nstrs] = out;
+  ++*nstrs;
+}
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {
+  char *next;
+  *strs = NULL;
+  *nstrs = 0;
+  size_t capstrs = 0;
+  while ((next = strstr(input, sep))) {
+    add_string_to_split(input, next, strs, nstrs, &capstrs);
+    input = next + strlen(sep);
+  }
+  add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
+}
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
+}

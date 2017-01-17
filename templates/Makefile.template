@@ -182,10 +182,17 @@
   endif
   STRIP ?= strip -x
   else
+  ifeq ($(SYSTEM),MINGW32)
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
+  STRIP ?= strip --strip-unneeded
+  else
   ifeq ($(origin AR), default)
   AR = ar rcs
   endif
   STRIP ?= strip
+  endif
   endif
   endif
   INSTALL ?= install
@@ -392,6 +399,7 @@
   Libs.private: $(PC_LIBS_PRIVATE)
 
   ifeq ($(SYSTEM),MINGW32)
+  EXECUTABLE_SUFFIX = .exe
   SHARED_EXT_CORE = dll
   SHARED_EXT_CPP = dll
   SHARED_EXT_CSHARP = dll
@@ -400,6 +408,7 @@
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
   SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
+  EXECUTABLE_SUFFIX = 
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
   SHARED_EXT_CSHARP = dylib
@@ -408,6 +417,7 @@
   SHARED_VERSION_CPP =
   SHARED_VERSION_CSHARP =
   else
+  EXECUTABLE_SUFFIX = 
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
   SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -1196,7 +1206,7 @@
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
   endif
 
   % endfor
@@ -1293,9 +1303,9 @@
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
   	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]})
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
   ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
@@ -1322,9 +1332,6 @@
   ${install_shared("csharp")}
 
   install-plugins: $(PROTOC_PLUGINS)
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) false
-  else
   	$(E) "[INSTALL] Installing grpc protoc plugins"
   % for tgt in targets:
   % if tgt.build == 'protoc':
@@ -1332,7 +1339,6 @@
   	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
   % endif
   % endfor
-  endif
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
@@ -1513,8 +1519,8 @@
         assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
         link_libs = link_libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
-        mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        mingw_libs = mingw_libs + ' -l' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
+        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
 
     security = lib.get('secure', 'check')
     if security == True:
@@ -1546,17 +1552,17 @@
   ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared ${lib.name}.def -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
   else
   ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
   % endif

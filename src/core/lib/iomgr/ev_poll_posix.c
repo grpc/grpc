@@ -397,7 +397,7 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_NONE);
 }
 
 static int fd_wrapped_fd(grpc_fd *fd) {
@@ -457,16 +457,14 @@ static grpc_error *fd_shutdown_error(bool shutdown) {
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (fd->shutdown) {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_exec_ctx_sched(exec_ctx, closure, fd_shutdown_error(fd->shutdown),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd->shutdown));
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -489,7 +487,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_exec_ctx_sched(exec_ctx, *st, fd_shutdown_error(fd->shutdown), NULL);
+    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd->shutdown));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -852,7 +850,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
     GRPC_FD_UNREF(pollset->fds[i], "multipoller");
   }
   pollset->fd_count = 0;
-  grpc_exec_ctx_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
 }
 
 static void work_combine_error(grpc_error **composite, grpc_error *error) {
@@ -901,7 +899,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (!pollset_has_workers(pollset) &&
       !grpc_closure_list_empty(pollset->idle_jobs)) {
     GPR_TIMER_MARK("pollset_work.idle_jobs", 0);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
+    grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
     goto done;
   }
   /* If we're shutting down then we don't execute any extended work */
@@ -1081,7 +1079,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
       gpr_mu_lock(&pollset->mu);
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
-      grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
+      grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
       gpr_mu_unlock(&pollset->mu);
       grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&pollset->mu);
@@ -1100,7 +1098,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutdown_done = closure;
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset_has_workers(pollset)) {
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
+    grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
   }
   if (!pollset->called_shutdown && !pollset_has_workers(pollset)) {
     pollset->called_shutdown = 1;
@@ -1288,10 +1286,8 @@ static void workqueue_unref(grpc_exec_ctx *exec_ctx,
                             grpc_workqueue *workqueue) {}
 #endif
 
-static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
-                              grpc_workqueue *workqueue, grpc_closure *closure,
-                              grpc_error *error) {
-  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
+  return grpc_schedule_on_exec_ctx;
 }
 
 /*******************************************************************************
@@ -1534,7 +1530,7 @@ static const grpc_event_engine_vtable vtable = {
 
     .workqueue_ref = workqueue_ref,
     .workqueue_unref = workqueue_unref,
-    .workqueue_enqueue = workqueue_enqueue,
+    .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
 };
