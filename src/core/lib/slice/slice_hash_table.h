@@ -66,7 +66,6 @@ grpc_slice_hash_table *grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry *entries);
 
 grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
-/** Returns 1 when \a table is destroyed. */
 void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_slice_hash_table *table);
 
