@@ -180,6 +180,6 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
 
 /// Returns a new channel arg encoding the subchannel address as a string.
 /// Caller is responsible for freeing the string.
-grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr);
+grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */
