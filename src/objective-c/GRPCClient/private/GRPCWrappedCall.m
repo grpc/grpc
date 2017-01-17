@@ -215,11 +215,15 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
-                                                   details:(char*)GRPC_SLICE_START_PTR(strongSelf->_details)];
-        NSDictionary *trailers = [NSDictionary
-                                  grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
-        handler(error, trailers);
+        if (strongSelf) {
+          char *details = grpc_slice_to_c_string(strongSelf->_details);
+          NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
+                                                     details:details];
+          NSDictionary *trailers = [NSDictionary
+                                    grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
+          handler(error, trailers);
+          gpr_free(details);
+        }
       };
     }
   }
