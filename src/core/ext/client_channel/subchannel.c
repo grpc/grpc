@@ -802,7 +802,7 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
   }
 }
 
-grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
+grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
   grpc_arg new_arg;
   new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
   new_arg.type = GRPC_ARG_STRING;
