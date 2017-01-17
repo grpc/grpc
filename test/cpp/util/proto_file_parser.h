@@ -64,9 +64,9 @@ class ProtoFileParser {
   // descriptor database queries.
   grpc::string GetFullMethodName(const grpc::string& method);
 
-  // Formated method name is in the form of /Service/Method, it's good to be
+  // Formatted method name is in the form of /Service/Method, it's good to be
   // used as the argument of Stub::Call()
-  grpc::string GetFormatedMethodName(const grpc::string& method);
+  grpc::string GetFormattedMethodName(const grpc::string& method);
 
   grpc::string GetSerializedProtoFromMethod(
       const grpc::string& method, const grpc::string& text_format_proto,

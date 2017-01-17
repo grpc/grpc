@@ -68,7 +68,15 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
 
-  config.init_client(&f, NULL);
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
+
+  config.init_client(&f, &client_args);
 
   ce.channel = f.client;
   ce.cq = f.cq;

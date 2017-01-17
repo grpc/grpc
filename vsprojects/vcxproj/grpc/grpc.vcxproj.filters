@@ -25,6 +25,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -457,13 +463,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.c">
-      <Filter>src\core\lib\security\transport</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
@@ -489,6 +495,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
       <Filter>src\core\lib\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\secure</Filter>
@@ -546,6 +555,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
       <Filter>src\core\ext\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
+      <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
@@ -678,6 +690,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -750,6 +765,12 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">
@@ -950,6 +971,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
@@ -1121,13 +1145,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.h">
-      <Filter>src\core\lib\security\transport</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h">
@@ -1153,6 +1177,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h">
       <Filter>src\core\lib\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h">
       <Filter>src\core\ext\client_channel</Filter>
@@ -1198,6 +1225,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
       <Filter>src\core\ext\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h">
+      <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>

@@ -30,7 +30,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.0.1'
+  version = '1.0.2'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'http://www.grpc.io'
@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{version}",
+    :tag => "objective-c-v#{version}",
   }
 
   s.ios.deployment_target = '7.1'

@@ -34,7 +34,6 @@
 //#include "src/core/ext/census/tracing.h"
 
 #include <stdlib.h>
-
 #include <grpc/census.h>
 
 /* TODO(aveitch): These are all placeholder implementations. */
@@ -50,5 +49,3 @@ void census_trace_print(census_context *context, uint32_t type,
                         const char *buffer, size_t n) {
   abort();
 }
-
-// void SetTracerParams(const Params& params);

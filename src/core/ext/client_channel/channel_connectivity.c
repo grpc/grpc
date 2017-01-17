@@ -76,6 +76,7 @@ typedef struct {
   gpr_mu mu;
   callback_phase phase;
   grpc_closure on_complete;
+  grpc_closure on_timeout;
   grpc_timer alarm;
   grpc_connectivity_state state;
   grpc_completion_queue *cq;
@@ -198,7 +199,10 @@ void grpc_channel_watch_connectivity_state(
   grpc_cq_begin_op(cq, tag);
 
   gpr_mu_init(&w->mu);
-  grpc_closure_init(&w->on_complete, watch_complete, w);
+  grpc_closure_init(&w->on_complete, watch_complete, w,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&w->on_timeout, timeout_complete, w,
+                    grpc_schedule_on_exec_ctx);
   w->phase = WAITING;
   w->state = last_observed_state;
   w->cq = cq;
@@ -207,7 +211,7 @@ void grpc_channel_watch_connectivity_state(
 
   grpc_timer_init(&exec_ctx, &w->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &w->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");

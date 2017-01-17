@@ -106,7 +106,7 @@ namespace Grpc.Core.Internal
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 using (var ctx = BatchContextSafeHandle.Create())
                 {
-                    call.StartUnary(ctx, payload, metadataArray, GetWriteFlagsForCall());
+                    call.StartUnary(ctx, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
 
                     var ev = cq.Pluck(ctx.Handle);
 
@@ -150,7 +150,7 @@ namespace Grpc.Core.Internal
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartUnary(HandleUnaryResponse, payload, metadataArray, GetWriteFlagsForCall());
+                    call.StartUnary(HandleUnaryResponse, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
                 }
                 return unaryResponseTcs.Task;
             }
@@ -174,7 +174,7 @@ namespace Grpc.Core.Internal
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartClientStreaming(HandleUnaryResponse, metadataArray);
+                    call.StartClientStreaming(HandleUnaryResponse, metadataArray, details.Options.Flags);
                 }
 
                 return unaryResponseTcs.Task;
@@ -200,7 +200,7 @@ namespace Grpc.Core.Internal
                 streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartServerStreaming(HandleFinished, payload, metadataArray, GetWriteFlagsForCall());
+                    call.StartServerStreaming(HandleFinished, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
                 }
                 call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }
@@ -222,7 +222,7 @@ namespace Grpc.Core.Internal
                 streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartDuplexStreaming(HandleFinished, metadataArray);
+                    call.StartDuplexStreaming(HandleFinished, metadataArray, details.Options.Flags);
                 }
                 call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }

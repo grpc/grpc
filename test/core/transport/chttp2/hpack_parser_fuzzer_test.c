@@ -44,7 +44,7 @@ bool squelch = true;
 bool leak_check = true;
 
 static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
-  GRPC_MDELEM_UNREF(md);
+  GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -53,13 +53,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   grpc_chttp2_hpack_parser parser;
-  grpc_chttp2_hpack_parser_init(&parser);
-  parser.on_header = onhdr;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  parser.on_header = onhdr;
   GRPC_ERROR_UNREF(
       grpc_chttp2_hpack_parser_parse(&exec_ctx, &parser, data, data + size));
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_chttp2_hpack_parser_destroy(&parser);
   grpc_shutdown();
   return 0;
 }

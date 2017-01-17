@@ -2,7 +2,7 @@ This directory contains MS Visual Studio project & solution files.
 
 #Supported Visual Studio versions
 
-Currently supported versions are Visual Studio 2013 (our primary focus) and 2010.
+Currently supported versions are Visual Studio 2013 (our primary focus).
 
 #Building
 We are using [NuGet](http://www.nuget.org) to pull zlib and openssl dependencies.
@@ -83,10 +83,12 @@ Windows .exe binaries of gRPC protoc plugins.
 1. Follow instructions in `third_party\protobuf\cmake\README.md` to create Visual Studio 2013 projects for protobuf.
 ```
 $ cd third_party/protobuf/cmake
-$ cmake -G "Visual Studio 12 2013"
+$ mkdir build & cd build
+$ mkdir solution & cd solution
+$ cmake -G "Visual Studio 12 2013" -Dprotobuf_BUILD_TESTS=OFF ../..
 ```
 
-2. Open solution `third_party\protobuf\cmake\protobuf.sln` and build it in Release mode. That will build libraries `libprotobuf.lib` and `libprotoc.lib` needed for the next step.
+2. Open solution `third_party\protobuf\cmake\build\solution\protobuf.sln` and build it in Release mode. That will build libraries `libprotobuf.lib` and `libprotoc.lib` needed for the next step.
 
 3. Open solution `vsprojects\grpc_protoc_plugins.sln` and build it in Release mode. As a result, you should obtain a set of gRPC protoc plugin binaries (`grpc_cpp_plugin.exe`, `grpc_csharp_plugin.exe`, ...)
 

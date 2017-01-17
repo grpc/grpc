@@ -34,6 +34,13 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 
+//////////////////////////////////////////////////////////////////////////////
+// IMPORTANT NOTE:
+//
+// When you update this API, please make the corresponding changes to
+// the C++ API in src/cpp/common/channel_filter.{h,cc}
+//////////////////////////////////////////////////////////////////////////////
+
 /* A channel filter defines how operations on a channel are implemented.
    Channel filters are chained together to create full channels, and if those
    chains are linear, then channel stacks provide a mechanism to minimize
@@ -146,8 +153,9 @@ typedef struct {
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
-  void (*init_channel_elem)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-                            grpc_channel_element_args *args);
+  grpc_error *(*init_channel_elem)(grpc_exec_ctx *exec_ctx,
+                                   grpc_channel_element *elem,
+                                   grpc_channel_element_args *args);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_exec_ctx *exec_ctx,
@@ -214,12 +222,11 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
-                             grpc_iomgr_cb_func destroy, void *destroy_arg,
-                             const grpc_channel_filter **filters,
-                             size_t filter_count, const grpc_channel_args *args,
-                             grpc_transport *optional_transport,
-                             const char *name, grpc_channel_stack *stack);
+grpc_error *grpc_channel_stack_init(
+    grpc_exec_ctx *exec_ctx, int initial_refs, grpc_iomgr_cb_func destroy,
+    void *destroy_arg, const grpc_channel_filter **filters, size_t filter_count,
+    const grpc_channel_args *args, grpc_transport *optional_transport,
+    const char *name, grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_stack *stack);

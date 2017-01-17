@@ -105,8 +105,8 @@ void server_thread(void *vargs) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   struct server_thread_args *args = (struct server_thread_args *)vargs;
-  (void)acceptor;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
@@ -229,9 +229,9 @@ int main(int argc, char **argv) {
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_shutdown(
-      &exec_ctx, args.pollset,
-      grpc_closure_create(done_pollset_shutdown, args.pollset));
+  grpc_pollset_shutdown(&exec_ctx, args.pollset,
+                        grpc_closure_create(done_pollset_shutdown, args.pollset,
+                                            grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();

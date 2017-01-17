@@ -65,5 +65,6 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
                GRPC_SLICE_LENGTH(next));
     grpc_slice_unref(next);
   }
+  grpc_byte_buffer_reader_destroy(&reader);
   return rb_string;
 }

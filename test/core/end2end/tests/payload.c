@@ -126,7 +126,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(60);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
