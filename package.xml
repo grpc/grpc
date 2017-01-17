@@ -351,6 +351,12 @@
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_label.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_params.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_propagation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/tracing.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />

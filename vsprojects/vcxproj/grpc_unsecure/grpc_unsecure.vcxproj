@@ -442,6 +442,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_label.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_params.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_propagation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_status.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
