@@ -29,8 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Generates the appropriate build.json data for all the end2end tests."""
+"""Generates the appropriate targets for all the end2end tests."""
 
+load("//bazel:grpc_build_system.bzl", "grpc_test_cc_library", "grpc_test_cc_test")
 
 def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
                     secure=True, tracing=False,
@@ -153,7 +154,7 @@ def compatible(fopt, topt):
 
 
 def grpc_end2end_tests():
-  native.cc_library(
+  grpc_test_cc_library(
     name = 'end2end_tests',
     srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
              'tests/%s.c' % t
@@ -177,18 +178,17 @@ def grpc_end2end_tests():
   )
 
   for f, fopt in END2END_FIXTURES.items():
-    native.cc_binary(
+    grpc_test_cc_library(
       name = '%s_test' % f,
       srcs = ['fixtures/%s.c' % f],
       copts = ['-std=c99'],
       deps = [':end2end_tests']
     )
     for t, topt in END2END_TESTS.items():
-      #print(compatible(fopt, topt), f, t, fopt, topt)
+      # print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      native.sh_test(
+      grpc_test_cc_test(
         name = '%s_test@%s' % (f, t),
-        srcs = ['end2end_test.sh'],
-        args = ['$(location %s_test)' % f, t],
-        data = [':%s_test' % f],
+        args = [t],
+        deps = [':%s_test' % f],
       )

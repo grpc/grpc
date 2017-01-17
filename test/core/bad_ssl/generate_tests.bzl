@@ -29,6 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+load("//bazel:grpc_build_system.bzl", "grpc_test_cc_library", "grpc_test_cc_test")
+
 def test_options():
   return struct()
 
@@ -37,14 +39,14 @@ def test_options():
 BAD_SSL_TESTS = ['cert', 'alpn']
 
 def grpc_bad_ssl_tests():
-  native.cc_library(
+  grpc_test_cc_library(
       name = 'bad_ssl_test_server',
       srcs = ['server_common.c'],
       hdrs = ['server_common.h'],
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data']
   )
   for t in BAD_SSL_TESTS:
-    native.cc_test(
+    grpc_test_cc_test(
         name = 'bad_ssl_%s_server' % t,
         srcs = ['servers/%s.c' % t],
         deps = [':bad_ssl_test_server'],
