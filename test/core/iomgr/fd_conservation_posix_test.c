@@ -65,6 +65,10 @@ int main(int argc, char **argv) {
 
   grpc_resource_quota_unref(resource_quota);
 
-  grpc_iomgr_shutdown();
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return 0;
 }

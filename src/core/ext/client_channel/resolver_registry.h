@@ -35,6 +35,7 @@
 #define GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_REGISTRY_H
 
 #include "src/core/ext/client_channel/resolver_factory.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 void grpc_resolver_registry_init();
 void grpc_resolver_registry_shutdown(void);
@@ -60,8 +61,9 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     If a resolver factory was not found, return NULL.
     \a args is a set of channel arguments to be included in the result
     (typically the set of arguments passed in from the client API). */
-grpc_resolver *grpc_resolver_create(const char *target,
-                                    const grpc_channel_args *args);
+grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                    const grpc_channel_args *args,
+                                    grpc_pollset_set *pollset_set);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */
@@ -70,5 +72,9 @@ grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name);
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */
 char *grpc_get_default_authority(const char *target);
+
+/** Returns a newly allocated string containing \a target, adding the
+    default prefix if needed. */
+char *grpc_resolver_factory_add_default_prefix_if_needed(const char *target);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_REGISTRY_H */

@@ -68,8 +68,10 @@ typedef struct grpc_metadata_batch {
 } grpc_metadata_batch;
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch);
-void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
-void grpc_metadata_batch_clear(grpc_metadata_batch *batch);
+void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
+                                 grpc_metadata_batch *batch);
+void grpc_metadata_batch_clear(grpc_exec_ctx *exec_ctx,
+                               grpc_metadata_batch *batch);
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 
 /* Returns the transport size of the batch. */
@@ -118,8 +120,10 @@ void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
     The return value from \a filter will be substituted for the
     grpc_mdelem passed to \a filter. If \a filter returns NULL,
     the element will be moved to the garbage list. */
-void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
-                                grpc_mdelem *(*filter)(void *user_data,
+void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
+                                grpc_metadata_batch *batch,
+                                grpc_mdelem *(*filter)(grpc_exec_ctx *exec_ctx,
+                                                       void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data);
 

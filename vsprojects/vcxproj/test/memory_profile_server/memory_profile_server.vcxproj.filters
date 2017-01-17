@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\memory_usage\server.c">
+      <Filter>test\core\memory_usage</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{0193b199-ddad-5387-8a4f-ab1e6c36b835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{31db3ee2-d7ca-bedb-eacc-1bc7785dcae6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\memory_usage">
+      <UniqueIdentifier>{5b7c6ebd-9730-e59c-59bf-806a8b7ccda2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

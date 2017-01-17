@@ -98,7 +98,7 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error;
   error = handle_addrinfo_result(status, res, r->addresses);
-  grpc_exec_ctx_sched(&exec_ctx, r->on_done, error, NULL);
+  grpc_closure_sched(&exec_ctx, r->on_done, error);
   grpc_exec_ctx_finish(&exec_ctx);
 
   gpr_free(r->hints);
@@ -181,6 +181,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
 
 static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  const char *default_port,
+                                 grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
   uv_getaddrinfo_t *req;
@@ -192,7 +193,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   int s;
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    grpc_closure_sched(exec_ctx, on_done, err);
     return;
   }
   r = gpr_malloc(sizeof(request));
@@ -216,16 +217,16 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
     *addrs = NULL;
     err = GRPC_ERROR_CREATE("getaddrinfo failed");
     err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR, uv_strerror(s));
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    grpc_closure_sched(exec_ctx, on_done, err);
     gpr_free(r);
     gpr_free(req);
     gpr_free(hints);
   }
 }
 
-void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *name,
-                             const char *default_port, grpc_closure *on_done,
-                             grpc_resolved_addresses **addrs) =
-    resolve_address_impl;
+void (*grpc_resolve_address)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) = resolve_address_impl;
 
 #endif /* GRPC_UV */

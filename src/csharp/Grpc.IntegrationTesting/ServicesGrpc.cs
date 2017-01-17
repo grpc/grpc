@@ -71,18 +71,25 @@ namespace Grpc.Testing {
     public abstract partial class BenchmarkServiceBase
     {
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -114,49 +121,71 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return StreamingCall(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
+      /// One request followed by one response.
+      /// The server returns the client payload as-is.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_StreamingCall, null, options);
@@ -169,6 +198,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
@@ -227,42 +257,56 @@ namespace Grpc.Testing {
     public abstract partial class WorkerServiceBase
     {
       /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start server with specified workload.
+      /// First request sent specifies the ServerConfig followed by ServerStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test server
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start client with specified workload.
+      /// First request sent specifies the ClientConfig followed by ClientStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test client
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Just return the core count - unary call
+      /// Just return the core count - unary call
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Quit this worker
+      /// Quit this worker
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -294,105 +338,149 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start server with specified workload.
+      /// First request sent specifies the ServerConfig followed by ServerStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test server
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return RunServer(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start server with specified workload.
+      /// First request sent specifies the ServerConfig followed by ServerStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test server
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_RunServer, null, options);
       }
       /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start client with specified workload.
+      /// First request sent specifies the ClientConfig followed by ClientStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test client
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return RunClient(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
+      /// Start client with specified workload.
+      /// First request sent specifies the ClientConfig followed by ClientStatus
+      /// response. After that, a "Mark" can be sent anytime to request the latest
+      /// stats. Closing the stream will initiate shutdown of the test client
+      /// and once the shutdown has finished, the OK status is sent to terminate
+      /// this RPC.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_RunClient, null, options);
       }
       /// <summary>
-      ///  Just return the core count - unary call
+      /// Just return the core count - unary call
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return CoreCount(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Just return the core count - unary call
+      /// Just return the core count - unary call
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_CoreCount, null, options, request);
       }
       /// <summary>
-      ///  Just return the core count - unary call
+      /// Just return the core count - unary call
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return CoreCountAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Just return the core count - unary call
+      /// Just return the core count - unary call
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_CoreCount, null, options, request);
       }
       /// <summary>
-      ///  Quit this worker
+      /// Quit this worker
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return QuitWorker(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Quit this worker
+      /// Quit this worker
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_QuitWorker, null, options, request);
       }
       /// <summary>
-      ///  Quit this worker
+      /// Quit this worker
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return QuitWorkerAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Quit this worker
+      /// Quit this worker
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_QuitWorker, null, options, request);
@@ -405,6 +493,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
