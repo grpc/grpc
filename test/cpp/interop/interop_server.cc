@@ -56,6 +56,7 @@
 #include "test/cpp/util/test_config.h"
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");
 DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
@@ -344,7 +345,7 @@ void grpc::testing::interop::RunServer(
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!g_got_sigint) {
+  while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
     sleep(5);
   }
 }

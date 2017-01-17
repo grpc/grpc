@@ -66,7 +66,13 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
 if (MSVC)
-  add_definitions( -D_WIN32_WINNT=0x600 )
+  add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+  # needed to compile boringssl
+  add_definitions(/wd4464 /wd4623 /wd4668 /wd4701 /wd4702 /wd4777 /wd5027)
+  # needed to compile protobuf
+  add_definitions(/wd4065 /wd4506)
+  # TODO(jtattermusch): revisit C4267 occurrences throughout the code
+  add_definitions(/wd4267)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -292,6 +298,8 @@ add_library(grpc
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -436,9 +444,9 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
-  src/core/lib/security/transport/handshake.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/b64.c
@@ -447,6 +455,7 @@ add_library(grpc
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
@@ -466,6 +475,7 @@ add_library(grpc
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -528,6 +538,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -571,6 +582,8 @@ add_library(grpc_cronet
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -736,9 +749,9 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
-  src/core/lib/security/transport/handshake.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/b64.c
@@ -747,6 +760,7 @@ add_library(grpc_cronet
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
@@ -778,6 +792,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -822,6 +837,8 @@ add_library(grpc_unsecure
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -951,8 +968,10 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
   src/core/ext/client_channel/client_channel_factory.c
@@ -1027,6 +1046,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1190,6 +1210,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1258,6 +1279,7 @@ add_library(grpc++_cronet
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
@@ -1286,6 +1308,8 @@ add_library(grpc++_cronet
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
   src/core/lib/channel/message_size_filter.c
@@ -1412,6 +1436,7 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -1521,6 +1546,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1556,45 +1582,6 @@ endforeach()
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++_cronet EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-  
-add_library(grpc++_reflection
-  src/cpp/ext/proto_server_reflection.cc
-  src/cpp/ext/proto_server_reflection_plugin.cc
-  src/proto/grpc/reflection/v1alpha/reflection.proto
-)
-
-target_include_directories(grpc++_reflection
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc++_reflection
-  grpc++
-)
-
-foreach(_hdr
-  include/grpc++/ext/proto_server_reflection_plugin.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-if (gRPC_INSTALL)
-  install(TARGETS grpc++_reflection EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -1727,6 +1714,7 @@ foreach(_hdr
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
@@ -1795,35 +1783,6 @@ endforeach()
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-  
-add_library(grpc_csharp_ext
-  src/csharp/ext/grpc_csharp_ext.c
-)
-
-target_include_directories(grpc_csharp_ext
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_csharp_ext
-  grpc
-  gpr
-)
-
-
-  
-if (gRPC_INSTALL)
-  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

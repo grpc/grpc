@@ -316,7 +316,8 @@ static char *roots_filename;
 }
 
 - (void)testInvokeLargeRequest {
-  [self testIndividualCase:"invoke_large_request"];
+  // NOT SUPPORTED (frame size)
+  // [self testIndividualCase:"invoke_large_request"];
 }
 
 - (void)testLargeMetadata {
@@ -329,7 +330,8 @@ static char *roots_filename;
 }
 
 - (void)testMaxMessageLength {
-  [self testIndividualCase:"max_message_length"];
+  // NOT SUPPORTED (close_error)
+  // [self testIndividualCase:"max_message_length"];
 }
 
 - (void)testNegativeDeadline {

@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   /* wait a little */
-  sleep(2);
+  sleep(10);
   /* start the clients */
   ret = test_client(root, "127.0.0.1", port);
   if (ret != 0) return ret;

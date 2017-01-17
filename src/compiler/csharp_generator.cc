@@ -68,13 +68,13 @@ namespace {
 // Currently, we cannot easily reuse the functionality as
 // google/protobuf/compiler/csharp/csharp_doc_comment.h is not a public header.
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
-void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
+bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
                                 grpc::protobuf::SourceLocation location) {
   grpc::string comments = location.leading_comments.empty()
                               ? location.trailing_comments
                               : location.leading_comments;
   if (comments.empty()) {
-    return;
+    return false;
   }
   // XML escaping... no need for apostrophes etc as the whole text is going to
   // be a child
@@ -107,18 +107,84 @@ void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
         printer->Print("///\n");
       }
       last_was_empty = false;
-      printer->Print("/// $line$\n", "line", *it);
+      printer->Print("///$line$\n", "line", *it);
     }
   }
   printer->Print("/// </summary>\n");
+  return true;
 }
 
 template <typename DescriptorType>
-void GenerateDocCommentBody(grpc::protobuf::io::Printer *printer,
+bool GenerateDocCommentBody(grpc::protobuf::io::Printer *printer,
                             const DescriptorType *descriptor) {
   grpc::protobuf::SourceLocation location;
-  if (descriptor->GetSourceLocation(&location)) {
-    GenerateDocCommentBodyImpl(printer, location);
+  if (!descriptor->GetSourceLocation(&location)) {
+    return false;
+  }
+  return GenerateDocCommentBodyImpl(printer, location);
+}
+
+void GenerateDocCommentServerMethod(grpc::protobuf::io::Printer *printer,
+                                    const MethodDescriptor *method) {
+  if (GenerateDocCommentBody(printer, method)) {
+    if (method->client_streaming()) {
+      printer->Print(
+          "/// <param name=\"requestStream\">Used for reading requests from "
+          "the client.</param>\n");
+    } else {
+      printer->Print(
+          "/// <param name=\"request\">The request received from the "
+          "client.</param>\n");
+    }
+    if (method->server_streaming()) {
+      printer->Print(
+          "/// <param name=\"responseStream\">Used for sending responses back "
+          "to the client.</param>\n");
+    }
+    printer->Print(
+        "/// <param name=\"context\">The context of the server-side call "
+        "handler being invoked.</param>\n");
+    if (method->server_streaming()) {
+      printer->Print(
+          "/// <returns>A task indicating completion of the "
+          "handler.</returns>\n");
+    } else {
+      printer->Print(
+          "/// <returns>The response to send back to the client (wrapped by a "
+          "task).</returns>\n");
+    }
+  }
+}
+
+void GenerateDocCommentClientMethod(grpc::protobuf::io::Printer *printer,
+                                    const MethodDescriptor *method,
+                                    bool is_sync, bool use_call_options) {
+  if (GenerateDocCommentBody(printer, method)) {
+    if (!method->client_streaming()) {
+      printer->Print(
+          "/// <param name=\"request\">The request to send to the "
+          "server.</param>\n");
+    }
+    if (!use_call_options) {
+      printer->Print(
+          "/// <param name=\"headers\">The initial metadata to send with the "
+          "call. This parameter is optional.</param>\n");
+      printer->Print(
+          "/// <param name=\"deadline\">An optional deadline for the call. The "
+          "call will be cancelled if deadline is hit.</param>\n");
+      printer->Print(
+          "/// <param name=\"cancellationToken\">An optional token for "
+          "canceling the call.</param>\n");
+    } else {
+      printer->Print(
+          "/// <param name=\"options\">The options for the call.</param>\n");
+    }
+    if (is_sync) {
+      printer->Print(
+          "/// <returns>The response received from the server.</returns>\n");
+    } else {
+      printer->Print("/// <returns>The call object.</returns>\n");
+    }
   }
 }
 
@@ -319,7 +385,7 @@ void GenerateServerClass(Printer *out, const ServiceDescriptor *service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor *method = service->method(i);
-    GenerateDocCommentBody(out, method);
+    GenerateDocCommentServerMethod(out, method);
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request$$response_stream_maybe$, "
@@ -393,7 +459,7 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
 
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
-      GenerateDocCommentBody(out, method);
+      GenerateDocCommentClientMethod(out, method, true, false);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, Metadata "
           "headers = null, DateTime? deadline = null, CancellationToken "
@@ -411,7 +477,7 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
       out->Print("}\n");
 
       // overload taking CallOptions as a param
-      GenerateDocCommentBody(out, method);
+      GenerateDocCommentClientMethod(out, method, true, true);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "CallOptions options)\n",
@@ -432,7 +498,7 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
-    GenerateDocCommentBody(out, method);
+    GenerateDocCommentClientMethod(out, method, false, false);
     out->Print(
         "public virtual $returntype$ $methodname$($request_maybe$Metadata "
         "headers = null, DateTime? deadline = null, CancellationToken "
@@ -452,7 +518,7 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
     out->Print("}\n");
 
     // overload taking CallOptions as a param
-    GenerateDocCommentBody(out, method);
+    GenerateDocCommentClientMethod(out, method, false, true);
     out->Print(
         "public virtual $returntype$ $methodname$($request_maybe$CallOptions "
         "options)\n",
@@ -517,6 +583,9 @@ void GenerateBindServiceMethod(Printer *out, const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Creates service definition that can be registered with a "
       "server</summary>\n");
+  out->Print(
+      "/// <param name=\"serviceImpl\">An object implementing the server-side"
+      " handling logic.</param>\n");
   out->Print(
       "public static ServerServiceDefinition BindService($implclass$ "
       "serviceImpl)\n",

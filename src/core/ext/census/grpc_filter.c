@@ -154,7 +154,8 @@ static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(d, 0, sizeof(*d));
   d->start_ts = args->start_time;
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem);
+  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
@@ -167,11 +168,12 @@ static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
+  return GRPC_ERROR_NONE;
 }
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,

@@ -100,9 +100,15 @@ def diagnose_compile_error(build_ext, error):
             .format(source)
           )
 
+def diagnose_attribute_error(build_ext, error):
+  if any('_needs_stub' in arg for arg in error.args):
+    raise commands.CommandError(
+        "We expect a missing `_needs_stub` attribute from older versions of "
+        "setuptools. Consider upgrading setuptools.")
 
 _ERROR_DIAGNOSES = {
-    errors.CompileError: diagnose_compile_error
+    errors.CompileError: diagnose_compile_error,
+    AttributeError: diagnose_attribute_error
 }
 
 def diagnose_build_ext_error(build_ext, error, formatted):
