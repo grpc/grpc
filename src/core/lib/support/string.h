@@ -96,6 +96,9 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
 char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
                       size_t *total_length);
 
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs);
+
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
   char **strs;

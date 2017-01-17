@@ -45,6 +45,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/stack_lockfree.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -271,7 +272,7 @@ struct shutdown_cleanup_args {
 static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
   struct shutdown_cleanup_args *a = arg;
-  grpc_slice_unref(a->slice);
+  grpc_slice_unref_internal(exec_ctx, a->slice);
   gpr_free(a);
 }
 
@@ -380,7 +381,7 @@ static void server_ref(grpc_server *server) {
 static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   registered_method *rm;
   size_t i;
-  grpc_channel_args_destroy(server->channel_args);
+  grpc_channel_args_destroy(exec_ctx, server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
   while ((rm = server->registered_methods) != NULL) {
@@ -743,7 +744,8 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
@@ -767,7 +769,8 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   gpr_timespec op_deadline;
 
   GRPC_ERROR_REF(error);
-  grpc_metadata_batch_filter(calld->recv_initial_metadata, server_filter, elem);
+  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                             server_filter, elem);
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
     calld->deadline = op_deadline;
@@ -842,7 +845,7 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   args.server_transport_data = transport_server_data;
   args.send_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_call *call;
-  grpc_error *error = grpc_call_create(&args, &call);
+  grpc_error *error = grpc_call_create(exec_ctx, &args, &call);
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   if (error != GRPC_ERROR_NONE) {
@@ -908,10 +911,10 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   GPR_ASSERT(calld->state != PENDING);
 
   if (calld->host) {
-    GRPC_MDSTR_UNREF(calld->host);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
   }
   if (calld->path) {
-    GRPC_MDSTR_UNREF(calld->path);
+    GRPC_MDSTR_UNREF(exec_ctx, calld->path);
   }
   grpc_metadata_array_destroy(&calld->initial_metadata);
 
@@ -944,10 +947,10 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       if (chand->registered_methods[i].method) {
-        GRPC_MDSTR_UNREF(chand->registered_methods[i].method);
+        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].method);
       }
       if (chand->registered_methods[i].host) {
-        GRPC_MDSTR_UNREF(chand->registered_methods[i].host);
+        GRPC_MDSTR_UNREF(exec_ctx, chand->registered_methods[i].host);
       }
     }
     gpr_free(chand->registered_methods);

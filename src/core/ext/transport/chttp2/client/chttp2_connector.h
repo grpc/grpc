@@ -35,17 +35,7 @@
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 
 #include "src/core/ext/client_channel/connector.h"
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
-typedef void (*grpc_chttp2_add_handshakers_func)(
-    grpc_exec_ctx* exec_ctx, void* user_data,
-    grpc_handshake_manager* handshake_mgr);
-
-/// If \a add_handshakers is non-NULL, it will be called with
-/// \a add_handshakers_user_data to add handshakers.
-grpc_connector* grpc_chttp2_connector_create(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_add_handshakers_func add_handshakers,
-    void* add_handshakers_user_data);
+grpc_connector* grpc_chttp2_connector_create();
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H */

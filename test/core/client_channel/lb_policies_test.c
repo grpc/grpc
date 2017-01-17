@@ -645,7 +645,11 @@ static void test_get_channel_info() {
   arg.value.string = "{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}";
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
-  grpc_channel_args_destroy(args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // Now request the service config again.

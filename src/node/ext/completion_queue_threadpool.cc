@@ -31,17 +31,62 @@
  *
  */
 
+/* I don't like using #ifndef, but I don't see a better way to do this */
+#ifndef GRPC_UV
+
 #include <node.h>
 #include <nan.h>
 
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
-#include "completion_queue_async_worker.h"
+#include "completion_queue.h"
 #include "call.h"
 
 namespace grpc {
 namespace node {
+
+namespace {
+
+/* A worker that asynchronously calls completion_queue_next, and queues onto the
+   node event loop a call to the function stored in the event's tag. */
+class CompletionQueueAsyncWorker : public Nan::AsyncWorker {
+ public:
+  CompletionQueueAsyncWorker();
+
+  ~CompletionQueueAsyncWorker();
+  /* Calls completion_queue_next with the provided deadline, and stores the
+     event if there was one or sets an error message if there was not */
+  void Execute();
+
+  /* Returns the completion queue attached to this class */
+  static grpc_completion_queue *GetQueue();
+
+  /* Convenience function to create a worker with the given arguments and queue
+     it to run asynchronously */
+  static void Next();
+
+  /* Initialize the CompletionQueueAsyncWorker class */
+  static void Init(v8::Local<v8::Object> exports);
+
+ protected:
+  /* Called when Execute has succeeded (completed without setting an error
+     message). Calls the saved callback with the event that came from
+     completion_queue_next */
+  void HandleOKCallback();
+
+  void HandleErrorCallback();
+
+ private:
+  grpc_event result;
+
+  static grpc_completion_queue *queue;
+
+  // Number of grpc_completion_queue_next calls in the thread pool
+  static int current_threads;
+  // Number of grpc_completion_queue_next calls waiting to enter the thread pool
+  static int waiting_next_calls;
+};
 
 const int max_queue_threads = 2;
 
@@ -137,5 +182,21 @@ void CompletionQueueAsyncWorker::HandleErrorCallback() {
   DestroyTag(result.tag);
 }
 
+}  // namespace
+
+grpc_completion_queue *GetCompletionQueue() {
+  return CompletionQueueAsyncWorker::GetQueue();
+}
+
+void CompletionQueueNext() {
+  CompletionQueueAsyncWorker::Next();
+}
+
+void CompletionQueueInit(Local<Object> exports) {
+  CompletionQueueAsyncWorker::Init(exports);
+}
+
 }  // namespace node
 }  // namespace grpc
+
+#endif  /* GRPC_UV */

@@ -158,7 +158,7 @@ static void cleanup_rpc(void) {
   grpc_event ev;
   grpc_slice_buffer_destroy(&state.incoming_buffer);
   grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_channel_credentials_unref(state.creds);
+  grpc_channel_credentials_release(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
