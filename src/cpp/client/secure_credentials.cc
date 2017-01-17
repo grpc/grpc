@@ -214,6 +214,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
      static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
+  for (auto it = md.begin(); it != md.end(); ++it) {
+    grpc_slice_unref(it->key);
+    grpc_slice_unref(it->value);
+  }
 }
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
