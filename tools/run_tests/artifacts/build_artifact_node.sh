@@ -42,10 +42,18 @@ mkdir -p artifacts
 
 npm update
 
-node_versions=( 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 7.0.0 )
+node_versions=( 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 7.0.0 )
+
+electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 )
 
 for version in ${node_versions[@]}
 do
   ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
+  cp -r build/stage/* artifacts/
+done
+
+for version in ${electron_versions[@]}
+do
+  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
   cp -r build/stage/* artifacts/
 done

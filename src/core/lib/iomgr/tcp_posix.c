@@ -56,6 +56,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -127,7 +128,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
-  grpc_slice_buffer_destroy(&tcp->last_read_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &tcp->last_read_buffer);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
@@ -168,7 +169,7 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
@@ -235,14 +236,15 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       /* We've consumed the edge, request a new one */
       grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
     } else {
-      grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                 tcp->incoming_buffer);
       call_read_cb(exec_ctx, tcp,
                    tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
       TCP_UNREF(exec_ctx, tcp, "read");
     }
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
-    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
     call_read_cb(exec_ctx, tcp,
                  tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp));
     TCP_UNREF(exec_ctx, tcp, "read");
@@ -268,8 +270,9 @@ static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
   grpc_tcp *tcp = tcpp;
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                               &tcp->last_read_buffer);
     call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
@@ -294,8 +297,9 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   GPR_ASSERT(!tcp->finished_edge);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                               &tcp->last_read_buffer);
     call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
@@ -309,7 +313,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->incoming_buffer = incoming_buffer;
-  grpc_slice_buffer_reset_and_unref(incoming_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
@@ -578,7 +582,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
-  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 

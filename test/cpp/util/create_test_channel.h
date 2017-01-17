@@ -59,6 +59,10 @@ std::shared_ptr<Channel> CreateTestChannel(
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args);
 
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& credential_type,
+    const std::shared_ptr<CallCredentials>& creds);
+
 }  // namespace grpc
 
 #endif  // GRPC_TEST_CPP_UTIL_CREATE_TEST_CHANNEL_H

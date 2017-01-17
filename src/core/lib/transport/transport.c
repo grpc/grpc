@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -212,12 +213,12 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 }
 
 void grpc_transport_stream_op_add_cancellation_with_message(
-    grpc_transport_stream_op *op, grpc_status_code status,
-    grpc_slice *optional_message) {
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op,
+    grpc_status_code status, grpc_slice *optional_message) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_error != GRPC_ERROR_NONE) {
     if (optional_message) {
-      grpc_slice_unref(*optional_message);
+      grpc_slice_unref_internal(exec_ctx, *optional_message);
     }
     return;
   }
@@ -227,7 +228,7 @@ void grpc_transport_stream_op_add_cancellation_with_message(
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
-    grpc_slice_unref(*optional_message);
+    grpc_slice_unref_internal(exec_ctx, *optional_message);
   } else {
     error = GRPC_ERROR_CREATE("Call cancelled");
   }
@@ -235,14 +236,15 @@ void grpc_transport_stream_op_add_cancellation_with_message(
   add_error(op, &op->cancel_error, error);
 }
 
-void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
+void grpc_transport_stream_op_add_close(grpc_exec_ctx *exec_ctx,
+                                        grpc_transport_stream_op *op,
                                         grpc_status_code status,
                                         grpc_slice *optional_message) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_error != GRPC_ERROR_NONE ||
       op->close_error != GRPC_ERROR_NONE) {
     if (optional_message) {
-      grpc_slice_unref(*optional_message);
+      grpc_slice_unref_internal(exec_ctx, *optional_message);
     }
     return;
   }
@@ -252,7 +254,7 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
-    grpc_slice_unref(*optional_message);
+    grpc_slice_unref_internal(exec_ctx, *optional_message);
   } else {
     error = GRPC_ERROR_CREATE("Call force closed");
   }

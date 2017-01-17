@@ -129,6 +129,27 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
+def maybe_echo_metadata(_call)
+  
+  # these are consistent for all interop tests
+  initial_metadata_key = "x-grpc-test-echo-initial"
+  trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
+
+  if _call.metadata.has_key?(initial_metadata_key)
+    _call.metadata_to_send[initial_metadata_key] = _call.metadata[initial_metadata_key]
+  end
+  if _call.metadata.has_key?(trailing_metadata_key)
+    _call.output_metadata[trailing_metadata_key] = _call.metadata[trailing_metadata_key]
+  end
+end
+
+def maybe_echo_status_and_message(req)
+  unless req.response_status.nil?
+    fail GRPC::BadStatus.new_status_exception(
+        req.response_status.code, req.response_status.message)
+  end
+end
+
 # A FullDuplexEnumerator passes requests to a block and yields generated responses
 class FullDuplexEnumerator
   include Grpc::Testing
@@ -143,6 +164,7 @@ class FullDuplexEnumerator
     begin
       cls = StreamingOutputCallResponse
       @requests.each do |req|
+        maybe_echo_status_and_message(req)
         req.response_parameters.each do |params|
           resp_size = params.size
           GRPC.logger.info("read a req, response size is #{resp_size}")
@@ -170,6 +192,8 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def unary_call(simple_req, _call)
+    maybe_echo_metadata(_call)
+    maybe_echo_status_and_message(simple_req)
     req_size = simple_req.response_size
     SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
                                             body: nulls(req_size)))
@@ -189,7 +213,8 @@ class TestTarget < Grpc::Testing::TestService::Service
     end
   end
 
-  def full_duplex_call(reqs)
+  def full_duplex_call(reqs, _call)
+    maybe_echo_metadata(_call)
     # reqs is a lazy Enumerator of the requests sent by the client.
     FullDuplexEnumerator.new(reqs).each_item
   end
