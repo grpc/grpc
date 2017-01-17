@@ -32,27 +32,27 @@ from src.proto.grpc.testing import services_pb2
 
 
 class BenchmarkServer(services_pb2.BenchmarkServiceServicer):
-  """Synchronous Server implementation for the Benchmark service."""
+    """Synchronous Server implementation for the Benchmark service."""
 
-  def UnaryCall(self, request, context):
-    payload = messages_pb2.Payload(body='\0' * request.response_size)
-    return messages_pb2.SimpleResponse(payload=payload)
+    def UnaryCall(self, request, context):
+        payload = messages_pb2.Payload(body='\0' * request.response_size)
+        return messages_pb2.SimpleResponse(payload=payload)
 
-  def StreamingCall(self, request_iterator, context):
-    for request in request_iterator:
-      payload = messages_pb2.Payload(body='\0' * request.response_size)
-      yield messages_pb2.SimpleResponse(payload=payload)
+    def StreamingCall(self, request_iterator, context):
+        for request in request_iterator:
+            payload = messages_pb2.Payload(body='\0' * request.response_size)
+            yield messages_pb2.SimpleResponse(payload=payload)
 
 
 class GenericBenchmarkServer(services_pb2.BenchmarkServiceServicer):
-  """Generic Server implementation for the Benchmark service."""
+    """Generic Server implementation for the Benchmark service."""
 
-  def __init__(self, resp_size):
-    self._response = '\0' * resp_size
+    def __init__(self, resp_size):
+        self._response = '\0' * resp_size
 
-  def UnaryCall(self, request, context):
-    return self._response
+    def UnaryCall(self, request, context):
+        return self._response
 
-  def StreamingCall(self, request_iterator, context):
-    for request in request_iterator:
-      yield self._response
+    def StreamingCall(self, request_iterator, context):
+        for request in request_iterator:
+            yield self._response

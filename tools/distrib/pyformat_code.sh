@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/bin/bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +27,34 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""The entry point for the qps worker."""
 
-import argparse
-import time
+set -ex
 
-from concurrent import futures
-import grpc
-from src.proto.grpc.testing import services_pb2
+# change to root directory
+cd $(dirname $0)/../..
 
-from tests.qps import worker_server
+DIRS=src/python
+EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_health_checking/grpc_*.py src/python/grpcio_reflection/grpc_*.py src/python/grpcio_tests/grpc_*.py'
 
+VIRTUALENV=python_format_venv
 
-def run_worker_server(port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
-    servicer = worker_server.WorkerServer()
-    services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
-    server.add_insecure_port('[::]:{}'.format(port))
-    server.start()
-    servicer.wait_for_quit()
-    server.stop(0)
+virtualenv $VIRTUALENV
+PYTHON=`realpath $VIRTUALENV/bin/python`
+$PYTHON -m pip install --upgrade futures yapf
 
+exclusion_args=""
+for exclusion in $EXCLUSIONS; do
+  exclusion_args="$exclusion_args --exclude $exclusion"
+done
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='gRPC Python performance testing worker')
-    parser.add_argument(
-        '--driver_port',
-        type=int,
-        dest='port',
-        help='The port the worker should listen on')
-    args = parser.parse_args()
-
-    run_worker_server(args.port)
+script_result=0
+for dir in $DIRS; do
+  tempdir=`mktemp -d`
+  cp -RT $dir $tempdir
+  $PYTHON -m yapf -i -r -p $exclusion_args $dir
+  if ! diff -rq $dir $tempdir; then
+    script_result=1
+  fi
+  rm -rf $tempdir
+done
+exit $script_result

@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tests for grpc.framework.foundation.logging_pool."""
 
 import threading
@@ -39,50 +38,51 @@ _POOL_SIZE = 16
 
 class _CallableObject(object):
 
-  def __init__(self):
-    self._lock = threading.Lock()
-    self._passed_values = []
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._passed_values = []
 
-  def __call__(self, value):
-    with self._lock:
-      self._passed_values.append(value)
+    def __call__(self, value):
+        with self._lock:
+            self._passed_values.append(value)
 
-  def passed_values(self):
-    with self._lock:
-      return tuple(self._passed_values)
+    def passed_values(self):
+        with self._lock:
+            return tuple(self._passed_values)
 
 
 class LoggingPoolTest(unittest.TestCase):
 
-  def testUpAndDown(self):
-    pool = logging_pool.pool(_POOL_SIZE)
-    pool.shutdown(wait=True)
+    def testUpAndDown(self):
+        pool = logging_pool.pool(_POOL_SIZE)
+        pool.shutdown(wait=True)
 
-    with logging_pool.pool(_POOL_SIZE) as pool:
-      self.assertIsNotNone(pool)
+        with logging_pool.pool(_POOL_SIZE) as pool:
+            self.assertIsNotNone(pool)
 
-  def testTaskExecuted(self):
-    test_list = []
+    def testTaskExecuted(self):
+        test_list = []
 
-    with logging_pool.pool(_POOL_SIZE) as pool:
-      pool.submit(lambda: test_list.append(object())).result()
+        with logging_pool.pool(_POOL_SIZE) as pool:
+            pool.submit(lambda: test_list.append(object())).result()
 
-    self.assertTrue(test_list)
+        self.assertTrue(test_list)
 
-  def testException(self):
-    with logging_pool.pool(_POOL_SIZE) as pool:
-      raised_exception = pool.submit(lambda: 1/0).exception()
+    def testException(self):
+        with logging_pool.pool(_POOL_SIZE) as pool:
+            raised_exception = pool.submit(lambda: 1 / 0).exception()
 
-    self.assertIsNotNone(raised_exception)
+        self.assertIsNotNone(raised_exception)
 
-  def testCallableObjectExecuted(self):
-    callable_object = _CallableObject()
-    passed_object = object()
-    with logging_pool.pool(_POOL_SIZE) as pool:
-      future = pool.submit(callable_object, passed_object)
-    self.assertIsNone(future.result())
-    self.assertSequenceEqual((passed_object,), callable_object.passed_values())
+    def testCallableObjectExecuted(self):
+        callable_object = _CallableObject()
+        passed_object = object()
+        with logging_pool.pool(_POOL_SIZE) as pool:
+            future = pool.submit(callable_object, passed_object)
+        self.assertIsNone(future.result())
+        self.assertSequenceEqual((passed_object,),
+                                 callable_object.passed_values())
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)
