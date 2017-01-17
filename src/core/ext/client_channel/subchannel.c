@@ -43,6 +43,7 @@
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/initial_connect_string.h"
 #include "src/core/ext/client_channel/parse_address.h"
+#include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -332,13 +333,24 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_resolved_address *addr = gpr_malloc(sizeof(*addr));
   grpc_get_subchannel_address_arg(args->args, addr);
   grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
-  static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-  grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
+  grpc_resolved_address *new_address = NULL;
+  grpc_channel_args *new_args = NULL;
+  if (grpc_proxy_mappers_map(exec_ctx, c->addr, args->args, &new_address,
+                             &new_args)) {
+    GPR_ASSERT(new_address != NULL);
+    gpr_free(addr);
+    addr = new_address;
+    if (new_args != NULL) c->args = new_args;
+  }
+  if (c->args == NULL) {
+    static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
+    grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
+    c->args = grpc_channel_args_copy_and_add_and_remove(
+        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg,
+        1);
+    gpr_free(new_arg.value.string);
+  }
   gpr_free(addr);
-  c->args = grpc_channel_args_copy_and_add_and_remove(
-      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
-  gpr_free(new_arg.value.string);
-
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c,
