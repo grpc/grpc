@@ -1,0 +1,5 @@
+%YAML 1.2
+--- |
+  module GrpcBuildConfig
+    CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-${settings.core_version.major}.dll'
+  end

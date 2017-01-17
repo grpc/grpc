@@ -5,6 +5,8 @@ require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
 require 'fileutils'
 
+require_relative 'build_config.rb'
+
 load 'tools/distrib/docker_for_windows.rb'
 
 # Add rubocop style checking tasks
@@ -83,7 +85,7 @@ task 'dlls' do
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
-  out = '/tmp/libs/opt/grpc-2.dll'
+  out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
