@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,16 +26,27 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Test basic Bazel features
-#
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
-cd /var/local/git/grpc
-bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/cpp/...
+package(default_visibility = ["//visibility:public"])
+
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+
+grpc_proto_library(
+    name = "auth_sample",
+    srcs = ["auth_sample.proto"],
+)
+
+grpc_proto_library(
+    name = "hellostreamingworld",
+    srcs = ["hellostreamingworld.proto"],
+)
+
+grpc_proto_library(
+    name = "helloworld",
+    srcs = ["helloworld.proto"],
+)
+
+grpc_proto_library(
+    name = "route_guide",
+    srcs = ["route_guide.proto"],
+)
