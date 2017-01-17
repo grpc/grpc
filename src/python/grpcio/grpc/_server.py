@@ -249,6 +249,10 @@ class _Context(grpc.ServicerContext):
   def peer(self):
     return _common.decode(self._rpc_event.operation_call.peer())
 
+  def parent(self, child=None, census=None):
+    # TODO(https://github.com/grpc/grpc/issues/2515): implement.
+    raise NotImplementedError()
+
   def send_initial_metadata(self, initial_metadata):
     with self._state.condition:
       if self._state.client is _CANCELLED:
@@ -716,7 +720,7 @@ def _start(state):
       raise ValueError('Cannot start already-started server!')
     state.server.start()
     state.stage = _ServerStage.STARTED
-    _request_call(state)    
+    _request_call(state)
     def cleanup_server(timeout):
       if timeout is None:
         _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()

@@ -357,8 +357,9 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 class ChannelCredentials(object):
   """A value encapsulating the data required to create a secure Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions.
+  This class has no supported interface - not even construction. It exists to
+  define the type of its instances and its instances exist to be passed to
+  other functions.
   """
 
   def __init__(self, credentials):
@@ -371,8 +372,9 @@ class CallCredentials(object):
   A CallCredentials may be composed with ChannelCredentials to always assert
   identity for every call over that Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions.
+  This class has no supported interface - not even construction. It exists to
+  define the type of its instances and its instances exist to be passed to
+  other functions.
   """
 
   def __init__(self, credentials):
@@ -421,12 +423,29 @@ class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
 class ServerCredentials(object):
   """A value encapsulating the data required to open a secure port on a Server.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions.
+  This class has no supported interface - not even construction. It exists to
+  define the type of its instances and its instances exist to be passed to
+  other functions.
   """
 
   def __init__(self, credentials):
     self._credentials = credentials
+
+
+#################################  Parent  #####################################
+
+
+class Parent(object):
+  """An object used to chain RPCs.
+
+  This class has no supported interface - not even construction. It exists to
+  define the type of its instances and its instances exist to be passed to
+  other behaviors.
+  """
+
+  def __init__(self, call, census):
+    self._call = call
+    self._census = census
 
 
 ########################  Multi-Callable Interfaces  ###########################
@@ -436,7 +455,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-unary RPC."""
 
   @abc.abstractmethod
-  def __call__(self, request, timeout=None, metadata=None, credentials=None):
+  def __call__(
+      self, request, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -444,6 +465,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -457,7 +480,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def with_call(self, request, timeout=None, metadata=None, credentials=None):
+  def with_call(
+      self, request, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -465,6 +490,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional durating of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -478,7 +505,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def future(self, request, timeout=None, metadata=None, credentials=None):
+  def future(
+      self, request, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Asynchronously invokes the underlying RPC.
 
     Args:
@@ -486,6 +515,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -501,7 +532,9 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-stream RPC."""
 
   @abc.abstractmethod
-  def __call__(self, request, timeout=None, metadata=None, credentials=None):
+  def __call__(
+      self, request, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Invokes the underlying RPC.
 
     Args:
@@ -509,6 +542,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -524,7 +559,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __call__(
-      self, request_iterator, timeout=None, metadata=None, credentials=None):
+      self, request_iterator, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -532,6 +568,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -547,7 +585,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def with_call(
-      self, request_iterator, timeout=None, metadata=None, credentials=None):
+      self, request_iterator, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -555,6 +594,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -569,7 +610,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def future(
-      self, request_iterator, timeout=None, metadata=None, credentials=None):
+      self, request_iterator, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Asynchronously invokes the underlying RPC.
 
     Args:
@@ -577,6 +619,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -593,7 +637,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __call__(
-      self, request_iterator, timeout=None, metadata=None, credentials=None):
+      self, request_iterator, timeout=None, metadata=None, parent=None,
+      credentials=None):
     """Invokes the underlying RPC.
 
     Args:
@@ -601,6 +646,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
+      parent: An optional Parent object describing how the invoked RPC is to be
+        associated with another RPC.
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
@@ -733,6 +780,26 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     Returns:
       A string identifying the peer that invoked the RPC being serviced.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def parent(self, child=None, census=None):
+    """Creates a value to associate invoked RPCs with the current RPC.
+
+    This method's parameters have no guaranteed defaults; if either True or
+    False is desired for the value of an argument the argument should be
+    explicitly passed.
+
+    Args:
+      child: An optional boolean indicating whether or not the invoked RPC
+        should be considered a child RPC of the RPC currently being serviced.
+      census: An optional boolean indicating whether or not census information
+        should be passed from the RPC currently being serviced to the invoked
+        RPC.
+
+    Returns:
+      A Parent object to be passed to other RPC invocations.
     """
     raise NotImplementedError()
 
