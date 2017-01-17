@@ -168,9 +168,6 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
       break;
     case GRPC_CHTTP2_DATA_PAD_STATE_INITIAL:
       p->pad_state = *cur;
-      if (p->frame_size < (uint32_t)(p->pad_state + 1)) {
-        return GRPC_ERROR_CREATE("Data frame too short for padding specified");
-      }
       if (++cur == end) {
         return GRPC_ERROR_NONE;
       }
@@ -313,6 +310,9 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   if (is_last && p->is_last_frame) {
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
                                    GRPC_ERROR_NONE);
+  }
+  if (is_last && p->pad_state) {
+    return GRPC_ERROR_CREATE("Padding too long");
   }
 
   return error;
