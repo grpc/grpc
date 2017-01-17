@@ -88,8 +88,10 @@
 + (instancetype)grpc_dictionaryFromMetadata:(grpc_metadata *)entries count:(size_t)count {
   NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithCapacity:count];
   for (grpc_metadata *entry = entries; entry < entries + count; entry++) {
-    NSString *name = [NSString stringWithCString:(char*)GRPC_SLICE_START_PTR(entry->key)
+    char *key = grpc_slice_to_c_string(entry->key);
+    NSString *name = [NSString stringWithCString:key
                                         encoding:NSASCIIStringEncoding];
+    gpr_free(key);
     if (!name || metadata[name]) {
       // Log if name is nil?
       continue;
