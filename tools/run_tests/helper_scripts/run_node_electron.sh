@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2016, Google Inc.
+#!/bin/bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,19 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs full performance test suite.
+
+source ~/.nvm/nvm.sh
+
+nvm use 6
 set -ex
 
-SERVER_HOST=${1:-grpc-performance-server-32core}
-CLIENT_HOST1=${2:-grpc-performance-client-32core}
-CLIENT_HOST2=${3:-grpc-performance-client2-32core}
-# Enter the gRPC repo root
+# change to grpc repo root
 cd $(dirname $0)/../..
 
-# scalability with 32cores (and upload to a different BQ table)
-tools/run_tests/run_performance_tests.py \
-    -l c++ \
-    --category sweep \
-    --bq_result_table performance_test.performance_experiment_32core \
-    --remote_worker_host ${SERVER_HOST} ${CLIENT_HOST1} ${CLIENT_HOST2} \
-    --perf_args "record -F 97 --call-graph dwarf" \
-    || EXIT_CODE=1
+test_directory='src/node/test'
+timeout=8000
 
-exit $EXIT_CODE
+JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
+  ./node_modules/.bin/xvfb-maybe \
+  ./node_modules/.bin/electron-mocha --timeout $timeout \
+  --reporter mocha-jenkins-reporter $test_directory

@@ -2335,6 +2335,43 @@ targets:
   - mac
   - linux
   - posix
+- name: memory_profile_client
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_server
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_test
+  cpu_cost: 1.5
+  build: test
+  language: c
+  src:
+  - test/core/memory_usage/memory_usage_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: message_compress_test
   build: test
   language: c
@@ -3827,7 +3864,6 @@ node_modules:
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
   - src/node/ext/completion_queue.h
-  - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
   - src/node/ext/slice.h
@@ -3847,8 +3883,8 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue.cc
-  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/completion_queue_threadpool.cc
+  - src/node/ext/completion_queue_uv.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
