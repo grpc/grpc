@@ -70,6 +70,8 @@ cdef class CompletionQueue:
         operation_call = tag.operation_call
         request_call_details = tag.request_call_details
         request_metadata = tag.request_metadata
+        if request_metadata is not None:
+          request_metadata._claim_slice_ownership()
         batch_operations = tag.batch_operations
         if tag.is_new_request:
           # Stuff in the tag not explicitly handled by us needs to live through
@@ -91,7 +93,7 @@ cdef class CompletionQueue:
       c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
       if deadline is not None:
         c_deadline = deadline.c_time
-      
+
       while True:
         c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
         if gpr_time_cmp(c_timeout, c_deadline) > 0:
@@ -100,7 +102,7 @@ cdef class CompletionQueue:
           self.c_completion_queue, c_timeout, NULL)
         if event.type != GRPC_QUEUE_TIMEOUT or gpr_time_cmp(c_timeout, c_deadline) == 0:
           break;
-        
+
         # Handle any signals
         with gil:
           cpython.PyErr_CheckSignals()
