@@ -54,7 +54,7 @@ static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   GPR_ASSERT(evalue);
   GPR_ASSERT(grpc_slice_str_cmp(md->key->slice, ekey) == 0);
   GPR_ASSERT(grpc_slice_str_cmp(md->value->slice, evalue) == 0);
-  GRPC_MDELEM_UNREF(md);
+  GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
@@ -94,8 +94,9 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.2.1 */
   test_vector(&parser, mode,
               "400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
@@ -111,9 +112,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "password", "secret", NULL);
   /* D.2.4 */
   test_vector(&parser, mode, "82", ":method", "GET", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -131,9 +132,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -151,11 +152,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.5.1 */
   test_vector(&parser, mode,
               "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -185,11 +186,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.6.1 */
   test_vector(&parser, mode,
               "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -216,7 +217,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

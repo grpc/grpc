@@ -36,7 +36,7 @@ import shutil
 import sys
 import tempfile
 import multiprocessing
-sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests'))
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
 
 assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
 

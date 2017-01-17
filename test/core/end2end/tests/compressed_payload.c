@@ -140,8 +140,12 @@ static void request_for_disabled_algorithm(
       NULL, requested_client_compression_algorithm);
   server_args =
       grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_NONE);
-  server_args = grpc_channel_args_compression_algorithm_set_state(
-      &server_args, algorithm_to_disable, false);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    server_args = grpc_channel_args_compression_algorithm_set_state(
+        &exec_ctx, &server_args, algorithm_to_disable, false);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
@@ -262,8 +266,12 @@ static void request_for_disabled_algorithm(
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
 
-  grpc_channel_args_destroy(client_args);
-  grpc_channel_args_destroy(server_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, client_args);
+    grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -512,8 +520,12 @@ static void request_with_payload_template(
 
   cq_verifier_destroy(cqv);
 
-  grpc_channel_args_destroy(client_args);
-  grpc_channel_args_destroy(server_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, client_args);
+    grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   end_test(&f);
   config.tear_down_data(&f);

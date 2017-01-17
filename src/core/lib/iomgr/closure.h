@@ -35,16 +35,14 @@
 #define GRPC_CORE_LIB_IOMGR_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <stdbool.h>
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/support/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
-
-/* forward declaration for exec_ctx.h */
-struct grpc_exec_ctx;
-typedef struct grpc_exec_ctx grpc_exec_ctx;
 
 typedef struct grpc_closure_list {
   grpc_closure *head;
@@ -58,6 +56,22 @@ typedef struct grpc_closure_list {
  *              describing what went wrong */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error);
+
+typedef struct grpc_closure_scheduler grpc_closure_scheduler;
+
+typedef struct grpc_closure_scheduler_vtable {
+  /* NOTE: for all these functions, closure->scheduler == the scheduler that was
+           used to find this vtable */
+  void (*run)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+              grpc_error *error);
+  void (*sched)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                grpc_error *error);
+} grpc_closure_scheduler_vtable;
+
+/** Abstract type that can schedule closures for execution */
+struct grpc_closure_scheduler {
+  const grpc_closure_scheduler_vtable *vtable;
+};
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
@@ -75,6 +89,10 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void *cb_arg;
 
+  /** Scheduler to schedule against: NULL to schedule against current execution
+      context */
+  grpc_closure_scheduler *scheduler;
+
   /** Once queued, the result of the closure. Before then: scratch space */
   union {
     grpc_error *error;
@@ -82,12 +100,14 @@ struct grpc_closure {
   } error_data;
 };
 
-/** Initializes \a closure with \a cb and \a cb_arg. */
-void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                       void *cb_arg);
+/** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
+grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
+                                void *cb_arg,
+                                grpc_closure_scheduler *scheduler);
 
 /* Create a heap allocated closure: try to avoid except for very rare events */
-grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
+grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
+                                  grpc_closure_scheduler *scheduler);
 
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
@@ -114,5 +134,14 @@ bool grpc_closure_list_empty(grpc_closure_list list);
  *  by definition safe. */
 void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                       grpc_error *error);
+
+/** Schedule a closure to be run. Does not need to be run from a safe point. */
+void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                        grpc_error *error);
+
+/** Schedule all closures in a list to be run. Does not need to be run from a
+ * safe point. */
+void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx,
+                             grpc_closure_list *closure_list);
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

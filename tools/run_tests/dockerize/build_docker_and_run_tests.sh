@@ -77,8 +77,6 @@ docker run \
   -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \
   -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(which docker):/bin/docker \
   -w /var/local/git/grpc \
   --name=$CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \

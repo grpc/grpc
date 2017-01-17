@@ -36,7 +36,9 @@ import math
 import grpc
 
 import helloworld_pb2
+import helloworld_pb2_grpc
 import route_guide_pb2
+import route_guide_pb2_grpc
 import route_guide_resources
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -70,13 +72,13 @@ def _get_distance(start, end):
   return R * c;
 
 
-class _GreeterServicer(helloworld_pb2.GreeterServicer):
+class _GreeterServicer(helloworld_pb2_grpc.GreeterServicer):
 
   def SayHello(self, request, context):
     return helloworld_pb2.HelloReply(message='Hello, {}!'.format(request.name))
 
 
-class _RouteGuideServicer(route_guide_pb2.RouteGuideServicer):
+class _RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
   """Provides methods that implement functionality of route guide server."""
 
   def __init__(self):
@@ -133,8 +135,8 @@ class _RouteGuideServicer(route_guide_pb2.RouteGuideServicer):
 
 def serve():
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-  helloworld_pb2.add_GreeterServicer_to_server(_GreeterServicer(), server)
-  route_guide_pb2.add_RouteGuideServicer_to_server(
+  helloworld_pb2_grpc.add_GreeterServicer_to_server(_GreeterServicer(), server)
+  route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
       _RouteGuideServicer(), server)
   server.add_insecure_port('[::]:50051')
   server.start()
