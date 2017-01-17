@@ -183,6 +183,7 @@ describe('Server.prototype.addProtoService', function() {
         assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
         done();
       });
+      call.on('error', function(status) { /* Do nothing */ });
     });
     it('should respond to a bidi call with UNIMPLEMENTED', function(done) {
       var call = client.divMany();
@@ -193,6 +194,7 @@ describe('Server.prototype.addProtoService', function() {
         assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
         done();
       });
+      call.on('error', function(status) { /* Do nothing */ });
       call.end();
     });
   });
