@@ -60,7 +60,7 @@ static size_t grpc_slice_hash_table_find_index(
     if (is_empty(&table->entries[idx])) {
       return find_empty ? idx : table->size;
     }
-    if (grpc_slice_cmp(table->entries[idx].key, key) == 0) {
+    if (grpc_slice_eq(table->entries[idx].key, key)) {
       return idx;
     }
   }
