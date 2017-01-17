@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,26 @@
 # This script is invoked by Jenkins and runs full performance test suite.
 set -ex
 
-SERVER_HOST=${1:-grpc-performance-server-32core}
-CLIENT_HOST1=${2:-grpc-performance-client-32core}
-CLIENT_HOST2=${3:-grpc-performance-client2-32core}
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-# scalability with 32cores (and upload to a different BQ table)
+# scalability with 32cores c++ benchmarks
 tools/run_tests/run_performance_tests.py \
     -l c++ \
-    --category sweep \
-    --bq_result_table performance_test.performance_experiment_32core \
-    --remote_worker_host ${SERVER_HOST} ${CLIENT_HOST1} ${CLIENT_HOST2} \
+    --category scalable \
+    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
     --perf_args "record -F 97 --call-graph dwarf" \
+    --flame_graph_reports cpp_flamegraphs \
+    || EXIT_CODE=1
+
+# scalability with 32cores go benchmarks
+tools/run_tests/run_performance_tests.py \
+    -l go \
+    --category scalable \
+    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
+    --perf_args "record -F 97 -g" \
+    --flame_graph_reports go_flamegraphs \
     || EXIT_CODE=1
 
 exit $EXIT_CODE
+
