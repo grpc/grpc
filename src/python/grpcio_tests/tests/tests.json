@@ -27,6 +27,7 @@
   "unit._cython.cygrpc_test.TypeSmokeTest",
   "unit._empty_message_test.EmptyMessageTest",
   "unit._exit_test.ExitTest",
+  "unit._invalid_metadata_test.InvalidMetadataTest",
   "unit._metadata_code_details_test.MetadataCodeDetailsTest",
   "unit._metadata_test.MetadataTest",
   "unit._rpc_test.RPCTest",
