@@ -62,7 +62,8 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
                                                 uint8_t flags,
                                                 uint32_t stream_id) {
-  if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
+  if (flags &
+      ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_PADDED)) {
     char *msg;
     gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
     grpc_error *err = grpc_error_set_int(
@@ -75,6 +76,12 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
     parser->is_last_frame = 1;
   } else {
     parser->is_last_frame = 0;
+  }
+
+  if (flags & GRPC_CHTTP2_DATA_FLAG_PADDED) {
+    parser->pad_state = GRPC_CHTTP2_DATA_PAD_STATE_INITIAL;
+  } else {
+    parser->pad_state = 0;
   }
 
   return GRPC_ERROR_NONE;
@@ -154,6 +161,34 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
 
   if (cur == end) {
     return GRPC_ERROR_NONE;
+  }
+
+  switch (p->pad_state) {
+    case 0:
+      break;
+    case GRPC_CHTTP2_DATA_PAD_STATE_INITIAL:
+      p->pad_state = *cur;
+      if (p->frame_size < (uint32_t)(p->pad_state + 1)) {
+        return GRPC_ERROR_CREATE("Data frame too short for padding specified");
+      }
+      if (++cur == end) {
+        return GRPC_ERROR_NONE;
+      }
+    /* fallthrough intended */
+    default:
+      GPR_ASSERT(p->pad_state >= 0);
+      if (end - cur > p->pad_state) {
+        cur += p->pad_state;
+        p->pad_state = 0;
+        break;
+      } else if (end - cur == p->pad_state) {
+        p->pad_state = 0;
+        return GRPC_ERROR_NONE;
+      } else {
+        p->pad_state -= end - cur;
+        return GRPC_ERROR_NONE;
+      }
+      GPR_UNREACHABLE_CODE(return GRPC_ERROR_CANCELLED);
   }
 
   switch (p->state) {

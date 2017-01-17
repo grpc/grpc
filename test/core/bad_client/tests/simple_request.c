@@ -143,6 +143,17 @@ int main(int argc, char **argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR_UNUSUAL, 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR_UNUSUAL2, 0);
 
+  /* push a data frame with padding */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
+                           "\x00\x00\x02\x00\x08\x00\x00\x00\x01\x01\x00",
+                           0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
+                           "\x00\x00\x02\x00\x08\x00\x00\x00\x01\x02\x00",
+                           0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
+                           "\x00\x00\x02\x00\x08\x00\x00\x00\x01\x03\x00",
+                           0);
+
   /* push an illegal data frame */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
