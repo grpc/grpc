@@ -34,6 +34,7 @@
 #include "test/cpp/util/grpc_tool.h"
 
 #include <sstream>
+#include <thread>
 
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
@@ -426,13 +427,16 @@ TEST_F(GrpcToolTest, CallCommandRequestStream) {
   // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
   std::streambuf* orig = std::cin.rdbuf();
   std::stringstream ss;
-  ss << "message: 'Hello1'" << std::endl << std::endl;
-  ss << "message: 'Hello2'" << std::endl << std::endl;
   std::cin.rdbuf(ss.rdbuf());
+  std::thread t([&ss]() {
+    ss << "message: 'Hello1'" << std::endl << std::endl;
+    ss << "message: 'Hello2'" << std::endl << std::endl;
+  });
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  t.join();
 
   // Expected output: "message: \"Hello0Hello1Hello2\""
   EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
@@ -453,13 +457,16 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequest) {
   // Mock std::cin input "bad_field: 'Hello1'\n\n message: 'Hello2'\n\n"
   std::streambuf* orig = std::cin.rdbuf();
   std::stringstream ss;
-  ss << "bad_field: 'Hello1'" << std::endl << std::endl;
-  ss << "message: 'Hello2'" << std::endl << std::endl;
   std::cin.rdbuf(ss.rdbuf());
+  std::thread t([&ss]() {
+    ss << "bad_field: 'Hello1'" << std::endl << std::endl;
+    ss << "message: 'Hello2'" << std::endl << std::endl;
+  });
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  t.join();
 
   // Expected output: "message: \"Hello0Hello2\""
   EXPECT_TRUE(NULL !=
