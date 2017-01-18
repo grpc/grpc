@@ -76,10 +76,9 @@ static bool grpc_proxy_mapper_list_map(grpc_exec_ctx* exec_ctx,
   return false;
 }
 
-static void grpc_proxy_mapper_list_destroy(grpc_exec_ctx* exec_ctx,
-                                           grpc_proxy_mapper_list* list) {
+static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
   for (size_t i = 0; i < list->num_mappers; ++i) {
-    grpc_proxy_mapper_destroy(exec_ctx, list->list[i]);
+    grpc_proxy_mapper_destroy(list->list[i]);
   }
   gpr_free(list->list);
 }
@@ -94,8 +93,8 @@ void grpc_proxy_mapper_registry_init() {
   memset(&g_proxy_mapper_list, 0, sizeof(g_proxy_mapper_list));
 }
 
-void grpc_proxy_mapper_registry_shutdown(grpc_exec_ctx* exec_ctx) {
-  grpc_proxy_mapper_list_destroy(exec_ctx, &g_proxy_mapper_list);
+void grpc_proxy_mapper_registry_shutdown() {
+  grpc_proxy_mapper_list_destroy(&g_proxy_mapper_list);
 }
 
 void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper) {

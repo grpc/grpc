@@ -47,7 +47,6 @@ bool grpc_proxy_mapper_map(grpc_exec_ctx* exec_ctx, grpc_proxy_mapper* mapper,
                              new_args);
 }
 
-void grpc_proxy_mapper_destroy(grpc_exec_ctx* exec_ctx,
-                               grpc_proxy_mapper* mapper) {
-  mapper->vtable->destroy(exec_ctx, mapper);
+void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper) {
+  mapper->vtable->destroy(mapper);
 }
