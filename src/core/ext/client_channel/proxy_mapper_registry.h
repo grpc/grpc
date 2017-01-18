@@ -40,10 +40,9 @@ void grpc_proxy_mapper_registry_init();
 void grpc_proxy_mapper_registry_shutdown(grpc_exec_ctx* exec_ctx);
 
 /// Registers a new proxy mapper.  Takes ownership.
-/// If \a at_start is true, the new factory will be at the beginning of
+/// If \a at_start is true, the new mapper will be at the beginning of
 /// the list.  Otherwise, it will be added to the end.
-void grpc_proxy_mapper_factory_register(bool at_start,
-                                        grpc_proxy_mapper* mapper);
+void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper);
 
 bool grpc_proxy_mappers_map(grpc_exec_ctx* exec_ctx,
                             const grpc_resolved_address* address,
