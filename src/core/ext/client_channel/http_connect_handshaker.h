@@ -37,9 +37,11 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/http/parser.h"
 
+/// Channel arg indicating HTTP CONNECT server (string).
+#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+
 /// Creates a new HTTP CONNECT handshaker.
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     grpc_http_header* headers,
+grpc_handshaker* grpc_http_connect_handshaker_create(grpc_http_header* headers,
                                                      size_t num_headers);
 
 /// Returns the name of the proxy to use, or NULL if no proxy is configured.
