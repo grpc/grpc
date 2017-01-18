@@ -49,13 +49,11 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 typedef struct http_connect_handshaker {
   // Base class.  Must be first.
   grpc_handshaker base;
-
-  grpc_http_header* headers;
-  size_t num_headers;
 
   gpr_refcount refcount;
   gpr_mu mu;
@@ -90,11 +88,6 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
                                          handshaker->read_buffer_to_destroy);
       gpr_free(handshaker->read_buffer_to_destroy);
     }
-    for (size_t i = 0; i < handshaker->num_headers; ++i) {
-      gpr_free(handshaker->headers[i].key);
-      gpr_free(handshaker->headers[i].value);
-    }
-    gpr_free(handshaker->headers);
     grpc_slice_buffer_destroy_internal(exec_ctx, &handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
@@ -282,26 +275,58 @@ static void http_connect_handshaker_do_handshake(
     grpc_closure_sched(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
+  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   char* server_name = arg->value.string;
+  // Get headers from channel args.
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
+  grpc_http_header* headers = NULL;
+  size_t num_headers = 0;
+  char** header_strings = NULL;
+  size_t num_header_strings = 0;
+  if (arg != NULL) {
+    GPR_ASSERT(arg->type == GRPC_ARG_STRING);
+    gpr_string_split(arg->value.string, "\n", &header_strings,
+                     &num_header_strings);
+    headers = gpr_malloc(sizeof(grpc_http_header) * num_header_strings);
+    for (size_t i = 0; i < num_header_strings; ++i) {
+      char* sep = strchr(header_strings[i], ':');
+      if (sep == NULL) {
+        gpr_log(GPR_ERROR, "skipping unparseable HTTP CONNECT header: %s",
+                header_strings[i]);
+        continue;
+      }
+      *sep = '\0';
+      headers[num_headers].key = header_strings[i];
+      headers[num_headers].value = sep + 1;
+      ++num_headers;
+    }
+  }
   // Save state in the handshaker object.
   gpr_mu_lock(&handshaker->mu);
   handshaker->args = args;
   handshaker->on_handshake_done = on_handshake_done;
-  // Send HTTP CONNECT request.
+  // Log connection via proxy.
   char* proxy_name = grpc_endpoint_get_peer(args->endpoint);
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
           proxy_name);
   gpr_free(proxy_name);
+  // Construct HTTP CONNECT request.
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
   request.host = server_name;
   request.http.method = "CONNECT";
   request.http.path = server_name;
-  request.http.hdrs = handshaker->headers;
-  request.http.hdr_count = handshaker->num_headers;
+  request.http.hdrs = headers;
+  request.http.hdr_count = num_headers;
   request.handshaker = &grpc_httpcli_plaintext;
   grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
   grpc_slice_buffer_add(&handshaker->write_buffer, request_slice);
+  // Clean up.
+  gpr_free(headers);
+  for (size_t i = 0; i < num_header_strings; ++i) {
+    gpr_free(header_strings[i]);
+  }
+  gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   gpr_ref(&handshaker->refcount);
   grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer,
@@ -313,21 +338,12 @@ static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create(grpc_http_header* headers,
-                                                     size_t num_headers) {
+static grpc_handshaker* grpc_http_connect_handshaker_create() {
   http_connect_handshaker* handshaker = gpr_malloc(sizeof(*handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
-  if (num_headers > 0) {
-    handshaker->headers = gpr_malloc(sizeof(grpc_http_header) * num_headers);
-    for (size_t i = 0; i < num_headers; ++i) {
-      handshaker->headers[i].key = gpr_strdup(headers[i].key);
-      handshaker->headers[i].value = gpr_strdup(headers[i].value);
-    }
-    handshaker->num_headers = num_headers;
-  }
   grpc_slice_buffer_init(&handshaker->write_buffer);
   grpc_closure_init(&handshaker->request_done_closure, on_write_done,
                     handshaker, grpc_schedule_on_exec_ctx);
@@ -370,7 +386,7 @@ static void handshaker_factory_add_handshakers(
     grpc_exec_ctx* exec_ctx, grpc_handshaker_factory* factory,
     const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(handshake_mgr,
-                             grpc_http_connect_handshaker_create(NULL, 0));
+                             grpc_http_connect_handshaker_create());
 }
 
 static void handshaker_factory_destroy(grpc_exec_ctx* exec_ctx,
