@@ -272,6 +272,11 @@ static void http_connect_handshaker_do_handshake(
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
   if (arg == NULL) {
+    // Set shutdown to true so that subsequent calls to
+    // http_connect_handshaker_shutdown() do nothing.
+    gpr_mu_lock(&handshaker->mu);
+    handshaker->shutdown = true;
+    gpr_mu_unlock(&handshaker->mu);
     grpc_closure_sched(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
