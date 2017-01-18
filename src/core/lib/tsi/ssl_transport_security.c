@@ -434,7 +434,11 @@ static tsi_result do_ssl_read(SSL *ssl, unsigned char *unprotected_bytes,
   read_from_ssl =
       SSL_read(ssl, unprotected_bytes, (int)*unprotected_bytes_size);
   if (read_from_ssl == 0) {
-    gpr_log(GPR_ERROR, "SSL_read returned 0 unexpectedly.");
+    int err = SSL_get_error(ssl, read_from_ssl);
+    gpr_log(GPR_ERROR, "SSL_read returned 0(%d) unexpectedly.", err);
+    if (err == SSL_ERROR_ZERO_RETURN) {
+      return TSI_REMOTE_PEER_CLOSED;
+    }
     return TSI_INTERNAL_ERROR;
   }
   if (read_from_ssl < 0) {

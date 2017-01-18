@@ -210,7 +210,9 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_slice_buffer_reset_and_unref(&ep->source_buffer);
 
   if (result != TSI_OK) {
-    gpr_slice_buffer_reset_and_unref(ep->read_buffer);
+    if (result != TSI_REMOTE_PEER_CLOSED) { /* let callback to process last read buffer */
+      gpr_slice_buffer_reset_and_unref(ep->read_buffer);
+    }
     call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
                                    GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
