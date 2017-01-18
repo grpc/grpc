@@ -39,9 +39,11 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
-DEFINE_string(ssl_server_ca_file, "", "Path to server CA file.");
-DEFINE_string(ssl_client_cert_file, "", "Path to client certificate file.");
-DEFINE_string(ssl_client_key_file, "", "Path to client key file.");
+DEFINE_string(ssl_server_roots_file, "", "Path to custom server roots file. If this option is not "
+    "specified, the default server roots will be used. --enable_ssl must be set.");
+DEFINE_string(ssl_client_cert_chain_file, "", "Path to client certificate chain file. "
+    "--enable_ssl must be set.");
+DEFINE_string(ssl_client_key_file, "", "Path to client key file. --enable_ssl must be set.");
 
 namespace grpc {
 namespace testing {
@@ -55,23 +57,32 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
       return grpc::GoogleDefaultCredentials();
     } else {
       auto options = grpc::SslCredentialsOptions();
-      if (!FLAGS_ssl_server_ca_file.empty()) {
+      if (!FLAGS_ssl_server_roots_file.empty()) {
         std::stringstream ca_buffer;
-        ca_buffer << std::ifstream(FLAGS_ssl_server_ca_file).rdbuf();
-
+        ca_buffer << std::ifstream(FLAGS_ssl_server_roots_file).rdbuf();
         if (ca_buffer.str().empty()) {
           exit(2);
         }
         options.pem_root_certs = ca_buffer.str();
       }
-      if (!FLAGS_ssl_client_cert_file.empty() && !FLAGS_ssl_client_key_file.empty()) {
+      if ((FLAGS_ssl_client_cert_chain_file.empty() && !FLAGS_ssl_client_key_file.empty())
+          || (!FLAGS_ssl_client_cert_chain_file.empty() && FLAGS_ssl_client_key_file.empty()) {
+        std::cerr << "Both --ssl_client_cert_chain_file and --ssl_client_key_file must be specified." << std::endl;
+        exit(2);
+      }
+      if (!FLAGS_ssl_client_cert_chain_file.empty() && !FLAGS_ssl_client_key_file.empty()) {
         std::stringstream cert_buffer;
-        cert_buffer << std::ifstream(FLAGS_ssl_client_cert_file).rdbuf();
+        cert_buffer << std::ifstream(FLAGS_ssl_client_cert_chain_file).rdbuf();
 
         std::stringstream key_buffer;
         key_buffer << std::ifstream(FLAGS_ssl_client_key_file).rdbuf();
 
-        if (cert_buffer.str().empty() || key_buffer.str().empty()) {
+        if (cert_buffer.str().empty()) {
+          std::cerr << "Failed to parse client certificate chain file." << std::endl;
+          exit(2);
+        }
+        if (key_buffer.str().empty()) {
+          std::cerr << "Failed to parse client key file." << std::endl;
           exit(2);
         }
 
