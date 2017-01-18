@@ -425,7 +425,9 @@ TEST_F(GrpcToolTest, CallCommandRequestStream) {
 
   // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
   std::streambuf* orig = std::cin.rdbuf();
-  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::stringstream ss;
+  ss << "message: 'Hello1'" << std::endl << std::endl;
+  ss << "message: 'Hello2'" << std::endl << std::endl;
   std::cin.rdbuf(ss.rdbuf());
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
@@ -450,7 +452,9 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequest) {
 
   // Mock std::cin input "bad_field: 'Hello1'\n\n message: 'Hello2'\n\n"
   std::streambuf* orig = std::cin.rdbuf();
-  std::istringstream ss("bad_field: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::stringstream ss;
+  ss << "bad_field: 'Hello1'" << std::endl << std::endl;
+  ss << "message: 'Hello2'" << std::endl << std::endl;
   std::cin.rdbuf(ss.rdbuf());
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
