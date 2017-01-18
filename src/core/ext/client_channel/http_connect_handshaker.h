@@ -40,9 +40,10 @@
 /// Channel arg indicating HTTP CONNECT server (string).
 #define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
 
-/// Creates a new HTTP CONNECT handshaker.
-grpc_handshaker* grpc_http_connect_handshaker_create(grpc_http_header* headers,
-                                                     size_t num_headers);
+/// Channel arg indicating HTTP CONNECT headers (string).
+/// Multiple headers are separated by newlines.  Key/value pairs are
+/// seperated by colons.
+#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
 /// Returns the name of the proxy to use, or NULL if no proxy is configured.
 /// Caller takes ownership of result.
