@@ -98,8 +98,7 @@ void grpc_proxy_mapper_registry_shutdown(grpc_exec_ctx* exec_ctx) {
   grpc_proxy_mapper_list_destroy(exec_ctx, &g_proxy_mapper_list);
 }
 
-void grpc_proxy_mapper_factory_register(bool at_start,
-                                        grpc_proxy_mapper* mapper) {
+void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper) {
   grpc_proxy_mapper_list_register(&g_proxy_mapper_list, at_start, mapper);
 }
 
