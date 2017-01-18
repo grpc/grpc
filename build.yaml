@@ -684,7 +684,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  - third_party/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
