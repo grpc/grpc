@@ -343,6 +343,12 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
+  if (state.range(0) > 0) {
+    send_request.set_message(std::string(state.range(0), 'a'));
+  }
+  if (state.range(1) > 0) {
+    send_response.set_message(std::string(state.range(0), 'a'));
+  }
   Status recv_status;
   struct ServerEnv {
     ServerContext ctx;
@@ -402,7 +408,8 @@ static void BM_UnaryPingPong(benchmark::State& state) {
  * CONFIGURATIONS
  */
 
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
+    ->Ranges({{0, 2 * 1024 * 1024}, {0, 2 * 1024 * 1024}});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator);
