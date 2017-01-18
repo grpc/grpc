@@ -48,25 +48,6 @@ HISTOGRAM_PARAMS = {
   'max_possible': 60e9,
 }
 
-EMPTY_GENERIC_PAYLOAD = {
-  'bytebuf_params': {
-    'req_size': 0,
-    'resp_size': 0,
-  }
-}
-EMPTY_PROTO_PAYLOAD = {
-  'simple_params': {
-    'req_size': 0,
-    'resp_size': 0,
-  }
-}
-BIG_GENERIC_PAYLOAD = {
-  'bytebuf_params': {
-    'req_size': 65536,
-    'resp_size': 65536,
-  }
-}
-
 # target number of RPCs outstanding on across all client channels in
 # non-ping-pong tests (since we can only specify per-channel numbers, the
 # actual target will be slightly higher)
@@ -102,10 +83,24 @@ def geometric_progression(start, stop, step):
     n *= step
 
 
+def _payload_type(use_generic_payload, req_size, resp_size):
+    r = {}
+    sizes = {
+      'req_size': req_size,
+      'resp_size': resp_size,
+    }
+    if use_generic_payload:
+        r['bytebuf_params'] = sizes
+    else:
+        r['simple_params'] = sizes
+
+
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
                         use_generic_payload=False,
+                        req_size=0,
+                        resp_size=0,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
@@ -145,11 +140,8 @@ def _ping_pong_scenario(name, rpc_type,
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
-    scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
-    scenario['server_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
-  else:
-    # For proto payload, only the client should get the config.
-    scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
+  scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+  scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
