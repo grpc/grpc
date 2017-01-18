@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +26,17 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""The entry point for the qps worker."""
 
-import argparse
-import time
+cc_binary(
+    name = "greeter_client",
+    srcs = ["greeter_client.cc"],
+    deps = ["//examples/protos:helloworld"],
+    defines = ["BAZEL_BUILD"],
+)
 
-from concurrent import futures
-import grpc
-from src.proto.grpc.testing import services_pb2
-
-from tests.qps import worker_server
-
-
-def run_worker_server(port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
-    servicer = worker_server.WorkerServer()
-    services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
-    server.add_insecure_port('[::]:{}'.format(port))
-    server.start()
-    servicer.wait_for_quit()
-    server.stop(0)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='gRPC Python performance testing worker')
-    parser.add_argument(
-        '--driver_port',
-        type=int,
-        dest='port',
-        help='The port the worker should listen on')
-    args = parser.parse_args()
-
-    run_worker_server(args.port)
+cc_binary(
+    name = "greeter_server",
+    srcs = ["greeter_server.cc"],
+    deps = ["//examples/protos:helloworld"],
+    defines = ["BAZEL_BUILD"],
+)
