@@ -547,11 +547,10 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   chand->server_name = gpr_strdup(arg->value.string);
   chand->proxy_name = grpc_get_http_proxy_server();
-  char* name_to_resolve = chand->proxy_name == NULL
-                          ? chand->server_name : chand->proxy_name;
-  chand->resolver =
-      grpc_resolver_create(exec_ctx, name_to_resolve, args->channel_args,
-                           chand->interested_parties);
+  char *name_to_resolve =
+      chand->proxy_name == NULL ? chand->server_name : chand->proxy_name;
+  chand->resolver = grpc_resolver_create(
+      exec_ctx, name_to_resolve, args->channel_args, chand->interested_parties);
   if (chand->resolver == NULL) {
     return GRPC_ERROR_CREATE("resolver creation failed");
   }
