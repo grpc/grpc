@@ -354,30 +354,6 @@ static grpc_handshaker* grpc_http_connect_handshaker_create() {
   return &handshaker->base;
 }
 
-char* grpc_get_http_proxy_server() {
-  char* uri_str = gpr_getenv("http_proxy");
-  if (uri_str == NULL) return NULL;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
-  char* proxy_name = NULL;
-  if (uri == NULL || uri->authority == NULL) {
-    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
-    goto done;
-  }
-  if (strcmp(uri->scheme, "http") != 0) {
-    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
-    goto done;
-  }
-  if (strchr(uri->authority, '@') != NULL) {
-    gpr_log(GPR_ERROR, "userinfo not supported in proxy URI");
-    goto done;
-  }
-  proxy_name = gpr_strdup(uri->authority);
-done:
-  gpr_free(uri_str);
-  grpc_uri_destroy(uri);
-  return proxy_name;
-}
-
 //
 // handshaker factory
 //

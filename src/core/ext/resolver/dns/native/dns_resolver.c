@@ -37,7 +37,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -263,24 +262,14 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
   // Get name from args.
   char *path = args->uri->path;
   if (path[0] == '/') ++path;
-  // Get proxy name, if any.
-  char *proxy_name = grpc_get_http_proxy_server();
-  grpc_arg new_arg;
-  if (proxy_name != NULL) {
-    new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
-    new_arg.type = GRPC_ARG_STRING;
-    new_arg.value.string = path;
-  }
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
-  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
+  r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
-  r->channel_args = proxy_name == NULL
-                    ? grpc_channel_args_copy(args->args)
-                    : grpc_channel_args_copy_and_add(args->args, &new_arg, 1);
+  r->channel_args = grpc_channel_args_copy(args->args);
   r->interested_parties = grpc_pollset_set_create();
   if (args->pollset_set != NULL) {
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,

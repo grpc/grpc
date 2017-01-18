@@ -465,6 +465,7 @@ add_library(grpc
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
@@ -724,6 +725,7 @@ add_library(grpc_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
@@ -982,6 +984,7 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
@@ -1428,6 +1431,7 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
