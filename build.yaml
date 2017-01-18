@@ -1313,7 +1313,6 @@ libs:
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
-  - test/cpp/qps/limit_cores.h
   - test/cpp/qps/parse_json.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
@@ -1330,7 +1329,6 @@ libs:
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
-  - test/cpp/qps/limit_cores.cc
   - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
