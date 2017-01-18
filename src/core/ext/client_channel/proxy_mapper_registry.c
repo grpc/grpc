@@ -46,8 +46,9 @@ typedef struct {
   size_t num_mappers;
 } grpc_proxy_mapper_list;
 
-static void grpc_proxy_mapper_list_register(
-    grpc_proxy_mapper_list* list, bool at_start, grpc_proxy_mapper* mapper) {
+static void grpc_proxy_mapper_list_register(grpc_proxy_mapper_list* list,
+                                            bool at_start,
+                                            grpc_proxy_mapper* mapper) {
   list->list = gpr_realloc(
       list->list, (list->num_mappers + 1) * sizeof(grpc_proxy_mapper*));
   if (at_start) {
@@ -60,10 +61,12 @@ static void grpc_proxy_mapper_list_register(
   ++list->num_mappers;
 }
 
-static bool grpc_proxy_mapper_list_map(
-    grpc_exec_ctx* exec_ctx, grpc_proxy_mapper_list* list,
-    const grpc_resolved_address* address, const grpc_channel_args* args,
-    grpc_resolved_address** new_address, grpc_channel_args** new_args) {
+static bool grpc_proxy_mapper_list_map(grpc_exec_ctx* exec_ctx,
+                                       grpc_proxy_mapper_list* list,
+                                       const grpc_resolved_address* address,
+                                       const grpc_channel_args* args,
+                                       grpc_resolved_address** new_address,
+                                       grpc_channel_args** new_args) {
   for (size_t i = 0; i < list->num_mappers; ++i) {
     if (grpc_proxy_mapper_map(exec_ctx, list->list[i], address, args,
                               new_address, new_args)) {
@@ -73,8 +76,8 @@ static bool grpc_proxy_mapper_list_map(
   return false;
 }
 
-static void grpc_proxy_mapper_list_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_proxy_mapper_list* list) {
+static void grpc_proxy_mapper_list_destroy(grpc_exec_ctx* exec_ctx,
+                                           grpc_proxy_mapper_list* list) {
   for (size_t i = 0; i < list->num_mappers; ++i) {
     grpc_proxy_mapper_destroy(exec_ctx, list->list[i]);
   }
