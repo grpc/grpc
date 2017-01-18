@@ -1634,7 +1634,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      compression and just write the uncompressed bytes onto the wire. */
   status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
-  *p++ = 0x40; /* literal header */
+  *p++ = 0x00; /* literal header, not indexed */
   *p++ = 11;   /* len(grpc-status) */
   *p++ = 'g';
   *p++ = 'r';
@@ -1664,8 +1664,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 0);
     message_pfx = grpc_slice_malloc(14 + msg_len_len);
     p = GRPC_SLICE_START_PTR(message_pfx);
-    *p++ = 0x40;
-    *p++ = 12; /* len(grpc-message) */
+    *p++ = 0x00; /* literal header, not indexed */
+    *p++ = 12;   /* len(grpc-message) */
     *p++ = 'g';
     *p++ = 'r';
     *p++ = 'p';
