@@ -20,12 +20,18 @@ uses the syntax:
 scheme://authority/endpoint_name
 ```
 
-Here, `scheme` indicates the name-system to be used. Example schemes to
-be supported include:
+Here, `scheme` indicates the name-system to be used. Currently, we
+support the following schemes:
 
-* `dns`
+- `dns`
 
-* `etcd`
+- `ipv4` (IPv4 address)
+
+- `ipv6` (IPv6 address)
+
+- `unix` (path to unix domain socket -- unix systems only)
+
+In the future, additional schemes such as `etcd` could be added.
 
 The `authority` indicates some scheme-specific bootstrap information, e.g.,
 for DNS, the authority may include the IP[:port] of the DNS server to
@@ -38,7 +44,7 @@ syntax of the endpoint name is dictated by the scheme in use.
 
 ### Resolver Plugins
 
-The gRPC client library will switch on the scheme to pick the right
+The gRPC client library will use the specified scheme to pick the right
 resolver plugin and pass it the fully qualified name string.
 
 Resolvers should be able to contact the authority and get a resolution
@@ -46,7 +52,7 @@ that they return back to the gRPC client library. The returned contents
 include:
 
 - A list of resolved addresses, each of which has three attributes:
-  - The address itself, in IP:port form.
+  - The address itself, including both IP address and port.
   - A boolean indicating whether the address is a backend address (i.e.,
     the address to use to contact the server directly) or a balancer
     address (for cases where [external load balancing](load-balancing.md)
