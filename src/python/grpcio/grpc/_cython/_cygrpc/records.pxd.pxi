@@ -117,8 +117,8 @@ cdef class Metadata:
   cdef grpc_metadata_array c_metadata_array
   cdef bint owns_metadata_slices
   cdef object metadata
-  cdef void _claim_slice_ownership(self) nogil
-  cdef void _drop_slice_ownership(self) nogil
+  cdef void _claim_slice_ownership(self)
+  cdef void _drop_slice_ownership(self)
 
 
 cdef class Operation:
