@@ -466,6 +466,10 @@ cdef class _MetadataIterator:
     else:
       raise StopIteration
 
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
+  cdef void *start = grpc_slice_start_ptr(slice)
+  cdef size_t length = grpc_slice_length(slice)
+  return grpc_slice_from_copied_buffer(<const char *>start, length)
 
 cdef class Metadata:
 
@@ -489,8 +493,8 @@ cdef class Metadata:
           (<Metadatum>self.metadata[i]).c_metadata)
 
   def __dealloc__(self):
+    self._drop_slice_ownership()
     with nogil:
-      self._drop_slice_ownership()
       # this frees the allocated memory for the grpc_metadata_array (although
       # it'd be nice if that were documented somewhere...)
       # TODO(atash): document this in the C core
@@ -510,15 +514,17 @@ cdef class Metadata:
   def __iter__(self):
     return _MetadataIterator(self)
 
-  cdef void _claim_slice_ownership(self) nogil:
+  cdef void _claim_slice_ownership(self):
     if self.owns_metadata_slices:
       return
     for i in range(self.c_metadata_array.count):
-      grpc_slice_ref(self.c_metadata_array.metadata[i].key)
-      grpc_slice_ref(self.c_metadata_array.metadata[i].value)
+      self.c_metadata_array.metadata[i].key = _copy_slice(
+          self.c_metadata_array.metadata[i].key)
+      self.c_metadata_array.metadata[i].value = _copy_slice(
+          self.c_metadata_array.metadata[i].value)
     self.owns_metadata_slices = True
 
-  cdef void _drop_slice_ownership(self) nogil:
+  cdef void _drop_slice_ownership(self):
     if not self.owns_metadata_slices:
       return
     for i in range(self.c_metadata_array.count):
