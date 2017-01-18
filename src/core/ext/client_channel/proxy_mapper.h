@@ -53,7 +53,7 @@ typedef struct {
               grpc_resolved_address** new_address,
               grpc_channel_args** new_args);
   /// Destroys \a mapper.
-  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_proxy_mapper* mapper);
+  void (*destroy)(grpc_proxy_mapper* mapper);
 } grpc_proxy_mapper_vtable;
 
 struct grpc_proxy_mapper {
@@ -68,7 +68,6 @@ bool grpc_proxy_mapper_map(grpc_exec_ctx* exec_ctx, grpc_proxy_mapper* mapper,
                            const grpc_channel_args* args,
                            grpc_resolved_address** new_address,
                            grpc_channel_args** new_args);
-void grpc_proxy_mapper_destroy(grpc_exec_ctx* exec_ctx,
-                               grpc_proxy_mapper* mapper);
+void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H */

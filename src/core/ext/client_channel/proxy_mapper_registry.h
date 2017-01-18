@@ -37,7 +37,7 @@
 #include "src/core/ext/client_channel/proxy_mapper.h"
 
 void grpc_proxy_mapper_registry_init();
-void grpc_proxy_mapper_registry_shutdown(grpc_exec_ctx* exec_ctx);
+void grpc_proxy_mapper_registry_shutdown();
 
 /// Registers a new proxy mapper.  Takes ownership.
 /// If \a at_start is true, the new mapper will be at the beginning of
