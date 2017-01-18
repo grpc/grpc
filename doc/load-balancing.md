@@ -125,7 +125,7 @@ works:
      address returned by the resolver. Note that these policies
      ignore any balancer addresses returned by the resolver.
    - In the case of the `grpclb` policy, the workflow is as follows:
-     a. The policy opens a stream to one of the balancer addresses returned
+     1. The policy opens a stream to one of the balancer addresses returned
         by the resolver. It asks the balancer for the server addresses to
         use for the server name originally requested by the client (i.e.,
         the same one originally passed to the name resolver).
@@ -133,10 +133,10 @@ works:
           addresses returned by the resolver. However, in the future, it
           may be changed to use these addresses as a fallback in case no
           balancers can be contacted.
-     b. The gRPC servers to which the load balancer is directing the client
+     2. The gRPC servers to which the load balancer is directing the client
         may report load to the load balancers, if that information is needed
         by the load balancer's configuration.
-     c. The load balancer returns a server list to the gRPC client's `grpclb`
+     3. The load balancer returns a server list to the gRPC client's `grpclb`
         policy. The `grpclb` policy will then create a subchannel to each of
         server in the list.
 4. For each RPC sent, the load balancing policy decides which
