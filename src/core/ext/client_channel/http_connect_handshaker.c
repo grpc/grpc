@@ -54,7 +54,6 @@ typedef struct http_connect_handshaker {
   // Base class.  Must be first.
   grpc_handshaker base;
 
-  char* proxy_server;
   grpc_http_header* headers;
   size_t num_headers;
 
@@ -91,7 +90,6 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
                                          handshaker->read_buffer_to_destroy);
       gpr_free(handshaker->read_buffer_to_destroy);
     }
-    gpr_free(handshaker->proxy_server);
     for (size_t i = 0; i < handshaker->num_headers; ++i) {
       gpr_free(handshaker->headers[i].key);
       gpr_free(handshaker->headers[i].value);
@@ -276,22 +274,24 @@ static void http_connect_handshaker_do_handshake(
     grpc_tcp_server_acceptor* acceptor, grpc_closure* on_handshake_done,
     grpc_handshaker_args* args) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
-  // Get server name from channel args.
-  const grpc_arg* arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(arg != NULL);
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  char* canonical_uri =
-      grpc_resolver_factory_add_default_prefix_if_needed(arg->value.string);
-  grpc_uri* uri = grpc_uri_parse(canonical_uri, 1);
-  char* server_name = uri->path;
-  if (server_name[0] == '/') ++server_name;
+  // Check for HTTP CONNECT channel arg.
+  // If not found, invoke on_handshake_done without doing anything.
+  const grpc_arg* arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
+  if (arg == NULL) {
+    grpc_closure_sched(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
+    return;
+  }
+  char* server_name = arg->value.string;
   // Save state in the handshaker object.
   gpr_mu_lock(&handshaker->mu);
   handshaker->args = args;
   handshaker->on_handshake_done = on_handshake_done;
   // Send HTTP CONNECT request.
+  char* proxy_name = grpc_endpoint_get_peer(args->endpoint);
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
-          handshaker->proxy_server);
+          proxy_name);
+  gpr_free(proxy_name);
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
   request.host = server_name;
@@ -307,25 +307,19 @@ static void http_connect_handshaker_do_handshake(
   grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer,
                       &handshaker->request_done_closure);
   gpr_mu_unlock(&handshaker->mu);
-  // Clean up.
-  gpr_free(canonical_uri);
-  grpc_uri_destroy(uri);
 }
 
 static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     grpc_http_header* headers,
+grpc_handshaker* grpc_http_connect_handshaker_create(grpc_http_header* headers,
                                                      size_t num_headers) {
-  GPR_ASSERT(proxy_server != NULL);
   http_connect_handshaker* handshaker = gpr_malloc(sizeof(*handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
-  handshaker->proxy_server = gpr_strdup(proxy_server);
   if (num_headers > 0) {
     handshaker->headers = gpr_malloc(sizeof(grpc_http_header) * num_headers);
     for (size_t i = 0; i < num_headers; ++i) {
@@ -375,13 +369,8 @@ done:
 static void handshaker_factory_add_handshakers(
     grpc_exec_ctx* exec_ctx, grpc_handshaker_factory* factory,
     const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
-  char* proxy_name = grpc_get_http_proxy_server();
-  if (proxy_name != NULL) {
-    grpc_handshake_manager_add(
-        handshake_mgr,
-        grpc_http_connect_handshaker_create(proxy_name, NULL, 0));
-    gpr_free(proxy_name);
-  }
+  grpc_handshake_manager_add(handshake_mgr,
+                             grpc_http_connect_handshaker_create(NULL, 0));
 }
 
 static void handshaker_factory_destroy(grpc_exec_ctx* exec_ctx,
