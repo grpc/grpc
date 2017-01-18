@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +26,27 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""The entry point for the qps worker."""
 
-import argparse
-import time
+package(default_visibility = ["//visibility:public"])
 
-from concurrent import futures
-import grpc
-from src.proto.grpc.testing import services_pb2
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-from tests.qps import worker_server
+grpc_proto_library(
+    name = "auth_sample",
+    srcs = ["auth_sample.proto"],
+)
 
+grpc_proto_library(
+    name = "hellostreamingworld",
+    srcs = ["hellostreamingworld.proto"],
+)
 
-def run_worker_server(port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
-    servicer = worker_server.WorkerServer()
-    services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
-    server.add_insecure_port('[::]:{}'.format(port))
-    server.start()
-    servicer.wait_for_quit()
-    server.stop(0)
+grpc_proto_library(
+    name = "helloworld",
+    srcs = ["helloworld.proto"],
+)
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='gRPC Python performance testing worker')
-    parser.add_argument(
-        '--driver_port',
-        type=int,
-        dest='port',
-        help='The port the worker should listen on')
-    args = parser.parse_args()
-
-    run_worker_server(args.port)
+grpc_proto_library(
+    name = "route_guide",
+    srcs = ["route_guide.proto"],
+)
