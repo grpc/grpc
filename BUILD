@@ -284,6 +284,11 @@ grpc_cc_library(
         "src/core/ext/census/resource.h",
         "src/core/ext/census/rpc_metric_id.h",
         "src/core/ext/census/trace_context.h",
+        "src/core/ext/census/trace_label.h",
+        "src/core/ext/census/trace_propagation.h",
+        "src/core/ext/census/trace_status.h",
+        "src/core/ext/census/trace_string.h",
+        "src/core/ext/census/tracing.h",
     ],
     external_deps = [
         "nanopb",
