@@ -1518,6 +1518,57 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "memory_profile_client", 
+    "src": [
+      "test/core/memory_usage/client.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "memory_profile_server", 
+    "src": [
+      "test/core/memory_usage/server.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "memory_profile_test", 
+    "src": [
+      "test/core/memory_usage/memory_usage_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "message_compress_test", 
     "src": [
       "test/core/compression/message_compress_test.c"
@@ -2769,6 +2820,23 @@
     "src": [
       "test/cpp/grpclb/grpclb_test.cc"
     ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "http2_client_main"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "http2_client", 
+    "src": [], 
     "third_party": false, 
     "type": "target"
   }, 
@@ -5390,6 +5458,33 @@
   }, 
   {
     "deps": [
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h", 
+      "test/cpp/interop/http2_client.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "http2_client_main", 
+    "src": [
+      "test/cpp/interop/http2_client.cc", 
+      "test/cpp/interop/http2_client.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -5447,6 +5542,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [
@@ -5525,7 +5621,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
@@ -5545,8 +5640,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.cc", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.cc", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.cc", 
@@ -6362,7 +6455,9 @@
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c"
+      "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/write_buffering.c", 
+      "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6431,7 +6526,9 @@
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c"
+      "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/write_buffering.c", 
+      "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6631,6 +6728,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
@@ -6647,6 +6745,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
@@ -7559,7 +7658,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+      "third_party/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 

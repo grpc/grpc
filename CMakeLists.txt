@@ -66,7 +66,13 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
 if (MSVC)
-  add_definitions( -D_WIN32_WINNT=0x600 )
+  add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+  # needed to compile boringssl
+  add_definitions(/wd4464 /wd4623 /wd4668 /wd4701 /wd4702 /wd4777 /wd5027)
+  # needed to compile protobuf
+  add_definitions(/wd4065 /wd4506)
+  # TODO(jtattermusch): revisit C4267 occurrences throughout the code
+  add_definitions(/wd4267)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -116,6 +122,9 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     if(TARGET libprotoc)
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
     endif()
+    if(TARGET protoc)
+      set(_gRPC_PROTOBUF_PROTOC protoc)
+    endif()
   else()
       message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
   endif()
@@ -127,6 +136,9 @@ elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
     endif()
     if(TARGET protobuf::libprotoc)
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+    endif()
+    if(TARGET protobuf::protoc)
+      set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
     endif()
     set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
   else()
@@ -169,7 +181,56 @@ if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
   set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
 endif()
 
-  
+# Create directory for generated .proto files
+set(_gRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
+file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
+
+#  protobuf_generate_grpc_cpp
+#  --------------------------
+#
+#   Add custom commands to process ``.proto`` files to C++ using protoc and
+#   GRPC plugin::
+#
+#     protobuf_generate_grpc_cpp [<ARGN>...]
+#
+#   ``ARGN``
+#     ``.proto`` files
+#
+function(protobuf_generate_grpc_cpp)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
+    return()
+  endif()
+
+  set(_protobuf_include_path -I .)
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    file(RELATIVE_PATH REL_FIL ${CMAKE_SOURCE_DIR} ${ABS_FIL})
+    get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
+    set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+    
+    add_custom_command(
+      OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
+             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
+             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
+             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
+      COMMAND ${_gRPC_PROTOBUF_PROTOC}
+      ARGS --grpc_out=${_gRPC_PROTO_GENS_DIR}
+           --cpp_out=${_gRPC_PROTO_GENS_DIR}
+           --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+           ${_protobuf_include_path}
+           ${REL_FIL}
+      DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
+      VERBATIM)
+      
+      set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
+  endforeach()
+endfunction()
+
+
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
@@ -217,6 +278,7 @@ add_library(gpr
   src/core/lib/support/wrap_memcpy.c
 )
 
+
 target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -258,6 +320,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -273,7 +336,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS gpr EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -282,7 +345,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -503,6 +566,7 @@ add_library(grpc
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
+
 target_include_directories(grpc
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -540,6 +604,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -557,7 +622,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -566,7 +631,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -758,6 +823,7 @@ add_library(grpc_cronet
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
+
 target_include_directories(grpc_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -794,6 +860,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -811,7 +878,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -820,7 +887,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
@@ -1013,6 +1080,7 @@ add_library(grpc_unsecure
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
+
 target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1048,6 +1116,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1064,7 +1133,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1073,7 +1142,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
@@ -1113,6 +1182,7 @@ add_library(grpc++
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
 
 target_include_directories(grpc++
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1212,6 +1282,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1227,7 +1298,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1236,7 +1307,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_cronet
   src/cpp/client/cronet_credentials.cc
   src/cpp/client/insecure_credentials.cc
@@ -1450,6 +1521,7 @@ add_library(grpc++_cronet
   third_party/nanopb/pb_encode.c
 )
 
+
 target_include_directories(grpc++_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1548,6 +1620,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1573,7 +1646,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1582,10 +1655,17 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+)
+
+protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 
@@ -1596,6 +1676,7 @@ target_include_directories(grpc++_reflection
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++_reflection
@@ -1612,7 +1693,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1621,7 +1702,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc++_unsecure
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
@@ -1656,6 +1737,7 @@ add_library(grpc++_unsecure
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
 
 target_include_directories(grpc++_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1755,6 +1837,7 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
@@ -1770,7 +1853,7 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1779,7 +1862,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-  
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -1789,6 +1872,7 @@ add_library(grpc_plugin_support
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
+
 
 target_include_directories(grpc_plugin_support
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1813,38 +1897,9 @@ foreach(_hdr
   )
 endforeach()
 
-  
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-  
-add_library(grpc_csharp_ext
-  src/csharp/ext/grpc_csharp_ext.c
-)
-
-target_include_directories(grpc_csharp_ext
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_csharp_ext
-  grpc
-  gpr
-)
-
-
-  
-if (gRPC_INSTALL)
-  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

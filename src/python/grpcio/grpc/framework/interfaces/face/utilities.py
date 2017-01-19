@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Utilities for RPC Framework's Face interface."""
 
 import collections
@@ -38,18 +37,24 @@ from grpc.framework.foundation import stream  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face
 
 
-class _MethodImplementation(
-    face.MethodImplementation,
-    collections.namedtuple(
-        '_MethodImplementation',
-        ['cardinality', 'style', 'unary_unary_inline', 'unary_stream_inline',
-         'stream_unary_inline', 'stream_stream_inline', 'unary_unary_event',
-         'unary_stream_event', 'stream_unary_event', 'stream_stream_event',])):
-  pass
+class _MethodImplementation(face.MethodImplementation,
+                            collections.namedtuple('_MethodImplementation', [
+                                'cardinality',
+                                'style',
+                                'unary_unary_inline',
+                                'unary_stream_inline',
+                                'stream_unary_inline',
+                                'stream_stream_inline',
+                                'unary_unary_event',
+                                'unary_stream_event',
+                                'stream_unary_event',
+                                'stream_stream_event',
+                            ])):
+    pass
 
 
 def unary_unary_inline(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-unary RPC method as a callable value
@@ -59,13 +64,13 @@ def unary_unary_inline(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.UNARY_UNARY, style.Service.INLINE, behavior,
-      None, None, None, None, None, None, None)
+    return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
+                                 style.Service.INLINE, behavior, None, None,
+                                 None, None, None, None, None)
 
 
 def unary_stream_inline(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-stream RPC method as a callable
@@ -75,13 +80,13 @@ def unary_stream_inline(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.UNARY_STREAM, style.Service.INLINE, None,
-      behavior, None, None, None, None, None, None)
+    return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
+                                 style.Service.INLINE, None, behavior, None,
+                                 None, None, None, None, None)
 
 
 def stream_unary_inline(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-unary RPC method as a callable
@@ -91,13 +96,13 @@ def stream_unary_inline(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.STREAM_UNARY, style.Service.INLINE, None, None,
-      behavior, None, None, None, None, None)
+    return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
+                                 style.Service.INLINE, None, None, behavior,
+                                 None, None, None, None, None)
 
 
 def stream_stream_inline(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-stream RPC method as a callable
@@ -107,13 +112,13 @@ def stream_stream_inline(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.STREAM_STREAM, style.Service.INLINE, None, None,
-      None, behavior, None, None, None, None)
+    return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
+                                 style.Service.INLINE, None, None, None,
+                                 behavior, None, None, None, None)
 
 
 def unary_unary_event(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-unary RPC method as a callable
@@ -123,13 +128,13 @@ def unary_unary_event(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.UNARY_UNARY, style.Service.EVENT, None, None,
-      None, None, behavior, None, None, None)
+    return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
+                                 style.Service.EVENT, None, None, None, None,
+                                 behavior, None, None, None)
 
 
 def unary_stream_event(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-stream RPC method as a callable
@@ -139,13 +144,13 @@ def unary_stream_event(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.UNARY_STREAM, style.Service.EVENT, None, None,
-      None, None, None, behavior, None, None)
+    return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
+                                 style.Service.EVENT, None, None, None, None,
+                                 None, behavior, None, None)
 
 
 def stream_unary_event(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-unary RPC method as a callable
@@ -156,13 +161,13 @@ def stream_unary_event(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.STREAM_UNARY, style.Service.EVENT, None, None,
-      None, None, None, None, behavior, None)
+    return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
+                                 style.Service.EVENT, None, None, None, None,
+                                 None, None, behavior, None)
 
 
 def stream_stream_event(behavior):
-  """Creates an face.MethodImplementation for the given behavior.
+    """Creates an face.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-stream RPC method as a callable
@@ -173,6 +178,6 @@ def stream_stream_event(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
-  return _MethodImplementation(
-      cardinality.Cardinality.STREAM_STREAM, style.Service.EVENT, None, None,
-      None, None, None, None, None, behavior)
+    return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
+                                 style.Service.EVENT, None, None, None, None,
+                                 None, None, None, behavior)
