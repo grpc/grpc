@@ -46,15 +46,27 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer *sb) {
-  if (sb->count == sb->capacity) {
+  if (sb->base_slices != sb->slices) {
+    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+    sb->slices = sb->base_slices;
+  }
+
+  /* How many far away from sb->base_slices is sb->slices pointer */
+  size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
+  size_t slice_count = sb->count + slice_offset;
+
+  if (slice_count == sb->capacity) {
     sb->capacity = GROW(sb->capacity);
-    GPR_ASSERT(sb->capacity > sb->count);
-    if (sb->slices == sb->inlined) {
-      sb->slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
-      memcpy(sb->slices, sb->inlined, sb->count * sizeof(grpc_slice));
+    GPR_ASSERT(sb->capacity > slice_count);
+    if (sb->base_slices == sb->inlined) {
+      sb->base_slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
+      memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
     } else {
-      sb->slices = gpr_realloc(sb->slices, sb->capacity * sizeof(grpc_slice));
+      sb->base_slices =
+          gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice));
     }
+
+    sb->slices = sb->base_slices + slice_offset;
   }
 }
 
@@ -62,14 +74,14 @@ void grpc_slice_buffer_init(grpc_slice_buffer *sb) {
   sb->count = 0;
   sb->length = 0;
   sb->capacity = GRPC_SLICE_BUFFER_INLINE_ELEMENTS;
-  sb->slices = sb->inlined;
+  sb->base_slices = sb->slices = sb->inlined;
 }
 
 void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_slice_buffer *sb) {
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, sb);
-  if (sb->slices != sb->inlined) {
-    gpr_free(sb->slices);
+  if (sb->base_slices != sb->inlined) {
+    gpr_free(sb->base_slices);
   }
 }
 
@@ -156,6 +168,7 @@ void grpc_slice_buffer_addn(grpc_slice_buffer *sb, grpc_slice *s, size_t n) {
   }
 }
 
+/* TODO (sreek) - Check where this is used and if this is still safe */
 void grpc_slice_buffer_pop(grpc_slice_buffer *sb) {
   if (sb->count != 0) {
     size_t count = --sb->count;
@@ -166,7 +179,6 @@ void grpc_slice_buffer_pop(grpc_slice_buffer *sb) {
 void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
                                                 grpc_slice_buffer *sb) {
   size_t i;
-
   for (i = 0; i < sb->count; i++) {
     grpc_slice_unref_internal(exec_ctx, sb->slices[i]);
   }
@@ -182,32 +194,45 @@ void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer *sb) {
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer *a, grpc_slice_buffer *b) {
+  size_t a_offset = (size_t)(a->slices - a->base_slices);
+  size_t b_offset = (size_t)(b->slices - b->base_slices);
+
+  size_t a_count = a->count + a_offset;
+  size_t b_count = b->count + b_offset;
+
+  if (a->base_slices == a->inlined) {
+    if (b->base_slices == b->inlined) {
+      /* swap contents of inlined buffer */
+      grpc_slice temp[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
+      memcpy(temp, a->base_slices, a_count * sizeof(grpc_slice));
+      memcpy(a->base_slices, b->base_slices, b_count * sizeof(grpc_slice));
+      memcpy(b->base_slices, temp, a_count * sizeof(grpc_slice));
+    } else {
+      /* a is inlined, b is not - copy a inlined into b, fix pointers */
+      a->base_slices = b->base_slices;
+      b->base_slices = b->inlined;
+      memcpy(b->base_slices, a->inlined, a_count * sizeof(grpc_slice));
+    }
+  } else if (b->base_slices == b->inlined) {
+    /* b is inlined, a is not - copy b inlined int a, fix pointers */
+    b->base_slices = a->base_slices;
+    a->base_slices = a->inlined;
+    memcpy(a->base_slices, b->inlined, b_count * sizeof(grpc_slice));
+  } else {
+    /* no inlining: easy swap */
+    GPR_SWAP(grpc_slice *, a->base_slices, b->base_slices);
+  }
+
+  /* Update the slices pointers (cannot do a GPR_SWAP on slices fields here).
+   * Also note that since the base_slices pointers are already swapped we need
+   * use 'b_offset' for 'a->base_slices' and vice versa */
+  a->slices = a->base_slices + b_offset;
+  b->slices = b->base_slices + a_offset;
+
+  /* base_slices and slices fields are correctly set. Swap all other fields */
   GPR_SWAP(size_t, a->count, b->count);
   GPR_SWAP(size_t, a->capacity, b->capacity);
   GPR_SWAP(size_t, a->length, b->length);
-
-  if (a->slices == a->inlined) {
-    if (b->slices == b->inlined) {
-      /* swap contents of inlined buffer */
-      grpc_slice temp[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
-      memcpy(temp, a->slices, b->count * sizeof(grpc_slice));
-      memcpy(a->slices, b->slices, a->count * sizeof(grpc_slice));
-      memcpy(b->slices, temp, b->count * sizeof(grpc_slice));
-    } else {
-      /* a is inlined, b is not - copy a inlined into b, fix pointers */
-      a->slices = b->slices;
-      b->slices = b->inlined;
-      memcpy(b->slices, a->inlined, b->count * sizeof(grpc_slice));
-    }
-  } else if (b->slices == b->inlined) {
-    /* b is inlined, a is not - copy b inlined int a, fix pointers */
-    b->slices = a->slices;
-    a->slices = a->inlined;
-    memcpy(a->slices, b->inlined, a->count * sizeof(grpc_slice));
-  } else {
-    /* no inlining: easy swap */
-    GPR_SWAP(grpc_slice *, a->slices, b->slices);
-  }
 }
 
 void grpc_slice_buffer_move_into(grpc_slice_buffer *src,
@@ -237,8 +262,9 @@ void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
     grpc_slice_buffer_move_into(src, dst);
     return;
   }
+
   src_idx = 0;
-  while (src_idx < src->capacity) {
+  while (src_idx < src->count) {
     grpc_slice slice = src->slices[src_idx];
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
     if (n > slice_len) {
@@ -293,8 +319,9 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer *sb) {
   grpc_slice slice;
   GPR_ASSERT(sb->count > 0);
   slice = sb->slices[0];
-  memmove(&sb->slices[0], &sb->slices[1], (sb->count - 1) * sizeof(grpc_slice));
+  sb->slices++;
   sb->count--;
   sb->length -= GRPC_SLICE_LENGTH(slice);
+
   return slice;
 }
