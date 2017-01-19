@@ -778,6 +778,7 @@ target_include_directories(grpc_cronet
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   gpr
 )
 
@@ -1033,6 +1034,7 @@ target_include_directories(grpc_unsecure
 
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   gpr
 )
 
