@@ -8,6 +8,7 @@ objs
 # Python items
 cython_debug/
 python_build/
+python_format_venv/
 .coverage*
 .eggs
 htmlcov/
@@ -96,10 +97,17 @@ DerivedData
 Pods/
 
 # Artifacts directory
-artifacts/
+/artifacts/
 
 # Git generated files for conflicting
 *.orig
 
 # IDE specific folder for JetBrains IDEs
 .idea/
+
+# Blaze files
+bazel-bin
+bazel-genfiles
+bazel-grpc
+bazel-out
+bazel-testlogs

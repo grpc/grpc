@@ -212,10 +212,8 @@ struct grpc_chttp2_transport {
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
   grpc_closure write_action_end_locked;
 
-  grpc_closure read_action_begin;
   grpc_closure read_action_locked;
 
   /** incoming read bytes */
@@ -251,6 +249,9 @@ struct grpc_chttp2_transport {
   int64_t announce_incoming_window;
   /** how much window would we like to have for incoming_window */
   uint32_t connection_window_target;
+  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+   */
+  uint32_t write_buffer_size;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
@@ -336,10 +337,8 @@ struct grpc_chttp2_transport {
   /** have we scheduled a destructive cleanup? */
   bool destructive_reclaimer_registered;
   /** benign cleanup closure */
-  grpc_closure benign_reclaimer;
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
-  grpc_closure destructive_reclaimer;
   grpc_closure destructive_reclaimer_locked;
 };
 
@@ -407,6 +406,9 @@ struct grpc_chttp2_stream {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  /** Are we buffering writes on this stream? If yes, we won't become writable
+      until there's enough queued up in the flow_controlled_buffer */
+  bool write_buffering;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;

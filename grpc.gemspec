@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.2'
+  s.add_dependency 'google-protobuf', '~> 3.1.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -73,6 +73,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/atm_gcc_atomic.h )
   s.files += %w( include/grpc/impl/codegen/atm_gcc_sync.h )
   s.files += %w( include/grpc/impl/codegen/atm_windows.h )
+  s.files += %w( include/grpc/impl/codegen/gpr_slice.h )
   s.files += %w( include/grpc/impl/codegen/gpr_types.h )
   s.files += %w( include/grpc/impl/codegen/port_platform.h )
   s.files += %w( include/grpc/impl/codegen/slice.h )
@@ -148,6 +149,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
+  s.files += %w( include/grpc/impl/codegen/exec_ctx_fwd.h )
   s.files += %w( include/grpc/impl/codegen/grpc_types.h )
   s.files += %w( include/grpc/impl/codegen/propagation_bits.h )
   s.files += %w( include/grpc/impl/codegen/status.h )
@@ -155,6 +157,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/atm_gcc_atomic.h )
   s.files += %w( include/grpc/impl/codegen/atm_gcc_sync.h )
   s.files += %w( include/grpc/impl/codegen/atm_windows.h )
+  s.files += %w( include/grpc/impl/codegen/gpr_slice.h )
   s.files += %w( include/grpc/impl/codegen/gpr_types.h )
   s.files += %w( include/grpc/impl/codegen/port_platform.h )
   s.files += %w( include/grpc/impl/codegen/slice.h )
@@ -172,6 +175,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/context.h )
   s.files += %w( src/core/lib/channel/deadline_filter.h )
   s.files += %w( src/core/lib/channel/handshaker.h )
+  s.files += %w( src/core/lib/channel/handshaker_factory.h )
+  s.files += %w( src/core/lib/channel/handshaker_registry.h )
   s.files += %w( src/core/lib/channel/http_client_filter.h )
   s.files += %w( src/core/lib/channel/http_server_filter.h )
   s.files += %w( src/core/lib/channel/message_size_filter.h )
@@ -238,6 +243,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/json/json_reader.h )
   s.files += %w( src/core/lib/json/json_writer.h )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
+  s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )
@@ -351,6 +357,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/connected_channel.c )
   s.files += %w( src/core/lib/channel/deadline_filter.c )
   s.files += %w( src/core/lib/channel/handshaker.c )
+  s.files += %w( src/core/lib/channel/handshaker_factory.c )
+  s.files += %w( src/core/lib/channel/handshaker_registry.c )
   s.files += %w( src/core/lib/channel/http_client_filter.c )
   s.files += %w( src/core/lib/channel/http_server_filter.c )
   s.files += %w( src/core/lib/channel/message_size_filter.c )

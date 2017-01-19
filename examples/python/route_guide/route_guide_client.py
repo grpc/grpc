@@ -37,6 +37,7 @@ import time
 import grpc
 
 import route_guide_pb2
+import route_guide_pb2_grpc
 import route_guide_resources
 
 
@@ -116,7 +117,7 @@ def guide_route_chat(stub):
 
 def run():
   channel = grpc.insecure_channel('localhost:50051')
-  stub = route_guide_pb2.RouteGuideStub(channel)
+  stub = route_guide_pb2_grpc.RouteGuideStub(channel)
   print("-------------- GetFeature --------------")
   guide_get_feature(stub)
   print("-------------- ListFeatures --------------")

@@ -61,4 +61,4 @@ void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt);
 
-#endif
+#endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */
