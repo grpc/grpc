@@ -214,7 +214,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
         return reader.status();
       }
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-      decoder.SetTotalBytesLimit(UINT32_MAX, UINT32_MAX);
+      decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
       if (!msg->ParseFromCodedStream(&decoder)) {
         result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
       }
