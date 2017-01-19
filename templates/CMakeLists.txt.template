@@ -40,6 +40,17 @@
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   <%!
+  
+  import re
+  
+  proto_re = re.compile('(.*)\\.proto')
+  
+  def proto_replace_ext(filename, ext):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
+  
   def get_deps(target_dict):
     deps = []
     if target_dict.get('baselib', False):
@@ -140,6 +151,9 @@
       if(TARGET libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
       endif()
+      if(TARGET protoc)
+        set(_gRPC_PROTOBUF_PROTOC protoc)
+      endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
     endif()
@@ -151,6 +165,9 @@
       endif()
       if(TARGET protobuf::libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+      endif()
+      if(TARGET protobuf::protoc)
+        set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
       endif()
       set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
     else()
@@ -192,16 +209,60 @@
   if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
     set(CMAKE_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_LIBDIR}</%text>/cmake/gRPC")
   endif()
-
+  
+  # Create directory for generated .proto files
+  set(_gRPC_PROTO_GENS_DIR <%text>${CMAKE_BINARY_DIR}/gens</%text>)
+  file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_GENS_DIR}</%text>)
+  
+  #  protobuf_generate_grpc_cpp
+  #  --------------------------
+  #
+  #   Add custom commands to process ``.proto`` files to C++ using protoc and
+  #   GRPC plugin::
+  #
+  #     protobuf_generate_grpc_cpp [<ARGN>...]
+  #
+  #   ``ARGN``
+  #     ``.proto`` files
+  #
+  function(protobuf_generate_grpc_cpp)
+    if(NOT ARGN)
+      message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
+      return()
+    endif()
+  
+    set(_protobuf_include_path -I .)
+    foreach(FIL <%text>${ARGN}</%text>)
+      get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
+      get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
+      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
+      get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
+      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+      
+      add_custom_command(
+        OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
+        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC}</%text>
+        ARGS --grpc_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+             --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+             --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+             <%text>${_protobuf_include_path}</%text>
+             <%text>${REL_FIL}</%text>
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        WORKING_DIRECTORY <%text>${CMAKE_SOURCE_DIR}</%text>
+        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
+        VERBATIM)
+        
+        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+    endforeach()
+  endfunction()
+  
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool"] and lib.language in ['c', 'c++']:
-  ## TODO(jtattermusch): grpc++_reflection includes .proto files
-  ## which is not yet supported and thus fails the entire build.
-  ## Re-enable once fixed.
-  % if lib.name != 'grpc++_reflection':
-    ${cc_library(lib)}
-    ${cc_install(lib)}
-  % endif
+  ${cc_library(lib)}
+  ${cc_install(lib)}
   % endif
   % endfor
 
@@ -215,9 +276,24 @@
   <%def name="cc_library(lib)">
   add_library(${lib.name}
   % for src in lib.src:
+  % if not proto_re.match(src):
     ${src}
+  % else:
+    ${proto_replace_ext(src, '.pb.cc')}
+    ${proto_replace_ext(src, '.grpc.pb.cc')}
+    ${proto_replace_ext(src, '.pb.h')}
+    ${proto_replace_ext(src, '.grpc.pb.h')}
+  % endif
   % endfor
   )
+  
+  % for src in lib.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(
+    ${src}
+  )
+  % endif
+  % endfor
 
   target_include_directories(${lib.name}
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
@@ -226,6 +302,9 @@
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+  % if any(proto_re.match(src) for src in lib.src):
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
   )
 
   % if len(get_deps(lib)) > 0:
