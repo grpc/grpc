@@ -61,10 +61,6 @@ extern zend_module_entry grpc_module_entry;
 
 #include "grpc/grpc.h"
 
-#define RETURN_DESTROY_ZVAL(val)                               \
-  RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
-              true /* Dealloc original before returning */)
-
 /* These are all function declarations */
 /* Code that runs at module initialization */
 PHP_MINIT_FUNCTION(grpc);

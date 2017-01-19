@@ -45,7 +45,8 @@ namespace testing {
 std::unique_ptr<ScenarioResult> RunScenario(
     const grpc::testing::ClientConfig& client_config, size_t num_clients,
     const grpc::testing::ServerConfig& server_config, size_t num_servers,
-    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
+    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
+    const char* qps_server_target_override = "");
 
 bool RunQuit();
 }  // namespace testing

@@ -10,19 +10,20 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-08-22</date>
+ <date>2017-01-13</date>
  <time>16:06:07</time>
  <version>
   <release>1.1.0dev</release>
   <api>1.1.0dev</api>
  </version>
  <stability>
-  <release>stable</release>
-  <api>stable</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license>BSD</license>
  <notes>
-- Reject metadata keys which are not legal #7881
+- PHP Proto3 adoption #8179
+- Various bug fixes     
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -81,6 +82,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -156,6 +158,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/exec_ctx_fwd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
@@ -163,6 +166,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -180,6 +184,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.h" role="src" />
@@ -246,6 +252,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
@@ -359,6 +366,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.c" role="src" />
@@ -1209,17 +1218,48 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>1.1.0dev</release>
-    <api>1.1.0dev</api>
+    <release>1.0.1RC1</release>
+    <api>1.0.1RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-10-06</date>
+   <license>BSD</license>
+   <notes>
+- Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.1</release>
+    <api>1.0.1</api>
    </version>
    <stability>
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2016-08-22</date>
+   <date>2016-10-27</date>
    <license>BSD</license>
    <notes>
 - Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0dev</release>
+    <api>1.1.0dev</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-01-13</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes     
    </notes>
   </release>
  </changelog>

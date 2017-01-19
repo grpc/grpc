@@ -43,8 +43,7 @@
 /* --- Constants. --- */
 
 #define GRPC_OPENID_CONFIG_URL_SUFFIX "/.well-known/openid-configuration"
-#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN \
-  "developer.gserviceaccount.com"
+#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN "gserviceaccount.com"
 #define GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX \
   "www.googleapis.com/robot/v1/metadata/x509"
 
@@ -57,6 +56,7 @@ typedef enum {
   GRPC_JWT_VERIFIER_BAD_AUDIENCE,
   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
   GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE,
+  GRPC_JWT_VERIFIER_BAD_SUBJECT,
   GRPC_JWT_VERIFIER_GENERIC_ERROR
 } grpc_jwt_verifier_status;
 
@@ -66,7 +66,7 @@ const char *grpc_jwt_verifier_status_to_string(grpc_jwt_verifier_status status);
 
 typedef struct grpc_jwt_claims grpc_jwt_claims;
 
-void grpc_jwt_claims_destroy(grpc_jwt_claims *claims);
+void grpc_jwt_claims_destroy(grpc_exec_ctx *exec_ctx, grpc_jwt_claims *claims);
 
 /* Returns the whole JSON tree of the claims. */
 const grpc_json *grpc_jwt_claims_json(const grpc_jwt_claims *claims);
@@ -115,7 +115,8 @@ void grpc_jwt_verifier_destroy(grpc_jwt_verifier *verifier);
    is done (maybe in another thread).
    It is the responsibility of the callee to call grpc_jwt_claims_destroy on
    the claims. */
-typedef void (*grpc_jwt_verification_done_cb)(void *user_data,
+typedef void (*grpc_jwt_verification_done_cb)(grpc_exec_ctx *exec_ctx,
+                                              void *user_data,
                                               grpc_jwt_verifier_status status,
                                               grpc_jwt_claims *claims);
 
@@ -129,8 +130,10 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
 /* --- TESTING ONLY exposed functions. --- */
 
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer);
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
+                                           grpc_json *json, grpc_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
+const char *grpc_jwt_issuer_email_domain(const char *issuer);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H */

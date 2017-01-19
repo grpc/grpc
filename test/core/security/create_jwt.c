@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
   char *scope = NULL;
   char *json_key_file_path = NULL;
   char *service_url = NULL;
+  grpc_init();
   gpr_cmdline *cl = gpr_cmdline_create("create_jwt");
   gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
                          &json_key_file_path);
@@ -102,5 +103,6 @@ int main(int argc, char **argv) {
   create_jwt(json_key_file_path, service_url, scope);
 
   gpr_cmdline_destroy(cl);
+  grpc_shutdown();
   return 0;
 }

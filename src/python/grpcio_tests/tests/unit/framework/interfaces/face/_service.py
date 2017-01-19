@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Private interfaces implemented by data sets used in Face-layer tests."""
 
 import abc
@@ -38,12 +37,13 @@ from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
 from tests.unit.framework.interfaces.face import test_interfaces
 
 
-class UnaryUnaryTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
-  """A controllable implementation of a unary-unary method."""
+class UnaryUnaryTestMethodImplementation(
+        six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
+    """A controllable implementation of a unary-unary method."""
 
-  @abc.abstractmethod
-  def service(self, request, response_callback, context, control):
-    """Services an RPC that accepts one message and produces one message.
+    @abc.abstractmethod
+    def service(self, request, response_callback, context, control):
+        """Services an RPC that accepts one message and produces one message.
 
     Args:
       request: The single request message for the RPC.
@@ -56,15 +56,15 @@ class UnaryUnaryTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_in
       abandonment.Abandoned: May or may not be raised when the RPC has been
         aborted.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class UnaryUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
-  """A type for unary-request-unary-response message pairings."""
+    """A type for unary-request-unary-response message pairings."""
 
-  @abc.abstractmethod
-  def request(self):
-    """Affords a request message.
+    @abc.abstractmethod
+    def request(self):
+        """Affords a request message.
 
     Implementations of this method should return a different message with each
     call so that multiple test executions of the test method may be made with
@@ -73,11 +73,11 @@ class UnaryUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
     Returns:
       A request message.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def verify(self, request, response, test_case):
-    """Verifies that the computed response matches the given request.
+    @abc.abstractmethod
+    def verify(self, request, response, test_case):
+        """Verifies that the computed response matches the given request.
 
     Args:
       request: A request message.
@@ -88,15 +88,16 @@ class UnaryUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
       AssertionError: If the request and response do not match, indicating that
         there was some problem executing the RPC under test.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
-class UnaryStreamTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
-  """A controllable implementation of a unary-stream method."""
+class UnaryStreamTestMethodImplementation(
+        six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
+    """A controllable implementation of a unary-stream method."""
 
-  @abc.abstractmethod
-  def service(self, request, response_consumer, context, control):
-    """Services an RPC that takes one message and produces a stream of messages.
+    @abc.abstractmethod
+    def service(self, request, response_consumer, context, control):
+        """Services an RPC that takes one message and produces a stream of messages.
 
     Args:
       request: The single request message for the RPC.
@@ -109,15 +110,15 @@ class UnaryStreamTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_i
       abandonment.Abandoned: May or may not be raised when the RPC has been
         aborted.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class UnaryStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
-  """A type for unary-request-stream-response message pairings."""
+    """A type for unary-request-stream-response message pairings."""
 
-  @abc.abstractmethod
-  def request(self):
-    """Affords a request message.
+    @abc.abstractmethod
+    def request(self):
+        """Affords a request message.
 
     Implementations of this method should return a different message with each
     call so that multiple test executions of the test method may be made with
@@ -126,11 +127,11 @@ class UnaryStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
     Returns:
       A request message.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def verify(self, request, responses, test_case):
-    """Verifies that the computed responses match the given request.
+    @abc.abstractmethod
+    def verify(self, request, responses, test_case):
+        """Verifies that the computed responses match the given request.
 
     Args:
       request: A request message.
@@ -141,15 +142,16 @@ class UnaryStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
       AssertionError: If the request and responses do not match, indicating that
         there was some problem executing the RPC under test.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
-class StreamUnaryTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
-  """A controllable implementation of a stream-unary method."""
+class StreamUnaryTestMethodImplementation(
+        six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
+    """A controllable implementation of a stream-unary method."""
 
-  @abc.abstractmethod
-  def service(self, response_callback, context, control):
-    """Services an RPC that takes a stream of messages and produces one message.
+    @abc.abstractmethod
+    def service(self, response_callback, context, control):
+        """Services an RPC that takes a stream of messages and produces one message.
 
     Args:
       response_callback: A callback to be called to accept the response message
@@ -169,15 +171,15 @@ class StreamUnaryTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_i
       abandonment.Abandoned: May or may not be raised when the RPC has been
         aborted.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class StreamUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
-  """A type for stream-request-unary-response message pairings."""
+    """A type for stream-request-unary-response message pairings."""
 
-  @abc.abstractmethod
-  def requests(self):
-    """Affords a sequence of request messages.
+    @abc.abstractmethod
+    def requests(self):
+        """Affords a sequence of request messages.
 
     Implementations of this method should return a different sequences with each
     call so that multiple test executions of the test method may be made with
@@ -186,11 +188,11 @@ class StreamUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
     Returns:
       A sequence of request messages.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def verify(self, requests, response, test_case):
-    """Verifies that the computed response matches the given requests.
+    @abc.abstractmethod
+    def verify(self, requests, response, test_case):
+        """Verifies that the computed response matches the given requests.
 
     Args:
       requests: A sequence of request messages.
@@ -201,15 +203,16 @@ class StreamUnaryTestMessages(six.with_metaclass(abc.ABCMeta)):
       AssertionError: If the requests and response do not match, indicating that
         there was some problem executing the RPC under test.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
-class StreamStreamTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
-  """A controllable implementation of a stream-stream method."""
+class StreamStreamTestMethodImplementation(
+        six.with_metaclass(abc.ABCMeta, test_interfaces.Method)):
+    """A controllable implementation of a stream-stream method."""
 
-  @abc.abstractmethod
-  def service(self, response_consumer, context, control):
-    """Services an RPC that accepts and produces streams of messages.
+    @abc.abstractmethod
+    def service(self, response_consumer, context, control):
+        """Services an RPC that accepts and produces streams of messages.
 
     Args:
       response_consumer: A stream.Consumer to be called to accept the response
@@ -229,15 +232,15 @@ class StreamStreamTestMethodImplementation(six.with_metaclass(abc.ABCMeta, test_
       abandonment.Abandoned: May or may not be raised when the RPC has been
         aborted.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class StreamStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
-  """A type for stream-request-stream-response message pairings."""
+    """A type for stream-request-stream-response message pairings."""
 
-  @abc.abstractmethod
-  def requests(self):
-    """Affords a sequence of request messages.
+    @abc.abstractmethod
+    def requests(self):
+        """Affords a sequence of request messages.
 
     Implementations of this method should return a different sequences with each
     call so that multiple test executions of the test method may be made with
@@ -246,11 +249,11 @@ class StreamStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
     Returns:
       A sequence of request messages.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def verify(self, requests, responses, test_case):
-    """Verifies that the computed response matches the given requests.
+    @abc.abstractmethod
+    def verify(self, requests, responses, test_case):
+        """Verifies that the computed response matches the given requests.
 
     Args:
       requests: A sequence of request messages.
@@ -261,15 +264,15 @@ class StreamStreamTestMessages(six.with_metaclass(abc.ABCMeta)):
       AssertionError: If the requests and responses do not match, indicating
         that there was some problem executing the RPC under test.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class TestService(six.with_metaclass(abc.ABCMeta)):
-  """A specification of implemented methods to use in tests."""
+    """A specification of implemented methods to use in tests."""
 
-  @abc.abstractmethod
-  def unary_unary_scenarios(self):
-    """Affords unary-request-unary-response test methods and their messages.
+    @abc.abstractmethod
+    def unary_unary_scenarios(self):
+        """Affords unary-request-unary-response test methods and their messages.
 
     Returns:
       A dict from method group-name pair to implementation/messages pair. The
@@ -277,11 +280,11 @@ class TestService(six.with_metaclass(abc.ABCMeta)):
         and the second element is a sequence of UnaryUnaryTestMethodMessages
         objects.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def unary_stream_scenarios(self):
-    """Affords unary-request-stream-response test methods and their messages.
+    @abc.abstractmethod
+    def unary_stream_scenarios(self):
+        """Affords unary-request-stream-response test methods and their messages.
 
     Returns:
       A dict from method group-name pair to implementation/messages pair. The
@@ -289,11 +292,11 @@ class TestService(six.with_metaclass(abc.ABCMeta)):
         object and the second element is a sequence of
         UnaryStreamTestMethodMessages objects.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def stream_unary_scenarios(self):
-    """Affords stream-request-unary-response test methods and their messages.
+    @abc.abstractmethod
+    def stream_unary_scenarios(self):
+        """Affords stream-request-unary-response test methods and their messages.
 
     Returns:
       A dict from method group-name pair to implementation/messages pair. The
@@ -301,11 +304,11 @@ class TestService(six.with_metaclass(abc.ABCMeta)):
         object and the second element is a sequence of
         StreamUnaryTestMethodMessages objects.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def stream_stream_scenarios(self):
-    """Affords stream-request-stream-response test methods and their messages.
+    @abc.abstractmethod
+    def stream_stream_scenarios(self):
+        """Affords stream-request-stream-response test methods and their messages.
 
     Returns:
       A dict from method group-name pair to implementation/messages pair. The
@@ -313,4 +316,4 @@ class TestService(six.with_metaclass(abc.ABCMeta)):
         object and the second element is a sequence of
         StreamStreamTestMethodMessages objects.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
