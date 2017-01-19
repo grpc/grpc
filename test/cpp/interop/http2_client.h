@@ -31,19 +31,50 @@
  *
  */
 
-#ifndef TEST_QPS_LIMIT_CORES_H
-#define TEST_QPS_LIMIT_CORES_H
+#ifndef GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+
+#include <memory>
+
+#include <grpc++/channel.h>
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
-/// LimitCores: allow this worker to only run on the cores specified in the
-/// array \a cores, which is of length \a cores_size.
-///
-/// LimitCores takes array and size arguments (instead of vector) for direct
-/// conversion from repeated field of protobuf. Use a cores_size of 0 to remove
-/// existing limits (from an empty repeated field)
-int LimitCores(const int *cores, int cores_size);
+
+class Http2Client {
+ public:
+  explicit Http2Client(std::shared_ptr<Channel> channel);
+  ~Http2Client() {}
+
+  bool DoRstAfterHeader();
+  bool DoRstAfterData();
+  bool DoRstDuringData();
+  bool DoGoaway();
+  bool DoPing();
+  bool DoMaxStreams();
+
+ private:
+  class ServiceStub {
+   public:
+    ServiceStub(std::shared_ptr<Channel> channel);
+
+    TestService::Stub* Get();
+
+   private:
+    std::unique_ptr<TestService::Stub> stub_;
+    std::shared_ptr<Channel> channel_;
+  };
+
+  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  ServiceStub serviceStub_;
+  std::shared_ptr<Channel> channel_;
+};
+
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_QPS_LIMIT_CORES_H
+#endif  // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H

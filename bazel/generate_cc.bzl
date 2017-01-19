@@ -24,13 +24,15 @@ def generate_cc_impl(ctx):
   if ctx.executable.plugin:
     arguments += ["--plugin=protoc-gen-PLUGIN=" + ctx.executable.plugin.path]
     arguments += ["--PLUGIN_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
+    additional_input = [ctx.executable.plugin]
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
+    additional_input = []
   arguments += ["-I{0}={0}".format(include.path) for include in includes]
   arguments += [proto.path for proto in protos]
 
   ctx.action(
-      inputs = protos + includes,
+      inputs = protos + includes + additional_input,
       outputs = out_files,
       executable = ctx.executable._protoc,
       arguments = arguments,

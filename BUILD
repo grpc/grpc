@@ -401,6 +401,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/atm_gcc_atomic.h",
         "include/grpc/impl/codegen/atm_gcc_sync.h",
         "include/grpc/impl/codegen/atm_windows.h",
+        "include/grpc/impl/codegen/gpr_slice.h",
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/impl/codegen/slice.h",
@@ -1026,7 +1027,7 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
-        "third_party/objective_c/Cronet/cronet_c_for_grpc.h",
+        "third_party/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1078,6 +1079,7 @@ grpc_cc_library(
         "src/cpp/common/completion_queue_cc.cc",
         "src/cpp/common/core_codegen.cc",
         "src/cpp/common/rpc_method.cc",
+        "src/cpp/common/version_cc.cc",
         "src/cpp/server/async_generic_service.cc",
         "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.cc",
@@ -1086,6 +1088,7 @@ grpc_cc_library(
         "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/server_posix.cc",
+        "src/cpp/thread_manager/thread_manager.cc",
         "src/cpp/util/byte_buffer_cc.cc",
         "src/cpp/util/slice_cc.cc",
         "src/cpp/util/status.cc",

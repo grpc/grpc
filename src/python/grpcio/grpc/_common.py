@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Shared implementation."""
 
 import logging
@@ -45,9 +44,8 @@ CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.connecting: grpc.ChannelConnectivity.CONNECTING,
     cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
-        grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.shutdown:
-        grpc.ChannelConnectivity.SHUTDOWN,
+    grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+    cygrpc.ConnectivityState.shutdown: grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
@@ -77,83 +75,88 @@ STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
 
 
 def encode(s):
-  if isinstance(s, bytes):
-    return s
-  else:
-    return s.encode('ascii')
+    if isinstance(s, bytes):
+        return s
+    else:
+        return s.encode('ascii')
 
 
 def decode(b):
-  if isinstance(b, str):
-    return b
-  else:
-    try:
-      return b.decode('utf8')
-    except UnicodeDecodeError:
-      logging.exception('Invalid encoding on {}'.format(b))
-      return b.decode('latin1')
+    if isinstance(b, str):
+        return b
+    else:
+        try:
+            return b.decode('utf8')
+        except UnicodeDecodeError:
+            logging.exception('Invalid encoding on {}'.format(b))
+            return b.decode('latin1')
 
 
 def channel_args(options):
-  channel_args = []
-  for key, value in options:
-    if isinstance(value, six.string_types):
-      channel_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
-    else:
-      channel_args.append(cygrpc.ChannelArg(encode(key), value))
-  return cygrpc.ChannelArgs(channel_args)
+    channel_args = []
+    for key, value in options:
+        if isinstance(value, six.string_types):
+            channel_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
+        else:
+            channel_args.append(cygrpc.ChannelArg(encode(key), value))
+    return cygrpc.ChannelArgs(channel_args)
 
 
 def cygrpc_metadata(application_metadata):
-  return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
-      cygrpc.Metadatum(encode(key), encode(value))
-      for key, value in application_metadata)
+    return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
+        cygrpc.Metadatum(encode(key), encode(value))
+        for key, value in application_metadata)
 
 
 def application_metadata(cygrpc_metadata):
-  if cygrpc_metadata is None:
-    return ()
-  else:
-    return tuple(
-        (decode(key), value if key[-4:] == b'-bin' else decode(value))
-        for key, value in cygrpc_metadata)
+    if cygrpc_metadata is None:
+        return ()
+    else:
+        return tuple((decode(key), value
+                      if key[-4:] == b'-bin' else decode(value))
+                     for key, value in cygrpc_metadata)
 
 
 def _transform(message, transformer, exception_message):
-  if transformer is None:
-    return message
-  else:
-    try:
-      return transformer(message)
-    except Exception:  # pylint: disable=broad-except
-      logging.exception(exception_message)
-      return None
+    if transformer is None:
+        return message
+    else:
+        try:
+            return transformer(message)
+        except Exception:  # pylint: disable=broad-except
+            logging.exception(exception_message)
+            return None
 
 
 def serialize(message, serializer):
-  return _transform(message, serializer, 'Exception serializing message!')
+    return _transform(message, serializer, 'Exception serializing message!')
 
 
 def deserialize(serialized_message, deserializer):
-  return _transform(serialized_message, deserializer,
-                    'Exception deserializing message!')
+    return _transform(serialized_message, deserializer,
+                      'Exception deserializing message!')
 
 
 def fully_qualified_method(group, method):
-  return '/{}/{}'.format(group, method)
+    return '/{}/{}'.format(group, method)
 
 
 class CleanupThread(threading.Thread):
-  """A threading.Thread subclass supporting custom behavior on join().
+    """A threading.Thread subclass supporting custom behavior on join().
 
   On Python Interpreter exit, Python will attempt to join outstanding threads
   prior to garbage collection.  We may need to do additional cleanup, and
   we accomplish this by overriding the join() method.
   """
 
-  def __init__(self, behavior, group=None, target=None, name=None,
-               args=(), kwargs={}):
-    """Constructor.
+    def __init__(self,
+                 behavior,
+                 group=None,
+                 target=None,
+                 name=None,
+                 args=(),
+                 kwargs={}):
+        """Constructor.
 
     Args:
       behavior (function): Function called on join() with a single
@@ -169,15 +172,15 @@ class CleanupThread(threading.Thread):
       kwargs (dict[str,object]): A dictionary of keyword arguments to
            pass to `target`.
     """
-    super(CleanupThread, self).__init__(group=group, target=target,
-                                        name=name, args=args, kwargs=kwargs)
-    self._behavior = behavior
+        super(CleanupThread, self).__init__(
+            group=group, target=target, name=name, args=args, kwargs=kwargs)
+        self._behavior = behavior
 
-  def join(self, timeout=None):
-    start_time = time.time()
-    self._behavior(timeout)
-    end_time = time.time()
-    if timeout is not None:
-      timeout -= end_time - start_time
-      timeout = max(timeout, 0)
-    super(CleanupThread, self).join(timeout)
+    def join(self, timeout=None):
+        start_time = time.time()
+        self._behavior(timeout)
+        end_time = time.time()
+        if timeout is not None:
+            timeout -= end_time - start_time
+            timeout = max(timeout, 0)
+        super(CleanupThread, self).join(timeout)

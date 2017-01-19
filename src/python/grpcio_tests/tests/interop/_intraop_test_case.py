@@ -26,39 +26,41 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Common code for unit tests of the interoperability test code."""
 
 from tests.interop import methods
 
 
 class IntraopTestCase(object):
-  """Unit test methods.
+    """Unit test methods.
 
   This class must be mixed in with unittest.TestCase and a class that defines
   setUp and tearDown methods that manage a stub attribute.
   """
 
-  def testEmptyUnary(self):
-    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
+    def testEmptyUnary(self):
+        methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
 
-  def testLargeUnary(self):
-    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
+    def testLargeUnary(self):
+        methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
 
-  def testServerStreaming(self):
-    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
+    def testServerStreaming(self):
+        methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
 
-  def testClientStreaming(self):
-    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
+    def testClientStreaming(self):
+        methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
 
-  def testPingPong(self):
-    methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
+    def testPingPong(self):
+        methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
 
-  def testCancelAfterBegin(self):
-    methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
+    def testCancelAfterBegin(self):
+        methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub,
+                                                                  None)
 
-  def testCancelAfterFirstResponse(self):
-    methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)
+    def testCancelAfterFirstResponse(self):
+        methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(
+            self.stub, None)
 
-  def testTimeoutOnSleepingServer(self):
-    methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(self.stub, None)
+    def testTimeoutOnSleepingServer(self):
+        methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(
+            self.stub, None)
