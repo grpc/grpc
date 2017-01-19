@@ -5623,7 +5623,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
@@ -5643,8 +5642,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.cc", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.cc", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.cc", 
@@ -7663,7 +7660,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+      "third_party/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
