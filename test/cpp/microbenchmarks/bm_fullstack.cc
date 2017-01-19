@@ -84,6 +84,16 @@ static class InitializeStuff {
  * FIXTURES
  */
 
+static void ApplyCommonServerBuilderConfig(ServerBuilder *b) {
+  b->SetMaxReceiveMessageSize(INT_MAX);
+  b->SetMaxSendMessageSize(INT_MAX);
+}
+
+static void ApplyCommonChannelArguments(ChannelArguments *c) {
+  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
+  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+}
+
 class FullstackFixture {
  public:
   FullstackFixture(Service* service, const grpc::string& address) {
@@ -91,8 +101,11 @@ class FullstackFixture {
     b.AddListeningPort(address, InsecureServerCredentials());
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
+    ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
-    channel_ = CreateChannel(address, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(&args);
+    channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
   }
 
   virtual ~FullstackFixture() {
@@ -146,6 +159,7 @@ class EndpointPairFixture {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
+    ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -174,6 +188,7 @@ class EndpointPairFixture {
     {
       ChannelArguments args;
       args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
@@ -347,7 +362,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     send_request.set_message(std::string(state.range(0), 'a'));
   }
   if (state.range(1) > 0) {
-    send_response.set_message(std::string(state.range(0), 'a'));
+    send_response.set_message(std::string(state.range(1), 'a'));
   }
   Status recv_status;
   struct ServerEnv {
@@ -371,6 +386,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
+    recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
@@ -402,54 +418,78 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
+  state.SetBytesProcessed(state.range(0) * state.iterations() +
+                          state.range(1) * state.iterations());
 }
 
 /*******************************************************************************
  * CONFIGURATIONS
  */
 
+static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
+  b->Args({0,0});
+  for (int i=1; i<=128*1024*1024; i*=8) {
+    b->Args({i,0});
+    b->Args({0,i});
+    b->Args({i,i});
+  }
+}
+
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
-    ->Ranges({{0, 2 * 1024 * 1024}, {0, 2 * 1024 * 1024}});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator);
+  ->Apply(SweepSizesArgs);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator)
+  ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator);
+                   NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator);
+                   NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
+    ->Args({0, 0});
 
 }  // namespace testing
 }  // namespace grpc
