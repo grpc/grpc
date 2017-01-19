@@ -109,7 +109,6 @@ def _ping_pong_scenario(name, rpc_type,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
-                        server_core_limit=0,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
@@ -136,7 +135,6 @@ def _ping_pong_scenario(name, rpc_type,
     'server_config': {
       'server_type': server_type,
       'security_params': _get_secargs(secure),
-      'core_limit': server_core_limit,
       'async_server_threads': async_server_threads,
     },
     'warmup_seconds': warmup_seconds,
@@ -200,7 +198,7 @@ class CXXLanguage:
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          use_generic_payload=True, server_core_limit=1, async_server_threads=1,
+          use_generic_payload=True, async_server_threads=1,
           secure=secure,
           categories=smoketest_categories)
 
@@ -219,7 +217,7 @@ class CXXLanguage:
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
-          server_core_limit=1, async_server_threads=1,
+          async_server_threads=1,
           secure=secure)
 
       yield _ping_pong_scenario(
@@ -248,7 +246,7 @@ class CXXLanguage:
               rpc_type=rpc_type.upper(),
               client_type='%s_CLIENT' % synchronicity.upper(),
               server_type='%s_SERVER' % synchronicity.upper(),
-              server_core_limit=1, async_server_threads=1,
+              async_server_threads=1,
               secure=secure)
 
           yield _ping_pong_scenario(
@@ -332,13 +330,13 @@ class CSharpLanguage:
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1,
+        server_language='c++', async_server_threads=1,
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
@@ -414,13 +412,13 @@ class NodeLanguage:
     #yield _ping_pong_scenario(
     #    'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+    #    server_language='c++', async_server_threads=1)
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
     #    'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+    #    server_language='c++', async_server_threads=1)
 
   def __str__(self):
     return 'node'
@@ -469,13 +467,13 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1,
+        server_language='c++', async_server_threads=1,
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', async_server_threads=1)
 
   def __str__(self):
     return 'python'
@@ -516,12 +514,12 @@ class RubyLanguage:
     yield _ping_pong_scenario(
         'ruby_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
         'ruby_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', async_server_threads=1)
 
   def __str__(self):
     return 'ruby'

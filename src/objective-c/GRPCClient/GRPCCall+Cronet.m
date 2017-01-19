@@ -35,16 +35,16 @@
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 static BOOL useCronet = NO;
-static cronet_engine *globalCronetEngine;
+static stream_engine *globalCronetEngine;
 
 @implementation GRPCCall (Cronet)
 
-+ (void)useCronetWithEngine:(cronet_engine *)engine {
++ (void)useCronetWithEngine:(stream_engine *)engine {
   useCronet = YES;
   globalCronetEngine = engine;
 }
 
-+ (cronet_engine *)cronetEngine {
++ (stream_engine *)cronetEngine {
   return globalCronetEngine;
 }
 
