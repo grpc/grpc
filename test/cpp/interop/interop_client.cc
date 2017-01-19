@@ -31,7 +31,6 @@
  *
  */
 
-#include <unistd.h>
 #include <cinttypes>
 #include <fstream>
 #include <memory>
@@ -43,6 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
@@ -618,7 +618,9 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_DEBUG, "received message %d", i);
-    usleep(kReceiveDelayMilliSeconds * 1000);
+    gpr_sleep_until(gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME),
+        gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
     ++i;
   }
 
