@@ -88,7 +88,13 @@
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if (MSVC)
-    add_definitions( -D_WIN32_WINNT=0x600 )
+    add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+    # needed to compile boringssl
+    add_definitions(/wd4464 /wd4623 /wd4668 /wd4701 /wd4702 /wd4777 /wd5027)
+    # needed to compile protobuf
+    add_definitions(/wd4065 /wd4506)
+    # TODO(jtattermusch): revisit C4267 occurrences throughout the code
+    add_definitions(/wd4267)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
@@ -213,14 +219,19 @@
   endif()
 
   % for lib in libs:
-  % if lib.build in ["all", "protoc", "tool"]:
+  % if lib.build in ["all", "protoc", "tool"] and lib.language in ['c', 'c++']:
+  ## TODO(jtattermusch): grpc++_reflection includes .proto files
+  ## which is not yet supported and thus fails the entire build.
+  ## Re-enable once fixed.
+  % if lib.name != 'grpc++_reflection':
     ${cc_library(lib)}
     ${cc_install(lib)}
+  % endif
   % endif
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool"]:
+  % if tgt.build in ["all", "protoc", "tool"] and tgt.language in ['c', 'c++']:
   ${cc_binary(tgt)}
   ${cc_install(tgt)}
   % endif

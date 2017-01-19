@@ -44,8 +44,11 @@
 #include "test/core/util/test_config.h"
 
 void test_unparsable_target(void) {
-  int port = grpc_server_add_insecure_http2_port(NULL, "[");
+  grpc_channel_args args = {0, NULL};
+  grpc_server *server = grpc_server_create(&args, NULL);
+  int port = grpc_server_add_insecure_http2_port(server, "[");
   GPR_ASSERT(port == 0);
+  grpc_server_destroy(server);
 }
 
 void test_add_same_port_twice() {

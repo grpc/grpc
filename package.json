@@ -21,6 +21,7 @@
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js --exclude-path=src/node/.jshintignore",
     "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
+    "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
@@ -39,6 +40,7 @@
   "devDependencies": {
     "async": "^2.0.1",
     "body-parser": "^1.15.2",
+    "electron-mocha": "^3.1.1",
     "express": "^4.14.0",
     "google-auth-library": "^0.9.2",
     "google-protobuf": "^3.0.0",
@@ -51,7 +53,7 @@
     "poisson-process": "^0.2.1"
   },
   "engines": {
-    "node": ">=0.12.0"
+    "node": ">=1.1.0"
   },
   "binary": {
     "module_name": "grpc_node",

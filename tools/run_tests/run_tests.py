@@ -54,9 +54,9 @@ import time
 from six.moves import urllib
 import uuid
 
-import jobset
-import report_utils
-import watch_dirs
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
+import python_utils.watch_dirs as watch_dirs
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -116,7 +116,7 @@ class Config(object):
 def get_c_tests(travis, test_lang) :
   out = []
   platforms_str = 'ci_platforms' if travis else 'platforms'
-  with open('tools/run_tests/tests.json') as f:
+  with open('tools/run_tests/generated/tests.json') as f:
     js = json.load(f)
     return [tgt
             for tgt in js
@@ -234,6 +234,9 @@ class CLanguage(object):
         if resolver:
           env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
+        timeout_scaling = 1
+        if polling_strategy == 'poll-cv':
+          timeout_scaling *= 5
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
@@ -272,6 +275,7 @@ class CLanguage(object):
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
                                                 cpu_cost=cpu_cost,
+                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -282,7 +286,7 @@ class CLanguage(object):
                                                       shortname_ext,
                                             cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
-                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
+                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                             environ=env))
         elif self.args.regex == '.*' or self.platform == 'windows':
           print('\nWARNING: binary not found, skipping', binary)
@@ -299,7 +303,7 @@ class CLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_c.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
     else:
       return []
 
@@ -310,7 +314,7 @@ class CLanguage(object):
     if self.platform == 'windows':
       return []
     else:
-      return [['tools/run_tests/post_tests_c.sh']]
+      return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -370,28 +374,43 @@ class NodeLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
+    # Note: electron ABI only depends on major and minor version, so that's all
+    # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7'])
+                                         'node7', 'electron1.3'])
     if self.args.compiler == 'default':
+      self.runtime = 'node'
       self.node_version = '4'
     else:
-      # Take off the word "node"
-      self.node_version = self.args.compiler[4:]
+      if self.args.compiler.startswith('electron'):
+        self.runtime = 'electron'
+        self.node_version = self.args.compiler[8:]
+      else:
+        self.runtime = 'node'
+        # Take off the word "node"
+        self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
-      return [self.config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
+      return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
     else:
-      return [self.config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
+      run_script = 'run_node'
+      if self.runtime == 'electron':
+        run_script += '_electron'
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/{}.sh'.format(run_script),
+                                    self.node_version],
                                    None,
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+      build_script = 'pre_build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
 
   def make_targets(self):
     return []
@@ -401,9 +420,14 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
     else:
-      return [['tools/run_tests/build_node.sh', self.node_version]]
+      build_script = 'build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+        # building for electron requires a patch version
+        self.node_version += '.0'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
 
   def post_tests_steps(self):
     return []
@@ -426,7 +450,7 @@ class PhpLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'],
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -439,10 +463,10 @@ class PhpLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_php.sh']]
+    return [['tools/run_tests/helper_scripts/build_php.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_php.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -462,7 +486,7 @@ class Php7Language(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'],
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -475,10 +499,10 @@ class Php7Language(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_php.sh']]
+    return [['tools/run_tests/helper_scripts/build_php.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_php.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -510,7 +534,7 @@ class PythonLanguage(object):
         config.run,
         timeout_seconds=5*60,
         environ=dict(list(environment.items()) +
-                     [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+                     [('GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
         shortname='%s.test.%s' % (config.name, suite_name),)
         for suite_name in tests_json
         for config in self.pythons]
@@ -547,18 +571,18 @@ class PythonLanguage(object):
 
     if os.name == 'nt':
       shell = ['bash']
-      builder = [os.path.abspath('tools/run_tests/build_python_msys2.sh')]
+      builder = [os.path.abspath('tools/run_tests/helper_scripts/build_python_msys2.sh')]
       builder_prefix_arguments = ['MINGW{}'.format(bits)]
       venv_relative_python = ['Scripts/python.exe']
       toolchain = ['mingw32']
     else:
       shell = []
-      builder = [os.path.abspath('tools/run_tests/build_python.sh')]
+      builder = [os.path.abspath('tools/run_tests/helper_scripts/build_python.sh')]
       builder_prefix_arguments = []
       venv_relative_python = ['bin/python']
       toolchain = ['unix']
 
-    runner = [os.path.abspath('tools/run_tests/run_python.sh')]
+    runner = [os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')]
     config_vars = _PythonConfigVars(shell, builder, builder_prefix_arguments,
                               venv_relative_python, toolchain, runner)
     python27_config = _python_config_generator(name='py27', major='2',
@@ -610,12 +634,12 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
+    return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    return [['tools/run_tests/pre_build_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
   def make_targets(self):
     return []
@@ -624,10 +648,10 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return [['tools/run_tests/post_tests_ruby.sh']]
+    return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -701,7 +725,6 @@ class CSharpLanguage(object):
         for test in tests_by_assembly[assembly]:
           cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
           specs.append(self.config.job_spec(cmdline,
-                                            None,
                                             shortname='csharp.%s' % test,
                                             environ=_FORCE_ENVIRON_FOR_WRAPPERS))
       else:
@@ -719,7 +742,6 @@ class CSharpLanguage(object):
         # to prevent problems with registering the profiler.
         run_exclusive = 1000000
         specs.append(self.config.job_spec(cmdline,
-                                          None,
                                           shortname='csharp.coverage.%s' % assembly,
                                           cpu_cost=run_exclusive,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
@@ -727,9 +749,9 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
     else:
-      return [['tools/run_tests/pre_build_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
   def make_targets(self):
     return ['grpc_csharp_ext']
@@ -740,22 +762,22 @@ class CSharpLanguage(object):
   def build_steps(self):
     if self.args.compiler == 'coreclr':
       if self.platform == 'windows':
-        return [['tools\\run_tests\\build_csharp_coreclr.bat']]
+        return [['tools\\run_tests\\helper_scripts\\build_csharp_coreclr.bat']]
       else:
-        return [['tools/run_tests/build_csharp_coreclr.sh']]
+        return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
     else:
       if self.platform == 'windows':
         return [[_windows_build_bat(self.args.compiler),
                  'src/csharp/Grpc.sln',
                  '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
       else:
-        return [['tools/run_tests/build_csharp.sh']]
+        return [['tools/run_tests/helper_scripts/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\post_tests_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\post_tests_csharp.bat']]
     else:
-      return [['tools/run_tests/post_tests_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -778,7 +800,7 @@ class ObjCLanguage(object):
   def test_specs(self):
     return [
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
-                              timeout_seconds=None,
+                              timeout_seconds=60*60,
                               shortname='objc-tests',
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
         self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
@@ -822,8 +844,12 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+      environ={'TEST': 'true'}
+      if _is_use_docker_child():
+        environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
       return [self.config.job_spec(cmd['script'].split(),
-                                   timeout_seconds=None, environ={'TEST': 'true'},
+                                   timeout_seconds=30*60,
+                                   environ=environ,
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
 
@@ -874,9 +900,9 @@ class NodeExpressLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_node.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
 
   def make_targets(self):
     return []
@@ -900,7 +926,7 @@ class NodeExpressLanguage(object):
     return 'node_express'
 
 # different configurations we can run under
-with open('tools/run_tests/configs.json') as f:
+with open('tools/run_tests/generated/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
@@ -1074,6 +1100,7 @@ argp.add_argument('--compiler',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
+                           'electron1.3',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
@@ -1096,6 +1123,12 @@ argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 argp.add_argument('--report_suite_name', default='tests', type=str,
         help='Test suite name to use in generated JUnit XML report')
+argp.add_argument('--quiet_success',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Dont print anything when a test passes. Passing tests also will not be reported in XML report. ' +
+                       'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
@@ -1295,7 +1328,7 @@ def _start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+        [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
          'dump_version']))
     print('my port server is version %d' % current_version)
     running = (version >= current_version)
@@ -1307,7 +1340,7 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print('starting port_server, with log file %s' % logfile)
-    args = [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+    args = [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
@@ -1413,7 +1446,7 @@ def _build_and_run(
     return []
 
   # start antagonists
-  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
+  antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
   port_server_port = 32766
   _start_port_server(port_server_port)
@@ -1443,20 +1476,24 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
+    if args.quiet_success:
+      jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
+        quiet_success=args.quiet_success)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
-        if num_failures == num_runs:  # what about infinite_runs???
-          jobset.message('FAILED', k, do_newline=True)
-        elif num_failures > 0:
-          jobset.message(
-              'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
-              do_newline=True)
+        if num_failures > 0:
+          if num_failures == num_runs:  # what about infinite_runs???
+            jobset.message('FAILED', k, do_newline=True)
+          else:
+            jobset.message(
+                'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
+                do_newline=True)
   finally:
     for antagonist in antagonists:
       antagonist.kill()

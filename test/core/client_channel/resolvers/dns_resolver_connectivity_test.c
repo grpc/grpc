@@ -67,7 +67,8 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
 }
 
-static grpc_resolver *create_resolver(const char *name) {
+static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
+                                      const char *name) {
   grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
   grpc_uri *uri = grpc_uri_parse(name, 0);
   GPR_ASSERT(uri);
@@ -75,7 +76,7 @@ static grpc_resolver *create_resolver(const char *name) {
   memset(&args, 0, sizeof(args));
   args.uri = uri;
   grpc_resolver *resolver =
-      grpc_resolver_factory_create_resolver(factory, &args);
+      grpc_resolver_factory_create_resolver(exec_ctx, factory, &args);
   grpc_resolver_factory_unref(factory);
   grpc_uri_destroy(uri);
   return resolver;
@@ -104,30 +105,30 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-  grpc_resolve_address = my_resolve_address;
-
-  grpc_resolver *resolver = create_resolver("dns:test");
-
+  grpc_blocking_resolve_address = my_resolve_address;
   grpc_channel_args *result = (grpc_channel_args *)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_resolver *resolver = create_resolver(&exec_ctx, "dns:test");
   gpr_event ev1;
   gpr_event_init(&ev1);
-  grpc_resolver_next(&exec_ctx, resolver, &result,
-                     grpc_closure_create(on_done, &ev1));
+  grpc_resolver_next(
+      &exec_ctx, resolver, &result,
+      grpc_closure_create(on_done, &ev1, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(result == NULL);
 
   gpr_event ev2;
   gpr_event_init(&ev2);
-  grpc_resolver_next(&exec_ctx, resolver, &result,
-                     grpc_closure_create(on_done, &ev2));
+  grpc_resolver_next(
+      &exec_ctx, resolver, &result,
+      grpc_closure_create(on_done, &ev2, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);
 
-  grpc_channel_args_destroy(result);
+  grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 

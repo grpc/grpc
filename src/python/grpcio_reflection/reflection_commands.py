@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Provides distutils command classes for the GRPC Python setup process."""
 
 import os
@@ -35,44 +34,46 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/reflection/v1alpha/reflection.proto')
+HEALTH_PROTO = os.path.join(
+    ROOT_DIR, '../../proto/grpc/reflection/v1alpha/reflection.proto')
 
 
 class CopyProtoModules(setuptools.Command):
-  """Command to copy proto modules from grpc/src/proto."""
+    """Command to copy proto modules from grpc/src/proto."""
 
-  description = ''
-  user_options = []
+    description = ''
+    user_options = []
 
-  def initialize_options(self):
-    pass
+    def initialize_options(self):
+        pass
 
-  def finalize_options(self):
-    pass
+    def finalize_options(self):
+        pass
 
-  def run(self):
-    if os.path.isfile(HEALTH_PROTO):
-      shutil.copyfile(
-          HEALTH_PROTO,
-          os.path.join(ROOT_DIR, 'grpc/reflection/v1alpha/reflection.proto'))
+    def run(self):
+        if os.path.isfile(HEALTH_PROTO):
+            shutil.copyfile(
+                HEALTH_PROTO,
+                os.path.join(ROOT_DIR,
+                             'grpc_reflection/v1alpha/reflection.proto'))
 
 
 class BuildPackageProtos(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
+    """Command to generate project *_pb2.py modules from proto files."""
 
-  description = 'build grpc protobuf modules'
-  user_options = []
+    description = 'build grpc protobuf modules'
+    user_options = []
 
-  def initialize_options(self):
-    pass
+    def initialize_options(self):
+        pass
 
-  def finalize_options(self):
-    pass
+    def finalize_options(self):
+        pass
 
-  def run(self):
-    # due to limitations of the proto generator, we require that only *one*
-    # directory is provided as an 'include' directory. We assume it's the '' key
-    # to `self.distribution.package_dir` (and get a key error if it's not
-    # there).
-    from grpc.tools import command
-    command.build_package_protos(self.distribution.package_dir[''])
+    def run(self):
+        # due to limitations of the proto generator, we require that only *one*
+        # directory is provided as an 'include' directory. We assume it's the '' key
+        # to `self.distribution.package_dir` (and get a key error if it's not
+        # there).
+        from grpc_tools import command
+        command.build_package_protos(self.distribution.package_dir[''])

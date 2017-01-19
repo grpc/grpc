@@ -212,10 +212,8 @@ struct grpc_chttp2_transport {
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
   grpc_closure write_action_end_locked;
 
-  grpc_closure read_action_begin;
   grpc_closure read_action_locked;
 
   /** incoming read bytes */
@@ -251,6 +249,9 @@ struct grpc_chttp2_transport {
   int64_t announce_incoming_window;
   /** how much window would we like to have for incoming_window */
   uint32_t connection_window_target;
+  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+   */
+  uint32_t write_buffer_size;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
@@ -327,16 +328,17 @@ struct grpc_chttp2_transport {
    */
   grpc_error *close_transport_on_writes_finished;
 
+  /* a list of closures to run after writes are finished */
+  grpc_closure_list run_after_write;
+
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;
   /** have we scheduled a destructive cleanup? */
   bool destructive_reclaimer_registered;
   /** benign cleanup closure */
-  grpc_closure benign_reclaimer;
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
-  grpc_closure destructive_reclaimer;
   grpc_closure destructive_reclaimer_locked;
 };
 
@@ -404,6 +406,9 @@ struct grpc_chttp2_stream {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  /** Are we buffering writes on this stream? If yes, we won't become writable
+      until there's enough queued up in the flow_controlled_buffer */
+  bool write_buffering;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
@@ -493,6 +498,8 @@ void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                  grpc_chttp2_stream **s);
+void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                     grpc_chttp2_stream *s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
@@ -688,5 +695,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s);
+
+void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s, grpc_error *error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

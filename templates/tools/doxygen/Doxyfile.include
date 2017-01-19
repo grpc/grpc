@@ -8,7 +8,10 @@
 <%def name="gen_doxyfile(libnames, packagename, collection, internal)">
 <%
   import itertools
+  import glob
+  import os
   targets = []
+  docpackage = packagename.replace('+', 'p').lower()
   for libname in libnames:
     target = None
     for p in collection:
@@ -16,6 +19,11 @@
         target = p
     assert(target)
     targets.append(target)
+  srcdoc = []
+  for dirpath, dirnames, filenames in os.walk('src/%s' % docpackage):
+    for filename in filenames:
+      if os.path.splitext(filename)[1] == '.md':
+        srcdoc.append(os.path.join(dirpath, filename))
 %>
 # Doxyfile 1.8.9.1
 
@@ -778,13 +786,20 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ${' \\\n'.join(
-                               itertools.chain.from_iterable(
-			           target.public_headers +
-				   ([]
-				    if not internal
-				    else target.headers + target.src)
-			       for target in targets))}
+INPUT                  = ${
+    ' \\\n'.join(sorted(
+        itertools.chain(
+            itertools.chain.from_iterable(
+    			      target.public_headers +
+    				    ([]
+    				     if not internal
+    				     else target.headers + target.src)
+    			      for target in targets),
+            glob.glob('doc/*.md'),
+            glob.glob('doc/%s/*.md' % docpackage),
+            [] if not internal else srcdoc)
+    ))
+}
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

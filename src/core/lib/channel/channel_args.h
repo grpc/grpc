@@ -68,7 +68,7 @@ grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
-void grpc_channel_args_destroy(grpc_channel_args *a);
+void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a);
 
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
@@ -88,7 +88,8 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
  * modified to point to the returned instance (which may be different from the
  * input value of \a a). */
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args **a, grpc_compression_algorithm algorithm, int enabled);
+    grpc_exec_ctx *exec_ctx, grpc_channel_args **a,
+    grpc_compression_algorithm algorithm, int enabled);
 
 /** Returns the bitset representing the support state (true for enabled, false
  * for disabled) for compression algorithms.

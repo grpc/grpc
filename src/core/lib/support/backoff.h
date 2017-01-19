@@ -37,7 +37,9 @@
 #include <grpc/support/time.h>
 
 typedef struct {
-  /// const: multiplier between retry attempts
+  /// const:  how long to wait after the first failure before retrying
+  int64_t initial_connect_timeout;
+  /// const: factor with which to multiply backoff after a failed retry
   double multiplier;
   /// const: amount to randomize backoffs
   double jitter;
@@ -54,7 +56,8 @@ typedef struct {
 } gpr_backoff;
 
 /// Initialize backoff machinery - does not need to be destroyed
-void gpr_backoff_init(gpr_backoff *backoff, double multiplier, double jitter,
+void gpr_backoff_init(gpr_backoff *backoff, int64_t initial_connect_timeout,
+                      double multiplier, double jitter,
                       int64_t min_timeout_millis, int64_t max_timeout_millis);
 
 /// Begin retry loop: returns a timespec for the NEXT retry

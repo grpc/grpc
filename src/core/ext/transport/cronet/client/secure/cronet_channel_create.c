@@ -60,7 +60,7 @@ GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
   ct->host = gpr_malloc(strlen(target) + 1);
   strcpy(ct->host, target);
   gpr_log(GPR_DEBUG,
-          "grpc_create_cronet_transport: cronet_engine = %p, target=%s", engine,
+          "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
           ct->host);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

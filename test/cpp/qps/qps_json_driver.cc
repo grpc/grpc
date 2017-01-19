@@ -67,6 +67,10 @@ DEFINE_double(error_tolerance, 0.01,
               "range is narrower than the error_tolerance computed range, we "
               "stop the search.");
 
+DEFINE_string(qps_server_target_override, "",
+              "Override QPS server target to configure in client configs."
+              "Only applicable if there is a single benchmark server.");
+
 namespace grpc {
 namespace testing {
 
@@ -77,7 +81,8 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
       RunScenario(scenario.client_config(), scenario.num_clients(),
                   scenario.server_config(), scenario.num_servers(),
                   scenario.warmup_seconds(), scenario.benchmark_seconds(),
-                  scenario.spawn_local_worker_count());
+                  scenario.spawn_local_worker_count(),
+                  FLAGS_qps_server_target_override.c_str());
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
@@ -204,6 +209,7 @@ static bool QpsDriver() {
             SearchOfferedLoad(FLAGS_initial_search_value,
                               FLAGS_targeted_cpu_load, scenario, &success);
         gpr_log(GPR_INFO, "targeted_offered_load %f", targeted_offered_load);
+        GetCpuLoad(scenario, targeted_offered_load, &success);
       } else {
         gpr_log(GPR_ERROR, "Unimplemented search param");
       }

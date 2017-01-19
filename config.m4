@@ -5,9 +5,9 @@ if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 
   dnl # --with-grpc -> add include path
-  PHP_ADD_INCLUDE(../../grpc/include)
-  PHP_ADD_INCLUDE(../../grpc/src/php/ext/grpc)
-  PHP_ADD_INCLUDE(../../grpc/third_party/boringssl/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
 
   LIBS="-lpthread $LIBS"
 
@@ -88,6 +88,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -232,9 +234,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
     src/core/lib/security/util/b64.c \
@@ -243,6 +245,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_channel/channel_connectivity.c \
     src/core/ext/client_channel/client_channel.c \
@@ -262,6 +265,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -615,8 +619,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/secure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)

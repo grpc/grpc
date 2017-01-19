@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Governs coverage for tests of RPCs throughout RPC Framework."""
 
 import abc
@@ -38,80 +37,80 @@ import six
 
 
 class Coverage(six.with_metaclass(abc.ABCMeta)):
-  """Specification of test coverage."""
+    """Specification of test coverage."""
 
-  @abc.abstractmethod
-  def testSuccessfulUnaryRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testSuccessfulUnaryRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testSuccessfulUnaryRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testSuccessfulUnaryRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testSuccessfulStreamRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testSuccessfulStreamRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testSuccessfulStreamRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testSuccessfulStreamRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testSequentialInvocations(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testSequentialInvocations(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testParallelInvocations(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testParallelInvocations(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testWaitingForSomeButNotAllParallelInvocations(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testWaitingForSomeButNotAllParallelInvocations(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testCancelledUnaryRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testCancelledUnaryRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testCancelledUnaryRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testCancelledUnaryRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testCancelledStreamRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testCancelledStreamRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testCancelledStreamRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testCancelledStreamRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testExpiredUnaryRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testExpiredUnaryRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testExpiredUnaryRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testExpiredUnaryRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testExpiredStreamRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testExpiredStreamRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testExpiredStreamRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testExpiredStreamRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testFailedUnaryRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testFailedUnaryRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testFailedUnaryRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testFailedUnaryRequestStreamResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testFailedStreamRequestUnaryResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testFailedStreamRequestUnaryResponse(self):
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def testFailedStreamRequestStreamResponse(self):
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def testFailedStreamRequestStreamResponse(self):
+        raise NotImplementedError()

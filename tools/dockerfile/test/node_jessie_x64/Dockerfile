@@ -63,6 +63,17 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+
+# Install Electron apt dependencies
+RUN apt-get update && apt-get install -y \
+  libasound2 \
+  libgconf-2-4 \
+  libgtk2.0-0 \
+  libnss3 \
+  libxss1 \
+  libxtst6 \
+  xvfb
+
 #====================
 # Python dependencies
 

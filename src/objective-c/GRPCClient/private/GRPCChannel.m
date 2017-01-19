@@ -108,7 +108,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 - (instancetype)initWithHost:(NSString *)host
-                cronetEngine:(cronet_engine *)cronetEngine
+                cronetEngine:(stream_engine *)cronetEngine
                  channelArgs:(NSDictionary *)channelArgs {
   if (!host) {
     [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
@@ -163,7 +163,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 #ifdef GRPC_COMPILE_WITH_CRONET
 + (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
                                  channelArgs:(NSDictionary *)channelArgs {
-  cronet_engine *engine = [GRPCCall cronetEngine];
+  stream_engine *engine = [GRPCCall cronetEngine];
   if (!engine) {
     [NSException raise:NSInvalidArgumentException
                 format:@"cronet_engine is NULL. Set it first."];

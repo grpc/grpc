@@ -80,7 +80,6 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   LPOVERLAPPED overlapped;
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
-  grpc_closure *closure = NULL;
   success = GetQueuedCompletionStatus(
       g_iocp, &bytes, &completion_key, &overlapped,
       deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
