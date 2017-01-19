@@ -217,6 +217,8 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** Toggles channel tracing behavior */
+#define GRPC_ARG_CHANNEL_TRACING "grpc.channel_tracing"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

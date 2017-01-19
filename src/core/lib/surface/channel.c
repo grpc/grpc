@@ -42,6 +42,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -69,6 +70,8 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
+
+  grpc_channel_tracer *tracer;
 
   char *target;
 };
@@ -112,6 +115,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
+  channel->tracer = NULL;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
@@ -166,11 +170,16 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
       channel->compression_options.enabled_algorithms_bitset =
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
+    } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING)) {
+      channel->tracer = grpc_channel_tracer_init_tracer();
     }
   }
 
 done:
   grpc_channel_args_destroy(exec_ctx, args);
+  char* created = strdup("Channel Created");
+  if (channel->tracer)
+    grpc_channel_tracer_add_trace(&channel->tracer->node_list, created, GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_INIT);
   return channel;
 }
 
@@ -354,6 +363,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
+  grpc_channel_tracer_log_trace(channel->tracer);
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

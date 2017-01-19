@@ -167,6 +167,7 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_tracer.h
   - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
@@ -268,6 +269,7 @@ filegroups:
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
+  - src/core/lib/channel/channel_tracer.c
   - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/deadline_filter.c
@@ -1945,6 +1947,16 @@ targets:
   language: c
   src:
   - test/core/channel/channel_stack_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_tracing_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/channel_tracing_test.c
   deps:
   - grpc_test_util
   - grpc
