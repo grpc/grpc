@@ -84,12 +84,12 @@ static class InitializeStuff {
  * FIXTURES
  */
 
-static void ApplyCommonServerBuilderConfig(ServerBuilder *b) {
+static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
   b->SetMaxReceiveMessageSize(INT_MAX);
   b->SetMaxSendMessageSize(INT_MAX);
 }
 
-static void ApplyCommonChannelArguments(ChannelArguments *c) {
+static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
@@ -427,22 +427,22 @@ static void BM_UnaryPingPong(benchmark::State& state) {
  */
 
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
-  b->Args({0,0});
-  for (int i=1; i<=128*1024*1024; i*=8) {
-    b->Args({i,0});
-    b->Args({0,i});
-    b->Args({i,i});
+  b->Args({0, 0});
+  for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
+    b->Args({i, 0});
+    b->Args({0, i});
+    b->Args({i, i});
   }
 }
 
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
-  ->Apply(SweepSizesArgs);
+    ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator)
-  ->Apply(SweepSizesArgs);
+    ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
     ->Args({0, 0});
