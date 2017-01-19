@@ -691,6 +691,11 @@ grpc_resource_user *grpc_resource_user_create(
   return resource_user;
 }
 
+grpc_resource_quota *grpc_resource_user_quota(
+    grpc_resource_user *resource_user) {
+  return resource_user->resource_quota;
+}
+
 static void ru_ref_by(grpc_resource_user *resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&resource_user->refs, amount) != 0);
