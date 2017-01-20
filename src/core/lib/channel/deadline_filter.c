@@ -56,10 +56,11 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   deadline_state->timer_pending = false;
   gpr_mu_unlock(&deadline_state->timer_mu);
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_slice msg = grpc_slice_from_static_string("Deadline Exceeded");
-    grpc_call_element_send_cancel_with_message(
-        exec_ctx, elem, GRPC_STATUS_DEADLINE_EXCEEDED, &msg);
-    grpc_slice_unref_internal(exec_ctx, msg);
+    grpc_call_element_signal_error(
+        exec_ctx, elem,
+        grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_DEADLINE_EXCEEDED));
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
@@ -196,8 +197,7 @@ void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op) {
   grpc_deadline_state* deadline_state = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE ||
-      op->close_error != GRPC_ERROR_NONE) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     cancel_timer_if_needed(exec_ctx, deadline_state);
   } else {
     // Make sure we know when the call is complete, so that we can cancel
@@ -285,8 +285,7 @@ static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                              grpc_call_element* elem,
                                              grpc_transport_stream_op* op) {
   server_call_data* calld = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE ||
-      op->close_error != GRPC_ERROR_NONE) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);
   } else {
     // If we're receiving initial metadata, we need to get the deadline

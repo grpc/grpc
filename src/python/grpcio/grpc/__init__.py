@@ -487,9 +487,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
-        RPC completion, the return Future's result value will be the response
-        message of the RPC. Should the event terminate with non-OK status, the
-        returned Future's exception value will be an RpcError.
+        RPC completion, the return Call-Future's result value will be the
+        response message of the RPC. Should the event terminate with non-OK
+        status, the returned Call-Future's exception value will be an RpcError.
     """
         raise NotImplementedError()
 
@@ -510,8 +510,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
-        values. Drawing response values from the returned iterator may raise
-        RpcError indicating termination of the RPC with non-OK status.
+        values. Drawing response values from the returned Call-iterator may
+        raise RpcError indicating termination of the RPC with non-OK status.
     """
         raise NotImplementedError()
 
@@ -535,8 +535,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
-      The response value for the RPC, and a Call for the RPC if with_call was
-        set to True at invocation.
+      The response value for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -587,9 +586,9 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
-        RPC completion, the return Future's result value will be the response
-        message of the RPC. Should the event terminate with non-OK status, the
-        returned Future's exception value will be an RpcError.
+        RPC completion, the return Call-Future's result value will be the
+        response message of the RPC. Should the event terminate with non-OK
+        status, the returned Call-Future's exception value will be an RpcError.
     """
         raise NotImplementedError()
 
@@ -614,8 +613,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
-        values. Drawing response values from the returned iterator may raise
-        RpcError indicating termination of the RPC with non-OK status.
+        values. Drawing response values from the returned Call-iterator may
+        raise RpcError indicating termination of the RPC with non-OK status.
     """
         raise NotImplementedError()
 
