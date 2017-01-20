@@ -170,7 +170,7 @@ class JavaLanguage:
     return ['./run-test-client.sh'] + args
 
   def client_cmd_http2interop(self, args):
-    return ['./run-http2-client.sh'] + args
+    return ['./interop-testing/build/install/grpc-interop-testing/bin/http2-client'] + args
 
   def cloud_to_prod_env(self):
     return {}
