@@ -1567,6 +1567,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     int close_writes, grpc_error *error) {
   if (s->read_closed && s->write_closed) {
     /* already closed */
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
     GRPC_ERROR_UNREF(error);
     return;
   }
