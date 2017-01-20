@@ -52,8 +52,7 @@ int main(int argc, char **argv) {
   grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
 
   grpc_test_init(argc, argv);
   grpc_init();
@@ -65,8 +64,10 @@ int main(int argc, char **argv) {
 
   /* create a call, channel to a non existant server */
   chan = grpc_insecure_channel_create("nonexistant:54321", NULL, NULL);
+  grpc_slice host = grpc_slice_from_static_string("nonexistant");
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Foo", "nonexistant", deadline, NULL);
+                                  grpc_slice_from_static_string("/Foo"), &host,
+                                  deadline, NULL);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -79,7 +80,6 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_shutdown();
