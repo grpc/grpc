@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,49 +27,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+package(default_visibility = ["//visibility:public"])
 
-set -e
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+grpc_proto_library(
+    name = "auth_sample",
+    srcs = ["auth_sample.proto"],
+)
 
+grpc_proto_library(
+    name = "hellostreamingworld",
+    srcs = ["hellostreamingworld.proto"],
+)
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+grpc_proto_library(
+    name = "helloworld",
+    srcs = ["helloworld.proto"],
+)
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.yaml
-fi
-
-. tools/buildgen/generate_build_additions.sh
-
-global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
-  sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
-
-for dir in . ; do
-  local_plugins=`find $dir/templates -name '*.py' |
-    sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
-
-  plugins="$global_plugins $local_plugins"
-
-  find -L $dir/templates -type f -and -name *.template | while read file ; do
-    out=${dir}/${file#$dir/templates/}  # strip templates dir prefix
-    out=${out%.*}  # strip template extension
-    echo "generating file: $out"
-    yaml_files="build.yaml $gen_build_files"
-    data=`for i in $yaml_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
-    if [ "x$TEST" = "xtrue" ] ; then
-      actual_out=$out
-      out=`mktemp /tmp/gentXXXXXX`
-    fi
-    mkdir -p `dirname $out`  # make sure dest directory exist
-    $mako_renderer $plugins $data -o $out $file
-    if [ "x$TEST" = "xtrue" ] ; then
-      diff -q $out $actual_out
-      rm $out
-    fi
-  done
-done
-
-rm $gen_build_files
+grpc_proto_library(
+    name = "route_guide",
+    srcs = ["route_guide.proto"],
+)

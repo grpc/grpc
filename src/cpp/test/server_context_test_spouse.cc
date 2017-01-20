@@ -40,11 +40,12 @@ void ServerContextTestSpouse::AddClientMetadata(const grpc::string& key,
                                                 const grpc::string& value) {
   client_metadata_storage_.insert(
       std::pair<grpc::string, grpc::string>(key, value));
-  ctx_->client_metadata_.clear();
+  ctx_->client_metadata_.map()->clear();
   for (auto iter = client_metadata_storage_.begin();
        iter != client_metadata_storage_.end(); ++iter) {
-    ctx_->client_metadata_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-        iter->first.c_str(), iter->second.c_str()));
+    ctx_->client_metadata_.map()->insert(
+        std::pair<grpc::string_ref, grpc::string_ref>(iter->first.c_str(),
+                                                      iter->second.c_str()));
   }
 }
 
