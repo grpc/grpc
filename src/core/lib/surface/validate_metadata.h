@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,13 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H
+#ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
-/* error codes for RST_STREAM from http2 draft 14 section 7 */
-typedef enum {
-  GRPC_CHTTP2_NO_ERROR = 0x0,
-  GRPC_CHTTP2_PROTOCOL_ERROR = 0x1,
-  GRPC_CHTTP2_INTERNAL_ERROR = 0x2,
-  GRPC_CHTTP2_FLOW_CONTROL_ERROR = 0x3,
-  GRPC_CHTTP2_SETTINGS_TIMEOUT = 0x4,
-  GRPC_CHTTP2_STREAM_CLOSED = 0x5,
-  GRPC_CHTTP2_FRAME_SIZE_ERROR = 0x6,
-  GRPC_CHTTP2_REFUSED_STREAM = 0x7,
-  GRPC_CHTTP2_CANCEL = 0x8,
-  GRPC_CHTTP2_COMPRESSION_ERROR = 0x9,
-  GRPC_CHTTP2_CONNECT_ERROR = 0xa,
-  GRPC_CHTTP2_ENHANCE_YOUR_CALM = 0xb,
-  GRPC_CHTTP2_INADEQUATE_SECURITY = 0xc,
-  /* force use of a default clause */
-  GRPC_CHTTP2__ERROR_DO_NOT_USE = -1
-} grpc_chttp2_error_code;
+#include <grpc/slice.h>
+#include "src/core/lib/iomgr/error.h"
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H */
+grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice);
+grpc_error *grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
+
+#endif /* GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H */

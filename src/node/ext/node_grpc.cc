@@ -56,8 +56,11 @@ extern "C" {
 #include "server.h"
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
+#include "slice.h"
 #include "timeval.h"
 #include "completion_queue.h"
+
+using grpc::node::CreateSliceFromString;
 
 using v8::FunctionTemplate;
 using v8::Local;
@@ -283,10 +286,8 @@ NAN_METHOD(MetadataKeyIsLegal) {
         "headerKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
-  Nan::Utf8String key_utf8_str(key);
-  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_key_is_legal(key_str, static_cast<size_t>(key->Length()))));
+      grpc_header_key_is_legal(CreateSliceFromString(key))));
 }
 
 NAN_METHOD(MetadataNonbinValueIsLegal) {
@@ -295,11 +296,8 @@ NAN_METHOD(MetadataNonbinValueIsLegal) {
         "metadataNonbinValueIsLegal's argument must be a string");
   }
   Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
-  Nan::Utf8String value_utf8_str(value);
-  char *value_str = *value_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_nonbin_value_is_legal(
-          value_str, static_cast<size_t>(value->Length()))));
+      grpc_header_nonbin_value_is_legal(CreateSliceFromString(value))));
 }
 
 NAN_METHOD(MetadataKeyIsBinary) {
@@ -308,10 +306,8 @@ NAN_METHOD(MetadataKeyIsBinary) {
         "metadataKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
-  Nan::Utf8String key_utf8_str(key);
-  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_is_binary_header(key_str, static_cast<size_t>(key->Length()))));
+      grpc_is_binary_header(CreateSliceFromString(key))));
 }
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(

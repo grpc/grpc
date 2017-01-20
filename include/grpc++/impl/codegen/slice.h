@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,35 @@
  *
  */
 
-#ifndef TEST_QPS_LIMIT_CORES_H
-#define TEST_QPS_LIMIT_CORES_H
+#ifndef GRPCXX_IMPL_CODEGEN_SLICE_H
+#define GRPCXX_IMPL_CODEGEN_SLICE_H
+
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/string_ref.h>
 
 namespace grpc {
-namespace testing {
-/// LimitCores: allow this worker to only run on the cores specified in the
-/// array \a cores, which is of length \a cores_size.
-///
-/// LimitCores takes array and size arguments (instead of vector) for direct
-/// conversion from repeated field of protobuf. Use a cores_size of 0 to remove
-/// existing limits (from an empty repeated field)
-int LimitCores(const int *cores, int cores_size);
-}  // namespace testing
+
+inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
+  return grpc::string_ref(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*slice)),
+      GRPC_SLICE_LENGTH(*slice));
+}
+
+inline grpc::string StringFromCopiedSlice(grpc_slice slice) {
+  return grpc::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
+                      GRPC_SLICE_LENGTH(slice));
+}
+
+inline grpc_slice SliceReferencingString(const grpc::string& str) {
+  return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
+                                                                 str.length());
+}
+
+inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
+  return g_core_codegen_interface->grpc_slice_from_copied_buffer(str.data(),
+                                                                 str.length());
+}
+
 }  // namespace grpc
 
-#endif  // TEST_QPS_LIMIT_CORES_H
+#endif  // GRPCXX_IMPL_CODEGEN_SLICE_H

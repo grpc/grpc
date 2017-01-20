@@ -66,6 +66,7 @@ typedef struct grpc_closure_scheduler_vtable {
               grpc_error *error);
   void (*sched)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                 grpc_error *error);
+  const char *name;
 } grpc_closure_scheduler_vtable;
 
 /** Abstract type that can schedule closures for execution */

@@ -76,30 +76,6 @@ static std::string get_host(const std::string& worker) {
   return s;
 }
 
-static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
-    const deque<string>& workers) {
-  std::unordered_map<string, std::deque<int>> hosts;
-  for (auto it = workers.begin(); it != workers.end(); it++) {
-    const string host = get_host(*it);
-    if (hosts.find(host) == hosts.end()) {
-      auto stub = WorkerService::NewStub(
-          CreateChannel(*it, InsecureChannelCredentials()));
-      grpc::ClientContext ctx;
-      ctx.set_wait_for_ready(true);
-      CoreRequest dummy;
-      CoreResponse cores;
-      grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
-      GPR_ASSERT(s.ok());
-      std::deque<int> dq;
-      for (int i = 0; i < cores.cores(); i++) {
-        dq.push_back(i);
-      }
-      hosts[host] = dq;
-    }
-  }
-  return hosts;
-}
-
 static deque<string> get_workers(const string& env_name) {
   char* env = gpr_getenv(env_name.c_str());
   if (!env) {
@@ -210,7 +186,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const char* qps_server_target_override, bool configure_core_lists) {
+    const char* qps_server_target_override) {
   // Log everything from the driver
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
@@ -279,9 +255,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   std::vector<ServerData> servers(num_servers);
   std::unordered_map<string, std::deque<int>> hosts_cores;
 
-  if (configure_core_lists) {
-    hosts_cores = get_hosts_and_cores(workers);
-  }
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
@@ -289,37 +262,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
         CreateChannel(workers[i], InsecureChannelCredentials()));
 
     ServerConfig server_config = initial_server_config;
-    int server_core_limit = initial_server_config.core_limit();
-    int client_core_limit = initial_client_config.core_limit();
-
-    if (configure_core_lists) {
-      string host_str(get_host(workers[i]));
-      if (server_core_limit == 0 && client_core_limit > 0) {
-        // In this case, limit the server cores if it matches the
-        // same host as one or more clients
-        const auto& dq = hosts_cores.at(host_str);
-        bool match = false;
-        int limit = dq.size();
-        for (size_t cli = 0; cli < num_clients; cli++) {
-          if (host_str == get_host(workers[cli + num_servers])) {
-            limit -= client_core_limit;
-            match = true;
-          }
-        }
-        if (match) {
-          GPR_ASSERT(limit > 0);
-          server_core_limit = limit;
-        }
-      }
-      if (server_core_limit > 0) {
-        auto& dq = hosts_cores.at(host_str);
-        GPR_ASSERT(dq.size() >= static_cast<size_t>(server_core_limit));
-        gpr_log(GPR_INFO, "Setting server core_list");
-        for (int core = 0; core < server_core_limit; core++) {
-          server_config.add_core_list(dq.front());
-          dq.pop_front();
-        }
-      }
+    if (server_config.core_limit() != 0) {
+      gpr_log(GPR_ERROR,
+              "server config core limit is set but ignored by driver");
     }
 
     ServerArgs args;
@@ -364,33 +309,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
         CreateChannel(worker, InsecureChannelCredentials()));
     ClientConfig per_client_config = client_config;
 
-    int server_core_limit = initial_server_config.core_limit();
-    int client_core_limit = initial_client_config.core_limit();
-    if (configure_core_lists &&
-        ((server_core_limit > 0) || (client_core_limit > 0))) {
-      auto& dq = hosts_cores.at(get_host(worker));
-      if (client_core_limit == 0) {
-        // limit client cores if it matches a server host
-        bool match = false;
-        int limit = dq.size();
-        for (size_t srv = 0; srv < num_servers; srv++) {
-          if (get_host(worker) == get_host(workers[srv])) {
-            match = true;
-          }
-        }
-        if (match) {
-          GPR_ASSERT(limit > 0);
-          client_core_limit = limit;
-        }
-      }
-      if (client_core_limit > 0) {
-        GPR_ASSERT(dq.size() >= static_cast<size_t>(client_core_limit));
-        gpr_log(GPR_INFO, "Setting client core_list");
-        for (int core = 0; core < client_core_limit; core++) {
-          per_client_config.add_core_list(dq.front());
-          dq.pop_front();
-        }
-      }
+    if (initial_client_config.core_limit() != 0) {
+      gpr_log(GPR_ERROR, "client config core limit set but ignored");
     }
 
     // Reduce channel count so that total channels specified is held regardless

@@ -34,7 +34,9 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/support/string.h"
 
 #define GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
@@ -42,6 +44,6 @@
 /* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily */
 void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer);
-int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout);
+int grpc_http2_decode_timeout(grpc_slice text, gpr_timespec *timeout);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */

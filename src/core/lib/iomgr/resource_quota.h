@@ -94,13 +94,17 @@ typedef struct grpc_resource_user grpc_resource_user;
 
 grpc_resource_user *grpc_resource_user_create(
     grpc_resource_quota *resource_quota, const char *name);
+
+/* Returns a borrowed reference to the underlying resource quota for this
+   resource user. */
+grpc_resource_quota *grpc_resource_user_quota(
+    grpc_resource_user *resource_user);
+
 void grpc_resource_user_ref(grpc_resource_user *resource_user);
 void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
                               grpc_resource_user *resource_user);
 void grpc_resource_user_shutdown(grpc_exec_ctx *exec_ctx,
                                  grpc_resource_user *resource_user);
-grpc_resource_quota *grpc_resource_user_get_quota(
-    grpc_resource_user *resource_user);
 
 /* Allocate from the resource user (and its quota).
    If optional_on_done is NULL, then allocate immediately. This may push the

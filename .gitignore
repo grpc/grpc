@@ -8,6 +8,7 @@ objs
 # Python items
 cython_debug/
 python_build/
+python_format_venv/
 .coverage*
 .eggs
 htmlcov/
@@ -31,7 +32,7 @@ coverage
 # python compiled objects
 *.pyc
 
-#eclipse project files
+# eclipse project files
 .cproject
 .project
 .settings
@@ -110,3 +111,6 @@ bazel-genfiles
 bazel-grpc
 bazel-out
 bazel-testlogs
+
+# Debug output
+gdb.txt

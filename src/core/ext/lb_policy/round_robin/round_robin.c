@@ -64,8 +64,10 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -729,11 +731,15 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     if (addresses->addresses[i].is_balancer) continue;
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    sc_args.addr = &addresses->addresses[i].address;
-    sc_args.args = args->args;
-
+    grpc_arg addr_arg =
+        grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
+    grpc_channel_args *new_args =
+        grpc_channel_args_copy_and_add(args->args, &addr_arg, 1);
+    gpr_free(addr_arg.value.string);
+    sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
+    grpc_channel_args_destroy(exec_ctx, new_args);
 
     if (subchannel != NULL) {
       subchannel_data *sd = gpr_malloc(sizeof(*sd));
