@@ -28,6 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+cdef bytes _slice_bytes(grpc_slice slice)
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil
+cdef grpc_slice _slice_from_bytes(bytes value) nogil
+
+
 cdef class Timespec:
 
   cdef gpr_timespec c_time
@@ -70,17 +75,6 @@ cdef class Event:
   cdef readonly Operations batch_operations
 
 
-cdef class Slice:
-
-  cdef grpc_slice c_slice
-
-  cdef void _assign_slice(self, grpc_slice new_slice) nogil
-  @staticmethod
-  cdef Slice from_slice(grpc_slice slice)
-  @staticmethod
-  cdef bytes bytes_from_slice(grpc_slice slice)
-
-
 cdef class ByteBuffer:
 
   cdef grpc_byte_buffer *c_byte_buffer
@@ -108,17 +102,13 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   cdef grpc_metadata c_metadata
-  cdef Slice _key,
-  cdef Slice _value
+  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil
 
 
 cdef class Metadata:
 
   cdef grpc_metadata_array c_metadata_array
-  cdef bint owns_metadata_slices
-  cdef object metadata
   cdef void _claim_slice_ownership(self)
-  cdef void _drop_slice_ownership(self)
 
 
 cdef class Operation:
@@ -127,7 +117,7 @@ cdef class Operation:
   cdef ByteBuffer _received_message
   cdef Metadata _received_metadata
   cdef grpc_status_code _received_status_code
-  cdef Slice _received_status_details
+  cdef grpc_slice _status_details
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references
