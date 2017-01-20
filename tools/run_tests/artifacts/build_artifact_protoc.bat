@@ -34,7 +34,7 @@ cd third_party/protobuf/cmake
 
 mkdir build & cd build
 mkdir solution & cd solution
-cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF ../../.. || goto :error
+cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF ../.. || goto :error
 endlocal
 
 call vsprojects/build_plugins.bat || goto :error
