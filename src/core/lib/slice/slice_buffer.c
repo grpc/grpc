@@ -51,7 +51,7 @@ static void maybe_embiggen(grpc_slice_buffer *sb) {
     sb->slices = sb->base_slices;
   }
 
-  /* How many far away from sb->base_slices is sb->slices pointer */
+  /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
 
@@ -168,7 +168,6 @@ void grpc_slice_buffer_addn(grpc_slice_buffer *sb, grpc_slice *s, size_t n) {
   }
 }
 
-/* TODO (sreek) - Check where this is used and if this is still safe */
 void grpc_slice_buffer_pop(grpc_slice_buffer *sb) {
   if (sb->count != 0) {
     size_t count = --sb->count;
