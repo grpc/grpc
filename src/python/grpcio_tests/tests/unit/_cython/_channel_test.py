@@ -37,46 +37,49 @@ from tests.unit.framework.common import test_constants
 
 
 def _channel_and_completion_queue():
-  channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
-  completion_queue = cygrpc.CompletionQueue()
-  return channel, completion_queue
+    channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
+    completion_queue = cygrpc.CompletionQueue()
+    return channel, completion_queue
 
 
 def _connectivity_loop(channel, completion_queue):
-  for _ in range(100):
-    connectivity = channel.check_connectivity_state(True)
-    channel.watch_connectivity_state(
-        connectivity, cygrpc.Timespec(time.time() + 0.2), completion_queue,
-        None)
-    completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
+    for _ in range(100):
+        connectivity = channel.check_connectivity_state(True)
+        channel.watch_connectivity_state(connectivity,
+                                         cygrpc.Timespec(time.time() + 0.2),
+                                         completion_queue, None)
+        completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
 
 
 def _create_loop_destroy():
-  channel, completion_queue = _channel_and_completion_queue()
-  _connectivity_loop(channel, completion_queue)
-  completion_queue.shutdown()
+    channel, completion_queue = _channel_and_completion_queue()
+    _connectivity_loop(channel, completion_queue)
+    completion_queue.shutdown()
 
 
 def _in_parallel(behavior, arguments):
-  threads = tuple(
-      threading.Thread(target=behavior, args=arguments)
-      for _ in range(test_constants.THREAD_CONCURRENCY))
-  for thread in threads:
-    thread.start()
-  for thread in threads:
-    thread.join()
+    threads = tuple(
+        threading.Thread(
+            target=behavior, args=arguments)
+        for _ in range(test_constants.THREAD_CONCURRENCY))
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 class ChannelTest(unittest.TestCase):
 
-  def test_single_channel_lonely_connectivity(self):
-    channel, completion_queue = _channel_and_completion_queue()
-    _in_parallel(_connectivity_loop, (channel, completion_queue,))
-    completion_queue.shutdown()
+    def test_single_channel_lonely_connectivity(self):
+        channel, completion_queue = _channel_and_completion_queue()
+        _in_parallel(_connectivity_loop, (
+            channel,
+            completion_queue,))
+        completion_queue.shutdown()
 
-  def test_multiple_channels_lonely_connectivity(self):
-    _in_parallel(_create_loop_destroy, ())
+    def test_multiple_channels_lonely_connectivity(self):
+        _in_parallel(_create_loop_destroy, ())
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

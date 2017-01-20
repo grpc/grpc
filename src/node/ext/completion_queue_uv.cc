@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_UV
+
 #include <uv.h>
 #include <node.h>
 #include <v8.h>
@@ -38,7 +40,6 @@
 
 #include "call.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 
 namespace grpc {
 namespace node {
@@ -81,34 +82,24 @@ void drain_completion_queue(uv_prepare_t *handle) {
 }
 
 grpc_completion_queue *GetCompletionQueue() {
-#ifdef GRPC_UV
   return queue;
-#else
-  return CompletionQueueAsyncWorker::GetQueue();
-#endif
 }
 
 void CompletionQueueNext() {
-#ifdef GRPC_UV
   if (pending_batches == 0) {
     GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
     uv_prepare_start(&prepare, drain_completion_queue);
   }
   pending_batches++;
-#else
-  CompletionQueueAsyncWorker::Next();
-#endif
 }
 
 void CompletionQueueInit(Local<Object> exports) {
-#ifdef GRPC_UV
   queue = grpc_completion_queue_create(NULL);
   uv_prepare_init(uv_default_loop(), &prepare);
   pending_batches = 0;
-#else
-  CompletionQueueAsyncWorker::Init(exports);
-#endif
 }
 
 }  // namespace node
 }  // namespace grpc
+
+#endif /* GRPC_UV */

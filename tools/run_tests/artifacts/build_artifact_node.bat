@@ -29,6 +29,8 @@
 
 set node_versions=1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 7.0.0
 
+set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0
+
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
 del /f /q BUILD || rmdir build /s /q
@@ -44,6 +46,12 @@ for %%v in (%node_versions%) do (
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\%%v\include\node\openssl" /S /Q
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\iojs-%%v\include\node\openssl" /S /Q
   call .\node_modules\.bin\node-pre-gyp.cmd build package testpackage --target=%%v --target_arch=%1 || goto :error
+
+  xcopy /Y /I /S build\stage\* artifacts\ || goto :error
+)
+
+for %%v in (%electron_versions%) do (
+  cmd /V /C "set "HOME=%HOMEDRIVE%%HOMEPATH%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package testpackage --runtime=electron --target=%%v --target_arch=%1 --disturl=https://atom.io/download/electron" || goto :error
 
   xcopy /Y /I /S build\stage\* artifacts\ || goto :error
 )

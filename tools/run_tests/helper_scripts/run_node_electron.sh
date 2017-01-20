@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,49 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+source ~/.nvm/nvm.sh
 
-set -e
+nvm use 6
+set -ex
 
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+# change to grpc repo root
+cd $(dirname $0)/../..
 
+test_directory='src/node/test'
+timeout=8000
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
-
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.yaml
-fi
-
-. tools/buildgen/generate_build_additions.sh
-
-global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
-  sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
-
-for dir in . ; do
-  local_plugins=`find $dir/templates -name '*.py' |
-    sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
-
-  plugins="$global_plugins $local_plugins"
-
-  find -L $dir/templates -type f -and -name *.template | while read file ; do
-    out=${dir}/${file#$dir/templates/}  # strip templates dir prefix
-    out=${out%.*}  # strip template extension
-    echo "generating file: $out"
-    yaml_files="build.yaml $gen_build_files"
-    data=`for i in $yaml_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
-    if [ "x$TEST" = "xtrue" ] ; then
-      actual_out=$out
-      out=`mktemp /tmp/gentXXXXXX`
-    fi
-    mkdir -p `dirname $out`  # make sure dest directory exist
-    $mako_renderer $plugins $data -o $out $file
-    if [ "x$TEST" = "xtrue" ] ; then
-      diff -q $out $actual_out
-      rm $out
-    fi
-  done
-done
-
-rm $gen_build_files
+JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
+  ./node_modules/.bin/xvfb-maybe \
+  ./node_modules/.bin/electron-mocha --timeout $timeout \
+  --reporter mocha-jenkins-reporter $test_directory
