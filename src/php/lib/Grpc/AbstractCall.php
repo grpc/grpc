@@ -127,7 +127,7 @@ abstract class AbstractCall
      *
      * @return string The protobuf binary format
      */
-    protected function serializeMessage($data)
+    protected function _serializeMessage($data)
     {
         // Proto3 implementation
         if (method_exists($data, 'encode')) {
@@ -145,7 +145,7 @@ abstract class AbstractCall
      *
      * @return mixed The deserialized value
      */
-    protected function deserializeResponse($value)
+    protected function _deserializeResponse($value)
     {
         if ($value === null) {
             return;
