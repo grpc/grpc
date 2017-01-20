@@ -37,18 +37,68 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
+  'variables': {
+    'runtime%': 'node'
+  },
   'target_defaults': {
     'include_dirs': [
       '.',
       'include'
     ],
     'defines': [
-      'GRPC_UV'
+      'GPR_BACKWARDS_COMPATIBILITY_MODE'
     ],
     'conditions': [
+      ['runtime=="node"', {
+        'defines': [
+          'GRPC_UV'
+        ]
+      }],
+      ['OS!="win" and runtime=="electron"', {
+        "defines": [
+          'OPENSSL_NO_THREADS'
+        ]
+      }],
+      # This is the condition for using boringssl
+      ['OS=="win" or runtime=="electron"', {
+        "include_dirs": [
+          "third_party/boringssl/include"
+        ],
+        "defines": [
+          'OPENSSL_NO_ASM'
+        ]
+      }, {
+        # Based on logic above, we know that this must be a non-Windows system
+        'variables': {
+          # The output of "node --version" is "v[version]". We use cut to
+          # remove the first character.
+          'target%': '<!(node --version | cut -c2-)'
+        },
+        # Empirically, Node only exports ALPN symbols if its major version is >0.
+        # io.js always reports versions >0 and always exports ALPN symbols.
+        # Therefore, Node's major version will be truthy if and only if it
+        # supports ALPN. The target is "[major].[minor].[patch]". We split by
+        # periods and take the first field to get the major version.
+        'defines': [
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+        ],
+        'include_dirs': [
+          '<(node_root_dir)/deps/openssl/openssl/include',
+        ],
+        'conditions': [
+         ["target_arch=='ia32'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+         }],
+         ["target_arch=='x64'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+         }],
+         ["target_arch=='arm'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+         }]
+        ]
+      }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/boringssl/include",
           "third_party/zlib"
         ],
         "defines": [
@@ -58,8 +108,6 @@
           'UNICODE',
           '_UNICODE',
           'NOMINMAX',
-          'OPENSSL_NO_ASM',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         "msvs_settings": {
           'VCCLCompilerTool': {
@@ -72,21 +120,8 @@
       }, { # OS != "win"
         'variables': {
           'config': '<!(echo $CONFIG)',
-          # The output of "node --version" is "v[version]". We use cut to
-          # remove the first character.
-          'target%': '<!(node --version | cut -c2-)'
         },
-          # Empirically, Node only exports ALPN symbols if its major version is >0.
-          # io.js always reports versions >0 and always exports ALPN symbols.
-          # Therefore, Node's major version will be truthy if and only if it
-          # supports ALPN. The target is "[major].[minor].[patch]". We split by
-          # periods and take the first field to get the major version.
-        'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
-        ],
         'include_dirs': [
-          '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib'
         ],
         'conditions': [
@@ -101,47 +136,14 @@
               '-fprofile-arcs'
             ]
           }
-         ],
-         ["target_arch=='ia32'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-         }],
-         ["target_arch=='x64'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-         }],
-         ["target_arch=='arm'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-         }]
+         ]
         ]
       }]
     ]
   },
   'conditions': [
-    ['OS == "win"', {
+    ['OS=="win" or runtime=="electron"', {
       'targets': [
-        {
-          # IMPORTANT WINDOWS BUILD INFORMATION
-          # This library does not build on Windows without modifying the Node
-          # development packages that node-gyp downloads in order to build.
-          # Due to https://github.com/nodejs/node/issues/4932, the headers for
-          # BoringSSL conflict with the OpenSSL headers included by default
-          # when including the Node headers. The remedy for this is to remove
-          # the OpenSSL headers, from the downloaded Node development package,
-          # which is typically located in `.node-gyp` in your home directory.
-          'target_name': 'WINDOWS_BUILD_WARNING',
-          'actions': [
-            {
-              'action_name': 'WINDOWS_BUILD_WARNING',
-              'inputs': [
-                'package.json'
-              ],
-              'outputs': [
-                'ignore_this_part'
-              ],
-              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
-            }
-          ]
-        },
-        # Only want to compile BoringSSL and zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -453,6 +455,34 @@
             'third_party/boringssl/ssl/tls_record.c',
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
+        {
+          # IMPORTANT WINDOWS BUILD INFORMATION
+          # This library does not build on Windows without modifying the Node
+          # development packages that node-gyp downloads in order to build.
+          # Due to https://github.com/nodejs/node/issues/4932, the headers for
+          # BoringSSL conflict with the OpenSSL headers included by default
+          # when including the Node headers. The remedy for this is to remove
+          # the OpenSSL headers, from the downloaded Node development package,
+          # which is typically located in `.node-gyp` in your home directory.
+          'target_name': 'WINDOWS_BUILD_WARNING',
+          'actions': [
+            {
+              'action_name': 'WINDOWS_BUILD_WARNING',
+              'inputs': [
+                'package.json'
+              ],
+              'outputs': [
+                'ignore_this_part'
+              ],
+              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
+            }
+          ]
+        },
+        # Only want to compile zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -572,6 +602,8 @@
         'src/core/lib/channel/connected_channel.c',
         'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
+        'src/core/lib/channel/handshaker_factory.c',
+        'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/channel/http_client_filter.c',
         'src/core/lib/channel/http_server_filter.c',
         'src/core/lib/channel/message_size_filter.c',
@@ -647,6 +679,8 @@
         'src/core/lib/slice/percent_encoding.c',
         'src/core/lib/slice/slice.c',
         'src/core/lib/slice/slice_buffer.c',
+        'src/core/lib/slice/slice_hash_table.c',
+        'src/core/lib/slice/slice_intern.c',
         'src/core/lib/slice/slice_string_helpers.c',
         'src/core/lib/surface/alarm.c',
         'src/core/lib/surface/api_trace.c',
@@ -668,12 +702,13 @@
         'src/core/lib/surface/version.c',
         'src/core/lib/transport/byte_stream.c',
         'src/core/lib/transport/connectivity_state.c',
-        'src/core/lib/transport/mdstr_hash_table.c',
+        'src/core/lib/transport/error_utils.c',
         'src/core/lib/transport/metadata.c',
         'src/core/lib/transport/metadata_batch.c',
         'src/core/lib/transport/pid_controller.c',
         'src/core/lib/transport/service_config.c',
         'src/core/lib/transport/static_metadata.c',
+        'src/core/lib/transport/status_conversion.c',
         'src/core/lib/transport/timeout_encoding.c',
         'src/core/lib/transport/transport.c',
         'src/core/lib/transport/transport_op_string.c',
@@ -694,7 +729,6 @@
         'src/core/ext/transport/chttp2/transport/huffsyms.c',
         'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
         'src/core/ext/transport/chttp2/transport/parsing.c',
-        'src/core/ext/transport/chttp2/transport/status_conversion.c',
         'src/core/ext/transport/chttp2/transport/stream_lists.c',
         'src/core/ext/transport/chttp2/transport/stream_map.c',
         'src/core/ext/transport/chttp2/transport/varint.c',
@@ -716,9 +750,9 @@
         'src/core/lib/security/credentials/plugin/plugin_credentials.c',
         'src/core/lib/security/credentials/ssl/ssl_credentials.c',
         'src/core/lib/security/transport/client_auth_filter.c',
-        'src/core/lib/security/transport/handshake.c',
         'src/core/lib/security/transport/secure_endpoint.c',
         'src/core/lib/security/transport/security_connector.c',
+        'src/core/lib/security/transport/security_handshaker.c',
         'src/core/lib/security/transport/server_auth_filter.c',
         'src/core/lib/security/transport/tsi_error.c',
         'src/core/lib/security/util/b64.c',
@@ -727,6 +761,7 @@
         'src/core/lib/tsi/fake_transport_security.c',
         'src/core/lib/tsi/ssl_transport_security.c',
         'src/core/lib/tsi/transport_security.c',
+        'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/client_channel/channel_connectivity.c',
         'src/core/ext/client_channel/client_channel.c',
@@ -746,6 +781,7 @@
         'src/core/ext/client_channel/subchannel.c',
         'src/core/ext/client_channel/subchannel_index.c',
         'src/core/ext/client_channel/uri_parser.c',
+        'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
@@ -803,6 +839,11 @@
         '-g'
       ],
       "conditions": [
+        ['OS=="win" or runtime=="electron"', {
+          'dependencies': [
+            "boringssl",
+          ]
+        }],
         ['OS=="mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',
@@ -814,7 +855,6 @@
         }],
         ['OS=="win"', {
           'dependencies': [
-            "boringssl",
             "z",
           ]
         }],
@@ -831,11 +871,12 @@
         "src/node/ext/call_credentials.cc",
         "src/node/ext/channel.cc",
         "src/node/ext/channel_credentials.cc",
-        "src/node/ext/completion_queue.cc",
-        "src/node/ext/completion_queue_async_worker.cc",
+        "src/node/ext/completion_queue_threadpool.cc",
+        "src/node/ext/completion_queue_uv.cc",
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
+        "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
       "dependencies": [

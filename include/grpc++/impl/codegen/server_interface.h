@@ -140,7 +140,7 @@ class ServerInterface : public CallHook {
                      ServerAsyncStreamingInterface* stream,
                      CompletionQueue* call_cq, void* tag,
                      bool delete_on_finalize);
-    virtual ~BaseAsyncRequest() {}
+    virtual ~BaseAsyncRequest();
 
     bool FinalizeResult(void** tag, bool* status) override;
 
@@ -152,7 +152,6 @@ class ServerInterface : public CallHook {
     void* const tag_;
     const bool delete_on_finalize_;
     grpc_call* call_;
-    grpc_metadata_array initial_metadata_array_;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {

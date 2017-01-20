@@ -48,6 +48,7 @@
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -156,7 +157,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
       size_t i;
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "read: error=%s", str);
-      grpc_error_free_string(str);
+
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -169,7 +170,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     // nread < 0: Error
     error = GRPC_ERROR_CREATE("TCP Read failed");
   }
-  grpc_exec_ctx_sched(&exec_ctx, cb, error, NULL);
+  grpc_closure_sched(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -181,7 +182,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
   TCP_REF(tcp, "read");
   // TODO(murgatroid99): figure out what the return value here means
   status =
@@ -190,7 +191,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     error = GRPC_ERROR_CREATE("TCP Read failed at start");
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
-    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+    grpc_closure_sched(exec_ctx, cb, error);
   }
   if (grpc_tcp_trace) {
     const char *str = grpc_error_string(error);
@@ -217,7 +218,7 @@ static void write_callback(uv_write_t *req, int status) {
   gpr_free(tcp->write_buffers);
   grpc_resource_user_free(&exec_ctx, tcp->resource_user,
                           sizeof(uv_buf_t) * tcp->write_slices->count);
-  grpc_exec_ctx_sched(&exec_ctx, cb, error, NULL);
+  grpc_closure_sched(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -243,8 +244,8 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_sched(exec_ctx, cb,
-                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
+    grpc_closure_sched(exec_ctx, cb,
+                       GRPC_ERROR_CREATE("TCP socket is shutting down"));
     return;
   }
 
@@ -254,7 +255,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (tcp->write_slices->count == 0) {
     // No slices means we don't have to do anything,
     // and libuv doesn't like empty writes
-    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
     return;
   }
 

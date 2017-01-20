@@ -61,7 +61,7 @@ typedef struct grpc_call_create_args {
 
   const void *server_transport_data;
 
-  grpc_mdelem **add_initial_metadata;
+  grpc_mdelem *add_initial_metadata;
   size_t add_initial_metadata_count;
 
   gpr_timespec send_deadline;
@@ -70,7 +70,8 @@ typedef struct grpc_call_create_args {
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error *grpc_call_create(const grpc_call_create_args *args,
+grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
+                             const grpc_call_create_args *args,
                              grpc_call **call);
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,

@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """A thread pool that logs exceptions raised by tasks executed within it."""
 
 import logging
@@ -35,42 +34,46 @@ from concurrent import futures
 
 
 def _wrap(behavior):
-  """Wraps an arbitrary callable behavior in exception-logging."""
-  def _wrapping(*args, **kwargs):
-    try:
-      return behavior(*args, **kwargs)
-    except Exception as e:
-      logging.exception(
-          'Unexpected exception from %s executed in logging pool!', behavior)
-      raise
-  return _wrapping
+    """Wraps an arbitrary callable behavior in exception-logging."""
+
+    def _wrapping(*args, **kwargs):
+        try:
+            return behavior(*args, **kwargs)
+        except Exception as e:
+            logging.exception(
+                'Unexpected exception from %s executed in logging pool!',
+                behavior)
+            raise
+
+    return _wrapping
 
 
 class _LoggingPool(object):
-  """An exception-logging futures.ThreadPoolExecutor-compatible thread pool."""
+    """An exception-logging futures.ThreadPoolExecutor-compatible thread pool."""
 
-  def __init__(self, backing_pool):
-    self._backing_pool = backing_pool
+    def __init__(self, backing_pool):
+        self._backing_pool = backing_pool
 
-  def __enter__(self):
-    return self
+    def __enter__(self):
+        return self
 
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    self._backing_pool.shutdown(wait=True)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._backing_pool.shutdown(wait=True)
 
-  def submit(self, fn, *args, **kwargs):
-    return self._backing_pool.submit(_wrap(fn), *args, **kwargs)
+    def submit(self, fn, *args, **kwargs):
+        return self._backing_pool.submit(_wrap(fn), *args, **kwargs)
 
-  def map(self, func, *iterables, **kwargs):
-    return self._backing_pool.map(
-        _wrap(func), *iterables, timeout=kwargs.get('timeout', None))
+    def map(self, func, *iterables, **kwargs):
+        return self._backing_pool.map(_wrap(func),
+                                      *iterables,
+                                      timeout=kwargs.get('timeout', None))
 
-  def shutdown(self, wait=True):
-    self._backing_pool.shutdown(wait=wait)
+    def shutdown(self, wait=True):
+        self._backing_pool.shutdown(wait=wait)
 
 
 def pool(max_workers):
-  """Creates a thread pool that logs exceptions raised by the tasks within it.
+    """Creates a thread pool that logs exceptions raised by the tasks within it.
 
   Args:
     max_workers: The maximum number of worker threads to allow the pool.
@@ -79,4 +82,4 @@ def pool(max_workers):
     A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
       raised by the tasks executed within it.
   """
-  return _LoggingPool(futures.ThreadPoolExecutor(max_workers))
+    return _LoggingPool(futures.ThreadPoolExecutor(max_workers))

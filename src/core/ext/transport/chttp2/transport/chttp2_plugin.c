@@ -31,14 +31,11 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/metadata.h"
 
 void grpc_chttp2_plugin_init(void) {
-  grpc_chttp2_base64_encode_and_huffman_compress =
-      grpc_chttp2_base64_encode_and_huffman_compress_impl;
   grpc_register_tracer("http", &grpc_http_trace);
   grpc_register_tracer("flowctl", &grpc_flowctl_trace);
 }

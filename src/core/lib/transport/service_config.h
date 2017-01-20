@@ -35,7 +35,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/transport/mdstr_hash_table.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 
 typedef struct grpc_service_config grpc_service_config;
 
@@ -53,10 +53,10 @@ const char* grpc_service_config_get_lb_policy_name(
 /// returned by \a create_value(), based on data parsed from the JSON tree.
 /// \a vtable provides methods used to manage the values.
 /// Returns NULL on error.
-grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
-    const grpc_service_config* service_config,
+grpc_slice_hash_table* grpc_service_config_create_method_config_table(
+    grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    const grpc_mdstr_hash_table_vtable* vtable);
+    const grpc_slice_hash_table_vtable* vtable);
 
 /// A helper function for looking up values in the table returned by
 /// \a grpc_service_config_create_method_config_table().
@@ -64,7 +64,8 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
-void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
-                                   const grpc_mdstr* path);
+void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
+                                   const grpc_slice_hash_table* table,
+                                   grpc_slice path);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */

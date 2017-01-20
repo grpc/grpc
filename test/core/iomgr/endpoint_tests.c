@@ -41,6 +41,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 /*
@@ -211,9 +213,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.write_done = 0;
   state.current_read_data = 0;
   state.current_write_data = 0;
-  grpc_closure_init(&state.done_read, read_and_write_test_read_handler, &state);
+  grpc_closure_init(&state.done_read, read_and_write_test_read_handler, &state,
+                    grpc_schedule_on_exec_ctx);
   grpc_closure_init(&state.done_write, read_and_write_test_write_handler,
-                    &state);
+                    &state, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.outgoing);
   grpc_slice_buffer_init(&state.incoming);
 
@@ -249,8 +252,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_exec_ctx_flush(&exec_ctx);
 
   end_test(config);
-  grpc_slice_buffer_destroy(&state.outgoing);
-  grpc_slice_buffer_destroy(&state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.outgoing);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_endpoint_destroy(&exec_ctx, state.read_ep);
   grpc_endpoint_destroy(&exec_ctx, state.write_ep);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -290,21 +293,24 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
-                     grpc_closure_create(inc_on_failure, &fail_count));
+                     grpc_closure_create(inc_on_failure, &fail_count,
+                                         grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 0);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
   wait_for_fail_count(&exec_ctx, &fail_count, 1);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
-                     grpc_closure_create(inc_on_failure, &fail_count));
+                     grpc_closure_create(inc_on_failure, &fail_count,
+                                         grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
   grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer,
-                      grpc_closure_create(inc_on_failure, &fail_count));
+                      grpc_closure_create(inc_on_failure, &fail_count,
+                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
 
-  grpc_slice_buffer_destroy(&slice_buffer);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &slice_buffer);
 
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);

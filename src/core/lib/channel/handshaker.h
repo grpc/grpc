@@ -54,15 +54,33 @@
 
 typedef struct grpc_handshaker grpc_handshaker;
 
-/// Callback type invoked when a handshaker is done.
-/// Takes ownership of \a args and \a read_buffer.
-typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
-                                        grpc_endpoint* endpoint,
-                                        grpc_channel_args* args,
-                                        grpc_slice_buffer* read_buffer,
-                                        void* user_data, grpc_error* error);
+/// Arguments passed through handshakers and to the on_handshake_done callback.
+///
+/// For handshakers, all members are input/output parameters; for
+/// example, a handshaker may read from or write to \a endpoint and
+/// then later replace it with a wrapped endpoint.  Similarly, a
+/// handshaker may modify \a args.
+///
+/// A handshaker takes ownership of the members while a handshake is in
+/// progress.  Upon failure or shutdown of an in-progress handshaker,
+/// the handshaker is responsible for destroying the members and setting
+/// them to NULL before invoking the on_handshake_done callback.
+///
+/// For the on_handshake_done callback, all members are input arguments,
+/// which the callback takes ownership of.
+typedef struct {
+  grpc_endpoint* endpoint;
+  grpc_channel_args* args;
+  grpc_slice_buffer* read_buffer;
+  // A handshaker may set this to true before invoking on_handshake_done
+  // to indicate that subsequent handshakers should be skipped.
+  bool exit_early;
+  // User data passed through the handshake manager.  Not used by
+  // individual handshakers.
+  void* user_data;
+} grpc_handshaker_args;
 
-struct grpc_handshaker_vtable {
+typedef struct {
   /// Destroys the handshaker.
   void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
@@ -70,43 +88,35 @@ struct grpc_handshaker_vtable {
   /// aborted in the middle).
   void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
-  /// Performs handshaking.  When finished, calls \a cb with \a user_data.
-  /// Takes ownership of \a args.
-  /// Takes ownership of \a read_buffer, which contains leftover bytes read
-  /// from the endpoint by the previous handshaker.
+  /// Performs handshaking, modifying \a args as needed (e.g., to
+  /// replace \a endpoint with a wrapped endpoint).
+  /// When finished, invokes \a on_handshake_done.
   /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-                       grpc_endpoint* endpoint, grpc_channel_args* args,
-                       grpc_slice_buffer* read_buffer, gpr_timespec deadline,
                        grpc_tcp_server_acceptor* acceptor,
-                       grpc_handshaker_done_cb cb, void* user_data);
-};
+                       grpc_closure* on_handshake_done,
+                       grpc_handshaker_args* args);
+} grpc_handshaker_vtable;
 
 /// Base struct.  To subclass, make this the first member of the
 /// implementation struct.
 struct grpc_handshaker {
-  const struct grpc_handshaker_vtable* vtable;
+  const grpc_handshaker_vtable* vtable;
 };
 
 /// Called by concrete implementations to initialize the base struct.
-void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
+void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker);
 
-/// Convenient wrappers for invoking methods via the vtable.
-/// These probably do not need to be called from anywhere but
-/// grpc_handshake_manager.
 void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                              grpc_handshaker* handshaker);
 void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
                               grpc_handshaker* handshaker);
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
-                                  grpc_endpoint* endpoint,
-                                  grpc_channel_args* args,
-                                  grpc_slice_buffer* read_buffer,
-                                  gpr_timespec deadline,
                                   grpc_tcp_server_acceptor* acceptor,
-                                  grpc_handshaker_done_cb cb, void* user_data);
+                                  grpc_closure* on_handshake_done,
+                                  grpc_handshaker_args* args);
 
 ///
 /// grpc_handshake_manager
@@ -134,15 +144,21 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr);
 
 /// Invokes handshakers in the order they were added.
-/// Does NOT take ownership of \a args.  Instead, makes a copy before
+/// Takes ownership of \a endpoint, and then passes that ownership to
+/// the \a on_handshake_done callback.
+/// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
 /// invoking the first handshaker.
 /// \a acceptor will be NULL for client-side handshakers.
-/// Invokes \a cb with \a user_data after either a handshaker fails or
-/// all handshakers have completed successfully.
+///
+/// When done, invokes \a on_handshake_done with a grpc_handshaker_args
+/// object as its argument.  If the callback is invoked with error !=
+/// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+/// the necessary clean-up.  Otherwise, the callback takes ownership of
+/// the arguments.
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_endpoint* endpoint, const grpc_channel_args* args,
+    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_handshaker_done_cb cb, void* user_data);
+    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

@@ -172,19 +172,19 @@ grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
   return method_descriptor->full_name();
 }
 
-grpc::string ProtoFileParser::GetFormatedMethodName(
+grpc::string ProtoFileParser::GetFormattedMethodName(
     const grpc::string& method) {
   has_error_ = false;
-  grpc::string formated_method_name = GetFullMethodName(method);
+  grpc::string formatted_method_name = GetFullMethodName(method);
   if (has_error_) {
     return "";
   }
-  size_t last_dot = formated_method_name.find_last_of('.');
+  size_t last_dot = formatted_method_name.find_last_of('.');
   if (last_dot != grpc::string::npos) {
-    formated_method_name[last_dot] = '/';
+    formatted_method_name[last_dot] = '/';
   }
-  formated_method_name.insert(formated_method_name.begin(), '/');
-  return formated_method_name;
+  formatted_method_name.insert(formatted_method_name.begin(), '/');
+  return formatted_method_name;
 }
 
 grpc::string ProtoFileParser::GetMessageTypeFromMethod(

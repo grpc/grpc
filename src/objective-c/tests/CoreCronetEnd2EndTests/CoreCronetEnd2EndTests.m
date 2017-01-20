@@ -94,7 +94,7 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
 
 static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
-                                                cronet_engine *cronetEngine) {
+                                                stream_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
   f->client = grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr,
                                                 client_args, NULL);
@@ -124,7 +124,7 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void cronet_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  cronet_engine *cronetEngine = [Cronet getGlobalEngine];
+  stream_engine *cronetEngine = [Cronet getGlobalEngine];
 
   grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);
   cronet_init_client_secure_fullstack(f, new_client_args, cronetEngine);
@@ -316,7 +316,8 @@ static char *roots_filename;
 }
 
 - (void)testInvokeLargeRequest {
-  [self testIndividualCase:"invoke_large_request"];
+  // NOT SUPPORTED (frame size)
+  // [self testIndividualCase:"invoke_large_request"];
 }
 
 - (void)testLargeMetadata {
@@ -329,7 +330,8 @@ static char *roots_filename;
 }
 
 - (void)testMaxMessageLength {
-  [self testIndividualCase:"max_message_length"];
+  // NOT SUPPORTED (close_error)
+  // [self testIndividualCase:"max_message_length"];
 }
 
 - (void)testNegativeDeadline {

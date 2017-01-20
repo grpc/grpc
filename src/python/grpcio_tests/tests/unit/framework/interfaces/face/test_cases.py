@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tools for creating tests of implementations of the Face layer."""
 
 # unittest is referenced from specification in this module.
@@ -40,12 +39,11 @@ from tests.unit.framework.interfaces.face import test_interfaces  # pylint: disa
 
 _TEST_CASE_SUPERCLASSES = (
     _blocking_invocation_inline_service.TestCase,
-    _future_invocation_asynchronous_event_service.TestCase,
-)
+    _future_invocation_asynchronous_event_service.TestCase,)
 
 
 def test_cases(implementation):
-  """Creates unittest.TestCase classes for a given Face layer implementation.
+    """Creates unittest.TestCase classes for a given Face layer implementation.
 
   Args:
     implementation: A test_interfaces.Implementation specifying creation and
@@ -55,13 +53,14 @@ def test_cases(implementation):
     A sequence of subclasses of unittest.TestCase defining tests of the
       specified Face layer implementation.
   """
-  test_case_classes = []
-  for invoker_constructor in _invocation.invoker_constructors():
-    for super_class in _TEST_CASE_SUPERCLASSES:
-      test_case_classes.append(
-          type(invoker_constructor.name() + super_class.NAME, (super_class,),
-               {'implementation': implementation,
-                'invoker_constructor': invoker_constructor,
-                '__module__': implementation.__module__,
-               }))
-  return test_case_classes
+    test_case_classes = []
+    for invoker_constructor in _invocation.invoker_constructors():
+        for super_class in _TEST_CASE_SUPERCLASSES:
+            test_case_classes.append(
+                type(invoker_constructor.name() + super_class.NAME, (
+                    super_class,), {
+                        'implementation': implementation,
+                        'invoker_constructor': invoker_constructor,
+                        '__module__': implementation.__module__,
+                    }))
+    return test_case_classes

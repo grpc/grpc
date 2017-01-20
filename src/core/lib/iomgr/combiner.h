@@ -50,14 +50,12 @@
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 // Destroy the lock
 void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
-// Execute \a action within the lock.
-void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
-                           grpc_closure *closure, grpc_error *error,
-                           bool covered_by_poller);
-// Execute \a action within the lock just prior to unlocking.
-void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
-                                   grpc_closure *closure, grpc_error *error,
-                                   bool covered_by_poller);
+// Fetch a scheduler to schedule closures against
+grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock,
+                                                bool covered_by_poller);
+// Scheduler to execute \a action within the lock just prior to unlocking.
+grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock,
+                                                        bool covered_by_poller);
 
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 

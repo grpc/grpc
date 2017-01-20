@@ -59,7 +59,7 @@ extern "C" {
 }
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "third_party/google_benchmark/include/benchmark/benchmark.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 namespace grpc {
 namespace testing {
@@ -443,6 +443,8 @@ BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
                    Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
                    Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>);
 
 }  // namespace testing
 }  // namespace grpc

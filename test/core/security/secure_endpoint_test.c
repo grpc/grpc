@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
@@ -59,7 +60,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("secure_endpoint_test");
   tcp = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, slice_size);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
@@ -158,20 +159,20 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   gpr_log(GPR_INFO, "Start test left over");
 
   grpc_slice_buffer_init(&incoming);
-  grpc_closure_init(&done_closure, inc_call_ctr, &n);
+  grpc_closure_init(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming, &done_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);
-  GPR_ASSERT(0 == grpc_slice_cmp(s, incoming.slices[0]));
+  GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
   grpc_endpoint_shutdown(&exec_ctx, f.server_ep);
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_slice_unref(s);
-  grpc_slice_buffer_destroy(&incoming);
+  grpc_slice_unref_internal(&exec_ctx, s);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
 
   clean_up();
 }
@@ -191,7 +192,8 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

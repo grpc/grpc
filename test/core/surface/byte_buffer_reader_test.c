@@ -40,9 +40,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "test/core/util/test_config.h"
 
 #include <string.h>
 
@@ -145,7 +146,12 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   input_slice = grpc_slice_malloc(input_size);
   memset(GRPC_SLICE_START_PTR(input_slice), 'a', input_size);
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
-  GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GPR_ASSERT(
+        grpc_msg_compress(&exec_ctx, algorithm, &sliceb_in, &sliceb_out));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
                                                   sliceb_out.count, algorithm);

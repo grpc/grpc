@@ -218,15 +218,18 @@ SETUP_REQUIRES = INSTALL_REQUIRES + (
     'six>=1.10',
   ) if ENABLE_DOCUMENTATION_BUILD else ()
 
-if BUILD_WITH_CYTHON:
-  sys.stderr.write(
-    "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
-    "but do not have Cython installed. We won't stop you from using "
-    "other commands, but the extension files will fail to build.\n")
-elif need_cython:
-  sys.stderr.write(
-      'We could not find Cython. Setup may take 10-20 minutes.\n')
-  SETUP_REQUIRES += ('cython>=0.23',)
+try:
+  import Cython
+except ImportError:
+  if BUILD_WITH_CYTHON:
+    sys.stderr.write(
+      "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
+      "but do not have Cython installed. We won't stop you from using "
+      "other commands, but the extension files will fail to build.\n")
+  elif need_cython:
+    sys.stderr.write(
+        'We could not find Cython. Setup may take 10-20 minutes.\n')
+    SETUP_REQUIRES += ('cython>=0.23',)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,

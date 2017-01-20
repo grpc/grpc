@@ -186,7 +186,11 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
     grpc_channel_args *new_client_args =                                     \
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
-    grpc_channel_args_destroy(new_client_args);                              \
+    {                                                                        \
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;                           \
+      grpc_channel_args_destroy(&exec_ctx, new_client_args);                 \
+      grpc_exec_ctx_finish(&exec_ctx);                                       \
+    }                                                                        \
   }
 
 CLIENT_INIT(NONE)
@@ -317,9 +321,10 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   grpc_op *op;
   grpc_call_error error;
 
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));

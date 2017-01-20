@@ -92,8 +92,9 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   test_tcp_server *server = arg;
-  grpc_closure_init(&on_read, handle_read, NULL);
+  grpc_closure_init(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.incoming_buffer);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   state.tcp = tcp;
@@ -140,9 +141,11 @@ static void start_rpc(int use_creds, int target_port) {
   } else {
     state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
   }
+  grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
-      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
-      "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq,
+      grpc_slice_from_static_string("/Service/Method"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   memset(&state.op, 0, sizeof(state.op));
   state.op.op = GRPC_OP_SEND_INITIAL_METADATA;
   state.op.data.send_initial_metadata.count = 0;
@@ -157,7 +160,7 @@ static void cleanup_rpc(void) {
   grpc_event ev;
   grpc_slice_buffer_destroy(&state.incoming_buffer);
   grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_channel_credentials_unref(state.creds);
+  grpc_channel_credentials_release(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
@@ -206,8 +209,7 @@ static void match_initial_magic_string(grpc_slice_buffer *buffer) {
   size_t magic_length = strlen(magic_connect_string);
   GPR_ASSERT(buffer->length >= magic_length);
   for (i = 0, j = 0; i < state.incoming_buffer.count && j < magic_length; i++) {
-    char *dump =
-        grpc_dump_slice(state.incoming_buffer.slices[i], GPR_DUMP_ASCII);
+    char *dump = grpc_slice_to_c_string(state.incoming_buffer.slices[i]);
     cmp_length = GPR_MIN(strlen(dump), magic_length - j);
     GPR_ASSERT(strncmp(dump, magic_connect_string + j, cmp_length) == 0);
     j += cmp_length;

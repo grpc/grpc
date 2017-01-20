@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tests clean exit of server/client on Python Interpreter exit/sigint.
 
 The tests in this module spawn a subprocess for each test case, the
@@ -43,18 +42,16 @@ import threading
 import time
 import unittest
 
-import grpc
-from grpc.framework.foundation import logging_pool
 from tests.unit import _exit_scenarios
 
-SCENARIO_FILE = os.path.abspath(os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), '_exit_scenarios.py'))
+SCENARIO_FILE = os.path.abspath(
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), '_exit_scenarios.py'))
 INTERPRETER = sys.executable
 BASE_COMMAND = [INTERPRETER, SCENARIO_FILE]
 BASE_SIGTERM_COMMAND = BASE_COMMAND + ['--wait_for_interrupt']
 
 INIT_TIME = 1.0
-SHUTDOWN_GRACE = 5.0
 
 processes = []
 process_lock = threading.Lock()
@@ -63,145 +60,146 @@ process_lock = threading.Lock()
 # Make sure we attempt to clean up any
 # processes we may have left running
 def cleanup_processes():
-  with process_lock:
-    for process in processes:
-      try:
-        process.kill()
-      except Exception:
-        pass
+    with process_lock:
+        for process in processes:
+            try:
+                process.kill()
+            except Exception:
+                pass
+
+
 atexit.register(cleanup_processes)
 
 
 def interrupt_and_wait(process):
-  with process_lock:
-    processes.append(process)
-  time.sleep(INIT_TIME)
-  os.kill(process.pid, signal.SIGINT)
-  process.wait()
+    with process_lock:
+        processes.append(process)
+    time.sleep(INIT_TIME)
+    os.kill(process.pid, signal.SIGINT)
+    process.wait()
 
 
 def wait(process):
-  with process_lock:
-    processes.append(process)
-  process.wait()
+    with process_lock:
+        processes.append(process)
+    process.wait()
 
 
 @unittest.skip('https://github.com/grpc/grpc/issues/7311')
 class ExitTest(unittest.TestCase):
 
-  def test_unstarted_server(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.UNSTARTED_SERVER],
-        stdout=sys.stdout, stderr=sys.stderr)
-    wait(process)
+    def test_unstarted_server(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.UNSTARTED_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        wait(process)
 
-  def test_unstarted_server_terminate(self):
-    process = subprocess.Popen(
-        BASE_SIGTERM_COMMAND + [_exit_scenarios.UNSTARTED_SERVER],
-        stdout=sys.stdout)
-    interrupt_and_wait(process)
+    def test_unstarted_server_terminate(self):
+        process = subprocess.Popen(
+            BASE_SIGTERM_COMMAND + [_exit_scenarios.UNSTARTED_SERVER],
+            stdout=sys.stdout)
+        interrupt_and_wait(process)
 
-  def test_running_server(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.RUNNING_SERVER],
-        stdout=sys.stdout, stderr=sys.stderr)
-    wait(process)
+    def test_running_server(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.RUNNING_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        wait(process)
 
-  def test_running_server_terminate(self):
-    process = subprocess.Popen(
-        BASE_SIGTERM_COMMAND + [_exit_scenarios.RUNNING_SERVER],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_running_server_terminate(self):
+        process = subprocess.Popen(
+            BASE_SIGTERM_COMMAND + [_exit_scenarios.RUNNING_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  def test_poll_connectivity_no_server(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY_NO_SERVER],
-        stdout=sys.stdout, stderr=sys.stderr)
-    wait(process)
+    def test_poll_connectivity_no_server(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY_NO_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        wait(process)
 
-  def test_poll_connectivity_no_server_terminate(self):
-    process = subprocess.Popen(
-        BASE_SIGTERM_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY_NO_SERVER],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_poll_connectivity_no_server_terminate(self):
+        process = subprocess.Popen(
+            BASE_SIGTERM_COMMAND +
+            [_exit_scenarios.POLL_CONNECTIVITY_NO_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  def test_poll_connectivity(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY],
-        stdout=sys.stdout, stderr=sys.stderr)
-    wait(process)
+    def test_poll_connectivity(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        wait(process)
 
-  def test_poll_connectivity_terminate(self):
-    process = subprocess.Popen(
-        BASE_SIGTERM_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_poll_connectivity_terminate(self):
+        process = subprocess.Popen(
+            BASE_SIGTERM_COMMAND + [_exit_scenarios.POLL_CONNECTIVITY],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  def test_in_flight_unary_unary_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_UNARY_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_in_flight_unary_unary_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_UNARY_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-  def test_in_flight_unary_stream_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_STREAM_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
+    def test_in_flight_unary_stream_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_STREAM_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  def test_in_flight_stream_unary_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_UNARY_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_in_flight_stream_unary_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_UNARY_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-  def test_in_flight_stream_stream_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_STREAM_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
+    def test_in_flight_stream_stream_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_STREAM_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-  def test_in_flight_partial_unary_stream_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
+    def test_in_flight_partial_unary_stream_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND +
+            [_exit_scenarios.IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  def test_in_flight_partial_stream_unary_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    def test_in_flight_partial_stream_unary_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND +
+            [_exit_scenarios.IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-  @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-  def test_in_flight_partial_stream_stream_call(self):
-    process = subprocess.Popen(
-        BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL],
-        stdout=sys.stdout, stderr=sys.stderr)
-    interrupt_and_wait(process)
+    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
+    def test_in_flight_partial_stream_stream_call(self):
+        process = subprocess.Popen(
+            BASE_COMMAND +
+            [_exit_scenarios.IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        interrupt_and_wait(process)
 
-
-class _ShutDownHandler(object):
-
-  def __init__(self):
-    self.seen_handler_grace = None
-
-  def shutdown_handler(self, handler_grace):
-    self.seen_handler_grace = handler_grace
-
-  
-class ShutdownHandlerTest(unittest.TestCase):
-
-  def test_shutdown_handler(self):
-    server = grpc.server(logging_pool.pool(1))
-    handler = _ShutDownHandler()
-    server.add_shutdown_handler(handler.shutdown_handler)
-    server.start()
-    server.stop(0, shutdown_handler_grace=SHUTDOWN_GRACE).wait()
-    self.assertEqual(SHUTDOWN_GRACE, handler.seen_handler_grace)
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

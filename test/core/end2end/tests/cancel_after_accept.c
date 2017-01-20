@@ -43,6 +43,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -118,8 +119,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_slice request_payload_slice =
@@ -154,8 +154,9 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/service/method",
-      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -170,7 +171,6 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -246,12 +246,16 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  if (args != NULL) grpc_channel_args_destroy(args);
+  if (args != NULL) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 
   cq_verifier_destroy(cqv);
   end_test(&f);
