@@ -27,6 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_tools/grpc_version.py.template`!!!
 
 VERSION='1.1.0.dev0'

@@ -175,7 +175,7 @@ $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
-pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
+pip_install_dir $ROOT/src/python/grpcio_tools
 # TODO(atash) figure out namespace packages and grpcio-tools and auditwheel
 # etc...
 pip_install_dir $ROOT

@@ -61,10 +61,10 @@ ${SETARCH_CMD} ${PYTHON} setup.py bdist_wheel
 ${PYTHON} tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package source distribution
-${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py sdist
+${SETARCH_CMD} ${PYTHON} src/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
-${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
+${SETARCH_CMD} ${PYTHON} src/python/grpcio_tools/setup.py bdist_wheel
 
 if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
 then
@@ -72,7 +72,7 @@ then
     ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
     rm $wheel
   done
-  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
+  for wheel in src/python/grpcio_tools/dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
     rm $wheel
   done
@@ -100,4 +100,4 @@ then
 fi
 
 cp -r dist/* "$ARTIFACT_DIR"
-cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
+cp -r src/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
