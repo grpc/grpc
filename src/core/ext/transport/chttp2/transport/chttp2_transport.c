@@ -1921,9 +1921,6 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       }
       double log2_bdp_guess =
           grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-      gpr_log(GPR_DEBUG, "%s: err=%lf cur=%lf pressure=%lf target=%lf",
-              t->peer_string, bdp_error, log2_bdp_guess, memory_pressure,
-              target);
       update_bdp(exec_ctx, t, pow(2, log2_bdp_guess));
       t->last_pid_update = now;
     }
@@ -1942,14 +1939,18 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   grpc_error *error) {
   grpc_chttp2_transport *t = tp;
-  gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
+  }
   grpc_bdp_estimator_start_ping(&t->bdp_estimator);
 }
 
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                    grpc_error *error) {
   grpc_chttp2_transport *t = tp;
-  gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
+  }
   grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
 
