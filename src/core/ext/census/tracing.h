@@ -41,7 +41,6 @@
 #include "src/core/ext/census/trace_status.h"
 
 /* The tracing level. */
-public
 enum TraceLevel {
   /* Annotations on this context will be silently discarded. */
   NO_TRACING = 0,
@@ -51,7 +50,7 @@ enum TraceLevel {
   /* Annotations are recorded for the entire distributed trace and they are
      saved to a persistent store. It is propagated to the child. */
   PERSISTENT_TRACING = 2,
-}
+};
 
 typedef struct trace_span_context {
   /* Trace span context stores Span ID, Trace ID, and option flags. */
