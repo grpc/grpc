@@ -153,6 +153,7 @@ DATA (flags = END_STREAM)
 HEADERS (flags = END_HEADERS)
 :status = 200
 grpc-encoding = gzip
+content-type = application/grpc+proto
 
 DATA
 <Length-Prefixed Message>
