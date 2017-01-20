@@ -884,7 +884,12 @@ src/core/ext/census/resource.h \
 src/core/ext/census/rpc_metric_id.h \
 src/core/ext/census/trace_context.c \
 src/core/ext/census/trace_context.h \
+src/core/ext/census/trace_label.h \
+src/core/ext/census/trace_propagation.h \
+src/core/ext/census/trace_status.h \
+src/core/ext/census/trace_string.h \
 src/core/ext/census/tracing.c \
+src/core/ext/census/tracing.h \
 src/core/ext/client_channel/README.md \
 src/core/ext/client_channel/channel_connectivity.c \
 src/core/ext/client_channel/client_channel.c \

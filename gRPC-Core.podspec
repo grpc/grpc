@@ -432,6 +432,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
                       'src/core/ext/census/trace_context.h',
+                      'src/core/ext/census/trace_label.h',
+                      'src/core/ext/census/trace_propagation.h',
+                      'src/core/ext/census/trace_status.h',
+                      'src/core/ext/census/trace_string.h',
+                      'src/core/ext/census/tracing.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -843,7 +848,12 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h',
-                              'src/core/ext/census/trace_context.h'
+                              'src/core/ext/census/trace_context.h',
+                              'src/core/ext/census/trace_label.h',
+                              'src/core/ext/census/trace_propagation.h',
+                              'src/core/ext/census/trace_status.h',
+                              'src/core/ext/census/trace_string.h',
+                              'src/core/ext/census/tracing.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|
