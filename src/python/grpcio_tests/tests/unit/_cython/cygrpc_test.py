@@ -95,8 +95,18 @@ class TypeSmokeTest(unittest.TestCase):
 
     def testTimespec(self):
         now = time.time()
-        timespec = cygrpc.Timespec(now)
-        self.assertAlmostEqual(now, float(timespec), places=8)
+        now_timespec_a = cygrpc.Timespec(now)
+        now_timespec_b = cygrpc.Timespec(now)
+        self.assertAlmostEqual(now, float(now_timespec_a), places=8)
+        self.assertEqual(now_timespec_a, now_timespec_b)
+        self.assertLess(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
+        self.assertGreater(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
+        self.assertGreaterEqual(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
+        self.assertGreaterEqual(cygrpc.Timespec(now), cygrpc.Timespec(now))
+        self.assertLessEqual(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
+        self.assertLessEqual(cygrpc.Timespec(now), cygrpc.Timespec(now))
+        self.assertNotEqual(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
+        self.assertNotEqual(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
 
     def testCompletionQueueUpDown(self):
         completion_queue = cygrpc.CompletionQueue()
