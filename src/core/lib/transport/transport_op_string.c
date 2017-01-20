@@ -47,14 +47,14 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
+static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
   gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(
-      b, grpc_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+      b, grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
   gpr_strvec_add(
-      b, grpc_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+      b, grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
@@ -121,15 +121,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     const char *msg = grpc_error_string(op->cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
-    grpc_error_free_string(msg);
-    gpr_strvec_add(&b, tmp);
-  }
 
-  if (op->close_error != GRPC_ERROR_NONE) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    const char *msg = grpc_error_string(op->close_error);
-    gpr_asprintf(&tmp, "CLOSE:%s", msg);
-    grpc_error_free_string(msg);
     gpr_strvec_add(&b, tmp);
   }
 
@@ -168,18 +160,14 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     const char *err = grpc_error_string(op->disconnect_with_error);
     gpr_asprintf(&tmp, "DISCONNECT:%s", err);
     gpr_strvec_add(&b, tmp);
-    grpc_error_free_string(err);
   }
 
-  if (op->send_goaway) {
+  if (op->goaway_error) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    char *msg = op->goaway_message == NULL
-                    ? "null"
-                    : grpc_dump_slice(*op->goaway_message,
-                                      GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_asprintf(&tmp, "SEND_GOAWAY:status=%d:msg=%s", op->goaway_status, msg);
-    if (op->goaway_message != NULL) gpr_free(msg);
+    const char *msg = grpc_error_string(op->goaway_error);
+    gpr_asprintf(&tmp, "SEND_GOAWAY:%s", msg);
+
     gpr_strvec_add(&b, tmp);
   }
 

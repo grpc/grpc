@@ -237,6 +237,7 @@ int main(int argc, char **argv) {
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }
+
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_iomgr_shutdown(&exec_ctx);
