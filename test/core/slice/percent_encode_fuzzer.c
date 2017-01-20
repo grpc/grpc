@@ -55,8 +55,8 @@ static void test(const uint8_t *data, size_t size, const uint8_t *dict) {
   grpc_slice permissive_decoded_output =
       grpc_permissive_percent_decode_slice(output);
   // and decoded output must always match the input
-  GPR_ASSERT(grpc_slice_cmp(input, decoded_output) == 0);
-  GPR_ASSERT(grpc_slice_cmp(input, permissive_decoded_output) == 0);
+  GPR_ASSERT(grpc_slice_eq(input, decoded_output));
+  GPR_ASSERT(grpc_slice_eq(input, permissive_decoded_output));
   grpc_slice_unref(input);
   grpc_slice_unref(output);
   grpc_slice_unref(decoded_output);
