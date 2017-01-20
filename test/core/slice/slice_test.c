@@ -259,8 +259,8 @@ static void test_slice_interning(void) {
   LOG_TEST_NAME("test_slice_interning");
 
   grpc_init();
-  grpc_slice src1 = grpc_slice_from_copied_string("hello");
-  grpc_slice src2 = grpc_slice_from_copied_string("hello");
+  grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
+  grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
   GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
