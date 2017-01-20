@@ -51,12 +51,14 @@ static void test_get_estimate_no_samples(void) {
   gpr_log(GPR_INFO, "test_get_estimate_no_samples");
   grpc_bdp_estimator est;
   grpc_bdp_estimator_init(&est);
-  GPR_ASSERT(!grpc_bdp_estimator_get_estimate(&est, NULL));
+  int64_t estimate;
+  grpc_bdp_estimator_get_estimate(&est, &estimate);
 }
 
 static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
                         size_t n) {
   GPR_ASSERT(grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567) == true);
+  grpc_bdp_estimator_schedule_ping(estimator);
   grpc_bdp_estimator_start_ping(estimator);
   for (size_t i = 0; i < n; i++) {
     GPR_ASSERT(grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]) ==
@@ -74,7 +76,8 @@ static void test_get_estimate_1_sample(void) {
   grpc_bdp_estimator est;
   grpc_bdp_estimator_init(&est);
   add_sample(&est, 100);
-  GPR_ASSERT(!grpc_bdp_estimator_get_estimate(&est, NULL));
+  int64_t estimate;
+  grpc_bdp_estimator_get_estimate(&est, &estimate);
 }
 
 static void test_get_estimate_2_samples(void) {
@@ -83,7 +86,8 @@ static void test_get_estimate_2_samples(void) {
   grpc_bdp_estimator_init(&est);
   add_sample(&est, 100);
   add_sample(&est, 100);
-  GPR_ASSERT(!grpc_bdp_estimator_get_estimate(&est, NULL));
+  int64_t estimate;
+  grpc_bdp_estimator_get_estimate(&est, &estimate);
 }
 
 static int64_t get_estimate(grpc_bdp_estimator *estimator) {
@@ -99,7 +103,20 @@ static void test_get_estimate_3_samples(void) {
   add_sample(&est, 100);
   add_sample(&est, 100);
   add_sample(&est, 100);
-  GPR_ASSERT(get_estimate(&est) == 100);
+  int64_t estimate;
+  grpc_bdp_estimator_get_estimate(&est, &estimate);
+}
+
+static int64_t next_pow_2(int64_t v) {
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v |= v >> 32;
+  v++;
+  return v;
 }
 
 static void test_get_estimate_random_values(size_t n) {
@@ -114,8 +131,9 @@ static void test_get_estimate_random_values(size_t n) {
     if (sample > max) max = sample;
     add_sample(&est, sample);
     if (i >= 3) {
-      GPR_ASSERT(get_estimate(&est) <= max);
-      GPR_ASSERT(get_estimate(&est) >= min);
+      gpr_log(GPR_DEBUG, "est:%" PRId64 " min:%d max:%d", get_estimate(&est),
+              min, max);
+      GPR_ASSERT(get_estimate(&est) <= 2 * next_pow_2(max));
     }
   }
 }

@@ -72,13 +72,15 @@ static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
                                        .max_control_value = DBL_MAX,
                                        .integral_range = DBL_MAX});
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 100000; i++) {
     grpc_pid_controller_update(&pid, set_point - grpc_pid_controller_last(&pid),
                                1);
   }
 
   GPR_ASSERT(fabs(set_point - grpc_pid_controller_last(&pid)) < 0.1);
-  GPR_ASSERT(fabs(pid.error_integral) < 0.1);
+  if (gain_i > 0) {
+    GPR_ASSERT(fabs(pid.error_integral) < 0.1);
+  }
 }
 
 int main(int argc, char **argv) {

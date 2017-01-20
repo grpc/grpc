@@ -43,6 +43,7 @@ void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
 
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller) {
   pid_controller->last_error = 0.0;
+  pid_controller->last_dc_dt = 0.0;
   pid_controller->error_integral = 0.0;
 }
 
