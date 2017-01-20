@@ -108,10 +108,10 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
       // acquire locks in on_done. ares_dns_resolver is using combiner to
       // protect resources needed by on_done.
       grpc_exec_ctx new_exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_exec_ctx_sched(&new_exec_ctx, r->on_done, r->error, NULL);
+      grpc_closure_sched(&new_exec_ctx, r->on_done, r->error);
       grpc_exec_ctx_finish(&new_exec_ctx);
     } else {
-      grpc_exec_ctx_sched(exec_ctx, r->on_done, r->error, NULL);
+      grpc_closure_sched(exec_ctx, r->on_done, r->error);
     }
     gpr_mu_destroy(&r->mu);
     grpc_ares_ev_driver_destroy(r->ev_driver);
@@ -207,13 +207,13 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     grpc_error *err =
         grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
                            GRPC_ERROR_STR_TARGET_ADDRESS, name);
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    grpc_closure_sched(exec_ctx, on_done, err);
     goto error_cleanup;
   } else if (port == NULL) {
     if (default_port == NULL) {
       grpc_error *err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
                                            GRPC_ERROR_STR_TARGET_ADDRESS, name);
-      grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+      grpc_closure_sched(exec_ctx, on_done, err);
       goto error_cleanup;
     }
     port = gpr_strdup(default_port);

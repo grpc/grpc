@@ -43,7 +43,6 @@ typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 /** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
-  grpc_pollset_set *pollset_set;
   gpr_refcount refs;
 };
 

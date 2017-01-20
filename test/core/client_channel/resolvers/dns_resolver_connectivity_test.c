@@ -64,7 +64,7 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
   }
-  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
+  grpc_closure_sched(exec_ctx, on_done, error);
 }
 
 static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-  grpc_blocking_resolve_address = my_resolve_address;
+  grpc_resolve_address = my_resolve_address;
   grpc_channel_args *result = (grpc_channel_args *)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

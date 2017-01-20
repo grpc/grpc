@@ -86,7 +86,7 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
   }
-  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
+  grpc_closure_sched(exec_ctx, on_done, error);
 }
 
 int main(int argc, char **argv) {

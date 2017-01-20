@@ -256,8 +256,10 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
           fdn->readable_registered = false;
           fdn->writable_registered = false;
           gpr_mu_init(&fdn->mu);
-          grpc_closure_init(&fdn->read_closure, on_readable_cb, fdn);
-          grpc_closure_init(&fdn->write_closure, on_writable_cb, fdn);
+          grpc_closure_init(&fdn->read_closure, on_readable_cb, fdn,
+                            grpc_schedule_on_exec_ctx);
+          grpc_closure_init(&fdn->write_closure, on_writable_cb, fdn,
+                            grpc_schedule_on_exec_ctx);
           grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
                                   fdn->grpc_fd);
           gpr_free(fd_name);
