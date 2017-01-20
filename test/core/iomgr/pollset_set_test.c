@@ -95,7 +95,8 @@ static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps);
+    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps,
+                      grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].ps, &destroyed);
 
     grpc_exec_ctx_flush(exec_ctx);
@@ -123,7 +124,8 @@ void on_readable(grpc_exec_ctx *exec_ctx, void *tfd, grpc_error *error) {
 static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   tfd->is_on_readable_called = false;
 
-  grpc_closure_init(&tfd->on_readable, on_readable, tfd);
+  grpc_closure_init(&tfd->on_readable, on_readable, tfd,
+                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
 
@@ -449,6 +451,7 @@ void pollset_set_test_empty_pollset() {
 
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
 
@@ -464,7 +467,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */
