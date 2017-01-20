@@ -144,6 +144,7 @@ filegroups:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/slice.h
@@ -683,7 +684,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  - third_party/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
@@ -1312,7 +1313,6 @@ libs:
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
-  - test/cpp/qps/limit_cores.h
   - test/cpp/qps/parse_json.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
@@ -1329,7 +1329,6 @@ libs:
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
-  - test/cpp/qps/limit_cores.cc
   - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
@@ -2330,6 +2329,43 @@ targets:
   language: c
   src:
   - test/core/network_benchmarks/low_level_ping_pong.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: memory_profile_client
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_server
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_test
+  cpu_cost: 1.5
+  build: test
+  language: c
+  src:
+  - test/core/memory_usage/memory_usage_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3624,16 +3660,17 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/create_test_channel.h
   - test/cpp/util/metrics_server.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/metrics.proto
   - src/proto/grpc/testing/test.proto
-  - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
@@ -3865,7 +3902,6 @@ node_modules:
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
   - src/node/ext/completion_queue.h
-  - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
   - src/node/ext/timeval.h
@@ -3884,8 +3920,8 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue.cc
-  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/completion_queue_threadpool.cc
+  - src/node/ext/completion_queue_uv.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
