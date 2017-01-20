@@ -173,7 +173,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
       }
     /* fallthrough intended */
     default:
-      GPR_ASSERT(p->pad_state >= 0);
+      GPR_ASSERT(p->pad_state < 256);
       if (end - cur > p->pad_state) {
         cur += p->pad_state;
         p->pad_state = 0;
@@ -182,7 +182,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
         p->pad_state = 0;
         return GRPC_ERROR_NONE;
       } else {
-        p->pad_state -= end - cur;
+        p->pad_state = (uint16_t)(p->pad_state - (uint16_t)(end - cur));
         return GRPC_ERROR_NONE;
       }
       GPR_UNREACHABLE_CODE(return GRPC_ERROR_CANCELLED);
