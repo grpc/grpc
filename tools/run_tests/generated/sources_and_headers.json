@@ -6551,7 +6551,12 @@
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
-      "src/core/ext/census/trace_context.h"
+      "src/core/ext/census/trace_context.h", 
+      "src/core/ext/census/trace_label.h", 
+      "src/core/ext/census/trace_propagation.h", 
+      "src/core/ext/census/trace_status.h", 
+      "src/core/ext/census/trace_string.h", 
+      "src/core/ext/census/tracing.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -6582,7 +6587,12 @@
       "src/core/ext/census/rpc_metric_id.h", 
       "src/core/ext/census/trace_context.c", 
       "src/core/ext/census/trace_context.h", 
-      "src/core/ext/census/tracing.c"
+      "src/core/ext/census/trace_label.h", 
+      "src/core/ext/census/trace_propagation.h", 
+      "src/core/ext/census/trace_status.h", 
+      "src/core/ext/census/trace_string.h", 
+      "src/core/ext/census/tracing.c", 
+      "src/core/ext/census/tracing.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
