@@ -58,12 +58,11 @@ abstract class AbstractCall
      *                              the response
      * @param array    $options     Call options (optional)
      */
-    public function __construct(
-        Channel $channel,
-        $method,
-        $deserialize,
-        array $options = []
-    ) {
+    public function __construct(Channel $channel,
+                                $method,
+                                $deserialize,
+                                array $options = [])
+    {
         if (array_key_exists('timeout', $options) &&
             is_numeric($timeout = $options['timeout'])
         ) {
