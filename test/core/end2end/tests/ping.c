@@ -48,7 +48,12 @@ static void test_ping(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  config.init_client(&f, NULL);
+  grpc_arg a = {.type = GRPC_ARG_INTEGER,
+                .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
+                .value.integer = 0};
+  grpc_channel_args client_args = {.num_args = 1, .args = &a};
+
+  config.init_client(&f, &client_args);
   config.init_server(&f, NULL);
 
   grpc_channel_ping(f.client, f.cq, tag(0), NULL);
