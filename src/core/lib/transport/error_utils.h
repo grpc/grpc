@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,26 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#define GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
-/* error codes for RST_STREAM from http2 draft 14 section 7 */
-typedef enum {
-  GRPC_CHTTP2_NO_ERROR = 0x0,
-  GRPC_CHTTP2_PROTOCOL_ERROR = 0x1,
-  GRPC_CHTTP2_INTERNAL_ERROR = 0x2,
-  GRPC_CHTTP2_FLOW_CONTROL_ERROR = 0x3,
-  GRPC_CHTTP2_SETTINGS_TIMEOUT = 0x4,
-  GRPC_CHTTP2_STREAM_CLOSED = 0x5,
-  GRPC_CHTTP2_FRAME_SIZE_ERROR = 0x6,
-  GRPC_CHTTP2_REFUSED_STREAM = 0x7,
-  GRPC_CHTTP2_CANCEL = 0x8,
-  GRPC_CHTTP2_COMPRESSION_ERROR = 0x9,
-  GRPC_CHTTP2_CONNECT_ERROR = 0xa,
-  GRPC_CHTTP2_ENHANCE_YOUR_CALM = 0xb,
-  GRPC_CHTTP2_INADEQUATE_SECURITY = 0xc,
-  /* force use of a default clause */
-  GRPC_CHTTP2__ERROR_DO_NOT_USE = -1
-} grpc_chttp2_error_code;
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/transport/http2_errors.h"
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ERRORS_H */
+/// A utility function to get the status code and message to be returned
+/// to the application.  If not set in the top-level message, looks
+/// through child errors until it finds the first one with these attributes.
+/// All attributes are pulled from the same child error. If any of the
+/// attributes (code, msg, http_status) are unneeded, they can be passed as
+/// NULL.
+void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
+                           grpc_status_code *code, const char **msg,
+                           grpc_http2_error_code *http_status);
+
+/// A utility function to check whether there is a clear status code that
+/// doesn't need to be guessed in \a error. This means that \a error or some
+/// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or
+/// GRPC_ERROR_CANCELLED
+bool grpc_error_has_clear_grpc_status(grpc_error *error);
+
+#endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */
