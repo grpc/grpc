@@ -9080,10 +9080,10 @@ add_executable(stress_test
   src/proto/grpc/testing/messages.proto
   src/proto/grpc/testing/metrics.proto
   src/proto/grpc/testing/test.proto
-  test/cpp/interop/client_helper.cc
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
+  test/cpp/util/create_test_channel.cc
   test/cpp/util/metrics_server.cc
   third_party/googletest/src/gtest-all.cc
 )
