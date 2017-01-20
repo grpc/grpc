@@ -47,12 +47,12 @@
 @implementation NSData (GRPCMetadata)
 + (instancetype)grpc_dataFromMetadataValue:(grpc_metadata *)metadata {
   // TODO(jcanizales): Should we use a non-copy constructor?
-  return [self dataWithBytes:metadata->value length:metadata->value_length];
+  return [self dataWithBytes:GRPC_SLICE_START_PTR(metadata->value)
+                      length:GRPC_SLICE_LENGTH(metadata->value)];
 }
 
 - (void)grpc_initMetadata:(grpc_metadata *)metadata {
-  metadata->value = self.bytes;
-  metadata->value_length = self.length;
+  metadata->value = grpc_slice_from_copied_buffer(self.bytes, self.length);
 }
 @end
 
@@ -67,15 +67,14 @@
 
 @implementation NSString (GRPCMetadata)
 + (instancetype)grpc_stringFromMetadataValue:(grpc_metadata *)metadata {
-  return [[self alloc] initWithBytes:metadata->value
-                              length:metadata->value_length
+  return [[self alloc] initWithBytes:GRPC_SLICE_START_PTR(metadata->value)
+                              length:GRPC_SLICE_LENGTH(metadata->value)
                             encoding:NSASCIIStringEncoding];
 }
 
 // Precondition: This object contains only ASCII characters.
 - (void)grpc_initMetadata:(grpc_metadata *)metadata {
-  metadata->value = self.UTF8String;
-  metadata->value_length = self.length;
+  metadata->value = grpc_slice_from_copied_string(self.UTF8String);
 }
 @end
 
@@ -89,7 +88,10 @@
 + (instancetype)grpc_dictionaryFromMetadata:(grpc_metadata *)entries count:(size_t)count {
   NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithCapacity:count];
   for (grpc_metadata *entry = entries; entry < entries + count; entry++) {
-    NSString *name = [NSString stringWithCString:entry->key encoding:NSASCIIStringEncoding];
+    char *key = grpc_slice_to_c_string(entry->key);
+    NSString *name = [NSString stringWithCString:key
+                                        encoding:NSASCIIStringEncoding];
+    gpr_free(key);
     if (!name || metadata[name]) {
       // Log if name is nil?
       continue;
@@ -112,7 +114,7 @@
   grpc_metadata *current = metadata;
   for (NSString* key in self) {
     id value = self[key];
-    current->key = key.UTF8String;
+    current->key = grpc_slice_from_copied_string(key.UTF8String);
     if ([value respondsToSelector:@selector(grpc_initMetadata:)]) {
       [value grpc_initMetadata:current];
     } else {
