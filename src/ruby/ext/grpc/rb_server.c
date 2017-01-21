@@ -44,7 +44,6 @@
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"
 #include "rb_server_credentials.h"
-#include "rb_byte_buffer.h"
 #include "rb_grpc.h"
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
@@ -167,6 +166,8 @@ static void grpc_request_call_stack_init(request_call_stack* st) {
   MEMZERO(st, request_call_stack, 1);
   grpc_metadata_array_init(&st->md_ary);
   grpc_call_details_init(&st->details);
+  st->details.method = NULL;
+  st->details.host = NULL;
 }
 
 /* grpc_request_call_stack_cleanup ensures the request_call_stack is properly
@@ -190,7 +191,6 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   void *tag = (void*)&st;
   grpc_completion_queue *call_queue = grpc_completion_queue_create(NULL);
   gpr_timespec deadline;
-
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
@@ -218,13 +218,11 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
     return Qnil;
   }
 
-
-
   /* build the NewServerRpc struct result */
   deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
   result = rb_struct_new(
-      grpc_rb_sNewServerRpc, grpc_rb_slice_to_ruby_string(st.details.method),
-      grpc_rb_slice_to_ruby_string(st.details.host),
+      grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
+      rb_str_new2(st.details.host),
       rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
                  INT2NUM(deadline.tv_nsec / 1000)),
       grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call, call_queue),

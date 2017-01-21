@@ -158,7 +158,7 @@ void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
   gpr_mu_destroy(&g_executor.mu);
 }
 
-static const grpc_closure_scheduler_vtable executor_vtable = {
-    executor_push, executor_push, "executor"};
+static const grpc_closure_scheduler_vtable executor_vtable = {executor_push,
+                                                              executor_push};
 static grpc_closure_scheduler executor_scheduler = {&executor_vtable};
 grpc_closure_scheduler *grpc_executor_scheduler = &executor_scheduler;

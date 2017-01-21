@@ -109,12 +109,11 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
 
-  grpc_slice host = grpc_slice_from_static_string("slartibartfast.local");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, NULL);
+                               "/foo", "slartibartfast.local", deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -142,6 +141,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -153,7 +153,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
 
   GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
 
-  grpc_slice_unref(details);
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
