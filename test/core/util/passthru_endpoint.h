@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
-                                   grpc_endpoint **server);
+                                   grpc_endpoint **server,
+                                   grpc_resource_quota *resource_quota);
 
 #endif

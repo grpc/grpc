@@ -37,6 +37,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/auth_metadata_processor.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
@@ -91,12 +92,12 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
         is_blocking_(is_blocking),
         is_successful_(is_successful) {}
 
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
-  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
-                     const grpc::AuthContext& channel_auth_context,
-                     std::multimap<grpc::string, grpc::string>* metadata)
-      GRPC_OVERRIDE {
+  Status GetMetadata(
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const grpc::AuthContext& channel_auth_context,
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     EXPECT_GT(service_url.length(), 0UL);
     EXPECT_GT(method_name.length(), 0UL);
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
@@ -144,11 +145,11 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   }
 
   // Interface implementation
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
   Status Process(const InputMetadata& auth_metadata, AuthContext* context,
                  OutputMetadata* consumed_auth_metadata,
-                 OutputMetadata* response_metadata) GRPC_OVERRIDE {
+                 OutputMetadata* response_metadata) override {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
@@ -184,7 +185,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
       : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     return stub_->Echo(client_context.get(), *request, response);
@@ -198,7 +199,7 @@ class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
   }
@@ -208,16 +209,26 @@ class TestScenario {
  public:
   TestScenario(bool proxy, const grpc::string& creds_type)
       : use_proxy(proxy), credentials_type(creds_type) {}
-  void Log() const {
-    gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
-            credentials_type.c_str());
-  }
+  void Log() const;
   bool use_proxy;
   // Although the below grpc::string is logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
   // manage vector insertion using a copy constructor
   grpc::string credentials_type;
 };
+
+static std::ostream& operator<<(std::ostream& out,
+                                const TestScenario& scenario) {
+  return out << "TestScenario{use_proxy="
+             << (scenario.use_proxy ? "true" : "false") << ", credentials='"
+             << scenario.credentials_type << "'}";
+}
+
+void TestScenario::Log() const {
+  std::ostringstream out;
+  out << *this;
+  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
+}
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
@@ -228,7 +239,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     GetParam().Log();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     if (is_server_started_) {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
@@ -240,18 +251,28 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
-    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    ConfigureServerBuilder(&builder);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
+        GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     builder.RegisterService("foo.test.youtube.com", &special_service_);
-    builder.SetMaxMessageSize(
-        kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
+
+    builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+    builder.SetSyncServerOption(
+        ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
+  }
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) {
+    builder->SetMaxMessageSize(
+        kMaxMessageSize_);  // For testing max message size.
   }
 
   void ResetChannel() {
@@ -260,8 +281,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    auto channel_creds =
-        GetChannelCredentials(GetParam().credentials_type, &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+        GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
@@ -279,6 +300,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
+
+      builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+      builder.SetSyncServerOption(
+          ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
       proxy_server_ = builder.BuildAndStart();
 
       channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
@@ -620,7 +646,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
-TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
+TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   user_agent_prefix_ = "custom_prefix";
   ResetStub();
   EchoRequest request;
@@ -636,30 +662,28 @@ TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
   auto iter = trailing_metadata.find("user-agent");
   EXPECT_TRUE(iter != trailing_metadata.end());
   grpc::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
-  EXPECT_TRUE(iter->second.starts_with(expected_prefix));
+  EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, true));
+    threads.emplace_back(SendRpc, stub_.get(), 10, true);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
 TEST_P(End2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -1091,13 +1115,12 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -1328,6 +1351,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
+
 TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   ResetStub();
   EchoRequest request;
@@ -1524,17 +1548,50 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   }
 }
 
+class ResourceQuotaEnd2endTest : public End2endTest {
+ public:
+  ResourceQuotaEnd2endTest()
+      : server_resource_quota_("server_resource_quota") {}
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) override {
+    builder->SetResourceQuota(server_resource_quota_);
+  }
+
+ private:
+  ResourceQuota server_resource_quota_;
+};
+
+TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
                                               bool test_secure) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   if (test_secure) {
-    credentials_types = GetSecureCredentialsTypeList();
+    credentials_types =
+        GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }
   if (test_insecure) {
-    credentials_types.push_back(kInsecureCredentialsType);
+    // Only add insecure credentials type when it is registered with the
+    // provider. User may create providers that do not have insecure.
+    if (GetCredentialsProvider()->GetChannelCredentials(
+            kInsecureCredentialsType, nullptr) != nullptr) {
+      credentials_types.push_back(kInsecureCredentialsType);
+    }
   }
+  GPR_ASSERT(!credentials_types.empty());
   for (auto it = credentials_types.begin(); it != credentials_types.end();
        ++it) {
     scenarios.emplace_back(false, *it);
@@ -1551,7 +1608,7 @@ INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                false)));
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(true, true,
@@ -1559,6 +1616,10 @@ INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
+
+INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
                                                                 true)));
 
 }  // namespace

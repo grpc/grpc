@@ -716,7 +716,9 @@ Procedure:
 
     ```
     {
-      response_size: 314159
+      response_parameters:{
+        size: 314159
+      }
       payload:{
         body: 271828 bytes of zeros
       }
@@ -779,21 +781,21 @@ Client asserts:
 
 ### unimplemented_method
 
-This test verifies that calling an unimplemented RPC method returns the 
+This test verifies that calling an unimplemented RPC method returns the
 UNIMPLEMENTED status code.
 
 Server features:
 N/A
 
 Procedure:
-* Client calls `grpc.testing.TestService/UnimplementedMethod` with an empty
+* Client calls `grpc.testing.TestService/UnimplementedCall` with an empty
   request (defined as `grpc.testing.Empty`):
 
     ```
     {
     }
     ```
-   
+
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
 

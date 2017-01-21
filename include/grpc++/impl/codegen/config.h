@@ -34,99 +34,22 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CONFIG_H
 #define GRPCXX_IMPL_CODEGEN_CONFIG_H
 
-#if !defined(GRPC_NO_AUTODETECT_PLATFORM)
-
-#ifdef _MSC_VER
-// Visual Studio 2010 is 1600.
-#if _MSC_VER < 1600
-#error "gRPC is only supported with Visual Studio starting at 2010"
-// Visual Studio 2013 is 1800.
-#elif _MSC_VER < 1800
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#define GRPC_CXX0X_NO_CHRONO 1
-#define GRPC_CXX0X_NO_THREAD 1
-#endif
-#endif  // Visual Studio
-
-#ifndef __clang__
-#ifdef __GNUC__
-// nullptr was added in gcc 4.6
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
-#define GRPC_CXX0X_NO_NULLPTR 1
-#define GRPC_CXX0X_LIMITED_TOSTRING 1
-#endif
-// final and override were added in gcc 4.7
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#endif
-#endif
-#endif
-
-#endif
-
-#ifdef GRPC_CXX0X_NO_FINAL
-#define GRPC_FINAL
-#else
-#define GRPC_FINAL final
-#endif
-
-#ifdef GRPC_CXX0X_NO_OVERRIDE
-#define GRPC_OVERRIDE
-#else
-#define GRPC_OVERRIDE override
-#endif
-
-#ifdef GRPC_CXX0X_NO_NULLPTR
-#include <functional>
-#include <memory>
-namespace grpc {
-const class {
- public:
-  template <class T>
-  operator T *() const {
-    return static_cast<T *>(0);
-  }
-  template <class T>
-  operator std::unique_ptr<T>() const {
-    return std::unique_ptr<T>(static_cast<T *>(0));
-  }
-  template <class T>
-  operator std::shared_ptr<T>() const {
-    return std::shared_ptr<T>(static_cast<T *>(0));
-  }
-  operator bool() const { return false; }
-  template <class F>
-  operator std::function<F>() const {
-    return std::function<F>();
-  }
-
- private:
-  void operator&() const = delete;
-} nullptr = {};
-}
-#endif
-
 #ifndef GRPC_CUSTOM_STRING
 #include <string>
 #define GRPC_CUSTOM_STRING std::string
 #endif
 
+// The following macros are deprecated and appear only for users
+// with PB files generated using gRPC 1.0.x plugins. They should
+// not be used in new code
+#define GRPC_OVERRIDE override  // deprecated
+#define GRPC_FINAL final        // deprecated
+
 namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
 
-#ifdef GRPC_CXX0X_LIMITED_TOSTRING
-inline grpc::string to_string(const int x) {
-  return std::to_string(static_cast<const long long int>(x));
-}
-inline grpc::string to_string(const unsigned int x) {
-  return std::to_string(static_cast<const long long unsigned int>(x));
-}
-#else
 using std::to_string;
-#endif
 
 }  // namespace grpc
 

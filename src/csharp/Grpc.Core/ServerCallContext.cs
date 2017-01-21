@@ -48,7 +48,6 @@ namespace Grpc.Core
         private readonly CallSafeHandle callHandle;
         private readonly string method;
         private readonly string host;
-        private readonly string peer;
         private readonly DateTime deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
@@ -58,13 +57,12 @@ namespace Grpc.Core
         private Func<Metadata, Task> writeHeadersFunc;
         private IHasWriteOptions writeOptionsHolder;
 
-        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
             Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
         {
             this.callHandle = callHandle;
             this.method = method;
             this.host = host;
-            this.peer = peer;
             this.deadline = deadline;
             this.requestHeaders = requestHeaders;
             this.cancellationToken = cancellationToken;
@@ -115,7 +113,10 @@ namespace Grpc.Core
         {
             get
             {
-                return this.peer;
+                // Getting the peer lazily is fine as the native call is guaranteed
+                // not to be disposed before user-supplied server side handler returns.
+                // Most users won't need to read this field anyway.
+                return this.callHandle.GetPeer();
             }
         }
 

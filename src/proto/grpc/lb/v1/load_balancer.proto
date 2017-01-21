@@ -63,7 +63,8 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, service.grpc.gslb.google.com)
+  // Name of load balanced service (IE, service.grpc.gslb.google.com). Its
+  // length should be less than 256 bytes.
   string name = 1;
 }
 
@@ -95,7 +96,8 @@ message InitialLoadBalanceResponse {
   // This is an application layer redirect that indicates the client should use
   // the specified server for load balancing. When this field is non-empty in
   // the response, the client should open a separate connection to the
-  // load_balancer_delegate and call the BalanceLoad method.
+  // load_balancer_delegate and call the BalanceLoad method. Its length should
+  // be less than 64 bytes.
   string load_balancer_delegate = 1;
 
   // This interval defines how often the client should send the client stats
@@ -130,6 +132,8 @@ message Server {
   // frontend requests for that pick must include the token in its initial
   // metadata. The token is used by the backend to verify the request and to
   // allow the backend to report load to the gRPC LB system.
+  //
+  // Its length is variable but less than 50 bytes.
   string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client

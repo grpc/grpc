@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <ctype.h>
@@ -214,8 +219,8 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd, "listener");
   grpc_pollset_add_fd(exec_ctx, g_pollset, se->em_fd);
-  se->session_read_closure.cb = session_read_cb;
-  se->session_read_closure.cb_arg = se;
+  grpc_closure_init(&se->session_read_closure, session_read_cb, se,
+                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, se->em_fd, &se->session_read_closure);
 
   grpc_fd_notify_on_read(exec_ctx, listen_em_fd, &sv->listen_closure);
@@ -244,8 +249,8 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
   sv->em_fd = grpc_fd_create(fd, "server");
   grpc_pollset_add_fd(exec_ctx, g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
-  sv->listen_closure.cb = listen_cb;
-  sv->listen_closure.cb_arg = sv;
+  grpc_closure_init(&sv->listen_closure, listen_cb, sv,
+                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, sv->em_fd, &sv->listen_closure);
 
   return port;
@@ -328,8 +333,8 @@ static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
   if (errno == EAGAIN) {
     gpr_mu_lock(g_mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      cl->write_closure.cb = client_session_write;
-      cl->write_closure.cb_arg = cl;
+      grpc_closure_init(&cl->write_closure, client_session_write, cl,
+                        grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_write(exec_ctx, cl->em_fd, &cl->write_closure);
       cl->client_write_cnt++;
     } else {
@@ -454,10 +459,10 @@ static void test_grpc_fd_change(void) {
   grpc_closure second_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  first_closure.cb = first_read_callback;
-  first_closure.cb_arg = &a;
-  second_closure.cb = second_read_callback;
-  second_closure.cb_arg = &b;
+  grpc_closure_init(&first_closure, first_read_callback, &a,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&second_closure, second_read_callback, &b,
+                    grpc_schedule_on_exec_ctx);
 
   init_change_data(&a);
   init_change_data(&b);
@@ -541,10 +546,18 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

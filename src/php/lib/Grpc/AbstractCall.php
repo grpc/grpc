@@ -35,7 +35,7 @@
 namespace Grpc;
 
 /**
- * Class AbstractCall
+ * Class AbstractCall.
  * @package Grpc
  */
 abstract class AbstractCall
@@ -62,7 +62,7 @@ abstract class AbstractCall
         Channel $channel,
         $method,
         $deserialize,
-        $options = []
+        array $options = []
     ) {
         if (array_key_exists('timeout', $options) &&
             is_numeric($timeout = $options['timeout'])
@@ -89,7 +89,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The metadata sent by the server.
+     * @return mixed The metadata sent by the server
      */
     public function getMetadata()
     {
@@ -97,7 +97,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The trailing metadata sent by the server.
+     * @return mixed The trailing metadata sent by the server
      */
     public function getTrailingMetadata()
     {
@@ -105,7 +105,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return string The URI of the endpoint.
+     * @return string The URI of the endpoint
      */
     public function getPeer()
     {
@@ -121,13 +121,14 @@ abstract class AbstractCall
     }
 
     /**
-     * Serialize a message to the protobuf binary format
+     * Serialize a message to the protobuf binary format.
      *
      * @param mixed $data The Protobuf message
      *
      * @return string The protobuf binary format
      */
-    protected function serializeMessage($data) {
+    protected function serializeMessage($data)
+    {
         // Proto3 implementation
         if (method_exists($data, 'encode')) {
             return $data->encode();
@@ -155,6 +156,7 @@ abstract class AbstractCall
             list($className, $deserializeFunc) = $this->deserialize;
             $obj = new $className();
             $obj->$deserializeFunc($value);
+
             return $obj;
         }
 
@@ -165,8 +167,7 @@ abstract class AbstractCall
     /**
      * Set the CallCredentials for the underlying Call.
      *
-     * @param CallCredentials $call_credentials The CallCredentials
-     *                                          object
+     * @param CallCredentials $call_credentials The CallCredentials object
      */
     public function setCallCredentials($call_credentials)
     {

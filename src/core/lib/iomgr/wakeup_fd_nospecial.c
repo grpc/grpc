@@ -36,9 +36,9 @@
  * systems without anything better than pipe.
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_NO_SPECIAL_WAKEUP_FD
+#ifdef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
 
 #include <stddef.h>
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
@@ -48,4 +48,4 @@ static int check_availability_invalid(void) { return 0; }
 const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {
     NULL, NULL, NULL, NULL, check_availability_invalid};
 
-#endif /* GPR_POSIX_NO_SPECIAL_WAKEUP_FD */
+#endif /* GRPC_POSIX_NO_SPECIAL_WAKEUP_FD */

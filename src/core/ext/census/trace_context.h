@@ -65,4 +65,4 @@ of these do not exist. On success, returns true and false otherwise. */
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
                           const size_t nbytes);
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H */

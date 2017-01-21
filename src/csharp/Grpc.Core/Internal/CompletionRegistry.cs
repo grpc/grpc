@@ -44,6 +44,8 @@ namespace Grpc.Core.Internal
 
     internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
 
+    internal delegate void RequestCallCompletionDelegate(bool success, RequestCallContextSafeHandle ctx);
+
     internal class CompletionRegistry
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
@@ -68,6 +70,12 @@ namespace Grpc.Core.Internal
             Register(ctx.Handle, opCallback);
         }
 
+        public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
+        {
+            OpCompletionDelegate opCallback = ((success) => HandleRequestCallCompletion(success, ctx, callback));
+            Register(ctx.Handle, opCallback);
+        }
+
         public OpCompletionDelegate Extract(IntPtr key)
         {
             OpCompletionDelegate value;
@@ -84,7 +92,26 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured while invoking completion delegate.");
+                Logger.Error(e, "Exception occured while invoking batch completion delegate.");
+            }
+            finally
+            {
+                if (ctx != null)
+                {
+                    ctx.Dispose();
+                }
+            }
+        }
+
+        private static void HandleRequestCallCompletion(bool success, RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
+        {
+            try
+            {
+                callback(success, ctx);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking request call completion delegate.");
             }
             finally
             {

@@ -59,8 +59,8 @@ message ServerReflectionRequest {
     // message type with the given field number.
     ExtensionRequest file_containing_extension = 5;
 
-    // Finds the tag numbers used by all known extensions of extendee_type, and
-    // appends them to ExtensionNumberResponse in an undefined order.
+    // Finds the tag numbers used by all known extensions of the given message
+    // type, and appends them to ExtensionNumberResponse in an undefined order.
     // Its corresponding method is best-effort: it's not guaranteed that the
     // reflection service will implement this method, and it's not guaranteed
     // that this method will provide all extensions. Returns

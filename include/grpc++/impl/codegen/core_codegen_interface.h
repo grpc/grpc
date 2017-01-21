@@ -56,7 +56,8 @@ namespace grpc {
 class CoreCodegenInterface {
  public:
   /// Upon a failed assertion, log the error.
-  virtual void assert_fail(const char* failed_assertion) = 0;
+  virtual void assert_fail(const char* failed_assertion, const char* file,
+                           int line) = 0;
 
   virtual grpc_completion_queue* grpc_completion_queue_create(
       void* reserved) = 0;
@@ -88,16 +89,21 @@ class CoreCodegenInterface {
   virtual void grpc_byte_buffer_reader_destroy(
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                           gpr_slice* slice) = 0;
+                                           grpc_slice* slice) = 0;
 
-  virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(gpr_slice* slice,
+  virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;
 
-  virtual gpr_slice gpr_slice_malloc(size_t length) = 0;
-  virtual void gpr_slice_unref(gpr_slice slice) = 0;
-  virtual gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) = 0;
-  virtual void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) = 0;
-  virtual void gpr_slice_buffer_pop(gpr_slice_buffer* sb) = 0;
+  virtual grpc_slice grpc_slice_malloc(size_t length) = 0;
+  virtual void grpc_slice_unref(grpc_slice slice) = 0;
+  virtual grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) = 0;
+  virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
+                                     grpc_slice slice) = 0;
+  virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;
+  virtual grpc_slice grpc_slice_from_static_buffer(const void* buffer,
+                                                   size_t length) = 0;
+  virtual grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
+                                                   size_t length) = 0;
 
   virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
@@ -112,11 +118,11 @@ class CoreCodegenInterface {
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Codegen specific version of \a GPR_ASSERT.
-#define GPR_CODEGEN_ASSERT(x)                          \
-  do {                                                 \
-    if (!(x)) {                                        \
-      grpc::g_core_codegen_interface->assert_fail(#x); \
-    }                                                  \
+#define GPR_CODEGEN_ASSERT(x)                                              \
+  do {                                                                     \
+    if (!(x)) {                                                            \
+      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
+    }                                                                      \
   } while (0)
 
 }  // namespace grpc

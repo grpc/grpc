@@ -34,6 +34,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
@@ -41,7 +42,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(gpr_slice slice) {}
+static void discard_write(grpc_slice slice) {}
 
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 static int detag(void *p) { return (int)(uintptr_t)p; }
@@ -49,17 +50,21 @@ static int detag(void *p) { return (int)(uintptr_t)p; }
 static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_endpoint *mock_endpoint = grpc_mock_endpoint_create(discard_write);
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("server_fuzzer");
+  grpc_endpoint *mock_endpoint =
+      grpc_mock_endpoint_create(discard_write, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
-      gpr_slice_from_copied_buffer((const char *)data, size));
+      grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_server *server = grpc_server_create(NULL, NULL);
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);

@@ -33,7 +33,7 @@
 
 /* Posix implementation for gpr threads. */
 
-#include <memory.h>
+#include <string.h>
 
 #include <grpc/support/thd.h>
 

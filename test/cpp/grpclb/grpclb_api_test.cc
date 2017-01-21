@@ -71,12 +71,12 @@ TEST_F(GrpclbTest, CreateRequest) {
   const grpc::string service_name = "AServiceName";
   LoadBalanceRequest request;
   grpc_grpclb_request* c_req = grpc_grpclb_request_create(service_name.c_str());
-  gpr_slice slice = grpc_grpclb_request_encode(c_req);
-  const int num_bytes_written = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = grpc_grpclb_request_encode(c_req);
+  const int num_bytes_written = GRPC_SLICE_LENGTH(slice);
   EXPECT_GT(num_bytes_written, 0);
-  request.ParseFromArray(GPR_SLICE_START_PTR(slice), num_bytes_written);
+  request.ParseFromArray(GRPC_SLICE_START_PTR(slice), num_bytes_written);
   EXPECT_EQ(request.initial_request().name(), service_name);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   grpc_grpclb_request_destroy(c_req);
 }
 
@@ -88,15 +88,15 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
   client_stats_report_interval->set_seconds(123);
   client_stats_report_interval->set_nanos(456);
   const grpc::string encoded_response = response.SerializeAsString();
-  gpr_slice encoded_slice =
-      gpr_slice_from_copied_string(encoded_response.c_str());
+  grpc_slice encoded_slice =
+      grpc_slice_from_copied_string(encoded_response.c_str());
 
   grpc_grpclb_initial_response* c_initial_response =
       grpc_grpclb_initial_response_parse(encoded_slice);
   EXPECT_FALSE(c_initial_response->has_load_balancer_delegate);
   EXPECT_EQ(c_initial_response->client_stats_report_interval.seconds, 123);
   EXPECT_EQ(c_initial_response->client_stats_report_interval.nanos, 456);
-  gpr_slice_unref(encoded_slice);
+  grpc_slice_unref(encoded_slice);
   grpc_grpclb_initial_response_destroy(c_initial_response);
 }
 
@@ -116,7 +116,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   expiration_interval->set_nanos(999);
 
   const grpc::string encoded_response = response.SerializeAsString();
-  const gpr_slice encoded_slice = gpr_slice_from_copied_buffer(
+  const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
       encoded_response.data(), encoded_response.size());
   grpc_grpclb_serverlist* c_serverlist =
       grpc_grpclb_response_parse_serverlist(encoded_slice);
@@ -137,7 +137,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_TRUE(c_serverlist->expiration_interval.has_nanos);
   EXPECT_EQ(c_serverlist->expiration_interval.nanos, 999);
 
-  gpr_slice_unref(encoded_slice);
+  grpc_slice_unref(encoded_slice);
   grpc_grpclb_destroy_serverlist(c_serverlist);
 }
 

@@ -138,6 +138,12 @@ typedef enum {
   GRPC_NUM_SETTING_SETS
 } grpc_chttp2_setting_set;
 
+typedef enum {
+  GRPC_CHTTP2_NO_GOAWAY_SEND,
+  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_GOAWAY_SENT,
+} grpc_chttp2_sent_goaway_state;
+
 /* Outstanding ping request data */
 typedef struct grpc_chttp2_outstanding_ping {
   uint8_t id[8];
@@ -164,14 +170,14 @@ struct grpc_chttp2_incoming_byte_stream {
   bool is_tail;
 
   gpr_mu slice_mu;  // protects slices, on_next
-  gpr_slice_buffer slices;
+  grpc_slice_buffer slices;
   grpc_closure *on_next;
-  gpr_slice *next;
+  grpc_slice *next;
   uint32_t remaining_bytes;
 
   struct {
     grpc_closure closure;
-    gpr_slice *slice;
+    grpc_slice *slice;
     size_t max_size_hint;
     grpc_closure *on_complete;
   } next_action;
@@ -206,14 +212,12 @@ struct grpc_chttp2_transport {
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
   grpc_closure write_action_end_locked;
 
-  grpc_closure read_action_begin;
   grpc_closure read_action_locked;
 
   /** incoming read bytes */
-  gpr_slice_buffer read_buffer;
+  grpc_slice_buffer read_buffer;
 
   /** address to place a newly accepted stream - set and unset by
       grpc_chttp2_parsing_accept_stream; used by init_stream to
@@ -231,7 +235,7 @@ struct grpc_chttp2_transport {
   } channel_callback;
 
   /** data to write now */
-  gpr_slice_buffer outbuf;
+  grpc_slice_buffer outbuf;
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
   int64_t outgoing_window;
@@ -239,17 +243,20 @@ struct grpc_chttp2_transport {
   uint8_t is_client;
 
   /** data to write next write */
-  gpr_slice_buffer qbuf;
+  grpc_slice_buffer qbuf;
 
   /** window available to announce to peer */
   int64_t announce_incoming_window;
   /** how much window would we like to have for incoming_window */
   uint32_t connection_window_target;
+  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+   */
+  uint32_t write_buffer_size;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
   /** have we sent a goaway */
-  uint8_t sent_goaway;
+  grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
   uint8_t dirtied_local_settings;
@@ -308,18 +315,31 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream *incoming_stream;
   grpc_error *(*parser)(grpc_exec_ctx *exec_ctx, void *parser_user_data,
                         grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                        gpr_slice slice, int is_last);
+                        grpc_slice slice, int is_last);
 
   /* goaway data */
   grpc_status_code goaway_error;
   uint32_t goaway_last_stream_index;
-  gpr_slice goaway_text;
+  grpc_slice goaway_text;
 
   grpc_chttp2_write_cb *write_cb_pool;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
   grpc_error *close_transport_on_writes_finished;
+
+  /* a list of closures to run after writes are finished */
+  grpc_closure_list run_after_write;
+
+  /* buffer pool state */
+  /** have we scheduled a benign cleanup? */
+  bool benign_reclaimer_registered;
+  /** have we scheduled a destructive cleanup? */
+  bool destructive_reclaimer_registered;
+  /** benign cleanup closure */
+  grpc_closure benign_reclaimer_locked;
+  /** destructive cleanup closure */
+  grpc_closure destructive_reclaimer_locked;
 };
 
 typedef enum {
@@ -356,7 +376,7 @@ struct grpc_chttp2_stream {
 
   grpc_byte_stream *fetching_send_message;
   uint32_t fetched_send_message_length;
-  gpr_slice fetching_slice;
+  grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
   bool complete_fetch_covered_by_poller;
@@ -386,6 +406,9 @@ struct grpc_chttp2_stream {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  /** Are we buffering writes on this stream? If yes, we won't become writable
+      until there's enough queued up in the flow_controlled_buffer */
+  bool write_buffering;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
@@ -416,7 +439,7 @@ struct grpc_chttp2_stream {
   bool sent_trailing_metadata;
   /** how much window should we announce? */
   uint32_t announce_window;
-  gpr_slice_buffer flow_controlled_buffer;
+  grpc_slice_buffer flow_controlled_buffer;
 
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
@@ -448,7 +471,8 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
 grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
-                                     grpc_chttp2_transport *t, gpr_slice slice);
+                                     grpc_chttp2_transport *t,
+                                     grpc_slice slice);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s);
@@ -474,6 +498,8 @@ void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                  grpc_chttp2_stream **s);
+void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                     grpc_chttp2_stream *s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
@@ -491,7 +517,7 @@ grpc_chttp2_stream *grpc_chttp2_parsing_accept_stream(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      uint32_t goaway_error,
-                                     gpr_slice goaway_text);
+                                     grpc_slice goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t);
@@ -592,8 +618,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                uint32_t stream_id, int64_t val1, int64_t val2);
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_chttp2_stream *stream,
-                             grpc_status_code status, gpr_slice *details);
+                             grpc_chttp2_stream *stream, grpc_error *error);
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t,
                                     grpc_chttp2_stream *s, int close_reads,
@@ -641,7 +666,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     uint32_t frame_size, uint32_t flags);
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
-                                           gpr_slice slice);
+                                           grpc_slice slice);
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error);
@@ -669,5 +694,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s);
+
+void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s, grpc_error *error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

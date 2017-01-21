@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Defines an enum for classifying RPC methods by control flow semantics."""
 
 import enum
@@ -34,7 +33,7 @@ import enum
 
 @enum.unique
 class Service(enum.Enum):
-  """Describes the control flow style of RPC method implementation."""
+    """Describes the control flow style of RPC method implementation."""
 
-  INLINE = 'inline'
-  EVENT = 'event'
+    INLINE = 'inline'
+    EVENT = 'event'

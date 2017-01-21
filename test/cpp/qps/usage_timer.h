@@ -42,6 +42,8 @@ class UsageTimer {
     double wall;
     double user;
     double system;
+    unsigned long long total_cpu_time;
+    unsigned long long idle_cpu_time;
   };
 
   Result Mark() const;

@@ -55,7 +55,7 @@ class ClientAsyncResponseReaderInterface {
 };
 
 template <class R>
-class ClientAsyncResponseReader GRPC_FINAL
+class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   template <class W>
@@ -113,13 +113,12 @@ class ClientAsyncResponseReader GRPC_FINAL
 };
 
 template <class W>
-class ServerAsyncResponseWriter GRPC_FINAL
-    : public ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
@@ -168,7 +167,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   }
 
  private:
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;

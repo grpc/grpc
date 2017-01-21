@@ -28,13 +28,18 @@
   # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
   FROM debian:jessie
-  
+
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../python_deps.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../clang_update.include"/>
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../libuv_install.include"/>
+
+  # Install gcc-4.8 and other relevant items
+  RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+
   # Define the default command.
   CMD ["bash"]

@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\uri_parser_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\uri_parser_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

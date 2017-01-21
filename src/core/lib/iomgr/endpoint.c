@@ -34,12 +34,12 @@
 #include "src/core/lib/iomgr/endpoint.h"
 
 void grpc_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                        gpr_slice_buffer* slices, grpc_closure* cb) {
+                        grpc_slice_buffer* slices, grpc_closure* cb) {
   ep->vtable->read(exec_ctx, ep, slices, cb);
 }
 
 void grpc_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                         gpr_slice_buffer* slices, grpc_closure* cb) {
+                         grpc_slice_buffer* slices, grpc_closure* cb) {
   ep->vtable->write(exec_ctx, ep, slices, cb);
 }
 
@@ -66,6 +66,12 @@ char* grpc_endpoint_get_peer(grpc_endpoint* ep) {
   return ep->vtable->get_peer(ep);
 }
 
+int grpc_endpoint_get_fd(grpc_endpoint* ep) { return ep->vtable->get_fd(ep); }
+
 grpc_workqueue* grpc_endpoint_get_workqueue(grpc_endpoint* ep) {
   return ep->vtable->get_workqueue(ep);
+}
+
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep) {
+  return ep->vtable->get_resource_user(ep);
 }

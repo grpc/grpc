@@ -42,6 +42,8 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/port_platform.h>
@@ -50,6 +52,8 @@
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -60,8 +64,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>

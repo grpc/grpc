@@ -39,11 +39,11 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/profiling/timers.h"
@@ -102,31 +102,45 @@ void CoreCodegen::grpc_byte_buffer_reader_destroy(
 }
 
 int CoreCodegen::grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                              gpr_slice* slice) {
+                                              grpc_slice* slice) {
   return ::grpc_byte_buffer_reader_next(reader, slice);
 }
 
-grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(gpr_slice* slice,
+grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                            size_t nslices) {
   return ::grpc_raw_byte_buffer_create(slice, nslices);
 }
 
-gpr_slice CoreCodegen::gpr_slice_malloc(size_t length) {
-  return ::gpr_slice_malloc(length);
+grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
+  return ::grpc_slice_malloc(length);
 }
 
-void CoreCodegen::gpr_slice_unref(gpr_slice slice) { ::gpr_slice_unref(slice); }
-
-gpr_slice CoreCodegen::gpr_slice_split_tail(gpr_slice* s, size_t split) {
-  return ::gpr_slice_split_tail(s, split);
+void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
+  ::grpc_slice_unref(slice);
 }
 
-void CoreCodegen::gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) {
-  ::gpr_slice_buffer_add(sb, slice);
+grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
+  return ::grpc_slice_split_tail(s, split);
 }
 
-void CoreCodegen::gpr_slice_buffer_pop(gpr_slice_buffer* sb) {
-  ::gpr_slice_buffer_pop(sb);
+grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_static_buffer(buffer, length);
+}
+
+grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
+                                         length);
+}
+
+void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
+                                        grpc_slice slice) {
+  ::grpc_slice_buffer_add(sb, slice);
+}
+
+void CoreCodegen::grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
+  ::grpc_slice_buffer_pop(sb);
 }
 
 void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
@@ -149,8 +163,10 @@ gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
   return ::gpr_time_0(type);
 }
 
-void CoreCodegen::assert_fail(const char* failed_assertion) {
-  gpr_log(GPR_ERROR, "assertion failed: %s", failed_assertion);
+void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
+                              int line) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "assertion failed: %s",
+          failed_assertion);
   abort();
 }
 

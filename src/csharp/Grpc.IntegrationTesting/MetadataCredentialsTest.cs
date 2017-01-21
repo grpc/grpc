@@ -103,6 +103,34 @@ namespace Grpc.IntegrationTesting
             client.UnaryCall(new SimpleRequest { }, new CallOptions(credentials: callCredentials));
         }
 
+        [Test]
+        public void MetadataCredentials_InterceptorLeavesMetadataEmpty()
+        {
+            var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
+                CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => TaskUtils.CompletedTask)));
+            channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
+            client = new TestService.TestServiceClient(channel);
+
+            var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
+            // StatusCode.Unknown as the server-side handler throws an exception after not receiving the authorization header.
+            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
+        }
+
+        [Test]
+        public void MetadataCredentials_InterceptorThrows()
+        {
+            var callCredentials = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) =>
+            {
+                throw new Exception("Auth interceptor throws");
+            }));
+            var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(), callCredentials);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
+            client = new TestService.TestServiceClient(channel);
+
+            var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+        }
+
         private class FakeTestService : TestService.TestServiceBase
         {
             public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)

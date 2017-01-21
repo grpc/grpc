@@ -12,6 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
+  core_version: 2.0.0-dev
   g_stands_for: good
   version: 1.1.0-dev
 filegroups:
@@ -64,8 +65,6 @@ filegroups:
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
-  - include/grpc/support/slice.h
-  - include/grpc/support/slice_buffer.h
   - include/grpc/support/string_util.h
   - include/grpc/support/subprocess.h
   - include/grpc/support/sync.h
@@ -86,7 +85,6 @@ filegroups:
   - src/core/lib/support/env.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
-  - src/core/lib/support/percent_encoding.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
@@ -116,9 +114,6 @@ filegroups:
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/mpscq.c
   - src/core/lib/support/murmur_hash.c
-  - src/core/lib/support/percent_encoding.c
-  - src/core/lib/support/slice.c
-  - src/core/lib/support/slice_buffer.c
   - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
@@ -149,6 +144,7 @@ filegroups:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/slice.h
@@ -164,6 +160,8 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -174,6 +172,8 @@ filegroups:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
+  - src/core/lib/channel/handshaker_factory.h
+  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/channel/message_size_filter.h
@@ -188,8 +188,8 @@ filegroups:
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll_linux.h
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -204,32 +204,46 @@ filegroups:
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_uv.h
   - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_uv.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/workqueue.h
+  - src/core/lib/iomgr/workqueue_uv.h
   - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice_hash_table.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -241,12 +255,17 @@ filegroups:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/lib/transport/mdstr_hash_table.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/pid_controller.h
+  - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -258,6 +277,8 @@ filegroups:
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
+  - src/core/lib/channel/handshaker_factory.c
+  - src/core/lib/channel/handshaker_registry.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/channel/message_size_filter.c
@@ -271,10 +292,10 @@ filegroups:
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
+  - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll_linux.c
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -282,28 +303,40 @@ filegroups:
   - src/core/lib/iomgr/iocp_windows.c
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
+  - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/network_status_tracker.c
   - src/core/lib/iomgr/polling_entity.c
+  - src/core/lib/iomgr/pollset_set_uv.c
   - src/core/lib/iomgr/pollset_set_windows.c
+  - src/core/lib/iomgr/pollset_uv.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
+  - src/core/lib/iomgr/resolve_address_uv.c
   - src/core/lib/iomgr/resolve_address_windows.c
+  - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
+  - src/core/lib/iomgr/socket_mutator.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
   - src/core/lib/iomgr/socket_utils_posix.c
+  - src/core/lib/iomgr/socket_utils_uv.c
+  - src/core/lib/iomgr/socket_utils_windows.c
   - src/core/lib/iomgr/socket_windows.c
   - src/core/lib/iomgr/tcp_client_posix.c
+  - src/core/lib/iomgr/tcp_client_uv.c
   - src/core/lib/iomgr/tcp_client_windows.c
   - src/core/lib/iomgr/tcp_posix.c
   - src/core/lib/iomgr/tcp_server_posix.c
+  - src/core/lib/iomgr/tcp_server_uv.c
   - src/core/lib/iomgr/tcp_server_windows.c
+  - src/core/lib/iomgr/tcp_uv.c
   - src/core/lib/iomgr/tcp_windows.c
   - src/core/lib/iomgr/time_averaged_stats.c
-  - src/core/lib/iomgr/timer.c
+  - src/core/lib/iomgr/timer_generic.c
   - src/core/lib/iomgr/timer_heap.c
+  - src/core/lib/iomgr/timer_uv.c
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
   - src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -312,11 +345,18 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
+  - src/core/lib/iomgr/workqueue_uv.c
   - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/slice/percent_encoding.c
+  - src/core/lib/slice/slice.c
+  - src/core/lib/slice/slice_buffer.c
+  - src/core/lib/slice/slice_hash_table.c
+  - src/core/lib/slice/slice_intern.c
+  - src/core/lib/slice/slice_string_helpers.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -337,10 +377,13 @@ filegroups:
   - src/core/lib/surface/version.c
   - src/core/lib/transport/byte_stream.c
   - src/core/lib/transport/connectivity_state.c
-  - src/core/lib/transport/mdstr_hash_table.c
+  - src/core/lib/transport/error_utils.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
+  - src/core/lib/transport/pid_controller.c
+  - src/core/lib/transport/service_config.c
   - src/core/lib/transport/static_metadata.c
+  - src/core/lib/transport/status_conversion.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
@@ -348,47 +391,43 @@ filegroups:
   - gpr
   uses:
   - grpc_codegen
-- name: grpc_client_config
+- name: grpc_client_channel
   headers:
-  - src/core/ext/client_config/client_channel.h
-  - src/core/ext/client_config/client_channel_factory.h
-  - src/core/ext/client_config/connector.h
-  - src/core/ext/client_config/http_connect_handshaker.h
-  - src/core/ext/client_config/initial_connect_string.h
-  - src/core/ext/client_config/lb_policy.h
-  - src/core/ext/client_config/lb_policy_factory.h
-  - src/core/ext/client_config/lb_policy_registry.h
-  - src/core/ext/client_config/method_config.h
-  - src/core/ext/client_config/parse_address.h
-  - src/core/ext/client_config/resolver.h
-  - src/core/ext/client_config/resolver_factory.h
-  - src/core/ext/client_config/resolver_registry.h
-  - src/core/ext/client_config/resolver_result.h
-  - src/core/ext/client_config/subchannel.h
-  - src/core/ext/client_config/subchannel_index.h
-  - src/core/ext/client_config/uri_parser.h
+  - src/core/ext/client_channel/client_channel.h
+  - src/core/ext/client_channel/client_channel_factory.h
+  - src/core/ext/client_channel/connector.h
+  - src/core/ext/client_channel/http_connect_handshaker.h
+  - src/core/ext/client_channel/initial_connect_string.h
+  - src/core/ext/client_channel/lb_policy.h
+  - src/core/ext/client_channel/lb_policy_factory.h
+  - src/core/ext/client_channel/lb_policy_registry.h
+  - src/core/ext/client_channel/parse_address.h
+  - src/core/ext/client_channel/resolver.h
+  - src/core/ext/client_channel/resolver_factory.h
+  - src/core/ext/client_channel/resolver_registry.h
+  - src/core/ext/client_channel/subchannel.h
+  - src/core/ext/client_channel/subchannel_index.h
+  - src/core/ext/client_channel/uri_parser.h
   src:
-  - src/core/ext/client_config/channel_connectivity.c
-  - src/core/ext/client_config/client_channel.c
-  - src/core/ext/client_config/client_channel_factory.c
-  - src/core/ext/client_config/client_config_plugin.c
-  - src/core/ext/client_config/connector.c
-  - src/core/ext/client_config/default_initial_connect_string.c
-  - src/core/ext/client_config/http_connect_handshaker.c
-  - src/core/ext/client_config/initial_connect_string.c
-  - src/core/ext/client_config/lb_policy.c
-  - src/core/ext/client_config/lb_policy_factory.c
-  - src/core/ext/client_config/lb_policy_registry.c
-  - src/core/ext/client_config/method_config.c
-  - src/core/ext/client_config/parse_address.c
-  - src/core/ext/client_config/resolver.c
-  - src/core/ext/client_config/resolver_factory.c
-  - src/core/ext/client_config/resolver_registry.c
-  - src/core/ext/client_config/resolver_result.c
-  - src/core/ext/client_config/subchannel.c
-  - src/core/ext/client_config/subchannel_index.c
-  - src/core/ext/client_config/uri_parser.c
-  plugin: grpc_client_config
+  - src/core/ext/client_channel/channel_connectivity.c
+  - src/core/ext/client_channel/client_channel.c
+  - src/core/ext/client_channel/client_channel_factory.c
+  - src/core/ext/client_channel/client_channel_plugin.c
+  - src/core/ext/client_channel/connector.c
+  - src/core/ext/client_channel/default_initial_connect_string.c
+  - src/core/ext/client_channel/http_connect_handshaker.c
+  - src/core/ext/client_channel/initial_connect_string.c
+  - src/core/ext/client_channel/lb_policy.c
+  - src/core/ext/client_channel/lb_policy_factory.c
+  - src/core/ext/client_channel/lb_policy_registry.c
+  - src/core/ext/client_channel/parse_address.c
+  - src/core/ext/client_channel/resolver.c
+  - src/core/ext/client_channel/resolver_factory.c
+  - src/core/ext/client_channel/resolver_registry.c
+  - src/core/ext/client_channel/subchannel.c
+  - src/core/ext/client_channel/subchannel_index.c
+  - src/core/ext/client_channel/uri_parser.c
+  plugin: grpc_client_channel
   uses:
   - grpc_base
 - name: grpc_codegen
@@ -396,6 +435,7 @@ filegroups:
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
@@ -413,7 +453,7 @@ filegroups:
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
   - nanopb
 - name: grpc_lb_policy_pick_first
   src:
@@ -421,14 +461,14 @@ filegroups:
   plugin: grpc_lb_policy_pick_first
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
   plugin: grpc_lb_policy_round_robin
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_load_reporting
   headers:
   - src/core/ext/load_reporting/load_reporting.h
@@ -445,14 +485,14 @@ filegroups:
   plugin: grpc_resolver_dns_native
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_resolver_sockaddr
   src:
   - src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -470,9 +510,9 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/handshake.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/b64.h
   - src/core/lib/security/util/json_util.h
@@ -483,8 +523,7 @@ filegroups:
   - src/core/lib/security/credentials/credentials.c
   - src/core/lib/security/credentials/credentials_metadata.c
   - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_windows.c
+  - src/core/lib/security/credentials/google_default/credentials_generic.c
   - src/core/lib/security/credentials/google_default/google_default_credentials.c
   - src/core/lib/security/credentials/iam/iam_credentials.c
   - src/core/lib/security/credentials/jwt/json_token.c
@@ -494,9 +533,9 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.c
   - src/core/lib/security/credentials/ssl/ssl_credentials.c
   - src/core/lib/security/transport/client_auth_filter.c
-  - src/core/lib/security/transport/handshake.c
   - src/core/lib/security/transport/secure_endpoint.c
   - src/core/lib/security/transport/security_connector.c
+  - src/core/lib/security/transport/security_handshaker.c
   - src/core/lib/security/transport/server_auth_filter.c
   - src/core/lib/security/transport/tsi_error.c
   - src/core/lib/security/util/b64.c
@@ -536,6 +575,7 @@ filegroups:
   - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
+  - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   deps:
@@ -556,11 +596,9 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
-  - src/core/ext/transport/chttp2/transport/http2_errors.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/status_conversion.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
@@ -580,7 +618,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/huffsyms.c
   - src/core/ext/transport/chttp2/transport/incoming_metadata.c
   - src/core/ext/transport/chttp2/transport/parsing.c
-  - src/core/ext/transport/chttp2/transport/status_conversion.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
   - src/core/ext/transport/chttp2/transport/varint.c
@@ -596,22 +633,40 @@ filegroups:
   - src/core/ext/transport/chttp2/alpn/alpn.c
   deps:
   - gpr
+- name: grpc_transport_chttp2_client_connector
+  headers:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.h
+  src:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
   - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   uses:
+  - grpc_transport_chttp2_client_connector
   - grpc_transport_chttp2
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_transport_chttp2_client_secure
   src:
   - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   uses:
   - grpc_transport_chttp2
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
   - grpc_secure
+  - grpc_transport_chttp2_client_connector
+- name: grpc_transport_chttp2_server
+  headers:
+  - src/core/ext/transport/chttp2/server/chttp2_server.h
+  src:
+  - src/core/ext/transport/chttp2/server/chttp2_server.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -619,6 +674,7 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
+  - grpc_transport_chttp2_server
 - name: grpc_transport_chttp2_server_secure
   src:
   - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
@@ -626,13 +682,14 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+  - grpc_transport_chttp2_server
 - name: grpc_transport_cronet_client_secure
   public_headers:
   - include/grpc/grpc_cronet.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  - third_party/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
@@ -688,12 +745,7 @@ filegroups:
   - include/grpc++/impl/server_builder_plugin.h
   - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
-  - include/grpc++/impl/sync.h
-  - include/grpc++/impl/sync_cxx11.h
-  - include/grpc++/impl/sync_no_cxx11.h
-  - include/grpc++/impl/thd.h
-  - include/grpc++/impl/thd_cxx11.h
-  - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/resource_quota.h
   - include/grpc++/security/auth_context.h
   - include/grpc++/security/auth_metadata_processor.h
   - include/grpc++/security/credentials.h
@@ -719,6 +771,7 @@ filegroups:
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
@@ -731,7 +784,9 @@ filegroups:
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
@@ -740,6 +795,7 @@ filegroups:
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
   - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
@@ -771,14 +827,12 @@ filegroups:
   - include/grpc++/impl/codegen/server_context.h
   - include/grpc++/impl/codegen/server_interface.h
   - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/slice.h
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
   - include/grpc++/impl/codegen/status_helper.h
   - include/grpc++/impl/codegen/string_ref.h
   - include/grpc++/impl/codegen/stub_options.h
-  - include/grpc++/impl/codegen/sync.h
-  - include/grpc++/impl/codegen/sync_cxx11.h
-  - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
   uses:
@@ -802,14 +856,8 @@ filegroups:
   - include/grpc++/impl/codegen/config_protobuf.h
 - name: grpc++_reflection_proto
   language: c++
-  public_headers:
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   src:
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
-  uses:
-  - grpc++_codegen_proto
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: thrift_util
   language: c++
   public_headers:
@@ -1007,6 +1055,41 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_cronet
+  build: all
+  language: c++
+  src:
+  - src/cpp/client/cronet_credentials.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/insecure_create_auth_context.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  deps:
+  - gpr
+  - grpc_cronet
+  baselib: true
+  dll: true
+  filegroups:
+  - grpc++_base
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  - grpc_transport_chttp2_client_insecure
+  - grpc_transport_chttp2_server_insecure
+  - census
+  platforms:
+  - linux
+  secure: true
+- name: grpc++_proto_reflection_desc_db
+  build: private
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1021,13 +1104,8 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
-- name: grpc++_reflection_codegen
-  build: private
-  language: c++
-  src:
-  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test
-  build: test
+  build: private
   language: c++
   headers:
   - include/grpc++/test/server_context_test_spouse.h
@@ -1098,18 +1176,19 @@ libs:
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
-  - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1145,6 +1224,22 @@ libs:
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
   - protoc
+- name: http2_client_main
+  build: private
+  language: c++
+  headers:
+  - test/cpp/interop/http2_client.h
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/http2_client.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
 - name: interop_client_helper
   build: private
   language: c++
@@ -1187,6 +1282,7 @@ libs:
   src:
   - test/cpp/interop/server_helper.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -1223,7 +1319,6 @@ libs:
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
-  - test/cpp/qps/limit_cores.h
   - test/cpp/qps/parse_json.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
@@ -1240,7 +1335,6 @@ libs:
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
-  - test/cpp/qps/limit_cores.cc
   - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
@@ -1337,6 +1431,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: bin_decoder_test
   build: test
   language: c
@@ -1398,16 +1494,6 @@ targets:
   language: c
   src:
   - test/core/transport/chttp2/hpack_encoder_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_status_conversion_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/status_conversion_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1478,6 +1564,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: connection_refused_test
   cpu_cost: 0.1
   build: test
@@ -1494,17 +1582,19 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/dns_resolver_connectivity_test.c
+  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: dns_resolver_test
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/dns_resolver_test.c
+  - test/core/client_channel/resolvers/dns_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1521,6 +1611,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1535,6 +1627,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -1545,6 +1639,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
 - name: fd_conservation_posix_test
@@ -1557,6 +1653,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1571,6 +1669,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1658,6 +1758,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1732,30 +1834,6 @@ targets:
   language: c
   src:
   - test/core/support/mpscq_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_percent_encoding_test
-  build: test
-  language: c
-  src:
-  - test/core/support/percent_encoding_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_buffer_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_buffer_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -1878,6 +1956,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_create_jwt
   build: tool
   language: c
@@ -1968,6 +2048,32 @@ targets:
   deps:
   - grpc
   - gpr
+- name: handshake_client
+  build: test
+  language: c
+  src:
+  - test/core/handshake/client_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  secure: true
+- name: handshake_server
+  build: test
+  language: c
+  src:
+  - test/core/handshake/server_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  secure: true
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
@@ -2023,7 +2129,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/request_corpus
   maxlen: 2048
 - name: http_response_fuzzer_test
   build: fuzzer
@@ -2036,7 +2142,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/response_corpus
   maxlen: 2048
 - name: httpcli_format_request_test
   build: test
@@ -2198,7 +2304,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/lb_policies_test.c
+  - test/core/client_channel/lb_policies_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2219,6 +2325,43 @@ targets:
   language: c
   src:
   - test/core/network_benchmarks/low_level_ping_pong.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: memory_profile_client
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_server
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory_usage/server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_profile_test
+  cpu_cost: 1.5
+  build: test
+  language: c
+  src:
+  - test/core/memory_usage/memory_usage_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2308,33 +2451,56 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_decode_fuzzer.c
+  - test/core/slice/percent_decode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_decode_corpus
+  - test/core/slice/percent_decode_corpus
   maxlen: 32
 - name: percent_encode_fuzzer
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_encode_fuzzer.c
+  - test/core/slice/percent_encode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_encode_corpus
+  - test/core/slice/percent_encode_corpus
   maxlen: 32
+- name: percent_encoding_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/percent_encoding_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: resolve_address_test
   build: test
   language: c
   src:
   - test/core/iomgr/resolve_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+- name: resource_quota_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resource_quota_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2360,6 +2526,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sequential_connectivity_test
   build: test
   language: c
@@ -2370,6 +2538,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: server_chttp2_test
   build: test
   language: c
@@ -2409,9 +2579,41 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/set_initial_connect_string_test.c
+  - test/core/client_channel/set_initial_connect_string_test.c
   deps:
   - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+- name: slice_buffer_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_buffer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: slice_string_helpers_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_string_helpers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: slice_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_test.c
+  deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
@@ -2420,7 +2622,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  - test/core/client_channel/resolvers/sockaddr_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2446,10 +2648,35 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
   - posix
+- name: ssl_server_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/security/ssl_server_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/security/corpus/ssl_server_corpus
+  maxlen: 2048
+- name: status_conversion_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
@@ -2461,6 +2688,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2476,6 +2705,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2490,6 +2721,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2524,6 +2757,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: timer_list_test
   build: test
   language: c
@@ -2534,6 +2769,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: transport_connectivity_state_test
   build: test
   language: c
@@ -2549,6 +2786,16 @@ targets:
   language: c
   src:
   - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_pid_controller_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/pid_controller_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2578,6 +2825,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2586,20 +2835,20 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/client_config/uri_fuzzer_test.c
+  - test/core/client_channel/uri_fuzzer_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/client_config/uri_corpus
+  - test/core/client_channel/uri_corpus
   maxlen: 128
 - name: uri_parser_test
   build: test
   language: c
   src:
-  - test/core/client_config/uri_parser_test.c
+  - test/core/client_channel/uri_parser_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2615,6 +2864,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2658,12 +2909,35 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: bm_fullstack
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: channel_arguments_test
   gtest: true
   build: test
   language: c++
   src:
   - test/cpp/common/channel_arguments_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+- name: channel_filter_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/channel_filter_test.cc
   deps:
   - grpc++
   - grpc
@@ -2857,7 +3131,7 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
   - grpc
   - gpr
@@ -2934,16 +3208,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/string_ref_helper.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/grpc_tool_test.cc
-  - test/cpp/util/string_ref_helper.cc
   deps:
   - grpc_cli_libs
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -2951,7 +3224,6 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_proto
-  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -2978,6 +3250,22 @@ targets:
   - grpc++
   - grpc++_test_util
   - grpc_test_util
+- name: http2_client
+  build: test
+  run: false
+  language: c++
+  src: []
+  deps:
+  - http2_client_main
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -3041,6 +3329,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux
@@ -3086,16 +3375,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: noop-benchmark
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/noop-benchmark.cc
+  deps:
+  - benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/end2end/proto_server_reflection_test.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
@@ -3209,6 +3503,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: round_robin_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/round_robin_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -3345,6 +3652,7 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/create_test_channel.h
   - test/cpp/util/metrics_server.h
   src:
   - src/proto/grpc/testing/empty.proto
@@ -3354,6 +3662,7 @@ targets:
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
@@ -3361,6 +3670,16 @@ targets:
   - grpc++
   - grpc
   - gpr_test_util
+  - gpr
+  - grpc++_test_config
+- name: thread_manager_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/thread_manager/thread_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
   - gpr
   - grpc++_test_config
 - name: thread_stress_test
@@ -3449,36 +3768,6 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  easan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=address
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
-  edbg:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-  etsan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=thread
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
@@ -3549,6 +3838,8 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
+  benchmark:
+    CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
       -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
@@ -3572,9 +3863,10 @@ node_modules:
   - src/node/ext/call_credentials.h
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
-  - src/node/ext/completion_queue_async_worker.h
+  - src/node/ext/completion_queue.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
+  - src/node/ext/slice.h
   - src/node/ext/timeval.h
   js:
   - src/node/index.js
@@ -3591,10 +3883,12 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/completion_queue_threadpool.cc
+  - src/node/ext/completion_queue_uv.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
+  - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/

@@ -47,7 +47,7 @@
 namespace grpc {
 
 /// A sequence of bytes.
-class ByteBuffer GRPC_FINAL {
+class ByteBuffer final {
  public:
   /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}

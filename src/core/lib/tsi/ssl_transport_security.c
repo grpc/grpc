@@ -39,7 +39,9 @@
 #include <string.h>
 
 /* TODO(jboeuf): refactor inet_ntop into a portability header. */
-#ifdef GPR_WINSOCK_SOCKET
+/* Note: for whomever reads this and tries to refactor this, this
+   can't be in grpc, it has to be in gpr. */
+#ifdef GPR_WINDOWS
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>

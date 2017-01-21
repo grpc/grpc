@@ -31,11 +31,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
-#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/tcp_client_posix.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -47,9 +47,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -63,15 +65,18 @@ typedef struct {
   grpc_fd *fd;
   gpr_timespec deadline;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
   char *addr_str;
   grpc_endpoint **ep;
   grpc_closure *closure;
+  grpc_channel_args *channel_args;
 } async_connect;
 
-static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
+static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd,
+                                  const grpc_channel_args *channel_args) {
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -86,6 +91,16 @@ static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
+  if (channel_args) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
+        GPR_ASSERT(channel_args->args[i].type == GRPC_ARG_POINTER);
+        grpc_socket_mutator *mutator = channel_args->args[i].value.pointer.p;
+        err = grpc_set_socket_with_mutator(fd, mutator);
+        if (err != GRPC_ERROR_NONE) goto error;
+      }
+    }
+  }
   goto done;
 
 error:
@@ -103,7 +118,6 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
-    grpc_error_free_string(str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
@@ -114,8 +128,37 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
+}
+
+grpc_endpoint *grpc_tcp_client_create_from_fd(
+    grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
+    const char *addr_str) {
+  size_t tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 ==
+          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
+        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
+                                        8 * 1024 * 1024};
+        tcp_read_chunk_size = (size_t)grpc_channel_arg_get_integer(
+            &channel_args->args[i], options);
+      } else if (0 ==
+                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
+
+  grpc_endpoint *ep =
+      grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+  return ep;
 }
 
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
@@ -134,7 +177,6 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
-    grpc_error_free_string(str);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -165,7 +207,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-      *ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
+      *ep = grpc_tcp_client_create_from_fd(exec_ctx, fd, ac->channel_args,
+                                           ac->addr_str);
       fd = NULL;
       break;
     case ENOBUFS:
@@ -207,30 +250,35 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                               "Failed to connect to remote host");
+    char *error_descr;
+    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s",
+                 grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, error_descr);
+    gpr_free(error_descr);
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
   }
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
-  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+  grpc_closure_sched(exec_ctx, closure, error);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
                                     grpc_pollset_set *interested_parties,
-                                    const struct sockaddr *addr,
-                                    size_t addr_len, gpr_timespec deadline) {
+                                    const grpc_channel_args *channel_args,
+                                    const grpc_resolved_address *addr,
+                                    gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
   async_connect *ac;
-  struct sockaddr_in6 addr6_v4mapped;
-  struct sockaddr_in addr4_copy;
+  grpc_resolved_address addr6_v4mapped;
+  grpc_resolved_address addr4_copy;
   grpc_fd *fdobj;
   char *name;
   char *addr_str;
@@ -240,29 +288,28 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = (const struct sockaddr *)&addr6_v4mapped;
-    addr_len = sizeof(addr6_v4mapped);
+    addr = &addr6_v4mapped;
   }
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+    grpc_closure_sched(exec_ctx, closure, error);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
     /* If we got an AF_INET socket, map the address back to IPv4. */
     GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
-    addr = (struct sockaddr *)&addr4_copy;
-    addr_len = sizeof(addr4_copy);
+    addr = &addr4_copy;
   }
-  if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+  if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
+    grpc_closure_sched(exec_ctx, closure, error);
     return;
   }
 
   do {
-    GPR_ASSERT(addr_len < ~(socklen_t)0);
-    err = connect(fd, addr, (socklen_t)addr_len);
+    GPR_ASSERT(addr->len < ~(socklen_t)0);
+    err =
+        connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
@@ -271,15 +318,15 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+    *ep =
+        grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
 
@@ -294,8 +341,9 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  ac->write_closure.cb = on_writable;
-  ac->write_closure.cb_arg = ac;
+  grpc_closure_init(&ac->write_closure, on_writable, ac,
+                    grpc_schedule_on_exec_ctx);
+  ac->channel_args = grpc_channel_args_copy(channel_args);
 
   if (grpc_tcp_trace) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
@@ -303,9 +351,10 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   gpr_mu_lock(&ac->mu);
+  grpc_closure_init(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
@@ -317,16 +366,18 @@ done:
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const grpc_resolved_address *addr,
+    gpr_timespec deadline) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
+                             const grpc_channel_args *channel_args,
+                             const grpc_resolved_address *addr,
                              gpr_timespec deadline) {
-  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
-                               addr_len, deadline);
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
+                               channel_args, addr, deadline);
 }
 
 #endif

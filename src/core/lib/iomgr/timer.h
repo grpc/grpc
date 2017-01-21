@@ -34,29 +34,30 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include "src/core/lib/iomgr/timer_uv.h"
+#else
+#include "src/core/lib/iomgr/timer_generic.h"
+#endif /* GRPC_UV */
+
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-typedef struct grpc_timer {
-  gpr_timespec deadline;
-  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
-  int triggered;
-  struct grpc_timer *next;
-  struct grpc_timer *prev;
-  grpc_closure closure;
-} grpc_timer;
+typedef struct grpc_timer grpc_timer;
 
-/* Initialize *timer. When expired or canceled, timer_cb will be called with
-   *timer_cb_arg and error set to indicate if it expired (GRPC_ERROR_NONE) or
-   was canceled (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called
-   exactly once, and application code should check the error to determine
-   how it was invoked. The application callback is also responsible for
-   maintaining information about when to free up any user-level state. */
+/* Initialize *timer. When expired or canceled, closure will be called with
+   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
+   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+   application code should check the error to determine how it was invoked. The
+   application callback is also responsible for maintaining information about
+   when to free up any user-level state. */
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now);
+                     gpr_timespec deadline, grpc_closure *closure,
+                     gpr_timespec now);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will

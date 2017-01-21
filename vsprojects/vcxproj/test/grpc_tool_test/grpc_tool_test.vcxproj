@@ -182,19 +182,18 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
@@ -202,6 +201,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
@@ -210,9 +210,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.pb.cc">
@@ -233,15 +230,19 @@
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\grpc_tool_test.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.cc">
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_cli_libs\grpc_cli_libs.vcxproj">
       <Project>{86E35862-43E8-F59E-F906-AFE0348AD3D2}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_proto_reflection_desc_db\grpc++_proto_reflection_desc_db.vcxproj">
+      <Project>{7B95AF96-915A-7132-AE45-9FA37769FACE}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
       <Project>{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
+      <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>

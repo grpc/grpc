@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
@@ -51,29 +52,33 @@ static void test_algorithm_mesh(void) {
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     char *name;
     grpc_compression_algorithm parsed;
-    grpc_mdstr *mdstr;
-    grpc_mdelem *mdelem;
+    grpc_slice mdstr;
+    grpc_mdelem mdelem;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
-    GPR_ASSERT(grpc_compression_algorithm_parse(name, strlen(name), &parsed));
+    GPR_ASSERT(grpc_compression_algorithm_parse(
+        grpc_slice_from_static_string(name), &parsed));
     GPR_ASSERT((int)parsed == i);
-    mdstr = grpc_mdstr_from_string(name);
-    GPR_ASSERT(mdstr == grpc_compression_algorithm_mdstr(parsed));
-    GPR_ASSERT(parsed == grpc_compression_algorithm_from_mdstr(mdstr));
+    mdstr = grpc_slice_from_copied_string(name);
+    GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
+    GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
     mdelem = grpc_compression_encoding_mdelem(parsed);
-    GPR_ASSERT(mdelem->value == mdstr);
-    GPR_ASSERT(mdelem->key == GRPC_MDSTR_GRPC_ENCODING);
-    GRPC_MDSTR_UNREF(mdstr);
-    GRPC_MDELEM_UNREF(mdelem);
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    grpc_slice_unref_internal(&exec_ctx, mdstr);
+    GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   /* test failure */
-  GPR_ASSERT(NULL ==
-             grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT));
+  GPR_ASSERT(GRPC_MDISNULL(
+      grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT)));
 }
 
 static void test_algorithm_failure(void) {
-  grpc_mdstr *mdstr;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice mdstr;
 
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
 
@@ -81,14 +86,17 @@ static void test_algorithm_failure(void) {
                                              NULL) == 0);
   GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT + 1,
                                              NULL) == 0);
-  mdstr = grpc_mdstr_from_string("this-is-an-invalid-algorithm");
-  GPR_ASSERT(grpc_compression_algorithm_from_mdstr(mdstr) ==
+  mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
+  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT) ==
-             NULL);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT +
-                                              1) == NULL);
-  GRPC_MDSTR_UNREF(mdstr);
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
+      grpc_empty_slice()));
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
+      grpc_empty_slice()));
+  grpc_slice_unref_internal(&exec_ctx, mdstr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

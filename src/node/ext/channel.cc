@@ -41,6 +41,7 @@
 #include "grpc/grpc_security.h"
 #include "call.h"
 #include "channel.h"
+#include "completion_queue.h"
 #include "completion_queue_async_worker.h"
 #include "channel_credentials.h"
 #include "timeval.h"
@@ -140,6 +141,7 @@ void DeallocateChannelArgs(grpc_channel_args *channel_args) {
 Channel::Channel(grpc_channel *channel) : wrapped_channel(channel) {}
 
 Channel::~Channel() {
+  gpr_log(GPR_DEBUG, "Destroying channel");
   if (wrapped_channel != NULL) {
     grpc_channel_destroy(wrapped_channel);
   }
@@ -206,8 +208,8 @@ NAN_METHOD(Channel::New) {
   } else {
     const int argc = 3;
     Local<Value> argv[argc] = {info[0], info[1], info[2]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
+    MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+        constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;
@@ -276,11 +278,10 @@ NAN_METHOD(Channel::WatchConnectivityState) {
   unique_ptr<OpVec> ops(new OpVec());
   grpc_channel_watch_connectivity_state(
       channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
-      CompletionQueueAsyncWorker::GetQueue(),
+      GetCompletionQueue(),
       new struct tag(callback,
-                     ops.release(),
-                     shared_ptr<Resources>(nullptr)));
-  CompletionQueueAsyncWorker::Next();
+                     ops.release(), NULL));
+  CompletionQueueNext();
 }
 
 }  // namespace node

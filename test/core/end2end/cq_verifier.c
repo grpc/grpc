@@ -92,8 +92,8 @@ static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
                         const char *value) {
   size_t i;
   for (i = 0; i < count; i++) {
-    if (0 == strcmp(key, md[i].key) && strlen(value) == md[i].value_length &&
-        0 == memcmp(md[i].value, value, md[i].value_length)) {
+    if (0 == grpc_slice_str_cmp(md[i].key, key) &&
+        0 == grpc_slice_str_cmp(md[i].value, value)) {
       return 1;
     }
   }
@@ -105,44 +105,61 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
   return has_metadata(array->metadata, array->count, key, value);
 }
 
-static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
+static int has_metadata_slices(const grpc_metadata *md, size_t count,
+                               grpc_slice key, grpc_slice value) {
+  size_t i;
+  for (i = 0; i < count; i++) {
+    if (grpc_slice_eq(md[i].key, key) && grpc_slice_eq(md[i].value, value)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int contains_metadata_slices(grpc_metadata_array *array, grpc_slice key,
+                             grpc_slice value) {
+  return has_metadata_slices(array->metadata, array->count, key, value);
+}
+
+static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
   uint8_t *cursor;
-  gpr_slice out;
+  grpc_slice out;
 
   for (i = 0; i < nslices; i++) {
-    len += GPR_SLICE_LENGTH(slices[i]);
+    len += GRPC_SLICE_LENGTH(slices[i]);
   }
 
-  out = gpr_slice_malloc(len);
-  cursor = GPR_SLICE_START_PTR(out);
+  out = grpc_slice_malloc(len);
+  cursor = GRPC_SLICE_START_PTR(out);
 
   for (i = 0; i < nslices; i++) {
-    memcpy(cursor, GPR_SLICE_START_PTR(slices[i]), GPR_SLICE_LENGTH(slices[i]));
-    cursor += GPR_SLICE_LENGTH(slices[i]);
+    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]),
+           GRPC_SLICE_LENGTH(slices[i]));
+    cursor += GRPC_SLICE_LENGTH(slices[i]);
   }
 
   return out;
 }
 
-int raw_byte_buffer_eq_slice(grpc_byte_buffer *rbb, gpr_slice b) {
-  gpr_slice a;
+int raw_byte_buffer_eq_slice(grpc_byte_buffer *rbb, grpc_slice b) {
+  grpc_slice a;
   int ok;
 
   if (!rbb) return 0;
 
   a = merge_slices(rbb->data.raw.slice_buffer.slices,
                    rbb->data.raw.slice_buffer.count);
-  ok = GPR_SLICE_LENGTH(a) == GPR_SLICE_LENGTH(b) &&
-       0 == memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
-                   GPR_SLICE_LENGTH(a));
-  gpr_slice_unref(a);
-  gpr_slice_unref(b);
+  ok = GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
+       0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                   GRPC_SLICE_LENGTH(a));
+  grpc_slice_unref(a);
+  grpc_slice_unref(b);
   return ok;
 }
 
-int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
+int byte_buffer_eq_slice(grpc_byte_buffer *bb, grpc_slice b) {
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer *rbb;
   int res;
@@ -165,7 +182,7 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
              "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
+  res = raw_byte_buffer_eq_slice(rbb, grpc_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);
   grpc_byte_buffer_destroy(rbb);
 

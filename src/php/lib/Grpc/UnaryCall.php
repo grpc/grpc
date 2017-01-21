@@ -35,8 +35,8 @@
 namespace Grpc;
 
 /**
- * Represents an active call that sends a single message and then gets a single
- * response.
+ * Represents an active call that sends a single message and then gets a
+ * single response.
  */
 class UnaryCall extends AbstractCall
 {
@@ -45,10 +45,11 @@ class UnaryCall extends AbstractCall
      *
      * @param mixed $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
-     * @param array $options  an array of options, possible keys:
-     *                        'flags' => a number
+     *                        (optional)
+     * @param array $options  An array of options, possible keys:
+     *                        'flags' => a number (optional)
      */
-    public function start($data, $metadata = [], $options = [])
+    public function start($data, array $metadata = [], array $options = [])
     {
         $message_array = ['message' => $this->serializeMessage($data)];
         if (isset($options['flags'])) {

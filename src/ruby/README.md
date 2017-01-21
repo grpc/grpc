@@ -59,7 +59,7 @@ Directory structure is the layout for [ruby extensions][]
 - bin: example gRPC clients and servers, e.g,
 
   ```ruby
-  stub = Math::Math::Stub.new('my.test.math.server.com:8080')
+  stub = Math::Math::Stub.new('my.test.math.server.com:8080', :this_channel_is_insecure)
   req = Math::DivArgs.new(dividend: 7, divisor: 3)
   GRPC.logger.info("div(7/3): req=#{req.inspect}")
   resp = stub.div(req)

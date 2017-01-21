@@ -98,6 +98,10 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'status_code_and_message',
                            true, true, done);
   });
+  it('should pass unimplemented_service', function(done) {
+    interop_client.runTest(port, name_override, 'unimplemented_service',
+                           true, true, done);
+  });
   it('should pass unimplemented_method', function(done) {
     interop_client.runTest(port, name_override, 'unimplemented_method',
                            true, true, done);

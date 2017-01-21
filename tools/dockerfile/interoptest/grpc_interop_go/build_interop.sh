@@ -37,7 +37,7 @@ set -e
 git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
 
 # Get all gRPC Go dependencies
-(cd src/google.golang.org/grpc && go get -t .)
+(cd src/google.golang.org/grpc && make deps && make testdeps)
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true

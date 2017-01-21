@@ -71,7 +71,9 @@ namespace Grpc.Core.Internal
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
+            UIntPtr detailsLength;
+            IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
+            string details = Marshal.PtrToStringAnsi(detailsPtr, (int) detailsLength.ToUInt32());
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
@@ -91,21 +93,6 @@ namespace Grpc.Core.Internal
             byte[] data = new byte[(int)len];
             Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
             return data;
-        }
-
-        // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew(Server server)
-        {
-            var call = Native.grpcsharp_batch_context_server_rpc_new_call(this);
-
-            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_method(this));
-            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_host(this));
-            var deadline = Native.grpcsharp_batch_context_server_rpc_new_deadline(this);
-
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_server_rpc_new_request_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-
-            return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
         // Gets data of receive_close_on_server completion.

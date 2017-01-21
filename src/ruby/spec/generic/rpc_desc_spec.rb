@@ -48,7 +48,6 @@ describe GRPC::RpcDesc do
     @bidi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
                                  Stream.new(Object.new), 'encode', 'decode')
     @bs_code = INTERNAL
-    @no_reason = 'no reason given'
     @ok_response = Object.new
   end
 
@@ -62,8 +61,9 @@ describe GRPC::RpcDesc do
 
     it 'sends status UNKNOWN if other StandardErrors are raised' do
       expect(@call).to receive(:remote_read).once.and_return(Object.new)
-      expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                        false, metadata: {})
+      expect(@call).to receive(:send_status).once.with(UNKNOWN,
+                                                       arg_error_msg,
+                                                       false, metadata: {})
       this_desc.run_server_method(@call, method(:other_error))
     end
 
@@ -83,6 +83,7 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
+        allow(@call).to receive(:output_metadata).and_return(@call)
       end
 
       it_behaves_like 'it handles errors'
@@ -90,10 +91,10 @@ describe GRPC::RpcDesc do
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         metadata: fake_md)
+        expect(@call).to receive(:output_metadata).once.and_return(fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -111,13 +112,15 @@ describe GRPC::RpcDesc do
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
-        expect(@call).to receive(:send_status).once.with(UNKNOWN, @no_reason,
+        expect(@call).to receive(:send_status).once.with(UNKNOWN, arg_error_msg,
                                                          false, metadata: {})
         @client_streamer.run_server_method(@call, method(:other_error_alt))
       end
 
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_send).once.and_raise(CallError)
+        expect(@call).to receive(:server_unary_response).once.and_raise(
+          CallError)
+        allow(@call).to receive(:output_metadata).and_return({})
         blk = proc do
           @client_streamer.run_server_method(@call, method(:fake_clstream))
         end
@@ -125,10 +128,11 @@ describe GRPC::RpcDesc do
       end
 
       it 'sends a response and closes the stream if there no errors' do
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         metadata: fake_md)
+        expect(@call).to receive(:output_metadata).and_return(
+          fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
@@ -170,8 +174,9 @@ describe GRPC::RpcDesc do
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
+        error_msg = arg_error_msg(StandardError.new)
         expect(@call).to receive(:run_server_bidi).and_raise(StandardError)
-        expect(@call).to receive(:send_status).once.with(UNKNOWN, @no_reason,
+        expect(@call).to receive(:send_status).once.with(UNKNOWN, error_msg,
                                                          false, metadata: {})
         @bidi_streamer.run_server_method(@call, method(:other_error_alt))
       end
@@ -337,5 +342,10 @@ describe GRPC::RpcDesc do
 
   def other_error_alt(_call)
     fail(ArgumentError, 'other error')
+  end
+
+  def arg_error_msg(error = nil)
+    error ||= ArgumentError.new('other error')
+    "#{error.class}: #{error.message}"
   end
 end

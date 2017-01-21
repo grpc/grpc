@@ -48,23 +48,23 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
                                   grpc_http_version expect_version,
                                   char *expect_path, char *expect_body, ...) {
   grpc_http_parser parser;
-  gpr_slice input_slice = gpr_slice_from_copied_string(request_text);
+  grpc_slice input_slice = grpc_slice_from_copied_string(request_text);
   size_t num_slices;
   size_t i;
-  gpr_slice *slices;
+  grpc_slice *slices;
   va_list args;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
-  gpr_slice_unref(input_slice);
+  grpc_slice_unref(input_slice);
 
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
   for (i = 0; i < num_slices; i++) {
     GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], NULL) ==
                GRPC_ERROR_NONE);
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
 
@@ -105,23 +105,23 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
 static void test_succeeds(grpc_slice_split_mode split_mode, char *response_text,
                           int expect_status, char *expect_body, ...) {
   grpc_http_parser parser;
-  gpr_slice input_slice = gpr_slice_from_copied_string(response_text);
+  grpc_slice input_slice = grpc_slice_from_copied_string(response_text);
   size_t num_slices;
   size_t i;
-  gpr_slice *slices;
+  grpc_slice *slices;
   va_list args;
   grpc_http_response response;
   memset(&response, 0, sizeof(response));
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
-  gpr_slice_unref(input_slice);
+  grpc_slice_unref(input_slice);
 
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   for (i = 0; i < num_slices; i++) {
     GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], NULL) ==
                GRPC_ERROR_NONE);
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
 
@@ -158,16 +158,16 @@ static void test_succeeds(grpc_slice_split_mode split_mode, char *response_text,
 
 static void test_fails(grpc_slice_split_mode split_mode, char *response_text) {
   grpc_http_parser parser;
-  gpr_slice input_slice = gpr_slice_from_copied_string(response_text);
+  grpc_slice input_slice = grpc_slice_from_copied_string(response_text);
   size_t num_slices;
   size_t i;
-  gpr_slice *slices;
+  grpc_slice *slices;
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_http_response response;
   memset(&response, 0, sizeof(response));
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
-  gpr_slice_unref(input_slice);
+  grpc_slice_unref(input_slice);
 
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
@@ -175,7 +175,7 @@ static void test_fails(grpc_slice_split_mode split_mode, char *response_text) {
     if (GRPC_ERROR_NONE == error) {
       error = grpc_http_parser_parse(&parser, slices[i], NULL);
     }
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   if (GRPC_ERROR_NONE == error) {
     error = grpc_http_parser_eof(&parser);
@@ -191,16 +191,16 @@ static void test_fails(grpc_slice_split_mode split_mode, char *response_text) {
 static void test_request_fails(grpc_slice_split_mode split_mode,
                                char *request_text) {
   grpc_http_parser parser;
-  gpr_slice input_slice = gpr_slice_from_copied_string(request_text);
+  grpc_slice input_slice = grpc_slice_from_copied_string(request_text);
   size_t num_slices;
   size_t i;
-  gpr_slice *slices;
+  grpc_slice *slices;
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
-  gpr_slice_unref(input_slice);
+  grpc_slice_unref(input_slice);
 
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
@@ -208,7 +208,7 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
     if (error == GRPC_ERROR_NONE) {
       error = grpc_http_parser_parse(&parser, slices[i], NULL);
     }
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   if (error == GRPC_ERROR_NONE) {
     error = grpc_http_parser_eof(&parser);

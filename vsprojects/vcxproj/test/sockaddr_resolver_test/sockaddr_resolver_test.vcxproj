@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\resolvers\sockaddr_resolver_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\resolvers\sockaddr_resolver_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

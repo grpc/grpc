@@ -45,22 +45,12 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public SafeHandleZeroIsInvalid(bool ownsHandle) : base(IntPtr.Zero, ownsHandle)
-        {
-        }
-
         public override bool IsInvalid
         {
             get
             {
                 return handle == IntPtr.Zero;
             }
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            // handle is not owned.
-            return true;
         }
     }
 }

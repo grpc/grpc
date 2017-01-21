@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """The Python implementation of the GRPC interoperability test server."""
 
 import argparse
@@ -44,34 +43,36 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def serve():
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '--port', help='the port on which to serve', type=int)
-  parser.add_argument(
-      '--use_tls', help='require a secure connection',
-      default=False, type=resources.parse_bool)
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', help='the port on which to serve', type=int)
+    parser.add_argument(
+        '--use_tls',
+        help='require a secure connection',
+        default=False,
+        type=resources.parse_bool)
+    args = parser.parse_args()
 
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-  test_pb2.add_TestServiceServicer_to_server(methods.TestService(), server)
-  if args.use_tls:
-    private_key = resources.private_key()
-    certificate_chain = resources.certificate_chain()
-    credentials = grpc.ssl_server_credentials(
-        ((private_key, certificate_chain),))
-    server.add_secure_port('[::]:{}'.format(args.port), credentials)
-  else:
-    server.add_insecure_port('[::]:{}'.format(args.port))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    test_pb2.add_TestServiceServicer_to_server(methods.TestService(), server)
+    if args.use_tls:
+        private_key = resources.private_key()
+        certificate_chain = resources.certificate_chain()
+        credentials = grpc.ssl_server_credentials((
+            (private_key, certificate_chain),))
+        server.add_secure_port('[::]:{}'.format(args.port), credentials)
+    else:
+        server.add_insecure_port('[::]:{}'.format(args.port))
 
-  server.start()
-  logging.info('Server serving.')
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except BaseException as e:
-    logging.info('Caught exception "%s"; stopping server...', e)
-    server.stop(None)
-    logging.info('Server stopped; exiting.')
+    server.start()
+    logging.info('Server serving.')
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except BaseException as e:
+        logging.info('Caught exception "%s"; stopping server...', e)
+        server.stop(None)
+        logging.info('Server stopped; exiting.')
+
 
 if __name__ == '__main__':
-  serve()
+    serve()

@@ -30,10 +30,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 /* This test only relevant on linux systems where epoll() is available */
-#ifdef GPR_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -102,7 +102,8 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].pollset);
+    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].pollset,
+                      grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].pollset, &destroyed);
 
     grpc_exec_ctx_flush(exec_ctx);
@@ -236,9 +237,14 @@ int main(int argc, char **argv) {
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }
-  grpc_iomgr_shutdown();
+
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return 0;
 }
-#else /* defined(GPR_LINUX_EPOLL) */
+#else /* defined(GRPC_LINUX_EPOLL) */
 int main(int argc, char **argv) { return 0; }
-#endif /* !defined(GPR_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL) */

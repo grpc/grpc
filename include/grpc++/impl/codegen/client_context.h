@@ -51,15 +51,17 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
+#include <grpc++/impl/codegen/metadata_map.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
+#include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
-#include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -193,7 +195,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
-    return recv_initial_metadata_;
+    return *recv_initial_metadata_.map();
   }
 
   /// Return a collection of trailing metadata key-value pairs. Note that keys
@@ -205,7 +207,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
-    return trailing_metadata_;
+    return *trailing_metadata_.map();
   }
 
   /// Set the deadline for the client call.
@@ -235,12 +237,10 @@ class ClientContext {
   /// DEPRECATED: Use set_wait_for_ready() instead.
   void set_fail_fast(bool fail_fast) { set_wait_for_ready(!fail_fast); }
 
-#ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
@@ -368,7 +368,7 @@ class ClientContext {
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<Channel> channel_;
-  grpc::mutex mu_;
+  std::mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
@@ -377,8 +377,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> recv_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> trailing_metadata_;
+  MetadataMap recv_initial_metadata_;
+  MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

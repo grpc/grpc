@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -69,10 +69,10 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *parser,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
-                                            gpr_slice slice, int is_last);
+                                            grpc_slice slice, int is_last);
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               gpr_slice debug_data,
-                               gpr_slice_buffer *slice_buffer);
+                               grpc_slice debug_data,
+                               grpc_slice_buffer *slice_buffer);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H */

@@ -7,7 +7,6 @@
       "buildOptions": {
         "define": [ "SIGNED" ],
         "keyFile": "../keys/Grpc.snk",
-        "publicSign": true,
         "xmlDoc": true,
         "compile": {
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
@@ -29,7 +28,6 @@
       "buildOptions": {
         "define": [ "SIGNED" ],
         "keyFile": "../keys/Grpc.snk",
-        "publicSign": true,
         "xmlDoc": true,
         "compile": {
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
@@ -66,6 +64,11 @@
           "version": "1.0.0"
         }
       }
+    }
+  },
+  "runtimeOptions": {
+    "configProperties": {
+      "System.GC.Server": true
     }
   }
 }

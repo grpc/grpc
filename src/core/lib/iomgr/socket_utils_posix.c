@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKETUTILS
+#ifdef GRPC_POSIX_SOCKETUTILS
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
@@ -42,12 +42,15 @@
 #include <unistd.h>
 
 #include <grpc/support/log.h>
+#include "src/core/lib/iomgr/sockaddr.h"
 
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec) {
+int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
+                 int cloexec) {
   int fd, flags;
-
-  fd = accept(sockfd, addr, addrlen);
+  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
+  GPR_ASSERT(resolved_addr->len <= (socklen_t)-1);
+  fd = accept(sockfd, (struct sockaddr *)resolved_addr->addr,
+              (socklen_t *)&resolved_addr->len);
   if (fd >= 0) {
     if (nonblock) {
       flags = fcntl(fd, F_GETFL, 0);
@@ -67,4 +70,4 @@ close_and_error:
   return -1;
 }
 
-#endif /* GPR_POSIX_SOCKETUTILS */
+#endif /* GRPC_POSIX_SOCKETUTILS */

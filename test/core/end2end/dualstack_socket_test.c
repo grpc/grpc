@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -41,8 +46,8 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -83,8 +88,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_metadata_array request_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
   grpc_call_details call_details;
   char *peer;
@@ -120,17 +124,17 @@ void test_connect(const char *server_host, const char *client_host, int port,
   if (client_host[0] == 'i') {
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
     size_t i;
-    gpr_slice uri_slice;
-    gpr_slice_buffer uri_parts;
+    grpc_slice uri_slice;
+    grpc_slice_buffer uri_parts;
     char **hosts_with_port;
 
     uri_slice =
-        gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
-    gpr_slice_buffer_init(&uri_parts);
-    gpr_slice_split(uri_slice, ",", &uri_parts);
+        grpc_slice_new((char *)client_host, strlen(client_host), do_nothing);
+    grpc_slice_buffer_init(&uri_parts);
+    grpc_slice_split(uri_slice, ",", &uri_parts);
     hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
-      char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      char *uri_part_str = grpc_slice_to_c_string(uri_parts.slices[i]);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
       gpr_free(uri_part_str);
     }
@@ -140,8 +144,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
       gpr_free(hosts_with_port[i]);
     }
     gpr_free(hosts_with_port);
-    gpr_slice_buffer_destroy(&uri_parts);
-    gpr_slice_unref(uri_slice);
+    grpc_slice_buffer_destroy(&uri_parts);
+    grpc_slice_unref(uri_slice);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);
   }
@@ -163,8 +167,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
@@ -187,7 +193,6 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -211,7 +216,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count = 0;
     op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-    op->data.send_status_from_server.status_details = "xyz";
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
     op->flags = 0;
     op++;
     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -230,9 +236,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     gpr_free(peer);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-    GPR_ASSERT(0 == strcmp(details, "xyz"));
-    GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-    GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    GPR_ASSERT(0 ==
+               grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
     GPR_ASSERT(was_cancelled == 1);
 
     grpc_call_destroy(s);
@@ -266,7 +273,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_metadata_array_destroy(&request_metadata_recv);
 
   grpc_call_details_destroy(&call_details);
-  gpr_free(details);
+  grpc_slice_unref(details);
   if (picked_port) {
     grpc_recycle_unused_port(port);
   }
@@ -353,3 +360,9 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

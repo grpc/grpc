@@ -37,7 +37,11 @@
 
 #include <grpc++/grpc++.h>
 
+#ifdef BAZEL_BUILD
+#include "examples/protos/helloworld.grpc.pb.h"
+#else
 #include "helloworld.grpc.pb.h"
+#endif
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -51,7 +55,7 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assambles the client's payload, sends it and presents the response back
+  // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.

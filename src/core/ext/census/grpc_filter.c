@@ -37,9 +37,9 @@
 #include <string.h>
 
 #include <grpc/census.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/census/census_interface.h"
@@ -67,9 +67,7 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             channel_data *chand) {
   grpc_linked_mdelem *m;
   for (m = md->list.head; m != NULL; m = m->next) {
-    if (m->md->key == GRPC_MDSTR_PATH) {
-      gpr_log(GPR_DEBUG, "%s",
-              (const char *)GPR_SLICE_START_PTR(m->md->value->slice));
+    if (grpc_slice_eq(GRPC_MDKEY(m->md), GRPC_MDSTR_PATH)) {
       /* Add method tag here */
     }
   }
@@ -154,7 +152,8 @@ static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(d, 0, sizeof(*d));
   d->start_ts = args->start_time;
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem);
+  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
@@ -167,11 +166,12 @@ static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
+  return GRPC_ERROR_NONE;
 }
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -191,6 +191,7 @@ const grpc_channel_filter grpc_client_census_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
@@ -204,4 +205,5 @@ const grpc_channel_filter grpc_server_census_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "census-server"};

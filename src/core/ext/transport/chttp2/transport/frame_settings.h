@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -87,10 +87,10 @@ extern const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
 
 /* Create a settings frame by diffing old & new, and updating old to be new */
-gpr_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
-                                      uint32_t force_mask, size_t count);
+grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
+                                       uint32_t force_mask, size_t count);
 /* Create an ack settings frame */
-gpr_slice grpc_chttp2_settings_ack_create(void);
+grpc_slice grpc_chttp2_settings_ack_create(void);
 
 grpc_error *grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
@@ -99,6 +99,6 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx,
                                               void *parser,
                                               grpc_chttp2_transport *t,
                                               grpc_chttp2_stream *s,
-                                              gpr_slice slice, int is_last);
+                                              grpc_slice slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

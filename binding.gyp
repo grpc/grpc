@@ -37,15 +37,68 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
+  'variables': {
+    'runtime%': 'node'
+  },
   'target_defaults': {
     'include_dirs': [
       '.',
       'include'
     ],
+    'defines': [
+      'GPR_BACKWARDS_COMPATIBILITY_MODE'
+    ],
     'conditions': [
+      ['runtime=="node"', {
+        'defines': [
+          'GRPC_UV'
+        ]
+      }],
+      ['OS!="win" and runtime=="electron"', {
+        "defines": [
+          'OPENSSL_NO_THREADS'
+        ]
+      }],
+      # This is the condition for using boringssl
+      ['OS=="win" or runtime=="electron"', {
+        "include_dirs": [
+          "third_party/boringssl/include"
+        ],
+        "defines": [
+          'OPENSSL_NO_ASM'
+        ]
+      }, {
+        # Based on logic above, we know that this must be a non-Windows system
+        'variables': {
+          # The output of "node --version" is "v[version]". We use cut to
+          # remove the first character.
+          'target%': '<!(node --version | cut -c2-)'
+        },
+        # Empirically, Node only exports ALPN symbols if its major version is >0.
+        # io.js always reports versions >0 and always exports ALPN symbols.
+        # Therefore, Node's major version will be truthy if and only if it
+        # supports ALPN. The target is "[major].[minor].[patch]". We split by
+        # periods and take the first field to get the major version.
+        'defines': [
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+        ],
+        'include_dirs': [
+          '<(node_root_dir)/deps/openssl/openssl/include',
+        ],
+        'conditions': [
+         ["target_arch=='ia32'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+         }],
+         ["target_arch=='x64'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+         }],
+         ["target_arch=='arm'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+         }]
+        ]
+      }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/boringssl/include",
           "third_party/zlib"
         ],
         "defines": [
@@ -55,8 +108,6 @@
           'UNICODE',
           '_UNICODE',
           'NOMINMAX',
-          'OPENSSL_NO_ASM',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         "msvs_settings": {
           'VCCLCompilerTool': {
@@ -69,21 +120,8 @@
       }, { # OS != "win"
         'variables': {
           'config': '<!(echo $CONFIG)',
-          # The output of "node --version" is "v[version]". We use cut to
-          # remove the first character.
-          'target%': '<!(node --version | cut -c2-)'
         },
-          # Empirically, Node only exports ALPN symbols if its major version is >0.
-          # io.js always reports versions >0 and always exports ALPN symbols.
-          # Therefore, Node's major version will be truthy if and only if it
-          # supports ALPN. The target is "[major].[minor].[patch]". We split by
-          # periods and take the first field to get the major version.
-        'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
-        ],
         'include_dirs': [
-          '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib'
         ],
         'conditions': [
@@ -98,47 +136,14 @@
               '-fprofile-arcs'
             ]
           }
-         ],
-         ["target_arch=='ia32'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-         }],
-         ["target_arch=='x64'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-         }],
-         ["target_arch=='arm'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-         }]
+         ]
         ]
       }]
     ]
   },
   'conditions': [
-    ['OS == "win"', {
+    ['OS=="win" or runtime=="electron"', {
       'targets': [
-        {
-          # IMPORTANT WINDOWS BUILD INFORMATION
-          # This library does not build on Windows without modifying the Node
-          # development packages that node-gyp downloads in order to build.
-          # Due to https://github.com/nodejs/node/issues/4932, the headers for
-          # BoringSSL conflict with the OpenSSL headers included by default
-          # when including the Node headers. The remedy for this is to remove
-          # the OpenSSL headers, from the downloaded Node development package,
-          # which is typically located in `.node-gyp` in your home directory.
-          'target_name': 'WINDOWS_BUILD_WARNING',
-          'actions': [
-            {
-              'action_name': 'WINDOWS_BUILD_WARNING',
-              'inputs': [
-                'package.json'
-              ],
-              'outputs': [
-                'ignore_this_part'
-              ],
-              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
-            }
-          ]
-        },
-        # Only want to compile BoringSSL and zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -156,7 +161,6 @@
             'third_party/boringssl/crypto/aes/mode_wrappers.c',
             'third_party/boringssl/crypto/asn1/a_bitstr.c',
             'third_party/boringssl/crypto/asn1/a_bool.c',
-            'third_party/boringssl/crypto/asn1/a_bytes.c',
             'third_party/boringssl/crypto/asn1/a_d2i_fp.c',
             'third_party/boringssl/crypto/asn1/a_dup.c',
             'third_party/boringssl/crypto/asn1/a_enum.c',
@@ -175,18 +179,14 @@
             'third_party/boringssl/crypto/asn1/asn1_lib.c',
             'third_party/boringssl/crypto/asn1/asn1_par.c',
             'third_party/boringssl/crypto/asn1/asn_pack.c',
-            'third_party/boringssl/crypto/asn1/bio_asn1.c',
-            'third_party/boringssl/crypto/asn1/bio_ndef.c',
             'third_party/boringssl/crypto/asn1/f_enum.c',
             'third_party/boringssl/crypto/asn1/f_int.c',
             'third_party/boringssl/crypto/asn1/f_string.c',
             'third_party/boringssl/crypto/asn1/t_bitst.c',
-            'third_party/boringssl/crypto/asn1/t_pkey.c',
             'third_party/boringssl/crypto/asn1/tasn_dec.c',
             'third_party/boringssl/crypto/asn1/tasn_enc.c',
             'third_party/boringssl/crypto/asn1/tasn_fre.c',
             'third_party/boringssl/crypto/asn1/tasn_new.c',
-            'third_party/boringssl/crypto/asn1/tasn_prn.c',
             'third_party/boringssl/crypto/asn1/tasn_typ.c',
             'third_party/boringssl/crypto/asn1/tasn_utl.c',
             'third_party/boringssl/crypto/asn1/x_bignum.c',
@@ -216,6 +216,7 @@
             'third_party/boringssl/crypto/bn/generic.c',
             'third_party/boringssl/crypto/bn/kronecker.c',
             'third_party/boringssl/crypto/bn/montgomery.c',
+            'third_party/boringssl/crypto/bn/montgomery_inv.c',
             'third_party/boringssl/crypto/bn/mul.c',
             'third_party/boringssl/crypto/bn/prime.c',
             'third_party/boringssl/crypto/bn/random.c',
@@ -227,8 +228,7 @@
             'third_party/boringssl/crypto/bytestring/ber.c',
             'third_party/boringssl/crypto/bytestring/cbb.c',
             'third_party/boringssl/crypto/bytestring/cbs.c',
-            'third_party/boringssl/crypto/chacha/chacha_generic.c',
-            'third_party/boringssl/crypto/chacha/chacha_vec.c',
+            'third_party/boringssl/crypto/chacha/chacha.c',
             'third_party/boringssl/crypto/cipher/aead.c',
             'third_party/boringssl/crypto/cipher/cipher.c',
             'third_party/boringssl/crypto/cipher/derive_key.c',
@@ -243,10 +243,14 @@
             'third_party/boringssl/crypto/cipher/tls_cbc.c',
             'third_party/boringssl/crypto/cmac/cmac.c',
             'third_party/boringssl/crypto/conf/conf.c',
+            'third_party/boringssl/crypto/cpu-aarch64-linux.c',
+            'third_party/boringssl/crypto/cpu-arm-linux.c',
             'third_party/boringssl/crypto/cpu-arm.c',
             'third_party/boringssl/crypto/cpu-intel.c',
+            'third_party/boringssl/crypto/cpu-ppc64le.c',
             'third_party/boringssl/crypto/crypto.c',
             'third_party/boringssl/crypto/curve25519/curve25519.c',
+            'third_party/boringssl/crypto/curve25519/spake25519.c',
             'third_party/boringssl/crypto/curve25519/x25519-x86_64.c',
             'third_party/boringssl/crypto/des/des.c',
             'third_party/boringssl/crypto/dh/check.c',
@@ -255,8 +259,6 @@
             'third_party/boringssl/crypto/dh/params.c',
             'third_party/boringssl/crypto/digest/digest.c',
             'third_party/boringssl/crypto/digest/digests.c',
-            'third_party/boringssl/crypto/directory_posix.c',
-            'third_party/boringssl/crypto/directory_win.c',
             'third_party/boringssl/crypto/dsa/dsa.c',
             'third_party/boringssl/crypto/dsa/dsa_asn1.c',
             'third_party/boringssl/crypto/ec/ec.c',
@@ -275,7 +277,6 @@
             'third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c',
             'third_party/boringssl/crypto/engine/engine.c',
             'third_party/boringssl/crypto/err/err.c',
-            'third_party/boringssl/crypto/evp/algorithm.c',
             'third_party/boringssl/crypto/evp/digestsign.c',
             'third_party/boringssl/crypto/evp/evp.c',
             'third_party/boringssl/crypto/evp/evp_asn1.c',
@@ -286,6 +287,7 @@
             'third_party/boringssl/crypto/evp/p_rsa.c',
             'third_party/boringssl/crypto/evp/p_rsa_asn1.c',
             'third_party/boringssl/crypto/evp/pbkdf.c',
+            'third_party/boringssl/crypto/evp/print.c',
             'third_party/boringssl/crypto/evp/sign.c',
             'third_party/boringssl/crypto/ex_data.c',
             'third_party/boringssl/crypto/hkdf/hkdf.c',
@@ -299,6 +301,12 @@
             'third_party/boringssl/crypto/modes/ctr.c',
             'third_party/boringssl/crypto/modes/gcm.c',
             'third_party/boringssl/crypto/modes/ofb.c',
+            'third_party/boringssl/crypto/newhope/error_correction.c',
+            'third_party/boringssl/crypto/newhope/newhope.c',
+            'third_party/boringssl/crypto/newhope/ntt.c',
+            'third_party/boringssl/crypto/newhope/poly.c',
+            'third_party/boringssl/crypto/newhope/precomp.c',
+            'third_party/boringssl/crypto/newhope/reduce.c',
             'third_party/boringssl/crypto/obj/obj.c',
             'third_party/boringssl/crypto/obj/obj_xref.c',
             'third_party/boringssl/crypto/pem/pem_all.c',
@@ -316,6 +324,7 @@
             'third_party/boringssl/crypto/poly1305/poly1305.c',
             'third_party/boringssl/crypto/poly1305/poly1305_arm.c',
             'third_party/boringssl/crypto/poly1305/poly1305_vec.c',
+            'third_party/boringssl/crypto/rand/deterministic.c',
             'third_party/boringssl/crypto/rand/rand.c',
             'third_party/boringssl/crypto/rand/urandom.c',
             'third_party/boringssl/crypto/rand/windows.c',
@@ -340,11 +349,13 @@
             'third_party/boringssl/crypto/x509/a_sign.c',
             'third_party/boringssl/crypto/x509/a_strex.c',
             'third_party/boringssl/crypto/x509/a_verify.c',
+            'third_party/boringssl/crypto/x509/algorithm.c',
             'third_party/boringssl/crypto/x509/asn1_gen.c',
             'third_party/boringssl/crypto/x509/by_dir.c',
             'third_party/boringssl/crypto/x509/by_file.c',
             'third_party/boringssl/crypto/x509/i2d_pr.c',
             'third_party/boringssl/crypto/x509/pkcs7.c',
+            'third_party/boringssl/crypto/x509/rsa_pss.c',
             'third_party/boringssl/crypto/x509/t_crl.c',
             'third_party/boringssl/crypto/x509/t_req.c',
             'third_party/boringssl/crypto/x509/t_x509.c',
@@ -419,21 +430,17 @@
             'third_party/boringssl/crypto/x509v3/v3_utl.c',
             'third_party/boringssl/ssl/custom_extensions.c',
             'third_party/boringssl/ssl/d1_both.c',
-            'third_party/boringssl/ssl/d1_clnt.c',
             'third_party/boringssl/ssl/d1_lib.c',
-            'third_party/boringssl/ssl/d1_meth.c',
             'third_party/boringssl/ssl/d1_pkt.c',
             'third_party/boringssl/ssl/d1_srtp.c',
-            'third_party/boringssl/ssl/d1_srvr.c',
+            'third_party/boringssl/ssl/dtls_method.c',
             'third_party/boringssl/ssl/dtls_record.c',
-            'third_party/boringssl/ssl/pqueue/pqueue.c',
+            'third_party/boringssl/ssl/handshake_client.c',
+            'third_party/boringssl/ssl/handshake_server.c',
             'third_party/boringssl/ssl/s3_both.c',
-            'third_party/boringssl/ssl/s3_clnt.c',
             'third_party/boringssl/ssl/s3_enc.c',
             'third_party/boringssl/ssl/s3_lib.c',
-            'third_party/boringssl/ssl/s3_meth.c',
             'third_party/boringssl/ssl/s3_pkt.c',
-            'third_party/boringssl/ssl/s3_srvr.c',
             'third_party/boringssl/ssl/ssl_aead_ctx.c',
             'third_party/boringssl/ssl/ssl_asn1.c',
             'third_party/boringssl/ssl/ssl_buffer.c',
@@ -447,9 +454,42 @@
             'third_party/boringssl/ssl/ssl_stat.c',
             'third_party/boringssl/ssl/t1_enc.c',
             'third_party/boringssl/ssl/t1_lib.c',
+            'third_party/boringssl/ssl/tls13_both.c',
+            'third_party/boringssl/ssl/tls13_client.c',
+            'third_party/boringssl/ssl/tls13_enc.c',
+            'third_party/boringssl/ssl/tls13_server.c',
+            'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
+        {
+          # IMPORTANT WINDOWS BUILD INFORMATION
+          # This library does not build on Windows without modifying the Node
+          # development packages that node-gyp downloads in order to build.
+          # Due to https://github.com/nodejs/node/issues/4932, the headers for
+          # BoringSSL conflict with the OpenSSL headers included by default
+          # when including the Node headers. The remedy for this is to remove
+          # the OpenSSL headers, from the downloaded Node development package,
+          # which is typically located in `.node-gyp` in your home directory.
+          'target_name': 'WINDOWS_BUILD_WARNING',
+          'actions': [
+            {
+              'action_name': 'WINDOWS_BUILD_WARNING',
+              'inputs': [
+                'package.json'
+              ],
+              'outputs': [
+                'ignore_this_part'
+              ],
+              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
+            }
+          ]
+        },
+        # Only want to compile zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -517,9 +557,6 @@
         'src/core/lib/support/log_windows.c',
         'src/core/lib/support/mpscq.c',
         'src/core/lib/support/murmur_hash.c',
-        'src/core/lib/support/percent_encoding.c',
-        'src/core/lib/support/slice.c',
-        'src/core/lib/support/slice_buffer.c',
         'src/core/lib/support/stack_lockfree.c',
         'src/core/lib/support/string.c',
         'src/core/lib/support/string_posix.c',
@@ -572,6 +609,8 @@
         'src/core/lib/channel/connected_channel.c',
         'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
+        'src/core/lib/channel/handshaker_factory.c',
+        'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/channel/http_client_filter.c',
         'src/core/lib/channel/http_server_filter.c',
         'src/core/lib/channel/message_size_filter.c',
@@ -585,10 +624,10 @@
         'src/core/lib/iomgr/combiner.c',
         'src/core/lib/iomgr/endpoint.c',
         'src/core/lib/iomgr/endpoint_pair_posix.c',
+        'src/core/lib/iomgr/endpoint_pair_uv.c',
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll_linux.c',
-        'src/core/lib/iomgr/ev_poll_and_epoll_posix.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
         'src/core/lib/iomgr/ev_posix.c',
         'src/core/lib/iomgr/exec_ctx.c',
@@ -596,28 +635,40 @@
         'src/core/lib/iomgr/iocp_windows.c',
         'src/core/lib/iomgr/iomgr.c',
         'src/core/lib/iomgr/iomgr_posix.c',
+        'src/core/lib/iomgr/iomgr_uv.c',
         'src/core/lib/iomgr/iomgr_windows.c',
         'src/core/lib/iomgr/load_file.c',
         'src/core/lib/iomgr/network_status_tracker.c',
         'src/core/lib/iomgr/polling_entity.c',
+        'src/core/lib/iomgr/pollset_set_uv.c',
         'src/core/lib/iomgr/pollset_set_windows.c',
+        'src/core/lib/iomgr/pollset_uv.c',
         'src/core/lib/iomgr/pollset_windows.c',
         'src/core/lib/iomgr/resolve_address_posix.c',
+        'src/core/lib/iomgr/resolve_address_uv.c',
         'src/core/lib/iomgr/resolve_address_windows.c',
+        'src/core/lib/iomgr/resource_quota.c',
         'src/core/lib/iomgr/sockaddr_utils.c',
+        'src/core/lib/iomgr/socket_mutator.c',
         'src/core/lib/iomgr/socket_utils_common_posix.c',
         'src/core/lib/iomgr/socket_utils_linux.c',
         'src/core/lib/iomgr/socket_utils_posix.c',
+        'src/core/lib/iomgr/socket_utils_uv.c',
+        'src/core/lib/iomgr/socket_utils_windows.c',
         'src/core/lib/iomgr/socket_windows.c',
         'src/core/lib/iomgr/tcp_client_posix.c',
+        'src/core/lib/iomgr/tcp_client_uv.c',
         'src/core/lib/iomgr/tcp_client_windows.c',
         'src/core/lib/iomgr/tcp_posix.c',
         'src/core/lib/iomgr/tcp_server_posix.c',
+        'src/core/lib/iomgr/tcp_server_uv.c',
         'src/core/lib/iomgr/tcp_server_windows.c',
+        'src/core/lib/iomgr/tcp_uv.c',
         'src/core/lib/iomgr/tcp_windows.c',
         'src/core/lib/iomgr/time_averaged_stats.c',
-        'src/core/lib/iomgr/timer.c',
+        'src/core/lib/iomgr/timer_generic.c',
         'src/core/lib/iomgr/timer_heap.c',
+        'src/core/lib/iomgr/timer_uv.c',
         'src/core/lib/iomgr/udp_server.c',
         'src/core/lib/iomgr/unix_sockets_posix.c',
         'src/core/lib/iomgr/unix_sockets_posix_noop.c',
@@ -626,11 +677,18 @@
         'src/core/lib/iomgr/wakeup_fd_nospecial.c',
         'src/core/lib/iomgr/wakeup_fd_pipe.c',
         'src/core/lib/iomgr/wakeup_fd_posix.c',
+        'src/core/lib/iomgr/workqueue_uv.c',
         'src/core/lib/iomgr/workqueue_windows.c',
         'src/core/lib/json/json.c',
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
         'src/core/lib/json/json_writer.c',
+        'src/core/lib/slice/percent_encoding.c',
+        'src/core/lib/slice/slice.c',
+        'src/core/lib/slice/slice_buffer.c',
+        'src/core/lib/slice/slice_hash_table.c',
+        'src/core/lib/slice/slice_intern.c',
+        'src/core/lib/slice/slice_string_helpers.c',
         'src/core/lib/surface/alarm.c',
         'src/core/lib/surface/api_trace.c',
         'src/core/lib/surface/byte_buffer.c',
@@ -651,10 +709,13 @@
         'src/core/lib/surface/version.c',
         'src/core/lib/transport/byte_stream.c',
         'src/core/lib/transport/connectivity_state.c',
-        'src/core/lib/transport/mdstr_hash_table.c',
+        'src/core/lib/transport/error_utils.c',
         'src/core/lib/transport/metadata.c',
         'src/core/lib/transport/metadata_batch.c',
+        'src/core/lib/transport/pid_controller.c',
+        'src/core/lib/transport/service_config.c',
         'src/core/lib/transport/static_metadata.c',
+        'src/core/lib/transport/status_conversion.c',
         'src/core/lib/transport/timeout_encoding.c',
         'src/core/lib/transport/transport.c',
         'src/core/lib/transport/transport_op_string.c',
@@ -675,7 +736,6 @@
         'src/core/ext/transport/chttp2/transport/huffsyms.c',
         'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
         'src/core/ext/transport/chttp2/transport/parsing.c',
-        'src/core/ext/transport/chttp2/transport/status_conversion.c',
         'src/core/ext/transport/chttp2/transport/stream_lists.c',
         'src/core/ext/transport/chttp2/transport/stream_map.c',
         'src/core/ext/transport/chttp2/transport/varint.c',
@@ -687,8 +747,7 @@
         'src/core/lib/security/credentials/credentials.c',
         'src/core/lib/security/credentials/credentials_metadata.c',
         'src/core/lib/security/credentials/fake/fake_credentials.c',
-        'src/core/lib/security/credentials/google_default/credentials_posix.c',
-        'src/core/lib/security/credentials/google_default/credentials_windows.c',
+        'src/core/lib/security/credentials/google_default/credentials_generic.c',
         'src/core/lib/security/credentials/google_default/google_default_credentials.c',
         'src/core/lib/security/credentials/iam/iam_credentials.c',
         'src/core/lib/security/credentials/jwt/json_token.c',
@@ -698,9 +757,9 @@
         'src/core/lib/security/credentials/plugin/plugin_credentials.c',
         'src/core/lib/security/credentials/ssl/ssl_credentials.c',
         'src/core/lib/security/transport/client_auth_filter.c',
-        'src/core/lib/security/transport/handshake.c',
         'src/core/lib/security/transport/secure_endpoint.c',
         'src/core/lib/security/transport/security_connector.c',
+        'src/core/lib/security/transport/security_handshaker.c',
         'src/core/lib/security/transport/server_auth_filter.c',
         'src/core/lib/security/transport/tsi_error.c',
         'src/core/lib/security/util/b64.c',
@@ -709,27 +768,27 @@
         'src/core/lib/tsi/fake_transport_security.c',
         'src/core/lib/tsi/ssl_transport_security.c',
         'src/core/lib/tsi/transport_security.c',
+        'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
-        'src/core/ext/client_config/channel_connectivity.c',
-        'src/core/ext/client_config/client_channel.c',
-        'src/core/ext/client_config/client_channel_factory.c',
-        'src/core/ext/client_config/client_config_plugin.c',
-        'src/core/ext/client_config/connector.c',
-        'src/core/ext/client_config/default_initial_connect_string.c',
-        'src/core/ext/client_config/http_connect_handshaker.c',
-        'src/core/ext/client_config/initial_connect_string.c',
-        'src/core/ext/client_config/lb_policy.c',
-        'src/core/ext/client_config/lb_policy_factory.c',
-        'src/core/ext/client_config/lb_policy_registry.c',
-        'src/core/ext/client_config/method_config.c',
-        'src/core/ext/client_config/parse_address.c',
-        'src/core/ext/client_config/resolver.c',
-        'src/core/ext/client_config/resolver_factory.c',
-        'src/core/ext/client_config/resolver_registry.c',
-        'src/core/ext/client_config/resolver_result.c',
-        'src/core/ext/client_config/subchannel.c',
-        'src/core/ext/client_config/subchannel_index.c',
-        'src/core/ext/client_config/uri_parser.c',
+        'src/core/ext/client_channel/channel_connectivity.c',
+        'src/core/ext/client_channel/client_channel.c',
+        'src/core/ext/client_channel/client_channel_factory.c',
+        'src/core/ext/client_channel/client_channel_plugin.c',
+        'src/core/ext/client_channel/connector.c',
+        'src/core/ext/client_channel/default_initial_connect_string.c',
+        'src/core/ext/client_channel/http_connect_handshaker.c',
+        'src/core/ext/client_channel/initial_connect_string.c',
+        'src/core/ext/client_channel/lb_policy.c',
+        'src/core/ext/client_channel/lb_policy_factory.c',
+        'src/core/ext/client_channel/lb_policy_registry.c',
+        'src/core/ext/client_channel/parse_address.c',
+        'src/core/ext/client_channel/resolver.c',
+        'src/core/ext/client_channel/resolver_factory.c',
+        'src/core/ext/client_channel/resolver_registry.c',
+        'src/core/ext/client_channel/subchannel.c',
+        'src/core/ext/client_channel/subchannel_index.c',
+        'src/core/ext/client_channel/uri_parser.c',
+        'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
@@ -787,6 +846,11 @@
         '-g'
       ],
       "conditions": [
+        ['OS=="win" or runtime=="electron"', {
+          'dependencies': [
+            "boringssl",
+          ]
+        }],
         ['OS=="mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',
@@ -798,7 +862,6 @@
         }],
         ['OS=="win"', {
           'dependencies': [
-            "boringssl",
             "z",
           ]
         }],
@@ -815,10 +878,12 @@
         "src/node/ext/call_credentials.cc",
         "src/node/ext/channel.cc",
         "src/node/ext/channel_credentials.cc",
-        "src/node/ext/completion_queue_async_worker.cc",
+        "src/node/ext/completion_queue_threadpool.cc",
+        "src/node/ext/completion_queue_uv.cc",
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
+        "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
       "dependencies": [

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.proto">
+      <Filter>src\proto\grpc\reflection\v1alpha</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{9b233966-149a-36c4-89fb-11d63d8e00bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{1abcca00-34c5-513a-f372-4ef9b190910a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{0059fdd3-0e35-5500-b8a5-b2e573d7537c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl\codegen">
+      <UniqueIdentifier>{3f1b0e9e-802e-0535-bc3a-9685c2cf68d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{b479720c-6a7e-d0ca-bad6-db7cc12c9b0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{d9aa2326-a033-5a44-a24b-25cdb4a58297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{cdabe038-cb18-dc0f-8afa-0787627ebd55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\reflection">
+      <UniqueIdentifier>{3947956e-b4fb-30ce-fc28-da34aec087e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\reflection\v1alpha">
+      <UniqueIdentifier>{79b4cc2b-5f94-0c9f-4754-1197647dd040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{96bd243c-be93-569d-6a83-4a67ab8c1fa3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{1041430f-3c5a-c462-ccc6-adc845814dbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{c84ddb0b-56a0-0d29-a5c0-6cb1a7a49119}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

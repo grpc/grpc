@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_HTTP_PARSER_H
 #define GRPC_CORE_LIB_HTTP_PARSER_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
 #include "src/core/lib/iomgr/error.h"
 
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
@@ -114,7 +114,7 @@ void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
 void grpc_http_parser_destroy(grpc_http_parser *parser);
 
 /* Sets \a start_of_body to the offset in \a slice of the start of the body. */
-grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice,
+grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, grpc_slice slice,
                                    size_t *start_of_body);
 grpc_error *grpc_http_parser_eof(grpc_http_parser *parser);
 

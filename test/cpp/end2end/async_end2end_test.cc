@@ -47,6 +47,7 @@
 #include <grpc/support/tls.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -54,7 +55,7 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
@@ -73,7 +74,7 @@ namespace {
 void* tag(int i) { return (void*)(intptr_t)i; }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 static int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
                                           int timeout) {
   if (gpr_tls_get(&g_is_async_end2end_test)) {
@@ -210,10 +211,10 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 // that needs to be tested here.
 class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
-  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+  void UpdateArguments(ChannelArguments* arg) override {}
 
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      GRPC_OVERRIDE {
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
                                   plugin_has_sync_methods),
                    plugins->end());
@@ -227,12 +228,7 @@ class TestScenario {
       : disable_blocking(non_block),
         credentials_type(creds_type),
         message_content(content) {}
-  void Log() const {
-    gpr_log(
-        GPR_INFO,
-        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
-        disable_blocking, credentials_type.c_str(), message_content.size());
-  }
+  void Log() const;
   bool disable_blocking;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
@@ -241,11 +237,25 @@ class TestScenario {
   grpc::string message_content;
 };
 
+static std::ostream& operator<<(std::ostream& out,
+                                const TestScenario& scenario) {
+  return out << "TestScenario{disable_blocking="
+             << (scenario.disable_blocking ? "true" : "false")
+             << ", credentials='" << scenario.credentials_type
+             << "', message_size=" << scenario.message_content.size() << "}";
+}
+
+void TestScenario::Log() const {
+  std::ostringstream out;
+  out << *this;
+  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
+}
+
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   AsyncEnd2endTest() { GetParam().Log(); }
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
     port_ = grpc_pick_unused_port_or_die();
@@ -253,7 +263,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
     // Setup server
     ServerBuilder builder;
-    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
+        GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
@@ -268,7 +279,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     gpr_tls_set(&g_is_async_end2end_test, 1);
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -282,8 +293,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds =
-        GetChannelCredentials(GetParam().credentials_type, &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+        GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
         CreateCustomChannel(server_address_.str(), channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
@@ -351,15 +362,13 @@ void ServerWait(Server* server, int* notify) {
 }
 TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   int notify = 0;
-  std::thread* wait_thread =
-      new std::thread(&ServerWait, server_.get(), &notify);
+  std::thread wait_thread(&ServerWait, server_.get(), &notify);
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
   server_->Shutdown();
-  wait_thread->join();
+  wait_thread.join();
   EXPECT_EQ(1, notify);
-  delete wait_thread;
 }
 
 TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
@@ -893,8 +902,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  auto channel_creds =
-      GetChannelCredentials(GetParam().credentials_type, &args);
+  auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+      GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       CreateCustomChannel(server_address_.str(), channel_creds, args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
@@ -990,7 +999,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_server_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1026,7 +1035,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
@@ -1111,7 +1120,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1149,7 +1158,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
@@ -1251,7 +1260,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1331,7 +1340,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 8);
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
@@ -1405,11 +1414,15 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
 
-  credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetSecureCredentialsTypeList();
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
+                                                      nullptr) != nullptr) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
+  GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
   for (int sz = 1; sz < test_big_limit; sz *= 2) {

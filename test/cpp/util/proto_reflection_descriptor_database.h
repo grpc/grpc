@@ -38,14 +38,9 @@
 #include <unordered_set>
 #include <vector>
 
-// GRPC_NO_GENERATED_CODE indicates generated pb files should not be used
-#ifdef GRPC_NO_GENERATED_CODE
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
-#else
-#include <grpc++/ext/reflection.grpc.pb.h>
-#endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/codegen/config_protobuf.h>
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
 
@@ -67,14 +62,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // Find a file by file name.  Fills in in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
   bool FindFileByName(const string& filename,
-                      protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
+                      protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
   bool FindFileContainingSymbol(const string& symbol_name,
-                                protobuf::FileDescriptorProto* output)
-      GRPC_OVERRIDE;
+                                protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
   // with the given field number.  If found, fills in *output and returns true,
@@ -82,7 +76,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
       const string& containing_type, int field_number,
-      protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
+      protobuf::FileDescriptorProto* output) override;
 
   // Finds the tag numbers used by all known extensions of
   // extendee_type, and appends them to output in an undefined
@@ -92,7 +86,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
   bool FindAllExtensionNumbers(const string& extendee_type,
-                               std::vector<int>* output) GRPC_OVERRIDE;
+                               std::vector<int>* output) override;
 
   // Provide a list of full names of registered services
   bool GetServices(std::vector<grpc::string>* output);

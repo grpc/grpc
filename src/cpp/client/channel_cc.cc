@@ -47,8 +47,9 @@
 #include <grpc++/support/status.h>
 #include <grpc++/support/time.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include "src/core/lib/profiling/timers.h"
 
 namespace grpc {
@@ -60,6 +61,35 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
 }
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
+
+namespace {
+
+grpc::string GetChannelInfoField(grpc_channel* channel,
+                                 grpc_channel_info* channel_info,
+                                 char*** channel_info_field) {
+  char* value = NULL;
+  memset(channel_info, 0, sizeof(*channel_info));
+  *channel_info_field = &value;
+  grpc_channel_get_info(channel, channel_info);
+  if (value == NULL) return "";
+  grpc::string result = value;
+  gpr_free(value);
+  return result;
+}
+
+}  // namespace
+
+grpc::string Channel::GetLoadBalancingPolicyName() const {
+  grpc_channel_info channel_info;
+  return GetChannelInfoField(c_channel_, &channel_info,
+                             &channel_info.lb_policy_name);
+}
+
+grpc::string Channel::GetServiceConfigJSON() const {
+  grpc_channel_info channel_info;
+  return GetChannelInfoField(c_channel_, &channel_info,
+                             &channel_info.service_config_json);
+}
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
@@ -77,10 +107,20 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
     } else if (!host_.empty()) {
       host_str = host_.c_str();
     }
-    c_call = grpc_channel_create_call(c_channel_, context->propagate_from_call_,
-                                      context->propagation_options_.c_bitmask(),
-                                      cq->cq(), method.name(), host_str,
-                                      context->raw_deadline(), nullptr);
+    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice host_slice;
+    if (host_str != nullptr) {
+      host_slice = SliceFromCopiedString(host_str);
+    }
+    c_call = grpc_channel_create_call(
+        c_channel_, context->propagate_from_call_,
+        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
+        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
+        nullptr);
+    grpc_slice_unref(method_slice);
+    if (host_str != nullptr) {
+      grpc_slice_unref(host_slice);
+    }
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
@@ -106,11 +146,11 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 }
 
 namespace {
-class TagSaver GRPC_FINAL : public CompletionQueueTag {
+class TagSaver final : public CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
-  ~TagSaver() GRPC_OVERRIDE {}
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  ~TagSaver() override {}
+  bool FinalizeResult(void** tag, bool* status) override {
     *tag = tag_;
     delete this;
     return true;

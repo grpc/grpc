@@ -30,15 +30,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#ifdef GRPC_HAVE_UNIX_SOCKET
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
+
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -61,15 +64,18 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
   return GRPC_ERROR_NONE;
 }
 
-int grpc_is_unix_socket(const struct sockaddr *addr) {
+int grpc_is_unix_socket(const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   return addr->sa_family == AF_UNIX;
 }
 
-void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
+void grpc_unlink_if_unix_domain_socket(
+    const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return;
   }
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
+  struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
   struct stat st;
 
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
@@ -77,7 +83,9 @@ void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   }
 }
 
-char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
+char *grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return NULL;
   }

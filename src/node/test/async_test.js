@@ -61,6 +61,7 @@ describe('Async functionality', function() {
     done();
   });
   after(function() {
+    grpc.closeClient(math_client);
     server.forceShutdown();
   });
   it('should not hang', function(done) {

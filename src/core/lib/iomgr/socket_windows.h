@@ -87,6 +87,7 @@ typedef struct grpc_winsocket {
   grpc_winsocket_callback_info read_info;
 
   gpr_mu state_mu;
+  bool shutdown_called;
 
   /* You can't add the same socket twice to the same IO Completion Port.
      This prevents that. */

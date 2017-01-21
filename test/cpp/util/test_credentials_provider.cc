@@ -34,44 +34,28 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <mutex>
 #include <unordered_map>
 
-#include <grpc++/impl/sync.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
+namespace testing {
 namespace {
-
-using grpc::testing::CredentialTypeProvider;
-
-// Provide test credentials. Thread-safe.
-class CredentialsProvider {
- public:
-  virtual ~CredentialsProvider() {}
-
-  virtual void AddSecureType(
-      const grpc::string& type,
-      std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
-  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
-};
 
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
-  ~DefaultCredentialsProvider() GRPC_OVERRIDE {}
+  ~DefaultCredentialsProvider() override {}
 
-  void AddSecureType(const grpc::string& type,
-                     std::unique_ptr<CredentialTypeProvider> type_provider)
-      GRPC_OVERRIDE {
+  void AddSecureType(
+      const grpc::string& type,
+      std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     auto it = std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type);
     if (it == added_secure_type_names_.end()) {
@@ -84,7 +68,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) GRPC_OVERRIDE {
+      const grpc::string& type, ChannelArguments* args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
     } else if (type == grpc::testing::kTlsCredentialsType) {
@@ -92,7 +76,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return SslCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
+      std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
@@ -105,7 +89,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) GRPC_OVERRIDE {
+      const grpc::string& type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
     } else if (type == grpc::testing::kTlsCredentialsType) {
@@ -116,7 +100,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       return SslServerCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
+      std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
@@ -127,10 +111,10 @@ class DefaultCredentialsProvider : public CredentialsProvider {
           ->GetServerCredentials();
     }
   }
-  std::vector<grpc::string> GetSecureCredentialsTypeList() GRPC_OVERRIDE {
+  std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
       types.push_back(*it);
@@ -139,43 +123,27 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
  private:
-  grpc::mutex mu_;
+  std::mutex mu_;
   std::vector<grpc::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;
 };
 
-gpr_once g_once_init_provider = GPR_ONCE_INIT;
 CredentialsProvider* g_provider = nullptr;
-
-void CreateDefaultProvider() { g_provider = new DefaultCredentialsProvider; }
-
-CredentialsProvider* GetProvider() {
-  gpr_once_init(&g_once_init_provider, &CreateDefaultProvider);
-  return g_provider;
-}
 
 }  // namespace
 
-namespace testing {
-
-void AddSecureType(const grpc::string& type,
-                   std::unique_ptr<CredentialTypeProvider> type_provider) {
-  GetProvider()->AddSecureType(type, std::move(type_provider));
+CredentialsProvider* GetCredentialsProvider() {
+  if (g_provider == nullptr) {
+    g_provider = new DefaultCredentialsProvider;
+  }
+  return g_provider;
 }
 
-std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args) {
-  return GetProvider()->GetChannelCredentials(type, args);
-}
-
-std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type) {
-  return GetProvider()->GetServerCredentials(type);
-}
-
-std::vector<grpc::string> GetSecureCredentialsTypeList() {
-  return GetProvider()->GetSecureCredentialsTypeList();
+void SetCredentialsProvider(CredentialsProvider* provider) {
+  // For now, forbids overriding provider.
+  GPR_ASSERT(g_provider == nullptr);
+  g_provider = provider;
 }
 
 }  // namespace testing

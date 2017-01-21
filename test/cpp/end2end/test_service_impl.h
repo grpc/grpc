@@ -63,20 +63,20 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
       : signal_client_(false), host_(new grpc::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE;
+              EchoResponse* response) override;
 
   // Unimplemented is left unimplemented to test the returned error.
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE;
+                       EchoResponse* response) override;
 
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE;
+                        ServerWriter<EchoResponse>* writer) override;
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE;
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override;
 
   bool signal_client() {
     std::unique_lock<std::mutex> lock(mu_);

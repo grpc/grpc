@@ -83,15 +83,15 @@ if not check_version(top_version):
 for tag, value in settings.iteritems():
   if re.match(r'^[a-z]+_version$', tag):
     value = Version(value)
-    if value.major != top_version.major:
-      errors += 1
-      print 'major version mismatch on %s: %d vs %d' % (tag, value.major, top_version.major)
-    if value.minor != top_version.minor:
-      errors += 1
-      print 'minor version mismatch on %s: %d vs %d' % (tag, value.minor, top_version.minor)
+    if tag != 'core_version':
+      if value.major != top_version.major:
+        errors += 1
+        print 'major version mismatch on %s: %d vs %d' % (tag, value.major, top_version.major)
+      if value.minor != top_version.minor:
+        errors += 1
+        print 'minor version mismatch on %s: %d vs %d' % (tag, value.minor, top_version.minor)
     if not check_version(value):
       errors += 1
       print warning % (tag, value)
 
 sys.exit(errors)
-

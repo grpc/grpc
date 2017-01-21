@@ -85,8 +85,8 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 void test_succeeds(void) {
-  struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   int svr_fd;
   int r;
   int connections_complete_before;
@@ -95,13 +95,15 @@ void test_succeeds(void) {
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
 
   /* create a dummy server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
-  GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr *)&addr, addr_len));
+  GPR_ASSERT(
+      0 == bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
   gpr_mu_lock(g_mu);
@@ -109,16 +111,17 @@ void test_succeeds(void) {
   gpr_mu_unlock(g_mu);
 
   /* connect to it */
-  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
-  grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(GPR_CLOCK_REALTIME));
+  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
+                         (socklen_t *)&resolved_addr.len) == 0);
+  grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
+                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   /* await the connection */
   do {
-    addr_len = sizeof(addr);
-    r = accept(svr_fd, (struct sockaddr *)&addr, &addr_len);
+    resolved_addr.len = sizeof(addr);
+    r = accept(svr_fd, (struct sockaddr *)addr,
+               (socklen_t *)&resolved_addr.len);
   } while (r == -1 && errno == EINTR);
   GPR_ASSERT(r >= 0);
   close(r);
@@ -143,26 +146,26 @@ void test_succeeds(void) {
 }
 
 void test_fails(void) {
-  struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_DEBUG, "test_fails");
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
 
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
 
   /* connect to a broken address */
-  grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(GPR_CLOCK_REALTIME));
+  grpc_closure_init(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
+                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   gpr_mu_lock(g_mu);
 
@@ -204,7 +207,8 @@ int main(int argc, char **argv) {
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   grpc_pollset_set_destroy(g_pollset_set);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

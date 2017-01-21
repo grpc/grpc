@@ -53,22 +53,22 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
   }
   // The slice contains uncompressed data even if compressed data was received
   // because the reader takes care of automatically decompressing it
-  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t uncompressed_length = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t uncompressed_length = GRPC_SLICE_LENGTH(slice);
   char *result = malloc(uncompressed_length);
   if (result) {
-    memcpy(result, GPR_SLICE_START_PTR(slice), uncompressed_length);
+    memcpy(result, GRPC_SLICE_START_PTR(slice), uncompressed_length);
   }
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   *array = result;
   *length = uncompressed_length;
 }
 
 static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
                                                       size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(array, length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(array, length);
   grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return buffer;
 }
 
@@ -97,9 +97,9 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   // appending of byte arrays by not using internally a single contiguous memory
   // block for representation.
   // The following implementation is thus not optimal, sometimes requiring two
-  // copies (one by self.bytes and another by gpr_slice_from_copied_buffer).
+  // copies (one by self.bytes and another by grpc_slice_from_copied_buffer).
   // If it turns out to be an issue, we can use enumerateByteRangesUsingblock:
-  // to create an array of gpr_slice objects to pass to
+  // to create an array of grpc_slice objects to pass to
   // grpc_raw_byte_buffer_create.
   // That would make it do exactly one copy, always.
   return CopyCharArrayToNewByteBuffer((const char *)self.bytes,

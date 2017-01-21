@@ -51,7 +51,7 @@
  * The value corresponding to this key is an opaque binary blob reported by the
  * backend as part of its trailing metadata containing cost information for the
  * call. */
-#define GRPC_LB_COST_MD_KEY "lb-cost"
+#define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {

@@ -126,12 +126,6 @@ class ServerInterface : public CallHook {
   /// \return true on a successful shutdown.
   virtual bool Start(ServerCompletionQueue** cqs, size_t num_cqs) = 0;
 
-  /// Process one or more incoming calls.
-  virtual void RunRpc() = 0;
-
-  /// Schedule \a RunRpc to run in the threadpool.
-  virtual void ScheduleCallback() = 0;
-
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
   virtual int max_receive_message_size() const = 0;
@@ -146,9 +140,9 @@ class ServerInterface : public CallHook {
                      ServerAsyncStreamingInterface* stream,
                      CompletionQueue* call_cq, void* tag,
                      bool delete_on_finalize);
-    virtual ~BaseAsyncRequest() {}
+    virtual ~BaseAsyncRequest();
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+    bool FinalizeResult(void** tag, bool* status) override;
 
    protected:
     ServerInterface* const server_;
@@ -158,7 +152,6 @@ class ServerInterface : public CallHook {
     void* const tag_;
     const bool delete_on_finalize_;
     grpc_call* call_;
-    grpc_metadata_array initial_metadata_array_;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {
@@ -174,7 +167,7 @@ class ServerInterface : public CallHook {
                       ServerCompletionQueue* notification_cq);
   };
 
-  class NoPayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
+  class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     NoPayloadAsyncRequest(void* registered_method, ServerInterface* server,
                           ServerContext* context,
@@ -189,7 +182,7 @@ class ServerInterface : public CallHook {
   };
 
   template <class Message>
-  class PayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
+  class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(void* registered_method, ServerInterface* server,
                         ServerContext* context,
@@ -202,7 +195,7 @@ class ServerInterface : public CallHook {
       IssueRequest(registered_method, &payload_, notification_cq);
     }
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    bool FinalizeResult(void** tag, bool* status) override {
       bool serialization_status =
           *status && payload_ &&
           SerializationTraits<Message>::Deserialize(
@@ -226,7 +219,7 @@ class ServerInterface : public CallHook {
                         ServerCompletionQueue* notification_cq, void* tag,
                         bool delete_on_finalize);
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+    bool FinalizeResult(void** tag, bool* status) override;
 
    private:
     grpc_call_details call_details_;

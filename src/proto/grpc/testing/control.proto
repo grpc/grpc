@@ -78,6 +78,14 @@ message SecurityParams {
   string server_host_override = 2;
 }
 
+message ChannelArg {
+  string name = 1;
+  oneof value {
+    string str_value = 2;
+    int32 int_value = 3;
+  }
+}
+
 message ClientConfig {
   // List of targets to connect to. At least one target needs to be specified.
   repeated string server_targets = 1;
@@ -103,6 +111,8 @@ message ClientConfig {
 
   // If we use an OTHER_CLIENT client_type, this string gives more detail
   string other_client_api = 15;
+
+  repeated ChannelArg channel_args = 16;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -137,6 +147,11 @@ message ServerConfig {
 
   // If we use an OTHER_SERVER client_type, this string gives more detail
   string other_server_api = 11;
+
+  // c++-only options (for now) --------------------------------
+
+  // Buffer pool size (no buffer pool specified if unset)
+  int32 resource_quota_size = 1001;
 }
 
 message ServerArgs {
@@ -213,6 +228,13 @@ message ScenarioResultSummary
   double latency_95 = 9;
   double latency_99 = 10;
   double latency_999 = 11;
+
+  // server cpu usage percentage
+  double server_cpu_usage = 12;
+
+  // Number of requests that succeeded/failed
+  double successful_requests_per_second = 13;
+  double failed_requests_per_second = 14;
 }
 
 // Results of a single benchmark scenario.
@@ -232,4 +254,6 @@ message ScenarioResult {
   // Information on success or failure of each worker
   repeated bool client_success = 7;
   repeated bool server_success = 8;
+  // Number of failed requests (one row per status code seen)
+  repeated RequestResultCount request_results = 9;
 }

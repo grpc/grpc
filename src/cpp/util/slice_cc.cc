@@ -35,14 +35,14 @@
 
 namespace grpc {
 
-Slice::Slice() : slice_(gpr_empty_slice()) {}
+Slice::Slice() : slice_(grpc_empty_slice()) {}
 
-Slice::~Slice() { gpr_slice_unref(slice_); }
+Slice::~Slice() { grpc_slice_unref(slice_); }
 
-Slice::Slice(gpr_slice slice, AddRef) : slice_(gpr_slice_ref(slice)) {}
+Slice::Slice(grpc_slice slice, AddRef) : slice_(grpc_slice_ref(slice)) {}
 
-Slice::Slice(gpr_slice slice, StealRef) : slice_(slice) {}
+Slice::Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 
-Slice::Slice(const Slice& other) : slice_(gpr_slice_ref(other.slice_)) {}
+Slice::Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
 
 }  // namespace grpc

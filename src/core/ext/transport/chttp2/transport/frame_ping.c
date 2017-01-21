@@ -40,9 +40,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-gpr_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes) {
-  gpr_slice slice = gpr_slice_malloc(9 + 8);
-  uint8_t *p = GPR_SLICE_START_PTR(slice);
+grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes) {
+  grpc_slice slice = grpc_slice_malloc(9 + 8);
+  uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   *p++ = 0;
   *p++ = 0;
@@ -76,9 +76,9 @@ grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
 grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s,
-                                          gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+                                          grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_ping_parser *p = parser;
 
@@ -93,8 +93,8 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     if (p->is_ack) {
       grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
-      gpr_slice_buffer_add(&t->qbuf,
-                           grpc_chttp2_ping_create(1, p->opaque_8bytes));
+      grpc_slice_buffer_add(&t->qbuf,
+                            grpc_chttp2_ping_create(1, p->opaque_8bytes));
       grpc_chttp2_initiate_write(exec_ctx, t, false, "ping response");
     }
   }

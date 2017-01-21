@@ -56,7 +56,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
  public:
   ProtoServerReflectionTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     ref_desc_pool_ = protobuf::DescriptorPool::generated_pool();
 

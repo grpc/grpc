@@ -200,6 +200,7 @@ module GRPC
             if is_client
               batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
               @call.status = batch_result.status
+              @call.trailing_metadata = @call.status.metadata if @call.status
               batch_result.check_status
               GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
             end
@@ -219,6 +220,10 @@ module GRPC
       GRPC.logger.debug('bidi-read-loop: finished')
       @reads_complete = true
       finished
+      # Make sure that the write loop is done done before finishing the call.
+      # Note that blocking is ok at this point because we've already received
+      # a status
+      @enq_th.join if is_client
     end
   end
 end

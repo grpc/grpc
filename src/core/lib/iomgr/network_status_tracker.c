@@ -46,7 +46,7 @@ static gpr_mu g_endpoint_mutex;
 void grpc_network_status_shutdown(void) {
   if (head != NULL) {
     gpr_log(GPR_ERROR,
-            "Memory leaked as all network endpoints were not shut down");
+            "Memory leaked as not all network endpoints were shut down");
   }
   gpr_mu_destroy(&g_endpoint_mutex);
 }

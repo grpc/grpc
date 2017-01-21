@@ -67,6 +67,7 @@ environment.update({
     'LDFLAGS': '-L{}'.format(LIBRARY_PATH),
     'LD_LIBRARY_PATH': LIBRARY_PATH,
     'GRPC_PYTHON_BUILD_WITH_CYTHON': '1',
+    'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD': '1',
 })
 
 subprocess_arguments_list = [
@@ -93,6 +94,7 @@ if args.submit:
   # specified repository, edit it, and push it. It's up to the user to then go
   # onto GitHub and make a PR against grpc/grpc:gh-pages.
   repo_parent_dir = tempfile.mkdtemp()
+  print('Documentation parent directory: {}'.format(repo_parent_dir))
   repo_dir = os.path.join(repo_parent_dir, 'grpc')
   python_doc_dir = os.path.join(repo_dir, 'python')
   doc_branch = args.doc_branch

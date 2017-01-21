@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/workqueue_windows.h"
@@ -71,17 +72,16 @@ grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
 
-/** Add a work item to a workqueue. Items added to a work queue will be started
-    in approximately the order they were enqueued, on some thread that may or
-    may not be the current thread. Successive closures enqueued onto a workqueue
-    MAY be executed concurrently.
+/** Fetch the workqueue closure scheduler. Items added to a work queue will be
+    started in approximately the order they were enqueued, on some thread that
+    may or may not be the current thread. Successive closures enqueued onto a
+    workqueue MAY be executed concurrently.
 
     It is generally more expensive to add a closure to a workqueue than to the
     execution context, both in terms of CPU work and in execution latency.
 
     Use work queues when it's important that other threads be given a chance to
     tackle some workload. */
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue);
 
 #endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_H */

@@ -153,6 +153,10 @@
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_test_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\authority_not_supported.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
@@ -184,6 +188,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_call_init_fails.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_latency.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
     </ClCompile>
@@ -223,6 +229,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_payload.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\resource_quota_server.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\server_finishes_request.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_calls.c">
@@ -240,6 +248,10 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\streaming_error_response.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\trailing_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\write_buffering.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\write_buffering_at_end.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

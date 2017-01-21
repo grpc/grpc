@@ -37,9 +37,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
@@ -57,16 +57,16 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
                                const char *error_details) {
   oauth2_request *request = user_data;
   char *token = NULL;
-  gpr_slice token_slice;
+  grpc_slice token_slice;
   if (status == GRPC_CREDENTIALS_ERROR) {
     gpr_log(GPR_ERROR, "Fetching token failed.");
   } else {
     GPR_ASSERT(num_md == 1);
     token_slice = md_elems[0].value;
-    token = gpr_malloc(GPR_SLICE_LENGTH(token_slice) + 1);
-    memcpy(token, GPR_SLICE_START_PTR(token_slice),
-           GPR_SLICE_LENGTH(token_slice));
-    token[GPR_SLICE_LENGTH(token_slice)] = '\0';
+    token = gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1);
+    memcpy(token, GRPC_SLICE_START_PTR(token_slice),
+           GRPC_SLICE_LENGTH(token_slice));
+    token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
   }
   gpr_mu_lock(request->mu);
   request->is_done = 1;
@@ -92,7 +92,8 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = 0;
 
-  grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
+  grpc_closure_init(&do_nothing_closure, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, creds, &request.pops, null_ctx, on_oauth2_response, &request);

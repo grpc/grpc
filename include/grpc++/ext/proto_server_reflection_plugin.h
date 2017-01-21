@@ -48,12 +48,12 @@ namespace reflection {
 class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
  public:
   ProtoServerReflectionPlugin();
-  ::grpc::string name() GRPC_OVERRIDE;
-  void InitServer(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
-  void Finish(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
-  void ChangeArguments(const ::grpc::string& name, void* value) GRPC_OVERRIDE;
-  bool has_async_methods() const GRPC_OVERRIDE;
-  bool has_sync_methods() const GRPC_OVERRIDE;
+  ::grpc::string name() override;
+  void InitServer(::grpc::ServerInitializer* si) override;
+  void Finish(::grpc::ServerInitializer* si) override;
+  void ChangeArguments(const ::grpc::string& name, void* value) override;
+  bool has_async_methods() const override;
+  bool has_sync_methods() const override;
 
  private:
   std::shared_ptr<grpc::ProtoServerReflection> reflection_service_;

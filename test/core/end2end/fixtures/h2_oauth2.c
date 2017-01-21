@@ -59,8 +59,8 @@ static const grpc_metadata *find_metadata(const grpc_metadata *md,
                                           const char *value) {
   size_t i;
   for (i = 0; i < md_count; i++) {
-    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
-        memcmp(md[i].value, value, md[i].value_length) == 0) {
+    if (grpc_slice_str_cmp(md[i].key, key) == 0 &&
+        grpc_slice_str_cmp(md[i].value, value) == 0) {
       return &md[i];
     }
   }
@@ -74,7 +74,7 @@ static void process_oauth2_success(void *state, grpc_auth_context *ctx,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void *user_data) {
   const grpc_metadata *oauth2 =
-      find_metadata(md, md_count, "Authorization", oauth2_md);
+      find_metadata(md, md_count, "authorization", oauth2_md);
   test_processor_state *s;
 
   GPR_ASSERT(state != NULL);
@@ -93,7 +93,7 @@ static void process_oauth2_failure(void *state, grpc_auth_context *ctx,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void *user_data) {
   const grpc_metadata *oauth2 =
-      find_metadata(md, md_count, "Authorization", oauth2_md);
+      find_metadata(md, md_count, "authorization", oauth2_md);
   test_processor_state *s;
   GPR_ASSERT(state != NULL);
   s = (test_processor_state *)state;
@@ -150,13 +150,11 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 }
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
-    const char *query_args) {
-  GPR_ASSERT(query_args == NULL);
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   grpc_call_credentials *oauth2_creds =
-      grpc_md_only_test_credentials_create("Authorization", oauth2_md, 1);
+      grpc_md_only_test_credentials_create("authorization", oauth2_md, 1);
   grpc_channel_credentials *ssl_oauth2_creds =
       grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
@@ -165,7 +163,11 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
 }
@@ -218,7 +220,9 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_with_oauth2_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,

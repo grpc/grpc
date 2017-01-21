@@ -69,11 +69,11 @@ inline RandomDistInterface::~RandomDistInterface() {}
 // independent identical stationary sources. For more information,
 // see http://en.wikipedia.org/wiki/Exponential_distribution
 
-class ExpDist GRPC_FINAL : public RandomDistInterface {
+class ExpDist final : public RandomDistInterface {
  public:
   explicit ExpDist(double lambda) : lambda_recip_(1.0 / lambda) {}
-  ~ExpDist() GRPC_OVERRIDE {}
-  double transform(double uni) const GRPC_OVERRIDE {
+  ~ExpDist() override {}
+  double transform(double uni) const override {
     // Note: Use 1.0-uni above to avoid NaN if uni is 0
     return lambda_recip_ * (-log(1.0 - uni));
   }

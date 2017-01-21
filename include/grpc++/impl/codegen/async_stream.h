@@ -108,7 +108,7 @@ class ClientAsyncReaderInterface : public ClientAsyncStreamingInterface,
                                    public AsyncReaderInterface<R> {};
 
 template <class R>
-class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
+class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  public:
   /// Create a stream and write the first request out.
   template <class W>
@@ -125,7 +125,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&init_ops_);
   }
 
-  void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void ReadInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
@@ -133,7 +133,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) GRPC_OVERRIDE {
+  void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       read_ops_.RecvInitialMetadata(context_);
@@ -142,7 +142,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&read_ops_);
   }
 
-  void Finish(Status* status, void* tag) GRPC_OVERRIDE {
+  void Finish(Status* status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -174,7 +174,7 @@ class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
 };
 
 template <class W>
-class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
+class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  public:
   template <class R>
   ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
@@ -190,7 +190,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&init_ops_);
   }
 
-  void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void ReadInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
@@ -198,20 +198,20 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone(void* tag) GRPC_OVERRIDE {
+  void WritesDone(void* tag) override {
     writes_done_ops_.set_output_tag(tag);
     writes_done_ops_.ClientSendClose();
     call_.PerformOps(&writes_done_ops_);
   }
 
-  void Finish(Status* status, void* tag) GRPC_OVERRIDE {
+  void Finish(Status* status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -246,7 +246,7 @@ class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
 };
 
 template <class W, class R>
-class ClientAsyncReaderWriter GRPC_FINAL
+class ClientAsyncReaderWriter final
     : public ClientAsyncReaderWriterInterface<W, R> {
  public:
   ClientAsyncReaderWriter(ChannelInterface* channel, CompletionQueue* cq,
@@ -259,7 +259,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&init_ops_);
   }
 
-  void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void ReadInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
@@ -267,7 +267,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) GRPC_OVERRIDE {
+  void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       read_ops_.RecvInitialMetadata(context_);
@@ -276,20 +276,20 @@ class ClientAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone(void* tag) GRPC_OVERRIDE {
+  void WritesDone(void* tag) override {
     writes_done_ops_.set_output_tag(tag);
     writes_done_ops_.ClientSendClose();
     call_.PerformOps(&writes_done_ops_);
   }
 
-  void Finish(Status* status, void* tag) GRPC_OVERRIDE {
+  void Finish(Status* status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -319,12 +319,12 @@ class ServerAsyncReaderInterface : public ServerAsyncStreamingInterface,
 };
 
 template <class W, class R>
-class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
+class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
  public:
   explicit ServerAsyncReader(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -337,13 +337,13 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) GRPC_OVERRIDE {
+  void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
 
-  void Finish(const W& msg, const Status& status, void* tag) GRPC_OVERRIDE {
+  void Finish(const W& msg, const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -363,7 +363,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
     call_.PerformOps(&finish_ops_);
   }
 
-  void FinishWithError(const Status& status, void* tag) GRPC_OVERRIDE {
+  void FinishWithError(const Status& status, void* tag) override {
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
@@ -379,7 +379,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
   }
 
  private:
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -398,12 +398,12 @@ class ServerAsyncWriterInterface : public ServerAsyncStreamingInterface,
 };
 
 template <class W>
-class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
+class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
  public:
   explicit ServerAsyncWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -416,7 +416,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -431,7 +431,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  void Finish(const Status& status, void* tag) GRPC_OVERRIDE {
+  void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -446,7 +446,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
   }
 
  private:
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -465,13 +465,13 @@ class ServerAsyncReaderWriterInterface : public ServerAsyncStreamingInterface,
 };
 
 template <class W, class R>
-class ServerAsyncReaderWriter GRPC_FINAL
+class ServerAsyncReaderWriter final
     : public ServerAsyncReaderWriterInterface<W, R> {
  public:
   explicit ServerAsyncReaderWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -484,13 +484,13 @@ class ServerAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) GRPC_OVERRIDE {
+  void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -505,7 +505,7 @@ class ServerAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&write_ops_);
   }
 
-  void Finish(const Status& status, void* tag) GRPC_OVERRIDE {
+  void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -522,7 +522,7 @@ class ServerAsyncReaderWriter GRPC_FINAL
  private:
   friend class ::grpc::Server;
 
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;

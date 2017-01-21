@@ -43,6 +43,8 @@
 
 static bool g_pre_init_called = false;
 
+extern void authority_not_supported(grpc_end2end_test_config config);
+extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
@@ -75,6 +77,8 @@ extern void filter_call_init_fails(grpc_end2end_test_config config);
 extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
+extern void filter_latency(grpc_end2end_test_config config);
+extern void filter_latency_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void graceful_server_shutdown_pre_init(void);
 extern void high_initial_seqno(grpc_end2end_test_config config);
@@ -113,6 +117,8 @@ extern void request_with_flags(grpc_end2end_test_config config);
 extern void request_with_flags_pre_init(void);
 extern void request_with_payload(grpc_end2end_test_config config);
 extern void request_with_payload_pre_init(void);
+extern void resource_quota_server(grpc_end2end_test_config config);
+extern void resource_quota_server_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
@@ -131,10 +137,15 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
+extern void write_buffering(grpc_end2end_test_config config);
+extern void write_buffering_pre_init(void);
+extern void write_buffering_at_end(grpc_end2end_test_config config);
+extern void write_buffering_at_end_pre_init(void);
 
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
+  authority_not_supported_pre_init();
   bad_hostname_pre_init();
   binary_metadata_pre_init();
   call_creds_pre_init();
@@ -151,6 +162,7 @@ void grpc_end2end_tests_pre_init(void) {
   empty_batch_pre_init();
   filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
+  filter_latency_pre_init();
   graceful_server_shutdown_pre_init();
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
@@ -170,6 +182,7 @@ void grpc_end2end_tests_pre_init(void) {
   registered_call_pre_init();
   request_with_flags_pre_init();
   request_with_payload_pre_init();
+  resource_quota_server_pre_init();
   server_finishes_request_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
@@ -179,6 +192,8 @@ void grpc_end2end_tests_pre_init(void) {
   simple_request_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
+  write_buffering_pre_init();
+  write_buffering_at_end_pre_init();
 }
 
 void grpc_end2end_tests(int argc, char **argv,
@@ -188,6 +203,7 @@ void grpc_end2end_tests(int argc, char **argv,
   GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
+    authority_not_supported(config);
     bad_hostname(config);
     binary_metadata(config);
     call_creds(config);
@@ -204,6 +220,7 @@ void grpc_end2end_tests(int argc, char **argv,
     empty_batch(config);
     filter_call_init_fails(config);
     filter_causes_close(config);
+    filter_latency(config);
     graceful_server_shutdown(config);
     high_initial_seqno(config);
     hpack_size(config);
@@ -223,6 +240,7 @@ void grpc_end2end_tests(int argc, char **argv,
     registered_call(config);
     request_with_flags(config);
     request_with_payload(config);
+    resource_quota_server(config);
     server_finishes_request(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
@@ -232,10 +250,16 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_request(config);
     streaming_error_response(config);
     trailing_metadata(config);
+    write_buffering(config);
+    write_buffering_at_end(config);
     return;
   }
 
   for (i = 1; i < argc; i++) {
+    if (0 == strcmp("authority_not_supported", argv[i])) {
+      authority_not_supported(config);
+      continue;
+    }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
       continue;
@@ -298,6 +322,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
+      continue;
+    }
+    if (0 == strcmp("filter_latency", argv[i])) {
+      filter_latency(config);
       continue;
     }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
@@ -376,6 +404,10 @@ void grpc_end2end_tests(int argc, char **argv,
       request_with_payload(config);
       continue;
     }
+    if (0 == strcmp("resource_quota_server", argv[i])) {
+      resource_quota_server(config);
+      continue;
+    }
     if (0 == strcmp("server_finishes_request", argv[i])) {
       server_finishes_request(config);
       continue;
@@ -410,6 +442,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
+      continue;
+    }
+    if (0 == strcmp("write_buffering", argv[i])) {
+      write_buffering(config);
+      continue;
+    }
+    if (0 == strcmp("write_buffering_at_end", argv[i])) {
+      write_buffering_at_end(config);
       continue;
     }
     gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);

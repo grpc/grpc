@@ -37,8 +37,9 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb **list,
                               grpc_chttp2_write_cb *cb) {
@@ -80,7 +81,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
   if (t->dirtied_local_settings && !t->sent_local_settings) {
-    gpr_slice_buffer_add(
+    grpc_slice_buffer_add(
         &t->outbuf,
         grpc_chttp2_settings_create(
             t->settings[GRPC_SENT_SETTINGS], t->settings[GRPC_LOCAL_SETTINGS],
@@ -91,7 +92,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   }
 
   /* simple writes are queued to qbuf, and flushed here */
-  gpr_slice_buffer_move_into(&t->qbuf, &t->outbuf);
+  grpc_slice_buffer_move_into(&t->qbuf, &t->outbuf);
   GPR_ASSERT(t->qbuf.count == 0);
 
   grpc_chttp2_hpack_compressor_set_max_table_size(
@@ -119,7 +120,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
       grpc_chttp2_encode_header(
-          &t->hpack_compressor, s->id, s->send_initial_metadata, 0,
+          exec_ctx, &t->hpack_compressor, s->id, s->send_initial_metadata, 0,
           t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
           &s->stats.outgoing, &t->outbuf);
       s->send_initial_metadata = NULL;
@@ -130,9 +131,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     /* send any window updates */
     if (s->announce_window > 0) {
       uint32_t announce = s->announce_window;
-      gpr_slice_buffer_add(&t->outbuf,
-                           grpc_chttp2_window_update_create(
-                               s->id, s->announce_window, &s->stats.outgoing));
+      grpc_slice_buffer_add(&t->outbuf,
+                            grpc_chttp2_window_update_create(
+                                s->id, s->announce_window, &s->stats.outgoing));
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -162,9 +163,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
             if (!t->is_client && !s->read_closed) {
-              gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
-                                                   s->id, GRPC_CHTTP2_NO_ERROR,
-                                                   &s->stats.outgoing));
+              grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
+                                                    s->id, GRPC_HTTP2_NO_ERROR,
+                                                    &s->stats.outgoing));
             }
           }
           s->sending_bytes += send_bytes;
@@ -186,17 +187,17 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                   &s->stats.outgoing, &t->outbuf);
         } else {
           grpc_chttp2_encode_header(
-              &t->hpack_compressor, s->id, s->send_trailing_metadata, true,
-              t->settings[GRPC_ACKED_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              exec_ctx, &t->hpack_compressor, s->id, s->send_trailing_metadata,
+              true, t->settings[GRPC_ACKED_SETTINGS]
+                               [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s->stats.outgoing, &t->outbuf);
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
         if (!t->is_client && !s->read_closed) {
-          gpr_slice_buffer_add(
+          grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
-                              s->id, GRPC_CHTTP2_NO_ERROR, &s->stats.outgoing));
+                              s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
       }
@@ -220,8 +221,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, announce_incoming_window,
                                      announced);
     grpc_transport_one_way_stats throwaway_stats;
-    gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
-                                         0, announced, &throwaway_stats));
+    grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
+                                          0, announced, &throwaway_stats));
   }
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
@@ -254,7 +255,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
-  gpr_slice_buffer_reset_and_unref(&t->outbuf);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &t->outbuf);
   GRPC_ERROR_UNREF(error);
   GPR_TIMER_END("grpc_chttp2_end_write", 0);
 }

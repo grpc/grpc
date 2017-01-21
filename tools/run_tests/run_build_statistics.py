@@ -47,13 +47,32 @@ sys.path.append(gcp_utils_dir)
 import big_query_utils
 
 
-_HAS_MATRIX=True
 _PROJECT_ID = 'grpc-testing'
 _HAS_MATRIX = True
-_BUILDS = {'gRPC_master': _HAS_MATRIX, 
-           'gRPC_interop_master': not _HAS_MATRIX, 
-           'gRPC_pull_requests': _HAS_MATRIX, 
+_BUILDS = {'gRPC_interop_master': not _HAS_MATRIX,
+           'gRPC_master_linux': not _HAS_MATRIX,
+           'gRPC_master_macos': not _HAS_MATRIX,
+           'gRPC_master_windows': not _HAS_MATRIX,
+           'gRPC_performance_master': not _HAS_MATRIX,
+           'gRPC_portability_master_linux': not _HAS_MATRIX,
+           'gRPC_portability_master_windows': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_cpp': not _HAS_MATRIX,
+           'gRPC_master_msan_c': not _HAS_MATRIX,
+           'gRPC_master_tsanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_tsan_cpp': not _HAS_MATRIX,
            'gRPC_interop_pull_requests': not _HAS_MATRIX,
+           'gRPC_performance_pull_requests': not _HAS_MATRIX,
+           'gRPC_portability_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_portability_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_pull_requests_macos': not _HAS_MATRIX,
+           'gRPC_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_cpp': not _HAS_MATRIX,
+           'gRPC_pull_requests_msan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_cpp': not _HAS_MATRIX,
 }
 _URL_BASE = 'https://grpc-testing.appspot.com/job'
 
@@ -83,6 +102,7 @@ _KNOWN_ERRORS = [
     ('tests.bins/asan/h2_proxy_test streaming_error_response '
      'GRPC_POLL_STRATEGY=legacy'),
 ]
+_NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found. Configuration error?'
 _UNKNOWN_ERROR = 'Unknown error'
 _DATASET_ID = 'build_statistics'
 
@@ -99,6 +119,10 @@ def _scrape_for_known_errors(html):
                          'count': this_error_count})
       print('====> %d failures due to %s' % (this_error_count, known_error))
   return error_list, known_error_count
+
+
+def _no_report_files_found(html):
+  return _NO_REPORT_FILES_FOUND_ERROR in html
 
 
 def _get_last_processed_buildnumber(build_name):
@@ -141,6 +165,7 @@ def _process_build(json_url, console_url):
     failure_count = test_result['failCount']
     build_result['pass_count'] = test_result['passCount']
     build_result['failure_count'] = failure_count
+    build_result['no_report_files_found'] = _no_report_files_found(html)
     if failure_count > 0:
       error_list, known_error_count = _scrape_for_known_errors(html)
       unknown_error_count = failure_count - known_error_count

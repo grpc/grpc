@@ -35,9 +35,11 @@
 
 #include <string.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 static int buffers_are_equal(const unsigned char *buf1,
@@ -57,12 +59,14 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   const char *hello = "hello";
   char *hello_b64 =
       grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
-  gpr_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
-  GPR_ASSERT(GPR_SLICE_LENGTH(hello_slice) == strlen(hello));
-  GPR_ASSERT(strncmp((const char *)GPR_SLICE_START_PTR(hello_slice), hello,
-                     GPR_SLICE_LENGTH(hello_slice)) == 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice hello_slice = grpc_base64_decode(&exec_ctx, hello_b64, url_safe);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(hello_slice) == strlen(hello));
+  GPR_ASSERT(strncmp((const char *)GRPC_SLICE_START_PTR(hello_slice), hello,
+                     GRPC_SLICE_LENGTH(hello_slice)) == 0);
 
-  gpr_slice_unref(hello_slice);
+  grpc_slice_unref_internal(&exec_ctx, hello_slice);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(hello_b64);
 }
 
@@ -70,18 +74,20 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   unsigned char orig[256];
   size_t i;
   char *b64;
-  gpr_slice orig_decoded;
+  grpc_slice orig_decoded;
   for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
 
   /* Try all the different paddings. */
   for (i = 0; i < 3; i++) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
-    orig_decoded = grpc_base64_decode(b64, url_safe);
-    GPR_ASSERT(GPR_SLICE_LENGTH(orig_decoded) == (sizeof(orig) - i));
-    GPR_ASSERT(buffers_are_equal(orig, GPR_SLICE_START_PTR(orig_decoded),
+    orig_decoded = grpc_base64_decode(&exec_ctx, b64, url_safe);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(orig_decoded) == (sizeof(orig) - i));
+    GPR_ASSERT(buffers_are_equal(orig, GRPC_SLICE_START_PTR(orig_decoded),
                                  sizeof(orig) - i));
-    gpr_slice_unref(orig_decoded);
+    grpc_slice_unref_internal(&exec_ctx, orig_decoded);
     gpr_free(b64);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 }
 
@@ -117,25 +123,27 @@ static void test_full_range_encode_decode_b64_urlsafe_multiline(void) {
   test_full_range_encode_decode_b64(1, 1);
 }
 
-static void test_url_safe_unsafe_mismtach_failure(void) {
+static void test_url_safe_unsafe_mismatch_failure(void) {
   unsigned char orig[256];
   size_t i;
   char *b64;
-  gpr_slice orig_decoded;
+  grpc_slice orig_decoded;
   int url_safe = 1;
   for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
 
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   b64 = grpc_base64_encode(orig, sizeof(orig), url_safe, 0);
-  orig_decoded = grpc_base64_decode(b64, !url_safe);
-  GPR_ASSERT(GPR_SLICE_IS_EMPTY(orig_decoded));
+  orig_decoded = grpc_base64_decode(&exec_ctx, b64, !url_safe);
+  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  gpr_slice_unref(orig_decoded);
+  grpc_slice_unref_internal(&exec_ctx, orig_decoded);
 
   b64 = grpc_base64_encode(orig, sizeof(orig), !url_safe, 0);
-  orig_decoded = grpc_base64_decode(b64, url_safe);
-  GPR_ASSERT(GPR_SLICE_IS_EMPTY(orig_decoded));
+  orig_decoded = grpc_base64_decode(&exec_ctx, b64, url_safe);
+  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  gpr_slice_unref(orig_decoded);
+  grpc_slice_unref_internal(&exec_ctx, orig_decoded);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_rfc4648_test_vectors(void) {
@@ -171,40 +179,42 @@ static void test_rfc4648_test_vectors(void) {
 }
 
 static void test_unpadded_decode(void) {
-  gpr_slice decoded;
+  grpc_slice decoded;
 
-  decoded = grpc_base64_decode("Zm9vYmFy", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "foobar") == 0);
-  gpr_slice_unref(decoded);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  decoded = grpc_base64_decode(&exec_ctx, "Zm9vYmFy", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "foobar") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("Zm9vYmE", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "fooba") == 0);
-  gpr_slice_unref(decoded);
+  decoded = grpc_base64_decode(&exec_ctx, "Zm9vYmE", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "fooba") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("Zm9vYg", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "foob") == 0);
-  gpr_slice_unref(decoded);
+  decoded = grpc_base64_decode(&exec_ctx, "Zm9vYg", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "foob") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("Zm9v", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "foo") == 0);
-  gpr_slice_unref(decoded);
+  decoded = grpc_base64_decode(&exec_ctx, "Zm9v", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "foo") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("Zm8", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "fo") == 0);
-  gpr_slice_unref(decoded);
+  decoded = grpc_base64_decode(&exec_ctx, "Zm8", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "fo") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("Zg", 0);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(decoded));
-  GPR_ASSERT(gpr_slice_str_cmp(decoded, "f") == 0);
-  gpr_slice_unref(decoded);
+  decoded = grpc_base64_decode(&exec_ctx, "Zg", 0);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
+  GPR_ASSERT(grpc_slice_str_cmp(decoded, "f") == 0);
+  grpc_slice_unref(decoded);
 
-  decoded = grpc_base64_decode("", 0);
-  GPR_ASSERT(GPR_SLICE_IS_EMPTY(decoded));
+  decoded = grpc_base64_decode(&exec_ctx, "", 0);
+  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(decoded));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
@@ -217,7 +227,7 @@ int main(int argc, char **argv) {
   test_full_range_encode_decode_b64_multiline();
   test_full_range_encode_decode_b64_urlsafe_no_multiline();
   test_full_range_encode_decode_b64_urlsafe_multiline();
-  test_url_safe_unsafe_mismtach_failure();
+  test_url_safe_unsafe_mismatch_failure();
   test_rfc4648_test_vectors();
   test_unpadded_decode();
   return 0;

@@ -11,5 +11,7 @@ This file lists all pending backward-compatibility changes that should
 be cleaned up the next time we are going to bump the major version
 number:
 
+- remove `ServerBuilder::SetMaxMessageSize()` method from
+  `include/grpc++/server_builder.h` (commit `6980362`)
 - remove `ClientContext::set_fail_fast()` method from
   `include/grpc++/impl/codegen/client_context.h` (commit `9477724`)

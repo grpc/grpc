@@ -83,6 +83,7 @@ def main():
               'secure': 'no',
               'src': ['test/core/bad_client/tests/%s.c' % t],
               'vs_proj_dir': 'test',
+              'exclude_iomgrs': ['uv'],
               'deps': [
                   'bad_client_test',
                   'grpc_test_util_unsecure',

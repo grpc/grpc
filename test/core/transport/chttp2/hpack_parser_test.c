@@ -36,32 +36,32 @@
 #include <stdarg.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
 typedef struct { va_list args; } test_checker;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
   const char *ekey, *evalue;
   test_checker *chk = ud;
   ekey = va_arg(chk->args, char *);
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(gpr_slice_str_cmp(md->key->slice, ekey) == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md->value->slice, evalue) == 0);
-  GRPC_MDELEM_UNREF(md);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
+  GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
                         grpc_slice_split_mode mode, const char *hexstring,
                         ... /* char *key, char *value */) {
-  gpr_slice input = parse_hexstring(hexstring);
-  gpr_slice *slices;
+  grpc_slice input = parse_hexstring(hexstring);
+  grpc_slice *slices;
   size_t nslices;
   size_t i;
   test_checker chk;
@@ -72,18 +72,17 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   parser->on_header_user_data = &chk;
 
   grpc_split_slices(mode, &input, 1, &slices, &nslices);
-  gpr_slice_unref(input);
+  grpc_slice_unref(input);
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-                   &exec_ctx, parser, GPR_SLICE_START_PTR(slices[i]),
-                   GPR_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(&exec_ctx, parser, slices[i]) ==
+               GRPC_ERROR_NONE);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
   for (i = 0; i < nslices; i++) {
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   gpr_free(slices);
 
@@ -94,8 +93,9 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.2.1 */
   test_vector(&parser, mode,
               "400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
@@ -111,9 +111,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "password", "secret", NULL);
   /* D.2.4 */
   test_vector(&parser, mode, "82", ":method", "GET", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -131,9 +131,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -151,11 +151,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.5.1 */
   test_vector(&parser, mode,
               "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -185,11 +185,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.6.1 */
   test_vector(&parser, mode,
               "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -216,7 +216,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
