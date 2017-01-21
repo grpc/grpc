@@ -856,9 +856,10 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
     int header_index;
-    for (header_index = 0; header_index < s->header_array.count; header_index++) {
-      gpr_free((void*)s->header_array.headers[header_index].key);
-      gpr_free((void*)s->header_array.headers[header_index].value);
+    for (header_index = 0; header_index < s->header_array.count;
+         header_index++) {
+      gpr_free((void *)s->header_array.headers[header_index].key);
+      gpr_free((void *)s->header_array.headers[header_index].value);
     }
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_WITH_CALLBACK;
