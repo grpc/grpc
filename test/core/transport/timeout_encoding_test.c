@@ -88,8 +88,7 @@ void test_encoding(void) {
 static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
   gpr_timespec got;
   gpr_log(GPR_INFO, "check decoding '%s'", buffer);
-  GPR_ASSERT(1 == grpc_http2_decode_timeout(
-                      grpc_slice_from_static_string(buffer), &got));
+  GPR_ASSERT(1 == grpc_http2_decode_timeout(buffer, &got));
   GPR_ASSERT(0 == gpr_time_cmp(got, expected));
 }
 
@@ -135,23 +134,18 @@ void test_decoding(void) {
   assert_decodes_as("9999999999S", gpr_inf_future(GPR_TIMESPAN));
 }
 
-static void assert_decoding_fails(const char *s) {
-  gpr_timespec x;
-  GPR_ASSERT(0 ==
-             grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
-}
-
 void test_decoding_fails(void) {
+  gpr_timespec x;
   LOG_TEST("test_decoding_fails");
-  assert_decoding_fails("");
-  assert_decoding_fails(" ");
-  assert_decoding_fails("x");
-  assert_decoding_fails("1");
-  assert_decoding_fails("1x");
-  assert_decoding_fails("1ux");
-  assert_decoding_fails("!");
-  assert_decoding_fails("n1");
-  assert_decoding_fails("-1u");
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout(" ", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("x", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1x", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1ux", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("!", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("n1", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("-1u", &x));
 }
 
 int main(int argc, char **argv) {

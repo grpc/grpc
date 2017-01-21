@@ -178,8 +178,8 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *completion_queue, grpc_slice method,
-    const grpc_slice *host, gpr_timespec deadline, void *reserved);
+    grpc_completion_queue *completion_queue, const char *method,
+    const char *host, gpr_timespec deadline, void *reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
     to ping); if the channel is not connected, posts a failed. */
@@ -402,14 +402,14 @@ GRPCAPI void grpc_server_destroy(grpc_server *server);
 GRPCAPI int grpc_tracer_set_enabled(const char *name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
-GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);
+GRPCAPI int grpc_header_key_is_legal(const char *key, size_t length);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPCAPI int grpc_header_nonbin_value_is_legal(grpc_slice slice);
+GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
 
 /** Check whether a metadata key corresponds to a binary value */
-GRPCAPI int grpc_is_binary_header(grpc_slice slice);
+GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);

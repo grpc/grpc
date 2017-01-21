@@ -109,13 +109,13 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -144,6 +144,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -167,8 +168,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -185,13 +185,13 @@ static void simple_request_body(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == strcmp(details, "xyz"));
+  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
   GPR_ASSERT(was_cancelled == 1);
 
-  grpc_slice_unref(details);
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -223,9 +223,11 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv2;
   grpc_status_code status1;
   grpc_call_error error;
-  grpc_slice details1;
+  char *details1 = NULL;
+  size_t details_capacity1 = 0;
   grpc_status_code status2;
-  grpc_slice details2;
+  char *details2 = NULL;
+  size_t details_capacity2 = 0;
   grpc_op ops[6];
   grpc_op *op;
   int was_cancelled;
@@ -259,15 +261,13 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
      the first completes */
   deadline = n_seconds_time(1000);
   c1 = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/alpha",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c1);
   c2 = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/beta",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c2);
 
@@ -295,6 +295,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -326,6 +327,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity2;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -376,8 +378,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -390,8 +391,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   live_call = (live_call == 300) ? 400 : 300;
   CQ_EXPECT_COMPLETION(cqv, tag(live_call + 1), 1);
   cq_verify(cqv);
-
-  grpc_call_details_destroy(&call_details);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s2, &call_details,
@@ -414,7 +413,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -432,8 +431,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_call_destroy(c2);
   grpc_call_destroy(s2);
 
-  grpc_slice_unref(details1);
-  grpc_slice_unref(details2);
+  gpr_free(details1);
+  gpr_free(details2);
   grpc_metadata_array_destroy(&initial_metadata_recv1);
   grpc_metadata_array_destroy(&trailing_metadata_recv1);
   grpc_metadata_array_destroy(&initial_metadata_recv2);
