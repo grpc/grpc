@@ -45,8 +45,6 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct fd_node {

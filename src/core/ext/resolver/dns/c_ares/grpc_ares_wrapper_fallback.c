@@ -34,21 +34,23 @@
 /* TODO(zyc): remove this fallback after we can build c-ares on windows */
 
 #include <grpc/support/port_platform.h>
-#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
+#if !(GRPC_ARES == 1)
 
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
-                                    grpc_ares_ev_driver *ev_driver,
+                                    grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
-  grpc_resolve_address(exec_ctx, name, default_port, on_done, addrs);
+  grpc_resolve_address(exec_ctx, name, default_port, interested_parties,
+                       on_done, addrs);
 }
 
 void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) { return GRPC_ERROR_NONE; }

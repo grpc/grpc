@@ -46,15 +46,12 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
