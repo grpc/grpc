@@ -29,6 +29,26 @@
 
 from libc.stdint cimport intptr_t
 
+
+cdef bytes _slice_bytes(grpc_slice slice):
+  cdef void *start = grpc_slice_start_ptr(slice)
+  cdef size_t length = grpc_slice_length(slice)
+  return (<const char *>start)[:length]
+
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
+  cdef void *start = grpc_slice_start_ptr(slice)
+  cdef size_t length = grpc_slice_length(slice)
+  return grpc_slice_from_copied_buffer(<const char *>start, length)
+
+cdef grpc_slice _slice_from_bytes(bytes value) nogil:
+  cdef const char *value_ptr
+  cdef size_t length
+  with gil:
+    value_ptr = <const char *>value
+    length = len(value)
+  return grpc_slice_from_copied_buffer(value_ptr, length)
+
+
 class ConnectivityState:
   idle = GRPC_CHANNEL_IDLE
   connecting = GRPC_CHANNEL_CONNECTING
@@ -189,11 +209,11 @@ cdef class CallDetails:
 
   @property
   def method(self):
-    return Slice.from_slice(self.c_details.method).bytes()
+    return _slice_bytes(self.c_details.method)
 
   @property
   def host(self):
-    return Slice.from_slice(self.c_details.host).bytes()
+    return _slice_bytes(self.c_details.host)
 
   @property
   def deadline(self):
@@ -225,42 +245,6 @@ cdef class Event:
     self.request_metadata = request_metadata
     self.batch_operations = batch_operations
     self.is_new_request = is_new_request
-
-
-cdef class Slice:
-
-  def __cinit__(self):
-    with nogil:
-      grpc_init()
-      self.c_slice = grpc_empty_slice()
-
-  cdef void _assign_slice(self, grpc_slice new_slice) nogil:
-    grpc_slice_unref(self.c_slice)
-    self.c_slice = new_slice
-
-  @staticmethod
-  def from_bytes(bytes data):
-    cdef Slice self = Slice()
-    self._assign_slice(grpc_slice_from_copied_buffer(data, len(data)))
-    return self
-
-  @staticmethod
-  cdef Slice from_slice(grpc_slice slice):
-    cdef Slice self = Slice()
-    grpc_slice_ref(slice)
-    self._assign_slice(slice)
-    return self
-
-  def bytes(self):
-    with nogil:
-      pointer = grpc_slice_start_ptr(self.c_slice)
-      length = grpc_slice_length(self.c_slice)
-    return (<char *>pointer)[:length]
-
-  def __dealloc__(self):
-    with nogil:
-      grpc_slice_unref(self.c_slice)
-      grpc_shutdown()
 
 
 cdef class ByteBuffer:
@@ -412,20 +396,21 @@ cdef class ChannelArgs:
 
 cdef class Metadatum:
 
-  # TODO(atash) this should just accept Slice objects.
   def __cinit__(self, bytes key, bytes value):
-    self._key = Slice.from_bytes(key)
-    self._value = Slice.from_bytes(value)
-    self.c_metadata.key = self._key.c_slice
-    self.c_metadata.value = self._value.c_slice
+    self.c_metadata.key = _slice_from_bytes(key)
+    self.c_metadata.value = _slice_from_bytes(value)
+
+  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil:
+    destination[0].key = _copy_slice(self.c_metadata.key)
+    destination[0].value = _copy_slice(self.c_metadata.value)
 
   @property
   def key(self):
-    return self._key.bytes()
+    return _slice_bytes(self.c_metadata.key)
 
   @property
   def value(self):
-    return self._value.bytes()
+    return _slice_bytes(self.c_metadata.value)
 
   def __len__(self):
     return 2
@@ -441,6 +426,9 @@ cdef class Metadatum:
   def __iter__(self):
     return iter((self.key, self.value))
 
+  def __dealloc__(self):
+    grpc_slice_unref(self.c_metadata.key)
+    grpc_slice_unref(self.c_metadata.value)
 
 cdef class _MetadataIterator:
 
@@ -465,41 +453,57 @@ cdef class _MetadataIterator:
 
 cdef class Metadata:
 
-  def __cinit__(self, metadata):
-    grpc_init()
-    self.metadata = list(metadata)
+  def __cinit__(self, metadata_iterable):
+    with nogil:
+      grpc_init()
+      grpc_metadata_array_init(&self.c_metadata_array)
+    metadata = list(metadata_iterable)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
         raise TypeError("expected list of Metadatum")
-    with nogil:
-      grpc_metadata_array_init(&self.c_metadata_array)
-    self.c_metadata_array.count = len(self.metadata)
-    self.c_metadata_array.capacity = len(self.metadata)
+    self.c_metadata_array.count = len(metadata)
+    self.c_metadata_array.capacity = len(metadata)
     with nogil:
       self.c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
           self.c_metadata_array.count*sizeof(grpc_metadata)
       )
     for i in range(self.c_metadata_array.count):
-      self.c_metadata_array.metadata[i] = (
-          (<Metadatum>self.metadata[i]).c_metadata)
+      (<Metadatum>metadata[i])._copy_metadatum(&self.c_metadata_array.metadata[i])
 
   def __dealloc__(self):
-    # this frees the allocated memory for the grpc_metadata_array (although
-    # it'd be nice if that were documented somewhere...)
-    # TODO(atash): document this in the C core
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    grpc_shutdown()
+    with nogil:
+      # this frees the allocated memory for the grpc_metadata_array (although
+      # it'd be nice if that were documented somewhere...)
+      # TODO(atash): document this in the C core
+      grpc_metadata_array_destroy(&self.c_metadata_array)
+      grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
 
   def __getitem__(self, size_t i):
-    return Metadatum(
-        key=Slice.from_slice(self.c_metadata_array.metadata[i].key).bytes(),
-        value=Slice.from_slice(self.c_metadata_array.metadata[i].value).bytes())
+    if i >= self.c_metadata_array.count:
+      raise IndexError
+    key = _slice_bytes(self.c_metadata_array.metadata[i].key)
+    value = _slice_bytes(self.c_metadata_array.metadata[i].value)
+    return Metadatum(key=key, value=value)
 
   def __iter__(self):
     return _MetadataIterator(self)
+
+  cdef void _claim_slice_ownership(self):
+    cdef grpc_metadata_array new_c_metadata_array
+    grpc_metadata_array_init(&new_c_metadata_array)
+    new_c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
+        self.c_metadata_array.count*sizeof(grpc_metadata))
+    new_c_metadata_array.count = self.c_metadata_array.count
+    for i in range(self.c_metadata_array.count):
+      new_c_metadata_array.metadata[i].key = _copy_slice(
+          self.c_metadata_array.metadata[i].key)
+      new_c_metadata_array.metadata[i].value = _copy_slice(
+          self.c_metadata_array.metadata[i].value)
+    grpc_metadata_array_destroy(&self.c_metadata_array)
+    self.c_metadata_array = new_c_metadata_array
 
 
 cdef class Operation:
@@ -507,7 +511,7 @@ cdef class Operation:
   def __cinit__(self):
     grpc_init()
     self.references = []
-    self._received_status_details = Slice()
+    self._status_details = grpc_empty_slice()
     self.is_valid = False
 
   @property
@@ -564,13 +568,13 @@ cdef class Operation:
   def received_status_details(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       raise TypeError("self must be an operation receiving status details")
-    return self._received_status_details.bytes()
+    return _slice_bytes(self._status_details)
 
   @property
   def received_status_details_or_none(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       return None
-    return self._received_status_details.bytes()
+    return _slice_bytes(self._status_details)
 
   @property
   def received_cancelled(self):
@@ -586,6 +590,7 @@ cdef class Operation:
     return False if self._received_cancelled == 0 else True
 
   def __dealloc__(self):
+    grpc_slice_unref(self._status_details)
     grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
@@ -626,10 +631,10 @@ def operation_send_status_from_server(
   op.c_op.data.send_status_from_server.trailing_metadata = (
       metadata.c_metadata_array.metadata)
   op.c_op.data.send_status_from_server.status = code
-  cdef Slice details_slice = Slice.from_bytes(details)
-  op.c_op.data.send_status_from_server.status_details = &details_slice.c_slice
+  grpc_slice_unref(op._status_details)
+  op._status_details = _slice_from_bytes(details)
+  op.c_op.data.send_status_from_server.status_details = &op._status_details
   op.references.append(metadata)
-  op.references.append(details_slice)
   op.is_valid = True
   return op
 
@@ -665,7 +670,7 @@ def operation_receive_status_on_client(int flags):
   op.c_op.data.receive_status_on_client.status = (
       &op._received_status_code)
   op.c_op.data.receive_status_on_client.status_details = (
-      &op._received_status_details.c_slice)
+      &op._status_details)
   op.is_valid = True
   return op
 

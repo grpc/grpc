@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ecdh\ecdh_test.cc">
+      <Filter>third_party\boringssl\crypto\ecdh</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{100930cd-7241-d92b-da6a-a84ea68e24bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{2f0bb152-1c3a-5f3a-7512-ca92fef36751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{c004f731-666a-9d7d-c448-96a16069cbc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\ecdh">
+      <UniqueIdentifier>{74176a90-7b93-c871-7de7-0048a1a55076}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -206,14 +206,18 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
     grpc_metadata md_entry;
-    md_entry.key = SliceReferencingString(it->first);
-    md_entry.value = SliceReferencingString(it->second);
+    md_entry.key = SliceFromCopiedString(it->first);
+    md_entry.value = SliceFromCopiedString(it->second);
     md_entry.flags = 0;
     md.push_back(md_entry);
   }
   cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
      static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
+  for (auto it = md.begin(); it != md.end(); ++it) {
+    grpc_slice_unref(it->key);
+    grpc_slice_unref(it->value);
+  }
 }
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(

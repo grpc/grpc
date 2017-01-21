@@ -32,17 +32,18 @@ from concurrent import futures
 
 
 class RecordingThreadPool(futures.Executor):
-  """A thread pool that records if used."""
-  def __init__(self, max_workers):
-    self._tp_executor = futures.ThreadPoolExecutor(max_workers=max_workers)
-    self._lock = threading.Lock()
-    self._was_used = False
+    """A thread pool that records if used."""
 
-  def submit(self, fn, *args, **kwargs):
-    with self._lock:
-      self._was_used = True
-    self._tp_executor.submit(fn, *args, **kwargs)
+    def __init__(self, max_workers):
+        self._tp_executor = futures.ThreadPoolExecutor(max_workers=max_workers)
+        self._lock = threading.Lock()
+        self._was_used = False
 
-  def was_used(self):
-    with self._lock:
-      return self._was_used
+    def submit(self, fn, *args, **kwargs):
+        with self._lock:
+            self._was_used = True
+        self._tp_executor.submit(fn, *args, **kwargs)
+
+    def was_used(self):
+        with self._lock:
+            return self._was_used
