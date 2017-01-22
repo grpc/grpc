@@ -99,11 +99,18 @@ class GrpcTool {
     usage_exit_status_ = exit_status;
   }
 
+ protected:
+  virtual std::istream* input_stream() { return input_stream_; }
+
  private:
   void CommandUsage(const grpc::string& usage) const;
+  void SetInputStream(std::istream* input_stream) {
+    input_stream_ = input_stream;
+  }
   bool print_command_usage_;
   int usage_exit_status_;
   const grpc::string cred_usage_;
+  std::istream* input_stream_;
 };
 
 template <typename T>
@@ -468,7 +475,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   }
 
   if (parser->IsStreaming(method_name, true /* is_request */)) {
-    std::istream* input_stream;
+    // std::istream* input_stream;
     std::ifstream input_file;
 
     if (argc == 3) {
@@ -486,10 +493,12 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         print_mode = true;
         fprintf(stderr, "reading streaming request message from stdin...\n");
       }
-      input_stream = &std::cin;
+      // input_stream = &std::cin;
+      SetInputStream(&std::cin);
     } else {
       input_file.open(FLAGS_infile, std::ios::in | std::ios::binary);
-      input_stream = &input_file;
+      // input_stream = &input_file;
+      SetInputStream(&input_file);
     }
 
     std::thread read_thread(ReadResponse, &call, method_name, callback,
@@ -497,8 +506,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     std::stringstream request_ss;
     grpc::string line;
-    while (!request_text.empty() ||
-           (!input_stream->eof() && getline(*input_stream, line))) {
+    while (!request_text.empty() || getline(*input_stream(), line)) {
+      //  (!input_stream()->eof() && getline(*input_stream(), line))) {
       if (!request_text.empty()) {
         if (FLAGS_binary_input) {
           serialized_request_proto = request_text;
