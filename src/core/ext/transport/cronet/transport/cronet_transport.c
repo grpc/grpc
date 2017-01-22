@@ -655,8 +655,6 @@ static void convert_metadata_to_cronet_headers(
     headers[num_headers].key = key;
     headers[num_headers].value = value;
     num_headers++;
-    gpr_free(key);
-    gpr_free(value);
     if (curr == NULL) {
       break;
     }
@@ -857,6 +855,12 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
+    unsigned int header_index;
+    for (header_index = 0; header_index < s->header_array.count;
+         header_index++) {
+      gpr_free((void *)s->header_array.headers[header_index].key);
+      gpr_free((void *)s->header_array.headers[header_index].value);
+    }
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_WITH_CALLBACK;
   } else if (stream_op->recv_initial_metadata &&
