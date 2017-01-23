@@ -47,7 +47,7 @@ grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
                            grpc_slice *output) {
   unsigned char *contents = NULL;
   size_t contents_size = 0;
-  grpc_slice result = gpr_empty_slice();
+  grpc_slice result = grpc_empty_slice();
   FILE *file;
   size_t bytes_read = 0;
   grpc_error *error = GRPC_ERROR_NONE;
