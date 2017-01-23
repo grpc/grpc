@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.description = 'protoc and the Ruby gRPC protoc plugin'
   s.license = 'BSD-3-Clause'
 
-  s.files = %w( version.rb os_check.rb README.md )
+  s.files = %w( version.rb platform_check.rb README.md )
   s.files += Dir.glob('bin/**/*')
 
   s.bindir = 'bin'
