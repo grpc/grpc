@@ -297,10 +297,10 @@
 #endif
 
 #ifdef _MSC_VER
-#if _MSC_VER >= 1900 && defined(PY_MAJOR_VERSION)
+#if (_MSC_VER >= 1900) && defined(PY_MAJOR_VERSION)
 // The Python 3.5 Windows runtime is missing InetNtop
 #define GPR_WIN_INET_NTOP
-#endif // _MSC_VER >= 1900 && defined(PY_MAJOR_VERSION)
+#endif // (_MSC_VER >= 1900) && defined(PY_MAJOR_VERSION)
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
 typedef __int16 int16_t;
