@@ -204,8 +204,8 @@ class ServerClientMixin(object):
                 self.assertTrue(event.success)
                 self.assertIs(tag, event.tag)
             except Exception as error:
-                raise Exception("Error in '{}': {}".format(description,
-                                                           error.message))
+                raise Exception(
+                    "Error in '{}': {}".format(description, error.message))
             return event
 
         return test_utilities.SimpleFuture(performer)
