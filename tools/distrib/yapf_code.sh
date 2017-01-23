@@ -40,7 +40,7 @@ VIRTUALENV=python_format_venv
 
 virtualenv $VIRTUALENV
 PYTHON=`realpath $VIRTUALENV/bin/python`
-$PYTHON -m pip install --upgrade futures yapf
+$PYTHON -m pip install --upgrade futures yapf==0.15
 
 exclusion_args=""
 for exclusion in $EXCLUSIONS; do
