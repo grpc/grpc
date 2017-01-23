@@ -27,3 +27,6 @@
 [submodule "third_party/boringssl-with-bazel"]
 	path = third_party/boringssl-with-bazel
 	url = https://boringssl.googlesource.com/boringssl
+[submodule "third_party/cares/cares"]
+	path = third_party/cares/cares
+	url = https://github.com/c-ares/c-ares.git
