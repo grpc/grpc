@@ -31,12 +31,15 @@
  *
  */
 
+#include "src/cpp/server/dynamic_thread_pool.h"
+
 #include <mutex>
 #include <thread>
 
-#include "src/cpp/server/dynamic_thread_pool.h"
+#include <grpc/support/log.h>
 
 namespace grpc {
+
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
       thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
