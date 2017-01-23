@@ -611,6 +611,7 @@ static call_state *maybe_delete_call_state(call_state *call) {
     grpc_slice_unref(call->slices_to_unref[i]);
   }
   gpr_free(call->to_free);
+  gpr_free(call->slices_to_unref);
 
   gpr_free(call);
 
@@ -633,8 +634,8 @@ static grpc_slice *add_to_slice_unref(call_state *call, grpc_slice s) {
         gpr_realloc(call->slices_to_unref,
                     sizeof(*call->slices_to_unref) * call->cap_slices_to_unref);
   }
-  call->slices_to_unref[call->num_to_free++] = s;
-  return &call->slices_to_unref[call->num_to_free - 1];
+  call->slices_to_unref[call->num_slices_to_unref++] = s;
+  return &call->slices_to_unref[call->num_slices_to_unref - 1];
 }
 
 static void read_metadata(input_stream *inp, size_t *count,
