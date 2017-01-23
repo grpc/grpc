@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 
 const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
-  return inet_ntop(af, src, dst, size);
+  return InetNtop(af, (void *)src, dst, size);
 }
 
 #endif /* GRPC_WINDOWS_SOCKETUTILS */
