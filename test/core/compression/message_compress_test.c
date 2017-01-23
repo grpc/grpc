@@ -114,7 +114,7 @@ static void assert_passthrough(grpc_slice value,
   }
 
   final = grpc_slice_merge(output.slices, output.count);
-  GPR_ASSERT(grpc_slice_eq(value, final));
+  GPR_ASSERT(0 == grpc_slice_cmp(value, final));
 
   grpc_slice_buffer_destroy(&input);
   grpc_slice_buffer_destroy(&compressed);

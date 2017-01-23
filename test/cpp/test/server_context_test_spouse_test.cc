@@ -36,13 +36,10 @@
 #include <cstring>
 #include <vector>
 
-#include <grpc++/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
-
-static internal::GrpcLibraryInitializer g_initializer;
 
 const char key1[] = "metadata-key1";
 const char key2[] = "metadata-key2";

@@ -67,7 +67,9 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             channel_data *chand) {
   grpc_linked_mdelem *m;
   for (m = md->list.head; m != NULL; m = m->next) {
-    if (grpc_slice_eq(GRPC_MDKEY(m->md), GRPC_MDSTR_PATH)) {
+    if (m->md->key == GRPC_MDSTR_PATH) {
+      gpr_log(GPR_DEBUG, "%s",
+              (const char *)GRPC_SLICE_START_PTR(m->md->value->slice));
       /* Add method tag here */
     }
   }

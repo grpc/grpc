@@ -56,7 +56,8 @@ struct test_state {
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
-  grpc_slice details;
+  char *details;
+  size_t details_capacity;
   grpc_call *server_call;
   grpc_server *server;
   grpc_metadata_array server_initial_metadata_recv;
@@ -75,17 +76,17 @@ static void prepare_test(int is_client) {
   g_state.deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   g_state.cq = grpc_completion_queue_create(NULL);
   g_state.cqv = cq_verifier_create(g_state.cq);
-  g_state.details = grpc_empty_slice();
+  g_state.details = NULL;
+  g_state.details_capacity = 0;
   memset(g_state.ops, 0, sizeof(g_state.ops));
 
   if (is_client) {
     /* create a call, channel to a non existant server */
     g_state.chan =
         grpc_insecure_channel_create("nonexistant:54321", NULL, NULL);
-    grpc_slice host = grpc_slice_from_static_string("nonexistant");
     g_state.call = grpc_channel_create_call(
-        g_state.chan, NULL, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
-        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline, NULL);
+        g_state.chan, NULL, GRPC_PROPAGATE_DEFAULTS, g_state.cq, "/Foo",
+        "nonexistant", g_state.deadline, NULL);
   } else {
     g_state.server = grpc_server_create(NULL, NULL);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, NULL);
@@ -96,10 +97,9 @@ static void prepare_test(int is_client) {
     gpr_join_host_port(&server_hostport, "localhost", port);
     g_state.chan = grpc_insecure_channel_create(server_hostport, NULL, NULL);
     gpr_free(server_hostport);
-    grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
-        g_state.chan, NULL, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
-        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline, NULL);
+        g_state.chan, NULL, GRPC_PROPAGATE_DEFAULTS, g_state.cq, "/Foo", "bar",
+        g_state.deadline, NULL);
     grpc_metadata_array_init(&g_state.server_initial_metadata_recv);
     grpc_call_details_init(&g_state.call_details);
     op = g_state.ops;
@@ -126,7 +126,7 @@ static void cleanup_test() {
   grpc_call_destroy(g_state.call);
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
-  grpc_slice_unref(g_state.details);
+  gpr_free(g_state.details);
   grpc_metadata_array_destroy(&g_state.initial_metadata_recv);
   grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
@@ -289,8 +289,7 @@ static void test_send_server_status_from_client() {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -399,6 +398,8 @@ static void test_recv_status_on_client_twice() {
       &g_state.trailing_metadata_recv;
   op->data.recv_status_on_client.status = &g_state.status;
   op->data.recv_status_on_client.status_details = &g_state.details;
+  op->data.recv_status_on_client.status_details_capacity =
+      &g_state.details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -413,6 +414,7 @@ static void test_recv_status_on_client_twice() {
   op->data.recv_status_on_client.trailing_metadata = NULL;
   op->data.recv_status_on_client.status = NULL;
   op->data.recv_status_on_client.status_details = NULL;
+  op->data.recv_status_on_client.status_details_capacity = NULL;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -451,6 +453,8 @@ static void test_recv_status_on_client_from_server() {
       &g_state.trailing_metadata_recv;
   op->data.recv_status_on_client.status = &g_state.status;
   op->data.recv_status_on_client.status_details = &g_state.details;
+  op->data.recv_status_on_client.status_details_capacity =
+      &g_state.details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -470,8 +474,7 @@ static void test_send_status_from_server_with_invalid_flags() {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 1;
   op->reserved = NULL;
   op++;
@@ -492,8 +495,7 @@ static void test_too_many_trailing_metadata() {
   op->data.send_status_from_server.trailing_metadata_count =
       (size_t)INT_MAX + 1;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -513,15 +515,14 @@ static void test_send_server_status_twice() {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -576,8 +577,9 @@ static void test_invalid_initial_metadata_reserved_key() {
   gpr_log(GPR_INFO, "test_invalid_initial_metadata_reserved_key");
 
   grpc_metadata metadata;
-  metadata.key = grpc_slice_from_static_string(":start_with_colon");
-  metadata.value = grpc_slice_from_static_string("value");
+  metadata.key = ":start_with_colon";
+  metadata.value = "value";
+  metadata.value_length = 6;
 
   grpc_op *op;
   prepare_test(1);
@@ -597,7 +599,6 @@ static void test_invalid_initial_metadata_reserved_key() {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();
   test_non_null_reserved_on_op();
   test_send_initial_metadata_more_than_once();
@@ -617,6 +618,7 @@ int main(int argc, char **argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
+  test_invalid_initial_metadata_reserved_key();
   grpc_shutdown();
 
   return 0;

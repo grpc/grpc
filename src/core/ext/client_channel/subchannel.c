@@ -625,8 +625,9 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
-            grpc_error_string(error));
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "error initializing subchannel stack: %s", msg);
+    grpc_error_free_string(msg);
     GRPC_ERROR_UNREF(error);
     abort(); /* TODO(ctiller): what to do here? */
   }
@@ -691,6 +692,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
 
     const char *errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
+    grpc_error_free_string(errmsg);
 
     maybe_start_connecting_locked(exec_ctx, c);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
@@ -749,7 +751,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
+    grpc_polling_entity *pollent, grpc_mdstr *path, gpr_timespec start_time,
     gpr_timespec deadline, grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
@@ -761,7 +763,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-
+    grpc_error_free_string(error_string);
     gpr_free(*call);
     return error;
   }

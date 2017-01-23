@@ -177,7 +177,8 @@ static void enc_add1(huff_out *out, uint8_t a) {
   enc_flush_some(out);
 }
 
-grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
+    grpc_slice input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
