@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +28,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This is based on http://stackoverflow.com/a/171011/159388 by Aaron Hinni
+set -ex
 
-require 'rbconfig'
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-module OS
-  def OS.os_name
-    case RbConfig::CONFIG['host_os']
-    when /cygwin|mswin|mingw|bccwin|wince|emx/
-      'windows'
-    when /darwin/
-      'macos'
-    else
-      'linux'
-    end
-  end
-end
+git submodule update --init
+
+# download fuzzer docker image from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+# runtime 23 * 60 mins
+config=asan-trace-cmp tools/jenkins/run_fuzzer.sh nanopb_fuzzer_response_test

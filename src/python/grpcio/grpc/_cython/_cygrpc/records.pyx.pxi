@@ -174,6 +174,25 @@ cdef class Timespec:
   def infinite_past():
     return Timespec(float("-inf"))
 
+  def __richcmp__(Timespec self not None, Timespec other not None, int op):
+    cdef gpr_timespec self_c_time = self.c_time
+    cdef gpr_timespec other_c_time = other.c_time
+    cdef int result = gpr_time_cmp(self_c_time, other_c_time)
+    if op == 0:  # <
+      return result < 0
+    elif op == 2:  # ==
+      return result == 0
+    elif op == 4:  # >
+      return result > 0
+    elif op == 1:  # <=
+      return result <= 0
+    elif op == 3:  # !=
+      return result != 0
+    elif op == 5:  # >=
+      return result >= 0
+    else:
+      raise ValueError('__richcmp__ `op` contract violated')
+
 
 cdef class CallDetails:
 
