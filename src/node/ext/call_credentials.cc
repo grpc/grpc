@@ -206,6 +206,7 @@ NAN_METHOD(PluginCallback) {
     return Nan::ThrowTypeError(
         "The callback's fourth argument must be an object");
   }
+  shared_ptr<Resources> resources(new Resources);
   grpc_status_code code = static_cast<grpc_status_code>(
       Nan::To<uint32_t>(info[0]).FromJust());
   Utf8String details_utf8_str(info[1]);
@@ -213,7 +214,7 @@ NAN_METHOD(PluginCallback) {
   grpc_metadata_array array;
   Local<Object> callback_data = Nan::To<Object>(info[3]).ToLocalChecked();
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
-                           &array)){
+                           &array, resources)){
     return Nan::ThrowError("Failed to parse metadata");
   }
   grpc_credentials_plugin_metadata_cb cb =

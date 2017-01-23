@@ -321,7 +321,7 @@ gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
 
 static const grpc_closure_scheduler_vtable workqueue_scheduler_vtable = {
-    workqueue_enqueue, workqueue_enqueue, "workqueue"};
+    workqueue_enqueue, workqueue_enqueue};
 
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);

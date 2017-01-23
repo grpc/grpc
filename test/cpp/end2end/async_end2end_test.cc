@@ -228,7 +228,12 @@ class TestScenario {
       : disable_blocking(non_block),
         credentials_type(creds_type),
         message_content(content) {}
-  void Log() const;
+  void Log() const {
+    gpr_log(
+        GPR_INFO,
+        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
+        disable_blocking, credentials_type.c_str(), message_content.size());
+  }
   bool disable_blocking;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
@@ -236,20 +241,6 @@ class TestScenario {
   grpc::string credentials_type;
   grpc::string message_content;
 };
-
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
-  return out << "TestScenario{disable_blocking="
-             << (scenario.disable_blocking ? "true" : "false")
-             << ", credentials='" << scenario.credentials_type
-             << "', message_size=" << scenario.message_content.size() << "}";
-}
-
-void TestScenario::Log() const {
-  std::ostringstream out;
-  out << *this;
-  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
-}
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:

@@ -29,8 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
-#define GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
+#define GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -40,38 +40,38 @@
  * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
  * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
  *
- * The keys are \a grpc_slice objects.  The values are arbitrary pointers
+ * The keys are \a grpc_mdstr objects.  The values are arbitrary pointers
  * with a common vtable.
  *
  * Hash tables are intentionally immutable, to avoid the need for locking.
  */
 
-typedef struct grpc_slice_hash_table grpc_slice_hash_table;
+typedef struct grpc_mdstr_hash_table grpc_mdstr_hash_table;
 
-typedef struct grpc_slice_hash_table_vtable {
-  void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value);
-  void *(*copy_value)(void *value);
-} grpc_slice_hash_table_vtable;
+typedef struct grpc_mdstr_hash_table_vtable {
+  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
+  void* (*copy_value)(void* value);
+} grpc_mdstr_hash_table_vtable;
 
-typedef struct grpc_slice_hash_table_entry {
-  grpc_slice key;
-  void *value; /* Must not be NULL. */
-  const grpc_slice_hash_table_vtable *vtable;
-} grpc_slice_hash_table_entry;
+typedef struct grpc_mdstr_hash_table_entry {
+  grpc_mdstr* key;
+  void* value; /* Must not be NULL. */
+  const grpc_mdstr_hash_table_vtable* vtable;
+} grpc_mdstr_hash_table_entry;
 
 /** Creates a new hash table of containing \a entries, which is an array
     of length \a num_entries.
     Creates its own copy of all keys and values from \a entries. */
-grpc_slice_hash_table *grpc_slice_hash_table_create(
-    size_t num_entries, grpc_slice_hash_table_entry *entries);
+grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
+    size_t num_entries, grpc_mdstr_hash_table_entry* entries);
 
-grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
-void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
-                                 grpc_slice_hash_table *table);
+grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
+void grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                 grpc_mdstr_hash_table* table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
-void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
-                                const grpc_slice key);
+void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
+                                const grpc_mdstr* key);
 
-#endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */

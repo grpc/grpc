@@ -31,35 +31,20 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_SLICE_H
-#define GRPCXX_IMPL_CODEGEN_SLICE_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
 
-#include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc++/impl/codegen/string_ref.h>
+#include <grpc/grpc.h>
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 
-namespace grpc {
+/* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
+grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error(
+    grpc_status_code status);
+grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
+    grpc_chttp2_error_code error, gpr_timespec deadline);
 
-inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
-  return grpc::string_ref(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*slice)),
-      GRPC_SLICE_LENGTH(*slice));
-}
+/* Conversion of HTTP status codes (:status) to grpc status codes */
+grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status);
+int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status);
 
-inline grpc::string StringFromCopiedSlice(grpc_slice slice) {
-  return grpc::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                      GRPC_SLICE_LENGTH(slice));
-}
-
-inline grpc_slice SliceReferencingString(const grpc::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
-                                                                 str.length());
-}
-
-inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(str.data(),
-                                                                 str.length());
-}
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_CODEGEN_SLICE_H
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H */
