@@ -292,4 +292,4 @@ extern const pb_field_t google_census_Metric_fields[5];
 } /* extern "C" */
 #endif
 
-#endif /* GRPC_CORE_EXT_CENSUS_GEN_CENSUS_PB_H */
+#endif

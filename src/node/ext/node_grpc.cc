@@ -31,7 +31,7 @@
  *
  */
 
-#include <list>
+#include <queue>
 
 #include <node.h>
 #include <nan.h>
@@ -56,11 +56,8 @@ extern "C" {
 #include "server.h"
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
-#include "slice.h"
 #include "timeval.h"
 #include "completion_queue.h"
-
-using grpc::node::CreateSliceFromString;
 
 using v8::FunctionTemplate;
 using v8::Local;
@@ -77,7 +74,7 @@ typedef struct log_args {
 
 typedef struct logger_state {
   Nan::Callback *callback;
-  std::list<log_args *> *pending_args;
+  std::queue<log_args *> *pending_args;
   uv_mutex_t mutex;
   uv_async_t async;
   // Indicates that a logger has been set
@@ -286,8 +283,10 @@ NAN_METHOD(MetadataKeyIsLegal) {
         "headerKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_key_is_legal(CreateSliceFromString(key))));
+      grpc_header_key_is_legal(key_str, static_cast<size_t>(key->Length()))));
 }
 
 NAN_METHOD(MetadataNonbinValueIsLegal) {
@@ -296,8 +295,11 @@ NAN_METHOD(MetadataNonbinValueIsLegal) {
         "metadataNonbinValueIsLegal's argument must be a string");
   }
   Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String value_utf8_str(value);
+  char *value_str = *value_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_nonbin_value_is_legal(CreateSliceFromString(value))));
+      grpc_header_nonbin_value_is_legal(
+          value_str, static_cast<size_t>(value->Length()))));
 }
 
 NAN_METHOD(MetadataKeyIsBinary) {
@@ -306,8 +308,10 @@ NAN_METHOD(MetadataKeyIsBinary) {
         "metadataKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_is_binary_header(CreateSliceFromString(key))));
+      grpc_is_binary_header(key_str, static_cast<size_t>(key->Length()))));
 }
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
@@ -338,14 +342,14 @@ NAN_METHOD(SetDefaultRootsPem) {
 
 NAUV_WORK_CB(LogMessagesCallback) {
   Nan::HandleScope scope;
-  std::list<log_args *> args;
+  std::queue<log_args *> args;
   uv_mutex_lock(&grpc_logger_state.mutex);
-  args.splice(args.begin(), *grpc_logger_state.pending_args);
+  grpc_logger_state.pending_args->swap(args);
   uv_mutex_unlock(&grpc_logger_state.mutex);
   /* Call the callback with each log message */
   while (!args.empty()) {
     log_args *arg = args.front();
-    args.pop_front();
+    args.pop();
     Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
     Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
     Local<Value> severity = Nan::New(
@@ -372,7 +376,7 @@ void node_log_func(gpr_log_func_args *args) {
   args_copy->timestamp = gpr_now(GPR_CLOCK_REALTIME);
 
   uv_mutex_lock(&grpc_logger_state.mutex);
-  grpc_logger_state.pending_args->push_back(args_copy);
+  grpc_logger_state.pending_args->push(args_copy);
   uv_mutex_unlock(&grpc_logger_state.mutex);
 
   uv_async_send(&grpc_logger_state.async);
@@ -380,7 +384,7 @@ void node_log_func(gpr_log_func_args *args) {
 
 void init_logger() {
   memset(&grpc_logger_state, 0, sizeof(logger_state));
-  grpc_logger_state.pending_args = new std::list<log_args *>();
+  grpc_logger_state.pending_args = new std::queue<log_args *>();
   uv_mutex_init(&grpc_logger_state.mutex);
   uv_async_init(uv_default_loop(),
                 &grpc_logger_state.async,

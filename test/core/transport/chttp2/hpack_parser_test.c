@@ -45,15 +45,15 @@
 
 typedef struct { va_list args; } test_checker;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   const char *ekey, *evalue;
   test_checker *chk = ud;
   ekey = va_arg(chk->args, char *);
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
-  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->key->slice, ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->value->slice, evalue) == 0);
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
@@ -76,8 +76,9 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(&exec_ctx, parser, slices[i]) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
+                   &exec_ctx, parser, GRPC_SLICE_START_PTR(slices[i]),
+                   GRPC_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
