@@ -150,17 +150,12 @@ typedef struct grpc_transport_stream_op {
   /** Collect any stats into provided buffer, zero internal stat counters */
   grpc_transport_stream_stats *collect_stats;
 
-  /** If != GRPC_ERROR_NONE, forcefully close this stream.
-      The HTTP2 semantics should be:
-      - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
-        trailing metadata has not been sent, send trailing metadata with status
-        and message from cancel_error (use grpc_error_get_status) followed by
-        a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
-      - at all other times: use grpc_error_get_status to get a status code, and
-        convert to a HTTP2 error code using
-        grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
-        error. */
+  /** If != GRPC_ERROR_NONE, cancel this stream */
   grpc_error *cancel_error;
+
+  /** If != GRPC_ERROR_NONE, send grpc-status, grpc-message, and close this
+      stream for both reading and writing */
+  grpc_error *close_error;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
@@ -181,8 +176,13 @@ typedef struct grpc_transport_op {
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
   grpc_error *disconnect_with_error;
+  /** should we send a goaway?
+      after a goaway is sent, once there are no more active calls on
+      the transport, the transport should disconnect */
+  bool send_goaway;
   /** what should the goaway contain? */
-  grpc_error *goaway_error;
+  grpc_status_code goaway_status;
+  grpc_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
@@ -244,6 +244,18 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error);
+
+void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
+                                               grpc_status_code status);
+
+void grpc_transport_stream_op_add_cancellation_with_message(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op,
+    grpc_status_code status, grpc_slice *optional_message);
+
+void grpc_transport_stream_op_add_close(grpc_exec_ctx *exec_ctx,
+                                        grpc_transport_stream_op *op,
+                                        grpc_status_code status,
+                                        grpc_slice *optional_message);
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 char *grpc_transport_op_string(grpc_transport_op *op);

@@ -146,13 +146,13 @@ static void request_response_with_payload(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string(method_name),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, method_name,
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -193,6 +193,7 @@ static void request_response_with_payload(
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -241,8 +242,7 @@ static void request_response_with_payload(
   op->data.send_status_from_server.trailing_metadata_count = 1;
   op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -255,7 +255,7 @@ static void request_response_with_payload(
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
 
-  grpc_slice_unref(details);
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -295,13 +295,15 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_metadata initial_lr_metadata;
   grpc_metadata trailing_lr_metadata;
 
-  initial_lr_metadata.key = GRPC_MDSTR_LB_TOKEN;
-  initial_lr_metadata.value = grpc_slice_from_static_string("client-token");
+  initial_lr_metadata.key = GRPC_LB_TOKEN_MD_KEY;
+  initial_lr_metadata.value = "client-token";
+  initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_MDSTR_LB_COST_BIN;
-  trailing_lr_metadata.value = grpc_slice_from_static_string("server-token");
+  trailing_lr_metadata.key = GRPC_LB_COST_MD_KEY;
+  trailing_lr_metadata.value = "server-token";
+  trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
   memset(&trailing_lr_metadata.internal_data, 0,
          sizeof(trailing_lr_metadata.internal_data));
 

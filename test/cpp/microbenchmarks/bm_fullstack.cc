@@ -443,8 +443,6 @@ BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
                    Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
                    Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>);
 
 }  // namespace testing
 }  // namespace grpc

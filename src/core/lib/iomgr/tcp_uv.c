@@ -48,7 +48,6 @@
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -157,7 +156,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
       size_t i;
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "read: error=%s", str);
-
+      grpc_error_free_string(str);
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);

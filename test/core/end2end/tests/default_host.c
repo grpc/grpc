@@ -110,13 +110,13 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
   int was_cancelled = 2;
   char *peer;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), NULL,
-                               deadline, NULL);
+                               "/foo", NULL, deadline, NULL);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -149,6 +149,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -181,8 +182,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -199,12 +199,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9));
+  GPR_ASSERT(0 == strcmp(details, "xyz"));
+  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == strncmp(call_details.host, "localhost", 9));
   GPR_ASSERT(was_cancelled == 1);
 
-  grpc_slice_unref(details);
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);

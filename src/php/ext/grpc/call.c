@@ -100,11 +100,11 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
   grpc_metadata *elem;
   for (i = 0; i < count; i++) {
     elem = &elements[i];
-    key_len = GRPC_SLICE_LENGTH(elem->key);
+    key_len = strlen(elem->key);
     str_key = ecalloc(key_len + 1, sizeof(char));
-    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
-    str_val = ecalloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
+    memcpy(str_key, elem->key, key_len);
+    str_val = ecalloc(elem->value_length + 1, sizeof(char));
+    memcpy(str_val, elem->value, elem->value_length);
     if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
         == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
@@ -115,13 +115,13 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
         efree(str_val);
         return NULL;
       }
-      php_grpc_add_next_index_stringl(data, str_val, GRPC_SLICE_LENGTH(elem->value),
+      php_grpc_add_next_index_stringl(data, str_val, elem->value_length,
                                       false);
     } else {
       PHP_GRPC_MAKE_STD_ZVAL(inner_array);
       array_init(inner_array);
       php_grpc_add_next_index_stringl(inner_array, str_val,
-                                      GRPC_SLICE_LENGTH(elem->value), false);
+                                      elem->value_length, false);
       add_assoc_zval(array, str_key, inner_array);
     }
   }
@@ -164,7 +164,7 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
     if (key_type1 != HASH_KEY_IS_STRING) {
       return false;
     }
-    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key1))) {
+    if (!grpc_header_key_is_legal(key1, strlen(key1))) {
       return false;
     }
     inner_array_hash = Z_ARRVAL_P(inner_array);
@@ -172,8 +172,9 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
       if (Z_TYPE_P(value) != IS_STRING) {
         return false;
       }
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key1);
-      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(Z_STRVAL_P(value), Z_STRLEN_P(value));
+      metadata->metadata[metadata->count].key = key1;
+      metadata->metadata[metadata->count].value = Z_STRVAL_P(value);
+      metadata->metadata[metadata->count].value_length = Z_STRLEN_P(value);
       metadata->count += 1;
     PHP_GRPC_HASH_FOREACH_END()
   PHP_GRPC_HASH_FOREACH_END()
@@ -228,15 +229,10 @@ PHP_METHOD(Call, __construct) {
   }
   add_property_zval(getThis(), "channel", channel_obj);
   wrapped_grpc_timeval *deadline = Z_WRAPPED_GRPC_TIMEVAL_P(deadline_obj);
-  grpc_slice method_slice = grpc_slice_from_copied_string(method);
-  grpc_slice host_slice = host_override != NULL ?
-      grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
   call->wrapped =
     grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
-                             completion_queue, method_slice, host_override != NULL ? &host_slice : NULL,
+                             completion_queue, method, host_override,
                              deadline->wrapped, NULL);
-  grpc_slice_unref(method_slice);
-  grpc_slice_unref(host_slice);
   call->owned = true;
 }
 
@@ -271,8 +267,8 @@ PHP_METHOD(Call, startBatch) {
   grpc_metadata_array recv_metadata;
   grpc_metadata_array recv_trailing_metadata;
   grpc_status_code status;
-  grpc_slice recv_status_details = grpc_empty_slice();
-  grpc_slice send_status_details = grpc_empty_slice();
+  char *status_details = NULL;
+  size_t status_details_capacity = 0;
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
@@ -384,8 +380,8 @@ PHP_METHOD(Call, startBatch) {
                                1 TSRMLS_CC);
           goto cleanup;
         }
-        send_status_details = grpc_slice_from_copied_string(Z_STRVAL_P(inner_value));
-        ops[op_num].data.send_status_from_server.status_details = &send_status_details;
+        ops[op_num].data.send_status_from_server.status_details =
+            Z_STRVAL_P(inner_value);
       } else {
         zend_throw_exception(spl_ce_InvalidArgumentException,
                              "String status details is required",
@@ -404,7 +400,9 @@ PHP_METHOD(Call, startBatch) {
           &recv_trailing_metadata;
       ops[op_num].data.recv_status_on_client.status = &status;
       ops[op_num].data.recv_status_on_client.status_details =
-          &recv_status_details;
+          &status_details;
+      ops[op_num].data.recv_status_on_client.status_details_capacity =
+          &status_details_capacity;
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
@@ -476,10 +474,8 @@ PHP_METHOD(Call, startBatch) {
 #endif
       PHP_GRPC_DELREF(array);
       add_property_long(recv_status, "code", status);
-      char *status_details_text = grpc_slice_to_c_string(recv_status_details);
-      php_grpc_add_property_string(recv_status, "details", status_details_text,
+      php_grpc_add_property_string(recv_status, "details", status_details,
                                    true);
-      gpr_free(status_details_text);
       add_property_zval(result, "status", recv_status);
       PHP_GRPC_DELREF(recv_status);
       PHP_GRPC_FREE_STD_ZVAL(recv_status);
@@ -497,8 +493,9 @@ cleanup:
   grpc_metadata_array_destroy(&trailing_metadata);
   grpc_metadata_array_destroy(&recv_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
-  grpc_slice_unref(recv_status_details);
-  grpc_slice_unref(send_status_details);
+  if (status_details != NULL) {
+    gpr_free(status_details);
+  }
   for (int i = 0; i < op_num; i++) {
     if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
       grpc_byte_buffer_destroy(ops[i].data.send_message);

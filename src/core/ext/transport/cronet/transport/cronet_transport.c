@@ -44,8 +44,6 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -439,11 +437,9 @@ static void on_response_headers_received(
   for (size_t i = 0; i < headers->count; i++) {
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.initial_metadata,
-        grpc_mdelem_from_slices(
-            &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
-                           headers->headers[i].key)),
-            grpc_slice_intern(
-                grpc_slice_from_static_string(headers->headers[i].value))));
+        grpc_mdelem_from_metadata_strings(
+            &exec_ctx, grpc_mdstr_from_string(headers->headers[i].key),
+            grpc_mdstr_from_string(headers->headers[i].value)));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
   if (!(s->state.state_op_done[OP_CANCEL_ERROR] ||
@@ -538,11 +534,9 @@ static void on_response_trailers_received(
                trailers->headers[i].value);
     grpc_chttp2_incoming_metadata_buffer_add(
         &s->state.rs.trailing_metadata,
-        grpc_mdelem_from_slices(
-            &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
-                           trailers->headers[i].key)),
-            grpc_slice_intern(
-                grpc_slice_from_static_string(trailers->headers[i].value))));
+        grpc_mdelem_from_metadata_strings(
+            &exec_ctx, grpc_mdstr_from_string(trailers->headers[i].key),
+            grpc_mdstr_from_string(trailers->headers[i].value)));
     s->state.rs.trailing_metadata_valid = true;
     if (0 == strcmp(trailers->headers[i].key, "grpc-status") &&
         0 != strcmp(trailers->headers[i].value, "0")) {
@@ -622,33 +616,27 @@ static void convert_metadata_to_cronet_headers(
   curr = head;
   size_t num_headers = 0;
   while (num_headers < num_headers_available) {
-    grpc_mdelem mdelem = curr->md;
+    grpc_mdelem *mdelem = curr->md;
     curr = curr->next;
-    char *key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
-    char *value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
-        grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_AUTHORITY)) {
+    const char *key = grpc_mdstr_as_c_string(mdelem->key);
+    const char *value = grpc_mdstr_as_c_string(mdelem->value);
+    if (mdelem->key == GRPC_MDSTR_SCHEME ||
+        mdelem->key == GRPC_MDSTR_AUTHORITY) {
       /* Cronet populates these fields on its own */
-      gpr_free(key);
-      gpr_free(value);
       continue;
     }
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
-      if (grpc_slice_eq(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
+    if (mdelem->key == GRPC_MDSTR_METHOD) {
+      if (mdelem->value == GRPC_MDSTR_PUT) {
         *method = "PUT";
       } else {
         /* POST method in default*/
         *method = "POST";
       }
-      gpr_free(key);
-      gpr_free(value);
       continue;
     }
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
+    if (mdelem->key == GRPC_MDSTR_PATH) {
       /* Create URL by appending :path value to the hostname */
       gpr_asprintf(pp_url, "https://%s%s", host, value);
-      gpr_free(key);
-      gpr_free(value);
       continue;
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
@@ -674,7 +662,7 @@ static int parse_grpc_header(const uint8_t *data) {
 
 static bool header_has_authority(grpc_linked_mdelem *head) {
   while (head != NULL) {
-    if (grpc_slice_eq(GRPC_MDKEY(head->md), GRPC_MDSTR_AUTHORITY)) {
+    if (head->md->key == GRPC_MDSTR_AUTHORITY) {
       return true;
     }
     head = head->next;
@@ -875,8 +863,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                          GRPC_ERROR_NONE);
     } else {
       grpc_chttp2_incoming_metadata_buffer_publish(
-          exec_ctx, &oas->s->state.rs.initial_metadata,
-          stream_op->recv_initial_metadata);
+          &oas->s->state.rs.initial_metadata, stream_op->recv_initial_metadata);
       grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                          GRPC_ERROR_NONE);
     }
@@ -1032,7 +1019,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
     if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
-          exec_ctx, &oas->s->state.rs.trailing_metadata,
+          &oas->s->state.rs.trailing_metadata,
           stream_op->recv_trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }

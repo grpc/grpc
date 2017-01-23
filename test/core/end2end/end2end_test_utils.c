@@ -39,27 +39,13 @@
 
 const char *get_host_override_string(const char *str,
                                      grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    return str;
-  } else {
-    return NULL;
-  }
+  return (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER ? str
+                                                                       : NULL);
 }
 
-const grpc_slice *get_host_override_slice(const char *str,
-                                          grpc_end2end_test_config config) {
-  const char *r = get_host_override_string(str, config);
-  if (r != NULL) {
-    static grpc_slice ret;
-    ret = grpc_slice_from_static_string(r);
-    return &ret;
-  }
-  return NULL;
-}
-
-void validate_host_override_string(const char *pattern, grpc_slice str,
+void validate_host_override_string(const char *pattern, const char *str,
                                    grpc_end2end_test_config config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
+    GPR_ASSERT(0 == strcmp(str, pattern));
   }
 }
