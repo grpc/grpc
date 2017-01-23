@@ -280,7 +280,8 @@ NAN_METHOD(Channel::WatchConnectivityState) {
       channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
       GetCompletionQueue(),
       new struct tag(callback,
-                     ops.release(), NULL));
+                     ops.release(),
+                     shared_ptr<Resources>(nullptr), NULL));
   CompletionQueueNext();
 }
 

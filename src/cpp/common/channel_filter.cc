@@ -36,8 +36,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/cpp/common/channel_filter.h"
 
-#include <grpc++/impl/codegen/slice.h>
-
 namespace grpc {
 
 // MetadataBatch
@@ -47,10 +45,8 @@ grpc_linked_mdelem *MetadataBatch::AddMetadata(grpc_exec_ctx *exec_ctx,
                                                const string &value) {
   grpc_linked_mdelem *storage = new grpc_linked_mdelem;
   memset(storage, 0, sizeof(grpc_linked_mdelem));
-  storage->md = grpc_mdelem_from_slices(exec_ctx, SliceFromCopiedString(key),
-                                        SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
-                    grpc_metadata_batch_link_head(exec_ctx, batch_, storage));
+  storage->md = grpc_mdelem_from_strings(exec_ctx, key.c_str(), value.c_str());
+  grpc_metadata_batch_link_head(batch_, storage);
   return storage;
 }
 

@@ -196,8 +196,8 @@ class Runner(object):
         # Run the tests
         result.startTestRun()
         for augmented_case in augmented_cases:
-            sys.stdout.write('Running       {}\n'.format(augmented_case.case.id(
-            )))
+            sys.stdout.write(
+                'Running       {}\n'.format(augmented_case.case.id()))
             sys.stdout.flush()
             case_thread = threading.Thread(
                 target=augmented_case.case.run, args=(result,))

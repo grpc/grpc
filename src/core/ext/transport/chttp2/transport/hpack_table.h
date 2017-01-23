@@ -79,8 +79,8 @@ typedef struct {
   /* a circular buffer of headers - this is stored in the opposite order to
      what hpack specifies, in order to simplify table management a little...
      meaning lookups need to SUBTRACT from the end position */
-  grpc_mdelem *ents;
-  grpc_mdelem static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
+  grpc_mdelem **ents;
+  grpc_mdelem *static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
@@ -94,12 +94,12 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
                                                      uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                     uint32_t index);
+grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
+                                      uint32_t index);
 /* add a table entry to the index */
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_hptbl *tbl,
-                                  grpc_mdelem md) GRPC_MUST_USE_RESULT;
+                                  grpc_mdelem *md) GRPC_MUST_USE_RESULT;
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
 typedef struct {
@@ -107,6 +107,6 @@ typedef struct {
   int has_value;
 } grpc_chttp2_hptbl_find_result;
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl *tbl, grpc_mdelem md);
+    const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

@@ -74,8 +74,8 @@ typedef struct {
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
-  grpc_slice entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  grpc_mdelem entries_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_mdstr *entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_mdelem *entries_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   uint32_t indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   uint32_t indices_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
 
