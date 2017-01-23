@@ -60,25 +60,20 @@ cdef class Channel:
                   method, host, Timespec deadline not None):
     if queue.is_shutting_down:
       raise ValueError("queue must not be shutting down or shutdown")
-    cdef grpc_slice method_slice = _slice_from_bytes(method)
-    cdef grpc_slice host_slice
-    cdef grpc_slice *host_slice_ptr = NULL
+    cdef char *method_c_string = method
+    cdef char *host_c_string = NULL
     if host is not None:
-      host_slice = _slice_from_bytes(host)
-      host_slice_ptr = &host_slice
+      host_c_string = host
     cdef Call operation_call = Call()
-    operation_call.references = [self, queue]
+    operation_call.references = [self, method, host, queue]
     cdef grpc_call *parent_call = NULL
     if parent is not None:
       parent_call = parent.c_call
     with nogil:
       operation_call.c_call = grpc_channel_create_call(
           self.c_channel, parent_call, flags,
-          queue.c_completion_queue, method_slice, host_slice_ptr,
+          queue.c_completion_queue, method_c_string, host_c_string,
           deadline.c_time, NULL)
-      grpc_slice_unref(method_slice)
-      if host_slice_ptr:
-        grpc_slice_unref(host_slice)
     return operation_call
 
   def check_connectivity_state(self, bint try_to_connect):

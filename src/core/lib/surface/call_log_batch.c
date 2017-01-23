@@ -35,22 +35,17 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   size_t i;
-  if (md == NULL) {
-    gpr_strvec_add(b, gpr_strdup("(nil)"));
-    return;
-  }
   for (i = 0; i < count; i++) {
     gpr_strvec_add(b, gpr_strdup("\nkey="));
-    gpr_strvec_add(b, grpc_slice_to_c_string(md[i].key));
+    gpr_strvec_add(b, gpr_strdup(md[i].key));
 
     gpr_strvec_add(b, gpr_strdup(" value="));
-    gpr_strvec_add(b,
-                   grpc_dump_slice(md[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+    gpr_strvec_add(b, gpr_dump(md[i].value, md[i].value_length,
+                               GPR_DUMP_HEX | GPR_DUMP_ASCII));
   }
 }
 
@@ -75,16 +70,10 @@ char *grpc_op_string(const grpc_op *op) {
       gpr_strvec_add(&b, gpr_strdup("SEND_CLOSE_FROM_CLIENT"));
       break;
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      gpr_asprintf(&tmp, "SEND_STATUS_FROM_SERVER status=%d details=",
-                   op->data.send_status_from_server.status);
+      gpr_asprintf(&tmp, "SEND_STATUS_FROM_SERVER status=%d details=%s",
+                   op->data.send_status_from_server.status,
+                   op->data.send_status_from_server.status_details);
       gpr_strvec_add(&b, tmp);
-      if (op->data.send_status_from_server.status_details != NULL) {
-        gpr_strvec_add(&b, grpc_dump_slice(
-                               *op->data.send_status_from_server.status_details,
-                               GPR_DUMP_ASCII));
-      } else {
-        gpr_strvec_add(&b, gpr_strdup("(null)"));
-      }
       add_metadata(&b, op->data.send_status_from_server.trailing_metadata,
                    op->data.send_status_from_server.trailing_metadata_count);
       break;
