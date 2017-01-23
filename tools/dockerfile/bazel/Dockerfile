@@ -32,21 +32,20 @@ RUN apt-get update
 RUN apt-get -y install software-properties-common python-software-properties
 RUN add-apt-repository ppa:webupd8team/java
 RUN apt-get update
-RUN apt-get -y install \
-	vim            \
-	wget           \
-	openjdk-8-jdk  \
-	pkg-config     \
-	zip            \
-	g++            \
-	zlib1g-dev     \
-	unzip          \
-	git
+RUN apt-get -y install  \
+	vim             \
+	wget            \
+	openjdk-8-jdk   \
+	pkg-config      \
+	zip             \
+	g++             \
+	zlib1g-dev      \
+	unzip           \
+	git             \
+	bash-completion
 
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel
-RUN cd /bazel && ./compile.sh
-
-RUN ln -s /bazel/output/bazel /bin/
+RUN wget https://github.com/bazelbuild/bazel/releases/download/0.4.3/bazel_0.4.3-linux-x86_64.deb
+RUN dpkg -i bazel_0.4.3-linux-x86_64.deb
 
 # ensure the installation has been extracted
 RUN bazel
