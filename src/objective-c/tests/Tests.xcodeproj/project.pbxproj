@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		06467F3A8D01EC493D12ADA2 /* libPods-CronetUnitTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C6134277D2EB8B380862A03F /* libPods-CronetUnitTests.a */; };
 		09B76D9585ACE7403804D9DC /* libPods-InteropTestsRemoteWithCronet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E9444C764F0FFF64A7EB58E /* libPods-InteropTestsRemoteWithCronet.a */; };
 		0F9232F984C08643FD40C34F /* libPods-InteropTestsRemote.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DBE059B4AC7A51919467EEC0 /* libPods-InteropTestsRemote.a */; };
 		16A9E77B6E336B3C0B9BA6E0 /* libPods-InteropTestsLocalSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DBEDE45BDA60DF1E1C8950C0 /* libPods-InteropTestsLocalSSL.a */; };
@@ -15,6 +16,8 @@
 		3D7C85F6AA68C4A205E3BA16 /* libPods-Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 20DFF2F3C97EF098FE5A3171 /* libPods-Tests.a */; };
 		5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */; };
 		5E8A5DA91D3840B4000F8BC4 /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
+		5EAD6D271E27047400002378 /* CronetUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD6D261E27047400002378 /* CronetUnitTests.m */; };
+		5EAD6D291E27047400002378 /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
 		5EE84BF41D4717E40050C6CC /* InteropTestsRemoteWithCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE84BF31D4717E40050C6CC /* InteropTestsRemoteWithCronet.m */; };
 		5EE84BF61D4717E40050C6CC /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
 		5EE84BFE1D471D400050C6CC /* InteropTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 635ED2EB1B1A3BC400FDE5C3 /* InteropTests.m */; };
@@ -46,6 +49,13 @@
 
 /* Begin PBXContainerItemProxy section */
 		5E8A5DAA1D3840B4000F8BC4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 635697BF1B14FC11007A7283 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 635697C61B14FC11007A7283;
+			remoteInfo = Tests;
+		};
+		5EAD6D2A1E27047400002378 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 635697BF1B14FC11007A7283 /* Project object */;
 			proxyType = 1;
@@ -109,6 +119,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02192CF1FF9534E3D18C65FC /* Pods-CronetUnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CronetUnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		060EF32D7EC0DF67ED617507 /* Pods-Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Tests/Pods-Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		07D10A965323BEA7FE59A74B /* Pods-RxLibraryUnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxLibraryUnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests.debug.xcconfig"; sourceTree = "<group>"; };
 		0A4F89D9C90E9C30990218F0 /* Pods.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.release.xcconfig; path = "Pods/Target Support Files/Pods/Pods.release.xcconfig"; sourceTree = "<group>"; };
@@ -117,6 +128,7 @@
 		17F60BF2871F6AF85FB3FA12 /* Pods-InteropTestsRemoteWithCronet.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsRemoteWithCronet.debug.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet.debug.xcconfig"; sourceTree = "<group>"; };
 		20DFF2F3C97EF098FE5A3171 /* libPods-Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		35F2B6BF3BAE8F0DC4AFD76E /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		386712AEACF7C2190C4B8B3F /* Pods-CronetUnitTests.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CronetUnitTests.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests.cronet.xcconfig"; sourceTree = "<group>"; };
 		3B0861FC805389C52DB260D4 /* Pods-RxLibraryUnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxLibraryUnitTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests.release.xcconfig"; sourceTree = "<group>"; };
 		3F27B2E744482771EB93C394 /* Pods-InteropTestsRemoteWithCronet.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsRemoteWithCronet.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet.cronet.xcconfig"; sourceTree = "<group>"; };
 		4AD97096D13D7416DC91A72A /* Pods-CoreCronetEnd2EndTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CoreCronetEnd2EndTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -127,6 +139,9 @@
 		5761E98978DDDF136A58CB7E /* Pods-AllTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.release.xcconfig"; sourceTree = "<group>"; };
 		5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoreCronetEnd2EndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreCronetEnd2EndTests.m; sourceTree = "<group>"; };
+		5EAD6D241E27047400002378 /* CronetUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CronetUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5EAD6D261E27047400002378 /* CronetUnitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CronetUnitTests.m; sourceTree = "<group>"; };
+		5EAD6D281E27047400002378 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5EE84BF11D4717E40050C6CC /* InteropTestsRemoteWithCronet.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InteropTestsRemoteWithCronet.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EE84BF31D4717E40050C6CC /* InteropTestsRemoteWithCronet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = InteropTestsRemoteWithCronet.m; sourceTree = "<group>"; };
 		5EE84BF51D4717E40050C6CC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -146,6 +161,7 @@
 		63E240CC1B6C4D3A005F3B0E /* InteropTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InteropTests.h; sourceTree = "<group>"; };
 		63E240CD1B6C4E2B005F3B0E /* InteropTestsLocalSSL.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = InteropTestsLocalSSL.m; sourceTree = "<group>"; };
 		63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = TestCertificates.bundle; sourceTree = "<group>"; };
+		64F68A9A6A63CC930DD30A6E /* Pods-CronetUnitTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CronetUnitTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests.debug.xcconfig"; sourceTree = "<group>"; };
 		79C68EFFCB5533475D810B79 /* Pods-RxLibraryUnitTests.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxLibraryUnitTests.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests.cronet.xcconfig"; sourceTree = "<group>"; };
 		7A2E97E3F469CC2A758D77DE /* Pods-InteropTestsLocalSSL.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalSSL.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL.release.xcconfig"; sourceTree = "<group>"; };
 		9E9444C764F0FFF64A7EB58E /* libPods-InteropTestsRemoteWithCronet.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InteropTestsRemoteWithCronet.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -153,6 +169,7 @@
 		AA7CB64B4DD9915AE7C03163 /* Pods-InteropTestsLocalCleartext.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalCleartext.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext.cronet.xcconfig"; sourceTree = "<group>"; };
 		AC414EF7A6BF76ED02B6E480 /* Pods-InteropTestsRemoteWithCronet.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsRemoteWithCronet.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet.release.xcconfig"; sourceTree = "<group>"; };
 		B94C27C06733CF98CE1B2757 /* Pods-AllTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.debug.xcconfig"; sourceTree = "<group>"; };
+		C6134277D2EB8B380862A03F /* libPods-CronetUnitTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CronetUnitTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAE086D5B470DA367D415AB0 /* libPods-AllTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AllTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBE059B4AC7A51919467EEC0 /* libPods-InteropTestsRemote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InteropTestsRemote.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBEDE45BDA60DF1E1C8950C0 /* libPods-InteropTestsLocalSSL.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InteropTestsLocalSSL.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -174,6 +191,15 @@
 			files = (
 				5E8A5DA91D3840B4000F8BC4 /* libTests.a in Frameworks */,
 				60D2A57ED559F34428C2EEC5 /* libPods-CoreCronetEnd2EndTests.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5EAD6D211E27047400002378 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5EAD6D291E27047400002378 /* libTests.a in Frameworks */,
+				06467F3A8D01EC493D12ADA2 /* libPods-CronetUnitTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +280,7 @@
 				20DFF2F3C97EF098FE5A3171 /* libPods-Tests.a */,
 				FBD98AC417B9882D32B19F28 /* libPods-CoreCronetEnd2EndTests.a */,
 				9E9444C764F0FFF64A7EB58E /* libPods-InteropTestsRemoteWithCronet.a */,
+				C6134277D2EB8B380862A03F /* libPods-CronetUnitTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -287,6 +314,9 @@
 				3F27B2E744482771EB93C394 /* Pods-InteropTestsRemoteWithCronet.cronet.xcconfig */,
 				79C68EFFCB5533475D810B79 /* Pods-RxLibraryUnitTests.cronet.xcconfig */,
 				F671D4CAD2864FB203B920B4 /* Pods-Tests.cronet.xcconfig */,
+				64F68A9A6A63CC930DD30A6E /* Pods-CronetUnitTests.debug.xcconfig */,
+				386712AEACF7C2190C4B8B3F /* Pods-CronetUnitTests.cronet.xcconfig */,
+				02192CF1FF9534E3D18C65FC /* Pods-CronetUnitTests.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -297,6 +327,15 @@
 				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */,
 			);
 			path = CoreCronetEnd2EndTests;
+			sourceTree = "<group>";
+		};
+		5EAD6D251E27047400002378 /* CronetUnitTests */ = {
+			isa = PBXGroup;
+			children = (
+				5EAD6D261E27047400002378 /* CronetUnitTests.m */,
+				5EAD6D281E27047400002378 /* Info.plist */,
+			);
+			path = CronetUnitTests;
 			sourceTree = "<group>";
 		};
 		5EE84BF21D4717E40050C6CC /* InteropTestsRemoteWithCronet */ = {
@@ -315,6 +354,7 @@
 				63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */,
 				5E8A5DA51D3840B4000F8BC4 /* CoreCronetEnd2EndTests */,
 				5EE84BF21D4717E40050C6CC /* InteropTestsRemoteWithCronet */,
+				5EAD6D251E27047400002378 /* CronetUnitTests */,
 				635697C81B14FC11007A7283 /* Products */,
 				51E4650F34F854F41FF053B3 /* Pods */,
 				136D535E19727099B941D7B1 /* Frameworks */,
@@ -332,6 +372,7 @@
 				63DC84431BE152B5000708E8 /* InteropTestsLocalCleartext.xctest */,
 				5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */,
 				5EE84BF11D4717E40050C6CC /* InteropTestsRemoteWithCronet.xctest */,
+				5EAD6D241E27047400002378 /* CronetUnitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -382,6 +423,27 @@
 			name = CoreCronetEnd2EndTests;
 			productName = CoreCronetEnd2EndTests;
 			productReference = 5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		5EAD6D231E27047400002378 /* CronetUnitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5EAD6D2F1E27047400002378 /* Build configuration list for PBXNativeTarget "CronetUnitTests" */;
+			buildPhases = (
+				80E2DDD2EC04A4009F45E933 /* [CP] Check Pods Manifest.lock */,
+				5EAD6D201E27047400002378 /* Sources */,
+				5EAD6D211E27047400002378 /* Frameworks */,
+				5EAD6D221E27047400002378 /* Resources */,
+				A686B9967BB4CB81B1CBF8F8 /* [CP] Embed Pods Frameworks */,
+				051806D6A59B19C8A0B76BED /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5EAD6D2B1E27047400002378 /* PBXTargetDependency */,
+			);
+			name = CronetUnitTests;
+			productName = CronetUnitTests;
+			productReference = 5EAD6D241E27047400002378 /* CronetUnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		5EE84BF01D4717E40050C6CC /* InteropTestsRemoteWithCronet */ = {
@@ -541,6 +603,9 @@
 					5E8A5DA31D3840B4000F8BC4 = {
 						CreatedOnToolsVersion = 7.3.1;
 					};
+					5EAD6D231E27047400002378 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
 					5EE84BF01D4717E40050C6CC = {
 						CreatedOnToolsVersion = 7.3.1;
 					};
@@ -584,12 +649,20 @@
 				63DC84421BE152B5000708E8 /* InteropTestsLocalCleartext */,
 				5E8A5DA31D3840B4000F8BC4 /* CoreCronetEnd2EndTests */,
 				5EE84BF01D4717E40050C6CC /* InteropTestsRemoteWithCronet */,
+				5EAD6D231E27047400002378 /* CronetUnitTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		5E8A5DA21D3840B4000F8BC4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5EAD6D221E27047400002378 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -643,6 +716,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		051806D6A59B19C8A0B76BED /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		31F8D1C407195CBF0C02929B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -670,7 +758,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		4F5690DC0E6AD6663FE78B8B /* [CP] Embed Pods Frameworks */ = {
@@ -700,7 +788,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		5F14F59509E10C2852014F9E /* [CP] Embed Pods Frameworks */ = {
@@ -760,7 +848,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		796680C7599CB4ED736DD62A /* [CP] Check Pods Manifest.lock */ = {
@@ -775,7 +863,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		80E2DDD2EC04A4009F45E933 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		8AD3130D3C58A0FB32FF2A36 /* [CP] Copy Pods Resources */ = {
@@ -820,7 +923,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		A441F71824DCB9D0CA297748 /* [CP] Copy Pods Resources */ = {
@@ -836,6 +939,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A686B9967BB4CB81B1CBF8F8 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A8E3AC66DF770B774114A30E /* [CP] Embed Pods Frameworks */ = {
@@ -880,7 +998,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		C0F7B1FF6F88CC5FBF362F4C /* [CP] Check Pods Manifest.lock */ = {
@@ -895,7 +1013,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		C2E09DC4BD239F71160F0CC1 /* [CP] Copy Pods Resources */ = {
@@ -985,7 +1103,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -996,6 +1114,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5EAD6D201E27047400002378 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5EAD6D271E27047400002378 /* CronetUnitTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1073,6 +1199,11 @@
 			target = 635697C61B14FC11007A7283 /* Tests */;
 			targetProxy = 5E8A5DAA1D3840B4000F8BC4 /* PBXContainerItemProxy */;
 		};
+		5EAD6D2B1E27047400002378 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 635697C61B14FC11007A7283 /* Tests */;
+			targetProxy = 5EAD6D2A1E27047400002378 /* PBXContainerItemProxy */;
+		};
 		5EE84BF81D4717E40050C6CC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 635697C61B14FC11007A7283 /* Tests */;
@@ -1135,6 +1266,53 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.CoreCronetEnd2EndTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(inherited) \"${PODS_ROOT}/../../../..\"";
+			};
+			name = Release;
+		};
+		5EAD6D2C1E27047400002378 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 64F68A9A6A63CC930DD30A6E /* Pods-CronetUnitTests.debug.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				INFOPLIST_FILE = CronetUnitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.CronetUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "\"${PODS_ROOT}/../../../..\" $(inherited)";
+			};
+			name = Debug;
+		};
+		5EAD6D2D1E27047400002378 /* Cronet */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 386712AEACF7C2190C4B8B3F /* Pods-CronetUnitTests.cronet.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				INFOPLIST_FILE = CronetUnitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.CronetUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "\"${PODS_ROOT}/../../../..\" $(inherited)";
+			};
+			name = Cronet;
+		};
+		5EAD6D2E1E27047400002378 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 02192CF1FF9534E3D18C65FC /* Pods-CronetUnitTests.release.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				INFOPLIST_FILE = CronetUnitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.CronetUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "\"${PODS_ROOT}/../../../..\" $(inherited)";
 			};
 			name = Release;
 		};
@@ -1594,6 +1772,16 @@
 				5E8A5DAC1D3840B4000F8BC4 /* Debug */,
 				5EC3C7A71D4FC18C000330E2 /* Cronet */,
 				5E8A5DAD1D3840B4000F8BC4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5EAD6D2F1E27047400002378 /* Build configuration list for PBXNativeTarget "CronetUnitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5EAD6D2C1E27047400002378 /* Debug */,
+				5EAD6D2D1E27047400002378 /* Cronet */,
+				5EAD6D2E1E27047400002378 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -51,7 +51,6 @@
 
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
@@ -374,7 +373,7 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
+      : cores_(gpr_cpu_num_cores()),
         channels_(config.client_channels()),
         create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
