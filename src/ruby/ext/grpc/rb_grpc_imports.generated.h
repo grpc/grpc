@@ -596,9 +596,15 @@ extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
 typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
 extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 #define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *src, size_t n, void *dst);
+extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
+#define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
 typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer *src);
 extern grpc_slice_buffer_take_first_type grpc_slice_buffer_take_first_import;
 #define grpc_slice_buffer_take_first grpc_slice_buffer_take_first_import
+typedef void(*grpc_slice_buffer_undo_take_first_type)(grpc_slice_buffer *src, grpc_slice slice);
+extern grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_import;
+#define grpc_slice_buffer_undo_take_first grpc_slice_buffer_undo_take_first_import
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
