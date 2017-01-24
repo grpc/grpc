@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """A setup module for the GRPC Python package."""
-
+from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
 import os
@@ -59,20 +59,19 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'darwin' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_darwin'),)
+README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
-import _unixccompiler_patch
+import _spawn_patch
 import commands
 import grpc_core_dependencies
 import grpc_version
 
-if 'win32' in sys.platform:
-  _unixccompiler_patch.monkeypatch_unix_compiler()
-
+_spawn_patch.monkeypatch_spawn()
 
 LICENSE = '3-clause BSD'
 
@@ -88,6 +87,11 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 ENABLE_CYTHON_TRACING = os.environ.get(
     'GRPC_PYTHON_ENABLE_CYTHON_TRACING', False)
 
+# Environment variable specifying whether or not there's interest in setting up
+# documentation building.
+ENABLE_DOCUMENTATION_BUILD = os.environ.get(
+    'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD', False)
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -98,8 +102,8 @@ ENABLE_CYTHON_TRACING = os.environ.get(
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-  EXTRA_ENV_COMPILE_ARGS = '-fno-wrapv'
-  if 'win32' in sys.platform:
+  EXTRA_ENV_COMPILE_ARGS = ''
+  if 'win32' in sys.platform and sys.version_info < (3, 5):
     # We use define flags here and don't directly add to DEFINE_MACROS below to
     # ensure that the expert user/builder has a way of turning it off (via the
     # envvars) without adding yet more GRPC-specific envvars.
@@ -109,21 +113,21 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     else:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
   elif "linux" in sys.platform or "darwin" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden'
+    EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv'
 if EXTRA_ENV_LINK_ARGS is None:
-  EXTRA_ENV_LINK_ARGS = '-lpthread'
-  if 'win32' in sys.platform:
-    # TODO(atash) check if this is actually safe to just import and call on
-    # non-Windows (to avoid breaking import style)
-    from distutils.cygwinccompiler import get_msvcr
-    msvcr = get_msvcr()[0]
+  EXTRA_ENV_LINK_ARGS = ''
+  if "linux" in sys.platform or "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += ' -lpthread'
+  elif "win32" in sys.platform and sys.version_info < (3, 5):
+    msvcr = cygwinccompiler.get_msvcr()[0]
     # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
     # influence on the linkage outcome on MinGW for non-C++ programs.
     EXTRA_ENV_LINK_ARGS += (
         ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
         '-static'.format(msvcr=msvcr))
-  elif "linux" in sys.platform:
+  if "linux" in sys.platform:
     EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy'
+
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
@@ -145,16 +149,19 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
-  EXTENSION_LIBRARIES += ('ws2_32',)
+  EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
     ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
-  DEFINE_MACROS += (('OPENSSL_WINDOWS', 1), ('WIN32_LEAN_AND_MEAN', 1),
-                    ('CARES_STATICLIB', 1),)
+  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),)
   if '64bit' in platform.architecture()[0]:
     DEFINE_MACROS += (('MS_WIN64', 1),)
+  elif sys.version_info >= (3, 5):
+    # For some reason, this is needed to get access to inet_pton/inet_ntop
+    # on msvc, but only for 32 bits
+    DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
 else:
   DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
 
@@ -164,7 +171,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   pymodinit_type = 'PyObject*' if PY3 else 'void'
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
-
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.
@@ -208,26 +214,32 @@ PACKAGE_DIRECTORIES = {
 INSTALL_REQUIRES = (
     'six>=1.5.2',
     'enum34>=1.0.4',
-    'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
     'protobuf>=3.0.0',
 )
 
+if not PY3:
+  INSTALL_REQUIRES += ('futures>=2.2.0',)
+
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
     'sphinx_rtd_theme>=0.1.8',
     'six>=1.10',
-)
-if BUILD_WITH_CYTHON:
-  sys.stderr.write(
-    "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
-    "but do not have Cython installed. We won't stop you from using "
-    "other commands, but the extension files will fail to build.\n")
-elif need_cython:
-  sys.stderr.write(
-      'We could not find Cython. Setup may take 10-20 minutes.\n')
-  SETUP_REQUIRES += ('cython>=0.23',)
+  ) if ENABLE_DOCUMENTATION_BUILD else ()
+
+try:
+  import Cython
+except ImportError:
+  if BUILD_WITH_CYTHON:
+    sys.stderr.write(
+      "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
+      "but do not have Cython installed. We won't stop you from using "
+      "other commands, but the extension files will fail to build.\n")
+  elif need_cython:
+    sys.stderr.write(
+        'We could not find Cython. Setup may take 10-20 minutes.\n')
+    SETUP_REQUIRES += ('cython>=0.23',)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
@@ -261,6 +273,7 @@ setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
   license=LICENSE,
+  long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
