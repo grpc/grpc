@@ -783,11 +783,11 @@ TEST_P(End2endTest, BidiStreamWithOptions) {
   FinishOptions finopts;
 
   auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
-  wopts.set_deadline(deadline);
-  ropts.set_deadline(deadline);
-  nmopts.set_deadline(deadline);
-  wdopts.set_deadline(deadline);
-  finopts.set_deadline(deadline);
+  wopts.set_deadline(deadline, false);
+  ropts.set_deadline(deadline, false);
+  nmopts.set_deadline(deadline, false);
+  wdopts.set_deadline(deadline, false);
+  finopts.set_deadline(deadline, false);
 
   auto stream = stub_->BidiStream(&context);
 

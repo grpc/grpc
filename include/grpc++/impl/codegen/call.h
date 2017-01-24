@@ -87,15 +87,19 @@ class MessageOptions {
  public:
   MessageOptions()
       : msg_deadline_(
-            g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+		      g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)),
+    reverting_deadline_(false) {}
   gpr_timespec deadline() const { return msg_deadline_; }
+  bool reverting_deadline() const { return reverting_deadline_; }
   template <class T>
-  void set_deadline(const T& deadline) {
+    void set_deadline(const T& deadline, bool reverting) {
     msg_deadline_ = (TimePoint<T>(deadline).raw_time());
+    reverting_deadline_ = reverting;
   }
 
  private:
   gpr_timespec msg_deadline_;
+  bool reverting_deadline_;
 };
 
 /// Finish-specific options
@@ -106,8 +110,8 @@ class FinishOptions {
 
   /// Set a deadline
   template <class T>
-  FinishOptions& set_deadline(const T& dl) {
-    msg_options_.set_deadline(dl);
+  FinishOptions& set_deadline(const T& dl, bool reverting) {
+    msg_options_.set_deadline(dl, reverting);
     return *this;
   }
 
@@ -207,8 +211,8 @@ class WriteOptions {
 
   /// Set a deadline
   template <class T>
-  WriteOptions& set_deadline(const T& dl) {
-    msg_options_.set_deadline(dl);
+  WriteOptions& set_deadline(const T& dl, bool reverting) {
+    msg_options_.set_deadline(dl, reverting);
     return *this;
   }
 
