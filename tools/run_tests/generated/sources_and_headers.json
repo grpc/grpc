@@ -7542,11 +7542,9 @@
     "src": [
       "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c", 
       "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_fallback.c", 
       "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c", 
       "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c"
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
