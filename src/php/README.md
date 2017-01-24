@@ -163,6 +163,13 @@ of this repo. The plugin can be found in the `bins/opt` directory. We are
 planning to provide a better way to download and install the plugin
 in the future.
 
+You can also just build the gRPC PHP protoc plugin by running:
+
+```sh
+$ cd grpc
+$ make grpc_php_plugin
+```
+
 
 ### Client Stub
 
