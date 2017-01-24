@@ -106,11 +106,16 @@ struct grpc_slice {
 /* Represents an expandable array of slices, to be interpreted as a
    single item. */
 typedef struct {
-  /* slices in the array */
+  /* This is for internal use only. External users (i.e any code outside grpc
+   * core) MUST NOT use this field */
+  grpc_slice *base_slices;
+
+  /* slices in the array (Points to the first valid grpc_slice in the array) */
   grpc_slice *slices;
   /* the number of slices in the array */
   size_t count;
-  /* the number of slices allocated in the array */
+  /* the number of slices allocated in the array. External users (i.e any code
+   * outside grpc core) MUST NOT use this field */
   size_t capacity;
   /* the combined length of all slices in the array */
   size_t length;

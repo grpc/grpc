@@ -796,7 +796,7 @@ static polling_island *polling_island_merge(polling_island *p,
     gpr_atm_rel_store(&p->merged_to, (gpr_atm)q);
     PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
 
-    workqueue_move_items_to_parent(q);
+    workqueue_move_items_to_parent(p);
   }
   /* else if p == q, nothing needs to be done */
 
