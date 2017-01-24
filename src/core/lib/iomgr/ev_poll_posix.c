@@ -413,9 +413,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       const char *reason) {
   fd->on_done_closure = on_done;
   fd->released = release_fd != NULL;
-  if (!fd->released) {
-    shutdown(fd->fd, SHUT_RDWR);
-  } else {
+  if (fd->released) {
     *release_fd = fd->fd;
   }
   gpr_mu_lock(&fd->mu);

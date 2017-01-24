@@ -3459,6 +3459,8 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
+    src/core/lib/channel/handshaker_factory.c \
+    src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/message_size_filter.c \
@@ -3643,6 +3645,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \

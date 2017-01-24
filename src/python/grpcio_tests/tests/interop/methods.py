@@ -428,8 +428,8 @@ def _compute_engine_creds(stub, args):
 
 
 def _oauth2_auth_token(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[oauth2client_client.
+                                   GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
@@ -441,8 +441,8 @@ def _oauth2_auth_token(stub, args):
 
 
 def _jwt_token_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[oauth2client_client.
+                                   GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
@@ -451,11 +451,10 @@ def _jwt_token_creds(stub, args):
 
 
 def _per_rpc_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[oauth2client_client.
+                                   GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
-    credentials = oauth2client_client.GoogleCredentials.get_application_default(
-    )
+    credentials = oauth2client_client.GoogleCredentials.get_application_default()
     scoped_credentials = credentials.create_scoped([args.oauth_scope])
     # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
     # remaining use of the Beta API.

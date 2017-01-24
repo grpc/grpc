@@ -1530,12 +1530,15 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
-    return bctl->errors[0];
+    grpc_error *e = bctl->errors[0];
+    bctl->errors[0] = NULL;
+    return e;
   } else {
     grpc_error *error =
         GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
     for (size_t i = 0; i < n; i++) {
       GRPC_ERROR_UNREF(bctl->errors[i]);
+      bctl->errors[i] = NULL;
     }
     return error;
   }
@@ -1677,8 +1680,8 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
-  cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
+  if (idx > 0) cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   bctl->errors[idx] = error;
 }
 
