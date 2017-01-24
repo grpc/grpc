@@ -32,10 +32,11 @@
  */
 
 #include "src/core/ext/census/tracing.h"
+
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <openssl/rand.h>
+#include "third_party/boringssl/include/openssl/rand.h"
 #include "src/core/ext/census/mlog.h"
 
 void trace_start_span(const trace_span_context *span_ctxt,
