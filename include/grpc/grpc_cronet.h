@@ -44,6 +44,8 @@ GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
     void *engine, const char *target, const grpc_channel_args *args,
     void *reserved);
 
+GRPCAPI void grpc_cronet_use_packet_coalescing(bool use_coalescing);
+
 #ifdef __cplusplus
 }
 #endif
