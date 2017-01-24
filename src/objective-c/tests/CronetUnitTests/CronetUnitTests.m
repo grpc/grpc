@@ -269,7 +269,9 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_destroy(cq);
 }
 
-- (void)testPacketCoalescing {
+- (void)PacketCoalescing:(bool)use_coalescing {
+  grpc_cronet_use_packet_coalescing(use_coalescing);
+
   grpc_call *c;
   grpc_slice request_payload_slice =
   grpc_slice_from_copied_string("hello world");
@@ -379,7 +381,7 @@ unsigned int parse_h2_length(const char *field) {
     long len;
     bool coalesced = false;
     while ((len = SSL_read(ssl, buf, sizeof(buf))) > 0) {
-      NSLog(@"Read len: %ld", len);
+      gpr_log(GPR_DEBUG, "Read len: %ld", len);
 
       // Analyze the HTTP/2 frames in the same TLS PDU to identify if
       // coalescing is successful
@@ -404,7 +406,7 @@ unsigned int parse_h2_length(const char *field) {
       }
     }
 
-    XCTAssert(coalesced);
+    XCTAssert(coalesced == use_coalescing);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
     close(s);
@@ -431,6 +433,11 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
+}
+
+- (void)testPacketCoalescing {
+  [self PacketCoalescing:false];
+  [self PacketCoalescing:true];
 }
 
 @end
