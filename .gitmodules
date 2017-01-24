@@ -14,10 +14,6 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://github.com/google/boringssl.git
-[submodule "third_party/c-ares"]
-	path = third_party/c-ares
-	url = https://github.com/c-ares/c-ares.git
-	branch = cares-1_11_0
 [submodule "third_party/thrift"]
 	path = third_party/thrift
 	url = https://github.com/apache/thrift.git
