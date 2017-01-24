@@ -316,7 +316,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
     if (lb_policy_name == NULL) lb_policy_name = "pick_first";
-    // If using a proxy, add channel arg for HTTP CONNECT server.
+    // If using a proxy, add channel arg for server in HTTP CONNECT request.
     if (chand->proxy_name != NULL) {
       grpc_arg new_arg;
       new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
