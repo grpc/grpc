@@ -26,3 +26,4 @@
 [submodule "third_party/cares/cares"]
 	path = third_party/cares/cares
 	url = https://github.com/c-ares/c-ares.git
+	branch = cares-1_12_0
