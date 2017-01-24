@@ -81,6 +81,11 @@ class _Handler(object):
             servicer_context.set_trailing_metadata(((
                 'testkey',
                 'testvalue',),))
+            # TODO(https://github.com/grpc/grpc/issues/8483): test the values
+            # returned by these methods rather than only "smoke" testing that
+            # the return after having been called.
+            servicer_context.is_active()
+            servicer_context.time_remaining()
         return request
 
     def handle_unary_stream(self, request, servicer_context):

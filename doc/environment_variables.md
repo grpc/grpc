@@ -55,10 +55,12 @@ some configuration as environment variables that can be set.
   - secure_endpoint - traces bytes flowing through encrypted channels
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
+  
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
+ 
   Example:
-   export GRPC_TRACE=all,-pending_tags
+  export GRPC_TRACE=all,-pending_tags
 
 * GRPC_VERBOSITY
   Default gRPC logging verbosity - one of:

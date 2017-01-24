@@ -3370,19 +3370,21 @@
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
+      "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/metrics_server.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "stress_test", 
     "src": [
-      "test/cpp/interop/client_helper.cc", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.cc", 
       "test/cpp/interop/stress_interop_client.h", 
       "test/cpp/interop/stress_test.cc", 
+      "test/cpp/util/create_test_channel.cc", 
+      "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
     ], 
@@ -3527,6 +3529,20 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_chacha_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_chacha_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_aead_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3590,6 +3606,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_spake25519_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_spake25519_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3681,6 +3711,34 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_ecdh_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdh_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ecdsa_sign_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_sign_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_ecdsa_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3688,6 +3746,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ecdsa_verify_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_verify_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3800,6 +3872,62 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_gcm_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_statistical_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_statistical_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_vectors_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_vectors_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_obj_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_obj_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3940,20 +4068,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pqueue_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pqueue_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -5689,23 +5803,22 @@
       "third_party/boringssl/crypto/conf/internal.h", 
       "third_party/boringssl/crypto/curve25519/internal.h", 
       "third_party/boringssl/crypto/des/internal.h", 
-      "third_party/boringssl/crypto/dh/internal.h", 
       "third_party/boringssl/crypto/digest/internal.h", 
       "third_party/boringssl/crypto/digest/md32_common.h", 
-      "third_party/boringssl/crypto/directory.h", 
       "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
       "third_party/boringssl/crypto/internal.h", 
       "third_party/boringssl/crypto/modes/internal.h", 
+      "third_party/boringssl/crypto/newhope/internal.h", 
       "third_party/boringssl/crypto/obj/obj_dat.h", 
       "third_party/boringssl/crypto/obj/obj_xref.h", 
       "third_party/boringssl/crypto/pkcs8/internal.h", 
+      "third_party/boringssl/crypto/poly1305/internal.h", 
       "third_party/boringssl/crypto/rand/internal.h", 
       "third_party/boringssl/crypto/rsa/internal.h", 
-      "third_party/boringssl/crypto/test/scoped_types.h", 
-      "third_party/boringssl/crypto/test/test_util.h", 
       "third_party/boringssl/crypto/x509/charmap.h", 
+      "third_party/boringssl/crypto/x509/internal.h", 
       "third_party/boringssl/crypto/x509/vpm_int.h", 
       "third_party/boringssl/crypto/x509v3/ext_dat.h", 
       "third_party/boringssl/crypto/x509v3/pcy_int.h", 
@@ -5751,10 +5864,12 @@
       "third_party/boringssl/include/openssl/md4.h", 
       "third_party/boringssl/include/openssl/md5.h", 
       "third_party/boringssl/include/openssl/mem.h", 
+      "third_party/boringssl/include/openssl/newhope.h", 
+      "third_party/boringssl/include/openssl/nid.h", 
       "third_party/boringssl/include/openssl/obj.h", 
       "third_party/boringssl/include/openssl/obj_mac.h", 
       "third_party/boringssl/include/openssl/objects.h", 
-      "third_party/boringssl/include/openssl/opensslfeatures.h", 
+      "third_party/boringssl/include/openssl/opensslconf.h", 
       "third_party/boringssl/include/openssl/opensslv.h", 
       "third_party/boringssl/include/openssl/ossl_typ.h", 
       "third_party/boringssl/include/openssl/pem.h", 
@@ -5762,9 +5877,9 @@
       "third_party/boringssl/include/openssl/pkcs7.h", 
       "third_party/boringssl/include/openssl/pkcs8.h", 
       "third_party/boringssl/include/openssl/poly1305.h", 
-      "third_party/boringssl/include/openssl/pqueue.h", 
       "third_party/boringssl/include/openssl/rand.h", 
       "third_party/boringssl/include/openssl/rc4.h", 
+      "third_party/boringssl/include/openssl/ripemd.h", 
       "third_party/boringssl/include/openssl/rsa.h", 
       "third_party/boringssl/include/openssl/safestack.h", 
       "third_party/boringssl/include/openssl/sha.h", 
@@ -5780,11 +5895,7 @@
       "third_party/boringssl/include/openssl/x509.h", 
       "third_party/boringssl/include/openssl/x509_vfy.h", 
       "third_party/boringssl/include/openssl/x509v3.h", 
-      "third_party/boringssl/ssl/internal.h", 
-      "third_party/boringssl/ssl/test/async_bio.h", 
-      "third_party/boringssl/ssl/test/packeted_bio.h", 
-      "third_party/boringssl/ssl/test/scoped_types.h", 
-      "third_party/boringssl/ssl/test/test_config.h"
+      "third_party/boringssl/ssl/internal.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
@@ -5891,6 +6002,19 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "boringssl_chacha_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "boringssl_aead_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -5944,6 +6068,19 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_spake25519_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6034,7 +6171,46 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "boringssl_ecdh_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_sign_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "boringssl_ecdsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_verify_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6137,8 +6313,60 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "boringssl_gcm_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_statistical_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_vectors_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_obj_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6269,19 +6497,6 @@
     "is_filegroup": false, 
     "language": "c", 
     "name": "boringssl_v3name_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "boringssl_pqueue_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"

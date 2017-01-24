@@ -42,7 +42,7 @@ want_submodules=`mktemp /tmp/submXXXXXX`
 git submodule | awk '{ print $1 }' | sort > $submodules
 cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  44c25c892a6229b20db7cd9dc05584ea865896de third_party/benchmark (v0.1.0-343-g44c25c8)
- c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (c880e42)
+ 78684e5b222645828ca302e56b40b9daff2b2d27 third_party/boringssl (78684e5)
  886e7d75368e3f4fab3f4d0d3584e4abfc557755 third_party/boringssl-with-bazel (version_for_cocoapods_7.0-857-g886e7d7)
  f8a0efe03aa69b3336d8e228b37d4ccb17324b88 third_party/gflags (v2.2.0)
  c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
