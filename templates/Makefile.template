@@ -408,7 +408,7 @@
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
   SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
   SHARED_EXT_CSHARP = dylib
@@ -417,7 +417,7 @@
   SHARED_VERSION_CPP =
   SHARED_VERSION_CSHARP =
   else
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
   SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -561,7 +561,7 @@
   HAS_EMBEDDED_PROTOBUF = true
   endif
 
-  ifeq ($(wildcard third_party/c-ares/ares.h),)
+  ifeq ($(wildcard third_party/cares/cares/ares.h),)
   HAS_EMBEDDED_CARES = false
   else
   HAS_EMBEDDED_CARES = true
@@ -616,7 +616,7 @@
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-  CPPFLAGS := -Ithird_party/c-ares -Isrc/c-ares $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
   else
   ifeq ($(HAS_PKG_CONFIG),true)

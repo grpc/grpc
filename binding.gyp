@@ -100,7 +100,7 @@
       ['OS == "win"', {
         "include_dirs": [
           "third_party/zlib",
-          "third_party/c-ares"
+          "third_party/cares/cares"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',

@@ -495,7 +495,7 @@ SHARED_VERSION_CORE = -2
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -1
 else ifeq ($(SYSTEM),Darwin)
-EXECUTABLE_SUFFIX = 
+EXECUTABLE_SUFFIX =
 SHARED_EXT_CORE = dylib
 SHARED_EXT_CPP = dylib
 SHARED_EXT_CSHARP = dylib
@@ -504,7 +504,7 @@ SHARED_VERSION_CORE =
 SHARED_VERSION_CPP =
 SHARED_VERSION_CSHARP =
 else
-EXECUTABLE_SUFFIX = 
+EXECUTABLE_SUFFIX =
 SHARED_EXT_CORE = so.$(CORE_VERSION)
 SHARED_EXT_CPP = so.$(CPP_VERSION)
 SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -648,7 +648,7 @@ else
 HAS_EMBEDDED_PROTOBUF = true
 endif
 
-ifeq ($(wildcard third_party/c-ares/ares.h),)
+ifeq ($(wildcard third_party/cares/cares/ares.h),)
 HAS_EMBEDDED_CARES = false
 else
 HAS_EMBEDDED_CARES = true
@@ -703,7 +703,7 @@ ifeq ($(EMBED_CARES),true)
 CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
 CARES_MERGE_OBJS = $(LIBARES_OBJS)
 CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-CPPFLAGS := -Ithird_party/c-ares -Isrc/c-ares $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
 else
 ifeq ($(HAS_PKG_CONFIG),true)
@@ -7238,61 +7238,61 @@ endif
 
 
 LIBARES_SRC = \
-    third_party/c-ares/ares__close_sockets.c \
-    third_party/c-ares/ares__get_hostent.c \
-    third_party/c-ares/ares__read_line.c \
-    third_party/c-ares/ares__timeval.c \
-    third_party/c-ares/ares_cancel.c \
-    third_party/c-ares/ares_create_query.c \
-    third_party/c-ares/ares_data.c \
-    third_party/c-ares/ares_destroy.c \
-    third_party/c-ares/ares_expand_name.c \
-    third_party/c-ares/ares_expand_string.c \
-    third_party/c-ares/ares_fds.c \
-    third_party/c-ares/ares_free_hostent.c \
-    third_party/c-ares/ares_free_string.c \
-    third_party/c-ares/ares_getenv.c \
-    third_party/c-ares/ares_gethostbyaddr.c \
-    third_party/c-ares/ares_gethostbyname.c \
-    third_party/c-ares/ares_getnameinfo.c \
-    third_party/c-ares/ares_getopt.c \
-    third_party/c-ares/ares_getsock.c \
-    third_party/c-ares/ares_init.c \
-    third_party/c-ares/ares_library_init.c \
-    third_party/c-ares/ares_llist.c \
-    third_party/c-ares/ares_mkquery.c \
-    third_party/c-ares/ares_nowarn.c \
-    third_party/c-ares/ares_options.c \
-    third_party/c-ares/ares_parse_a_reply.c \
-    third_party/c-ares/ares_parse_aaaa_reply.c \
-    third_party/c-ares/ares_parse_mx_reply.c \
-    third_party/c-ares/ares_parse_naptr_reply.c \
-    third_party/c-ares/ares_parse_ns_reply.c \
-    third_party/c-ares/ares_parse_ptr_reply.c \
-    third_party/c-ares/ares_parse_soa_reply.c \
-    third_party/c-ares/ares_parse_srv_reply.c \
-    third_party/c-ares/ares_parse_txt_reply.c \
-    third_party/c-ares/ares_platform.c \
-    third_party/c-ares/ares_process.c \
-    third_party/c-ares/ares_query.c \
-    third_party/c-ares/ares_search.c \
-    third_party/c-ares/ares_send.c \
-    third_party/c-ares/ares_strcasecmp.c \
-    third_party/c-ares/ares_strdup.c \
-    third_party/c-ares/ares_strerror.c \
-    third_party/c-ares/ares_timeout.c \
-    third_party/c-ares/ares_version.c \
-    third_party/c-ares/ares_writev.c \
-    third_party/c-ares/bitncmp.c \
-    third_party/c-ares/inet_net_pton.c \
-    third_party/c-ares/inet_ntop.c \
-    third_party/c-ares/windows_port.c \
+    third_party/cares/cares/ares__close_sockets.c \
+    third_party/cares/cares/ares__get_hostent.c \
+    third_party/cares/cares/ares__read_line.c \
+    third_party/cares/cares/ares__timeval.c \
+    third_party/cares/cares/ares_cancel.c \
+    third_party/cares/cares/ares_create_query.c \
+    third_party/cares/cares/ares_data.c \
+    third_party/cares/cares/ares_destroy.c \
+    third_party/cares/cares/ares_expand_name.c \
+    third_party/cares/cares/ares_expand_string.c \
+    third_party/cares/cares/ares_fds.c \
+    third_party/cares/cares/ares_free_hostent.c \
+    third_party/cares/cares/ares_free_string.c \
+    third_party/cares/cares/ares_getenv.c \
+    third_party/cares/cares/ares_gethostbyaddr.c \
+    third_party/cares/cares/ares_gethostbyname.c \
+    third_party/cares/cares/ares_getnameinfo.c \
+    third_party/cares/cares/ares_getopt.c \
+    third_party/cares/cares/ares_getsock.c \
+    third_party/cares/cares/ares_init.c \
+    third_party/cares/cares/ares_library_init.c \
+    third_party/cares/cares/ares_llist.c \
+    third_party/cares/cares/ares_mkquery.c \
+    third_party/cares/cares/ares_nowarn.c \
+    third_party/cares/cares/ares_options.c \
+    third_party/cares/cares/ares_parse_a_reply.c \
+    third_party/cares/cares/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/ares_parse_mx_reply.c \
+    third_party/cares/cares/ares_parse_naptr_reply.c \
+    third_party/cares/cares/ares_parse_ns_reply.c \
+    third_party/cares/cares/ares_parse_ptr_reply.c \
+    third_party/cares/cares/ares_parse_soa_reply.c \
+    third_party/cares/cares/ares_parse_srv_reply.c \
+    third_party/cares/cares/ares_parse_txt_reply.c \
+    third_party/cares/cares/ares_platform.c \
+    third_party/cares/cares/ares_process.c \
+    third_party/cares/cares/ares_query.c \
+    third_party/cares/cares/ares_search.c \
+    third_party/cares/cares/ares_send.c \
+    third_party/cares/cares/ares_strcasecmp.c \
+    third_party/cares/cares/ares_strdup.c \
+    third_party/cares/cares/ares_strerror.c \
+    third_party/cares/cares/ares_timeout.c \
+    third_party/cares/cares/ares_version.c \
+    third_party/cares/cares/ares_writev.c \
+    third_party/cares/cares/bitncmp.c \
+    third_party/cares/cares/inet_net_pton.c \
+    third_party/cares/cares/inet_ntop.c \
+    third_party/cares/cares/windows_port.c \
 
 PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Isrc/c-ares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
 $(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 

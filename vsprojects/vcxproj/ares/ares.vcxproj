@@ -147,129 +147,129 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_data.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_dns.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_getenv.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_getopt.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_inet_net_pton.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_iphlpapi.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_ipv6.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_library_init.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_llist.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_nowarn.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_private.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_rules.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_setup.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_strcasecmp.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_strdup.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_version.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\bitncmp.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\config-win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\setup_once.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c-ares\ares_build.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c-ares\config_linux\ares_config.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c-ares\config_darwin\ares_config.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_data.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_dns.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_getenv.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_getopt.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_inet_net_pton.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_iphlpapi.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_ipv6.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_library_init.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_llist.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_nowarn.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_private.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_rules.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_setup.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_strcasecmp.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_strdup.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_version.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\bitncmp.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\config-win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\setup_once.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\ares_build.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\config_linux\ares_config.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\config_darwin\ares_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares__close_sockets.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__close_sockets.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares__get_hostent.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__get_hostent.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares__read_line.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__read_line.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares__timeval.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__timeval.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_cancel.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_cancel.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_create_query.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_create_query.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_data.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_data.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_destroy.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_destroy.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_expand_name.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_expand_name.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_expand_string.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_expand_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_fds.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_fds.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_free_hostent.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_free_hostent.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_free_string.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_free_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_getenv.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getenv.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_gethostbyaddr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_gethostbyaddr.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_gethostbyname.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_gethostbyname.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_getnameinfo.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getnameinfo.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_getopt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getopt.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_getsock.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getsock.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_init.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_init.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_library_init.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_library_init.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_llist.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_llist.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_mkquery.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_mkquery.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_nowarn.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_nowarn.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_options.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_options.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_a_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_a_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_aaaa_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_aaaa_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_mx_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_mx_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_naptr_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_naptr_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_ns_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_ns_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_ptr_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_ptr_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_soa_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_soa_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_srv_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_srv_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_parse_txt_reply.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_txt_reply.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_platform.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_platform.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_process.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_process.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_query.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_query.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_search.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_search.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_send.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_send.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_strcasecmp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strcasecmp.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_strdup.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strdup.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_strerror.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strerror.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_timeout.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_timeout.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_version.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_version.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares_writev.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_writev.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\bitncmp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\bitncmp.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\inet_net_pton.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\inet_net_pton.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\inet_ntop.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\inet_ntop.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\windows_port.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\windows_port.c">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
