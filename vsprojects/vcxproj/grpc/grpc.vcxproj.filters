@@ -541,6 +541,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.c">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.c">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
@@ -1215,6 +1221,12 @@
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.h">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h">
