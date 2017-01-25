@@ -69,59 +69,6 @@ DEFINE_string(infile, "", "Input file (default is stdin)");
 
 namespace {
 
-class GrpcTool {
- public:
-  explicit GrpcTool();
-  virtual ~GrpcTool() {}
-
-  bool Help(int argc, const char** argv, const CliCredentials& cred,
-            GrpcToolOutputCallback callback);
-  bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
-                  GrpcToolOutputCallback callback);
-  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback);
-  bool PrintType(int argc, const char** argv, const CliCredentials& cred,
-                 GrpcToolOutputCallback callback);
-  // TODO(zyc): implement the following methods
-  // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
-  // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
-  bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback);
-  bool ToText(int argc, const char** argv, const CliCredentials& cred,
-              GrpcToolOutputCallback callback);
-  bool ToBinary(int argc, const char** argv, const CliCredentials& cred,
-                GrpcToolOutputCallback callback);
-
-  void SetPrintCommandMode(int exit_status) {
-    print_command_usage_ = true;
-    usage_exit_status_ = exit_status;
-  }
-
- protected:
-  virtual std::istream* input_stream() { return input_stream_; }
-
- private:
-  void CommandUsage(const grpc::string& usage) const;
-  void SetInputStream(std::istream* input_stream) {
-    input_stream_ = input_stream;
-  }
-  bool print_command_usage_;
-  int usage_exit_status_;
-  const grpc::string cred_usage_;
-  std::istream* input_stream_;
-};
-
-template <typename T>
-std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
-                   GrpcToolOutputCallback)>
-BindWith5Args(T&& func) {
-  return std::bind(std::forward<T>(func), std::placeholders::_1,
-                   std::placeholders::_2, std::placeholders::_3,
-                   std::placeholders::_4, std::placeholders::_5);
-}
-
 template <typename T>
 size_t ArraySize(T& a) {
   return ((sizeof(a) / sizeof(*(a))) /
@@ -170,6 +117,7 @@ void PrintMetadata(const T& m, const grpc::string& message) {
 void ReadResponse(CliCall* call, const grpc::string& method_name,
                   GrpcToolOutputCallback callback, ProtoFileParser* parser,
                   bool print_mode) {
+  std::cout << "ReadResponse thread" << std::endl;
   grpc::string serialized_response_proto;
   std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata;
 
@@ -177,6 +125,7 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
            &serialized_response_proto,
            receive_initial_metadata ? &server_initial_metadata : nullptr);
        receive_initial_metadata = false) {
+    std::cout << "start of ReadResponse for loop" << std::endl;
     fprintf(stderr, "got response.\n");
     if (!FLAGS_binary_output) {
       serialized_response_proto = parser->GetTextFormatFromMethod(
@@ -192,28 +141,30 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
     if (!callback(serialized_response_proto) && print_mode) {
       fprintf(stderr, "Failed to output response.\n");
     }
+    std::cout << "end of ReadResponse for loop" << std::endl;
   }
+  std::cout << "after ReadResponse for loop" << std::endl;
 }
 
-struct Command {
-  const char* command;
-  std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
-                     GrpcToolOutputCallback)>
-      function;
-  int min_args;
-  int max_args;
-};
+// struct Command {
+//   const char* command;
+//   std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
+//                      GrpcToolOutputCallback)>
+//       function;
+//   int min_args;
+//   int max_args;
+// };
 
-const Command ops[] = {
-    {"help", BindWith5Args(&GrpcTool::Help), 0, INT_MAX},
-    {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
-    {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
-    {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
-    {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
-    {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
-    {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
-    {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
-};
+// const Command ops[] = {
+//     {"help", BindWith5Args(&GrpcTool::Help), 0, INT_MAX},
+//     {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+//     {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+//     {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
+//     {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
+//     {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
+//     {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
+//     {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
+// };
 
 void Usage(const grpc::string& msg) {
   fprintf(
@@ -231,19 +182,31 @@ void Usage(const grpc::string& msg) {
 
   exit(1);
 }
+}  // namespace
 
-const Command* FindCommand(const grpc::string& name) {
-  for (int i = 0; i < (int)ArraySize(ops); i++) {
-    if (name == ops[i].command) {
-      return &ops[i];
+const GrpcTool::Command GrpcTool::ops_[] = {
+    {"help", BindWith5Args(&GrpcTool::Help), 0, INT_MAX},
+    {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
+    {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
+    {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
+    {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
+    {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
+};
+
+const GrpcTool::Command* GrpcTool::FindCommand(const grpc::string& name) {
+  for (int i = 0; i < (int)ArraySize(ops_); i++) {
+    if (name == ops_[i].command) {
+      return &ops_[i];
     }
   }
   return NULL;
 }
-}  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback) {
+int GrpcTool::GrpcToolMainLib(int argc, const char** argv,
+                              const CliCredentials& cred,
+                              GrpcToolOutputCallback callback) {
   if (argc < 2) {
     Usage("No command specified");
   }
@@ -254,14 +217,15 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
 
   const Command* cmd = FindCommand(command);
   if (cmd != NULL) {
-    GrpcTool grpc_tool;
+    // GrpcTool grpc_tool;
     if (argc < cmd->min_args || argc > cmd->max_args) {
       // Force the command to print its usage message
       fprintf(stderr, "\nWrong number of arguments for %s\n", command.c_str());
-      grpc_tool.SetPrintCommandMode(1);
-      return cmd->function(&grpc_tool, -1, NULL, cred, callback);
+      // grpc_tool.SetPrintCommandMode(1);
+      SetPrintCommandMode(1);
+      return cmd->function(this, -1, NULL, cred, callback);
     }
-    const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
+    const bool ok = cmd->function(this, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
     Usage("Invalid command '" + grpc::string(command.c_str()) + "'");
@@ -508,6 +472,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     grpc::string line;
     while (!request_text.empty() || getline(*input_stream(), line)) {
       //  (!input_stream()->eof() && getline(*input_stream(), line))) {
+      std::cout << "start of while loop" << std::endl;
       if (!request_text.empty()) {
         if (FLAGS_binary_input) {
           serialized_request_proto = request_text;
@@ -524,7 +489,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           }
         }
 
+        std::cout << "Before WritesAndWait" << std::endl;
         call.WriteAndWait(serialized_request_proto);
+        std::cout << "After WritesAndWait" << std::endl;
         if (print_mode) {
           fprintf(stderr, "Request sent.\n");
         }
@@ -537,12 +504,14 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           request_ss << line << ' ';
         }
       }
+      std::cout << "end of while loop" << std::endl;
     }
     if (input_file.is_open()) {
       input_file.close();
     }
-
+    std::cout << "Before WritesDoneAndWait" << std::endl;
     call.WritesDoneAndWait();
+    std::cout << "wait for join" << std::endl;
     read_thread.join();
 
     std::multimap<grpc::string_ref, grpc::string_ref> server_trailing_metadata;

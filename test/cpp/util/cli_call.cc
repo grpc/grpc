@@ -137,22 +137,23 @@ void CliCall::WriteAndWait(const grpc::string& request) {
   grpc_slice s = grpc_slice_from_copied_string(request.c_str());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
-  call_->Write(send_buffer, tag(2));
-
   gpr_mu_lock(&write_mu_);
+  call_->Write(send_buffer, tag(2));
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+    std::cout << "Write wakeup" << std::endl;
   }
   gpr_mu_unlock(&write_mu_);
 }
 
 void CliCall::WritesDoneAndWait() {
-  call_->WritesDone(tag(4));
   gpr_mu_lock(&write_mu_);
+  call_->WritesDone(tag(4));
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+    std::cout << "WritesDone wakeup" << std::endl;
   }
   gpr_mu_unlock(&write_mu_);
 }
@@ -164,8 +165,11 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   bool ok;
   grpc::ByteBuffer recv_buffer;
 
+  // std::cout << "before read" << std::endl;
   call_->Read(&recv_buffer, tag(3));
+  std::cout << "after read" << std::endl;
   bool cq_result = cq_.Next(&got_tag, &ok);
+  std::cout << "after 1st Next:" << got_tag << std::endl;
 
   while (got_tag != tag(3)) {
     gpr_mu_lock(&write_mu_);
@@ -173,13 +177,25 @@ bool CliCall::ReadAndMaybeNotifyWrite(
     gpr_cv_signal(&write_cv_);
     gpr_mu_unlock(&write_mu_);
 
+    std::cout << "before 2nd Next" << std::endl;
     cq_result = cq_.Next(&got_tag, &ok);
+    std::cout << "after 2nd Next" << got_tag << std::endl;
     if (got_tag == tag(2)) {
       GPR_ASSERT(ok);
     }
   }
 
+  gpr_mu_lock(&write_mu_);
+  if (!ok && write_done_ == false) {
+    cq_result = cq_.Next(&got_tag, &ok);
+    write_done_ = true;
+    gpr_cv_signal(&write_cv_);
+  }
+  gpr_mu_unlock(&write_mu_);
+
   if (!cq_result || !ok) {
+    std::cout << "cq_result: " << cq_result << std::endl;
+    std::cout << "ok: " << ok << std::endl;
     return false;
   }
   std::vector<grpc::Slice> slices;

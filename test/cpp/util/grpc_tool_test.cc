@@ -207,6 +207,29 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 };
 
+class MockGrpcTool : public grpc::testing::GrpcTool {
+ public:
+  MockGrpcTool() { mock_input_stream_ = nullptr; }
+
+  virtual ~MockGrpcTool() {}
+
+  void SetMockInputStream(std::istream* input_stream) {
+    mock_input_stream_ = input_stream;
+  }
+
+  void ResetMockInputStream() { mock_input_stream_ = nullptr; }
+
+  std::istream* input_stream() override {
+    if (mock_input_stream_ == nullptr) {
+      return GrpcTool::input_stream();
+    } else {
+      return mock_input_stream_;
+    }
+  }
+
+  std::istream* mock_input_stream_;
+};
+
 }  // namespace
 
 class GrpcToolTest : public ::testing::Test {
@@ -232,7 +255,7 @@ class GrpcToolTest : public ::testing::Test {
 
   void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
                      GrpcToolOutputCallback callback) {
-    int result = GrpcToolMainLib(argc, argv, cred, callback);
+    int result = grpc_tool_.GrpcToolMainLib(argc, argv, cred, callback);
     if (result) {
       exit(result);
     }
@@ -241,6 +264,7 @@ class GrpcToolTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   reflection::ProtoServerReflectionPlugin plugin_;
+  MockGrpcTool grpc_tool_;
 };
 
 TEST_F(GrpcToolTest, NoCommand) {
@@ -249,7 +273,7 @@ TEST_F(GrpcToolTest, NoCommand) {
   const char* argv[] = {"grpc_cli"};
   // Exit with 1, print usage instruction in stderr
   EXPECT_EXIT(
-      GrpcToolMainLib(
+      grpc_tool_.GrpcToolMainLib(
           ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), "No command specified\n" USAGE_REGEX);
@@ -263,7 +287,7 @@ TEST_F(GrpcToolTest, InvalidCommand) {
   const char* argv[] = {"grpc_cli", "abc"};
   // Exit with 1, print usage instruction in stderr
   EXPECT_EXIT(
-      GrpcToolMainLib(
+      grpc_tool_.GrpcToolMainLib(
           ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), "Invalid command 'abc'\n" USAGE_REGEX);
@@ -276,10 +300,11 @@ TEST_F(GrpcToolTest, HelpCommand) {
   std::stringstream output_stream;
   const char* argv[] = {"grpc_cli", "help"};
   // Exit with 1, print usage instruction in stderr
-  EXPECT_EXIT(GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                              std::bind(PrintStream, &output_stream,
-                                        std::placeholders::_1)),
-              ::testing::ExitedWithCode(1), USAGE_REGEX);
+  EXPECT_EXIT(
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)),
+      ::testing::ExitedWithCode(1), USAGE_REGEX);
   // No output
   EXPECT_TRUE(0 == output_stream.tellp());
 }
@@ -292,9 +317,11 @@ TEST_F(GrpcToolTest, ListCommand) {
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
 
   FLAGS_l = false;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
                           "grpc.testing.EchoTestService\n"
                           "grpc.reflection.v1alpha.ServerReflection\n"));
@@ -311,9 +338,11 @@ TEST_F(GrpcToolTest, ListOneService) {
                         "grpc.testing.EchoTestService"};
   // without -l flag
   FLAGS_l = false;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: ECHO_TEST_SERVICE_SUMMARY
   EXPECT_TRUE(0 ==
               strcmp(output_stream.str().c_str(), ECHO_TEST_SERVICE_SUMMARY));
@@ -322,9 +351,11 @@ TEST_F(GrpcToolTest, ListOneService) {
   output_stream.str(grpc::string());
   output_stream.clear();
   FLAGS_l = true;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: ECHO_TEST_SERVICE_DESCRIPTION
   EXPECT_TRUE(
       0 == strcmp(output_stream.str().c_str(), ECHO_TEST_SERVICE_DESCRIPTION));
@@ -340,9 +371,11 @@ TEST_F(GrpcToolTest, TypeCommand) {
   const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
                         "grpc.testing.EchoRequest"};
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   const grpc::protobuf::Descriptor* desc =
       grpc::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(
           "grpc.testing.EchoRequest");
@@ -362,9 +395,11 @@ TEST_F(GrpcToolTest, ListOneMethod) {
                         "grpc.testing.EchoTestService.Echo"};
   // without -l flag
   FLAGS_l = false;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: "Echo"
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), "Echo\n"));
 
@@ -372,9 +407,11 @@ TEST_F(GrpcToolTest, ListOneMethod) {
   output_stream.str(grpc::string());
   output_stream.clear();
   FLAGS_l = true;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: ECHO_METHOD_DESCRIPTION
   EXPECT_TRUE(0 ==
               strcmp(output_stream.str().c_str(), ECHO_METHOD_DESCRIPTION));
@@ -406,9 +443,11 @@ TEST_F(GrpcToolTest, CallCommand) {
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
                         "message: 'Hello'"};
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(NULL !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
@@ -425,23 +464,20 @@ TEST_F(GrpcToolTest, CallCommandRequestStream) {
                         "RequestStream", "message: 'Hello0'"};
 
   // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
-  std::streambuf* orig = std::cin.rdbuf();
-  std::stringstream ss;
-  std::cin.rdbuf(ss.rdbuf());
-  std::thread t([&ss]() {
-    ss << "message: 'Hello1'" << std::endl << std::endl;
-    ss << "message: 'Hello2'" << std::endl << std::endl;
-  });
+  std::istringstream input_stream(
+      "message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  grpc_tool_.SetMockInputStream(&input_stream);
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-  t.join();
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
+  grpc_tool_.ResetMockInputStream();
 
   // Expected output: "message: \"Hello0Hello1Hello2\""
   EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
                              "message: \"Hello0Hello1Hello2\""));
-  std::cin.rdbuf(orig);
   ShutdownServer();
 }
 
@@ -455,23 +491,20 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequest) {
                         "RequestStream", "message: 'Hello0'"};
 
   // Mock std::cin input "bad_field: 'Hello1'\n\n message: 'Hello2'\n\n"
-  std::streambuf* orig = std::cin.rdbuf();
-  std::stringstream ss;
-  std::cin.rdbuf(ss.rdbuf());
-  std::thread t([&ss]() {
-    ss << "bad_field: 'Hello1'" << std::endl << std::endl;
-    ss << "message: 'Hello2'" << std::endl << std::endl;
-  });
+  std::istringstream input_stream(
+      "bad_field: 'Hello1'\n\n message: 'Hello2'\n\n");
+  grpc_tool_.SetMockInputStream(&input_stream);
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-  t.join();
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
+  grpc_tool_.ResetMockInputStream();
 
   // Expected output: "message: \"Hello0Hello2\""
   EXPECT_TRUE(NULL !=
               strstr(output_stream.str().c_str(), "message: \"Hello0Hello2\""));
-  std::cin.rdbuf(orig);
   ShutdownServer();
 }
 
@@ -484,9 +517,11 @@ TEST_F(GrpcToolTest, CallCommandResponseStream) {
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "ResponseStream", "message: 'Hello'"};
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
 
   // Expected output: "message: \"Hello{n}\""
   for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
@@ -508,20 +543,22 @@ TEST_F(GrpcToolTest, CallCommandBidiStream) {
                         "BidiStream", "message: 'Hello0'"};
 
   // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
-  std::streambuf* orig = std::cin.rdbuf();
-  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
-  std::cin.rdbuf(ss.rdbuf());
+  std::istringstream input_stream(
+      "message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  grpc_tool_.SetMockInputStream(&input_stream);
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
+  grpc_tool_.ResetMockInputStream();
 
   // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
   // \"Hello2\"\n\n"
   EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
                              "message: \"Hello0\"\nmessage: "
                              "\"Hello1\"\nmessage: \"Hello2\"\n"));
-  std::cin.rdbuf(orig);
   ShutdownServer();
 }
 
@@ -533,21 +570,21 @@ TEST_F(GrpcToolTest, CallCommandBidiStreamWithBadRequest) {
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "BidiStream", "message: 'Hello0'"};
 
-  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
-  std::streambuf* orig = std::cin.rdbuf();
-  std::istringstream ss("message: 1.0\n\n message: 'Hello2'\n\n");
-  std::cin.rdbuf(ss.rdbuf());
+  // Mock std::cin input "message: 1.0\n\n message: 'Hello2'\n\n"
+  std::istringstream input_stream("message: 1.0\n\n message: 'Hello2'\n\n");
+  grpc_tool_.SetMockInputStream(&input_stream);
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
+  grpc_tool_.ResetMockInputStream();
 
   // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
   // \"Hello2\"\n\n"
   EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
                              "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
-  std::cin.rdbuf(orig);
-
   ShutdownServer();
 }
 
@@ -563,9 +600,11 @@ TEST_F(GrpcToolTest, ParseCommand) {
 
   FLAGS_binary_input = false;
   FLAGS_binary_output = false;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   // Expected output: ECHO_RESPONSE_MESSAGE
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), ECHO_RESPONSE_MESSAGE));
 
@@ -573,18 +612,21 @@ TEST_F(GrpcToolTest, ParseCommand) {
   output_stream.str(grpc::string());
   output_stream.clear();
   FLAGS_binary_output = true;
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 ==
+      grpc_tool_.GrpcToolMainLib(
+          ArraySize(argv), argv, TestCliCredentials(),
+          std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   grpc::string binary_data = output_stream.str();
   output_stream.str(grpc::string());
   output_stream.clear();
   argv[4] = binary_data.c_str();
   FLAGS_binary_input = true;
   FLAGS_binary_output = false;
-  EXPECT_TRUE(0 == GrpcToolMainLib(5, argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(0 ==
+              grpc_tool_.GrpcToolMainLib(5, argv, TestCliCredentials(),
+                                         std::bind(PrintStream, &output_stream,
+                                                   std::placeholders::_1)));
 
   // Expected output: ECHO_RESPONSE_MESSAGE
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), ECHO_RESPONSE_MESSAGE));
@@ -599,7 +641,7 @@ TEST_F(GrpcToolTest, TooFewArguments) {
 
   // Exit with 1
   EXPECT_EXIT(
-      GrpcToolMainLib(
+      grpc_tool_.GrpcToolMainLib(
           ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), ".*Wrong number of arguments for call.*");
@@ -615,7 +657,7 @@ TEST_F(GrpcToolTest, TooManyArguments) {
 
   // Exit with 1
   EXPECT_EXIT(
-      GrpcToolMainLib(
+      grpc_tool_.GrpcToolMainLib(
           ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), ".*Wrong number of arguments for call.*");

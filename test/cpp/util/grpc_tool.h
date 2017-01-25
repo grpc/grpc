@@ -45,8 +45,71 @@ namespace testing {
 
 typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
 
-int GrpcToolMainLib(int argc, const char **argv, const CliCredentials &cred,
+class GrpcTool {
+ public:
+  GrpcTool();
+  virtual ~GrpcTool() {}
+
+  int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
+                      GrpcToolOutputCallback callback);
+
+ protected:
+  virtual std::istream* input_stream() {
+    std::cout << "call base" << std::endl;
+    return input_stream_;
+  }
+
+ private:
+  bool Help(int argc, const char** argv, const CliCredentials& cred,
+            GrpcToolOutputCallback callback);
+  bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
+                  GrpcToolOutputCallback callback);
+  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback);
+  bool PrintType(int argc, const char** argv, const CliCredentials& cred,
+                 GrpcToolOutputCallback callback);
+  bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
+                    GrpcToolOutputCallback callback);
+  bool ToText(int argc, const char** argv, const CliCredentials& cred,
+              GrpcToolOutputCallback callback);
+  bool ToBinary(int argc, const char** argv, const CliCredentials& cred,
+                GrpcToolOutputCallback callback);
+
+  void SetPrintCommandMode(int exit_status) {
+    print_command_usage_ = true;
+    usage_exit_status_ = exit_status;
+  }
+  void CommandUsage(const grpc::string& usage) const;
+  void SetInputStream(std::istream* input_stream) {
+    input_stream_ = input_stream;
+  }
+
+  typedef std::function<bool(GrpcTool*, int, const char**,
+                             const CliCredentials&, GrpcToolOutputCallback)>
+      CommandFunction;
+
+  struct Command {
+    const char* command;
+    CommandFunction function;
+    int min_args;
+    int max_args;
+  };
+
+  const Command* FindCommand(const grpc::string& name);
+
+  template <typename T>
+  CommandFunction static BindWith5Args(T&& func) {
+    return std::bind(std::forward<T>(func), std::placeholders::_1,
+                     std::placeholders::_2, std::placeholders::_3,
+                     std::placeholders::_4, std::placeholders::_5);
+  }
+
+  bool print_command_usage_;
+  int usage_exit_status_;
+  const grpc::string cred_usage_;
+  std::istream* input_stream_;
+  static const Command ops_[];
+};
 
 }  // namespace testing
 }  // namespace grpc

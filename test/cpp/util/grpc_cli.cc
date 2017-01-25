@@ -94,8 +94,8 @@ static bool SimplePrint(const grpc::string& outfile,
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-
-  return grpc::testing::GrpcToolMainLib(
+  grpc::testing::GrpcTool grpc_tool;
+  return grpc_tool.GrpcToolMainLib(
       argc, (const char**)argv, grpc::testing::CliCredentials(),
       std::bind(SimplePrint, FLAGS_outfile, std::placeholders::_1));
 }
