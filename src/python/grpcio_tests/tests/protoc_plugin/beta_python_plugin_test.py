@@ -301,12 +301,17 @@ class PythonPluginTest(unittest.TestCase):
         self.assertTrue(response_future.cancelled())
 
   def testUnaryCallFutureFailed(self):
+    abortion_callback_called = [False]
+    def test_abortion_callback(unused_call):
+      abortion_callback_called[0] = True
     with _CreateService() as (methods, stub):
       request = request_pb2.SimpleRequest(response_size=13)
       with methods.fail():
         response_future = stub.UnaryCall.future(
             request, test_constants.LONG_TIMEOUT)
+        response_future.add_abortion_callback(test_abortion_callback)
         self.assertIsNotNone(response_future.exception())
+    self.assertTrue(abortion_callback_called[0])
 
   def testStreamingOutputCall(self):
     with _CreateService() as (methods, stub):
