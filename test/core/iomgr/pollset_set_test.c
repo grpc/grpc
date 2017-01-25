@@ -32,9 +32,8 @@
  */
 #include "src/core/lib/iomgr/port.h"
 
-/* This test only relevant on linux systems */
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
+/* This test only relevant on linux systems where epoll is available */
+#ifdef GRPC_LINUX_EPOLL
 
 #include <errno.h>
 #include <string.h>
@@ -43,6 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -52,16 +52,14 @@
 
 typedef struct test_pollset_set { grpc_pollset_set *pss; } test_pollset_set;
 
-void init_test_pollset_sets(test_pollset_set pollset_sets[], int num_pss) {
-  int i;
-  for (i = 0; i < num_pss; i++) {
+void init_test_pollset_sets(test_pollset_set *pollset_sets, int num_pss) {
+  for (int i = 0; i < num_pss; i++) {
     pollset_sets[i].pss = grpc_pollset_set_create();
   }
 }
 
-void cleanup_test_pollset_sets(test_pollset_set pollset_sets[], int num_pss) {
-  int i;
-  for (i = 0; i < num_pss; i++) {
+void cleanup_test_pollset_sets(test_pollset_set *pollset_sets, int num_pss) {
+  for (int i = 0; i < num_pss; i++) {
     grpc_pollset_set_destroy(pollset_sets[i].pss);
     pollset_sets[i].pss = NULL;
   }
@@ -76,9 +74,8 @@ typedef struct test_pollset {
   gpr_mu *mu;
 } test_pollset;
 
-static void init_test_pollsets(test_pollset pollsets[], int num_pollsets) {
-  int i;
-  for (i = 0; i < num_pollsets; i++) {
+static void init_test_pollsets(test_pollset *pollsets, int num_pollsets) {
+  for (int i = 0; i < num_pollsets; i++) {
     pollsets[i].ps = gpr_malloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].ps, &pollsets[i].mu);
   }
@@ -90,11 +87,9 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
 }
 
 static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
-                                  test_pollset pollsets[], int num_pollsets) {
+                                  test_pollset *pollsets, int num_pollsets) {
   grpc_closure destroyed;
-  int i;
-
-  for (i = 0; i < num_pollsets; i++) {
+  for (int i = 0; i < num_pollsets; i++) {
     grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].ps, &destroyed);
@@ -129,11 +124,8 @@ static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
 
-static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd tfds[],
-                          int num_fds) {
-  int i;
-
-  for (i = 0; i < num_fds; i++) {
+static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds, int num_fds) {
+  for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
     tfds[i].fd = grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&tfds[i].wakeup_fd),
                                 "test_fd");
@@ -144,9 +136,8 @@ static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd tfds[],
 static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
                              int num_fds) {
   int release_fd;
-  int i;
 
-  for (i = 0; i < num_fds; i++) {
+  for (int i = 0; i < num_fds; i++) {
     grpc_fd_shutdown(exec_ctx, tfds[i].fd);
     grpc_exec_ctx_flush(exec_ctx);
 
@@ -162,17 +153,15 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   }
 }
 
-static void make_test_fds_readable(test_fd tfds[], int num_fds) {
-  int i;
-  for (i = 0; i < num_fds; i++) {
+static void make_test_fds_readable(test_fd *tfds, int num_fds) {
+  for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_wakeup(&tfds[i].wakeup_fd));
   }
 }
 
-static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd tfds[],
+static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd *tfds,
                                       int num_fds) {
-  int i;
-  for (i = 0; i < num_fds; i++) {
+  for (int i = 0; i < num_fds; i++) {
     /* Verify that the on_readable callback was called */
     GPR_ASSERT(tfds[i].is_on_readable_called);
 
@@ -221,7 +210,6 @@ static void pollset_set_test_basic() {
    *                    +---> FD9 (Added after PS2 is added to PSS0)
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  int i;
   grpc_pollset_worker *worker;
   gpr_timespec deadline;
 
@@ -272,7 +260,7 @@ static void pollset_set_test_basic() {
    *     - Verify that on_readable call back was called for all FDs (and
    *       reset the FDs)
    * */
-  for (i = 0; i < num_ps; i++) {
+  for (int i = 0; i < num_ps; i++) {
     make_test_fds_readable(tfds, num_fds);
 
     gpr_mu_lock(pollsets[i].mu);
@@ -450,12 +438,11 @@ void pollset_set_test_empty_pollset() {
 }
 
 int main(int argc, char **argv) {
-  const char *poll_strategy = NULL;
+  const char *poll_strategy = grpc_get_poll_strategy_name();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
 
-  poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
     pollset_set_test_basic();
     pollset_set_test_dup_fds();
