@@ -292,7 +292,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "nanopb",
-        "submodule_boringssl",
+        "libssl",
     ],
     language = "c",
     public_hdrs = [

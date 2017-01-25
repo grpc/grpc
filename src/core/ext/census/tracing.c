@@ -36,7 +36,7 @@
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "third_party/boringssl-with-bazel/src/include/openssl/rand.h"
+#include <openssl/rand.h>
 #include "src/core/ext/census/mlog.h"
 
 void trace_start_span(const trace_span_context *span_ctxt,
