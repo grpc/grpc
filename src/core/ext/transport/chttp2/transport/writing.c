@@ -76,10 +76,10 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   gpr_atm count;
-retry:
-  count = gpr_atm_acq_load(&r->count);
-  if (count == 0) return false;
-  if (!gpr_atm_rel_cas(&r->count, count, count + 1)) goto retry;
+  do {
+    count = gpr_atm_acq_load(&r->count);
+    if (count == 0) return false;
+  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
   return true;
 }
 
