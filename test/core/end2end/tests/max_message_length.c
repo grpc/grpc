@@ -196,7 +196,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -205,7 +205,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -241,7 +241,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &recv_payload;
+  op->data.recv_message.recv_message = &recv_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -376,12 +376,12 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &recv_payload;
+  op->data.recv_message.recv_message = &recv_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -416,7 +416,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload;
+  op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
