@@ -200,9 +200,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         } else {
           grpc_chttp2_encode_header(
               exec_ctx, &t->hpack_compressor, s->id, s->send_trailing_metadata,
-              true,
-              t->settings[GRPC_ACKED_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              true, t->settings[GRPC_ACKED_SETTINGS]
+                               [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s->stats.outgoing, &t->outbuf);
         }
         s->send_trailing_metadata = NULL;
