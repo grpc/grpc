@@ -51,7 +51,8 @@
     'conditions': [
       ['runtime=="node"', {
         'defines': [
-          'GRPC_UV'
+          'GRPC_UV',
+          'GRPC_ARES=0',
         ]
       }],
       ['OS!="win" and runtime=="electron"', {
