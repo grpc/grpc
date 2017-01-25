@@ -577,6 +577,8 @@ add_library(grpc
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -839,6 +841,8 @@ add_library(grpc_cronet
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1334,6 +1338,8 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1838,6 +1844,8 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
