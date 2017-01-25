@@ -121,8 +121,8 @@ class BuildProtoModules(setuptools.Command):
                 '--grpc_python_out={}'.format(PROTO_STEM),
             ] + [path]
             if protoc.main(command) != 0:
-                sys.stderr.write('warning: Command:\n{}\nFailed'.format(
-                    command))
+                sys.stderr.write(
+                    'warning: Command:\n{}\nFailed'.format(command))
 
         # Generated proto directories dont include __init__.py, but
         # these are needed for python package resolution

@@ -102,8 +102,8 @@ class WorkerServer(services_pb2.WorkerServiceServicer):
                 'grpc.testing.BenchmarkService', method_implementations)
             server.add_generic_rpc_handlers((handler,))
         else:
-            raise Exception('Unsupported server type {}'.format(
-                config.server_type))
+            raise Exception(
+                'Unsupported server type {}'.format(config.server_type))
 
         if config.HasField('security_params'):  # Use SSL
             server_creds = grpc.ssl_server_credentials((
@@ -171,8 +171,8 @@ class WorkerServer(services_pb2.WorkerServiceServicer):
             else:
                 raise Exception('Async streaming client not supported')
         else:
-            raise Exception('Unsupported client type {}'.format(
-                config.client_type))
+            raise Exception(
+                'Unsupported client type {}'.format(config.client_type))
 
         # In multi-channel tests, we split the load across all channels
         load_factor = float(config.client_channels)

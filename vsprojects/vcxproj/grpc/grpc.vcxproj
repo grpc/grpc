@@ -449,11 +449,14 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h" />
@@ -831,6 +834,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
@@ -840,6 +845,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.c">
     </ClCompile>

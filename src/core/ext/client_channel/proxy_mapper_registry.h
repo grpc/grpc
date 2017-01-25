@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,23 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
 
-/// Channel arg indicating the server in HTTP CONNECT request (string).
-/// The presence of this arg triggers the use of HTTP CONNECT.
-#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+#include "src/core/ext/client_channel/proxy_mapper.h"
 
-/// Channel arg indicating HTTP CONNECT headers (string).
-/// Multiple headers are separated by newlines.  Key/value pairs are
-/// seperated by colons.
-#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
+void grpc_proxy_mapper_registry_init();
+void grpc_proxy_mapper_registry_shutdown();
 
-/// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
+/// Registers a new proxy mapper.  Takes ownership.
+/// If \a at_start is true, the new mapper will be at the beginning of
+/// the list.  Otherwise, it will be added to the end.
+void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+bool grpc_proxy_mappers_map(grpc_exec_ctx* exec_ctx,
+                            const grpc_resolved_address* address,
+                            const grpc_channel_args* args,
+                            grpc_resolved_address** new_address,
+                            grpc_channel_args** new_args);
+
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */
