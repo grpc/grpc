@@ -3238,12 +3238,12 @@ targets:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_test.cc
   deps:
-  - gpr
-  - gpr_test_util
-  - grpc
-  - grpc++
   - grpc++_test_util
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: http2_client
   build: test
   run: false
