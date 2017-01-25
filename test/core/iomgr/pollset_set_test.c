@@ -41,6 +41,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -52,13 +53,14 @@
 
 typedef struct test_pollset_set { grpc_pollset_set *pss; } test_pollset_set;
 
-void init_test_pollset_sets(test_pollset_set *pollset_sets, int num_pss) {
+void init_test_pollset_sets(test_pollset_set *pollset_sets, const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
     pollset_sets[i].pss = grpc_pollset_set_create();
   }
 }
 
-void cleanup_test_pollset_sets(test_pollset_set *pollset_sets, int num_pss) {
+void cleanup_test_pollset_sets(test_pollset_set *pollset_sets,
+                               const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
     grpc_pollset_set_destroy(pollset_sets[i].pss);
     pollset_sets[i].pss = NULL;
@@ -74,7 +76,7 @@ typedef struct test_pollset {
   gpr_mu *mu;
 } test_pollset;
 
-static void init_test_pollsets(test_pollset *pollsets, int num_pollsets) {
+static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
   for (int i = 0; i < num_pollsets; i++) {
     pollsets[i].ps = gpr_malloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].ps, &pollsets[i].mu);
@@ -87,7 +89,8 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
 }
 
 static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
-                                  test_pollset *pollsets, int num_pollsets) {
+                                  test_pollset *pollsets,
+                                  const int num_pollsets) {
   grpc_closure destroyed;
   for (int i = 0; i < num_pollsets; i++) {
     grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps,
@@ -124,7 +127,8 @@ static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
 
-static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds, int num_fds) {
+static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
+                          const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
     tfds[i].fd = grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&tfds[i].wakeup_fd),
@@ -134,7 +138,7 @@ static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds, int num_fds) {
 }
 
 static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
-                             int num_fds) {
+                             const int num_fds) {
   int release_fd;
 
   for (int i = 0; i < num_fds; i++) {
@@ -153,14 +157,14 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   }
 }
 
-static void make_test_fds_readable(test_fd *tfds, int num_fds) {
+static void make_test_fds_readable(test_fd *tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_wakeup(&tfds[i].wakeup_fd));
   }
 }
 
 static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd *tfds,
-                                      int num_fds) {
+                                      const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     /* Verify that the on_readable callback was called */
     GPR_ASSERT(tfds[i].is_on_readable_called);
@@ -216,9 +220,9 @@ static void pollset_set_test_basic() {
   test_fd tfds[10];
   test_pollset pollsets[3];
   test_pollset_set pollset_sets[2];
-  int num_fds = sizeof(tfds) / sizeof(tfds[0]);
-  int num_ps = sizeof(pollsets) / sizeof(pollsets[0]);
-  int num_pss = sizeof(pollset_sets) / sizeof(pollset_sets[0]);
+  const int num_fds = GPR_ARRAY_SIZE(tfds);
+  const int num_ps = GPR_ARRAY_SIZE(pollsets);
+  const int num_pss = GPR_ARRAY_SIZE(pollset_sets);
 
   init_test_fds(&exec_ctx, tfds, num_fds);
   init_test_pollsets(pollsets, num_ps);
@@ -321,9 +325,9 @@ void pollset_set_test_dup_fds() {
   test_fd tfds[3];
   test_pollset pollset;
   test_pollset_set pollset_sets[2];
-  int num_fds = sizeof(tfds) / sizeof(tfds[0]);
-  int num_ps = 1;
-  int num_pss = sizeof(pollset_sets) / sizeof(pollset_sets[0]);
+  const int num_fds = GPR_ARRAY_SIZE(tfds);
+  const int num_ps = 1;
+  const int num_pss = GPR_ARRAY_SIZE(pollset_sets);
 
   init_test_fds(&exec_ctx, tfds, num_fds);
   init_test_pollsets(&pollset, num_ps);
@@ -394,9 +398,9 @@ void pollset_set_test_empty_pollset() {
   test_fd tfds[3];
   test_pollset pollsets[2];
   test_pollset_set pollset_set;
-  int num_fds = sizeof(tfds) / sizeof(tfds[0]);
-  int num_ps = sizeof(pollsets) / sizeof(pollsets[0]);
-  int num_pss = 1;
+  const int num_fds = GPR_ARRAY_SIZE(tfds);
+  const int num_ps = GPR_ARRAY_SIZE(pollsets);
+  const int num_pss = 1;
 
   init_test_fds(&exec_ctx, tfds, num_fds);
   init_test_pollsets(pollsets, num_ps);
