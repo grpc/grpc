@@ -262,7 +262,7 @@ class SendMessageOp : public Op {
       }
     }
     send_message = BufferToByteBuffer(value);
-    out->data.send_message = send_message;
+    out->data.send_message.send_message = send_message;
     PersistentValue *handle = new PersistentValue(value);
     resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
@@ -377,7 +377,7 @@ class GetMetadataOp : public Op {
 
   bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
-    out->data.recv_initial_metadata = &recv_metadata;
+    out->data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
     return true;
   }
   bool IsFinalOp() {
@@ -410,7 +410,7 @@ class ReadMessageOp : public Op {
 
   bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
-    out->data.recv_message = &recv_message;
+    out->data.recv_message.recv_message = &recv_message;
     return true;
   }
   bool IsFinalOp() {
