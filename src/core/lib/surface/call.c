@@ -1478,8 +1478,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         /* If the outgoing buffer is already compressed, mark it as so in the
            flags. These will be picked up by the compression filter and further
            (wasteful) attempts at compression skipped. */
-        if (op->data.send_message.send_message->data.raw.compression
-            > GRPC_COMPRESS_NONE) {
+        if (op->data.send_message.send_message->data.raw.compression >
+            GRPC_COMPRESS_NONE) {
           call->sending_stream.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         }
         stream_op->send_message = &call->sending_stream.base;
