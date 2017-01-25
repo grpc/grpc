@@ -652,8 +652,8 @@ def operation_receive_message(int flags):
   # n.b. the c_op.data.receive_message field needs to be deleted by us,
   # anyway, so we just let that be handled by the ByteBuffer() we allocated
   # the line before.
-  op.c_op.data.recv_message.receive_message =
-      &op._received_message.c_byte_buffer
+  op.c_op.data.recv_message.receive_message = (
+      &op._received_message.c_byte_buffer)
   op.is_valid = True
   return op
 
