@@ -321,10 +321,9 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   grpc_op *op;
   grpc_call_error error;
 
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, NULL);
+                               "/foo", "foo.test.google.fr:1234", deadline,
+                               NULL);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
