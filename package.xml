@@ -10,19 +10,20 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-08-22</date>
+ <date>2017-01-13</date>
  <time>16:06:07</time>
  <version>
   <release>1.1.0dev</release>
   <api>1.1.0dev</api>
  </version>
  <stability>
-  <release>stable</release>
-  <api>stable</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license>BSD</license>
  <notes>
-- Reject metadata keys which are not legal #7881
+- PHP Proto3 adoption #8179
+- Various bug fixes     
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -81,6 +82,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -164,6 +166,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -323,11 +326,14 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/http_proxy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/proxy_mapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/proxy_mapper_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.h" role="src" />
@@ -529,11 +535,14 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/default_initial_connect_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/http_proxy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/proxy_mapper.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/proxy_mapper_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.c" role="src" />
@@ -1215,17 +1224,48 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>1.1.0dev</release>
-    <api>1.1.0dev</api>
+    <release>1.0.1RC1</release>
+    <api>1.0.1RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-10-06</date>
+   <license>BSD</license>
+   <notes>
+- Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.1</release>
+    <api>1.0.1</api>
    </version>
    <stability>
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2016-08-22</date>
+   <date>2016-10-27</date>
    <license>BSD</license>
    <notes>
 - Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0dev</release>
+    <api>1.1.0dev</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-01-13</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes     
    </notes>
   </release>
  </changelog>

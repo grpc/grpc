@@ -1461,7 +1461,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (op->data.send_message == NULL) {
+        if (op->data.send_message.send_message == NULL) {
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
@@ -1473,11 +1473,13 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->sending_message = 1;
         grpc_slice_buffer_stream_init(
             &call->sending_stream,
-            &op->data.send_message->data.raw.slice_buffer, op->flags);
+            &op->data.send_message.send_message->data.raw.slice_buffer,
+            op->flags);
         /* If the outgoing buffer is already compressed, mark it as so in the
            flags. These will be picked up by the compression filter and further
            (wasteful) attempts at compression skipped. */
-        if (op->data.send_message->data.raw.compression > GRPC_COMPRESS_NONE) {
+        if (op->data.send_message.send_message->data.raw.compression >
+            GRPC_COMPRESS_NONE) {
           call->sending_stream.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         }
         stream_op->send_message = &call->sending_stream.base;
@@ -1565,7 +1567,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
            that case we're not necessarily covered by a poller. */
         stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = 1;
-        call->buffered_metadata[0] = op->data.recv_initial_metadata;
+        call->buffered_metadata[0] =
+            op->data.recv_initial_metadata.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
@@ -1588,7 +1591,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         call->receiving_message = 1;
         bctl->recv_message = 1;
-        call->receiving_buffer = op->data.recv_message;
+        call->receiving_buffer = op->data.recv_message.recv_message;
         stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
                           bctl, grpc_schedule_on_exec_ctx);

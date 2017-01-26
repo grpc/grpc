@@ -335,7 +335,7 @@ PHP_METHOD(Call, startBatch) {
                              1 TSRMLS_CC);
         goto cleanup;
       }
-      ops[op_num].data.send_message =
+      ops[op_num].data.send_message.send_message =
           string_to_byte_buffer(Z_STRVAL_P(message_value),
                                 Z_STRLEN_P(message_value));
       break;
@@ -390,10 +390,11 @@ PHP_METHOD(Call, startBatch) {
       }
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
-      ops[op_num].data.recv_initial_metadata = &recv_metadata;
+      ops[op_num].data.recv_initial_metadata.recv_initial_metadata =
+          &recv_metadata;
       break;
     case GRPC_OP_RECV_MESSAGE:
-      ops[op_num].data.recv_message = &message;
+      ops[op_num].data.recv_message.recv_message = &message;
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
       ops[op_num].data.recv_status_on_client.trailing_metadata =
@@ -478,6 +479,7 @@ PHP_METHOD(Call, startBatch) {
                                    true);
       add_property_zval(result, "status", recv_status);
       PHP_GRPC_DELREF(recv_status);
+      PHP_GRPC_FREE_STD_ZVAL(recv_status);
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       add_property_bool(result, "cancelled", cancelled);
@@ -497,10 +499,11 @@ cleanup:
   }
   for (int i = 0; i < op_num; i++) {
     if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
-      grpc_byte_buffer_destroy(ops[i].data.send_message);
+      grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
     }
     if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
       grpc_byte_buffer_destroy(message);
+      PHP_GRPC_FREE_STD_ZVAL(message_str);
     }
   }
   RETURN_DESTROY_ZVAL(result);

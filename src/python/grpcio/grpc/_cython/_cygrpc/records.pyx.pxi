@@ -174,6 +174,25 @@ cdef class Timespec:
   def infinite_past():
     return Timespec(float("-inf"))
 
+  def __richcmp__(Timespec self not None, Timespec other not None, int op):
+    cdef gpr_timespec self_c_time = self.c_time
+    cdef gpr_timespec other_c_time = other.c_time
+    cdef int result = gpr_time_cmp(self_c_time, other_c_time)
+    if op == 0:  # <
+      return result < 0
+    elif op == 2:  # ==
+      return result == 0
+    elif op == 4:  # >
+      return result > 0
+    elif op == 1:  # <=
+      return result <= 0
+    elif op == 3:  # !=
+      return result != 0
+    elif op == 5:  # >=
+      return result >= 0
+    else:
+      raise ValueError('__richcmp__ `op` contract violated')
+
 
 cdef class CallDetails:
 
@@ -587,7 +606,7 @@ def operation_send_message(data, int flags):
   op.c_op.type = GRPC_OP_SEND_MESSAGE
   op.c_op.flags = flags
   byte_buffer = ByteBuffer(data)
-  op.c_op.data.send_message = byte_buffer.c_byte_buffer
+  op.c_op.data.send_message.send_message = byte_buffer.c_byte_buffer
   op.references.append(byte_buffer)
   op.is_valid = True
   return op
@@ -620,7 +639,7 @@ def operation_receive_initial_metadata(int flags):
   op.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
   op.c_op.flags = flags
   op._received_metadata = Metadata([])
-  op.c_op.data.receive_initial_metadata = (
+  op.c_op.data.receive_initial_metadata.receive_initial_metadata = (
       &op._received_metadata.c_metadata_array)
   op.is_valid = True
   return op
@@ -633,7 +652,8 @@ def operation_receive_message(int flags):
   # n.b. the c_op.data.receive_message field needs to be deleted by us,
   # anyway, so we just let that be handled by the ByteBuffer() we allocated
   # the line before.
-  op.c_op.data.receive_message = &op._received_message.c_byte_buffer
+  op.c_op.data.receive_message.receive_message = (
+      &op._received_message.c_byte_buffer)
   op.is_valid = True
   return op
 

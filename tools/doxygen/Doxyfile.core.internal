@@ -784,6 +784,7 @@ doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/service_config.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \
@@ -807,6 +808,8 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/gpr_slice.h \
+include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
@@ -894,6 +897,8 @@ src/core/ext/client_channel/connector.h \
 src/core/ext/client_channel/default_initial_connect_string.c \
 src/core/ext/client_channel/http_connect_handshaker.c \
 src/core/ext/client_channel/http_connect_handshaker.h \
+src/core/ext/client_channel/http_proxy.c \
+src/core/ext/client_channel/http_proxy.h \
 src/core/ext/client_channel/initial_connect_string.c \
 src/core/ext/client_channel/initial_connect_string.h \
 src/core/ext/client_channel/lb_policy.c \
@@ -904,6 +909,10 @@ src/core/ext/client_channel/lb_policy_registry.c \
 src/core/ext/client_channel/lb_policy_registry.h \
 src/core/ext/client_channel/parse_address.c \
 src/core/ext/client_channel/parse_address.h \
+src/core/ext/client_channel/proxy_mapper.c \
+src/core/ext/client_channel/proxy_mapper.h \
+src/core/ext/client_channel/proxy_mapper_registry.c \
+src/core/ext/client_channel/proxy_mapper_registry.h \
 src/core/ext/client_channel/resolver.c \
 src/core/ext/client_channel/resolver.h \
 src/core/ext/client_channel/resolver_factory.c \

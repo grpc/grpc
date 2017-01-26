@@ -30,7 +30,7 @@
 
 require 'rbconfig'
 
-require_relative '../os_check'
+require_relative '../platform_check'
 
 ext = RbConfig::CONFIG['EXEEXT']
 
@@ -39,7 +39,7 @@ protoc_name = 'protoc' + ext
 plugin_name = 'grpc_ruby_plugin' + ext
 
 protoc_dir = File.join(File.dirname(__FILE__),
-                       RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name)
+                       PLATFORM.architecture + '-' + PLATFORM.os_name)
 
 protoc_path = File.join(protoc_dir, protoc_name)
 

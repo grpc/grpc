@@ -144,10 +144,10 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload1_recv;
+  op->data.recv_message.recv_message = &response_payload1_recv;
   op++;
   if (request_status_early) {
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -172,7 +172,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload1;
+  op->data.send_message.send_message = response_payload1;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -183,7 +183,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload2;
+  op->data.send_message.send_message = response_payload2;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -211,7 +211,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &response_payload2_recv;
+    op->data.recv_message.recv_message = &response_payload2_recv;
     op++;
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);

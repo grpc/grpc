@@ -104,7 +104,8 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
   bool grpc_exp_seen = false;
   bool h2_seen = false;
   const char *inp = (const char *)in;
-  for (int i = 0; i < (int)in_len; ++i) {
+  const char *in_end = inp + in_len;
+  while (inp < in_end) {
     const size_t length = (size_t)*inp++;
     if (length == strlen("grpc-exp") && strncmp(inp, "grpc-exp", length) == 0) {
       grpc_exp_seen = true;
@@ -117,6 +118,7 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
     inp += length;
   }
 
+  GPR_ASSERT(inp == in_end);
   GPR_ASSERT(grpc_exp_seen);
   GPR_ASSERT(h2_seen);
 

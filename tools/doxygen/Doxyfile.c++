@@ -785,6 +785,7 @@ doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/service_config.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \
@@ -868,6 +869,7 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/port_platform.h \

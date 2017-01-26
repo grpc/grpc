@@ -5,9 +5,9 @@ if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 
   dnl # --with-grpc -> add include path
-  PHP_ADD_INCLUDE(../../grpc/include)
-  PHP_ADD_INCLUDE(../../grpc/src/php/ext/grpc)
-  PHP_ADD_INCLUDE(../../grpc/third_party/boringssl/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
 
   LIBS="-lpthread $LIBS"
 
@@ -254,11 +254,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/connector.c \
     src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/http_proxy.c \
     src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
     src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/proxy_mapper.c \
+    src/core/ext/client_channel/proxy_mapper_registry.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
