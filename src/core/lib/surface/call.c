@@ -1225,7 +1225,7 @@ static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
-  if (idx > 0) cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
+  if (idx == 0) cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   bctl->errors[idx] = error;
 }
 
