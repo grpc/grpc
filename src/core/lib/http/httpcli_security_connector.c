@@ -156,7 +156,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
-
+    grpc_error_free_string(msg);
     c->func(exec_ctx, c->arg, NULL);
   } else {
     grpc_channel_args_destroy(exec_ctx, args->args);

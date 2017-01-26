@@ -141,11 +141,9 @@ static void start_rpc(int use_creds, int target_port) {
   } else {
     state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
   }
-  grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
-      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq,
-      grpc_slice_from_static_string("/Service/Method"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
+      "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   memset(&state.op, 0, sizeof(state.op));
   state.op.op = GRPC_OP_SEND_INITIAL_METADATA;
   state.op.data.send_initial_metadata.count = 0;
@@ -209,7 +207,8 @@ static void match_initial_magic_string(grpc_slice_buffer *buffer) {
   size_t magic_length = strlen(magic_connect_string);
   GPR_ASSERT(buffer->length >= magic_length);
   for (i = 0, j = 0; i < state.incoming_buffer.count && j < magic_length; i++) {
-    char *dump = grpc_slice_to_c_string(state.incoming_buffer.slices[i]);
+    char *dump =
+        grpc_dump_slice(state.incoming_buffer.slices[i], GPR_DUMP_ASCII);
     cmp_length = GPR_MIN(strlen(dump), magic_length - j);
     GPR_ASSERT(strncmp(dump, magic_connect_string + j, cmp_length) == 0);
     j += cmp_length;

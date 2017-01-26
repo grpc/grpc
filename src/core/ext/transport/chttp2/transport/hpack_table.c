@@ -190,11 +190,8 @@ void grpc_chttp2_hptbl_init(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
   tbl->ents = gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
-        exec_ctx,
-        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
-        grpc_slice_intern(
-            grpc_slice_from_static_string(static_table[i].value)));
+    tbl->static_ents[i - 1] = grpc_mdelem_from_strings(
+        exec_ctx, static_table[i].key, static_table[i].value);
   }
 }
 
@@ -211,8 +208,8 @@ void grpc_chttp2_hptbl_destroy(grpc_exec_ctx *exec_ctx,
   gpr_free(tbl->ents);
 }
 
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                     uint32_t tbl_index) {
+grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
+                                      uint32_t tbl_index) {
   /* Static table comes first, just return an entry from it */
   if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
     return tbl->static_ents[tbl_index - 1];
@@ -225,14 +222,14 @@ grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
     return tbl->ents[offset];
   }
   /* Invalid entry: return error */
-  return GRPC_MDNULL;
+  return NULL;
 }
 
 /* Evict one element from the table */
 static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
-  grpc_mdelem first_ent = tbl->ents[tbl->first_ent];
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(first_ent)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_ent)) +
+  grpc_mdelem *first_ent = tbl->ents[tbl->first_ent];
+  size_t elem_bytes = GRPC_SLICE_LENGTH(first_ent->key->slice) +
+                      GRPC_SLICE_LENGTH(first_ent->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
   tbl->mem_used -= (uint32_t)elem_bytes;
@@ -242,7 +239,7 @@ static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl *tbl, uint32_t new_cap) {
-  grpc_mdelem *ents = gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem **ents = gpr_malloc(sizeof(*ents) * new_cap);
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
@@ -304,10 +301,10 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_hptbl *tbl, grpc_mdelem md) {
+                                  grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* determine how many bytes of buffer this entry represents */
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
+  size_t elem_bytes = GRPC_SLICE_LENGTH(md->key->slice) +
+                      GRPC_SLICE_LENGTH(md->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
@@ -355,16 +352,16 @@ grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl *tbl, grpc_mdelem md) {
+    const grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   grpc_chttp2_hptbl_find_result r = {0, 0};
   uint32_t i;
 
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem ent = tbl->static_ents[i];
-    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
+    grpc_mdelem *ent = tbl->static_ents[i];
+    if (md->key != ent->key) continue;
     r.index = i + 1u;
-    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
+    r.has_value = md->value == ent->value;
     if (r.has_value) return r;
   }
 
@@ -372,10 +369,10 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   for (i = 0; i < tbl->num_ents; i++) {
     uint32_t idx =
         (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
-    grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
-    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
+    grpc_mdelem *ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
+    if (md->key != ent->key) continue;
     r.index = idx;
-    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
+    r.has_value = md->value == ent->value;
     if (r.has_value) return r;
   }
 

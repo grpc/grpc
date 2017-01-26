@@ -57,7 +57,7 @@ void grpc_chttp2_incoming_metadata_buffer_destroy(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem elem) {
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
   GPR_ASSERT(!buffer->published);
   if (buffer->capacity == buffer->count) {
     buffer->capacity = GPR_MAX(8, 2 * buffer->capacity);
@@ -68,19 +68,6 @@ void grpc_chttp2_incoming_metadata_buffer_add(
   buffer->size += GRPC_MDELEM_LENGTH(elem);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) {
-  for (size_t i = 0; i < buffer->count; i++) {
-    if (grpc_slice_eq(GRPC_MDKEY(buffer->elems[i].md), GRPC_MDKEY(elem))) {
-      GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
-      buffer->elems[i].md = elem;
-      return;
-    }
-  }
-  grpc_chttp2_incoming_metadata_buffer_add(buffer, elem);
-}
-
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
   GPR_ASSERT(!buffer->published);
@@ -88,20 +75,21 @@ void grpc_chttp2_incoming_metadata_buffer_set_deadline(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch) {
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch) {
   GPR_ASSERT(!buffer->published);
   buffer->published = 1;
   if (buffer->count > 0) {
     size_t i;
-    for (i = 0; i < buffer->count; i++) {
-      /* TODO(ctiller): do something better here */
-      if (!GRPC_LOG_IF_ERROR("grpc_chttp2_incoming_metadata_buffer_publish",
-                             grpc_metadata_batch_link_tail(
-                                 exec_ctx, batch, &buffer->elems[i]))) {
-        GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
-      }
+    for (i = 1; i < buffer->count; i++) {
+      buffer->elems[i].prev = &buffer->elems[i - 1];
     }
+    for (i = 0; i < buffer->count - 1; i++) {
+      buffer->elems[i].next = &buffer->elems[i + 1];
+    }
+    buffer->elems[0].prev = NULL;
+    buffer->elems[buffer->count - 1].next = NULL;
+    batch->list.head = &buffer->elems[0];
+    batch->list.tail = &buffer->elems[buffer->count - 1];
   } else {
     batch->list.head = batch->list.tail = NULL;
   }
