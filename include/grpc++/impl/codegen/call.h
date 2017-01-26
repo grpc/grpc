@@ -476,8 +476,15 @@ class CallOpRecvInitialMetadata {
   CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {}
 
   void RecvInitialMetadata(ClientContext* context) {
-    context->initial_metadata_received_ = true;
-    recv_initial_metadata_ = &context->recv_initial_metadata_;
+    RecvInitialMetadataInternal(context, false);
+  }
+  void RecvInitialMetadataLocked(ClientContext* context) {
+    grpc::lock_guard<grpc::mutex> l(context->mu_);
+    RecvInitialMetadataInternal(context, false);
+  }
+  void RecvInitialMetadataLockedChecked(ClientContext* context) {
+    grpc::lock_guard<grpc::mutex> l(context->mu_);
+    RecvInitialMetadataInternal(context, true);
   }
 
  protected:
@@ -497,6 +504,12 @@ class CallOpRecvInitialMetadata {
   }
 
  private:
+  void RecvInitialMetadataInternal(ClientContext* context, bool check) {
+    if (!check || !context->initial_metadata_received_) {
+      context->initial_metadata_received_ = true;
+      recv_initial_metadata_ = &context->recv_initial_metadata_;
+    }
+  }
   std::multimap<grpc::string_ref, grpc::string_ref>* recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
 };

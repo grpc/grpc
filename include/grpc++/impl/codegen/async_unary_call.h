@@ -79,16 +79,14 @@ class ClientAsyncResponseReader final
 
     collection_->meta_buf_.SetCollection(collection_);
     collection_->meta_buf_.set_output_tag(tag);
-    collection_->meta_buf_.RecvInitialMetadata(context_);
+    collection_->meta_buf_.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&collection_->meta_buf_);
   }
 
   void Finish(R* msg, Status* status, void* tag) {
     collection_->finish_buf_.SetCollection(collection_);
     collection_->finish_buf_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      collection_->finish_buf_.RecvInitialMetadata(context_);
-    }
+    collection_->finish_buf_.RecvInitialMetadataLockedChecked(context_);
     collection_->finish_buf_.RecvMessage(msg);
     collection_->finish_buf_.AllowNoMessage();
     collection_->finish_buf_.ClientRecvStatus(context_, status);

@@ -154,7 +154,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
-    ops.RecvInitialMetadata(context_);
+    ops.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  /// status ignored
   }
@@ -166,9 +166,7 @@ class ClientReader final : public ClientReaderInterface<R> {
 
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
-    if (!context_->initial_metadata_received_) {
-      ops.RecvInitialMetadata(context_);
-    }
+    ops.RecvInitialMetadataLockedChecked(context_);
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops) && ops.got_message;
@@ -224,7 +222,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
-    ops.RecvInitialMetadata(context_);
+    ops.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
   }
@@ -249,9 +247,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   /// Read the final response and wait for the final status.
   Status Finish() override {
     Status status;
-    if (!context_->initial_metadata_received_) {
-      finish_ops_.RecvInitialMetadata(context_);
-    }
+    finish_ops_.RecvInitialMetadataLockedChecked(context_);
     finish_ops_.ClientRecvStatus(context_, &status);
     call_.PerformOps(&finish_ops_);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&finish_ops_));
@@ -304,7 +300,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
-    ops.RecvInitialMetadata(context_);
+    ops.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
   }
@@ -316,9 +312,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
 
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
-    if (!context_->initial_metadata_received_) {
-      ops.RecvInitialMetadata(context_);
-    }
+    ops.RecvInitialMetadataLockedChecked(context_);
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops) && ops.got_message;
@@ -341,9 +335,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
 
   Status Finish() override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
-    if (!context_->initial_metadata_received_) {
-      ops.RecvInitialMetadata(context_);
-    }
+    ops.RecvInitialMetadataLockedChecked(context_);
     Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
@@ -352,7 +344,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   }
 
  private:
-  ClientContext* context_;
+  ClientContext* const context_;
   CompletionQueue cq_;
   Call call_;
 };
