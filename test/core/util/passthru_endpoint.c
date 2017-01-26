@@ -34,6 +34,7 @@
 #include "test/core/util/passthru_endpoint.h"
 
 #include <inttypes.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -55,6 +56,9 @@ typedef struct {
 struct passthru_endpoint {
   gpr_mu mu;
   int halves;
+  grpc_passthru_endpoint_stats *stats;
+  grpc_passthru_endpoint_stats
+      dummy_stats;  // used if constructor stats == NULL
   bool shutdown;
   half client;
   half server;
@@ -86,6 +90,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error *error = GRPC_ERROR_NONE;
+  m->parent->stats->num_writes++;
   if (m->parent->shutdown) {
     error = GRPC_ERROR_CREATE("Endpoint already shutdown");
   } else if (m->on_read != NULL) {
@@ -184,10 +189,13 @@ static void half_init(half *m, passthru_endpoint *parent,
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server,
-                                   grpc_resource_quota *resource_quota) {
+                                   grpc_resource_quota *resource_quota,
+                                   grpc_passthru_endpoint_stats *stats) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
+  m->stats = stats == NULL ? &m->dummy_stats : stats;
+  memset(m->stats, 0, sizeof(*m->stats));
   half_init(&m->client, m, resource_quota, "client");
   half_init(&m->server, m, resource_quota, "server");
   gpr_mu_init(&m->mu);

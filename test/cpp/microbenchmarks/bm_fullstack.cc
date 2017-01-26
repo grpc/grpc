@@ -130,6 +130,8 @@ class TCP : public FullstackFixture {
  public:
   TCP(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
+  void Finish(benchmark::State& state) {}
+
  private:
   static grpc::string MakeAddress() {
     int port = grpc_pick_unused_port_or_die();
@@ -142,6 +144,8 @@ class TCP : public FullstackFixture {
 class UDS : public FullstackFixture {
  public:
   UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
+
+  void Finish(benchmark::State& state) {}
 
  private:
   static grpc::string MakeAddress() {
@@ -228,6 +232,8 @@ class SockPair : public EndpointPairFixture {
       : EndpointPairFixture(service, grpc_iomgr_create_endpoint_pair(
                                          "test", initialize_stuff.rq(), 8192)) {
   }
+
+  void Finish(benchmark::State& state) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
@@ -235,10 +241,20 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service)
       : EndpointPairFixture(service, MakeEndpoints()) {}
 
+  void Finish(benchmark::State& state) {
+    std::ostringstream out;
+    out << "writes/iteration:"
+        << ((double)stats_.num_writes / (double)state.iterations());
+    state.SetLabel(out.str());
+  }
+
  private:
+  grpc_passthru_endpoint_stats stats_;
+
   grpc_endpoint_pair MakeEndpoints() {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq());
+    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
+                                  &stats_);
     return p;
   }
 };
@@ -415,6 +431,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
+  fixture->Finish(state);
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
