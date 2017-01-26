@@ -212,7 +212,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'six>=1.5.2',
+    'six>=1.10',
     'enum34>=1.0.4',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
@@ -225,7 +225,6 @@ if not PY3:
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
     'sphinx_rtd_theme>=0.1.8',
-    'six>=1.10',
 )
 
 COMMAND_CLASS = {
