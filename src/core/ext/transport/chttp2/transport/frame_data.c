@@ -156,6 +156,8 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
     return GRPC_ERROR_NONE;
   }
 
+  t->parse_saw_data_frames = true;
+
   switch (p->state) {
     case GRPC_CHTTP2_DATA_ERROR:
       p->state = GRPC_CHTTP2_DATA_ERROR;

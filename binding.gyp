@@ -705,6 +705,7 @@
         'src/core/lib/surface/server.c',
         'src/core/lib/surface/validate_metadata.c',
         'src/core/lib/surface/version.c',
+        'src/core/lib/transport/bdp_estimator.c',
         'src/core/lib/transport/byte_stream.c',
         'src/core/lib/transport/connectivity_state.c',
         'src/core/lib/transport/mdstr_hash_table.c',

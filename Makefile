@@ -937,6 +937,7 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
+bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
@@ -1296,6 +1297,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
@@ -1642,6 +1644,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bdp_estimator_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
@@ -2761,6 +2765,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/mdstr_hash_table.c \
@@ -3067,6 +3072,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/mdstr_hash_table.c \
@@ -3363,6 +3369,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/mdstr_hash_table.c \
@@ -3584,6 +3591,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/mdstr_hash_table.c \
@@ -4172,6 +4180,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/mdstr_hash_table.c \
@@ -7976,6 +7985,38 @@ deps_bad_server_response_test: $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BDP_ESTIMATOR_TEST_SRC = \
+    test/core/transport/bdp_estimator_test.c \
+
+BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 endif
 endif
 

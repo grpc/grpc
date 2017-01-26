@@ -265,6 +265,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
@@ -465,6 +467,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
