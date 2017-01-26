@@ -33,10 +33,13 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/avl.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
@@ -45,7 +48,6 @@
 #include <grpc/support/log_windows.h>
 #endif
 
-#include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
 
 static void destroy_integer(void *key) {}
@@ -126,10 +128,6 @@ static const char *error_int_name(grpc_error_ints key) {
 
 static const char *error_str_name(grpc_error_strs key) {
   switch (key) {
-    case GRPC_ERROR_STR_KEY:
-      return "key";
-    case GRPC_ERROR_STR_VALUE:
-      return "value";
     case GRPC_ERROR_STR_DESCRIPTION:
       return "description";
     case GRPC_ERROR_STR_OS_ERROR:
@@ -162,7 +160,16 @@ static const char *error_time_name(grpc_error_times key) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-bool grpc_error_is_special(grpc_error *err) {
+struct grpc_error {
+  gpr_refcount refs;
+  gpr_avl ints;
+  gpr_avl strs;
+  gpr_avl times;
+  gpr_avl errs;
+  uintptr_t next_err;
+};
+
+static bool is_special(grpc_error *err) {
   return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM ||
          err == GRPC_ERROR_CANCELLED;
 }
@@ -170,7 +177,7 @@ bool grpc_error_is_special(grpc_error *err) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
-  if (grpc_error_is_special(err)) return err;
+  if (is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count + 1, file, line, func);
   gpr_ref(&err->refs);
@@ -178,26 +185,25 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
 }
 #else
 grpc_error *grpc_error_ref(grpc_error *err) {
-  if (grpc_error_is_special(err)) return err;
+  if (is_special(err)) return err;
   gpr_ref(&err->refs);
   return err;
 }
 #endif
 
 static void error_destroy(grpc_error *err) {
-  GPR_ASSERT(!grpc_error_is_special(err));
+  GPR_ASSERT(!is_special(err));
   gpr_avl_unref(err->ints);
   gpr_avl_unref(err->strs);
   gpr_avl_unref(err->errs);
   gpr_avl_unref(err->times);
-  gpr_free((void *)gpr_atm_acq_load(&err->error_string));
   gpr_free(err);
 }
 
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
-  if (grpc_error_is_special(err)) return;
+  if (is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count - 1, file, line, func);
   if (gpr_unref(&err->refs)) {
@@ -206,7 +212,7 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
 }
 #else
 void grpc_error_unref(grpc_error *err) {
-  if (grpc_error_is_special(err)) return;
+  if (is_special(err)) return;
   if (gpr_unref(&err->refs)) {
     error_destroy(err);
   }
@@ -241,7 +247,6 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
                            box_time(gpr_now(GPR_CLOCK_REALTIME)));
-  gpr_atm_no_barrier_store(&err->error_string, 0);
   gpr_ref_init(&err->refs, 1);
   GPR_TIMER_END("grpc_error_create", 0);
   return err;
@@ -250,10 +255,9 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 static grpc_error *copy_error_and_unref(grpc_error *in) {
   GPR_TIMER_BEGIN("copy_error_and_unref", 0);
   grpc_error *out;
-  if (grpc_error_is_special(in)) {
+  if (is_special(in)) {
     if (in == GRPC_ERROR_NONE)
-      out = grpc_error_set_int(GRPC_ERROR_CREATE("no error"),
-                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK);
+      out = GRPC_ERROR_CREATE("no error");
     else if (in == GRPC_ERROR_OOM)
       out = GRPC_ERROR_CREATE("oom");
     else if (in == GRPC_ERROR_CANCELLED)
@@ -271,7 +275,6 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     out->strs = gpr_avl_ref(in->strs);
     out->errs = gpr_avl_ref(in->errs);
     out->times = gpr_avl_ref(in->times);
-    gpr_atm_no_barrier_store(&out->error_string, 0);
     out->next_err = in->next_err;
     gpr_ref_init(&out->refs, 1);
     GRPC_ERROR_UNREF(in);
@@ -289,29 +292,14 @@ grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
   return new;
 }
 
-typedef struct {
-  grpc_error *error;
-  grpc_status_code code;
-  const char *msg;
-} special_error_status_map;
-static special_error_status_map error_status_map[] = {
-    {GRPC_ERROR_NONE, GRPC_STATUS_OK, NULL},
-    {GRPC_ERROR_CANCELLED, GRPC_STATUS_CANCELLED, "Cancelled"},
-    {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
-};
-
 bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
   GPR_TIMER_BEGIN("grpc_error_get_int", 0);
   void *pp;
-  if (grpc_error_is_special(err)) {
-    if (which == GRPC_ERROR_INT_GRPC_STATUS) {
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-        if (error_status_map[i].error == err) {
-          if (p != NULL) *p = error_status_map[i].code;
-          GPR_TIMER_END("grpc_error_get_int", 0);
-          return true;
-        }
-      }
+  if (is_special(err)) {
+    if (err == GRPC_ERROR_CANCELLED && which == GRPC_ERROR_INT_GRPC_STATUS) {
+      *p = GRPC_STATUS_CANCELLED;
+      GPR_TIMER_END("grpc_error_get_int", 0);
+      return true;
     }
     GPR_TIMER_END("grpc_error_get_int", 0);
     return false;
@@ -336,17 +324,66 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
 }
 
 const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
-  if (grpc_error_is_special(err)) {
-    if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-        if (error_status_map[i].error == err) {
-          return error_status_map[i].msg;
-        }
-      }
-    }
-    return NULL;
-  }
+  if (is_special(err)) return NULL;
   return gpr_avl_get(err->strs, (void *)(uintptr_t)which);
+}
+
+typedef struct {
+  grpc_error *error;
+  grpc_status_code code;
+  const char *msg;
+} special_error_status_map;
+static special_error_status_map error_status_map[] = {
+    {GRPC_ERROR_NONE, GRPC_STATUS_OK, ""},
+    {GRPC_ERROR_CANCELLED, GRPC_STATUS_CANCELLED, "RPC cancelled"},
+    {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
+};
+
+static grpc_error *recursively_find_error_with_status(grpc_error *error,
+                                                      intptr_t *status) {
+  // If the error itself has a status code, return it.
+  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, status)) {
+    return error;
+  }
+  // Otherwise, search through its children.
+  intptr_t key = 0;
+  while (true) {
+    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
+    if (child_error == NULL) break;
+    grpc_error *result =
+        recursively_find_error_with_status(child_error, status);
+    if (result != NULL) return result;
+  }
+  return NULL;
+}
+
+void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
+                           const char **msg) {
+  // Handle special errors via the static map.
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); ++i) {
+    if (error == error_status_map[i].error) {
+      *code = error_status_map[i].code;
+      *msg = error_status_map[i].msg;
+      return;
+    }
+  }
+  // Populate code.
+  // Start with the parent error and recurse through the tree of children
+  // until we find the first one that has a status code.
+  intptr_t status = GRPC_STATUS_UNKNOWN;  // Default in case we don't find one.
+  grpc_error *found_error = recursively_find_error_with_status(error, &status);
+  *code = (grpc_status_code)status;
+  // Now populate msg.
+  // If we found an error with a status code above, use that; otherwise,
+  // fall back to using the parent error.
+  if (found_error == NULL) found_error = error;
+  // If the error has a status message, use it.  Otherwise, fall back to
+  // the error description.
+  *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE);
+  if (*msg == NULL) {
+    *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION);
+    if (*msg == NULL) *msg = "uknown error";  // Just in case.
+  }
 }
 
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
@@ -498,6 +535,7 @@ static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap,
   *first = false;
   const char *e = grpc_error_string(n->value);
   append_str(e, s, sz, cap);
+  grpc_error_free_string(e);
   add_errs(n->right, s, sz, cap, first);
 }
 
@@ -519,7 +557,7 @@ static int cmp_kvs(const void *a, const void *b) {
   return strcmp(ka->key, kb->key);
 }
 
-static char *finish_kvs(kv_pairs *kvs) {
+static const char *finish_kvs(kv_pairs *kvs) {
   char *s = NULL;
   size_t sz = 0;
   size_t cap = 0;
@@ -540,17 +578,18 @@ static char *finish_kvs(kv_pairs *kvs) {
   return s;
 }
 
+void grpc_error_free_string(const char *str) {
+  if (str == no_error_string) return;
+  if (str == oom_error_string) return;
+  if (str == cancelled_error_string) return;
+  gpr_free((char *)str);
+}
+
 const char *grpc_error_string(grpc_error *err) {
   GPR_TIMER_BEGIN("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
-
-  void *p = (void *)gpr_atm_acq_load(&err->error_string);
-  if (p != NULL) {
-    GPR_TIMER_END("grpc_error_string", 0);
-    return p;
-  }
 
   kv_pairs kvs;
   memset(&kvs, 0, sizeof(kvs));
@@ -564,13 +603,7 @@ const char *grpc_error_string(grpc_error *err) {
 
   qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
 
-  char *out = finish_kvs(&kvs);
-
-  if (!gpr_atm_rel_cas(&err->error_string, 0, (gpr_atm)out)) {
-    gpr_free(out);
-    out = (char *)gpr_atm_no_barrier_load(&err->error_string);
-  }
-
+  const char *out = finish_kvs(&kvs);
   GPR_TIMER_END("grpc_error_string", 0);
   return out;
 }
@@ -605,6 +638,7 @@ bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
   if (error == GRPC_ERROR_NONE) return true;
   const char *msg = grpc_error_string(error);
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what, msg);
+  grpc_error_free_string(msg);
   GRPC_ERROR_UNREF(error);
   return false;
 }

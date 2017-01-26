@@ -271,12 +271,12 @@ class BuildExt(build_ext.build_ext):
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
             for extension in self.extensions:
-                extension.extra_compile_args += list(BuildExt.C_OPTIONS[
-                    compiler])
+                extension.extra_compile_args += list(
+                    BuildExt.C_OPTIONS[compiler])
         if compiler in BuildExt.LINK_OPTIONS:
             for extension in self.extensions:
-                extension.extra_link_args += list(BuildExt.LINK_OPTIONS[
-                    compiler])
+                extension.extra_link_args += list(
+                    BuildExt.LINK_OPTIONS[compiler])
         if not check_and_update_cythonization(self.extensions):
             self.extensions = try_cythonize(self.extensions)
         try:
@@ -284,8 +284,8 @@ class BuildExt(build_ext.build_ext):
         except Exception as error:
             formatted_exception = traceback.format_exc()
             support.diagnose_build_ext_error(self, error, formatted_exception)
-            raise CommandError("Failed `build_ext` step:\n{}".format(
-                formatted_exception))
+            raise CommandError(
+                "Failed `build_ext` step:\n{}".format(formatted_exception))
 
 
 class Gather(setuptools.Command):

@@ -163,22 +163,18 @@ pip_install_dir() {
   PWD=`pwd`
   cd $1
   ($VENV_PYTHON setup.py build_ext -c $TOOLCHAIN || true)
-  # install the dependencies
-  $VENV_PYTHON -m pip install --upgrade .
-  # ensure that we've reinstalled the test packages
-  $VENV_PYTHON -m pip install --upgrade --force-reinstall --no-deps .
+  $VENV_PYTHON -m pip install --no-deps .
   cd $PWD
 }
 
 $VENV_PYTHON -m pip install --upgrade pip
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
+$VENV_PYTHON -m pip install six enum34 protobuf futures
 pip_install_dir $ROOT
+
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
 pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
-# TODO(atash) figure out namespace packages and grpcio-tools and auditwheel
-# etc...
-pip_install_dir $ROOT
 
 # Build/install health checking
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
@@ -191,6 +187,7 @@ $VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_reflection
 
 # Build/install tests
+$VENV_PYTHON -m pip install coverage oauth2client
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_tests

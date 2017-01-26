@@ -81,9 +81,9 @@ static void test_vector(const char *raw, size_t raw_length, const char *encoded,
   gpr_free(encoded2raw_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(grpc_slice_eq(raw_slice, encoded2raw_slice));
-  GPR_ASSERT(grpc_slice_eq(raw_slice, encoded2raw_permissive_slice));
-  GPR_ASSERT(grpc_slice_eq(encoded_slice, raw2encoded_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(raw_slice, encoded2raw_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(raw_slice, encoded2raw_permissive_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(encoded_slice, raw2encoded_slice));
 
   grpc_slice_unref(encoded2raw_slice);
   grpc_slice_unref(encoded2raw_permissive_slice);
@@ -123,8 +123,8 @@ static void test_nonconformant_vector(const char *encoded,
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(
-      grpc_slice_eq(permissive_unencoded_slice, encoded2raw_permissive_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(permissive_unencoded_slice,
+                                 encoded2raw_permissive_slice));
 
   grpc_slice_unref(permissive_unencoded_slice);
   grpc_slice_unref(encoded2raw_permissive_slice);

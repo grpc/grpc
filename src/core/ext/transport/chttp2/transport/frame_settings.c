@@ -43,8 +43,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/transport/http2_errors.h"
 
 #define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
 
@@ -52,21 +52,21 @@
 const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS] = {
         {NULL, 0, 0, 0, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
-         GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_PROTOCOL_ERROR},
         {"HEADER_TABLE_SIZE", 4096, 0, 0xffffffff,
-         GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
         {"ENABLE_PUSH", 1, 0, 1, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
-         GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_PROTOCOL_ERROR},
         {"MAX_CONCURRENT_STREAMS", 0xffffffffu, 0, 0xffffffffu,
-         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
         {"INITIAL_WINDOW_SIZE", 65535, 0, 0x7fffffffu,
          GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
-         GRPC_HTTP2_FLOW_CONTROL_ERROR},
+         GRPC_CHTTP2_FLOW_CONTROL_ERROR},
         {"MAX_FRAME_SIZE", 16384, 16384, 16777215,
-         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
         {"MAX_HEADER_LIST_SIZE", MAX_MAX_HEADER_LIST_SIZE, 0,
          MAX_MAX_HEADER_LIST_SIZE, GRPC_CHTTP2_CLAMP_INVALID_VALUE,
-         GRPC_HTTP2_PROTOCOL_ERROR},
+         GRPC_CHTTP2_PROTOCOL_ERROR},
 };
 
 static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
