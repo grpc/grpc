@@ -238,7 +238,9 @@ class SendMessageOp : public Op {
       }
     }
     send_message = BufferToByteBuffer(value);
-    out->data.send_message = send_message;
+    out->data.send_message.send_message = send_message;
+    PersistentValue *handle = new PersistentValue(value);
+    resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
   }
   bool IsFinalOp() {
@@ -352,8 +354,14 @@ class GetMetadataOp : public Op {
     return scope.Escape(ParseMetadata(&recv_metadata));
   }
 
+<<<<<<< HEAD
   bool ParseOp(Local<Value> value, grpc_op *out) {
     out->data.recv_initial_metadata = &recv_metadata;
+=======
+  bool ParseOp(Local<Value> value, grpc_op *out,
+               shared_ptr<Resources> resources) {
+    out->data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
+>>>>>>> 4ffcb2058df96c1fa0a319cd3e5d4aa9358e5bae
     return true;
   }
   bool IsFinalOp() {
@@ -384,8 +392,14 @@ class ReadMessageOp : public Op {
     return scope.Escape(ByteBufferToBuffer(recv_message));
   }
 
+<<<<<<< HEAD
   bool ParseOp(Local<Value> value, grpc_op *out) {
     out->data.recv_message = &recv_message;
+=======
+  bool ParseOp(Local<Value> value, grpc_op *out,
+               shared_ptr<Resources> resources) {
+    out->data.recv_message.recv_message = &recv_message;
+>>>>>>> 4ffcb2058df96c1fa0a319cd3e5d4aa9358e5bae
     return true;
   }
   bool IsFinalOp() {
