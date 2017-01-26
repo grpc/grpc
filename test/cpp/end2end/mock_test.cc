@@ -63,42 +63,68 @@ namespace {
 template <class W, class R>
 class MockClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
-  void WaitForInitialMetadata() override {}
-  bool NextMessageSize(uint32_t* sz) override {
-    *sz = UINT_MAX;
-    return true;
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) override {
+    return StreamOpStatus::SUCCESS;
   }
-  bool Read(R* msg) override { return true; }
-  bool Write(const W& msg) override { return true; }
-  bool WritesDone() override { return true; }
-  Status Finish() override { return Status::OK; }
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
+    *sz = UINT_MAX;
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus Read(R* msg, const ReadOptions& options) override {
+    return StreamOpStatus::SUCCESS;
+  }
+
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) override {
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) override {
+    return StreamOpStatus::SUCCESS;
+  }
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) override {
+    *completed = StreamOpStatus::SUCCESS;
+    return Status::OK;
+  }
 };
 template <>
 class MockClientReaderWriter<EchoRequest, EchoResponse> final
     : public ClientReaderWriterInterface<EchoRequest, EchoResponse> {
  public:
   MockClientReaderWriter() : writes_done_(false) {}
-  void WaitForInitialMetadata() override {}
-  bool NextMessageSize(uint32_t* sz) override {
-    *sz = UINT_MAX;
-    return true;
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) override {
+    return StreamOpStatus::SUCCESS;
   }
-  bool Read(EchoResponse* msg) override {
-    if (writes_done_) return false;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
+    *sz = UINT_MAX;
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus Read(EchoResponse* msg,
+                      const ReadOptions& options) override {
+    if (writes_done_) return StreamOpStatus::FAIL;
     msg->set_message(last_message_);
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Write(const EchoRequest& msg, const WriteOptions& options) override {
+  StreamOpStatus Write(const EchoRequest& msg,
+                       const WriteOptions& options) override {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
-  bool WritesDone() override {
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) override {
     writes_done_ = true;
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
-  Status Finish() override { return Status::OK; }
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) override {
+    *completed = StreamOpStatus::SUCCESS;
+    return Status::OK;
+  }
 
  private:
   bool writes_done_;

@@ -760,6 +760,54 @@ TEST_P(End2endTest, BidiStream) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, BidiStreamWithOptions) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+  WriteOptions wopts;
+  ReadOptions ropts;
+  NextMessageSizeOptions nmopts;
+  WritesDoneOptions wdopts;
+  FinishOptions finopts;
+
+  auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
+  wopts.set_deadline(deadline, false);
+  ropts.set_deadline(deadline, false);
+  nmopts.set_deadline(deadline, false);
+  wdopts.set_deadline(deadline, false);
+  finopts.set_deadline(deadline, false);
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  EXPECT_EQ(stream->Write(request, wopts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(stream->Read(&response, ropts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "1");
+  EXPECT_EQ(stream->Write(request, wopts), StreamOpStatus::SUCCESS);
+  uint32_t next_msg_sz;
+  EXPECT_EQ(stream->NextMessageSize(&next_msg_sz, nmopts),
+            StreamOpStatus::SUCCESS);
+  EXPECT_EQ(stream->Read(&response, ropts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "2");
+  EXPECT_EQ(stream->Write(request, wopts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(stream->Read(&response, ropts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(response.message(), request.message());
+
+  EXPECT_EQ(stream->WritesDone(wdopts), StreamOpStatus::SUCCESS);
+  EXPECT_EQ(stream->Read(&response, ropts), StreamOpStatus::FAIL);
+  EXPECT_EQ(stream->Read(&response, ropts), StreamOpStatus::FAIL);
+
+  StreamOpStatus fin_stat;
+  Status s = stream->Finish(finopts, &fin_stat);
+  EXPECT_TRUE(s.ok() && fin_stat == StreamOpStatus::SUCCESS);
+}
+
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_P(End2endTest, DiffPackageServices) {

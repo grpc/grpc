@@ -45,6 +45,8 @@
 
 namespace grpc {
 
+enum StreamOpStatus { FAIL, SUCCESS, TIMEOUT };
+
 /// Common interface for all synchronous client side streaming.
 class ClientStreamingInterface {
  public:
@@ -60,7 +62,27 @@ class ClientStreamingInterface {
   /// - when all incoming messages have been read and the server has returned
   ///   status.
   /// - OR when the server has returned a non-OK status.
-  virtual Status Finish() = 0;
+  /// - OR with a timeout if the stream ops haven't finished before the deadline
+  ///   specified in FinishOptions. In this case, the Status return value is
+  ///   not valid and should not be used
+  virtual Status Finish(const FinishOptions& options,
+                        StreamOpStatus* completed) = 0;
+
+  /// A default version of Finish that doesn't set a deadline or options
+  /// Wait until the stream finishes, and return the final status. When the
+  /// client side declares it has no more message to send, either implicitly or
+  /// by calling \a WritesDone(), it needs to make sure there is no more message
+  /// to be received from the server, either implicitly or by getting a false
+  /// from a \a Read().
+  ///
+  /// This function will return either:
+  /// - when all incoming messages have been read and the server has returned
+  ///   status.
+  /// - OR when the server has returned a non-OK status.
+  inline Status Finish() {
+    StreamOpStatus dummy;
+    return Finish(FinishOptions(), &dummy);
+  }
 };
 
 /// Common interface for all synchronous server side streaming.
@@ -68,8 +90,14 @@ class ServerStreamingInterface {
  public:
   virtual ~ServerStreamingInterface() {}
 
-  /// Blocking send initial metadata to client.
-  virtual void SendInitialMetadata() = 0;
+  /// Blocking send initial metadata to client with options
+  virtual StreamOpStatus SendInitialMetadata(
+      const SendInitialMetadataOptions& options) = 0;
+
+  /// Default version of SendInitialMetadata that doesn't have options
+  inline void SendInitialMetadata() {
+    SendInitialMetadata(SendInitialMetadataOptions());
+  }
 };
 
 /// An interface that yields a sequence of messages of type \a R.
@@ -79,7 +107,27 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Upper bound on the next message size available for reading on this stream
-  virtual bool NextMessageSize(uint32_t* sz) = 0;
+  virtual StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) = 0;
+
+  /// Default version of NextMessageSize with default options
+  inline bool NextMessageSize(uint32_t* sz) {
+    return NextMessageSize(sz, NextMessageSizeOptions()) ==
+           StreamOpStatus::SUCCESS;
+  }
+
+  /// Blocking read a message and parse to \a msg. Returns \a true on success.
+  /// This is thread-safe with respect to \a Write or \WritesDone methods on
+  /// the same stream. It should not be called concurrently with another \a
+  /// Read on the same stream as the order of delivery will not be defined.
+  ///
+  /// \param[out] msg The read message.
+  ///
+  /// \return \a FAIL when there will be no more incoming messages, either
+  /// because the other side has called \a WritesDone() or the stream has failed
+  /// (or been cancelled), \a TIMEOUT if there's a timeout, or \a SUCCESS
+  /// if we got what we wanted
+  virtual StreamOpStatus Read(R* msg, const ReadOptions& options) = 0;
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
   /// This is thread-safe with respect to \a Write or \WritesDone methods on
@@ -91,7 +139,10 @@ class ReaderInterface {
   /// \return \a false when there will be no more incoming messages, either
   /// because the other side has called \a WritesDone() or the stream has failed
   /// (or been cancelled).
-  virtual bool Read(R* msg) = 0;
+  /// default version with default options
+  inline bool Read(R* msg) {
+    return Read(msg, ReadOptions()) == StreamOpStatus::SUCCESS;
+  }
 };
 
 /// An interface that can be fed a sequence of messages of type \a W.
@@ -107,7 +158,7 @@ class WriterInterface {
   /// \param options Options affecting the write operation.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  virtual bool Write(const W& msg, const WriteOptions& options) = 0;
+  virtual StreamOpStatus Write(const W& msg, const WriteOptions& options) = 0;
 
   /// Blocking write \a msg to the stream with default options.
   /// This is thread-safe with respect to \a Read
@@ -115,7 +166,9 @@ class WriterInterface {
   /// \param msg The message to be written to the stream.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
+  inline bool Write(const W& msg) {
+    return Write(msg, WriteOptions()) == StreamOpStatus::SUCCESS;
+  }
 };
 
 /// Client-side interface for streaming reads of message of type \a R.
@@ -127,7 +180,12 @@ class ClientReaderInterface : public ClientStreamingInterface,
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
-  virtual void WaitForInitialMetadata() = 0;
+  virtual StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) = 0;
+
+  inline void WaitForInitialMetadata() {
+    WaitForInitialMetadata(WaitForInitialMetadataOptions());
+  }
 };
 
 template <class R>
@@ -150,36 +208,48 @@ class ClientReader final : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() override {
+  using ClientReaderInterface<R>::WaitForInitialMetadata;
+
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  /// status ignored
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  using ReaderInterface<R>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
     *sz = call_.max_receive_message_size();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Read(R* msg) override {
+  using ReaderInterface<R>::Read;
+  StreamOpStatus Read(R* msg, const ReadOptions& options) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops) && ops.got_message;
+    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS
+                                                : StreamOpStatus::FAIL;
   }
 
-  Status Finish() override {
+  using ClientStreamingInterface::Finish;
+
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) override {
     CallOpSet<CallOpClientRecvStatus> ops;
     Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
@@ -199,7 +269,11 @@ class ClientWriterInterface : public ClientStreamingInterface,
   /// Thread safe with respect to \a Read operations only
   ///
   /// \return Whether the writes were successful.
-  virtual bool WritesDone() = 0;
+  virtual StreamOpStatus WritesDone(const WritesDoneOptions& options) = 0;
+
+  inline bool WritesDone() {
+    return WritesDone(WritesDoneOptions()) == StreamOpStatus::SUCCESS;
+  }
 };
 
 template <class W>
@@ -220,34 +294,45 @@ class ClientWriter : public ClientWriterInterface<W> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() {
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
+    return StreamOpStatus::SUCCESS;
+  }
+
+  inline void WaitForInitialMetadata() {
+    WaitForInitialMetadata(WaitForInitialMetadataOptions());
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) override {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) override {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
-  bool WritesDone() override {
+  using ClientWriterInterface<W>::WritesDone;
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
+  using ClientStreamingInterface::Finish;
+
   /// Read the final response and wait for the final status.
-  Status Finish() override {
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) override {
     Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -255,6 +340,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     finish_ops_.ClientRecvStatus(context_, &status);
     call_.PerformOps(&finish_ops_);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&finish_ops_));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
@@ -277,13 +363,22 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
-  virtual void WaitForInitialMetadata() = 0;
+  virtual StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) = 0;
+
+  inline void WaitForInitialMetadata() {
+    WaitForInitialMetadata(WaitForInitialMetadataOptions());
+  }
 
   /// Block until currently-pending writes are completed.
   /// Thread-safe with respect to \a Read
   ///
   /// \return Whether the writes were successful.
-  virtual bool WritesDone() = 0;
+  virtual StreamOpStatus WritesDone(const WritesDoneOptions& options) = 0;
+
+  inline bool WritesDone() {
+    return WritesDone(WritesDoneOptions()) == StreamOpStatus::SUCCESS;
+  }
 };
 
 template <class W, class R>
@@ -300,46 +395,58 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() override {
+  using ClientReaderWriterInterface<W, R>::WaitForInitialMetadata;
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  using ReaderInterface<R>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
     *sz = call_.max_receive_message_size();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Read(R* msg) override {
+  using ReaderInterface<R>::Read;
+  StreamOpStatus Read(R* msg, const ReadOptions& options) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops) && ops.got_message;
+    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS
+                                                : StreamOpStatus::FAIL;
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) override {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) override {
     CallOpSet<CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg, options).ok()) return false;
+    if (!ops.SendMessage(msg, options).ok()) return StreamOpStatus::FAIL;
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
-  bool WritesDone() override {
+  using ClientReaderWriterInterface<W, R>::WritesDone;
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
-  Status Finish() override {
+  using ClientStreamingInterface::Finish;
+
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -348,6 +455,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
@@ -367,7 +475,8 @@ class ServerReader final : public ServerReaderInterface<R> {
  public:
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() override {
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -379,18 +488,24 @@ class ServerReader final : public ServerReaderInterface<R> {
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  using ReaderInterface<R>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
     *sz = call_->max_receive_message_size();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Read(R* msg) override {
+  using ReaderInterface<R>::Read;
+  StreamOpStatus Read(R* msg, const ReadOptions& options) override {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops) && ops.got_message;
+    return (call_->cq()->Pluck(&ops) && ops.got_message)
+               ? StreamOpStatus::SUCCESS
+               : StreamOpStatus::FAIL;
   }
 
  private:
@@ -408,7 +523,8 @@ class ServerWriter final : public ServerWriterInterface<W> {
  public:
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() override {
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -420,13 +536,15 @@ class ServerWriter final : public ServerWriterInterface<W> {
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
+    return StreamOpStatus::SUCCESS;
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) override {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) override {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
@@ -437,7 +555,8 @@ class ServerWriter final : public ServerWriterInterface<W> {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS
+                                      : StreamOpStatus::FAIL;
   }
 
  private:
@@ -459,7 +578,8 @@ class ServerReaderWriterBody final {
   ServerReaderWriterBody(Call* call, ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() {
+  StreamOpStatus SendInitialMetadata(
+      const SendInitialMetadataOptions& options) {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -471,24 +591,28 @@ class ServerReaderWriterBody final {
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool NextMessageSize(uint32_t* sz) {
+  StreamOpStatus NextMessageSize(uint32_t* sz,
+                                 const NextMessageSizeOptions& options) {
     *sz = call_->max_receive_message_size();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Read(R* msg) {
+  StreamOpStatus Read(R* msg, const ReadOptions& options) {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops) && ops.got_message;
+    return (call_->cq()->Pluck(&ops) && ops.got_message)
+               ? StreamOpStatus::SUCCESS
+               : StreamOpStatus::FAIL;
   }
 
-  bool Write(const W& msg, const WriteOptions& options) {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
@@ -499,7 +623,8 @@ class ServerReaderWriterBody final {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS
+                                      : StreamOpStatus::FAIL;
   }
 
  private:
@@ -514,16 +639,25 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
 
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
-
-  bool NextMessageSize(uint32_t* sz) override {
-    return body_.NextMessageSize(sz);
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      override {
+    return body_.SendInitialMetadata(options);
   }
 
-  bool Read(R* msg) override { return body_.Read(msg); }
+  using ReaderInterface<R>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
+    return body_.NextMessageSize(sz, options);
+  }
+
+  using ReaderInterface<R>::Read;
+  StreamOpStatus Read(R* msg, const ReadOptions& options) override {
+    return body_.Read(msg, options);
+  }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) override {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) override {
     return body_.Write(msg, options);
   }
 
@@ -547,25 +681,32 @@ class ServerUnaryStreamer final
   ServerUnaryStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
-
-  bool NextMessageSize(uint32_t* sz) override {
-    return body_.NextMessageSize(sz);
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      override {
+    return body_.SendInitialMetadata(options);
   }
 
-  bool Read(RequestType* request) override {
+  using ReaderInterface<RequestType>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
+    return body_.NextMessageSize(sz, options);
+  }
+
+  using ReaderInterface<RequestType>::Read;
+  StreamOpStatus Read(RequestType* request,
+                      const ReadOptions& options) override {
     if (read_done_) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     read_done_ = true;
-    return body_.Read(request);
+    return body_.Read(request, options);
   }
 
   using WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response,
-             const WriteOptions& options) override {
+  StreamOpStatus Write(const ResponseType& response,
+                       const WriteOptions& options) override {
     if (write_done_ || !read_done_) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     write_done_ = true;
     return body_.Write(response, options);
@@ -589,24 +730,34 @@ class ServerSplitStreamer final
   ServerSplitStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false) {}
 
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
-
-  bool NextMessageSize(uint32_t* sz) override {
-    return body_.NextMessageSize(sz);
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      override {
+    return body_.SendInitialMetadata(options);
   }
 
-  bool Read(RequestType* request) override {
+  using ReaderInterface<RequestType>::NextMessageSize;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) override {
+    return body_.NextMessageSize(sz, options);
+  }
+
+  using ReaderInterface<RequestType>::Read;
+  StreamOpStatus Read(RequestType* request,
+                      const ReadOptions& options) override {
     if (read_done_) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     read_done_ = true;
-    return body_.Read(request);
+    return body_.Read(request, options);
   }
 
   using WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response,
-             const WriteOptions& options) override {
-    return read_done_ && body_.Write(response, options);
+  StreamOpStatus Write(const ResponseType& response,
+                       const WriteOptions& options) override {
+    if (!read_done_) {
+      return StreamOpStatus::FAIL;
+    }
+    return body_.Write(response, options);
   }
 
  private:

@@ -48,6 +48,7 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
+#include <grpc++/impl/codegen/time.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -94,11 +95,69 @@ inline grpc_metadata* FillMetadataArray(
   return metadata_array;
 }
 
+/// Per-message options for all operation types
+class MessageOptions {
+ public:
+  MessageOptions()
+      : msg_deadline_(
+		      g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)),
+    reverting_deadline_(false) {}
+  gpr_timespec deadline() const { return msg_deadline_; }
+  bool reverting_deadline() const { return reverting_deadline_; }
+  template <class T>
+    void set_deadline(const T& deadline, bool reverting) {
+    msg_deadline_ = (TimePoint<T>(deadline).raw_time());
+    reverting_deadline_ = reverting;
+  }
+
+ private:
+  gpr_timespec msg_deadline_;
+  bool reverting_deadline_;
+};
+
+/// Finish-specific options
+class FinishOptions {
+ public:
+  /// Return the message options structure
+  MessageOptions message_options() const { return msg_options_; }
+
+  /// Set a deadline
+  template <class T>
+  FinishOptions& set_deadline(const T& dl, bool reverting) {
+    msg_options_.set_deadline(dl, reverting);
+    return *this;
+  }
+
+  /// Get the deadline value
+  gpr_timespec deadline() const { return msg_options_.deadline(); }
+
+ private:
+  MessageOptions msg_options_;
+};
+
+typedef FinishOptions ReadOptions;
+typedef FinishOptions WritesDoneOptions;
+typedef FinishOptions WaitForInitialMetadataOptions;
+typedef FinishOptions NextMessageSizeOptions;
+
+/// SendInitialMetadata Options
+class SendInitialMetadataOptions {
+ public:
+  /// Return the message options structure
+  MessageOptions message_options() const { return msg_options_; }
+
+  // Note that this class does not provide any mechanism to set a deadline
+  // as this is a sine-qua-non of the RPC.
+ private:
+  MessageOptions msg_options_;
+};
+
 /// Per-message write options.
 class WriteOptions {
  public:
   WriteOptions() : flags_(0) {}
-  WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
+  WriteOptions(const WriteOptions& other)
+      : flags_(other.flags_), msg_options_(other.msg_options_) {}
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -156,8 +215,22 @@ class WriteOptions {
 
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
+    msg_options_ = rhs.msg_options_;
     return *this;
   }
+
+  /// Return the message options structure
+  MessageOptions message_options() const { return msg_options_; }
+
+  /// Set a deadline
+  template <class T>
+  WriteOptions& set_deadline(const T& dl, bool reverting) {
+    msg_options_.set_deadline(dl, reverting);
+    return *this;
+  }
+
+  /// Get the deadline value
+  gpr_timespec deadline() const { return msg_options_.deadline(); }
 
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
@@ -167,6 +240,7 @@ class WriteOptions {
   bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
 
   uint32_t flags_;
+  MessageOptions msg_options_;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be
