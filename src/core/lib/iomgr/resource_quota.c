@@ -804,12 +804,10 @@ void grpc_resource_user_finish_reclamation(grpc_exec_ctx *exec_ctx,
 void grpc_resource_user_slice_allocator_init(
     grpc_resource_user_slice_allocator *slice_allocator,
     grpc_resource_user *resource_user, grpc_iomgr_cb_func cb, void *p) {
-  grpc_closure_init(
-      &slice_allocator->on_allocated, ru_allocated_slices, slice_allocator,
-      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
-  grpc_closure_init(
-      &slice_allocator->on_done, cb, p,
-      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
+  grpc_closure_init(&slice_allocator->on_allocated, ru_allocated_slices,
+                    slice_allocator, grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&slice_allocator->on_done, cb, p,
+                    grpc_schedule_on_exec_ctx);
   slice_allocator->resource_user = resource_user;
 }
 
