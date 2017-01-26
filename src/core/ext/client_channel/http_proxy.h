@@ -31,19 +31,11 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H
 
-/// Channel arg indicating the server in HTTP CONNECT request (string).
-/// The presence of this arg triggers the use of HTTP CONNECT.
-#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+/// Returns the name of the proxy to use, or NULL if no proxy is configured.
+/// Caller takes ownership of result.
+char* grpc_get_http_proxy_server();
 
-/// Channel arg indicating HTTP CONNECT headers (string).
-/// Multiple headers are separated by newlines.  Key/value pairs are
-/// seperated by colons.
-#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
-
-/// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
-
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H */

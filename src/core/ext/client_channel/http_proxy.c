@@ -31,19 +31,38 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#include "src/core/ext/client_channel/http_proxy.h"
 
-/// Channel arg indicating the server in HTTP CONNECT request (string).
-/// The presence of this arg triggers the use of HTTP CONNECT.
-#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+#include <stdbool.h>
+#include <string.h>
 
-/// Channel arg indicating HTTP CONNECT headers (string).
-/// Multiple headers are separated by newlines.  Key/value pairs are
-/// seperated by colons.
-#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
-/// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
+#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/lib/support/env.h"
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+char* grpc_get_http_proxy_server() {
+  char* uri_str = gpr_getenv("http_proxy");
+  if (uri_str == NULL) return NULL;
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  char* proxy_name = NULL;
+  if (uri == NULL || uri->authority == NULL) {
+    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
+    goto done;
+  }
+  if (strcmp(uri->scheme, "http") != 0) {
+    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
+    goto done;
+  }
+  if (strchr(uri->authority, '@') != NULL) {
+    gpr_log(GPR_ERROR, "userinfo not supported in proxy URI");
+    goto done;
+  }
+  proxy_name = gpr_strdup(uri->authority);
+done:
+  gpr_free(uri_str);
+  grpc_uri_destroy(uri);
+  return proxy_name;
+}
