@@ -82,7 +82,8 @@ static void init_ping_pong_request(int call_idx) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &calls[call_idx].initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &calls[call_idx].initial_metadata_recv;
   op++;
 
   calls[call_idx].call = grpc_channel_create_call(
@@ -139,10 +140,11 @@ static struct grpc_memory_counters send_snapshot_request(
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &calls[call_idx].initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &calls[call_idx].initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
