@@ -43,6 +43,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/http_proxy.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/subchannel.h"
@@ -150,6 +152,10 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
  */
 
 typedef struct client_channel_channel_data {
+  /** server name */
+  char *server_name;
+  /** HTTP CONNECT proxy to use, if any */
+  char *proxy_name;
   /** resolver for this channel */
   grpc_resolver *resolver;
   /** have we started resolving this channel */
@@ -310,6 +316,17 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
     if (lb_policy_name == NULL) lb_policy_name = "pick_first";
+    // If using a proxy, add channel arg for server in HTTP CONNECT request.
+    if (chand->proxy_name != NULL) {
+      grpc_arg new_arg;
+      new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
+      new_arg.type = GRPC_ARG_STRING;
+      new_arg.value.string = chand->server_name;
+      grpc_channel_args *tmp_args = chand->resolver_result;
+      chand->resolver_result =
+          grpc_channel_args_copy_and_add(chand->resolver_result, &new_arg, 1);
+      grpc_channel_args_destroy(exec_ctx, tmp_args);
+    }
     // Instantiate LB policy.
     grpc_lb_policy_args lb_policy_args;
     lb_policy_args.args = chand->resolver_result;
@@ -528,9 +545,12 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  chand->resolver =
-      grpc_resolver_create(exec_ctx, arg->value.string, args->channel_args,
-                           chand->interested_parties);
+  chand->server_name = gpr_strdup(arg->value.string);
+  chand->proxy_name = grpc_get_http_proxy_server();
+  char *name_to_resolve =
+      chand->proxy_name == NULL ? chand->server_name : chand->proxy_name;
+  chand->resolver = grpc_resolver_create(
+      exec_ctx, name_to_resolve, args->channel_args, chand->interested_parties);
   if (chand->resolver == NULL) {
     return GRPC_ERROR_CREATE("resolver creation failed");
   }
@@ -541,7 +561,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-
+  gpr_free(chand->server_name);
+  gpr_free(chand->proxy_name);
   if (chand->resolver != NULL) {
     grpc_resolver_shutdown(exec_ctx, chand->resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");

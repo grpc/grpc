@@ -179,6 +179,9 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** How much data are we willing to queue up per stream if
+    GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
+#define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -415,7 +418,9 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    struct grpc_byte_buffer *send_message;
+    struct {
+      struct grpc_byte_buffer *send_message;
+    } send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -427,11 +432,15 @@ typedef struct grpc_op {
         object, recv_initial_metadata->array is owned by the caller).
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
-    grpc_metadata_array *recv_initial_metadata;
+    struct {
+      grpc_metadata_array *recv_initial_metadata;
+    } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    struct grpc_byte_buffer **recv_message;
+    struct {
+      struct grpc_byte_buffer **recv_message;
+    } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

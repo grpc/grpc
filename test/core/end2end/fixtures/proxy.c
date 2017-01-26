@@ -203,7 +203,7 @@ static void on_p2s_sent_message(void *arg, int success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message = &pc->c2p_msg;
+    op.data.recv_message.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
@@ -228,7 +228,7 @@ static void on_c2p_recv_msg(void *arg, int success) {
       op.op = GRPC_OP_SEND_MESSAGE;
       op.flags = 0;
       op.reserved = NULL;
-      op.data.send_message = pc->c2p_msg;
+      op.data.send_message.send_message = pc->c2p_msg;
       refpc(pc, "on_p2s_sent_message");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
                                   new_closure(on_p2s_sent_message, pc), NULL);
@@ -259,7 +259,7 @@ static void on_c2p_sent_message(void *arg, int success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message = &pc->p2s_msg;
+    op.data.recv_message.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);
@@ -278,7 +278,7 @@ static void on_p2s_recv_msg(void *arg, int success) {
     op.op = GRPC_OP_SEND_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.send_message = pc->p2s_msg;
+    op.data.send_message.send_message = pc->p2s_msg;
     refpc(pc, "on_c2p_sent_message");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), NULL);
@@ -347,7 +347,8 @@ static void on_new_call(void *arg, int success) {
 
     op.op = GRPC_OP_RECV_INITIAL_METADATA;
     op.flags = 0;
-    op.data.recv_initial_metadata = &pc->p2s_initial_metadata;
+    op.data.recv_initial_metadata.recv_initial_metadata =
+        &pc->p2s_initial_metadata;
     refpc(pc, "on_p2s_recv_initial_metadata");
     err = grpc_call_start_batch(
         pc->p2s, &op, 1, new_closure(on_p2s_recv_initial_metadata, pc), NULL);
@@ -364,7 +365,7 @@ static void on_new_call(void *arg, int success) {
 
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
-    op.data.recv_message = &pc->c2p_msg;
+    op.data.recv_message.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
@@ -372,7 +373,7 @@ static void on_new_call(void *arg, int success) {
 
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
-    op.data.recv_message = &pc->p2s_msg;
+    op.data.recv_message.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);
