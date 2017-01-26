@@ -308,15 +308,12 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
   if (path[0] == '/') ++path;
-
-  // Get proxy name, if any.
-  char *proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
   ares_dns_resolver *r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
   r->combiner = grpc_combiner_create(NULL);
-  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
+  r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
   r->interested_parties = grpc_pollset_set_create();
