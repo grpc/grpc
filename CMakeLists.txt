@@ -599,11 +599,14 @@ add_library(grpc
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -866,11 +869,14 @@ add_library(grpc_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1366,11 +1372,14 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1880,11 +1889,14 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -9063,12 +9075,12 @@ target_include_directories(grpclb_test
 )
 
 target_link_libraries(grpclb_test
-  gpr
-  gpr_test_util
-  grpc
-  grpc++
   grpc++_test_util
   grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

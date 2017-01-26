@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,43 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H
 
-/// Channel arg indicating the server in HTTP CONNECT request (string).
-/// The presence of this arg triggers the use of HTTP CONNECT.
-#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+#include <stdbool.h>
 
-/// Channel arg indicating HTTP CONNECT headers (string).
-/// Multiple headers are separated by newlines.  Key/value pairs are
-/// seperated by colons.
-#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
+#include <grpc/impl/codegen/grpc_types.h>
 
-/// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
+#include "src/core/lib/iomgr/resolve_address.h"
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+typedef struct grpc_proxy_mapper grpc_proxy_mapper;
+
+typedef struct {
+  /// Determines the proxy address to use to contact \a address.
+  /// If no proxy is needed, returns false.
+  /// Otherwise, sets \a new_address, optionally sets \a new_args, and
+  /// returns true.
+  bool (*map)(grpc_exec_ctx* exec_ctx, grpc_proxy_mapper* mapper,
+              const grpc_resolved_address* address,
+              const grpc_channel_args* args,
+              grpc_resolved_address** new_address,
+              grpc_channel_args** new_args);
+  /// Destroys \a mapper.
+  void (*destroy)(grpc_proxy_mapper* mapper);
+} grpc_proxy_mapper_vtable;
+
+struct grpc_proxy_mapper {
+  const grpc_proxy_mapper_vtable* vtable;
+};
+
+void grpc_proxy_mapper_init(const grpc_proxy_mapper_vtable* vtable,
+                            grpc_proxy_mapper* mapper);
+
+bool grpc_proxy_mapper_map(grpc_exec_ctx* exec_ctx, grpc_proxy_mapper* mapper,
+                           const grpc_resolved_address* address,
+                           const grpc_channel_args* args,
+                           grpc_resolved_address** new_address,
+                           grpc_channel_args** new_args);
+void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper);
+
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H */
