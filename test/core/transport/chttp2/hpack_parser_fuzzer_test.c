@@ -39,26 +39,25 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 bool squelch = true;
 bool leak_check = true;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_slice_hash_seed(0);
+  grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   grpc_chttp2_hpack_parser parser;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   parser.on_header = onhdr;
-  GRPC_ERROR_UNREF(grpc_chttp2_hpack_parser_parse(
-      &exec_ctx, &parser, grpc_slice_from_static_buffer(data, size)));
+  GRPC_ERROR_UNREF(
+      grpc_chttp2_hpack_parser_parse(&exec_ctx, &parser, data, data + size));
   grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

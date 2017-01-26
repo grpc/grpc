@@ -233,8 +233,9 @@ class _Context(grpc.ServicerContext):
             return self._state.client is not _CANCELLED and not self._state.statused
 
     def time_remaining(self):
-        return max(self._rpc_event.request_call_details.deadline - time.time(),
-                   0)
+        return max(
+            float(self._rpc_event.request_call_details.deadline) - time.time(),
+            0)
 
     def cancel(self):
         self._rpc_event.operation_call.cancel()
@@ -591,8 +592,6 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
 
 
 def _handle_call(rpc_event, generic_handlers, thread_pool):
-    if not rpc_event.success:
-        return None
     if rpc_event.request_call_details.method is not None:
         method_handler = _find_method_handler(rpc_event, generic_handlers)
         if method_handler is None:

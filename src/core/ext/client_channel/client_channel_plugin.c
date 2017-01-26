@@ -40,6 +40,7 @@
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -80,6 +81,7 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
 void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
+  grpc_proxy_mapper_registry_init();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);
@@ -91,6 +93,7 @@ void grpc_client_channel_init(void) {
 void grpc_client_channel_shutdown(void) {
   grpc_subchannel_index_shutdown();
   grpc_channel_init_shutdown();
+  grpc_proxy_mapper_registry_shutdown();
   grpc_resolver_registry_shutdown();
   grpc_lb_policy_registry_shutdown();
 }

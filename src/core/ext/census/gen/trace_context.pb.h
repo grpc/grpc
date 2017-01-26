@@ -96,4 +96,4 @@ extern const pb_field_t google_trace_TraceContext_fields[4];
 } /* extern "C" */
 #endif
 
-#endif /* GRPC_CORE_EXT_CENSUS_GEN_TRACE_CONTEXT_PB_H */
+#endif
