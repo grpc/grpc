@@ -601,7 +601,7 @@ static grpc_security_connector_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_check_peer};
 
 static grpc_slice compute_default_pem_root_certs_once(void) {
-  grpc_slice result = grpc_empty_slice();
+  grpc_slice result = gpr_empty_slice();
 
   /* First try to load the roots from the environment. */
   char *default_root_certs_path =

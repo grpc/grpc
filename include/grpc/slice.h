@@ -76,12 +76,6 @@ GPRAPI grpc_slice grpc_slice_new_with_len(void *p, size_t len,
    Aborts if malloc() fails. */
 GPRAPI grpc_slice grpc_slice_malloc(size_t length);
 
-/* Intern a slice:
-
-   The return value for two invocations of this function with  the same sequence
-   of bytes is a slice which points to the same memory. */
-GPRAPI grpc_slice grpc_slice_intern(grpc_slice slice);
-
 /* Create a slice by copying a string.
    Does not preserve null terminators.
    Equivalent to:
@@ -98,9 +92,6 @@ GPRAPI grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len);
 
 /* Create a slice pointing to constant memory */
 GPRAPI grpc_slice grpc_slice_from_static_string(const char *source);
-
-/* Create a slice pointing to constant memory */
-GPRAPI grpc_slice grpc_slice_from_static_buffer(const void *source, size_t len);
 
 /* Return a result slice derived from s, which shares a ref count with s, where
    result.data==s.data+begin, and result.length==end-begin.
@@ -122,44 +113,17 @@ GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split);
    Requires s intialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_head(grpc_slice *s, size_t split);
 
-GPRAPI grpc_slice grpc_empty_slice(void);
-
-GPRAPI uint32_t grpc_slice_default_hash_impl(grpc_slice s);
-GPRAPI int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b);
-
-GPRAPI int grpc_slice_eq(grpc_slice a, grpc_slice b);
+GPRAPI grpc_slice gpr_empty_slice(void);
 
 /* Returns <0 if a < b, ==0 if a == b, >0 if a > b
    The order is arbitrary, and is not guaranteed to be stable across different
    versions of the API. */
 GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b);
 GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
-GPRAPI int grpc_slice_buf_cmp(grpc_slice a, const void *b, size_t blen);
-
-/* return non-zero if the first blen bytes of a are equal to b */
-GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t blen);
-
-/* return the index of the last instance of \a c in \a s, or -1 if not found */
-GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
-GPRAPI int grpc_slice_chr(grpc_slice s, char c);
-
-/* return the index of the first occurance of \a needle in \a haystack, or -1 if
- * it's not found */
-GPRAPI int grpc_slice_slice(grpc_slice haystack, grpc_slice needle);
-
-GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
 
 /* Do two slices point at the same memory, with the same length
    If a or b is inlined, actually compares data */
 GPRAPI int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b);
-
-/* Return a slice pointing to newly allocated memory that has the same contents
- * as \a s */
-GPRAPI grpc_slice grpc_slice_dup(grpc_slice a);
-
-/* Return a copy of slice as a C string. Offers no protection against embedded
-   NULL's. Returned string must be freed with gpr_free. */
-GPRAPI char *grpc_slice_to_c_string(grpc_slice s);
 
 #ifdef __cplusplus
 }

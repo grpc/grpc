@@ -70,7 +70,7 @@ class SecureCallCredentials final : public CallCredentials {
   grpc_call_credentials* const c_creds_;
 };
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
+class MetadataCredentialsPluginWrapper final {
  public:
   static void Destroy(void* wrapper);
   static void GetMetadata(void* wrapper, grpc_auth_metadata_context context,

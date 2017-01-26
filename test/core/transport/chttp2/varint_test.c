@@ -49,7 +49,7 @@ static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
   slice = grpc_slice_malloc(nbytes);
   GRPC_CHTTP2_WRITE_VARINT(value, prefix_bits, prefix_or,
                            GRPC_SLICE_START_PTR(slice), nbytes);
-  GPR_ASSERT(grpc_slice_eq(expect, slice));
+  GPR_ASSERT(grpc_slice_cmp(expect, slice) == 0);
   grpc_slice_unref(expect);
   grpc_slice_unref(slice);
 }

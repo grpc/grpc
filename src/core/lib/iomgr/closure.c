@@ -34,7 +34,6 @@
 #include "src/core/lib/iomgr/closure.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
 

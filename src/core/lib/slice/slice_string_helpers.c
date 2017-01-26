@@ -88,8 +88,3 @@ void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst) {
     grpc_slice_buffer_add_indexed(dst, grpc_slice_ref_internal(str));
   }
 }
-
-bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t *result) {
-  return gpr_parse_bytes_to_uint32((const char *)GRPC_SLICE_START_PTR(str),
-                                   GRPC_SLICE_LENGTH(str), result) != 0;
-}

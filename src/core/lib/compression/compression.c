@@ -41,24 +41,30 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_compression_algorithm_parse(grpc_slice name,
+int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {
   /* we use strncmp not only because it's safer (even though in this case it
    * doesn't matter, given that we are comparing against string literals, but
    * because this way we needn't have "name" nil-terminated (useful for slice
    * data, for example) */
-  if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
+  GRPC_API_TRACE(
+      "grpc_compression_algorithm_parse("
+      "name=%*.*s, name_length=%lu, algorithm=%p)",
+      5, ((int)name_length, (int)name_length, name, (unsigned long)name_length,
+          algorithm));
+  if (name_length == 0) {
+    return 0;
+  }
+  if (strncmp(name, "identity", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_NONE;
-    return 1;
-  } else if (grpc_slice_eq(name, GRPC_MDSTR_GZIP)) {
+  } else if (strncmp(name, "gzip", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_GZIP;
-    return 1;
-  } else if (grpc_slice_eq(name, GRPC_MDSTR_DEFLATE)) {
+  } else if (strncmp(name, "deflate", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_DEFLATE;
-    return 1;
   } else {
     return 0;
   }
+  return 1;
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
@@ -81,15 +87,15 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
   return 0;
 }
 
-grpc_compression_algorithm grpc_compression_algorithm_from_slice(
-    grpc_slice str) {
-  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE)) return GRPC_COMPRESS_DEFLATE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_COMPRESS_GZIP;
+grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
+    grpc_mdstr *str) {
+  if (str == GRPC_MDSTR_IDENTITY) return GRPC_COMPRESS_NONE;
+  if (str == GRPC_MDSTR_DEFLATE) return GRPC_COMPRESS_DEFLATE;
+  if (str == GRPC_MDSTR_GZIP) return GRPC_COMPRESS_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 
-grpc_slice grpc_compression_algorithm_slice(
+grpc_mdstr *grpc_compression_algorithm_mdstr(
     grpc_compression_algorithm algorithm) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -99,12 +105,12 @@ grpc_slice grpc_compression_algorithm_slice(
     case GRPC_COMPRESS_GZIP:
       return GRPC_MDSTR_GZIP;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      return grpc_empty_slice();
+      return NULL;
   }
-  return grpc_empty_slice();
+  return NULL;
 }
 
-grpc_mdelem grpc_compression_encoding_mdelem(
+grpc_mdelem *grpc_compression_encoding_mdelem(
     grpc_compression_algorithm algorithm) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -116,7 +122,7 @@ grpc_mdelem grpc_compression_encoding_mdelem(
     default:
       break;
   }
-  return GRPC_MDNULL;
+  return NULL;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {
