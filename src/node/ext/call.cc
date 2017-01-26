@@ -352,8 +352,7 @@ class GetMetadataOp : public Op {
     return scope.Escape(ParseMetadata(&recv_metadata));
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
+  bool ParseOp(Local<Value> value, grpc_op *out) {
     out->data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
     return true;
   }
