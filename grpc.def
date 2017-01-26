@@ -164,7 +164,9 @@ EXPORTS
     grpc_slice_buffer_move_into
     grpc_slice_buffer_trim_end
     grpc_slice_buffer_move_first
+    grpc_slice_buffer_move_first_into_buffer
     grpc_slice_buffer_take_first
+    grpc_slice_buffer_undo_take_first
     gpr_malloc
     gpr_free
     gpr_realloc

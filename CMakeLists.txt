@@ -571,11 +571,14 @@ add_library(grpc
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -832,11 +835,14 @@ add_library(grpc_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1326,11 +1332,14 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1829,11 +1838,14 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -2831,7 +2843,6 @@ add_library(boringssl
   third_party/boringssl/crypto/aes/mode_wrappers.c
   third_party/boringssl/crypto/asn1/a_bitstr.c
   third_party/boringssl/crypto/asn1/a_bool.c
-  third_party/boringssl/crypto/asn1/a_bytes.c
   third_party/boringssl/crypto/asn1/a_d2i_fp.c
   third_party/boringssl/crypto/asn1/a_dup.c
   third_party/boringssl/crypto/asn1/a_enum.c
@@ -2850,18 +2861,14 @@ add_library(boringssl
   third_party/boringssl/crypto/asn1/asn1_lib.c
   third_party/boringssl/crypto/asn1/asn1_par.c
   third_party/boringssl/crypto/asn1/asn_pack.c
-  third_party/boringssl/crypto/asn1/bio_asn1.c
-  third_party/boringssl/crypto/asn1/bio_ndef.c
   third_party/boringssl/crypto/asn1/f_enum.c
   third_party/boringssl/crypto/asn1/f_int.c
   third_party/boringssl/crypto/asn1/f_string.c
   third_party/boringssl/crypto/asn1/t_bitst.c
-  third_party/boringssl/crypto/asn1/t_pkey.c
   third_party/boringssl/crypto/asn1/tasn_dec.c
   third_party/boringssl/crypto/asn1/tasn_enc.c
   third_party/boringssl/crypto/asn1/tasn_fre.c
   third_party/boringssl/crypto/asn1/tasn_new.c
-  third_party/boringssl/crypto/asn1/tasn_prn.c
   third_party/boringssl/crypto/asn1/tasn_typ.c
   third_party/boringssl/crypto/asn1/tasn_utl.c
   third_party/boringssl/crypto/asn1/x_bignum.c
@@ -2891,6 +2898,7 @@ add_library(boringssl
   third_party/boringssl/crypto/bn/generic.c
   third_party/boringssl/crypto/bn/kronecker.c
   third_party/boringssl/crypto/bn/montgomery.c
+  third_party/boringssl/crypto/bn/montgomery_inv.c
   third_party/boringssl/crypto/bn/mul.c
   third_party/boringssl/crypto/bn/prime.c
   third_party/boringssl/crypto/bn/random.c
@@ -2902,8 +2910,7 @@ add_library(boringssl
   third_party/boringssl/crypto/bytestring/ber.c
   third_party/boringssl/crypto/bytestring/cbb.c
   third_party/boringssl/crypto/bytestring/cbs.c
-  third_party/boringssl/crypto/chacha/chacha_generic.c
-  third_party/boringssl/crypto/chacha/chacha_vec.c
+  third_party/boringssl/crypto/chacha/chacha.c
   third_party/boringssl/crypto/cipher/aead.c
   third_party/boringssl/crypto/cipher/cipher.c
   third_party/boringssl/crypto/cipher/derive_key.c
@@ -2918,10 +2925,14 @@ add_library(boringssl
   third_party/boringssl/crypto/cipher/tls_cbc.c
   third_party/boringssl/crypto/cmac/cmac.c
   third_party/boringssl/crypto/conf/conf.c
+  third_party/boringssl/crypto/cpu-aarch64-linux.c
+  third_party/boringssl/crypto/cpu-arm-linux.c
   third_party/boringssl/crypto/cpu-arm.c
   third_party/boringssl/crypto/cpu-intel.c
+  third_party/boringssl/crypto/cpu-ppc64le.c
   third_party/boringssl/crypto/crypto.c
   third_party/boringssl/crypto/curve25519/curve25519.c
+  third_party/boringssl/crypto/curve25519/spake25519.c
   third_party/boringssl/crypto/curve25519/x25519-x86_64.c
   third_party/boringssl/crypto/des/des.c
   third_party/boringssl/crypto/dh/check.c
@@ -2930,8 +2941,6 @@ add_library(boringssl
   third_party/boringssl/crypto/dh/params.c
   third_party/boringssl/crypto/digest/digest.c
   third_party/boringssl/crypto/digest/digests.c
-  third_party/boringssl/crypto/directory_posix.c
-  third_party/boringssl/crypto/directory_win.c
   third_party/boringssl/crypto/dsa/dsa.c
   third_party/boringssl/crypto/dsa/dsa_asn1.c
   third_party/boringssl/crypto/ec/ec.c
@@ -2950,7 +2959,6 @@ add_library(boringssl
   third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c
   third_party/boringssl/crypto/engine/engine.c
   third_party/boringssl/crypto/err/err.c
-  third_party/boringssl/crypto/evp/algorithm.c
   third_party/boringssl/crypto/evp/digestsign.c
   third_party/boringssl/crypto/evp/evp.c
   third_party/boringssl/crypto/evp/evp_asn1.c
@@ -2961,6 +2969,7 @@ add_library(boringssl
   third_party/boringssl/crypto/evp/p_rsa.c
   third_party/boringssl/crypto/evp/p_rsa_asn1.c
   third_party/boringssl/crypto/evp/pbkdf.c
+  third_party/boringssl/crypto/evp/print.c
   third_party/boringssl/crypto/evp/sign.c
   third_party/boringssl/crypto/ex_data.c
   third_party/boringssl/crypto/hkdf/hkdf.c
@@ -2974,6 +2983,12 @@ add_library(boringssl
   third_party/boringssl/crypto/modes/ctr.c
   third_party/boringssl/crypto/modes/gcm.c
   third_party/boringssl/crypto/modes/ofb.c
+  third_party/boringssl/crypto/newhope/error_correction.c
+  third_party/boringssl/crypto/newhope/newhope.c
+  third_party/boringssl/crypto/newhope/ntt.c
+  third_party/boringssl/crypto/newhope/poly.c
+  third_party/boringssl/crypto/newhope/precomp.c
+  third_party/boringssl/crypto/newhope/reduce.c
   third_party/boringssl/crypto/obj/obj.c
   third_party/boringssl/crypto/obj/obj_xref.c
   third_party/boringssl/crypto/pem/pem_all.c
@@ -2991,6 +3006,7 @@ add_library(boringssl
   third_party/boringssl/crypto/poly1305/poly1305.c
   third_party/boringssl/crypto/poly1305/poly1305_arm.c
   third_party/boringssl/crypto/poly1305/poly1305_vec.c
+  third_party/boringssl/crypto/rand/deterministic.c
   third_party/boringssl/crypto/rand/rand.c
   third_party/boringssl/crypto/rand/urandom.c
   third_party/boringssl/crypto/rand/windows.c
@@ -3015,11 +3031,13 @@ add_library(boringssl
   third_party/boringssl/crypto/x509/a_sign.c
   third_party/boringssl/crypto/x509/a_strex.c
   third_party/boringssl/crypto/x509/a_verify.c
+  third_party/boringssl/crypto/x509/algorithm.c
   third_party/boringssl/crypto/x509/asn1_gen.c
   third_party/boringssl/crypto/x509/by_dir.c
   third_party/boringssl/crypto/x509/by_file.c
   third_party/boringssl/crypto/x509/i2d_pr.c
   third_party/boringssl/crypto/x509/pkcs7.c
+  third_party/boringssl/crypto/x509/rsa_pss.c
   third_party/boringssl/crypto/x509/t_crl.c
   third_party/boringssl/crypto/x509/t_req.c
   third_party/boringssl/crypto/x509/t_x509.c
@@ -3094,21 +3112,17 @@ add_library(boringssl
   third_party/boringssl/crypto/x509v3/v3_utl.c
   third_party/boringssl/ssl/custom_extensions.c
   third_party/boringssl/ssl/d1_both.c
-  third_party/boringssl/ssl/d1_clnt.c
   third_party/boringssl/ssl/d1_lib.c
-  third_party/boringssl/ssl/d1_meth.c
   third_party/boringssl/ssl/d1_pkt.c
   third_party/boringssl/ssl/d1_srtp.c
-  third_party/boringssl/ssl/d1_srvr.c
+  third_party/boringssl/ssl/dtls_method.c
   third_party/boringssl/ssl/dtls_record.c
-  third_party/boringssl/ssl/pqueue/pqueue.c
+  third_party/boringssl/ssl/handshake_client.c
+  third_party/boringssl/ssl/handshake_server.c
   third_party/boringssl/ssl/s3_both.c
-  third_party/boringssl/ssl/s3_clnt.c
   third_party/boringssl/ssl/s3_enc.c
   third_party/boringssl/ssl/s3_lib.c
-  third_party/boringssl/ssl/s3_meth.c
   third_party/boringssl/ssl/s3_pkt.c
-  third_party/boringssl/ssl/s3_srvr.c
   third_party/boringssl/ssl/ssl_aead_ctx.c
   third_party/boringssl/ssl/ssl_asn1.c
   third_party/boringssl/ssl/ssl_buffer.c
@@ -3122,6 +3136,11 @@ add_library(boringssl
   third_party/boringssl/ssl/ssl_stat.c
   third_party/boringssl/ssl/t1_enc.c
   third_party/boringssl/ssl/t1_lib.c
+  third_party/boringssl/ssl/tls13_both.c
+  third_party/boringssl/ssl/tls13_client.c
+  third_party/boringssl/ssl/tls13_enc.c
+  third_party/boringssl/ssl/tls13_server.c
+  third_party/boringssl/ssl/tls_method.c
   third_party/boringssl/ssl/tls_record.c
 )
 
@@ -3333,6 +3352,33 @@ target_link_libraries(boringssl_bytestring_test_lib
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_library(boringssl_chacha_test_lib
+  third_party/boringssl/crypto/chacha/chacha_test.cc
+)
+
+
+target_include_directories(boringssl_chacha_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_chacha_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_library(boringssl_aead_test_lib
   third_party/boringssl/crypto/cipher/aead_test.cc
 )
@@ -3457,6 +3503,33 @@ target_include_directories(boringssl_ed25519_test_lib
 )
 
 target_link_libraries(boringssl_ed25519_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_spake25519_test_lib
+  third_party/boringssl/crypto/curve25519/spake25519_test.cc
+)
+
+
+target_include_directories(boringssl_spake25519_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_spake25519_test_lib
   ${_gRPC_SSL_LIBRARIES}
   boringssl_test_util
   boringssl
@@ -3624,6 +3697,60 @@ target_link_libraries(boringssl_example_mul_lib
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_library(boringssl_ecdh_test_lib
+  third_party/boringssl/crypto/ecdh/ecdh_test.cc
+)
+
+
+target_include_directories(boringssl_ecdh_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdh_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_ecdsa_sign_test_lib
+  third_party/boringssl/crypto/ecdsa/ecdsa_sign_test.cc
+)
+
+
+target_include_directories(boringssl_ecdsa_sign_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdsa_sign_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_library(boringssl_ecdsa_test_lib
   third_party/boringssl/crypto/ecdsa/ecdsa_test.cc
 )
@@ -3642,6 +3769,33 @@ target_include_directories(boringssl_ecdsa_test_lib
 )
 
 target_link_libraries(boringssl_ecdsa_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_ecdsa_verify_test_lib
+  third_party/boringssl/crypto/ecdsa/ecdsa_verify_test.cc
+)
+
+
+target_include_directories(boringssl_ecdsa_verify_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdsa_verify_test_lib
   ${_gRPC_SSL_LIBRARIES}
   boringssl_test_util
   boringssl
@@ -3837,7 +3991,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(boringssl_gcm_test_lib
-  third_party/boringssl/crypto/modes/gcm_test.c
+  third_party/boringssl/crypto/modes/gcm_test.cc
 )
 
 
@@ -3849,9 +4003,119 @@ target_include_directories(boringssl_gcm_test_lib
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
 )
 
 target_link_libraries(boringssl_gcm_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_newhope_statistical_test_lib
+  third_party/boringssl/crypto/newhope/newhope_statistical_test.cc
+)
+
+
+target_include_directories(boringssl_newhope_statistical_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_statistical_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_newhope_test_lib
+  third_party/boringssl/crypto/newhope/newhope_test.cc
+)
+
+
+target_include_directories(boringssl_newhope_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_newhope_vectors_test_lib
+  third_party/boringssl/crypto/newhope/newhope_vectors_test.cc
+)
+
+
+target_include_directories(boringssl_newhope_vectors_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_vectors_test_lib
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_test_util
+  boringssl
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(boringssl_obj_test_lib
+  third_party/boringssl/crypto/obj/obj_test.cc
+)
+
+
+target_include_directories(boringssl_obj_test_lib
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_obj_test_lib
   ${_gRPC_SSL_LIBRARIES}
   boringssl_test_util
   boringssl
@@ -4112,31 +4376,6 @@ target_include_directories(boringssl_v3name_test_lib
 )
 
 target_link_libraries(boringssl_v3name_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_pqueue_test_lib
-  third_party/boringssl/ssl/pqueue/pqueue_test.c
-)
-
-
-target_include_directories(boringssl_pqueue_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_pqueue_test_lib
   ${_gRPC_SSL_LIBRARIES}
   boringssl_test_util
   boringssl
@@ -8266,12 +8505,12 @@ target_include_directories(grpclb_test
 )
 
 target_link_libraries(grpclb_test
-  gpr
-  gpr_test_util
-  grpc
-  grpc++
   grpc++_test_util
   grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9080,10 +9319,10 @@ add_executable(stress_test
   src/proto/grpc/testing/messages.proto
   src/proto/grpc/testing/metrics.proto
   src/proto/grpc/testing/test.proto
-  test/cpp/interop/client_helper.cc
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
+  test/cpp/util/create_test_channel.cc
   test/cpp/util/metrics_server.cc
   third_party/googletest/src/gtest-all.cc
 )
@@ -9334,6 +9573,33 @@ target_link_libraries(boringssl_bytestring_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(boringssl_chacha_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_chacha_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_chacha_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_chacha_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(boringssl_aead_test
   third_party/googletest/src/gtest-all.cc
 )
@@ -9461,6 +9727,33 @@ target_include_directories(boringssl_ed25519_test
 target_link_libraries(boringssl_ed25519_test
   ${_gRPC_SSL_LIBRARIES}
   boringssl_ed25519_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_spake25519_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_spake25519_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_spake25519_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_spake25519_test_lib
   boringssl_test_util
   boringssl
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -9631,6 +9924,60 @@ target_link_libraries(boringssl_example_mul
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(boringssl_ecdh_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_ecdh_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdh_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_ecdh_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_ecdsa_sign_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_ecdsa_sign_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdsa_sign_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_ecdsa_sign_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(boringssl_ecdsa_test
   third_party/googletest/src/gtest-all.cc
 )
@@ -9650,6 +9997,33 @@ target_include_directories(boringssl_ecdsa_test
 target_link_libraries(boringssl_ecdsa_test
   ${_gRPC_SSL_LIBRARIES}
   boringssl_ecdsa_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_ecdsa_verify_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_ecdsa_verify_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_ecdsa_verify_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_ecdsa_verify_test_lib
   boringssl_test_util
   boringssl
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -9866,6 +10240,114 @@ target_include_directories(boringssl_gcm_test
 target_link_libraries(boringssl_gcm_test
   ${_gRPC_SSL_LIBRARIES}
   boringssl_gcm_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_newhope_statistical_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_newhope_statistical_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_statistical_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_newhope_statistical_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_newhope_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_newhope_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_newhope_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_newhope_vectors_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_newhope_vectors_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_newhope_vectors_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_newhope_vectors_test_lib
+  boringssl_test_util
+  boringssl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(boringssl_obj_test
+  third_party/googletest/src/gtest-all.cc
+)
+
+target_include_directories(boringssl_obj_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+)
+
+target_link_libraries(boringssl_obj_test
+  ${_gRPC_SSL_LIBRARIES}
+  boringssl_obj_test_lib
   boringssl_test_util
   boringssl
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -10136,33 +10618,6 @@ target_include_directories(boringssl_v3name_test
 target_link_libraries(boringssl_v3name_test
   ${_gRPC_SSL_LIBRARIES}
   boringssl_v3name_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_pqueue_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_pqueue_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pqueue_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_pqueue_test_lib
   boringssl_test_util
   boringssl
   ${_gRPC_GFLAGS_LIBRARIES}

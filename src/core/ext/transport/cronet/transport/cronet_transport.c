@@ -851,11 +851,10 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
-                         GRPC_ERROR_CANCELLED);
+                         GRPC_ERROR_NONE);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      grpc_closure_sched(
-          exec_ctx, stream_op->recv_initial_metadata_ready,
-          make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."));
+      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
+                         GRPC_ERROR_NONE);
     } else {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.initial_metadata, stream_op->recv_initial_metadata);
@@ -912,14 +911,13 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
       grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
-                         GRPC_ERROR_CANCELLED);
+                         GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       CRONET_LOG(GPR_DEBUG, "Stream failed.");
-      grpc_closure_sched(
-          exec_ctx, stream_op->recv_message_ready,
-          make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."));
+      grpc_closure_sched(exec_ctx, stream_op->recv_message_ready,
+                         GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->rs.read_stream_closed == true) {

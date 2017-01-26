@@ -394,11 +394,14 @@ filegroups:
   - src/core/ext/client_channel/client_channel_factory.h
   - src/core/ext/client_channel/connector.h
   - src/core/ext/client_channel/http_connect_handshaker.h
+  - src/core/ext/client_channel/http_proxy.h
   - src/core/ext/client_channel/initial_connect_string.h
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
   - src/core/ext/client_channel/parse_address.h
+  - src/core/ext/client_channel/proxy_mapper.h
+  - src/core/ext/client_channel/proxy_mapper_registry.h
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
   - src/core/ext/client_channel/resolver_registry.h
@@ -413,11 +416,14 @@ filegroups:
   - src/core/ext/client_channel/connector.c
   - src/core/ext/client_channel/default_initial_connect_string.c
   - src/core/ext/client_channel/http_connect_handshaker.c
+  - src/core/ext/client_channel/http_proxy.c
   - src/core/ext/client_channel/initial_connect_string.c
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
   - src/core/ext/client_channel/parse_address.c
+  - src/core/ext/client_channel/proxy_mapper.c
+  - src/core/ext/client_channel/proxy_mapper_registry.c
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
   - src/core/ext/client_channel/resolver_registry.c
@@ -3243,12 +3249,12 @@ targets:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_test.cc
   deps:
-  - gpr
-  - gpr_test_util
-  - grpc
-  - grpc++
   - grpc++_test_util
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: http2_client
   build: test
   run: false
@@ -3651,16 +3657,17 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/create_test_channel.h
   - test/cpp/util/metrics_server.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/metrics.proto
   - src/proto/grpc/testing/test.proto
-  - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
