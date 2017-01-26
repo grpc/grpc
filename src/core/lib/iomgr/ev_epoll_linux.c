@@ -1527,7 +1527,8 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
+        append_error(error,
+                     grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
         maybe_do_workqueue_work(exec_ctx, pi);
       } else if (data_ptr == &polling_island_wakeup_fd) {

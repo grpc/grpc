@@ -74,6 +74,15 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
+static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
+  gpr_atm count;
+  do {
+    count = gpr_atm_acq_load(&r->count);
+    if (count == 0) return false;
+  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
+  return true;
+}
+
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
@@ -101,8 +110,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   if (t->outgoing_window > 0) {
     while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
-      grpc_chttp2_become_writable(exec_ctx, t, s, false,
-                                  "transport.read_flow_control");
+      if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s) &&
+          stream_ref_if_not_destroyed(&s->refcount->refs)) {
+        grpc_chttp2_initiate_write(exec_ctx, t, false,
+                                   "transport.read_flow_control");
+      }
     }
   }
 
