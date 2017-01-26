@@ -239,8 +239,6 @@ class SendMessageOp : public Op {
     }
     send_message = BufferToByteBuffer(value);
     out->data.send_message.send_message = send_message;
-    PersistentValue *handle = new PersistentValue(value);
-    resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
   }
   bool IsFinalOp() {
