@@ -249,7 +249,7 @@ class CallOpSendMessage {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
     op->reserved = NULL;
-    op->data.send_message = send_buf_;
+    op->data.send_message.send_message = send_buf_;
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
@@ -298,7 +298,7 @@ class CallOpRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message = &recv_buf_;
+    op->data.recv_message.recv_message = &recv_buf_;
   }
 
   void FinishOp(bool* status, int max_receive_message_size) {
@@ -379,7 +379,7 @@ class CallOpGenericRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message = &recv_buf_;
+    op->data.recv_message.recv_message = &recv_buf_;
   }
 
   void FinishOp(bool* status, int max_receive_message_size) {
@@ -486,7 +486,8 @@ class CallOpRecvInitialMetadata {
     memset(&recv_initial_metadata_arr_, 0, sizeof(recv_initial_metadata_arr_));
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &recv_initial_metadata_arr_;
     op->flags = 0;
     op->reserved = NULL;
   }
