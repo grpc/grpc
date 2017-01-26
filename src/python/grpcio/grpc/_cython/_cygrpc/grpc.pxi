@@ -283,12 +283,21 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
 
+  ctypedef struct grpc_op_data_send_message:
+    grpc_byte_buffer *send_message
+
+  ctypedef struct grpc_op_data_receive_message:
+    grpc_byte_buffer **receive_message "recv_message"
+
+  ctypedef struct grpc_op_data_receive_initial_metadata:
+    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
+
   union grpc_op_data:
     grpc_op_data_send_initial_metadata send_initial_metadata
-    grpc_byte_buffer *send_message
+    grpc_op_data_send_message send_message
     grpc_op_data_send_status_from_server send_status_from_server
-    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
-    grpc_byte_buffer **receive_message "recv_message"
+    grpc_op_data_receive_initial_metadata receive_initial_metadata "recv_initial_metadata"
+    grpc_op_data_receive_message receive_message "recv_message"
     grpc_op_data_recv_status_on_client receive_status_on_client "recv_status_on_client"
     grpc_op_data_recv_close_on_server receive_close_on_server "recv_close_on_server"
 
