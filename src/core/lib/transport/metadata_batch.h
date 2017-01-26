@@ -41,19 +41,21 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct grpc_linked_mdelem {
-  grpc_mdelem *md;
+  grpc_mdelem md;
   struct grpc_linked_mdelem *next;
   struct grpc_linked_mdelem *prev;
   void *reserved;
 } grpc_linked_mdelem;
 
 typedef struct grpc_mdelem_list {
+  size_t count;
   grpc_linked_mdelem *head;
   grpc_linked_mdelem *tail;
 } grpc_mdelem_list;
@@ -61,6 +63,7 @@ typedef struct grpc_mdelem_list {
 typedef struct grpc_metadata_batch {
   /** Metadata elements in this batch */
   grpc_mdelem_list list;
+  grpc_metadata_batch_callouts idx;
   /** Used to calculate grpc-timeout at the point of sending,
       or gpr_inf_future if this batch does not need to send a
       grpc-timeout */
@@ -77,25 +80,37 @@ bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 /* Returns the transport size of the batch. */
 size_t grpc_metadata_batch_size(grpc_metadata_batch *batch);
 
-/** Moves the metadata information from \a src to \a dst. Upon return, \a src is
- * zeroed. */
-void grpc_metadata_batch_move(grpc_metadata_batch *dst,
-                              grpc_metadata_batch *src);
+/** Remove \a storage from the batch, unreffing the mdelem contained */
+void grpc_metadata_batch_remove(grpc_exec_ctx *exec_ctx,
+                                grpc_metadata_batch *batch,
+                                grpc_linked_mdelem *storage);
+
+/** Substitute a new mdelem for an old value */
+grpc_error *grpc_metadata_batch_substitute(grpc_exec_ctx *exec_ctx,
+                                           grpc_metadata_batch *batch,
+                                           grpc_linked_mdelem *storage,
+                                           grpc_mdelem new_value);
+
+void grpc_metadata_batch_set_value(grpc_exec_ctx *exec_ctx,
+                                   grpc_linked_mdelem *storage,
+                                   grpc_slice value);
 
 /** Add \a storage to the beginning of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
-                                   grpc_linked_mdelem *storage);
+grpc_error *grpc_metadata_batch_link_head(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage) GRPC_MUST_USE_RESULT;
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
-                                   grpc_linked_mdelem *storage);
+grpc_error *grpc_metadata_batch_link_tail(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage) GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the first element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -103,29 +118,38 @@ void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
     lifetime of batch. This usually means it should be around
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
-void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
-                                  grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add);
+grpc_error *grpc_metadata_batch_add_head(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
-void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
-                                  grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add);
+grpc_error *grpc_metadata_batch_add_tail(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_linked_mdelem *storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
-/** For each element in \a batch, execute \a filter.
-    The return value from \a filter will be substituted for the
-    grpc_mdelem passed to \a filter. If \a filter returns NULL,
-    the element will be moved to the garbage list. */
-void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
-                                grpc_metadata_batch *batch,
-                                grpc_mdelem *(*filter)(grpc_exec_ctx *exec_ctx,
-                                                       void *user_data,
-                                                       grpc_mdelem *elem),
-                                void *user_data);
+grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md);
+
+typedef struct {
+  grpc_error *error;
+  grpc_mdelem md;
+} grpc_filtered_mdelem;
+
+#define GRPC_FILTERED_ERROR(error) \
+  ((grpc_filtered_mdelem){(error), GRPC_MDNULL})
+#define GRPC_FILTERED_MDELEM(md) ((grpc_filtered_mdelem){GRPC_ERROR_NONE, (md)})
+#define GRPC_FILTERED_REMOVE() \
+  ((grpc_filtered_mdelem){GRPC_ERROR_NONE, GRPC_MDNULL})
+
+typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
+    grpc_exec_ctx *exec_ctx, void *user_data, grpc_mdelem elem);
+grpc_error *grpc_metadata_batch_filter(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_metadata_batch_filter_func func, void *user_data,
+    const char *composite_error_string) GRPC_MUST_USE_RESULT;
 
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
