@@ -95,10 +95,7 @@ The service config is a JSON string of the following form:
       # will not be sent and the client will see an error.
       # Note that 0 is a valid value, meaning that the request message must
       # be empty.
-      #
-      # The format of the value is that of the 'uint64' type defined here:
-      # https://developers.google.com/protocol-buffers/docs/proto3#json
-      'maxRequestMessageBytes': string,
+      'maxRequestMessageBytes': number,
 
       # The maximum allowed payload size for an individual response or object
       # in a stream (server->client) in bytes. The size which is measured is
@@ -114,10 +111,7 @@ The service config is a JSON string of the following form:
       # will not be sent, and the client will see an error.
       # Note that 0 is a valid value, meaning that the response message must
       # be empty.
-      #
-      # The format of the value is that of the 'uint64' type defined here:
-      # https://developers.google.com/protocol-buffers/docs/proto3#json
-      'maxResponseMessageBytes': string
+      'maxResponseMessageBytes': number
     }
   ]
 }
