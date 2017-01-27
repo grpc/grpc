@@ -619,48 +619,44 @@ static void finish_start_new_rpc(
   }
 }
 
-static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  grpc_server *server = chand->server;
+static bool search_by_host(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                           channel_data *chand, call_data *calld,
+                           grpc_server *server, bool by_host) {
   uint32_t i;
   uint32_t hash;
   channel_registered_method *rm;
 
+  hash = GRPC_MDSTR_KV_HASH(by_host ? calld->host->hash : 0, calld->path->hash);
+  for (i = 0; i <= chand->registered_method_max_probes; i++) {
+    rm =
+        &chand->registered_methods[(hash + i) % chand->registered_method_slots];
+    if (!rm) break;
+    if (by_host && (rm->host != calld->host)) continue;
+    if (!by_host && (rm->host != NULL)) continue;
+    if (rm->method != calld->path) continue;
+    if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
+        !calld->recv_idempotent_request)
+      continue;
+    finish_start_new_rpc(exec_ctx, server, elem,
+                         &rm->server_registered_method->request_matcher,
+                         rm->server_registered_method->payload_handling);
+    return true;
+  }
+  return false;
+}
+
+static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  GPR_ASSERT(chand != NULL && calld != NULL);
+  grpc_server *server = chand->server;
+  GPR_ASSERT(chand != NULL && calld != NULL && server != NULL);
+
   if (chand->registered_methods && calld->path && calld->host) {
-    /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
-    hash = GRPC_MDSTR_KV_HASH(calld->host->hash, calld->path->hash);
-    for (i = 0; i <= chand->registered_method_max_probes; i++) {
-      rm = &chand->registered_methods[(hash + i) %
-                                      chand->registered_method_slots];
-      if (!rm) break;
-      if (rm->host != calld->host) continue;
-      if (rm->method != calld->path) continue;
-      if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request)
-        continue;
-      finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher,
-                           rm->server_registered_method->payload_handling);
-      return;
-    }
+    if (search_by_host(exec_ctx, elem, chand, calld, server, true)) return;
     /* check for a wildcard method definition (no host set) */
-    hash = GRPC_MDSTR_KV_HASH(0, calld->path->hash);
-    for (i = 0; i <= chand->registered_method_max_probes; i++) {
-      rm = &chand->registered_methods[(hash + i) %
-                                      chand->registered_method_slots];
-      if (!rm) break;
-      if (rm->host != NULL) continue;
-      if (rm->method != calld->path) continue;
-      if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request)
-        continue;
-      finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher,
-                           rm->server_registered_method->payload_handling);
-      return;
-    }
+    if (search_by_host(exec_ctx, elem, chand, calld, server, false)) return;
   }
   finish_start_new_rpc(exec_ctx, server, elem,
                        &server->unregistered_request_matcher,
