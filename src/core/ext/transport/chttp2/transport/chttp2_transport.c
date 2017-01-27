@@ -135,8 +135,8 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_initiate,
                              grpc_closure *on_complete);
 
-#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 100
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 1
+#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 10
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
 
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -2071,13 +2071,20 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (uint32_t)(max_recv_bytes - s->incoming_window_delta);
     bool new_window_write_is_covered_by_poller =
         s->incoming_window_delta + initial_window_size < (int64_t)have_already;
+    bool force_send = (s->incoming_window_delta - s->announce_window <
+                       -(int64_t)initial_window_size / 2);
+    /*    gpr_log(GPR_DEBUG, "%d %d %d",
+                (int)(s->incoming_window_delta - s->announce_window),
+                (int)(-(int64_t)initial_window_size / 2), force_send); */
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
-    grpc_chttp2_become_writable(exec_ctx, t, s,
-                                new_window_write_is_covered_by_poller,
-                                "read_incoming_stream");
+    if (force_send) {
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  new_window_write_is_covered_by_poller,
+                                  "read_incoming_stream");
+    }
   }
 }
 
