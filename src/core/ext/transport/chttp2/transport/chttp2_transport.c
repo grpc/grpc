@@ -254,9 +254,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
 
-  grpc_bdp_estimator_init(&t->bdp_estimator);
-  t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
-  t->last_pid_update = t->last_bdp_ping_finished;
+  grpc_bdp_estimator_init(&t->bdp_estimator, t->peer_string);
+  t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_pid_controller_init(
       &t->pid_controller,
       (grpc_pid_controller_args){.gain_p = 4,
@@ -1887,10 +1886,6 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
     }
-    if (!t->parse_saw_data_frames) {
-      need_bdp_ping = false;
-    }
-    t->parse_saw_data_frames = false;
     if (errors[1] != GRPC_ERROR_NONE) {
       errors[2] = try_http_parsing(exec_ctx, t);
       GRPC_ERROR_UNREF(error);
@@ -1933,10 +1928,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
 
-    if (need_bdp_ping &&
-        gpr_time_cmp(gpr_time_add(t->last_bdp_ping_finished,
-                                  gpr_time_from_millis(100, GPR_TIMESPAN)),
-                     gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
+    if (need_bdp_ping) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
       grpc_bdp_estimator_schedule_ping(&t->bdp_estimator);
       send_ping_locked(exec_ctx, t,
@@ -1992,7 +1984,6 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
   grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
-  t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }

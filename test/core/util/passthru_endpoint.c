@@ -148,7 +148,9 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
-  return gpr_strdup("fake:mock_endpoint");
+  passthru_endpoint *p = ((half *)ep)->parent;
+  return ((half *)ep) == &p->client ? gpr_strdup("fake:mock_client_endpoint")
+                                    : gpr_strdup("fake:mock_server_endpoint");
 }
 
 static int me_get_fd(grpc_endpoint *ep) { return -1; }

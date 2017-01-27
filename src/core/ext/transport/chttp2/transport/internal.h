@@ -322,8 +322,6 @@ struct grpc_chttp2_transport {
 
   /** initial window change */
   int64_t initial_window_update;
-  /** did the current parse see actual data bytes? */
-  bool parse_saw_data_frames;
 
   /** window available for peer to send to us */
   int64_t incoming_window;
@@ -357,7 +355,6 @@ struct grpc_chttp2_transport {
   grpc_pid_controller pid_controller;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
-  gpr_timespec last_bdp_ping_finished;
   gpr_timespec last_pid_update;
 
   /* if non-NULL, close the transport with this error when writes are finished
