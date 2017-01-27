@@ -35,7 +35,7 @@
 
 namespace grpc {
 
-Slice::Slice() : slice_(gpr_empty_slice()) {}
+Slice::Slice() : slice_(grpc_empty_slice()) {}
 
 Slice::~Slice() { grpc_slice_unref(slice_); }
 

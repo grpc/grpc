@@ -658,8 +658,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                uint32_t stream_id, int64_t val1, int64_t val2);
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_chttp2_stream *stream,
-                             grpc_status_code status, grpc_slice *details);
+                             grpc_chttp2_stream *stream, grpc_error *error);
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t,
                                     grpc_chttp2_stream *s, int close_reads,

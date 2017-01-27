@@ -37,9 +37,9 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb **list,
                               grpc_chttp2_write_cb *cb) {
@@ -256,7 +256,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
             s->sent_trailing_metadata = true;
             if (!t->is_client && !s->read_closed) {
               grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
-                                                    s->id, GRPC_CHTTP2_NO_ERROR,
+                                                    s->id, GRPC_HTTP2_NO_ERROR,
                                                     &s->stats.outgoing));
             }
           }
@@ -292,7 +292,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
-                              s->id, GRPC_CHTTP2_NO_ERROR, &s->stats.outgoing));
+                              s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
       }

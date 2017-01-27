@@ -397,11 +397,15 @@ static void ru_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static const grpc_slice_refcount_vtable ru_slice_vtable = {
+    ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
+
 static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
                                   size_t size) {
   ru_slice_refcount *rc = gpr_malloc(sizeof(ru_slice_refcount) + size);
-  rc->base.ref = ru_slice_ref;
-  rc->base.unref = ru_slice_unref;
+  rc->base.vtable = &ru_slice_vtable;
+  rc->base.sub_refcount = &rc->base;
   gpr_ref_init(&rc->refs, 1);
   rc->resource_user = resource_user;
   rc->size = size;
@@ -832,12 +836,10 @@ void grpc_resource_user_finish_reclamation(grpc_exec_ctx *exec_ctx,
 void grpc_resource_user_slice_allocator_init(
     grpc_resource_user_slice_allocator *slice_allocator,
     grpc_resource_user *resource_user, grpc_iomgr_cb_func cb, void *p) {
-  grpc_closure_init(
-      &slice_allocator->on_allocated, ru_allocated_slices, slice_allocator,
-      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
-  grpc_closure_init(
-      &slice_allocator->on_done, cb, p,
-      grpc_combiner_scheduler(resource_user->resource_quota->combiner, false));
+  grpc_closure_init(&slice_allocator->on_allocated, ru_allocated_slices,
+                    slice_allocator, grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&slice_allocator->on_done, cb, p,
+                    grpc_schedule_on_exec_ctx);
   slice_allocator->resource_user = resource_user;
 }
 

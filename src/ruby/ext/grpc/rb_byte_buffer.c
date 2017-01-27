@@ -68,3 +68,10 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
   grpc_byte_buffer_reader_destroy(&reader);
   return rb_string;
 }
+
+VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice) {
+  if (GRPC_SLICE_START_PTR(slice) == NULL) {
+    rb_raise(rb_eRuntimeError, "attempt to convert uninitialized grpc_slice to ruby string");
+  }
+  return rb_str_new((char*)GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
+}
