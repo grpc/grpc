@@ -44,13 +44,13 @@
 static void test_noop(void) {
   gpr_log(GPR_INFO, "test_noop");
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
 }
 
 static void test_get_estimate_no_samples(void) {
   gpr_log(GPR_INFO, "test_get_estimate_no_samples");
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
   int64_t estimate;
   grpc_bdp_estimator_get_estimate(&est, &estimate);
 }
@@ -74,7 +74,7 @@ static void add_sample(grpc_bdp_estimator *estimator, int64_t sample) {
 static void test_get_estimate_1_sample(void) {
   gpr_log(GPR_INFO, "test_get_estimate_1_sample");
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
   add_sample(&est, 100);
   int64_t estimate;
   grpc_bdp_estimator_get_estimate(&est, &estimate);
@@ -83,7 +83,7 @@ static void test_get_estimate_1_sample(void) {
 static void test_get_estimate_2_samples(void) {
   gpr_log(GPR_INFO, "test_get_estimate_2_samples");
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
   add_sample(&est, 100);
   add_sample(&est, 100);
   int64_t estimate;
@@ -99,7 +99,7 @@ static int64_t get_estimate(grpc_bdp_estimator *estimator) {
 static void test_get_estimate_3_samples(void) {
   gpr_log(GPR_INFO, "test_get_estimate_3_samples");
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
   add_sample(&est, 100);
   add_sample(&est, 100);
   add_sample(&est, 100);
@@ -122,7 +122,7 @@ static int64_t next_pow_2(int64_t v) {
 static void test_get_estimate_random_values(size_t n) {
   gpr_log(GPR_INFO, "test_get_estimate_random_values(%" PRIdPTR ")", n);
   grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est);
+  grpc_bdp_estimator_init(&est, "test");
   int min = INT_MAX;
   int max = INT_MIN;
   for (size_t i = 0; i < n; i++) {
