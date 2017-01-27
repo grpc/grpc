@@ -87,6 +87,8 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 if (MSVC)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile boringssl
@@ -3321,7 +3323,7 @@ target_link_libraries(qps
 
 endif (gRPC_BUILD_TESTS)
 
-add_library(grpc_csharp_ext
+add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
