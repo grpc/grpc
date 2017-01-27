@@ -273,7 +273,8 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
-  grpc_connector_shutdown(exec_ctx, c->connector);
+  grpc_connector_shutdown(exec_ctx, c->connector,
+                          GRPC_ERROR_CREATE("Subchannel disconnected"));
   con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
   if (con != NULL) {
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, con, "connection");
