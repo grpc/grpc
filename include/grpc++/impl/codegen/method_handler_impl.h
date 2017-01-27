@@ -52,8 +52,8 @@ class RpcMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request, &req, param.max_receive_message_size);
+    Status status =
+        SerializationTraits<RequestType>::Deserialize(param.request, &req);
     ResponseType rsp;
     if (status.ok()) {
       status = func_(service_, param.server_context, &req, &rsp);
@@ -138,8 +138,8 @@ class ServerStreamingHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request, &req, param.max_receive_message_size);
+    Status status =
+        SerializationTraits<RequestType>::Deserialize(param.request, &req);
 
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);

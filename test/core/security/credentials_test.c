@@ -196,8 +196,8 @@ static void test_add_to_empty_md_store(void) {
   grpc_slice value = grpc_slice_from_copied_string(value_str);
   grpc_credentials_md_store_add(store, key, value);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(grpc_slice_cmp(key, store->entries[0].key) == 0);
-  GPR_ASSERT(grpc_slice_cmp(value, store->entries[0].value) == 0);
+  GPR_ASSERT(grpc_slice_eq(key, store->entries[0].key));
+  GPR_ASSERT(grpc_slice_eq(value, store->entries[0].value));
   grpc_slice_unref(key);
   grpc_slice_unref(value);
   grpc_credentials_md_store_unref(&exec_ctx, store);
@@ -1065,9 +1065,8 @@ static void plugin_get_metadata_success(void *state,
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
     memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = plugin_md[i].key;
-    md[i].value = plugin_md[i].value;
-    md[i].value_length = strlen(plugin_md[i].value);
+    md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
+    md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
   }
   cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
 }

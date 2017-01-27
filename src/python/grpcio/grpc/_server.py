@@ -592,6 +592,8 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
 
 
 def _handle_call(rpc_event, generic_handlers, thread_pool):
+    if not rpc_event.success:
+        return None
     if rpc_event.request_call_details.method is not None:
         method_handler = _find_method_handler(rpc_event, generic_handlers)
         if method_handler is None:
