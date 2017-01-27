@@ -146,6 +146,14 @@ class BaseStub
     }
 
     /**
+     * Close the communication channel associated with this stub.
+     */
+    public function close()
+    {
+        $this->channel->close();
+    }
+
+    /**
      * @param $new_state Connect state
      *
      * @return bool true if state is CHANNEL_READY
@@ -161,14 +169,6 @@ class BaseStub
         }
 
         return false;
-    }
-
-    /**
-     * Close the communication channel associated with this stub.
-     */
-    public function close()
-    {
-        $this->channel->close();
     }
 
     /**
@@ -235,7 +235,7 @@ class BaseStub
      *
      * @return SimpleSurfaceActiveCall The active call object
      */
-    public function _simpleRequest($method,
+    protected function _simpleRequest($method,
                                    $argument,
                                    $deserialize,
                                    array $metadata = [],
@@ -270,7 +270,7 @@ class BaseStub
      *
      * @return ClientStreamingSurfaceActiveCall The active call object
      */
-    public function _clientStreamRequest($method,
+    protected function _clientStreamRequest($method,
                                          $deserialize,
                                          array $metadata = [],
                                          array $options = [])
@@ -305,7 +305,7 @@ class BaseStub
      *
      * @return ServerStreamingSurfaceActiveCall The active call object
      */
-    public function _serverStreamRequest($method,
+    protected function _serverStreamRequest($method,
                                          $argument,
                                          $deserialize,
                                          array $metadata = [],
@@ -339,7 +339,7 @@ class BaseStub
      *
      * @return BidiStreamingSurfaceActiveCall The active call object
      */
-    public function _bidiRequest($method,
+    protected function _bidiRequest($method,
                                  $deserialize,
                                  array $metadata = [],
                                  array $options = [])
