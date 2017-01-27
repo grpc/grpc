@@ -61,7 +61,7 @@ typedef struct grpc_call_create_args {
 
   const void *server_transport_data;
 
-  grpc_mdelem **add_initial_metadata;
+  grpc_mdelem *add_initial_metadata;
   size_t add_initial_metadata_count;
 
   gpr_timespec send_deadline;
