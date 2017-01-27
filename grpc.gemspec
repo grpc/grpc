@@ -87,6 +87,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/env.h )
   s.files += %w( src/core/lib/support/mpscq.h )
   s.files += %w( src/core/lib/support/murmur_hash.h )
+  s.files += %w( src/core/lib/support/print_format.h )
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )
   s.files += %w( src/core/lib/support/string_windows.h )

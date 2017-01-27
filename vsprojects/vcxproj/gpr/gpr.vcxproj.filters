@@ -269,6 +269,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\print_format.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>

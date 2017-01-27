@@ -53,9 +53,6 @@
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/service_describer.h"
 
-namespace grpc {
-namespace testing {
-
 DEFINE_bool(l, false, "Use a long listing format");
 DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
 DEFINE_string(metadata, "",
@@ -65,6 +62,9 @@ DEFINE_string(protofiles, "", "Name of the proto file.");
 DEFINE_bool(binary_input, false, "Input in binary format");
 DEFINE_bool(binary_output, false, "Output in binary format");
 DEFINE_string(infile, "", "Input file (default is stdin)");
+
+namespace grpc {
+namespace testing {
 
 namespace {
 

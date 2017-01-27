@@ -32,7 +32,6 @@
  */
 
 #include <unistd.h>
-#include <cinttypes>
 #include <fstream>
 #include <memory>
 
@@ -45,6 +44,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/support/print_format.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -457,7 +457,7 @@ bool InteropClient::DoResponseStreaming() {
     // most likely due to connection failure.
     gpr_log(GPR_ERROR,
             "DoResponseStreaming(): Read fewer streams (%d) than "
-            "response_stream_sizes.size() (%" PRIuPTR ")",
+            "response_stream_sizes.size() (%" GPR_PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
@@ -583,8 +583,9 @@ bool InteropClient::DoServerCompressedStreaming() {
     // stream->Read() failed before reading all the expected messages. This
     // is most likely due to a connection failure.
     gpr_log(GPR_ERROR,
-            "%s(): Responses read (k=%" PRIuPTR
-            ") is less than the expected number of  messages (%" PRIuPTR ").",
+            "%s(): Responses read (k=%" GPR_PRIuPTR
+            ") is less than the expected number of  messages (%" GPR_PRIuPTR
+            ").",
             __func__, k, sizes.size());
     return TransientFailureOrAbort();
   }
@@ -670,7 +671,8 @@ bool InteropClient::DoHalfDuplex() {
     // most likely due to a connection failure
     gpr_log(GPR_ERROR,
             "DoHalfDuplex(): Responses read (i=%d) are less than the expected "
-            "number of messages response_stream_sizes.size() (%" PRIuPTR ")",
+            "number of messages response_stream_sizes.size() (%" GPR_PRIuPTR
+            ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }

@@ -99,10 +99,13 @@
 #define GPR_POSIX_STRING
 #define GPR_POSIX_TIME
 #else
+#if !defined(__MINGW32__)
+/* TODO(jtattermusch): make win crash handler compile under MINGW */
+#define GPR_WINDOWS_CRASH_HANDLER 1
+#endif
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINDOWS_TMPFILE
 #define GPR_WINDOWS_LOG
-#define GPR_WINDOWS_CRASH_HANDLER 1
 #define GPR_WINDOWS_STRING
 #define GPR_WINDOWS_TIME
 #endif
@@ -294,6 +297,10 @@
 #ifdef GPR_GCOV
 #undef GPR_FORBID_UNREACHABLE_CODE
 #define GPR_FORBID_UNREACHABLE_CODE 1
+#endif
+
+#if defined(__cplusplus) || defined(__MINGW32__)
+#define GPR_MINGW_PRINT_FORMAT_MACROS
 #endif
 
 #ifdef _MSC_VER

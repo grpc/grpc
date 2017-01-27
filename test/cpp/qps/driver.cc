@@ -31,7 +31,6 @@
  *
  */
 
-#include <cinttypes>
 #include <deque>
 #include <list>
 #include <thread>
@@ -48,6 +47,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/print_format.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -256,7 +256,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   std::unordered_map<string, std::deque<int>> hosts_cores;
 
   for (size_t i = 0; i < num_servers; i++) {
-    gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%" GPR_PRIuPTR ")",
             workers[i].c_str(), i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
@@ -271,11 +271,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
     *args.mutable_setup() = server_config;
     servers[i].stream = servers[i].stub->RunServer(alloc_context(&contexts));
     if (!servers[i].stream->Write(args)) {
-      gpr_log(GPR_ERROR, "Could not write args to server %zu", i);
+      gpr_log(GPR_ERROR, "Could not write args to server %" GPR_PRIuPTR, i);
     }
     ServerStatus init_status;
     if (!servers[i].stream->Read(&init_status)) {
-      gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
+      gpr_log(GPR_ERROR, "Server %" GPR_PRIuPTR " did not yield initial status",
+              i);
     }
     if (qps_server_target_override != NULL &&
         strlen(qps_server_target_override) > 0) {
@@ -303,7 +304,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%" GPR_PRIuPTR ")",
             worker.c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(worker, InsecureChannelCredentials()));
@@ -319,22 +320,23 @@ std::unique_ptr<ScenarioResult> RunScenario(
         (client_config.client_channels() - channels_allocated) /
         (num_clients - i);
     channels_allocated += num_channels;
-    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
-            num_channels);
+    gpr_log(GPR_DEBUG, "Client %" GPR_PRIdPTR " gets %" GPR_PRIdPTR " channels",
+            i, num_channels);
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
     *args.mutable_setup() = per_client_config;
     clients[i].stream = clients[i].stub->RunClient(alloc_context(&contexts));
     if (!clients[i].stream->Write(args)) {
-      gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
+      gpr_log(GPR_ERROR, "Could not write args to client %" GPR_PRIuPTR, i);
     }
   }
 
   for (size_t i = 0; i < num_clients; i++) {
     ClientStatus init_status;
     if (!clients[i].stream->Read(&init_status)) {
-      gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
+      gpr_log(GPR_ERROR, "Client %" GPR_PRIuPTR " did not yield initial status",
+              i);
     }
   }
 
@@ -350,13 +352,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't write mark to client %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't get status from client %" GPR_PRIuPTR, i);
     }
   }
 
@@ -371,25 +373,25 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't write mark to client %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Read(&server_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from server %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't get status from server %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't get status from client %" GPR_PRIuPTR, i);
     }
   }
 
@@ -412,17 +414,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't write mark to client %" GPR_PRIuPTR, i);
     }
     if (!client->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
+      gpr_log(GPR_ERROR, "Failed WritesDone for client %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
     if (client->stream->Read(&client_status)) {
-      gpr_log(GPR_INFO, "Received final status from client %zu", i);
+      gpr_log(GPR_INFO, "Received final status from client %" GPR_PRIuPTR, i);
       const auto& stats = client_status.stats();
       merged_latencies.MergeProto(stats.latencies());
       for (int i = 0; i < stats.request_results_size(); i++) {
@@ -433,7 +435,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       // That final status should be the last message on the client stream
       GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't get final status from client %" GPR_PRIuPTR,
+              i);
     }
   }
   for (size_t i = 0; i < num_clients; i++) {
@@ -441,7 +444,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     Status s = client->stream->Finish();
     result->add_client_success(s.ok());
     if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
+      gpr_log(GPR_ERROR, "Client %" GPR_PRIuPTR " had an error %s", i,
               s.error_message().c_str());
     }
   }
@@ -458,23 +461,24 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %" GPR_PRIuPTR, i);
     }
     if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+      gpr_log(GPR_ERROR, "Failed WritesDone for server %" GPR_PRIuPTR, i);
     }
   }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
     if (server->stream->Read(&server_status)) {
-      gpr_log(GPR_INFO, "Received final status from server %zu", i);
+      gpr_log(GPR_INFO, "Received final status from server %" GPR_PRIuPTR, i);
       result->add_server_stats()->CopyFrom(server_status.stats());
       result->add_server_cores(server_status.cores());
       // That final status should be the last message on the server stream
       GPR_ASSERT(!server->stream->Read(&server_status));
     } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
+      gpr_log(GPR_ERROR, "Couldn't get final status from server %" GPR_PRIuPTR,
+              i);
     }
   }
   for (size_t i = 0; i < num_servers; i++) {
@@ -482,7 +486,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     Status s = server->stream->Finish();
     result->add_server_success(s.ok());
     if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
+      gpr_log(GPR_ERROR, "Server %" GPR_PRIuPTR " had an error %s", i,
               s.error_message().c_str());
     }
   }
@@ -506,8 +510,9 @@ bool RunQuit() {
     ctx.set_wait_for_ready(true);
     Status s = stub->QuitWorker(&ctx, dummy, &dummy);
     if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
-              s.error_message().c_str());
+      gpr_log(GPR_ERROR,
+              "Worker %" GPR_PRIuPTR " could not be properly quit because %s",
+              i, s.error_message().c_str());
       result = false;
     }
   }
