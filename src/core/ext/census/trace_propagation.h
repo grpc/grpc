@@ -36,7 +36,7 @@
 
 #include "src/core/ext/census/tracing.h"
 
-/* Encoding and decoding functions for receiving and sending propagating data
+/* Encoding and decoding functions for receiving and sending trace contexts
    over the wire.  Only RPC libraries should be calling these
    functions.  These functions return the number of bytes encoded/decoded
    (0 if a failure has occurred). buf_size indicates the size of the
@@ -44,18 +44,19 @@
    trace ID, span ID, and a set of option flags (is_sampled, etc.). */
 
 /* Converts a span context to a binary byte buffer. */
-size_t trace_span_context_to_binary(const trace_span_context *ctxt, char *buf,
-                                    size_t buf_size);
+size_t trace_span_context_to_binary(const trace_span_context *ctxt,
+                                    uint8_t *buf, size_t buf_size);
 
 /* Reads a binary byte buffer and populates a span context structure. */
-size_t binary_to_trace_span_context(const char *buf, size_t buf_size,
+size_t binary_to_trace_span_context(const uint8_t *buf, size_t buf_size,
                                     trace_span_context *ctxt);
 
-/* Converts a span context to a http format buffer. */
+/* Converts a span context to an http metadata compatible string. */
 size_t trace_span_context_to_http_format(const trace_span_context *ctxt,
                                          char *buf, size_t buf_size);
 
-/* Reads a http format buffer and populates a span context structure. */
+/* Reads an http metadata compatible string and populates a span context
+   structure. */
 size_t http_format_to_trace_span_context(const char *buf, size_t buf_size,
                                          trace_span_context *ctxt);
 

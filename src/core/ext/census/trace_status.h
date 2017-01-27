@@ -38,7 +38,7 @@
 
 /* Stores a status code and status message for a trace. */
 typedef struct trace_status {
-  int errorCode;
+  int64_t errorCode;
   trace_string errorMessage;
 } trace_status;
 

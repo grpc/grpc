@@ -36,10 +36,13 @@
 
 #include "src/core/ext/census/trace_string.h"
 
-/* Trace label (key/value pair) stores a label name and the label value. */
+/* Trace label (key/value pair) stores a label name and the label value. The
+   value can be one of trace_string/int64_t/bool. */
 typedef struct trace_label {
   trace_string key;
   enum label_type {
+    /* Unknown value for debugging/error purposes */
+    LABEL_UNKNOWN = 0,
     /* A string value */
     LABEL_STRING = 1,
     /* An integer value. */
@@ -53,7 +56,6 @@ typedef struct trace_label {
     int64_t label_int;
     bool label_bool;
   } value;
-  size_t val_len;
 } trace_label;
 
 #endif

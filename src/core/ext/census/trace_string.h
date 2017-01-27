@@ -42,6 +42,9 @@
    This will also be more efficient when copying, as we have an explicitly
    specified length.  Also, grpc_slice has reference counting which allows for
    interning. */
-typedef struct trace_string { grpc_slice string_slice; } trace_string;
+typedef struct trace_string {
+  char *string;
+  size_t length;
+} trace_string;
 
 #endif
