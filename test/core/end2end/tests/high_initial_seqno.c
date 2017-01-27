@@ -54,7 +54,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -233,7 +233,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   f = begin_test(config, name, &client_args, NULL);
   for (i = 0; i < 10; i++) {
     simple_request_body(config, f);
-    gpr_log(GPR_INFO, "Passed simple request %d", i);
+    gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
   }
   end_test(&f);
   config.tear_down_data(&f);
