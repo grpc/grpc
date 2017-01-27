@@ -31,51 +31,51 @@
  *
  */
 
-#include "src/core/lib/transport/status_conversion.h"
+#include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 
-int grpc_status_to_http2_error(grpc_status_code status) {
+int grpc_chttp2_grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
-      return GRPC_HTTP2_NO_ERROR;
+      return GRPC_CHTTP2_NO_ERROR;
     case GRPC_STATUS_CANCELLED:
-      return GRPC_HTTP2_CANCEL;
+      return GRPC_CHTTP2_CANCEL;
     case GRPC_STATUS_DEADLINE_EXCEEDED:
-      return GRPC_HTTP2_CANCEL;
+      return GRPC_CHTTP2_CANCEL;
     case GRPC_STATUS_RESOURCE_EXHAUSTED:
-      return GRPC_HTTP2_ENHANCE_YOUR_CALM;
+      return GRPC_CHTTP2_ENHANCE_YOUR_CALM;
     case GRPC_STATUS_PERMISSION_DENIED:
-      return GRPC_HTTP2_INADEQUATE_SECURITY;
+      return GRPC_CHTTP2_INADEQUATE_SECURITY;
     case GRPC_STATUS_UNAVAILABLE:
-      return GRPC_HTTP2_REFUSED_STREAM;
+      return GRPC_CHTTP2_REFUSED_STREAM;
     default:
-      return GRPC_HTTP2_INTERNAL_ERROR;
+      return GRPC_CHTTP2_INTERNAL_ERROR;
   }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
-                                                 gpr_timespec deadline) {
+grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
+    grpc_chttp2_error_code error, gpr_timespec deadline) {
   switch (error) {
-    case GRPC_HTTP2_NO_ERROR:
+    case GRPC_CHTTP2_NO_ERROR:
       /* should never be received */
       return GRPC_STATUS_INTERNAL;
-    case GRPC_HTTP2_CANCEL:
+    case GRPC_CHTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
       return gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
-    case GRPC_HTTP2_ENHANCE_YOUR_CALM:
+    case GRPC_CHTTP2_ENHANCE_YOUR_CALM:
       return GRPC_STATUS_RESOURCE_EXHAUSTED;
-    case GRPC_HTTP2_INADEQUATE_SECURITY:
+    case GRPC_CHTTP2_INADEQUATE_SECURITY:
       return GRPC_STATUS_PERMISSION_DENIED;
-    case GRPC_HTTP2_REFUSED_STREAM:
+    case GRPC_CHTTP2_REFUSED_STREAM:
       return GRPC_STATUS_UNAVAILABLE;
     default:
       return GRPC_STATUS_INTERNAL;
   }
 }
 
-grpc_status_code grpc_http2_status_to_grpc_status(int status) {
+grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status) {
   switch (status) {
     /* these HTTP2 status codes are called out explicitly in status.proto */
     case 200:
@@ -110,4 +110,6 @@ grpc_status_code grpc_http2_status_to_grpc_status(int status) {
   }
 }
 
-int grpc_status_to_http2_status(grpc_status_code status) { return 200; }
+int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status) {
+  return 200;
+}

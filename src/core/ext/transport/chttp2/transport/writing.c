@@ -37,9 +37,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/http2_errors.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb **list,
                               grpc_chttp2_write_cb *cb) {
@@ -74,17 +74,33 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
+    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+      gpr_log(GPR_DEBUG, "Ping delayed [%p]: already pinging", t->peer_string);
+    }
     return;
   }
-  if (t->ping_state.pings_before_data_required > 0 &&
+  if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to send something of substance before sending a ping again */
+    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+      gpr_log(GPR_DEBUG, "Ping delayed [%p]: too many recent pings: %d/%d",
+              t->peer_string, t->ping_state.pings_before_data_required,
+              t->ping_policy.max_pings_without_data);
+    }
     return;
   }
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(gpr_time_sub(now, t->ping_state.last_ping_sent_time),
-                   t->ping_policy.min_time_between_pings) < 0) {
+  gpr_timespec elapsed = gpr_time_sub(now, t->ping_state.last_ping_sent_time);
+  /*gpr_log(GPR_DEBUG, "elapsed:%d.%09d min:%d.%09d", (int)elapsed.tv_sec,
+          elapsed.tv_nsec, (int)t->ping_policy.min_time_between_pings.tv_sec,
+          (int)t->ping_policy.min_time_between_pings.tv_nsec);*/
+  if (gpr_time_cmp(elapsed, t->ping_policy.min_time_between_pings) < 0) {
     /* not enough elapsed time between successive pings */
+    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+      gpr_log(GPR_DEBUG,
+              "Ping delayed [%p]: not enough time elapsed since last ping",
+              t->peer_string);
+    }
     return;
   }
   /* coalesce equivalent pings into this one */
@@ -127,6 +143,15 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
+static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
+  gpr_atm count;
+  do {
+    count = gpr_atm_acq_load(&r->count);
+    if (count == 0) return false;
+  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
+  return true;
+}
+
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
@@ -154,8 +179,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   if (t->outgoing_window > 0) {
     while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
-      grpc_chttp2_become_writable(exec_ctx, t, s, false,
-                                  "transport.read_flow_control");
+      if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s) &&
+          stream_ref_if_not_destroyed(&s->refcount->refs)) {
+        grpc_chttp2_initiate_write(exec_ctx, t, false,
+                                   "transport.read_flow_control");
+      }
     }
   }
 
@@ -189,6 +217,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_add(&t->outbuf,
                             grpc_chttp2_window_update_create(
                                 s->id, s->announce_window, &s->stats.outgoing));
+      t->ping_state.pings_before_data_required =
+          t->ping_policy.max_pings_without_data;
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -226,7 +256,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
             s->sent_trailing_metadata = true;
             if (!t->is_client && !s->read_closed) {
               grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
-                                                    s->id, GRPC_HTTP2_NO_ERROR,
+                                                    s->id, GRPC_CHTTP2_NO_ERROR,
                                                     &s->stats.outgoing));
             }
           }
@@ -262,7 +292,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
-                              s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
+                              s->id, GRPC_CHTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
       }
@@ -283,7 +313,10 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   uint32_t target_incoming_window = GPR_MAX(
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
       1024);
-  if (t->incoming_window < 3 * target_incoming_window / 4) {
+  uint32_t threshold_to_send_transport_window_update =
+      t->outbuf.count > 0 ? 3 * target_incoming_window / 4
+                          : target_incoming_window / 2;
+  if (t->incoming_window < threshold_to_send_transport_window_update) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
     uint32_t announced = (uint32_t)GPR_CLAMP(
@@ -292,9 +325,19 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
                                           0, announced, &throwaway_stats));
+    t->ping_state.pings_before_data_required =
+        t->ping_policy.max_pings_without_data;
   }
 
-  maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
+  for (size_t i = 0; i < t->ping_ack_count; i++) {
+    grpc_slice_buffer_add(&t->outbuf,
+                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
+  }
+  t->ping_ack_count = 0;
+
+  if (t->outbuf.count > 0) {
+    maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
+  }
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 

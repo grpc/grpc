@@ -76,8 +76,8 @@ class MetadataBatch {
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem &operator*() const { return elem_->md; }
-    const grpc_mdelem operator->() const { return elem_->md; }
+    const grpc_mdelem &operator*() const { return *elem_->md; }
+    const grpc_mdelem *operator->() const { return elem_->md; }
 
     const_iterator &operator++() {
       elem_ = elem_->next;
@@ -133,7 +133,7 @@ class TransportOp {
   grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+  bool send_goaway() const { return op_->send_goaway; }
 
   // TODO(roth): Add methods for additional fields as needed.
 

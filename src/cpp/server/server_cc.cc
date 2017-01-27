@@ -186,7 +186,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_, server->max_receive_message_size_),
+          call_(mrd->call_, server, &cq_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
                mrd->request_metadata_.count),
           has_request_payload_(mrd->has_request_payload_),
@@ -208,8 +208,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_, call_.max_receive_message_size()));
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
@@ -576,6 +576,7 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
   call_cq_->RegisterAvalanching();  // This op will trigger more ops
+  memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
 ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
@@ -585,11 +586,19 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (*status) {
-    context_->client_metadata_.FillMap();
+    for (size_t i = 0; i < initial_metadata_array_.count; i++) {
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
+    }
   }
+  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
+  Call call(call_, server_, call_cq_);
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }
@@ -612,8 +621,8 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     ServerCompletionQueue* notification_cq) {
   grpc_server_request_registered_call(
       server_->server(), registered_method, &call_, &context_->deadline_,
-      context_->client_metadata_.arr(), payload, call_cq_->cq(),
-      notification_cq->cq(), this);
+      &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
+      this);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -626,7 +635,7 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
   grpc_server_request_call(server->server(), &call_, &call_details_,
-                           context->client_metadata_.arr(), call_cq->cq(),
+                           &initial_metadata_array_, call_cq->cq(),
                            notification_cq->cq(), this);
 }
 
@@ -635,12 +644,11 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
-        StringFromCopiedSlice(call_details_.method);
-    static_cast<GenericServerContext*>(context_)->host_ =
-        StringFromCopiedSlice(call_details_.host);
+        call_details_.method;
+    static_cast<GenericServerContext*>(context_)->host_ = call_details_.host;
   }
-  grpc_slice_unref(call_details_.method);
-  grpc_slice_unref(call_details_.host);
+  gpr_free(call_details_.method);
+  gpr_free(call_details_.host);
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 

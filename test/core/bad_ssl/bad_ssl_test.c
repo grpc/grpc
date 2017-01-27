@@ -57,7 +57,8 @@ static void run_test(const char *target, size_t nops) {
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
@@ -79,10 +80,9 @@ static void run_test(const char *target, size_t nops) {
   grpc_metadata_array_init(&trailing_metadata_recv);
 
   channel = grpc_secure_channel_create(ssl_creds, target, &args, NULL);
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, NULL);
+                               "/foo", "foo.test.google.fr:1234", deadline,
+                               NULL);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -95,11 +95,12 @@ static void run_test(const char *target, size_t nops) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -116,7 +117,7 @@ static void run_test(const char *target, size_t nops) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
 
   grpc_call_destroy(c);
-  grpc_slice_unref(details);
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 

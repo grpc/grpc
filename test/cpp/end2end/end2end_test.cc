@@ -209,26 +209,16 @@ class TestScenario {
  public:
   TestScenario(bool proxy, const grpc::string& creds_type)
       : use_proxy(proxy), credentials_type(creds_type) {}
-  void Log() const;
+  void Log() const {
+    gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
+            credentials_type.c_str());
+  }
   bool use_proxy;
   // Although the below grpc::string is logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
   // manage vector insertion using a copy constructor
   grpc::string credentials_type;
 };
-
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
-  return out << "TestScenario{use_proxy="
-             << (scenario.use_proxy ? "true" : "false") << ", credentials='"
-             << scenario.credentials_type << "'}";
-}
-
-void TestScenario::Log() const {
-  std::ostringstream out;
-  out << *this;
-  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
-}
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
@@ -646,7 +636,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
-TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
+TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
   user_agent_prefix_ = "custom_prefix";
   ResetStub();
   EchoRequest request;
@@ -901,6 +891,8 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   EchoRequest request;
   EchoResponse response;
   request.set_message(string(kMaxMessageSize_ * 2, 'a'));
+  // cancelled is not guaranteed to appear before the end of the service handler
+  request.mutable_param()->set_skip_cancelled_check(true);
 
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
@@ -1303,7 +1295,6 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
-
 TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   ResetStub();
   EchoRequest request;

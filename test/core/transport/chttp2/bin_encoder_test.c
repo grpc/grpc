@@ -48,7 +48,7 @@ static int all_ok = 1;
 
 static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
                             int line) {
-  if (!grpc_slice_eq(slice, expected)) {
+  if (0 != grpc_slice_cmp(slice, expected)) {
     char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
@@ -84,8 +84,8 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
   grpc_slice input = grpc_slice_from_copied_buffer(s, len);
   grpc_slice base64 = grpc_chttp2_base64_encode(input);
   grpc_slice expect = grpc_chttp2_huffman_compress(base64);
-  grpc_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
-  if (!grpc_slice_eq(expect, got)) {
+  grpc_slice got = grpc_chttp2_base64_encode_and_huffman_compress_impl(input);
+  if (0 != grpc_slice_cmp(expect, got)) {
     char *t = grpc_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *e = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *g = grpc_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -106,7 +106,7 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
   expect_combined_equiv(x, sizeof(x) - 1, __LINE__)
 
 static void expect_binary_header(const char *hdr, int binary) {
-  if (grpc_is_binary_header(grpc_slice_from_static_string(hdr)) != binary) {
+  if (grpc_is_binary_header(hdr, strlen(hdr)) != binary) {
     gpr_log(GPR_ERROR, "FAILED: expected header '%s' to be %s", hdr,
             binary ? "binary" : "not binary");
     all_ok = 0;

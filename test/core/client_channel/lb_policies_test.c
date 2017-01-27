@@ -157,7 +157,8 @@ static void kill_server(const servers_fixture *f, size_t i) {
 typedef struct request_data {
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_slice details;
+  char *details;
+  size_t details_capacity;
   grpc_status_code status;
   grpc_call_details *call_details;
 } request_data;
@@ -271,6 +272,8 @@ static request_sequences perform_request(servers_fixture *f,
 
   for (iter_num = 0; iter_num < spec->num_iters; iter_num++) {
     cq_verifier *cqv = cq_verifier_create(f->cq);
+    rdata->details = NULL;
+    rdata->details_capacity = 0;
     was_cancelled = 2;
 
     for (i = 0; i < f->num_servers; i++) {
@@ -291,9 +294,8 @@ static request_sequences perform_request(servers_fixture *f,
     }
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
-    grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
     c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
+                                 "/foo", "foo.test.google.fr",
                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(c);
     completed_client = 0;
@@ -310,7 +312,8 @@ static request_sequences perform_request(servers_fixture *f,
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &rdata->initial_metadata_recv;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &rdata->initial_metadata_recv;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -319,6 +322,8 @@ static request_sequences perform_request(servers_fixture *f,
         &rdata->trailing_metadata_recv;
     op->data.recv_status_on_client.status = &rdata->status;
     op->data.recv_status_on_client.status_details = &rdata->details;
+    op->data.recv_status_on_client.status_details_capacity =
+        &rdata->details_capacity;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -361,8 +366,7 @@ static request_sequences perform_request(servers_fixture *f,
       op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
       op->data.send_status_from_server.trailing_metadata_count = 0;
       op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-      grpc_slice status_details = grpc_slice_from_static_string("xyz");
-      op->data.send_status_from_server.status_details = &status_details;
+      op->data.send_status_from_server.status_details = "xyz";
       op->flags = 0;
       op->reserved = NULL;
       op++;
@@ -381,12 +385,12 @@ static request_sequences perform_request(servers_fixture *f,
       }
       cq_verify(cqv);
 
+      gpr_log(GPR_DEBUG, "status=%d; %s", rdata->status, rdata->details);
       GPR_ASSERT(rdata->status == GRPC_STATUS_UNIMPLEMENTED);
-      GPR_ASSERT(0 == grpc_slice_str_cmp(rdata->details, "xyz"));
+      GPR_ASSERT(0 == strcmp(rdata->details, "xyz"));
+      GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].method, "/foo"));
       GPR_ASSERT(0 ==
-                 grpc_slice_str_cmp(rdata->call_details[s_idx].method, "/foo"));
-      GPR_ASSERT(0 == grpc_slice_str_cmp(rdata->call_details[s_idx].host,
-                                         "foo.test.google.fr"));
+                 strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
 
       grpc_call_destroy(f->server_calls[s_idx]);
@@ -419,7 +423,7 @@ static request_sequences perform_request(servers_fixture *f,
     for (i = 0; i < f->num_servers; i++) {
       grpc_call_details_destroy(&rdata->call_details[i]);
     }
-    grpc_slice_unref(rdata->details);
+    gpr_free(rdata->details);
   }
 
   gpr_free(s_valid);
@@ -451,12 +455,10 @@ static grpc_call **perform_multirequest(servers_fixture *f,
   op->flags = 0;
   op->reserved = NULL;
 
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   for (i = 0; i < concurrent_calls; i++) {
-    calls[i] =
-        grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    calls[i] = grpc_channel_create_call(
+        client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq, "/foo",
+        "foo.test.google.fr", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(calls[i]);
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[i], ops,
                                                      (size_t)(op - ops), tag(1),
