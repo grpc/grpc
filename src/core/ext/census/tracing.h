@@ -40,23 +40,31 @@
 #include "src/core/ext/census/trace_label.h"
 #include "src/core/ext/census/trace_status.h"
 
+/* This is the low level tracing API that other languages will interface with.
+   This is not intended to be accessed by the end-user, therefore it has been
+   designed with performance in mind rather than ease of use. */
+
 /* The tracing level. */
 enum TraceLevel {
   /* Annotations on this context will be silently discarded. */
   NO_TRACING = 0,
   /* Annotations will not be saved to a persistent store. They will be
-     available via local APIs only. It is not propagated to the child. */
+     available via local APIs only. This setting is not propagated to child
+     spans. */
   TRANSIENT_TRACING = 1,
   /* Annotations are recorded for the entire distributed trace and they are
-     saved to a persistent store. It is propagated to the child. */
+     saved to a persistent store. This setting is propagated to child spans. */
   PERSISTENT_TRACING = 2,
 };
 
 typedef struct trace_span_context {
   /* Trace span context stores Span ID, Trace ID, and option flags. */
+  /* Trace ID is 128 bits split into 2 64-bit chunks (hi and lo). */
   uint64_t trace_id_hi;
   uint64_t trace_id_lo;
+  /* Span ID is 64 bits. */
   uint64_t span_id;
+  /* Span-options is 32-bit value which contains flag options. */
   uint32_t span_options;
 } trace_span_context;
 
@@ -64,7 +72,10 @@ typedef struct start_span_options {
   /* If set, this will override the Span.local_start_time for the Span. */
   gpr_timespec local_start_timestamp;
 
-  /* If set, the Spans are linked to the created Span. */
+  /* Linked spans can be used to identify spans that are linked to this span in
+     a different trace.  This can be used (for example) in batching operations,
+     where a single batch handler processes multiple requests from different
+     traces. If set, points to a list of Spans are linked to the created Span.*/
   trace_span_context *linked_spans;
   /* The number of linked spans. */
   size_t n_linked_spans;
@@ -79,8 +90,9 @@ void trace_start_span(const trace_span_context *span_ctxt,
                       trace_span_context *new_span_ctxt,
                       bool has_remote_parent);
 
-/* Add a new Annotation to the Span. The description corresponds to
-   Span->annotations[].description. */
+/* Add a new Annotation to the Span. Annotations consist of a description
+   (trace_string) and a set of n labels (trace_label).  This can be populated
+   with arbitrary user data. */
 void trace_add_span_annotation(const trace_string description,
                                const trace_label *labels, const size_t n_labels,
                                trace_span_context *span_ctxt);
