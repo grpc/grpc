@@ -135,7 +135,7 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_initiate,
                              grpc_closure *on_complete);
 
-#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 10
+#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
 
 /*******************************************************************************
@@ -1946,7 +1946,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
     int64_t estimate = -1;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-      double target = log2((double)estimate);
+      double target = 1 + log2((double)estimate);
       double memory_pressure = grpc_resource_quota_get_memory_pressure(
           grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
       if (memory_pressure > 0.8) {
