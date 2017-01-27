@@ -121,7 +121,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
-    grpc_error_free_string(error_str);
+
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
@@ -307,7 +307,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
 
     const char *warning_message = grpc_error_string(err);
     gpr_log(GPR_INFO, "WARNING: %s", warning_message);
-    grpc_error_free_string(warning_message);
+
     /* we managed to bind some addresses: continue */
   }
   grpc_resolved_addresses_destroy(resolved);
