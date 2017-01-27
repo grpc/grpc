@@ -381,7 +381,7 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
       1024);
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
-  if (t->incoming_window < target_incoming_window / 2) {
+  if (t->incoming_window <= target_incoming_window / 2) {
     grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
   }
 
@@ -403,7 +403,8 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
   if (s != NULL) {
     GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
                                   incoming_frame_size);
-    if (s->incoming_window_delta < -target_incoming_window / 2) {
+    if (s->incoming_window_delta - s->announce_window <=
+        -(int64_t)target_incoming_window / 2) {
       grpc_chttp2_become_writable(exec_ctx, t, s, false,
                                   "window-update-required");
     }
