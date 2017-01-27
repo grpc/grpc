@@ -71,9 +71,7 @@ namespace Grpc.Core.Internal
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            UIntPtr detailsLength;
-            IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
-            string details = Marshal.PtrToStringAnsi(detailsPtr, (int) detailsLength.ToUInt32());
+            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);

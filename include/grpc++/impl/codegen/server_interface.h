@@ -152,6 +152,7 @@ class ServerInterface : public CallHook {
     void* const tag_;
     const bool delete_on_finalize_;
     grpc_call* call_;
+    grpc_metadata_array initial_metadata_array_;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {

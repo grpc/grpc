@@ -46,7 +46,7 @@ static int all_ok = 1;
 
 static void expect_slice_eq(grpc_exec_ctx *exec_ctx, grpc_slice expected,
                             grpc_slice slice, char *debug, int line) {
-  if (!grpc_slice_eq(slice, expected)) {
+  if (0 != grpc_slice_cmp(slice, expected)) {
     char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,

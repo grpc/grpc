@@ -482,8 +482,6 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
   src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
@@ -505,13 +503,12 @@ add_library(grpc
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/pid_controller.c
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -532,6 +529,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -573,11 +571,14 @@ add_library(grpc
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -771,8 +772,6 @@ add_library(grpc_cronet
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
   src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
@@ -794,13 +793,12 @@ add_library(grpc_cronet
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/pid_controller.c
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -824,6 +822,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -836,11 +835,14 @@ add_library(grpc_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1050,8 +1052,6 @@ add_library(grpc_test_util
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
   src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
@@ -1073,13 +1073,12 @@ add_library(grpc_test_util
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/pid_controller.c
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1268,8 +1267,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
   src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
@@ -1291,13 +1288,12 @@ add_library(grpc_unsecure
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/pid_controller.c
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1319,6 +1315,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -1335,11 +1332,14 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1614,7 +1614,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/server_context.h
   include/grpc++/impl/codegen/server_interface.h
   include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/status_helper.h
@@ -1712,6 +1711,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -1800,8 +1800,6 @@ add_library(grpc++_cronet
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
   src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
@@ -1823,13 +1821,12 @@ add_library(grpc++_cronet
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/pid_controller.c
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1841,11 +1838,14 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/connector.c
   src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/http_proxy.c
   src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
   src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/proxy_mapper.c
+  src/core/ext/client_channel/proxy_mapper_registry.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
@@ -1956,7 +1956,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/server_context.h
   include/grpc++/impl/codegen/server_interface.h
   include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/status_helper.h
@@ -2221,7 +2220,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/server_context.h
   include/grpc++/impl/codegen/server_interface.h
   include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/status_helper.h
@@ -2379,7 +2377,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/server_context.h
   include/grpc++/impl/codegen/server_interface.h
   include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/status_helper.h
@@ -4977,6 +4974,30 @@ target_link_libraries(chttp2_hpack_encoder_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(chttp2_status_conversion_test
+  test/core/transport/chttp2/status_conversion_test.c
+)
+
+target_include_directories(chttp2_status_conversion_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(chttp2_status_conversion_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(chttp2_stream_map_test
   test/core/transport/chttp2/stream_map_test.c
 )
@@ -7247,30 +7268,6 @@ target_link_libraries(socket_utils_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(status_conversion_test
-  test/core/transport/status_conversion_test.c
-)
-
-target_include_directories(status_conversion_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(status_conversion_test
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(tcp_client_posix_test
   test/core/iomgr/tcp_client_posix_test.c
 )
@@ -8508,12 +8505,12 @@ target_include_directories(grpclb_test
 )
 
 target_link_libraries(grpclb_test
-  gpr
-  gpr_test_util
-  grpc
-  grpc++
   grpc++_test_util
   grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

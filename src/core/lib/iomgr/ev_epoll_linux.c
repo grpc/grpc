@@ -321,7 +321,7 @@ gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
 
 static const grpc_closure_scheduler_vtable workqueue_scheduler_vtable = {
-    workqueue_enqueue, workqueue_enqueue, "workqueue"};
+    workqueue_enqueue, workqueue_enqueue};
 
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
@@ -796,7 +796,7 @@ static polling_island *polling_island_merge(polling_island *p,
     gpr_atm_rel_store(&p->merged_to, (gpr_atm)q);
     PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
 
-    workqueue_move_items_to_parent(q);
+    workqueue_move_items_to_parent(p);
   }
   /* else if p == q, nothing needs to be done */
 
@@ -1527,7 +1527,8 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
+        append_error(error,
+                     grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
         maybe_do_workqueue_work(exec_ctx, pi);
       } else if (data_ptr == &polling_island_wakeup_fd) {

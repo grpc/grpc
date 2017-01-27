@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,20 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
-#define GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include <grpc/grpc.h>
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 
-#include <grpc/support/avl.h>
+/* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
+grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error(
+    grpc_status_code status);
+grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
+    grpc_chttp2_error_code error, gpr_timespec deadline);
 
-struct grpc_error {
-  gpr_refcount refs;
-  gpr_avl ints;
-  gpr_avl strs;
-  gpr_avl times;
-  gpr_avl errs;
-  uintptr_t next_err;
-  gpr_atm error_string;
-};
+/* Conversion of HTTP status codes (:status) to grpc status codes */
+grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status);
+int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status);
 
-bool grpc_error_is_special(grpc_error *err);
-
-#endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STATUS_CONVERSION_H */

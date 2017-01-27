@@ -69,14 +69,7 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   ops.ClientSendClose();
   ops.ClientRecvStatus(context, &status);
   call.PerformOps(&ops);
-  if (cq.Pluck(&ops)) {
-    if (!ops.got_message && status.ok()) {
-      return Status(StatusCode::UNIMPLEMENTED,
-                    "No message returned for unary request");
-    }
-  } else {
-    GPR_CODEGEN_ASSERT(!status.ok());
-  }
+  GPR_CODEGEN_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.ok());
   return status;
 }
 
