@@ -35,6 +35,7 @@
 
 #include "rb_grpc_imports.generated.h"
 #include "rb_channel.h"
+#include "rb_byte_buffer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -252,10 +253,14 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
   grpc_channel *ch = NULL;
   grpc_completion_queue *cq = NULL;
   int flags = GRPC_PROPAGATE_DEFAULTS;
-  char *method_chars = StringValueCStr(method);
-  char *host_chars = NULL;
+  grpc_slice method_slice;
+  grpc_slice host_slice;
+  grpc_slice *host_slice_ptr = NULL;
+  char* tmp_str = NULL;
+
   if (host != Qnil) {
-    host_chars = StringValueCStr(host);
+    host_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(host), RSTRING_LEN(host));
+    host_slice_ptr = &host_slice;
   }
   if (mask != Qnil) {
     flags = NUM2UINT(mask);
@@ -272,15 +277,25 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
     return Qnil;
   }
 
-  call = grpc_channel_create_call(ch, parent_call, flags, cq, method_chars,
-                                  host_chars, grpc_rb_time_timeval(
+  method_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(method), RSTRING_LEN(method));
+
+  call = grpc_channel_create_call(ch, parent_call, flags, cq, method_slice,
+                                  host_slice_ptr, grpc_rb_time_timeval(
                                       deadline,
                                       /* absolute time */ 0), NULL);
+
   if (call == NULL) {
+    tmp_str = grpc_slice_to_c_string(method_slice);
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
-             method_chars);
+             tmp_str);
     return Qnil;
   }
+
+  grpc_slice_unref(method_slice);
+  if (host_slice_ptr != NULL) {
+    grpc_slice_unref(host_slice);
+  }
+
   res = grpc_rb_wrap_call(call, cq);
 
   /* Make this channel an instance attribute of the call so that it is not GCed
