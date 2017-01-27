@@ -129,6 +129,9 @@
   if(WIN32)
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
+  
+  ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
+  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
   if (MSVC)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -428,7 +431,7 @@
   % endfor
 
   <%def name="cc_library(lib)">
-  add_library(${lib.name}
+  add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
