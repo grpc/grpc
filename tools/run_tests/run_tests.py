@@ -234,6 +234,8 @@ class CLanguage(object):
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
           timeout_scaling *= 5
+        if polling_strategy in target.get('excluded_poll_engines', []):
+          continue;
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
