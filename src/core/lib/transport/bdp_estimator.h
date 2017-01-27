@@ -40,6 +40,8 @@
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
+extern int grpc_bdp_estimator_trace;
+
 typedef enum {
   GRPC_BDP_PING_UNSCHEDULED,
   GRPC_BDP_PING_SCHEDULED,
@@ -50,9 +52,10 @@ typedef struct grpc_bdp_estimator {
   grpc_bdp_estimator_ping_state ping_state;
   int64_t accumulator;
   int64_t estimate;
+  const char *name;
 } grpc_bdp_estimator;
 
-void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator);
+void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
