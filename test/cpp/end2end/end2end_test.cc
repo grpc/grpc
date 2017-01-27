@@ -891,6 +891,8 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   EchoRequest request;
   EchoResponse response;
   request.set_message(string(kMaxMessageSize_ * 2, 'a'));
+  // cancelled is not guaranteed to appear before the end of the service handler
+  request.mutable_param()->set_skip_cancelled_check(true);
 
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
