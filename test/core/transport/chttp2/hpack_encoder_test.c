@@ -81,7 +81,9 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
       e[i - 1].next = &e[i];
       e[i].prev = &e[i - 1];
     }
-    e[i].md = grpc_mdelem_from_strings(exec_ctx, key, value);
+    e[i].md = grpc_mdelem_from_slices(
+        exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
+        grpc_slice_intern(grpc_slice_from_static_string(value)));
   }
   e[0].prev = NULL;
   e[nheaders - 1].next = NULL;
@@ -89,6 +91,7 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
 
   b.list.head = &e[0];
   b.list.tail = &e[nheaders - 1];
+  b.list.count = nheaders;
 
   if (cap_to_delete == num_to_delete) {
     cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
@@ -106,7 +109,7 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(exec_ctx, &b);
 
-  if (0 != grpc_slice_cmp(merged, expect)) {
+  if (!grpc_slice_eq(merged, expect)) {
     char *expect_str = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *got_str = grpc_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "mismatched output for %s", expected);
@@ -193,7 +196,9 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
                                                      const char *key,
                                                      const char *value) {
   grpc_slice_buffer output;
-  grpc_mdelem *elem = grpc_mdelem_from_strings(exec_ctx, key, value);
+  grpc_mdelem elem = grpc_mdelem_from_slices(
+      exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
+      grpc_slice_intern(grpc_slice_from_static_string(value)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   size_t initial_table_size = g_compressor.table_size;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e));
@@ -204,6 +209,7 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
   e[0].next = NULL;
   b.list.head = &e[0];
   b.list.tail = &e[0];
+  b.list.count = 1;
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -233,7 +239,7 @@ static void run_test(void (*test)(grpc_exec_ctx *exec_ctx), const char *name) {
 
 int main(int argc, char **argv) {
   size_t i;
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   grpc_test_init(argc, argv);
   grpc_init();
   TEST(test_basic_headers);

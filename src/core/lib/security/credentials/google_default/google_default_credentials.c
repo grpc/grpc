@@ -177,7 +177,7 @@ static grpc_error *create_default_creds_from_path(
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
-  grpc_slice creds_data = gpr_empty_slice();
+  grpc_slice creds_data = grpc_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
     error = GRPC_ERROR_CREATE("creds_path unset");
