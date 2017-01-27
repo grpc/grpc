@@ -303,6 +303,11 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
 
+  /** ping acks */
+  size_t ping_ack_count;
+  size_t ping_ack_capacity;
+  uint64_t *ping_acks;
+
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */

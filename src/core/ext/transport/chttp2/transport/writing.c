@@ -74,17 +74,22 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
+    gpr_log(GPR_DEBUG, "already pinging");
     return;
   }
-  if (t->ping_state.pings_before_data_required > 0 &&
+  if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to send something of substance before sending a ping again */
+    gpr_log(GPR_DEBUG, "too many pings: %d/%d",
+            t->ping_state.pings_before_data_required,
+            t->ping_policy.max_pings_without_data);
     return;
   }
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   if (gpr_time_cmp(gpr_time_sub(now, t->ping_state.last_ping_sent_time),
                    t->ping_policy.min_time_between_pings) < 0) {
     /* not enough elapsed time between successive pings */
+    gpr_log(GPR_DEBUG, "not enough time");
     return;
   }
   /* coalesce equivalent pings into this one */
@@ -201,6 +206,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_add(&t->outbuf,
                             grpc_chttp2_window_update_create(
                                 s->id, s->announce_window, &s->stats.outgoing));
+      t->ping_state.pings_before_data_required =
+          t->ping_policy.max_pings_without_data;
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -290,6 +297,12 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     }
   }
 
+  for (size_t i = 0; i < t->ping_ack_count; i++) {
+    grpc_slice_buffer_add(&t->outbuf,
+                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
+  }
+  t->ping_ack_count = 0;
+
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
   uint32_t target_incoming_window = GPR_MAX(
@@ -307,6 +320,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
                                           0, announced, &throwaway_stats));
+    t->ping_state.pings_before_data_required =
+        t->ping_policy.max_pings_without_data;
   }
 
   maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
