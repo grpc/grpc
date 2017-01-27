@@ -989,6 +989,8 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
+    /* Skip creating a composite error in the case that only one error was
+       logged */
     grpc_error *e = bctl->errors[0];
     bctl->errors[0] = NULL;
     return e;
