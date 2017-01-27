@@ -2022,7 +2022,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (uint32_t)(max_recv_bytes - s->incoming_window_delta);
     bool new_window_write_is_covered_by_poller =
         s->incoming_window_delta + initial_window_size < (int64_t)have_already;
-    bool force_send = (s->incoming_window_delta - s->announce_window <
+    bool force_send = (s->incoming_window_delta - s->announce_window <=
                        -(int64_t)initial_window_size / 2);
     /*    gpr_log(GPR_DEBUG, "%d %d %d",
                 (int)(s->incoming_window_delta - s->announce_window),

@@ -316,7 +316,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   uint32_t threshold_to_send_transport_window_update =
       t->outbuf.count > 0 ? 3 * target_incoming_window / 4
                           : target_incoming_window / 2;
-  if (t->incoming_window < threshold_to_send_transport_window_update) {
+  if (t->incoming_window <= threshold_to_send_transport_window_update) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
     uint32_t announced = (uint32_t)GPR_CLAMP(
