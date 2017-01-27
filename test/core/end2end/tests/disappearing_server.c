@@ -194,7 +194,8 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
-  gpr_log(GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
+          config.name);
 
   config.init_client(&f, NULL);
   config.init_server(&f, NULL);
