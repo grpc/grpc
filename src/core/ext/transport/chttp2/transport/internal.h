@@ -303,6 +303,11 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
 
+  /** ping acks */
+  size_t ping_ack_count;
+  size_t ping_ack_capacity;
+  uint64_t *ping_acks;
+
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -317,8 +322,6 @@ struct grpc_chttp2_transport {
 
   /** initial window change */
   int64_t initial_window_update;
-  /** did the current parse see actual data bytes? */
-  bool parse_saw_data_frames;
 
   /** window available for peer to send to us */
   int64_t incoming_window;
@@ -352,7 +355,6 @@ struct grpc_chttp2_transport {
   grpc_pid_controller pid_controller;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
-  gpr_timespec last_bdp_ping_finished;
   gpr_timespec last_pid_update;
 
   /* if non-NULL, close the transport with this error when writes are finished
@@ -656,7 +658,8 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                uint32_t stream_id, int64_t val1, int64_t val2);
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_chttp2_stream *stream, grpc_error *error);
+                             grpc_chttp2_stream *stream,
+                             grpc_status_code status, grpc_slice *details);
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t,
                                     grpc_chttp2_stream *s, int close_reads,

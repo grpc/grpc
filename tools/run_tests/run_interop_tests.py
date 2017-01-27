@@ -406,7 +406,7 @@ class PythonLanguage:
 
   def client_cmd_http2interop(self, args):
     return [ 'py27/bin/python',
-              'src/python/grpcio_tests/tests/http2/_negative_http2_client.py',
+              'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
            ] + args
 
   def cloud_to_prod_env(self):

@@ -37,7 +37,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -188,8 +187,9 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
-    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
-            grpc_error_string(error));
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s", msg);
+    grpc_error_free_string(msg);
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
@@ -260,16 +260,14 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
   // Get name from args.
-  const char *path = args->uri->path;
+  char *path = args->uri->path;
   if (path[0] == '/') ++path;
-  // Get proxy name, if any.
-  char *proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
-  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
+  r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
   r->interested_parties = grpc_pollset_set_create();

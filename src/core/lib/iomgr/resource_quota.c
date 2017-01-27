@@ -397,15 +397,11 @@ static void ru_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
-static const grpc_slice_refcount_vtable ru_slice_vtable = {
-    ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
-
 static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
                                   size_t size) {
   ru_slice_refcount *rc = gpr_malloc(sizeof(ru_slice_refcount) + size);
-  rc->base.vtable = &ru_slice_vtable;
-  rc->base.sub_refcount = &rc->base;
+  rc->base.ref = ru_slice_ref;
+  rc->base.unref = ru_slice_unref;
   gpr_ref_init(&rc->refs, 1);
   rc->resource_user = resource_user;
   rc->size = size;

@@ -81,7 +81,7 @@ typedef struct {
   grpc_call_stack *call_stack;
   const void *server_transport_data;
   grpc_call_context_element *context;
-  grpc_slice path;
+  grpc_mdstr *path;
   gpr_timespec start_time;
   gpr_timespec deadline;
 } grpc_call_element_args;
@@ -238,7 +238,7 @@ grpc_error *grpc_call_stack_init(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
     int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
     grpc_call_context_element *context, const void *transport_server_data,
-    grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
+    grpc_mdstr *path, gpr_timespec start_time, gpr_timespec deadline,
     grpc_call_stack *call_stack);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
@@ -299,9 +299,18 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem, grpc_transport_stream_op *op);
 
-void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *cur_elem,
-                                    grpc_error *error);
+void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *cur_elem);
+
+void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_element *cur_elem,
+                                                grpc_status_code status,
+                                                grpc_slice *optional_message);
+
+void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *cur_elem,
+                                               grpc_status_code status,
+                                               grpc_slice *optional_message);
 
 extern int grpc_trace_channel;
 

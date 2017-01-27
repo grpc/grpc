@@ -29,6 +29,8 @@
 
 cimport cpython
 
+import traceback
+
 
 cdef class ChannelCredentials:
 
@@ -138,15 +140,22 @@ cdef class AuthMetadataContext:
 cdef void plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
+  called_flag = [False]
   def python_callback(
       Metadata metadata, grpc_status_code status,
       bytes error_details):
     cb(user_data, metadata.c_metadata_array.metadata,
        metadata.c_metadata_array.count, status, error_details)
+    called_flag[0] = True
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
   cdef AuthMetadataContext cy_context = AuthMetadataContext()
   cy_context.context = context
-  self.plugin_callback(cy_context, python_callback)
+  try:
+    self.plugin_callback(cy_context, python_callback)
+  except Exception as error:
+    if not called_flag[0]:
+      cb(user_data, Metadata([]).c_metadata_array.metadata,
+         0, StatusCode.unknown, traceback.format_exc().encode())
 
 cdef void plugin_destroy_c_plugin_state(void *state) with gil:
   cpython.Py_DECREF(<CredentialsMetadataPlugin>state)
