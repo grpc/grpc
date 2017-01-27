@@ -375,9 +375,14 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     return err;
   }
 
+  uint32_t target_incoming_window = GPR_MAX(
+      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      1024);
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
-  grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
+  if (t->incoming_window < target_incoming_window / 2) {
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
+  }
 
   if (s != NULL) {
     if (incoming_frame_size >
