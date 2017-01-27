@@ -117,13 +117,13 @@ static void test_invoke_request_with_flags(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  char *details = NULL;
+  size_t details_capacity = 0;
   grpc_call_error expectation;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -140,7 +140,7 @@ static void test_invoke_request_with_flags(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
@@ -149,7 +149,7 @@ static void test_invoke_request_with_flags(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
@@ -157,6 +157,7 @@ static void test_invoke_request_with_flags(
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
@@ -167,9 +168,9 @@ static void test_invoke_request_with_flags(
   if (expectation == GRPC_CALL_OK) {
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
-    grpc_slice_unref(details);
   }
 
+  gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);

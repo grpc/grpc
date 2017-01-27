@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,38 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
-#define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#include "src/core/ext/client_channel/http_proxy.h"
 
-#include <grpc/slice.h>
-#include "src/core/lib/iomgr/error.h"
+#include <stdbool.h>
+#include <string.h>
 
-grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice);
-grpc_error *grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
-#endif /* GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H */
+#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/lib/support/env.h"
+
+char* grpc_get_http_proxy_server() {
+  char* uri_str = gpr_getenv("http_proxy");
+  if (uri_str == NULL) return NULL;
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  char* proxy_name = NULL;
+  if (uri == NULL || uri->authority == NULL) {
+    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
+    goto done;
+  }
+  if (strcmp(uri->scheme, "http") != 0) {
+    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
+    goto done;
+  }
+  if (strchr(uri->authority, '@') != NULL) {
+    gpr_log(GPR_ERROR, "userinfo not supported in proxy URI");
+    goto done;
+  }
+  proxy_name = gpr_strdup(uri->authority);
+done:
+  gpr_free(uri_str);
+  grpc_uri_destroy(uri);
+  return proxy_name;
+}

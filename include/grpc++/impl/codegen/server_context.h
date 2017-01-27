@@ -39,7 +39,6 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
-#include <grpc++/impl/codegen/metadata_map.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
@@ -124,7 +123,7 @@ class ServerContext {
 
   const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
       const {
-    return *client_metadata_.map();
+    return client_metadata_;
   }
 
   grpc_compression_level compression_level() const {
@@ -224,7 +223,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  MetadataMap client_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 

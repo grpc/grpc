@@ -124,7 +124,7 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
   }
   const char *msg = grpc_error_string(error);
   gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
-
+  grpc_error_free_string(msg);
   if (!h->shutdown) {
     // TODO(ctiller): It is currently necessary to shutdown endpoints
     // before destroying them, even if we know that there are no

@@ -51,13 +51,6 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
-cdef extern from "grpc/impl/codegen/exec_ctx_fwd.h":
-
-  struct grpc_exec_ctx:
-    # We don't care about the internals
-    pass
-
-
 cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_slice:
@@ -67,7 +60,6 @@ cdef extern from "grpc/grpc.h":
 
   grpc_slice grpc_slice_ref(grpc_slice s) nogil
   void grpc_slice_unref(grpc_slice s) nogil
-  grpc_slice grpc_empty_slice() nogil
   grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
   grpc_slice grpc_slice_new_with_len(
       void *p, size_t len, void (*destroy)(void *, size_t)) nogil
@@ -183,7 +175,7 @@ cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_arg_pointer_vtable:
     void *(*copy)(void *)
-    void (*destroy)(grpc_exec_ctx *, void *)
+    void (*destroy)(void *)
     int (*cmp)(void *, void *)
 
   ctypedef struct grpc_arg_value_pointer:
@@ -225,8 +217,9 @@ cdef extern from "grpc/grpc.h":
     GRPC_CHANNEL_SHUTDOWN
 
   ctypedef struct grpc_metadata:
-    grpc_slice key
-    grpc_slice value
+    const char *key
+    const char *value
+    size_t value_length
     # ignore the 'internal_data.obfuscated' fields.
 
   ctypedef enum grpc_completion_type:
@@ -248,8 +241,10 @@ cdef extern from "grpc/grpc.h":
   void grpc_metadata_array_destroy(grpc_metadata_array *array) nogil
 
   ctypedef struct grpc_call_details:
-    grpc_slice method
-    grpc_slice host
+    char *method
+    size_t method_capacity
+    char *host
+    size_t host_capacity
     gpr_timespec deadline
 
   void grpc_call_details_init(grpc_call_details *details) nogil
@@ -273,22 +268,32 @@ cdef extern from "grpc/grpc.h":
     size_t trailing_metadata_count
     grpc_metadata *trailing_metadata
     grpc_status_code status
-    grpc_slice *status_details
+    const char *status_details
 
   ctypedef struct grpc_op_data_recv_status_on_client:
     grpc_metadata_array *trailing_metadata
     grpc_status_code *status
-    grpc_slice *status_details
+    char **status_details
+    size_t *status_details_capacity
 
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
 
+  ctypedef struct grpc_op_data_send_message:
+    grpc_byte_buffer *send_message
+
+  ctypedef struct grpc_op_data_receive_message:
+    grpc_byte_buffer **receive_message "recv_message"
+
+  ctypedef struct grpc_op_data_receive_initial_metadata:
+    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
+
   union grpc_op_data:
     grpc_op_data_send_initial_metadata send_initial_metadata
-    grpc_byte_buffer *send_message
+    grpc_op_data_send_message send_message
     grpc_op_data_send_status_from_server send_status_from_server
-    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
-    grpc_byte_buffer **receive_message "recv_message"
+    grpc_op_data_receive_initial_metadata receive_initial_metadata "recv_initial_metadata"
+    grpc_op_data_receive_message receive_message "recv_message"
     grpc_op_data_recv_status_on_client receive_status_on_client "recv_status_on_client"
     grpc_op_data_recv_close_on_server receive_close_on_server "recv_close_on_server"
 
@@ -325,9 +330,9 @@ cdef extern from "grpc/grpc.h":
                                              const grpc_channel_args *args,
                                              void *reserved) nogil
   grpc_call *grpc_channel_create_call(
-    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *completion_queue, grpc_slice method,
-    const grpc_slice *host, gpr_timespec deadline, void *reserved) nogil
+      grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+      grpc_completion_queue *completion_queue, const char *method,
+      const char *host, gpr_timespec deadline, void *reserved) nogil
   grpc_connectivity_state grpc_channel_check_connectivity_state(
       grpc_channel *channel, int try_to_connect) nogil
   void grpc_channel_watch_connectivity_state(
@@ -477,7 +482,8 @@ cdef extern from "grpc/compression.h":
     grpc_compression_algorithm default_compression_algorithm
 
   int grpc_compression_algorithm_parse(
-      grpc_slice value, grpc_compression_algorithm *algorithm) nogil
+      const char *name, size_t name_length,
+      grpc_compression_algorithm *algorithm) nogil
   int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                       char **name) nogil
   grpc_compression_algorithm grpc_compression_algorithm_for_level(
