@@ -200,7 +200,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   return grpc_channel_create_call(_unmanagedChannel,
                                   NULL, GRPC_PROPAGATE_DEFAULTS,
                                   queue.unmanagedQueue,
-                                  path.UTF8String,
+                                  grpc_slice_from_copied_string(path.UTF8String),
                                   NULL, // Passing NULL for host
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }

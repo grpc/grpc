@@ -50,7 +50,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -109,15 +109,30 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {
-      {"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_t[2] = {
-      {"key5", "val5", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key6", "val6", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
+                              grpc_slice_from_static_string("val1"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}},
+                             {grpc_slice_from_static_string("key2"),
+                              grpc_slice_from_static_string("val2"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_s[2] = {{grpc_slice_from_static_string("key3"),
+                              grpc_slice_from_static_string("val3"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}},
+                             {grpc_slice_from_static_string("key4"),
+                              grpc_slice_from_static_string("val4"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_t[2] = {{grpc_slice_from_static_string("key5"),
+                              grpc_slice_from_static_string("val5"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}},
+                             {grpc_slice_from_static_string("key6"),
+                              grpc_slice_from_static_string("val6"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -131,13 +146,13 @@ static void test_request_response_with_metadata_and_payload(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
-      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -177,7 +192,6 @@ static void test_request_response_with_metadata_and_payload(
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -226,7 +240,8 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_status_from_server.trailing_metadata_count = 2;
   op->data.send_status_from_server.trailing_metadata = meta_t;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -238,8 +253,8 @@ static void test_request_response_with_metadata_and_payload(
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
@@ -251,7 +266,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(contains_metadata(&trailing_metadata_recv, "key5", "val5"));
   GPR_ASSERT(contains_metadata(&trailing_metadata_recv, "key6", "val6"));
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
