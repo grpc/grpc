@@ -68,12 +68,16 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
     if (field->key == NULL) continue;
     if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
       if (max_request_message_bytes >= 0) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return NULL;
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        return NULL;
+      }
       max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
       if (max_request_message_bytes == -1) return NULL;
     } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
       if (max_response_message_bytes >= 0) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return NULL;
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        return NULL;
+      }
       max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
       if (max_response_message_bytes == -1) return NULL;
     }

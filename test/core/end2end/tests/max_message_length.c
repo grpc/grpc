@@ -108,9 +108,12 @@ static void end_test(grpc_end2end_test_fixture *f) {
 // recv limit on server.
 static void test_max_message_length_on_request(grpc_end2end_test_config config,
                                                bool send_limit,
-                                               bool use_service_config) {
-  gpr_log(GPR_INFO, "testing request with send_limit=%d use_service_config=%d",
-          send_limit, use_service_config);
+                                               bool use_service_config,
+                                               bool use_string_json_value) {
+  gpr_log(GPR_INFO,
+          "testing request with send_limit=%d use_service_config=%d "
+          "use_string_json_value=%d",
+          send_limit, use_service_config, use_string_json_value);
 
   grpc_end2end_test_fixture f;
   grpc_call *c = NULL;
@@ -142,14 +145,23 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     arg.type = GRPC_ARG_STRING;
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
-        "{\n"
-        "  \"methodConfig\": [ {\n"
-        "    \"name\": [\n"
-        "      { \"service\": \"service\", \"method\": \"method\" }\n"
-        "    ],\n"
-        "    \"maxRequestMessageBytes\": \"5\"\n"
-        "  } ]\n"
-        "}";
+        use_string_json_value
+            ? "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"maxRequestMessageBytes\": \"5\"\n"
+              "  } ]\n"
+              "}"
+            : "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"maxRequestMessageBytes\": 5\n"
+              "  } ]\n"
+              "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   } else {
     // Set limit via channel args.
@@ -286,9 +298,12 @@ done:
 // recv limit on client.
 static void test_max_message_length_on_response(grpc_end2end_test_config config,
                                                 bool send_limit,
-                                                bool use_service_config) {
-  gpr_log(GPR_INFO, "testing response with send_limit=%d use_service_config=%d",
-          send_limit, use_service_config);
+                                                bool use_service_config,
+                                                bool use_string_json_value) {
+  gpr_log(GPR_INFO,
+          "testing response with send_limit=%d use_service_config=%d "
+          "use_string_json_value=%d",
+          send_limit, use_service_config, use_string_json_value);
 
   grpc_end2end_test_fixture f;
   grpc_call *c = NULL;
@@ -320,14 +335,23 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     arg.type = GRPC_ARG_STRING;
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
-        "{\n"
-        "  \"methodConfig\": [ {\n"
-        "    \"name\": [\n"
-        "      { \"service\": \"service\", \"method\": \"method\" }\n"
-        "    ],\n"
-        "    \"maxResponseMessageBytes\": \"5\"\n"
-        "  } ]\n"
-        "}";
+        use_string_json_value
+            ? "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"maxResponseMessageBytes\": \"5\"\n"
+              "  } ]\n"
+              "}"
+            : "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"maxResponseMessageBytes\": 5\n"
+              "  } ]\n"
+              "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   } else {
     // Set limit via channel args.
@@ -462,17 +486,29 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
 void max_message_length(grpc_end2end_test_config config) {
   test_max_message_length_on_request(config, false /* send_limit */,
-                                     false /* use_service_config */);
+                                     false /* use_service_config */,
+                                     false /* use_string_json_value */);
   test_max_message_length_on_request(config, true /* send_limit */,
-                                     false /* use_service_config */);
+                                     false /* use_service_config */,
+                                     false /* use_string_json_value */);
   test_max_message_length_on_response(config, false /* send_limit */,
-                                      false /* use_service_config */);
+                                      false /* use_service_config */,
+                                      false /* use_string_json_value */);
   test_max_message_length_on_response(config, true /* send_limit */,
-                                      false /* use_service_config */);
+                                      false /* use_service_config */,
+                                      false /* use_string_json_value */);
   test_max_message_length_on_request(config, true /* send_limit */,
-                                     true /* use_service_config */);
+                                     true /* use_service_config */,
+                                     false /* use_string_json_value */);
+  test_max_message_length_on_request(config, true /* send_limit */,
+                                     true /* use_service_config */,
+                                     true /* use_string_json_value */);
   test_max_message_length_on_response(config, false /* send_limit */,
-                                      true /* use_service_config */);
+                                      true /* use_service_config */,
+                                      false /* use_string_json_value */);
+  test_max_message_length_on_response(config, false /* send_limit */,
+                                      true /* use_service_config */,
+                                      true /* use_string_json_value */);
 }
 
 void max_message_length_pre_init(void) {}
