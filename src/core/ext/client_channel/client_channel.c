@@ -43,6 +43,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/http_proxy.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/subchannel.h"
@@ -52,6 +54,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -87,7 +90,7 @@ static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *p) {
   gpr_free(p);
 }
 
-static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
+static const grpc_slice_hash_table_vtable method_parameters_vtable = {
     method_parameters_free, method_parameters_copy};
 
 static void *method_parameters_create_from_json(const grpc_json *json) {
@@ -150,6 +153,10 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
  */
 
 typedef struct client_channel_channel_data {
+  /** server name */
+  char *server_name;
+  /** HTTP CONNECT proxy to use, if any */
+  char *proxy_name;
   /** resolver for this channel */
   grpc_resolver *resolver;
   /** have we started resolving this channel */
@@ -165,7 +172,7 @@ typedef struct client_channel_channel_data {
   /** service config in JSON form */
   char *service_config_json;
   /** maps method names to method_parameters structs */
-  grpc_mdstr_hash_table *method_params_table;
+  grpc_slice_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_channel_args *resolver_result;
   /** a list of closures that are all waiting for config to come in */
@@ -267,7 +274,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
-  grpc_mdstr_hash_table *method_params_table = NULL;
+  grpc_slice_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
@@ -310,6 +317,17 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
     if (lb_policy_name == NULL) lb_policy_name = "pick_first";
+    // If using a proxy, add channel arg for server in HTTP CONNECT request.
+    if (chand->proxy_name != NULL) {
+      grpc_arg new_arg;
+      new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
+      new_arg.type = GRPC_ARG_STRING;
+      new_arg.value.string = chand->server_name;
+      grpc_channel_args *tmp_args = chand->resolver_result;
+      chand->resolver_result =
+          grpc_channel_args_copy_and_add(chand->resolver_result, &new_arg, 1);
+      grpc_channel_args_destroy(exec_ctx, tmp_args);
+    }
     // Instantiate LB policy.
     grpc_lb_policy_args lb_policy_args;
     lb_policy_args.args = chand->resolver_result;
@@ -362,7 +380,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     chand->service_config_json = service_config_json;
   }
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
+    grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
   if (lb_policy != NULL) {
@@ -528,9 +546,12 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  chand->resolver =
-      grpc_resolver_create(exec_ctx, arg->value.string, args->channel_args,
-                           chand->interested_parties);
+  chand->server_name = gpr_strdup(arg->value.string);
+  chand->proxy_name = grpc_get_http_proxy_server();
+  char *name_to_resolve =
+      chand->proxy_name == NULL ? chand->server_name : chand->proxy_name;
+  chand->resolver = grpc_resolver_create(
+      exec_ctx, name_to_resolve, args->channel_args, chand->interested_parties);
   if (chand->resolver == NULL) {
     return GRPC_ERROR_CREATE("resolver creation failed");
   }
@@ -541,7 +562,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-
+  gpr_free(chand->server_name);
+  gpr_free(chand->proxy_name);
   if (chand->resolver != NULL) {
     grpc_resolver_shutdown(exec_ctx, chand->resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
@@ -558,7 +580,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   gpr_free(chand->lb_policy_name);
   gpr_free(chand->service_config_json);
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
+    grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -593,7 +615,7 @@ typedef struct client_channel_call_data {
   // to avoid this without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
-  grpc_mdstr *path;  // Request path.
+  grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
   wait_for_ready_value wait_for_ready_from_service_config;
@@ -997,10 +1019,10 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     // Get the method config table from channel data.
     gpr_mu_lock(&chand->mu);
-    grpc_mdstr_hash_table *method_params_table = NULL;
+    grpc_slice_hash_table *method_params_table = NULL;
     if (chand->method_params_table != NULL) {
       method_params_table =
-          grpc_mdstr_hash_table_ref(chand->method_params_table);
+          grpc_slice_hash_table_ref(chand->method_params_table);
     }
     gpr_mu_unlock(&chand->mu);
     // If the method config table was present, use it.
@@ -1029,7 +1051,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_mu_unlock(&calld->mu);
         }
       }
-      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
+      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
@@ -1043,7 +1065,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   // Initialize data members.
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
-  calld->path = GRPC_MDSTR_REF(args->path);
+  calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
@@ -1067,8 +1089,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   if (chand->lb_policy != NULL) {
     // We already have a resolver result, so check for service config.
     if (chand->method_params_table != NULL) {
-      grpc_mdstr_hash_table *method_params_table =
-          grpc_mdstr_hash_table_ref(chand->method_params_table);
+      grpc_slice_hash_table *method_params_table =
+          grpc_slice_hash_table_ref(chand->method_params_table);
       gpr_mu_unlock(&chand->mu);
       method_parameters *method_params = grpc_method_config_table_get(
           exec_ctx, method_params_table, args->path);
@@ -1084,7 +1106,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
               method_params->wait_for_ready;
         }
       }
-      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
+      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
     } else {
       gpr_mu_unlock(&chand->mu);
     }
@@ -1113,7 +1135,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
   grpc_deadline_state_destroy(exec_ctx, elem);
-  GRPC_MDSTR_UNREF(exec_ctx, calld->path);
+  grpc_slice_unref_internal(exec_ctx, calld->path);
   GRPC_ERROR_UNREF(calld->cancel_error);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {

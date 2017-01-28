@@ -1218,13 +1218,15 @@ void PrintSourceService(Printer *printer, const Service *service,
                         std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
-  printer->Print(*vars,
-                 "static const char* $prefix$$Service$_method_names[] = {\n");
-  for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["Method"] = service->method(i).get()->name();
-    printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
+  if (service->method_count() > 0) {
+    printer->Print(*vars,
+                   "static const char* $prefix$$Service$_method_names[] = {\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      (*vars)["Method"] = service->method(i).get()->name();
+      printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
+    }
+    printer->Print(*vars, "};\n\n");
   }
-  printer->Print(*vars, "};\n\n");
 
   printer->Print(*vars,
                  "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
@@ -1272,7 +1274,6 @@ void PrintSourceService(Printer *printer, const Service *service,
 
   printer->Print(*vars, "$ns$$Service$::Service::Service() {\n");
   printer->Indent();
-  printer->Print(*vars, "(void)$prefix$$Service$_method_names;\n");
   for (int i = 0; i < service->method_count(); ++i) {
     auto method = service->method(i);
     (*vars)["Idx"] = as_string(i);
