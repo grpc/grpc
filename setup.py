@@ -263,6 +263,7 @@ setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
   license=LICENSE,
+  description='An RPC library and framework',
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
