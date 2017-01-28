@@ -627,9 +627,17 @@ BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
 
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
     ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, SockPair)
+    ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcessCHTTP2)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, TCP)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, UDS)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, SockPair)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
     ->Range(0, 128 * 1024 * 1024);
