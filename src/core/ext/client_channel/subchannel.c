@@ -43,6 +43,7 @@
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/initial_connect_string.h"
 #include "src/core/ext/client_channel/parse_address.h"
+#include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -332,13 +333,24 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_resolved_address *addr = gpr_malloc(sizeof(*addr));
   grpc_get_subchannel_address_arg(args->args, addr);
   grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
-  static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-  grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
+  grpc_resolved_address *new_address = NULL;
+  grpc_channel_args *new_args = NULL;
+  if (grpc_proxy_mappers_map(exec_ctx, addr, args->args, &new_address,
+                             &new_args)) {
+    GPR_ASSERT(new_address != NULL);
+    gpr_free(addr);
+    addr = new_address;
+    if (new_args != NULL) c->args = new_args;
+  }
+  if (c->args == NULL) {
+    static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
+    grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
+    c->args = grpc_channel_args_copy_and_add_and_remove(
+        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg,
+        1);
+    gpr_free(new_arg.value.string);
+  }
   gpr_free(addr);
-  c->args = grpc_channel_args_copy_and_add_and_remove(
-      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
-  gpr_free(new_arg.value.string);
-
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c,
@@ -625,9 +637,8 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "error initializing subchannel stack: %s", msg);
-    grpc_error_free_string(msg);
+    gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
+            grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     abort(); /* TODO(ctiller): what to do here? */
   }
@@ -692,7 +703,6 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
 
     const char *errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-    grpc_error_free_string(errmsg);
 
     maybe_start_connecting_locked(exec_ctx, c);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
@@ -751,7 +761,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_polling_entity *pollent, grpc_mdstr *path, gpr_timespec start_time,
+    grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
     gpr_timespec deadline, grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
@@ -763,7 +773,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-    grpc_error_free_string(error_string);
+
     gpr_free(*call);
     return error;
   }

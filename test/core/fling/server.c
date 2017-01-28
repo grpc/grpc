@@ -107,18 +107,18 @@ static void handle_unary_method(void) {
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &terminal_buffer;
+  op->data.recv_message.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
-  op->data.send_message = payload_buffer;
+  op->data.send_message.send_message = payload_buffer;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status_details = "";
+  op->data.send_status_from_server.status_details = NULL;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -144,7 +144,7 @@ static void start_read_op(int t) {
   grpc_call_error error;
   /* Starting read at server */
   read_op.op = GRPC_OP_RECV_MESSAGE;
-  read_op.data.recv_message = &payload_buffer;
+  read_op.data.recv_message.recv_message = &payload_buffer;
   error = grpc_call_start_batch(call, &read_op, 1, tag(t), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -157,7 +157,7 @@ static void start_write_op(void) {
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
-  write_op.data.send_message = payload_buffer;
+  write_op.data.send_message.send_message = payload_buffer;
   error = grpc_call_start_batch(call, &write_op, 1, tagarg, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -168,7 +168,7 @@ static void start_send_status(void) {
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
-  status_op[0].data.send_status_from_server.status_details = "";
+  status_op[0].data.send_status_from_server.status_details = NULL;
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
@@ -259,8 +259,8 @@ int main(int argc, char **argv) {
         switch ((intptr_t)s) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != NULL) {
-              if (0 ==
-                  strcmp(call_details.method, "/Reflector/reflectStream")) {
+              if (0 == grpc_slice_str_cmp(call_details.method,
+                                          "/Reflector/reflectStream")) {
                 /* Received streaming call. Send metadata here. */
                 start_read_op(FLING_SERVER_READ_FOR_STREAMING);
                 send_initial_metadata();

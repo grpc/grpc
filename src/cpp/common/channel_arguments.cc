@@ -143,6 +143,14 @@ void ChannelArguments::SetResourceQuota(
                        grpc_resource_quota_arg_vtable());
 }
 
+void ChannelArguments::SetMaxReceiveMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, size);
+}
+
+void ChannelArguments::SetMaxSendMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, size);
+}
+
 void ChannelArguments::SetLoadBalancingPolicyName(
     const grpc::string& lb_policy_name) {
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
