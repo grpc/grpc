@@ -83,10 +83,10 @@ DEFINE_string(outfile, "", "Output file (default is stdout)");
 static bool SimplePrint(const grpc::string& outfile,
                         const grpc::string& output) {
   if (outfile.empty()) {
-    std::cout << output;
+    std::cout << output << std::endl;
   } else {
-    std::ofstream output_file(outfile, std::ios::trunc | std::ios::binary);
-    output_file << output;
+    std::ofstream output_file(outfile, std::ios::app | std::ios::binary);
+    output_file << output << std::endl;
     output_file.close();
   }
   return true;
@@ -94,8 +94,8 @@ static bool SimplePrint(const grpc::string& outfile,
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-
-  return grpc::testing::GrpcToolMainLib(
+  grpc::testing::GrpcTool grpc_tool;
+  return grpc_tool.GrpcToolMainLib(
       argc, (const char**)argv, grpc::testing::CliCredentials(),
       std::bind(SimplePrint, FLAGS_outfile, std::placeholders::_1));
 }
