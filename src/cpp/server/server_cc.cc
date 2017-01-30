@@ -779,9 +779,7 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
 bool Server::HealthCheckAsyncRequest::FinalizeResult(void** tag, bool* status) {
   bool serialization_status =
       *status && payload_ &&
-      SerializationTraits<ByteBuffer>::Deserialize(
-          payload_, &request_, server_->max_receive_message_size())
-          .ok();
+      SerializationTraits<ByteBuffer>::Deserialize(payload_, &request_).ok();
   RegisteredAsyncRequest::FinalizeResult(tag, status);
   *status = serialization_status && *status;
   if (*status) {
