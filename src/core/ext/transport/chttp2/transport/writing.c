@@ -335,9 +335,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   }
   t->ping_ack_count = 0;
 
-  if (t->outbuf.count > 0) {
-    maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
-  }
+  maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 

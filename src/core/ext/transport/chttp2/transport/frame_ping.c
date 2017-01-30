@@ -103,7 +103,8 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     } else {
       if (t->ping_ack_count == t->ping_ack_capacity) {
         t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-        t->ping_acks = gpr_realloc(t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
+        t->ping_acks = gpr_realloc(
+            t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
       }
       t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
       grpc_chttp2_initiate_write(exec_ctx, t, false, "ping response");
