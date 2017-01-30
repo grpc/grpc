@@ -51,7 +51,7 @@ class ServerStreamingCall extends AbstractCall
      */
     public function start($data, array $metadata = [], array $options = [])
     {
-        $message_array = ['message' => $this->serializeMessage($data)];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
@@ -73,7 +73,7 @@ class ServerStreamingCall extends AbstractCall
             OP_RECV_MESSAGE => true,
         ])->message;
         while ($response !== null) {
-            yield $this->deserializeResponse($response);
+            yield $this->_deserializeResponse($response);
             $response = $this->call->startBatch([
                 OP_RECV_MESSAGE => true,
             ])->message;
