@@ -406,6 +406,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
   }
 
+  t->ping_state.pings_before_data_required = t->ping_policy.max_pings_without_data;
+
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
   post_benign_reclaimer(exec_ctx, t);
 }
