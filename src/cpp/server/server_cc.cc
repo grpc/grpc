@@ -186,7 +186,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_, server->max_receive_message_size_),
+          call_(mrd->call_, server, &cq_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
                mrd->request_metadata_.count),
           has_request_payload_(mrd->has_request_payload_),
@@ -208,8 +208,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_, call_.max_receive_message_size()));
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
@@ -589,7 +589,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
+  Call call(call_, server_, call_cq_);
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }

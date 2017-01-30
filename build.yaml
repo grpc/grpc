@@ -397,11 +397,14 @@ filegroups:
   - src/core/ext/client_channel/client_channel_factory.h
   - src/core/ext/client_channel/connector.h
   - src/core/ext/client_channel/http_connect_handshaker.h
+  - src/core/ext/client_channel/http_proxy.h
   - src/core/ext/client_channel/initial_connect_string.h
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
   - src/core/ext/client_channel/parse_address.h
+  - src/core/ext/client_channel/proxy_mapper.h
+  - src/core/ext/client_channel/proxy_mapper_registry.h
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
   - src/core/ext/client_channel/resolver_registry.h
@@ -416,11 +419,14 @@ filegroups:
   - src/core/ext/client_channel/connector.c
   - src/core/ext/client_channel/default_initial_connect_string.c
   - src/core/ext/client_channel/http_connect_handshaker.c
+  - src/core/ext/client_channel/http_proxy.c
   - src/core/ext/client_channel/initial_connect_string.c
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
   - src/core/ext/client_channel/parse_address.c
+  - src/core/ext/client_channel/proxy_mapper.c
+  - src/core/ext/client_channel/proxy_mapper_registry.c
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
   - src/core/ext/client_channel/resolver_registry.c
@@ -2494,6 +2500,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: resolve_address_posix_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: resolve_address_test
   build: test
   language: c
@@ -3255,12 +3275,12 @@ targets:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_test.cc
   deps:
-  - gpr
-  - gpr_test_util
-  - grpc
-  - grpc++
   - grpc++_test_util
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: http2_client
   build: test
   run: false

@@ -237,7 +237,7 @@ static void test_send_null_message() {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = NULL;
+  op->data.send_message.send_message = NULL;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -263,12 +263,12 @@ static void test_send_messages_at_the_same_time() {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = tag(2);
+  op->data.send_message.send_message = tag(2);
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -307,7 +307,8 @@ static void test_receive_initial_metadata_twice_at_client() {
   prepare_test(1);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &g_state.initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &g_state.initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -318,7 +319,8 @@ static void test_receive_initial_metadata_twice_at_client() {
   cq_verify(g_state.cqv);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &g_state.initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &g_state.initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -336,7 +338,7 @@ static void test_receive_message_with_invalid_flags() {
   prepare_test(1);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &payload;
+  op->data.recv_message.recv_message = &payload;
   op->flags = 1;
   op->reserved = NULL;
   op++;
@@ -354,12 +356,12 @@ static void test_receive_two_messages_at_the_same_time() {
   prepare_test(1);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &payload;
+  op->data.recv_message.recv_message = &payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &payload;
+  op->data.recv_message.recv_message = &payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;

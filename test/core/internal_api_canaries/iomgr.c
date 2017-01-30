@@ -92,7 +92,7 @@ static void test_code(void) {
   grpc_endpoint_read(&exec_ctx, &endpoint, NULL, NULL);
   grpc_endpoint_get_peer(&endpoint);
   grpc_endpoint_write(&exec_ctx, &endpoint, NULL, NULL);
-  grpc_endpoint_shutdown(&exec_ctx, &endpoint);
+  grpc_endpoint_shutdown(&exec_ctx, &endpoint, GRPC_ERROR_CANCELLED);
   grpc_endpoint_destroy(&exec_ctx, &endpoint);
   grpc_endpoint_add_to_pollset(&exec_ctx, &endpoint, NULL);
   grpc_endpoint_add_to_pollset_set(&exec_ctx, &endpoint, NULL);

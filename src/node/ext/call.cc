@@ -238,7 +238,7 @@ class SendMessageOp : public Op {
       }
     }
     send_message = BufferToByteBuffer(value);
-    out->data.send_message = send_message;
+    out->data.send_message.send_message = send_message;
     return true;
   }
   bool IsFinalOp() {
@@ -353,7 +353,7 @@ class GetMetadataOp : public Op {
   }
 
   bool ParseOp(Local<Value> value, grpc_op *out) {
-    out->data.recv_initial_metadata = &recv_metadata;
+    out->data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
     return true;
   }
   bool IsFinalOp() {
@@ -385,7 +385,7 @@ class ReadMessageOp : public Op {
   }
 
   bool ParseOp(Local<Value> value, grpc_op *out) {
-    out->data.recv_message = &recv_message;
+    out->data.recv_message.recv_message = &recv_message;
     return true;
   }
   bool IsFinalOp() {

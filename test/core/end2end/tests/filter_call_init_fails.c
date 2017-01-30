@@ -58,7 +58,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -148,7 +148,7 @@ static void test_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -157,7 +157,7 @@ static void test_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;

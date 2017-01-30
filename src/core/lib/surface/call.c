@@ -1530,6 +1530,8 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
+    /* Skip creating a composite error in the case that only one error was
+       logged */
     grpc_error *e = bctl->errors[0];
     bctl->errors[0] = NULL;
     return e;
@@ -1681,7 +1683,7 @@ static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
-  if (idx > 0) cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
+  if (idx == 0) cancel_with_error(exec_ctx, bctl->call, GRPC_ERROR_REF(error));
   bctl->errors[idx] = error;
 }
 
@@ -1845,7 +1847,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (op->data.send_message == NULL) {
+        if (op->data.send_message.send_message == NULL) {
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
@@ -1857,7 +1859,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->send_mode = SENDRECV_FULL_MESSAGE;
         grpc_slice_buffer_stream_init(
             &call->sending.full.stream,
-            &op->data.send_message->data.raw.slice_buffer, op->flags);
+            &op->data.send_message.send_message->data.raw.slice_buffer,
+            op->flags);
         stream_op->send_message = &call->sending.full.stream.base;
         break;
       case GRPC_OP_SEND_MESSAGE_INCREMENTAL_START:
@@ -1971,7 +1974,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
            that case we're not necessarily covered by a poller. */
         stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = 1;
-        call->buffered_metadata[0] = op->data.recv_initial_metadata;
+        call->buffered_metadata[0] =
+            op->data.recv_initial_metadata.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
@@ -1994,7 +1998,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         call->recv_mode = SENDRECV_FULL_MESSAGE;
         bctl->recv_message = 1;
-        call->receiving.full.buffer = op->data.recv_message;
+        call->receiving.full.buffer = op->data.recv_message.recv_message;
         stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_next_step, receiving_stream_ready,
                           bctl, grpc_schedule_on_exec_ctx);

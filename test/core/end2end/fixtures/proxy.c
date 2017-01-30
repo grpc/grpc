@@ -434,7 +434,8 @@ static void on_new_call(void *arg, int success) {
 
     op.op = GRPC_OP_RECV_INITIAL_METADATA;
     op.flags = 0;
-    op.data.recv_initial_metadata = &pc->p2s_initial_metadata;
+    op.data.recv_initial_metadata.recv_initial_metadata =
+        &pc->p2s_initial_metadata;
     refpc(pc, "on_p2s_recv_initial_metadata");
     err = grpc_call_start_batch(
         pc->p2s, &op, 1, new_closure(on_p2s_recv_initial_metadata, pc), NULL);

@@ -600,7 +600,7 @@ static void finish_start_new_rpc(
       grpc_op op;
       memset(&op, 0, sizeof(op));
       op.op = GRPC_OP_RECV_MESSAGE;
-      op.data.recv_message = &calld->payload;
+      op.data.recv_message.recv_message = &calld->payload;
       grpc_closure_init(&calld->publish, publish_new_rpc, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_start_batch_and_execute(exec_ctx, calld->call, &op, 1,
@@ -849,7 +849,8 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata = &calld->initial_metadata;
+  op.data.recv_initial_metadata.recv_initial_metadata =
+      &calld->initial_metadata;
   grpc_closure_init(&calld->got_initial_metadata, got_initial_metadata, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_call_start_batch_and_execute(exec_ctx, call, &op, 1,

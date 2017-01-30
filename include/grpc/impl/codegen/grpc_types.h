@@ -438,7 +438,9 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    grpc_byte_buffer *send_message;
+    struct {
+      struct grpc_byte_buffer *send_message;
+    } send_message;
     struct {
       uint32_t message_length;
     } send_message_incremental_start;
@@ -456,11 +458,15 @@ typedef struct grpc_op {
         object, recv_initial_metadata->array is owned by the caller).
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
-    grpc_metadata_array *recv_initial_metadata;
+    struct {
+      grpc_metadata_array *recv_initial_metadata;
+    } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    grpc_byte_buffer **recv_message;
+    struct {
+      struct grpc_byte_buffer **recv_message;
+    } recv_message;
     struct {
       uint32_t *message_length;
     } recv_message_incremental_start;

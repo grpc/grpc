@@ -120,7 +120,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -194,7 +194,8 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
-  gpr_log(GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
+          config.name);
 
   config.init_client(&f, NULL);
   config.init_server(&f, NULL);

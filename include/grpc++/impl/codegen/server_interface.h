@@ -198,9 +198,7 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) override {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(
-              payload_, request_, server_->max_receive_message_size())
-              .ok();
+          SerializationTraits<Message>::Deserialize(payload_, request_).ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
       *status = serialization_status && *status;
       return ret;
