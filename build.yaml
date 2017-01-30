@@ -188,6 +188,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
@@ -240,6 +241,7 @@ filegroups:
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
@@ -253,14 +255,17 @@ filegroups:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/lib/transport/mdstr_hash_table.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -349,6 +354,8 @@ filegroups:
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
+  - src/core/lib/slice/slice_hash_table.c
+  - src/core/lib/slice/slice_intern.c
   - src/core/lib/slice/slice_string_helpers.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
@@ -370,12 +377,13 @@ filegroups:
   - src/core/lib/surface/version.c
   - src/core/lib/transport/byte_stream.c
   - src/core/lib/transport/connectivity_state.c
-  - src/core/lib/transport/mdstr_hash_table.c
+  - src/core/lib/transport/error_utils.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/pid_controller.c
   - src/core/lib/transport/service_config.c
   - src/core/lib/transport/static_metadata.c
+  - src/core/lib/transport/status_conversion.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
@@ -594,11 +602,9 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
-  - src/core/ext/transport/chttp2/transport/http2_errors.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/status_conversion.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
@@ -618,7 +624,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/huffsyms.c
   - src/core/ext/transport/chttp2/transport/incoming_metadata.c
   - src/core/ext/transport/chttp2/transport/parsing.c
-  - src/core/ext/transport/chttp2/transport/status_conversion.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
   - src/core/ext/transport/chttp2/transport/varint.c
@@ -836,6 +841,7 @@ filegroups:
   - include/grpc++/impl/codegen/server_context.h
   - include/grpc++/impl/codegen/server_interface.h
   - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/slice.h
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
   - include/grpc++/impl/codegen/status_helper.h
@@ -1503,16 +1509,6 @@ targets:
   language: c
   src:
   - test/core/transport/chttp2/hpack_encoder_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_status_conversion_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/status_conversion_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2502,6 +2498,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: resolve_address_posix_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: resolve_address_test
   build: test
   language: c
@@ -2686,6 +2696,16 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: status_conversion_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
@@ -3790,36 +3810,6 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  easan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=address
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
-  edbg:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-  etsan:
-    CC: clang
-    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
-    CXX: clang++
-    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
-    LD: clang
-    LDFLAGS: -fsanitize=thread
-    LDXX: clang++
-    compile_the_world: true
-    test_environ:
-      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
@@ -3918,6 +3908,7 @@ node_modules:
   - src/node/ext/completion_queue.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
+  - src/node/ext/slice.h
   - src/node/ext/timeval.h
   js:
   - src/node/index.js
@@ -3939,6 +3930,7 @@ node_modules:
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
+  - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
