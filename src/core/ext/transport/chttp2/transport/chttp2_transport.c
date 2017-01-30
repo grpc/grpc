@@ -178,6 +178,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     t->write_cb_pool = next;
   }
 
+  gpr_free(t->ping_acks);
   gpr_free(t->peer_string);
   gpr_free(t);
 }
