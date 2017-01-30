@@ -55,8 +55,8 @@ void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                              grpc_handshaker* handshaker) {
-  handshaker->vtable->shutdown(exec_ctx, handshaker);
+                              grpc_handshaker* handshaker, grpc_error* why) {
+  handshaker->vtable->shutdown(exec_ctx, handshaker, why);
 }
 
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
@@ -141,14 +141,17 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
-                                     grpc_handshake_manager* mgr) {
+                                     grpc_handshake_manager* mgr,
+                                     grpc_error* why) {
   gpr_mu_lock(&mgr->mu);
   // Shutdown the handshaker that's currently in progress, if any.
   if (!mgr->shutdown && mgr->index > 0) {
     mgr->shutdown = true;
-    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1]);
+    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1],
+                             GRPC_ERROR_REF(why));
   }
   gpr_mu_unlock(&mgr->mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 // Helper function to call either the next handshaker or the
@@ -197,7 +200,8 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
 static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_handshake_manager* mgr = arg;
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
-    grpc_handshake_manager_shutdown(exec_ctx, mgr);
+    grpc_handshake_manager_shutdown(exec_ctx, mgr,
+                                    GRPC_ERROR_CREATE("Handshake timed out"));
   }
   grpc_handshake_manager_unref(exec_ctx, mgr);
 }

@@ -258,16 +258,22 @@ grpc_error *grpc_metadata_batch_substitute(grpc_exec_ctx *exec_ctx,
                                            grpc_metadata_batch *batch,
                                            grpc_linked_mdelem *storage,
                                            grpc_mdelem new) {
+  assert_valid_callouts(exec_ctx, batch);
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_mdelem old = storage->md;
   if (!grpc_slice_eq(GRPC_MDKEY(new), GRPC_MDKEY(old))) {
     maybe_unlink_callout(batch, storage);
     storage->md = new;
     error = maybe_link_callout(batch, storage);
+    if (error != GRPC_ERROR_NONE) {
+      unlink_storage(&batch->list, storage);
+      GRPC_MDELEM_UNREF(exec_ctx, storage->md);
+    }
   } else {
     storage->md = new;
   }
   GRPC_MDELEM_UNREF(exec_ctx, old);
+  assert_valid_callouts(exec_ctx, batch);
   return error;
 }
 
