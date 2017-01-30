@@ -448,7 +448,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     t->closed = 1;
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
-    grpc_endpoint_shutdown(exec_ctx, t->ep);
+    grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
 
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;

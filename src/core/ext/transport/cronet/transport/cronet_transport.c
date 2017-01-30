@@ -655,8 +655,6 @@ static void convert_metadata_to_cronet_headers(
     headers[num_headers].key = key;
     headers[num_headers].value = value;
     num_headers++;
-    gpr_free(key);
-    gpr_free(value);
     if (curr == NULL) {
       break;
     }
