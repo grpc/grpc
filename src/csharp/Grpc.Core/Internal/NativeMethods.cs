@@ -128,7 +128,6 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_metadata_array_count_delegate grpcsharp_metadata_array_count;
         public readonly Delegates.grpcsharp_metadata_array_get_key_delegate grpcsharp_metadata_array_get_key;
         public readonly Delegates.grpcsharp_metadata_array_get_value_delegate grpcsharp_metadata_array_get_value;
-        public readonly Delegates.grpcsharp_metadata_array_get_value_length_delegate grpcsharp_metadata_array_get_value_length;
         public readonly Delegates.grpcsharp_metadata_array_destroy_full_delegate grpcsharp_metadata_array_destroy_full;
 
         public readonly Delegates.grpcsharp_redirect_log_delegate grpcsharp_redirect_log;
@@ -237,7 +236,6 @@ namespace Grpc.Core.Internal
             this.grpcsharp_metadata_array_count = GetMethodDelegate<Delegates.grpcsharp_metadata_array_count_delegate>(library);
             this.grpcsharp_metadata_array_get_key = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_key_delegate>(library);
             this.grpcsharp_metadata_array_get_value = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_delegate>(library);
-            this.grpcsharp_metadata_array_get_value_length = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_length_delegate>(library);
             this.grpcsharp_metadata_array_destroy_full = GetMethodDelegate<Delegates.grpcsharp_metadata_array_destroy_full_delegate>(library);
 
             this.grpcsharp_redirect_log = GetMethodDelegate<Delegates.grpcsharp_redirect_log_delegate>(library);
@@ -306,15 +304,15 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_batch_context_recv_message_length_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_recv_message_to_buffer_delegate(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
             public delegate StatusCode grpcsharp_batch_context_recv_status_on_client_status_delegate(BatchContextSafeHandle ctx);
-            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx);  // returns const char*
+            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate int grpcsharp_batch_context_recv_close_on_server_cancelled_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_destroy_delegate(IntPtr ctx);
 
             public delegate RequestCallContextSafeHandle grpcsharp_request_call_context_create_delegate();
             public delegate CallSafeHandle grpcsharp_request_call_context_call_delegate(RequestCallContextSafeHandle ctx);
-            public delegate IntPtr grpcsharp_request_call_context_method_delegate(RequestCallContextSafeHandle ctx);  // returns const char*
-            public delegate IntPtr grpcsharp_request_call_context_host_delegate(RequestCallContextSafeHandle ctx);  // returns const char*
+            public delegate IntPtr grpcsharp_request_call_context_method_delegate(RequestCallContextSafeHandle ctx, out UIntPtr methodLength);
+            public delegate IntPtr grpcsharp_request_call_context_host_delegate(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
             public delegate Timespec grpcsharp_request_call_context_deadline_delegate(RequestCallContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_request_call_context_request_metadata_delegate(RequestCallContextSafeHandle ctx);
             public delegate void grpcsharp_request_call_context_destroy_delegate(IntPtr ctx);
@@ -384,9 +382,8 @@ namespace Grpc.Core.Internal
             public delegate MetadataArraySafeHandle grpcsharp_metadata_array_create_delegate(UIntPtr capacity);
             public delegate void grpcsharp_metadata_array_add_delegate(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
             public delegate UIntPtr grpcsharp_metadata_array_count_delegate(IntPtr metadataArray);
-            public delegate IntPtr grpcsharp_metadata_array_get_key_delegate(IntPtr metadataArray, UIntPtr index);
-            public delegate IntPtr grpcsharp_metadata_array_get_value_delegate(IntPtr metadataArray, UIntPtr index);
-            public delegate UIntPtr grpcsharp_metadata_array_get_value_length_delegate(IntPtr metadataArray, UIntPtr index);
+            public delegate IntPtr grpcsharp_metadata_array_get_key_delegate(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
+            public delegate IntPtr grpcsharp_metadata_array_get_value_delegate(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
             public delegate void grpcsharp_metadata_array_destroy_full_delegate(IntPtr array);
 
             public delegate void grpcsharp_redirect_log_delegate(GprLogDelegate callback);

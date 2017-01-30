@@ -26,48 +26,47 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Utilities for testing stream-related code."""
 
 from grpc.framework.foundation import stream
 
 
 class TestConsumer(stream.Consumer):
-  """A stream.Consumer instrumented for testing.
+    """A stream.Consumer instrumented for testing.
 
   Attributes:
     calls: A sequence of value-termination pairs describing the history of calls
       made on this object.
   """
 
-  def __init__(self):
-    self.calls = []
+    def __init__(self):
+        self.calls = []
 
-  def consume(self, value):
-    """See stream.Consumer.consume for specification."""
-    self.calls.append((value, False))
+    def consume(self, value):
+        """See stream.Consumer.consume for specification."""
+        self.calls.append((value, False))
 
-  def terminate(self):
-    """See stream.Consumer.terminate for specification."""
-    self.calls.append((None, True))
+    def terminate(self):
+        """See stream.Consumer.terminate for specification."""
+        self.calls.append((None, True))
 
-  def consume_and_terminate(self, value):
-    """See stream.Consumer.consume_and_terminate for specification."""
-    self.calls.append((value, True))
+    def consume_and_terminate(self, value):
+        """See stream.Consumer.consume_and_terminate for specification."""
+        self.calls.append((value, True))
 
-  def is_legal(self):
-    """Reports whether or not a legal sequence of calls has been made."""
-    terminated = False
-    for value, terminal in self.calls:
-      if terminated:
-        return False
-      elif terminal:
-        terminated = True
-      elif value is None:
-        return False
-    else:  # pylint: disable=useless-else-on-loop
-      return True
+    def is_legal(self):
+        """Reports whether or not a legal sequence of calls has been made."""
+        terminated = False
+        for value, terminal in self.calls:
+            if terminated:
+                return False
+            elif terminal:
+                terminated = True
+            elif value is None:
+                return False
+        else:  # pylint: disable=useless-else-on-loop
+            return True
 
-  def values(self):
-    """Returns the sequence of values that have been passed to this Consumer."""
-    return [value for value, _ in self.calls if value]
+    def values(self):
+        """Returns the sequence of values that have been passed to this Consumer."""
+        return [value for value, _ in self.calls if value]

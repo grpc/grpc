@@ -44,7 +44,6 @@ def cc_grpc_library(name, srcs, deps, proto_only, **kwargs):
         **kwargs
     )
 
-  if not proto_only:
     native.cc_library(
         name = name,
         srcs = [":" + codegen_grpc_target, ":" + codegen_target],

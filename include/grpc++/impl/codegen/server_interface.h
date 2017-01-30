@@ -152,7 +152,6 @@ class ServerInterface : public CallHook {
     void* const tag_;
     const bool delete_on_finalize_;
     grpc_call* call_;
-    grpc_metadata_array initial_metadata_array_;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {
@@ -199,9 +198,7 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) override {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(
-              payload_, request_, server_->max_receive_message_size())
-              .ok();
+          SerializationTraits<Message>::Deserialize(payload_, request_).ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
       *status = serialization_status && *status;
       return ret;

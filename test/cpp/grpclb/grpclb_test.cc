@@ -213,7 +213,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   // receive request for backends
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -268,7 +268,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = response_payload;
+    op->data.send_message.send_message = response_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -288,7 +288,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -372,7 +373,7 @@ static void start_backend_server(server_fixture *sf) {
     while (!exit) {
       op = ops;
       op->op = GRPC_OP_RECV_MESSAGE;
-      op->data.recv_message = &request_payload_recv;
+      op->data.recv_message.recv_message = &request_payload_recv;
       op->flags = 0;
       op->reserved = NULL;
       op++;
@@ -401,7 +402,7 @@ static void start_backend_server(server_fixture *sf) {
             grpc_raw_byte_buffer_create(&response_payload_slice, 1);
         op = ops;
         op->op = GRPC_OP_SEND_MESSAGE;
-        op->data.send_message = response_payload;
+        op->data.send_message.send_message = response_payload;
         op->flags = 0;
         op->reserved = NULL;
         op++;
@@ -433,7 +434,9 @@ static void start_backend_server(server_fixture *sf) {
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count = 0;
     op->data.send_status_from_server.status = GRPC_STATUS_OK;
-    op->data.send_status_from_server.status_details = "Backend server out a-ok";
+    grpc_slice status_details =
+        grpc_slice_from_static_string("Backend server out a-ok");
+    op->data.send_status_from_server.status_details = &status_details;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -462,8 +465,7 @@ static void perform_request(client_fixture *cf) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   grpc_byte_buffer *request_payload;
   grpc_byte_buffer *response_payload_recv;
   int i;
@@ -472,9 +474,11 @@ static void perform_request(client_fixture *cf) {
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
 
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
-                               cf->cq, "/foo", "foo.test.google.fr:1234",
-                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL);
+                               cf->cq, grpc_slice_from_static_string("/foo"),
+                               &host, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                               NULL);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;
@@ -489,7 +493,7 @@ static void perform_request(client_fixture *cf) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -497,7 +501,6 @@ static void perform_request(client_fixture *cf) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -509,12 +512,12 @@ static void perform_request(client_fixture *cf) {
 
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = request_payload;
+    op->data.send_message.send_message = request_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &response_payload_recv;
+    op->data.recv_message.recv_message = &response_payload_recv;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -553,7 +556,7 @@ static void perform_request(client_fixture *cf) {
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
   gpr_log(GPR_INFO, "Client call (peer %s) DESTROYED.", peer);
   gpr_free(peer);
 }

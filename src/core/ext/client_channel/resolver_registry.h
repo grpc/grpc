@@ -60,7 +60,9 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     return it.
     If a resolver factory was not found, return NULL.
     \a args is a set of channel arguments to be included in the result
-    (typically the set of arguments passed in from the client API). */
+    (typically the set of arguments passed in from the client API).
+    \a pollset_set is used to drive IO in the name resolution process, it
+    should not be NULL. */
 grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
                                     const grpc_channel_args *args,
                                     grpc_pollset_set *pollset_set);

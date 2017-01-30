@@ -227,23 +227,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "chttp2_status_conversion_test", 
-    "src": [
-      "test/core/transport/chttp2/status_conversion_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "chttp2_stream_map_test", 
     "src": [
       "test/core/transport/chttp2/stream_map_test.c"
@@ -1518,6 +1501,57 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "memory_profile_client", 
+    "src": [
+      "test/core/memory_usage/client.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "memory_profile_server", 
+    "src": [
+      "test/core/memory_usage/server.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "memory_profile_test", 
+    "src": [
+      "test/core/memory_usage/memory_usage_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "message_compress_test", 
     "src": [
       "test/core/compression/message_compress_test.c"
@@ -1672,6 +1706,23 @@
     "name": "percent_encoding_test", 
     "src": [
       "test/core/slice/percent_encoding_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resolve_address_posix_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_posix_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1945,6 +1996,23 @@
     "name": "ssl_server_fuzzer", 
     "src": [
       "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "status_conversion_test", 
+    "src": [
+      "test/core/transport/status_conversion_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3319,19 +3387,21 @@
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
+      "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/metrics_server.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "stress_test", 
     "src": [
-      "test/cpp/interop/client_helper.cc", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.cc", 
       "test/cpp/interop/stress_interop_client.h", 
       "test/cpp/interop/stress_test.cc", 
+      "test/cpp/util/create_test_channel.cc", 
+      "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
     ], 
@@ -3476,6 +3546,20 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_chacha_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_chacha_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_aead_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3539,6 +3623,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_spake25519_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_spake25519_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3630,6 +3728,34 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_ecdh_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdh_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ecdsa_sign_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_sign_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_ecdsa_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3637,6 +3763,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ecdsa_verify_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_verify_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3749,6 +3889,62 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_gcm_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_statistical_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_statistical_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_newhope_vectors_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_vectors_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_obj_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_obj_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -3889,20 +4085,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pqueue_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pqueue_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -5570,7 +5752,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
@@ -5590,8 +5771,6 @@
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/limit_cores.cc", 
-      "test/cpp/qps/limit_cores.h", 
       "test/cpp/qps/parse_json.cc", 
       "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.cc", 
@@ -5639,23 +5818,22 @@
       "third_party/boringssl/crypto/conf/internal.h", 
       "third_party/boringssl/crypto/curve25519/internal.h", 
       "third_party/boringssl/crypto/des/internal.h", 
-      "third_party/boringssl/crypto/dh/internal.h", 
       "third_party/boringssl/crypto/digest/internal.h", 
       "third_party/boringssl/crypto/digest/md32_common.h", 
-      "third_party/boringssl/crypto/directory.h", 
       "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
       "third_party/boringssl/crypto/internal.h", 
       "third_party/boringssl/crypto/modes/internal.h", 
+      "third_party/boringssl/crypto/newhope/internal.h", 
       "third_party/boringssl/crypto/obj/obj_dat.h", 
       "third_party/boringssl/crypto/obj/obj_xref.h", 
       "third_party/boringssl/crypto/pkcs8/internal.h", 
+      "third_party/boringssl/crypto/poly1305/internal.h", 
       "third_party/boringssl/crypto/rand/internal.h", 
       "third_party/boringssl/crypto/rsa/internal.h", 
-      "third_party/boringssl/crypto/test/scoped_types.h", 
-      "third_party/boringssl/crypto/test/test_util.h", 
       "third_party/boringssl/crypto/x509/charmap.h", 
+      "third_party/boringssl/crypto/x509/internal.h", 
       "third_party/boringssl/crypto/x509/vpm_int.h", 
       "third_party/boringssl/crypto/x509v3/ext_dat.h", 
       "third_party/boringssl/crypto/x509v3/pcy_int.h", 
@@ -5701,10 +5879,12 @@
       "third_party/boringssl/include/openssl/md4.h", 
       "third_party/boringssl/include/openssl/md5.h", 
       "third_party/boringssl/include/openssl/mem.h", 
+      "third_party/boringssl/include/openssl/newhope.h", 
+      "third_party/boringssl/include/openssl/nid.h", 
       "third_party/boringssl/include/openssl/obj.h", 
       "third_party/boringssl/include/openssl/obj_mac.h", 
       "third_party/boringssl/include/openssl/objects.h", 
-      "third_party/boringssl/include/openssl/opensslfeatures.h", 
+      "third_party/boringssl/include/openssl/opensslconf.h", 
       "third_party/boringssl/include/openssl/opensslv.h", 
       "third_party/boringssl/include/openssl/ossl_typ.h", 
       "third_party/boringssl/include/openssl/pem.h", 
@@ -5712,9 +5892,9 @@
       "third_party/boringssl/include/openssl/pkcs7.h", 
       "third_party/boringssl/include/openssl/pkcs8.h", 
       "third_party/boringssl/include/openssl/poly1305.h", 
-      "third_party/boringssl/include/openssl/pqueue.h", 
       "third_party/boringssl/include/openssl/rand.h", 
       "third_party/boringssl/include/openssl/rc4.h", 
+      "third_party/boringssl/include/openssl/ripemd.h", 
       "third_party/boringssl/include/openssl/rsa.h", 
       "third_party/boringssl/include/openssl/safestack.h", 
       "third_party/boringssl/include/openssl/sha.h", 
@@ -5730,11 +5910,7 @@
       "third_party/boringssl/include/openssl/x509.h", 
       "third_party/boringssl/include/openssl/x509_vfy.h", 
       "third_party/boringssl/include/openssl/x509v3.h", 
-      "third_party/boringssl/ssl/internal.h", 
-      "third_party/boringssl/ssl/test/async_bio.h", 
-      "third_party/boringssl/ssl/test/packeted_bio.h", 
-      "third_party/boringssl/ssl/test/scoped_types.h", 
-      "third_party/boringssl/ssl/test/test_config.h"
+      "third_party/boringssl/ssl/internal.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
@@ -5841,6 +6017,19 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "boringssl_chacha_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "boringssl_aead_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -5894,6 +6083,19 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_spake25519_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -5984,7 +6186,46 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "boringssl_ecdh_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_sign_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "boringssl_ecdsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_verify_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6087,8 +6328,60 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "boringssl_gcm_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_statistical_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_newhope_vectors_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_obj_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6219,19 +6512,6 @@
     "is_filegroup": false, 
     "language": "c", 
     "name": "boringssl_v3name_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "boringssl_pqueue_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6407,7 +6687,9 @@
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c"
+      "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/write_buffering.c", 
+      "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6476,7 +6758,9 @@
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c"
+      "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/write_buffering.c", 
+      "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6676,6 +6960,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
@@ -6692,6 +6977,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
@@ -6742,6 +7028,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
@@ -6794,6 +7081,7 @@
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
       "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/api_trace.h", 
@@ -6807,14 +7095,17 @@
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
       "src/core/lib/surface/server.h", 
+      "src/core/lib/surface/validate_metadata.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
-      "src/core/lib/transport/mdstr_hash_table.h", 
+      "src/core/lib/transport/error_utils.h", 
+      "src/core/lib/transport/http2_errors.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
+      "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h"
@@ -6881,6 +7172,7 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll_linux.c", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -6992,6 +7284,9 @@
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
       "src/core/lib/slice/slice_buffer.c", 
+      "src/core/lib/slice/slice_hash_table.c", 
+      "src/core/lib/slice/slice_hash_table.h", 
+      "src/core/lib/slice/slice_intern.c", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.c", 
       "src/core/lib/slice/slice_string_helpers.h", 
@@ -7023,13 +7318,15 @@
       "src/core/lib/surface/server.c", 
       "src/core/lib/surface/server.h", 
       "src/core/lib/surface/validate_metadata.c", 
+      "src/core/lib/surface/validate_metadata.h", 
       "src/core/lib/surface/version.c", 
       "src/core/lib/transport/byte_stream.c", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.c", 
       "src/core/lib/transport/connectivity_state.h", 
-      "src/core/lib/transport/mdstr_hash_table.c", 
-      "src/core/lib/transport/mdstr_hash_table.h", 
+      "src/core/lib/transport/error_utils.c", 
+      "src/core/lib/transport/error_utils.h", 
+      "src/core/lib/transport/http2_errors.h", 
       "src/core/lib/transport/metadata.c", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
@@ -7040,6 +7337,8 @@
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
+      "src/core/lib/transport/status_conversion.c", 
+      "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/timeout_encoding.c", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.c", 
@@ -7060,11 +7359,14 @@
       "src/core/ext/client_channel/client_channel_factory.h", 
       "src/core/ext/client_channel/connector.h", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/http_proxy.h", 
       "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.h", 
       "src/core/ext/client_channel/lb_policy_registry.h", 
       "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/proxy_mapper.h", 
+      "src/core/ext/client_channel/proxy_mapper_registry.h", 
       "src/core/ext/client_channel/resolver.h", 
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.h", 
@@ -7087,6 +7389,8 @@
       "src/core/ext/client_channel/default_initial_connect_string.c", 
       "src/core/ext/client_channel/http_connect_handshaker.c", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/http_proxy.c", 
+      "src/core/ext/client_channel/http_proxy.h", 
       "src/core/ext/client_channel/initial_connect_string.c", 
       "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.c", 
@@ -7097,6 +7401,10 @@
       "src/core/ext/client_channel/lb_policy_registry.h", 
       "src/core/ext/client_channel/parse_address.c", 
       "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/proxy_mapper.c", 
+      "src/core/ext/client_channel/proxy_mapper.h", 
+      "src/core/ext/client_channel/proxy_mapper_registry.c", 
+      "src/core/ext/client_channel/proxy_mapper_registry.h", 
       "src/core/ext/client_channel/resolver.c", 
       "src/core/ext/client_channel/resolver.h", 
       "src/core/ext/client_channel/resolver_factory.c", 
@@ -7409,11 +7717,9 @@
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
-      "src/core/ext/transport/chttp2/transport/http2_errors.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.h", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
       "src/core/ext/transport/chttp2/transport/varint.h"
     ], 
@@ -7447,15 +7753,12 @@
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.c", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
-      "src/core/ext/transport/chttp2/transport/http2_errors.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.c", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.c", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
       "src/core/ext/transport/chttp2/transport/parsing.c", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.c", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.h", 
       "src/core/ext/transport/chttp2/transport/stream_lists.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
@@ -7604,7 +7907,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+      "third_party/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -7824,6 +8127,7 @@
       "include/grpc++/impl/codegen/server_context.h", 
       "include/grpc++/impl/codegen/server_interface.h", 
       "include/grpc++/impl/codegen/service_type.h", 
+      "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
       "include/grpc++/impl/codegen/status_helper.h", 
@@ -7857,6 +8161,7 @@
       "include/grpc++/impl/codegen/server_context.h", 
       "include/grpc++/impl/codegen/server_interface.h", 
       "include/grpc++/impl/codegen/service_type.h", 
+      "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
       "include/grpc++/impl/codegen/status_helper.h", 

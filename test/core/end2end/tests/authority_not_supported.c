@@ -50,7 +50,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -103,9 +103,14 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
+                              grpc_slice_from_static_string("val1"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}},
+                             {grpc_slice_from_static_string("key2"),
+                              grpc_slice_from_static_string("val2"),
+                              0,
+                              {{NULL, NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f =
       begin_test(config, "test_with_authority_header", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -116,11 +121,12 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
 
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -135,7 +141,7 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -144,12 +150,12 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -157,7 +163,6 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -169,7 +174,7 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
