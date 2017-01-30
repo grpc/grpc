@@ -50,7 +50,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -112,8 +112,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
   grpc_byte_buffer *request_payload;
   grpc_byte_buffer *request_payload_recv;
@@ -126,8 +125,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
       grpc_slice_from_copied_string("hello you");
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
-      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -144,7 +144,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -152,7 +152,6 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -188,12 +187,12 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = request_payload;
+    op->data.send_message.send_message = request_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &response_payload_recv;
+    op->data.recv_message.recv_message = &response_payload_recv;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -203,7 +202,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &request_payload_recv;
+    op->data.recv_message.recv_message = &request_payload_recv;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -215,7 +214,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = response_payload;
+    op->data.send_message.send_message = response_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -248,7 +247,8 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -270,7 +270,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   end_test(&f);
   config.tear_down_data(&f);

@@ -48,9 +48,6 @@ struct grpc_connector {
 typedef struct {
   /** set of pollsets interested in this connection */
   grpc_pollset_set *interested_parties;
-  /** address to connect to */
-  const grpc_resolved_address *addr;
-  size_t addr_len;
   /** initial connect string to send */
   grpc_slice initial_connect_string;
   /** deadline for connection */

@@ -179,6 +179,9 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** How much data are we willing to queue up per stream if
+    GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
+#define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -291,9 +294,11 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
+  /* the key, value values are expected to line up with grpc_mdelem: if changing
+     them, update metadata.h at the same time. */
+  grpc_slice key;
+  grpc_slice value;
+
   uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
@@ -335,10 +340,8 @@ typedef struct {
 } grpc_metadata_array;
 
 typedef struct {
-  char *method;
-  size_t method_capacity;
-  char *host;
-  size_t host_capacity;
+  grpc_slice method;
+  grpc_slice host;
   gpr_timespec deadline;
   uint32_t flags;
   void *reserved;
@@ -415,23 +418,32 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    struct grpc_byte_buffer *send_message;
+    struct {
+      struct grpc_byte_buffer *send_message;
+    } send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
-      const char *status_details;
+      /* optional: set to NULL if no details need sending, non-NULL if they do
+       * pointer will not be retained past the start_batch call
+       */
+      grpc_slice *status_details;
     } send_status_from_server;
     /** ownership of the array is with the caller, but ownership of the elements
         stays with the call object (ie key, value members are owned by the call
         object, recv_initial_metadata->array is owned by the caller).
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
-    grpc_metadata_array *recv_initial_metadata;
+    struct {
+      grpc_metadata_array *recv_initial_metadata;
+    } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    struct grpc_byte_buffer **recv_message;
+    struct {
+      struct grpc_byte_buffer **recv_message;
+    } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned
@@ -441,28 +453,7 @@ typedef struct grpc_op {
           value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
-      /** status_details is a buffer owned by the application before the op
-          completes and after the op has completed. During the operation
-          status_details may be reallocated to a size larger than
-          *status_details_capacity, in which case *status_details_capacity will
-          be updated with the new array capacity.
-
-          Pre-allocating space:
-          size_t my_capacity = 8;
-          char *my_details = gpr_malloc(my_capacity);
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          Not pre-allocating space:
-          size_t my_capacity = 0;
-          char *my_details = NULL;
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          After the call:
-          gpr_free(my_details); */
-      char **status_details;
-      size_t *status_details_capacity;
+      grpc_slice *status_details;
     } recv_status_on_client;
     struct {
       /** out argument, set to 1 if the call failed in any way (seen as a

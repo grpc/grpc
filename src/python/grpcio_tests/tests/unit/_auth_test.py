@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tests of standard AuthMetadataPlugins."""
 
 import collections
@@ -38,59 +37,59 @@ from grpc import _auth
 
 class MockGoogleCreds(object):
 
-  def get_access_token(self):
-    token = collections.namedtuple('MockAccessTokenInfo',
-                                   ('access_token', 'expires_in'))
-    token.access_token = 'token'
-    return token
+    def get_access_token(self):
+        token = collections.namedtuple('MockAccessTokenInfo',
+                                       ('access_token', 'expires_in'))
+        token.access_token = 'token'
+        return token
 
 
 class MockExceptionGoogleCreds(object):
 
-  def get_access_token(self):
-    raise Exception()
+    def get_access_token(self):
+        raise Exception()
 
 
 class GoogleCallCredentialsTest(unittest.TestCase):
 
-  def test_google_call_credentials_success(self):
-    callback_event = threading.Event()
+    def test_google_call_credentials_success(self):
+        callback_event = threading.Event()
 
-    def mock_callback(metadata, error):
-      self.assertEqual(metadata, (('authorization', 'Bearer token'),))
-      self.assertIsNone(error)
-      callback_event.set()
+        def mock_callback(metadata, error):
+            self.assertEqual(metadata, (('authorization', 'Bearer token'),))
+            self.assertIsNone(error)
+            callback_event.set()
 
-    call_creds = _auth.GoogleCallCredentials(MockGoogleCreds())
-    call_creds(None, mock_callback)
-    self.assertTrue(callback_event.wait(1.0))
+        call_creds = _auth.GoogleCallCredentials(MockGoogleCreds())
+        call_creds(None, mock_callback)
+        self.assertTrue(callback_event.wait(1.0))
 
-  def test_google_call_credentials_error(self):
-    callback_event = threading.Event()
+    def test_google_call_credentials_error(self):
+        callback_event = threading.Event()
 
-    def mock_callback(metadata, error):
-      self.assertIsNotNone(error)
-      callback_event.set()
+        def mock_callback(metadata, error):
+            self.assertIsNotNone(error)
+            callback_event.set()
 
-    call_creds = _auth.GoogleCallCredentials(MockExceptionGoogleCreds())
-    call_creds(None, mock_callback)
-    self.assertTrue(callback_event.wait(1.0))
+        call_creds = _auth.GoogleCallCredentials(MockExceptionGoogleCreds())
+        call_creds(None, mock_callback)
+        self.assertTrue(callback_event.wait(1.0))
 
 
 class AccessTokenCallCredentialsTest(unittest.TestCase):
 
-  def test_google_call_credentials_success(self):
-    callback_event = threading.Event()
+    def test_google_call_credentials_success(self):
+        callback_event = threading.Event()
 
-    def mock_callback(metadata, error):
-      self.assertEqual(metadata, (('authorization', 'Bearer token'),))
-      self.assertIsNone(error)
-      callback_event.set()
+        def mock_callback(metadata, error):
+            self.assertEqual(metadata, (('authorization', 'Bearer token'),))
+            self.assertIsNone(error)
+            callback_event.set()
 
-    call_creds = _auth.AccessTokenCallCredentials('token')
-    call_creds(None, mock_callback)
-    self.assertTrue(callback_event.wait(1.0))
+        call_creds = _auth.AccessTokenCallCredentials('token')
+        call_creds(None, mock_callback)
+        self.assertTrue(callback_event.wait(1.0))
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)
