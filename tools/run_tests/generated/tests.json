@@ -281,28 +281,6 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "chttp2_status_conversion_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
     "name": "chttp2_stream_map_test", 
     "platforms": [
       "linux", 
@@ -1722,6 +1700,26 @@
     "ci_platforms": [
       "linux", 
       "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "resolve_address_posix_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ], 
@@ -2031,6 +2029,28 @@
       "linux", 
       "mac", 
       "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "status_conversion_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {
@@ -38310,7 +38330,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38335,7 +38355,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38360,7 +38380,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38385,7 +38405,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38412,7 +38432,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38439,7 +38459,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38464,7 +38484,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38489,7 +38509,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38514,7 +38534,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38539,7 +38559,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38564,7 +38584,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38589,7 +38609,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38614,7 +38634,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38639,7 +38659,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38664,7 +38684,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38689,7 +38709,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38714,7 +38734,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38739,7 +38759,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38764,7 +38784,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38789,7 +38809,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38814,7 +38834,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38841,7 +38861,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38868,7 +38888,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38893,7 +38913,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38918,7 +38938,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38943,7 +38963,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38968,7 +38988,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -38993,7 +39013,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39018,7 +39038,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39043,7 +39063,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39068,7 +39088,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 16, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39093,7 +39113,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39118,7 +39138,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39143,7 +39163,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39168,7 +39188,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39181,9 +39201,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39206,7 +39223,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39219,9 +39236,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39244,7 +39258,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39257,9 +39271,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39282,7 +39293,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39295,9 +39306,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39322,7 +39330,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39335,9 +39343,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39362,7 +39367,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39375,9 +39380,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39400,7 +39402,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39413,9 +39415,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39438,7 +39437,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39451,9 +39450,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39476,7 +39472,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39489,9 +39485,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39514,7 +39507,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39527,9 +39520,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39552,7 +39542,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39565,9 +39555,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39590,7 +39577,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39603,9 +39590,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39628,7 +39612,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39641,9 +39625,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39666,7 +39647,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39679,9 +39660,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39704,7 +39682,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39717,9 +39695,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39742,7 +39717,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39755,9 +39730,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39780,7 +39752,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_secure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39793,9 +39765,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39818,7 +39787,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39831,9 +39800,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39856,7 +39822,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39869,9 +39835,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39894,7 +39857,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39907,9 +39870,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39932,7 +39892,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39945,9 +39905,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -39972,7 +39929,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_servers\": 1, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 10, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -39985,9 +39942,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40012,7 +39966,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40025,9 +39979,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40050,7 +40001,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40063,9 +40014,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40088,7 +40036,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40101,9 +40049,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40126,7 +40071,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40139,9 +40084,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40164,7 +40106,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40177,9 +40119,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40202,7 +40141,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_unary_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"UNARY\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40215,9 +40154,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40240,7 +40176,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40253,9 +40189,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40278,7 +40211,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40291,9 +40224,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40316,7 +40246,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_sync_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"SYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"SYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40329,9 +40259,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40354,7 +40281,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_ping_pong_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 1, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 1, \"async_client_threads\": 1, \"outstanding_rpcs_per_channel\": 1, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40367,9 +40294,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40392,7 +40316,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40405,9 +40329,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -40430,7 +40351,7 @@
   {
     "args": [
       "--scenarios_json", 
-      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"simple_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+      "{\"scenarios\": [{\"name\": \"cpp_protobuf_async_streaming_qps_unconstrained_insecure_500kib_resource_quota\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"resource_quota_size\": 512000, \"async_server_threads\": 0, \"security_params\": null, \"payload_config\": null, \"server_type\": \"ASYNC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": null, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -40443,9 +40364,6 @@
       "asan-trace-cmp", 
       "basicprof", 
       "dbg", 
-      "easan", 
-      "edbg", 
-      "etsan", 
       "gcov", 
       "helgrind", 
       "memcheck", 
@@ -41479,6 +41397,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/070aca38b5cd06626dfc98126ef1225595800427"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/070c7005e63abba72c6bc1a0ee6d44e340f2d2be"
     ], 
     "ci_platforms": [
@@ -41809,6 +41749,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/08398518b9b4e98d4625dfb063ab0b6d9399a239"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/08455b3ef9d516deb8155d8db7d51c43ce0ff07a"
     ], 
     "ci_platforms": [
@@ -41985,6 +41947,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/096f9413b1bf712e092cf8bd70754014d6242f12"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/0976de1461fb037c6987d77d088416440b524dde"
     ], 
     "ci_platforms": [
@@ -42118,6 +42102,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/0a7aad5682c304b0cbda31445b221238e0293a9f"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/0a85889229b729883f4c0420d1a13d9f0a2ca7c2"
     ], 
     "ci_platforms": [
       "linux"
@@ -44823,6 +44829,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/1c0dc85faed94bb89bc90f87799d7383cf9907cf"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/1c1a1980a1959423766c5a26ac79d07264224278"
     ], 
     "ci_platforms": [
@@ -46869,6 +46897,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/2a4fc709f61977f0f6c75760af2b33007ecd5941"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/2a600cae342e8e9e23406bb1e76133f48d936766"
     ], 
     "ci_platforms": [
@@ -48761,6 +48811,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/352599b2850ac5a96ec656788c897c4b36114cc4"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/35623259c0d5d73d23ea52efc3e4bd808c119440"
     ], 
     "ci_platforms": [
@@ -48828,6 +48900,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/35cf9a1a6f81db0829d854fd3716916bae081c8c"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/35f172b0168cd0b2da4509c3463c2502274e01a6"
     ], 
     "ci_platforms": [
       "linux"
@@ -50631,6 +50725,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/424b6a20be32318d920d83aa2a292a0aba013a1b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/427392659bf3a945097c6c754a17d8c15e23816f"
     ], 
     "ci_platforms": [
@@ -52215,6 +52331,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/4b303d7f245a569f507013af0b3afb2f033b6741"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/4b538eda0a7ad5d38b9d95867b7c181cbe84589b"
     ], 
     "ci_platforms": [
@@ -53492,6 +53630,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/5515fa05b890973031b0e2cc8c2925f3974e2821"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/559d537675dd3fc5e0c6d40e94133e9016014f6c"
     ], 
     "ci_platforms": [
       "linux"
@@ -55317,6 +55477,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/60b4c79213b97204d1e4f6819ad1ed5f6e191789"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/60e8618c075ec5fd47a1699271c6da1b5befd579"
     ], 
     "ci_platforms": [
@@ -56395,6 +56577,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/671d63b9968444308d4908eb6a26bccdf32e5e29"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/6722929b4924f4d50ccfb999460e9a31ca104b4c"
     ], 
     "ci_platforms": [
@@ -56770,6 +56974,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/6ac88da4119df5e1592a05bac7ecb92af59dc1d1"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/6ad3a1170ef884a884a6f340101549df624bf5a4"
     ], 
     "ci_platforms": [
       "linux"
@@ -57870,6 +58096,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/718d23058d5c805a2984c087cd89f9cb6af065b4"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/71961e53698b07bfd57e9ea37067e0dd52298a3d"
     ], 
     "ci_platforms": [
       "linux"
@@ -60333,6 +60581,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/807a48bd33ce375438dbc158c1531891c5b54a51"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/80a249d17248e0dc7dcc9fb64d8ac2dd0320a544"
     ], 
     "ci_platforms": [
@@ -62555,6 +62825,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/8dfdb04ef558fba84dcbfa65a6aa318b10988fa9"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/8e226a7f67b7c6e9d439c3627bfa5644af992593"
     ], 
     "ci_platforms": [
@@ -63876,6 +64168,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/98cdb5ba5725c6b2ed39fc514401fe987fc2d9af"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/9916b65305d28acf75a17495b9f44d7b839b948f"
     ], 
     "ci_platforms": [
       "linux"
@@ -66141,6 +66455,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/a8c0a166004ee637f22f5838960c8f4320738694"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/a8c9f7043c578e48be49661be5207ceb9ec1b61f"
     ], 
     "ci_platforms": [
@@ -66604,6 +66940,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/abcfa029d3eb7c016a162e78e7351f64b9905a42"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/abd5de7b5e9218d19a57c47d2ccd6a1bc022c7fb"
     ], 
     "ci_platforms": [
       "linux"
@@ -67462,6 +67820,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/b35f51d95f597075bb93cd9d2135870fe0a73486"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/b36c3e5841c6aed7b0d439bd3b9c6d922d56c70b"
     ], 
     "ci_platforms": [
       "linux"
@@ -68342,6 +68722,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/b8a74cc440fbfaa2a523f20ca964976bde128fd0"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/b8bc377e53ca54ae4e30f437b69e270040c35f65"
     ], 
     "ci_platforms": [
       "linux"
@@ -73049,6 +73451,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/crash-60a3f7ed4abddaa6a7c837ace86d048fa15e288b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/crash-6db86c556caf542fe8c3345ef396467b1d609d32"
     ], 
     "ci_platforms": [
@@ -76130,6 +76554,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/db0dbec7a0811cac7b250cf9b248d47936edc0d0"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/db25df0fa146d02874114b8605000e0135ff12dd"
     ], 
     "ci_platforms": [
       "linux"
@@ -80287,6 +80733,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/f503f8d526eaec9bab6cae97d09207deefa85d8d"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/f5867f7dbacd22878e2955f4be8fca147442aa9d"
     ], 
     "ci_platforms": [
@@ -83499,6 +83967,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/175f16901997fdee41ac9ec88f7e018d46d774e7"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/17b1758fc7cd69a00d140f113b1ac894023ff20b"
     ], 
     "ci_platforms": [
@@ -84731,6 +85221,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/26f250ae38865f030176a8801ce992536351a326"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/2717067bbc0e9bfc1d90d15cddf6154800a25ec6"
     ], 
     "ci_platforms": [
@@ -85655,6 +86167,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/3233f2ab3b6c9431289ef7dc4f40676d0128bcad"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/330dd22142ff48078b189f4533ccc56878d88f92"
     ], 
     "ci_platforms": [
@@ -85810,6 +86344,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/361c6f4374443671f039fd9659577e4460178020"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/3656614c7b0dc11d4dd7e1826f77fa96a88c420f"
     ], 
     "ci_platforms": [
       "linux"
@@ -86206,6 +86762,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/3da7577acd806e1d92d48211b22fd9db352fd834"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/3dec1981e8677ec6ad2517feba29869d53f8d884"
     ], 
     "ci_platforms": [
       "linux"
@@ -87063,6 +87641,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/4bed84590a55b06d7eb30d8faa4b00a881ba9b2c"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/4e05d6cf1c3f0c04f6ee92d09a53ee0fe35c085a"
     ], 
     "ci_platforms": [
@@ -87855,6 +88455,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/591d46b83d2e6babc0ce3c753c4606a10c46d7ce"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/591ef436ef8cc982b48fd827a4555b57cd9780e5"
     ], 
     "ci_platforms": [
@@ -87987,7 +88609,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/5a52d683c9342dd301b0e699db36175aad715e1d"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/5a8cbd42a033b7899383d48c3929e517dafbb995"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/5b7ff7c113c2bcf125271d22c937f758a0cd2ee4"
     ], 
     "ci_platforms": [
       "linux"
@@ -88274,6 +88940,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/611343a6b8879b393ba2f38ed41c7f5355355920"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/616e55354ba3517ce6762d6cd56600f97915e646"
     ], 
     "ci_platforms": [
       "linux"
@@ -89505,6 +90193,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/7a9a12b15c798b88f1a599779f52d14edf9f4ef5"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/7af3156d286a32a6a6fede46d93ec12ded1ac138"
     ], 
     "ci_platforms": [
@@ -90583,6 +91293,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/8f05b8da748cc04e64b688c4b435fe64699bd481"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/8f980dd25f1c77e3536131c2c620aa32e8c13180"
     ], 
     "ci_platforms": [
@@ -90606,6 +91338,50 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/8fd4873d307af2d217f5d2bf02b495ba681fad74"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/8fd758e2603f1e3772cfcd295ff0f951988d7648"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/9018925b5e791ae4b3ae9c84b8a4d47d86671c2d"
     ], 
     "ci_platforms": [
       "linux"
@@ -91112,6 +91888,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/99099024a3f3e389f57cb7b697eb34485846f316"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/9912de197918ac0e305f0c0107f863823e8ae818"
     ], 
     "ci_platforms": [
       "linux"
@@ -92321,6 +93119,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/ab90bebd4c017827a6d5de61511445df81169eb6"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/abd52da5882855a63632a6917df3639538928cd3"
     ], 
     "ci_platforms": [
@@ -92695,6 +93515,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/b26a3a83d0b319ce13a9ae164e90fa6da1b05a57"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/b283eb8884c98dd50523995ce221aa1ecb3ca182"
     ], 
     "ci_platforms": [
@@ -93048,6 +93890,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/b93fd0a15287dd035eac86e547e3ce42183bdb28"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/ba25be123c630bd3e4aeb9bda6304dd1a7e51365"
     ], 
     "ci_platforms": [
       "linux"
@@ -93641,7 +94505,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/c77ee0b6cb21ab7b7cf222c7f6563b3b1b1b6eed"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/c784ad2e205ba49b5bb1302746723dbc57320981"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/c7b17d6ae5f3b155532a5a9bf0239c098c35eec1"
     ], 
     "ci_platforms": [
       "linux"
@@ -93971,6 +94879,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/ccc36ee2c6a0daad65a4d929599fda5cd38b8fd1"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/cceb4c620c02337138e489383db0d4f4e2c7a722"
     ], 
     "ci_platforms": [
@@ -94236,6 +95166,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/crash-12b69708d452b3cefe2da4a708a1030a661d37fc"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/crash-133500314833c9037b34a4c34ad779dd78a0fa8d"
     ], 
     "ci_platforms": [
       "linux"
@@ -94742,6 +95694,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/d2f71a800612876010558ce804c9a72ad0a1b9fc"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/d3141a71cdaa7a0915c8c55abf2c940b0fd00172"
     ], 
     "ci_platforms": [
       "linux"
@@ -95643,6 +96617,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/de9b9a35e1e7040e842b597b8d2fe4cd602e67f1"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/df20bbbb854cb997a73285ef30d227aa12d90e4e"
     ], 
     "ci_platforms": [
@@ -96061,6 +97057,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/e5319a8570a762bbdd67135b49579097324e369a"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/e5a7c086208248a15ee6fa5195fc4ce22469de15"
     ], 
     "ci_platforms": [
@@ -96084,6 +97102,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/e5ac3394971400b6636d029aec7ec665a94ecf29"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/e5e276acd665ccb47f868fe3bc36e647bbb840bd"
     ], 
     "ci_platforms": [
       "linux"
@@ -96942,6 +97982,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/f66305230042fa83fcd1b98c469d90ffef3ff6da"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/f69aa5666fd60c1b6814198f12d049abb0e9f148"
     ], 
     "ci_platforms": [
       "linux"
@@ -97932,6 +98994,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/042091aeac4cc255506b96fa11c7354e699fde76"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/051268ade45dbed0aab896d7d9f4d10ba89d3b09"
     ], 
     "ci_platforms": [
       "linux"
@@ -100022,6 +101106,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/521809903d36db80b1ccd707f354361f2bf05075"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/5278e3581c069624157fd9176eddf52c0e58df67"
     ], 
     "ci_platforms": [
       "linux"
@@ -102947,6 +104053,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/bc4263a92952d56168b354f723eaa43a33cd0b35"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/bcaa71abf23b2e5130e0cc464755fe769bf4aaa7"
     ], 
     "ci_platforms": [
@@ -103651,6 +104779,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/crash-5ac3e1ea7764cfb6383629574262f82dc7b3cada"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/d000502f32ca5620d7745f39ff6be3b547e26a6d"
     ], 
     "ci_platforms": [
@@ -103806,6 +104956,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/d59d7e94863f1ed89cacfbaabf7bc59946036c8f"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/d6d8b478e6d13945f7a6f7d27f424ff57ca12f7f"
     ], 
     "ci_platforms": [
       "linux"
@@ -104268,6 +105440,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/e6589006e3bda4c57247ad66fcd73ac00ee2cbe2"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/e67c79d0ed89ab2d5e8d81127df22876e636ac44"
     ], 
     "ci_platforms": [
       "linux"
@@ -104795,6 +105989,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/f4b48c4f3f310ed767755267210f212dd62bd715"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/f4d6ff635ae4fda497221da4bfa3e593df59a44e"
     ], 
     "ci_platforms": [
@@ -104928,6 +106144,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/fc3dd4292d6884a770199596f5e9cbc1e869e5fb"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/fcc06696e641a7743bfd2f3b7ecd88e7b727e00a"
     ], 
     "ci_platforms": [
       "linux"
@@ -125123,6 +126361,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/084e9e02b8f2ed41ff9c22fef80e522e491227c5"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/08c42ef29eff83052c5887855f2fa3e07ebe470c"
     ], 
     "ci_platforms": [
@@ -125256,6 +126516,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/0b275a7f.bin"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/0c129f78eacfb0d0d3c89dd4e578724096a3cea0"
     ], 
     "ci_platforms": [
       "linux"
@@ -125497,7 +126779,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/129382aa11fa2922053fa47ba691dddb98901260"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/13501419f349b7855d2e94060bd08b28923d1f37"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/1353e447b7b10fb3eabb02863a1fc5bc9bb50460"
     ], 
     "ci_platforms": [
       "linux"
@@ -127059,6 +128385,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/3b55d09b98e3982d6f80913a792463c3974766db"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/3ca5da2f.bin"
     ], 
     "ci_platforms": [
@@ -127389,6 +128737,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/416160124b3b64fc9355f24dd789b3d1fd097b8b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/418f392319c44d06a018ce4c62569d527829177a"
     ], 
     "ci_platforms": [
@@ -127632,6 +129002,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/468cf8bf3e31e1013c7c6d2288baac47ff90aa63"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/47563391b73b6ef4bf987014c3e631fe2555a377"
     ], 
     "ci_platforms": [
       "linux"
@@ -128951,7 +130343,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/6c0ec181e81b915071766762f5d78e9b1ccc9128"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/6c5bb78b51cf5006c92258292de19550985c00ba"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/6c66271b74a11f4e7065a6acbc86e4611e7e0dcc"
     ], 
     "ci_platforms": [
       "linux"
@@ -129171,6 +130607,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/72db978194609ac138bca393650740a3eae8f448"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/7342b3febb07521e39abdf4ee976d16199d51239"
     ], 
     "ci_platforms": [
@@ -129348,6 +130806,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/7ddfac7d7845b424bf670070781ca6ff8586c63b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/7df75412d12894fc501bd2d8493fe9e5a753ad88"
     ], 
     "ci_platforms": [
       "linux"
@@ -130095,6 +131575,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/92f1df2266f34a097e96dd22188d8633832d37b1"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/93beeba2.bin"
     ], 
     "ci_platforms": [
@@ -130118,6 +131620,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/93c3ffcb7e3bcb5ed7e37a5b3dfb97b43ca42718"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/947f53c0978672e59be452395670fa949a33cb4f"
     ], 
     "ci_platforms": [
       "linux"
@@ -130557,6 +132081,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/a40c3ba87b4206142b134f67485859b7c9b7c75c"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/a5348197.bin"
     ], 
     "ci_platforms": [
@@ -130668,6 +132214,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/a7fac1265a384fe9e45a9ee3d708b79c4e80505e"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/a8305e9bb4a544eaef27e8bd21b4faabf524a84e"
     ], 
     "ci_platforms": [
       "linux"
@@ -130975,7 +132543,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/ac4e19c9fe290afc54bbb1e5f6cfe84a9c1f3c29"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/ad810f7f.bin"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/ae297426638eb5a0611324f403c3189515274f1b"
     ], 
     "ci_platforms": [
       "linux"
@@ -131152,6 +132764,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/b5acaa52.bin"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/b74dcd9c2780f145e09a27d2e03119576889a301"
     ], 
     "ci_platforms": [
       "linux"
@@ -131548,6 +133182,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/c35968bf.bin"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/c39c0192d0d4f2b24f05c25a9e669cc091bff9e9"
     ], 
     "ci_platforms": [
       "linux"
@@ -132031,6 +133687,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/crash-73923add5066617ae08f187b79d2639b4fd96138"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/crash-7af5da2a8da23d197d9336e32da72c9ff64c15b3"
     ], 
     "ci_platforms": [
@@ -132054,6 +133732,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/crash-7e121dd3be057176369bea160d873040b32a03dc"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/crash-901723090ff2042ecc5a008ccd7ae0845c1681cb"
     ], 
     "ci_platforms": [
       "linux"
@@ -132230,6 +133930,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/d28155c6c92642c61dfb097f7b2eb1d6ced272c0"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/d297b3f84e3dee9f74bf1162718aff66a11a7f5c"
     ], 
     "ci_platforms": [
       "linux"
@@ -132560,6 +134282,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/df80b527a003e47a26099088a283228ec62a61c7"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/e021c5b9815f02ee9d1e5a003cbf3500e19db13c"
     ], 
     "ci_platforms": [
       "linux"
@@ -133307,6 +135051,50 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/fc162db40f87facb73cff20751e23af2e1f5296e"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/fcb1dea251d1ce74e30351f13a3f71e3debec3d2"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/fd14bea45ecaf13af0053900edb2f17b71a0bf09"
     ], 
     "ci_platforms": [
@@ -133483,6 +135271,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/fe740f8c4ffd07f79456c8cee24ef556ee348f55"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/ff227015.bin"
     ], 
     "ci_platforms": [
@@ -133571,6 +135381,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-03c6f209b2f144734c83d81ed452839d9e244fe9"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-082763e16153cb6b8f3f5308cd060e822f475e5a"
     ], 
     "ci_platforms": [
@@ -133616,6 +135448,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-0aa52e00ddd54f8e129430852c2da95650c354b0"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-129ecb5e7b80616f36791e3580844e520f2ba7d3"
     ], 
     "ci_platforms": [
       "linux"
@@ -133769,6 +135623,50 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-30408c9d13f29804168fc62a0818cc894c6375ae"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-33d8bf197de7131be78244e10fbb0da5055cf266"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-350b5da741597222c98fe86768432507850317f5"
     ], 
     "ci_platforms": [
@@ -133880,6 +135778,50 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-4c6da955e4c101b81a62b2f8e934d94a62ae534b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-51cdbfa3e97a46ceefde405e6ab087a109c26907"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-523cb1bca5ad56690c618b4ceac7fceca1113b9d"
     ], 
     "ci_platforms": [
       "linux"
@@ -134297,6 +136239,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-a877fe99fd0e92721d162bc252bf72a4f67ba1ea"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-aa23c18f6badd88a7bec65e8b04f7801ba624ec6"
     ], 
     "ci_platforms": [
@@ -134408,6 +136372,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-ba2b1fde90cc70d9abae22c4c4cb051aae8aa148"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-bd9d24f5c7c915174b6ca9d1a3573e16e0edee12"
     ], 
     "ci_platforms": [
       "linux"
@@ -134606,6 +136592,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-ddfe613d8791b2d377e14fbdffb18b84a89d49b6"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-f3c688876395bf7a529f29f7b91532726cf5cbce"
     ], 
     "ci_platforms": [
       "linux"
