@@ -48,6 +48,7 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -58,6 +59,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
@@ -124,12 +126,22 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                               grpc_error *error);
 
+/** keepalive-relevant functions (TODO: better description/organization) */
+static void keepalive_ping_end(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error);
+static void keepalive_watchdog(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error);
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_closure *on_recv);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
 
 static void destruct_transport(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t) {
+  grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+
   size_t i;
 
   grpc_endpoint_destroy(exec_ctx, t->ep);
@@ -201,6 +213,89 @@ void grpc_chttp2_unref_transport(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 #endif
+
+static void keepalive_ping_start(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  // If we're coming from initialization, this state must be the case.
+  // If we're coming from keepalive_ping_end, the watchdog must not have been
+  // invoked successfully.
+  // If we're coming from the watchdog, someone wrote something really dumb.
+  GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_STARTING);
+  if (error == GRPC_ERROR_NONE && !(t->destroying || t->closed)) {
+    t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
+    GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
+    send_ping_locked(exec_ctx, t, grpc_closure_create(keepalive_ping_end, t,
+                                                      grpc_combiner_scheduler(
+                                                          t->combiner, false)));
+    GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
+    grpc_timer_init(
+        exec_ctx, &t->keepalive_watchdog_timer,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_grace_delta_t),
+        grpc_closure_create(keepalive_watchdog, t,
+                            grpc_combiner_scheduler(t->combiner, false)),
+        gpr_now(GPR_CLOCK_MONOTONIC));
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive ping");
+}
+
+static void keepalive_ping_end(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  switch (t->keepalive_state) {
+    case GRPC_CHTTP2_KEEPALIVE_STATE_STARTING: {
+      // Unreachable
+      abort();
+      break;
+    };
+    case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
+      if (error == GRPC_ERROR_NONE) {
+        t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_STARTING;
+        grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
+        GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping");
+        grpc_timer_init(
+            exec_ctx, &t->keepalive_ping_timer,
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                         t->keepalive_ping_delta_t),
+            grpc_closure_create(keepalive_ping_start, t,
+                                grpc_combiner_scheduler(t->combiner, false)),
+            gpr_now(GPR_CLOCK_MONOTONIC));
+      }
+      break;
+    };
+    case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
+      // Do nothing.
+      break;
+    };
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive ping end");
+}
+
+static void keepalive_watchdog(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  switch (t->keepalive_state) {
+    case GRPC_CHTTP2_KEEPALIVE_STATE_STARTING: {
+      // Do nothing.
+      break;
+    };
+    case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
+      if (error == GRPC_ERROR_NONE) {
+        t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
+        grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+        close_transport_locked(exec_ctx, t,
+                               GRPC_ERROR_CREATE("keepalive wathdog timeout"));
+      }
+      break;
+    };
+    case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
+      // Unreachable
+      abort();
+      break;
+    };
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive watchdog");
+}
 
 static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
@@ -374,6 +469,18 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
   }
 
+  t->keepalive_init_delta_t = gpr_time_from_seconds(10, GPR_TIMESPAN);
+  t->keepalive_ping_delta_t = gpr_time_from_seconds(10, GPR_TIMESPAN);
+  t->keepalive_grace_delta_t = gpr_time_from_seconds(60, GPR_TIMESPAN);
+  t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_STARTING;
+  GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping");
+  grpc_timer_init(
+      exec_ctx, &t->keepalive_ping_timer,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_init_delta_t),
+      grpc_closure_create(keepalive_ping_start, t,
+                          grpc_combiner_scheduler(t->combiner, false)),
+      gpr_now(GPR_CLOCK_MONOTONIC));
+
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
   post_benign_reclaimer(exec_ctx, t);
 }
@@ -418,6 +525,20 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
     grpc_endpoint_shutdown(exec_ctx, t->ep);
+    switch (t->keepalive_state) {
+      case GRPC_CHTTP2_KEEPALIVE_STATE_STARTING: {
+        grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+        break;
+      }
+      case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
+        grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+        grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
+        break;
+      }
+      case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
+        break;
+      }
+    }
 
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;
