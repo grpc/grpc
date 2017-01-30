@@ -56,7 +56,8 @@ namespace grpc {
 class CoreCodegenInterface {
  public:
   /// Upon a failed assertion, log the error.
-  virtual void assert_fail(const char* failed_assertion) = 0;
+  virtual void assert_fail(const char* failed_assertion, const char* file,
+                           int line) = 0;
 
   virtual grpc_completion_queue* grpc_completion_queue_create(
       void* reserved) = 0;
@@ -99,6 +100,10 @@ class CoreCodegenInterface {
   virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
                                      grpc_slice slice) = 0;
   virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;
+  virtual grpc_slice grpc_slice_from_static_buffer(const void* buffer,
+                                                   size_t length) = 0;
+  virtual grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
+                                                   size_t length) = 0;
 
   virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
@@ -113,11 +118,11 @@ class CoreCodegenInterface {
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Codegen specific version of \a GPR_ASSERT.
-#define GPR_CODEGEN_ASSERT(x)                          \
-  do {                                                 \
-    if (!(x)) {                                        \
-      grpc::g_core_codegen_interface->assert_fail(#x); \
-    }                                                  \
+#define GPR_CODEGEN_ASSERT(x)                                              \
+  do {                                                                     \
+    if (!(x)) {                                                            \
+      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
+    }                                                                      \
   } while (0)
 
 }  // namespace grpc
