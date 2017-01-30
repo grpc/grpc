@@ -105,14 +105,14 @@
   }
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_MESSAGE;
-    _op.data.send_message = message.grpc_byteBuffer;
+    _op.data.send_message.send_message = message.grpc_byteBuffer;
     _handler = handler;
   }
   return self;
 }
 
 - (void)dealloc {
-  grpc_byte_buffer_destroy(_op.data.send_message);
+  grpc_byte_buffer_destroy(_op.data.send_message.send_message);
 }
 
 @end
@@ -145,7 +145,7 @@
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_INITIAL_METADATA;
     grpc_metadata_array_init(&_headers);
-    _op.data.recv_initial_metadata = &_headers;
+    _op.data.recv_initial_metadata.recv_initial_metadata = &_headers;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
@@ -177,7 +177,7 @@
 - (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_MESSAGE;
-    _op.data.recv_message = &_receivedMessage;
+    _op.data.recv_message.recv_message = &_receivedMessage;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
@@ -194,7 +194,7 @@
 
 @implementation GRPCOpRecvStatus{
   grpc_status_code _statusCode;
-  char *_details;
+  grpc_slice _details;
   size_t _detailsCapacity;
   grpc_metadata_array _trailers;
 }
@@ -208,7 +208,6 @@
     _op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     _op.data.recv_status_on_client.status = &_statusCode;
     _op.data.recv_status_on_client.status_details = &_details;
-    _op.data.recv_status_on_client.status_details_capacity = &_detailsCapacity;
     grpc_metadata_array_init(&_trailers);
     _op.data.recv_status_on_client.trailing_metadata = &_trailers;
     if (handler) {
@@ -216,11 +215,15 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
-                                                   details:strongSelf->_details];
-        NSDictionary *trailers = [NSDictionary
-                                  grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
-        handler(error, trailers);
+        if (strongSelf) {
+          char *details = grpc_slice_to_c_string(strongSelf->_details);
+          NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
+                                                     details:details];
+          NSDictionary *trailers = [NSDictionary
+                                    grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
+          handler(error, trailers);
+          gpr_free(details);
+        }
       };
     }
   }
@@ -229,7 +232,7 @@
 
 - (void)dealloc {
   grpc_metadata_array_destroy(&_trailers);
-  gpr_free(_details);
+  grpc_slice_unref(_details);
 }
 
 @end

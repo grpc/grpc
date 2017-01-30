@@ -143,6 +143,7 @@ struct grpc_fd {
   /* Indicates that the fd is shutdown and that any pending read/write closures
      should fail */
   bool shutdown;
+  grpc_error *shutdown_error; /* reason for shutdown: set iff shutdown==true */
 
   /* The fd is either closed or we relinquished control of it. In either cases,
      this indicates that the 'fd' on this structure is no longer valid */
@@ -321,7 +322,7 @@ gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
 
 static const grpc_closure_scheduler_vtable workqueue_scheduler_vtable = {
-    workqueue_enqueue, workqueue_enqueue};
+    workqueue_enqueue, workqueue_enqueue, "workqueue"};
 
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
@@ -796,7 +797,7 @@ static polling_island *polling_island_merge(polling_island *p,
     gpr_atm_rel_store(&p->merged_to, (gpr_atm)q);
     PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
 
-    workqueue_move_items_to_parent(q);
+    workqueue_move_items_to_parent(p);
   }
   /* else if p == q, nothing needs to be done */
 
@@ -907,6 +908,7 @@ static void unref_by(grpc_fd *fd, int n) {
     fd->freelist_next = fd_freelist;
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
+    if (fd->shutdown) GRPC_ERROR_UNREF(fd->shutdown_error);
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -1058,11 +1060,11 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
-static grpc_error *fd_shutdown_error(bool shutdown) {
-  if (!shutdown) {
+static grpc_error *fd_shutdown_error(grpc_fd *fd) {
+  if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE("FD shutdown");
+    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
   }
 }
 
@@ -1076,7 +1078,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd->shutdown));
+    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd));
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
     gpr_log(GPR_ERROR,
@@ -1098,7 +1100,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd->shutdown));
+    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -1123,17 +1125,20 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 }
 
 /* Might be called multiple times */
-static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
   gpr_mu_lock(&fd->po.mu);
   /* Do the actual shutdown only once */
   if (!fd->shutdown) {
     fd->shutdown = true;
+    fd->shutdown_error = why;
 
     shutdown(fd->fd, SHUT_RDWR);
     /* Flush any pending read and write closures. Since fd->shutdown is 'true'
        at this point, the closures would be called with 'success = false' */
     set_ready_locked(exec_ctx, fd, &fd->read_closure);
     set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  } else {
+    GRPC_ERROR_UNREF(why);
   }
   gpr_mu_unlock(&fd->po.mu);
 }
@@ -1527,7 +1532,8 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
+        append_error(error,
+                     grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
         maybe_do_workqueue_work(exec_ctx, pi);
       } else if (data_ptr == &polling_island_wakeup_fd) {

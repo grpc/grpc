@@ -119,9 +119,10 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              grpc_error *error);
 
-static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                         grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  grpc_fd_shutdown(exec_ctx, tcp->em_fd);
+  grpc_fd_shutdown(exec_ctx, tcp->em_fd, why);
   grpc_resource_user_shutdown(exec_ctx, tcp->resource_user);
 }
 
@@ -181,7 +182,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
     size_t i;
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "read: error=%s", str);
-    grpc_error_free_string(str);
+
     for (i = 0; i < tcp->incoming_buffer->count; i++) {
       char *dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -435,7 +436,6 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     if (grpc_tcp_trace) {
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "write: %s", str);
-      grpc_error_free_string(str);
     }
 
     grpc_closure_run(exec_ctx, cb, error);
@@ -485,7 +485,6 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     if (grpc_tcp_trace) {
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "write: %s", str);
-      grpc_error_free_string(str);
     }
     grpc_closure_sched(exec_ctx, cb, error);
   }
