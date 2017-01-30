@@ -119,9 +119,10 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              grpc_error *error);
 
-static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                         grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  grpc_fd_shutdown(exec_ctx, tcp->em_fd);
+  grpc_fd_shutdown(exec_ctx, tcp->em_fd, why);
   grpc_resource_user_shutdown(exec_ctx, tcp->resource_user);
 }
 

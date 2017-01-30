@@ -123,7 +123,8 @@ static void handshake_failed_locked(grpc_exec_ctx* exec_ctx,
     // before destroying them, even if we know that there are no
     // pending read/write callbacks.  This should be fixed, at which
     // point this can be removed.
-    grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
+    grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint,
+                           GRPC_ERROR_REF(error));
     // Not shutting down, so the handshake failed.  Clean up before
     // invoking the callback.
     cleanup_args_for_failure_locked(exec_ctx, handshaker);
@@ -251,15 +252,18 @@ static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                                             grpc_handshaker* handshaker_in) {
+                                             grpc_handshaker* handshaker_in,
+                                             grpc_error* why) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
   gpr_mu_lock(&handshaker->mu);
   if (!handshaker->shutdown) {
     handshaker->shutdown = true;
-    grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
+    grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint,
+                           GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(exec_ctx, handshaker);
   }
   gpr_mu_unlock(&handshaker->mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void http_connect_handshaker_do_handshake(
