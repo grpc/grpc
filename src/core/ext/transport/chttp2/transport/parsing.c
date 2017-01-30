@@ -385,22 +385,23 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
   }
 
-  if (incoming_frame_size >
-      s->incoming_window_delta +
-          t->settings[GRPC_ACKED_SETTINGS]
-                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-    char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
-                 t->incoming_frame_size,
-                 s->incoming_window_delta +
-                     t->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
-    gpr_free(msg);
-    return err;
-  }
-
   if (s != NULL) {
+    if (incoming_frame_size >
+        s->incoming_window_delta +
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
+      char *msg;
+      gpr_asprintf(&msg,
+                   "frame of size %d overflows incoming window of %" PRId64,
+                   t->incoming_frame_size,
+                   s->incoming_window_delta +
+                       t->settings[GRPC_ACKED_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      gpr_free(msg);
+      return err;
+    }
+
     GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
                                   incoming_frame_size);
     if (s->incoming_window_delta - s->announce_window <=
