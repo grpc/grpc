@@ -1233,6 +1233,9 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
     ],
+    external_deps = [
+        "protobuf",
+    ],
 )
 
 grpc_cc_library(
