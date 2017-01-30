@@ -81,7 +81,9 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
           state.incoming_buffer.length, strlen(magic_connect_string));
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
     gpr_atm_rel_store(&state.done_atm, 1);
-    grpc_endpoint_shutdown(exec_ctx, state.tcp);
+    grpc_endpoint_shutdown(
+        exec_ctx, state.tcp,
+        GRPC_ERROR_CREATE("Incoming buffer longer than magic_connect_string"));
     grpc_endpoint_destroy(exec_ctx, state.tcp);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,

@@ -101,16 +101,19 @@ static void pending_handshake_manager_remove_locked(
 }
 
 static void pending_handshake_manager_shutdown_locked(grpc_exec_ctx *exec_ctx,
-                                                      server_state *state) {
+                                                      server_state *state,
+                                                      grpc_error *why) {
   pending_handshake_manager_node *prev_node = NULL;
   for (pending_handshake_manager_node *node = state->pending_handshake_mgrs;
        node != NULL; node = node->next) {
-    grpc_handshake_manager_shutdown(exec_ctx, node->handshake_mgr);
+    grpc_handshake_manager_shutdown(exec_ctx, node->handshake_mgr,
+                                    GRPC_ERROR_REF(why));
     gpr_free(prev_node);
     prev_node = node;
   }
   gpr_free(prev_node);
   state->pending_handshake_mgrs = NULL;
+  GRPC_ERROR_UNREF(why);
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
@@ -129,7 +132,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       // before destroying them, even if we know that there are no
       // pending read/write callbacks.  This should be fixed, at which
       // point this can be removed.
-      grpc_endpoint_shutdown(exec_ctx, args->endpoint);
+      grpc_endpoint_shutdown(exec_ctx, args->endpoint, GRPC_ERROR_NONE);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
       grpc_channel_args_destroy(exec_ctx, args->args);
       grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
@@ -210,7 +213,8 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&state->mu);
   grpc_closure *destroy_done = state->server_destroy_listener_done;
   GPR_ASSERT(state->shutdown);
-  pending_handshake_manager_shutdown_locked(exec_ctx, state);
+  pending_handshake_manager_shutdown_locked(exec_ctx, state,
+                                            GRPC_ERROR_REF(error));
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.

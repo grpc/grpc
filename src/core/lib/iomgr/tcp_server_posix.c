@@ -276,7 +276,8 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->active_ports) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(exec_ctx, sp->emfd);
+      grpc_fd_shutdown(exec_ctx, sp->emfd,
+                       GRPC_ERROR_CREATE("Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -773,7 +774,8 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
   if (s->active_ports) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(exec_ctx, sp->emfd);
+      grpc_fd_shutdown(exec_ctx, sp->emfd,
+                       GRPC_ERROR_CREATE("Server shutdown"));
     }
   }
   gpr_mu_unlock(&s->mu);
