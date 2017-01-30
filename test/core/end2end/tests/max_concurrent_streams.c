@@ -583,6 +583,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  grpc_call_details_destroy(&call_details);
+  grpc_call_details_init(&call_details);
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
