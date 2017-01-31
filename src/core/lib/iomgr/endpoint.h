@@ -57,7 +57,7 @@ struct grpc_endpoint_vtable {
                          grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                              grpc_pollset_set *pollset);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_error *why);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
@@ -96,7 +96,8 @@ void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                            grpc_error *why);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 
 /* Add an endpoint to a pollset, so that when the pollset is polled, events from
