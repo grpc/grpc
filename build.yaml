@@ -2494,6 +2494,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: resolve_address_posix_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: resolve_address_test
   build: test
   language: c
