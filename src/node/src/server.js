@@ -728,11 +728,17 @@ var defaultHandler = {
  *     method implementation for the provided service.
  */
 Server.prototype.addService = function(service, implementation) {
+  if (!_.isObjectLike(service) || !_.isObjectLike(implementation)) {
+    throw new Error('addService requires two objects as arguments');
+  }
+  if (_.keys(service).length === 0) {
+    throw new Error('Cannot add an empty service to a server');
+  }
   if (this.started) {
     throw new Error('Can\'t add a service to a started server.');
   }
   var self = this;
-  _.each(service, function(attrs, name) {
+  _.forOwn(service, function(attrs, name) {
     var method_type;
     if (attrs.requestStream) {
       if (attrs.responseStream) {
