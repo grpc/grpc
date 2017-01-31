@@ -679,8 +679,6 @@ def build_interop_image_jobspec(language, tag=None):
     tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
          'BASE_NAME': 'grpc_interop_%s' % language.safename}
-  if not args.travis:
-    env['TTY_FLAG'] = '-t'
   # This env variable is used to get around the github rate limit
   # error when running the PHP `composer install` command
   host_file = '%s/.composer/auth.json' % os.environ['HOME']
