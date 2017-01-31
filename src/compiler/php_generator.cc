@@ -113,7 +113,7 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   map<grpc::string, grpc::string> vars;
   out->Print(GetPHPComments(service, "//").c_str());
   vars["name"] = service->name();
-  out->Print(vars, "class $name$Client extends \\Grpc\\BaseStub {\n\n");
+  out->Print(vars, "class $name$Grpc extends \\Grpc\\BaseStub {\n\n");
   out->Indent();
   out->Print(
       "/**\n * @param string $$hostname hostname\n"
