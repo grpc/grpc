@@ -117,7 +117,8 @@ void grpc_network_status_shutdown_all_endpoints() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (endpoint_ll_node *curr = head; curr != NULL; curr = curr->next) {
-    curr->ep->vtable->shutdown(&exec_ctx, curr->ep);
+    curr->ep->vtable->shutdown(&exec_ctx, curr->ep,
+                               GRPC_ERROR_CREATE("Network unavailable"));
   }
   gpr_mu_unlock(&g_endpoint_mutex);
   grpc_exec_ctx_finish(&exec_ctx);
