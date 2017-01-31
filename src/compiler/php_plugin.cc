@@ -51,18 +51,22 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const grpc::string &parameter,
                 grpc::protobuf::compiler::GeneratorContext *context,
                 grpc::string *error) const {
-    grpc::string code = GenerateFile(file);
-    if (code.size() == 0) {
+    if (file->service_count() == 0) {
       return true;
     }
 
-    // Get output file name
-    grpc::string file_name = GetPHPServiceFilename(file->name());
+    for (int i = 0; i < file->service_count(); i++) {
+      grpc::string code = GenerateFile(file, file->service(i));
 
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
-        context->Open(file_name));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
-    coded_out.WriteRaw(code.data(), code.size());
+      // Get output file name
+      grpc::string file_name = GetPHPServiceFilename(file, file->service(i));
+
+      std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+          context->Open(file_name));
+      grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+      coded_out.WriteRaw(code.data(), code.size());
+    }
+
     return true;
   }
 };
