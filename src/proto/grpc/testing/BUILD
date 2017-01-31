@@ -42,11 +42,13 @@ grpc_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
     deps = ["payloads_proto", "stats_proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
@@ -58,11 +60,13 @@ grpc_proto_library(
 grpc_proto_library(
     name = "empty_proto",
     srcs = ["empty.proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
     name = "messages_proto",
     srcs = ["messages.proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
@@ -73,6 +77,7 @@ grpc_proto_library(
 grpc_proto_library(
     name = "payloads_proto",
     srcs = ["payloads.proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
@@ -84,6 +89,7 @@ grpc_proto_library(
 grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
+    has_services = False,
 )
 
 grpc_proto_library(
