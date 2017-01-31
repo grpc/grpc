@@ -51,7 +51,7 @@ class UnaryCall extends AbstractCall
      */
     public function start($data, array $metadata = [], array $options = [])
     {
-        $message_array = ['message' => $this->serializeMessage($data)];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (isset($options['flags'])) {
             $message_array['flags'] = $options['flags'];
         }
@@ -79,6 +79,6 @@ class UnaryCall extends AbstractCall
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
 
-        return [$this->deserializeResponse($event->message), $status];
+        return [$this->_deserializeResponse($event->message), $status];
     }
 }
