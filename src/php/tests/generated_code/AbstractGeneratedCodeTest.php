@@ -32,6 +32,9 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
+
+// The following includes are needed when using protobuf 3.1.0
+// and will suppress warnings when using protobuf 3.2.0+
 @include_once dirname(__FILE__).'/math.pb.php';
 @include_once dirname(__FILE__).'/math_grpc_pb.php';
 

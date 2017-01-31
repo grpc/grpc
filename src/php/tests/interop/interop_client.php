@@ -32,8 +32,12 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
+
+// The following includes are needed when using protobuf 3.1.0
+// and will suppress warnings when using protobuf 3.2.0+
 @include_once 'src/proto/grpc/testing/test.pb.php';
 @include_once 'src/proto/grpc/testing/test_grpc_pb.php';
+
 use Google\Auth\CredentialsLoader;
 use Google\Auth\ApplicationDefaultCredentials;
 use GuzzleHttp\ClientInterface;
