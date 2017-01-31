@@ -57,6 +57,7 @@ extern "C" {
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
 }
+#include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
@@ -402,6 +403,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -470,6 +472,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     response_rw.Read(&recv_request, tag(0));
     while (state.KeepRunning()) {
+      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -527,6 +530,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     }
     request_rw->Read(&recv_response, tag(0));
     while (state.KeepRunning()) {
+      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
