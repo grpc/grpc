@@ -83,7 +83,7 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
                                  const grpc::string& protofiles)
     : has_error_(false),
       dynamic_factory_(new protobuf::DynamicMessageFactory()) {
-  std::vector<std::string> service_list;
+  std::vector<grpc::string> service_list;
   if (channel) {
     reflection_db_.reset(new grpc::ProtoReflectionDescriptorDatabase(channel));
     reflection_db_->GetServices(&service_list);
