@@ -33,11 +33,15 @@
  */
 
 require dirname(__FILE__).'/../vendor/autoload.php';
-require dirname(__FILE__).'/route_guide.php';
+
+// The following includes are needed when using protobuf 3.1.0
+// and will suppress warnings when using protobuf 3.2.0+
+@include_once dirname(__FILE__).'/route_guide.pb.php';
+@include_once dirname(__FILE__).'/route_guide_grpc_pb.php';
 
 define('COORD_FACTOR', 1e7);
 
-$client = new routeguide\RouteGuideClient('localhost:50051', [
+$client = new Routeguide\RouteGuideClient('localhost:50051', [
     'credentials' => Grpc\ChannelCredentials::createInsecure(),
 ]);
 
@@ -63,7 +67,7 @@ function runGetFeature()
     echo "Running GetFeature...\n";
     global $client;
 
-    $point = new routeguide\Point();
+    $point = new Routeguide\Point();
     $points = array(
         array(409146138, -746188906),
         array(0, 0),
@@ -88,15 +92,15 @@ function runListFeatures()
     echo "Running ListFeatures...\n";
     global $client;
 
-    $lo_point = new routeguide\Point();
-    $hi_point = new routeguide\Point();
+    $lo_point = new Routeguide\Point();
+    $hi_point = new Routeguide\Point();
 
     $lo_point->setLatitude(400000000);
     $lo_point->setLongitude(-750000000);
     $hi_point->setLatitude(420000000);
     $hi_point->setLongitude(-730000000);
 
-    $rectangle = new routeguide\Rectangle();
+    $rectangle = new Routeguide\Rectangle();
     $rectangle->setLo($lo_point);
     $rectangle->setHi($hi_point);
 
@@ -126,7 +130,7 @@ function runRecordRoute()
     $num_points_in_db = count($db);
     $num_points = 10;
     for ($i = 0; $i < $num_points; ++$i) {
-        $point = new routeguide\Point();
+        $point = new Routeguide\Point();
         $index = rand(0, $num_points_in_db - 1);
         $lat = $db[$index]['location']['latitude'];
         $long = $db[$index]['location']['longitude'];
@@ -169,11 +173,11 @@ function runRouteChat()
     );
 
     foreach ($notes as $n) {
-        $point = new routeguide\Point();
+        $point = new Routeguide\Point();
         $point->setLatitude($lat = $n[0]);
         $point->setLongitude($long = $n[1]);
 
-        $route_note = new routeguide\RouteNote();
+        $route_note = new Routeguide\RouteNote();
         $route_note->setLocation($point);
         $route_note->setMessage($message = $n[2]);
 
