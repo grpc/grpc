@@ -1155,7 +1155,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           grpc_channel_credentials *creds = read_channel_creds(&inp);
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
-          GPR_ASSERT(g_channel != NULL);
           {
             grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
             grpc_channel_args_destroy(&exec_ctx, args);
