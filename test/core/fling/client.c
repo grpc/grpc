@@ -214,9 +214,9 @@ int main(int argc, char **argv) {
 
   sc.init();
 
-  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds);
+  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
   gpr_timespec end_profiling =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds);
+      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();

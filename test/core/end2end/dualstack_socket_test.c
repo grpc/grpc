@@ -57,7 +57,7 @@
 static void *tag(intptr_t i) { return (void *)i; }
 
 static gpr_timespec ms_from_now(int ms) {
-  return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);
+  return grpc_timeout_milliseconds_to_deadline(ms);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -261,7 +261,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
