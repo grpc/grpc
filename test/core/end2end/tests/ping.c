@@ -70,7 +70,7 @@ static void test_ping(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(99));
+        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
