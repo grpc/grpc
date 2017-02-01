@@ -48,7 +48,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   s[size] = 0;
 
   grpc_uri *x;
-  if ((x = grpc_uri_parse(s, 1))) {
+  if ((x = grpc_uri_parse(s, true, NULL))) {
     grpc_uri_destroy(x);
   }
   gpr_free(s);

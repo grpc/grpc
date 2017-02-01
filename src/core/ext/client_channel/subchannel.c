@@ -789,7 +789,7 @@ grpc_call_stack *grpc_subchannel_call_get_call_stack(
 }
 
 static void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
-  grpc_uri *uri = grpc_uri_parse(uri_str, 0 /* suppress_errors */);
+  grpc_uri *uri = grpc_uri_parse(uri_str, false /* suppress_errors */, NULL);
   GPR_ASSERT(uri != NULL);
   if (strcmp(uri->scheme, "ipv4") == 0) {
     GPR_ASSERT(parse_ipv4(uri, addr));

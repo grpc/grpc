@@ -50,8 +50,19 @@ typedef struct {
   char *fragment;
 } grpc_uri;
 
-/** parse a uri, return NULL on failure */
-grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
+typedef enum {
+  GRPC_URI_SECTION_NONE = 0,
+  GRPC_URI_SECTION_SCHEME,
+  GRPC_URI_SECTION_AUTHORITY,
+  GRPC_URI_SECTION_PATH,
+  GRPC_URI_SECTION_QUERY,
+  GRPC_URI_SECTION_FRAGMENT
+} grpc_uri_section;
+
+/** parse a uri, return NULL on failure and set \a error_section (if not NULL)
+ * to the lefmost part of the URI that failed parsing */
+grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors,
+                         grpc_uri_section *error_section);
 
 /** return the part of a query string after the '=' in "?key=xxx&...", or NULL
  * if key is not present */

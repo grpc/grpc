@@ -46,7 +46,7 @@
 char* grpc_get_http_proxy_server() {
   char* uri_str = gpr_getenv("http_proxy");
   if (uri_str == NULL) return NULL;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */, NULL);
   char* proxy_name = NULL;
   if (uri == NULL || uri->authority == NULL) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");

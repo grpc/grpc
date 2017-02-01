@@ -33,6 +33,7 @@
 
 #include "src/core/ext/client_channel/uri_parser.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
@@ -42,7 +43,7 @@
 static void test_succeeds(const char *uri_text, const char *scheme,
                           const char *authority, const char *path,
                           const char *query, const char *fragment) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+  grpc_uri *uri = grpc_uri_parse(uri_text, false, NULL);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
@@ -52,14 +53,16 @@ static void test_succeeds(const char *uri_text, const char *scheme,
   grpc_uri_destroy(uri);
 }
 
-static void test_fails(const char *uri_text) {
-  GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
+static void test_fails(const char *uri_text, grpc_uri_section where) {
+  grpc_uri_section section = GRPC_URI_SECTION_NONE;
+  GPR_ASSERT(NULL == grpc_uri_parse(uri_text, false, &section));
+  GPR_ASSERT(section == where);
 }
 
 static void test_query_parts() {
   {
     const char *uri_text = "http://foo/path?a&b=B&c=&#frag";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(uri_text, false, NULL);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -91,7 +94,7 @@ static void test_query_parts() {
   {
     /* test the current behavior of multiple query part values */
     const char *uri_text = "http://auth/path?foo=bar=baz&foobar==";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(uri_text, false, NULL);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -108,7 +111,7 @@ static void test_query_parts() {
   {
     /* empty query */
     const char *uri_text = "http://foo/path";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(uri_text, false, NULL);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -143,11 +146,11 @@ int main(int argc, char **argv) {
   test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
   test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
 
-  test_fails("xyz");
-  test_fails("http:?dangling-pct-%0");
-  test_fails("http://foo?[bar]");
-  test_fails("http://foo?x[bar]");
-  test_fails("http://foo?bar#lol#");
+  test_fails("xyz", GRPC_URI_SECTION_SCHEME);
+  test_fails("http:?dangling-pct-%0", GRPC_URI_SECTION_QUERY);
+  test_fails("http://foo?[bar]", GRPC_URI_SECTION_QUERY);
+  test_fails("http://foo?x[bar]", GRPC_URI_SECTION_QUERY);
+  test_fails("http://foo?bar#lol#", GRPC_URI_SECTION_FRAGMENT);
 
   test_query_parts();
   return 0;
