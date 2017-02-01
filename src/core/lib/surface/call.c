@@ -242,18 +242,10 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error);
 
-static void add_init_error(grpc_error **composite, grpc_error *new) {
-  if (new == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE)
-    *composite = GRPC_ERROR_CREATE("Call creation failed");
-  *composite = grpc_error_add_child(*composite, new);
-}
-
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                              const grpc_call_create_args *args,
                              grpc_call **out_call) {
   size_t i, j;
-  grpc_error *error = GRPC_ERROR_NONE;
   grpc_channel_stack *channel_stack =
       grpc_channel_get_channel_stack(args->channel);
   grpc_call *call;
@@ -316,11 +308,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_call_context_set(
           call, GRPC_CONTEXT_TRACING,
           args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
-    } else if (0 ==
-               (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
-      add_init_error(&error,
-                     GRPC_ERROR_CREATE("Census tracing propagation requested "
-                                       "without Census context propagation"));
+    } else {
+      GPR_ASSERT(args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
@@ -343,11 +332,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  add_init_error(&error, grpc_call_stack_init(exec_ctx, channel_stack, 1,
-                                              destroy_call, call, call->context,
-                                              args->server_transport_data, path,
-                                              call->start_time, send_deadline,
-                                              CALL_STACK_FROM_CALL(call)));
+  grpc_error *error = grpc_call_stack_init(
+      exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      args->server_transport_data, path, call->start_time, send_deadline,
+      CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
   }
