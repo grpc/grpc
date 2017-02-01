@@ -67,7 +67,7 @@ void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e) {
 
 grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
   const gpr_timespec deadline =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(timeout_seconds);
+      grpc_timeout_seconds_to_deadline(timeout_seconds);
   return grpc_completion_queue_next(v->cq, deadline, NULL);
 }
 
