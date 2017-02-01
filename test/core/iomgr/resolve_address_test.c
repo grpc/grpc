@@ -42,7 +42,7 @@
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100);
+  return grpc_timeout_seconds_to_deadline(100);
 }
 
 typedef struct args_struct {

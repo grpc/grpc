@@ -64,9 +64,9 @@ static void test_alarm(void) {
     grpc_event ev;
     void *tag = create_test_tag();
     grpc_alarm *alarm =
-        grpc_alarm_create(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), tag);
+        grpc_alarm_create(cc, grpc_timeout_seconds_to_deadline(1), tag);
 
-    ev = grpc_completion_queue_next(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2),
+    ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(2),
                                     NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.tag == tag);
@@ -78,10 +78,10 @@ static void test_alarm(void) {
     grpc_event ev;
     void *tag = create_test_tag();
     grpc_alarm *alarm =
-        grpc_alarm_create(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), tag);
+        grpc_alarm_create(cc, grpc_timeout_seconds_to_deadline(2), tag);
 
     grpc_alarm_cancel(alarm);
-    ev = grpc_completion_queue_next(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
+    ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),
                                     NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.tag == tag);

@@ -234,8 +234,20 @@ class CLanguage(object):
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
           timeout_scaling *= 5
+
         if polling_strategy in target.get('excluded_poll_engines', []):
           continue
+
+        # Scale overall test timeout if running under various sanitizers.
+        config = self.args.config
+        if ('asan' in config
+            or config == 'msan'
+            or config == 'tsan'
+            or config == 'ubsan'
+            or config == 'helgrind'
+            or config == 'memcheck'):
+          timeout_scaling *= 20
+
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):

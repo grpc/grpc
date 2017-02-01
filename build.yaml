@@ -695,7 +695,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - third_party/Cronet/bidirectional_stream_c.h
+  - third_party/objective_c/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
@@ -3757,7 +3757,6 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
@@ -3769,7 +3768,6 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
-    timeout_multiplier: 3
   asan-trace-cmp:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
@@ -3782,7 +3780,6 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
@@ -3801,13 +3798,11 @@ configs:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
-    timeout_multiplier: 20
     valgrind: --tool=helgrind
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
-    timeout_multiplier: 10
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
@@ -3821,7 +3816,6 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
-    timeout_multiplier: 4
   mutrace:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
@@ -3844,7 +3838,6 @@ configs:
     compile_the_world: true
     test_environ:
       TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-    timeout_multiplier: 5
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow
@@ -3857,7 +3850,6 @@ configs:
     compile_the_world: true
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-    timeout_multiplier: 1.5
 defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
