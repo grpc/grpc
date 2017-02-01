@@ -51,8 +51,6 @@ typedef struct cronet_transport {
 
 extern grpc_transport_vtable grpc_cronet_vtable;
 
-bool grpc_cronet_packet_coalescing_enabled = true;
-
 GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
     void *engine, const char *target, const grpc_channel_args *args,
     void *reserved) {
@@ -68,8 +66,4 @@ GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   return grpc_channel_create(&exec_ctx, target, args,
                              GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
-}
-
-GRPCAPI void grpc_cronet_use_packet_coalescing(bool use_coalescing) {
-  grpc_cronet_packet_coalescing_enabled = use_coalescing;
 }
