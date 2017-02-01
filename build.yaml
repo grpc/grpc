@@ -3288,7 +3288,7 @@ targets:
   - linux
   - posix
 - name: hybrid_end2end_test
-  gtest: true
+  flaky: true
   build: test
   language: c++
   src:
