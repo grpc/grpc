@@ -877,7 +877,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
                       'src/core/ext/transport/cronet/transport/cronet_transport.c',
-                      'third_party/Cronet/bidirectional_stream_c.h'
+                      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
   s.subspec 'Tests' do |ss|
