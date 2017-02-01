@@ -103,7 +103,7 @@ static void execute_many_loop(void *a) {
     }
     // sleep for a little bit, to test a combiner draining and another thread
     // picking it up
-    gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }

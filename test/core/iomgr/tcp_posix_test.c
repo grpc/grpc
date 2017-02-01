@@ -175,7 +175,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   size_t written_bytes;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -226,7 +226,7 @@ static void large_read_test(size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -330,7 +330,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC),
-                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10))));
+                          grpc_timeout_milliseconds_to_deadline(10))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     do {
@@ -363,7 +363,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   uint8_t current_data = 0;
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO,
@@ -428,7 +428,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   int fd;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
