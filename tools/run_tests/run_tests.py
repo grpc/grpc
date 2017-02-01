@@ -235,6 +235,9 @@ class CLanguage(object):
         if polling_strategy == 'poll-cv':
           timeout_scaling *= 5
 
+        if polling_strategy in target.get('excluded_poll_engines', []):
+          continue
+
         # Scale overall test timeout if running under various sanitizers.
         config = self.args.config
         if ('asan' in config
