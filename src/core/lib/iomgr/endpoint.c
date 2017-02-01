@@ -54,8 +54,9 @@ void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
   ep->vtable->add_to_pollset_set(exec_ctx, ep, pollset_set);
 }
 
-void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
-  ep->vtable->shutdown(exec_ctx, ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                            grpc_error* why) {
+  ep->vtable->shutdown(exec_ctx, ep, why);
 }
 
 void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {

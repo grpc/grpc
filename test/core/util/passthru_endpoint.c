@@ -109,21 +109,25 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
-static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                        grpc_error *why) {
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"));
+    grpc_closure_sched(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"));
+    grpc_closure_sched(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);
   grpc_resource_user_shutdown(exec_ctx, m->resource_user);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {

@@ -91,7 +91,7 @@ static void run_test(const test_fixture *fixture) {
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     channels[i] = fixture->create_channel(addr);
 
-    gpr_timespec connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30);
+    gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
     grpc_connectivity_state state;
     while ((state = grpc_channel_check_connectivity_state(channels[i], 1)) !=
            GRPC_CHANNEL_READY) {

@@ -68,7 +68,8 @@ struct grpc_connector_vtable {
   void (*ref)(grpc_connector *connector);
   void (*unref)(grpc_exec_ctx *exec_ctx, grpc_connector *connector);
   /** Implementation of grpc_connector_shutdown */
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_connector *connector);
+  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
+                   grpc_error *why);
   /** Implementation of grpc_connector_connect */
   void (*connect)(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
                   const grpc_connect_in_args *in_args,
@@ -83,7 +84,7 @@ void grpc_connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
                             grpc_connect_out_args *out_args,
                             grpc_closure *notify);
 /** Cancel any pending connection */
-void grpc_connector_shutdown(grpc_exec_ctx *exec_ctx,
-                             grpc_connector *connector);
+void grpc_connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
+                             grpc_error *why);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CONNECTOR_H */
