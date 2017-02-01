@@ -66,6 +66,10 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
+  if (target == NULL) {
+    gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
+    return NULL;
+  }
   // Add channel arg containing the server URI.
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
