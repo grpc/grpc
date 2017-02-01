@@ -547,8 +547,10 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
-  if (uri == NULL || uri->path[0] == '\0') {
-    return GRPC_ERROR_CREATE("cannot parse server URI");
+  if (uri == NULL) return GRPC_ERROR_CREATE("cannot parse server URI");
+  if (uri->path[0] == '\0') {
+    grpc_uri_destroy(uri);
+    return GRPC_ERROR_CREATE("server URI is missing path");
   }
   chand->server_name =
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
