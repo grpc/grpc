@@ -125,6 +125,8 @@ uint8_t grpc_call_is_client(grpc_call *call);
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level);
 
+extern int grpc_call_error_trace;
+
 #ifdef __cplusplus
 }
 #endif
