@@ -269,7 +269,12 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_destroy(cq);
 }
 
-- (void)testPacketCoalescing {
+- (void)PacketCoalescing:(bool)use_coalescing {
+  grpc_arg arg;
+  arg.key = GRPC_ARG_USE_CRONET_PACKET_COALESCING;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.value.integer = use_coalescing ? 1:0;
+  grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   grpc_call *c;
   grpc_slice request_payload_slice =
   grpc_slice_from_copied_string("hello world");
@@ -285,8 +290,8 @@ unsigned int parse_h2_length(const char *field) {
   gpr_join_host_port(&addr, "127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
-  grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr,
-                                                           NULL, NULL);
+  grpc_channel *client =
+      grpc_cronet_secure_channel_create(cronetEngine, addr, args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
@@ -379,7 +384,7 @@ unsigned int parse_h2_length(const char *field) {
     long len;
     bool coalesced = false;
     while ((len = SSL_read(ssl, buf, sizeof(buf))) > 0) {
-      NSLog(@"Read len: %ld", len);
+      gpr_log(GPR_DEBUG, "Read len: %ld", len);
 
       // Analyze the HTTP/2 frames in the same TLS PDU to identify if
       // coalescing is successful
@@ -404,7 +409,7 @@ unsigned int parse_h2_length(const char *field) {
       }
     }
 
-    XCTAssert(coalesced);
+    XCTAssert(coalesced == use_coalescing);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
     close(s);
@@ -431,6 +436,11 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
+}
+
+- (void)testPacketCoalescing {
+  [self PacketCoalescing:true];
+  [self PacketCoalescing:false];
 }
 
 @end
