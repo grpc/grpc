@@ -57,7 +57,7 @@
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -150,7 +150,7 @@ unsigned int parse_h2_length(const char *field) {
   grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
   grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_metadata meta_c[2] = {
     {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
     {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
@@ -195,7 +195,7 @@ unsigned int parse_h2_length(const char *field) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -204,12 +204,12 @@ unsigned int parse_h2_length(const char *field) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;

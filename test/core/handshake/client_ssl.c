@@ -274,8 +274,8 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(
-        channel, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), cq, NULL);
-    gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+        channel, state, grpc_timeout_seconds_to_deadline(3), cq, NULL);
+    gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     state =
