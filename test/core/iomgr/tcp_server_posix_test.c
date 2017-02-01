@@ -202,7 +202,7 @@ static void test_no_op_with_port_and_start(void) {
 
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
                         socklen_t remote_len, on_connect_result *result) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   int clifd = socket(remote->sa_family, SOCK_STREAM, 0);
   int nconnects_before;
 
