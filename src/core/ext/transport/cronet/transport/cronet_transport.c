@@ -112,6 +112,7 @@ struct grpc_cronet_transport {
   grpc_transport base; /* must be first element in this structure */
   stream_engine *engine;
   char *host;
+  bool use_packet_coalescing;
 };
 typedef struct grpc_cronet_transport grpc_cronet_transport;
 
@@ -150,10 +151,8 @@ struct op_state {
   bool state_callback_received[OP_NUM_OPS];
   bool fail_state;
   bool flush_read;
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
   bool flush_cronet_when_ready;
   bool pending_write_for_trailer;
-#endif
   bool unprocessed_send_message;
   grpc_error *cancel_error;
   /* data structure for storing data coming from server */
@@ -178,7 +177,7 @@ struct op_storage {
 struct stream_obj {
   struct op_and_state *oas;
   grpc_transport_stream_op *curr_op;
-  grpc_cronet_transport curr_ct;
+  grpc_cronet_transport *curr_ct;
   grpc_stream *curr_gs;
   bidirectional_stream *cbs;
   bidirectional_stream_header_array header_array;
@@ -415,6 +414,7 @@ static void on_succeeded(bidirectional_stream *stream) {
 static void on_stream_ready(bidirectional_stream *stream) {
   CRONET_LOG(GPR_DEBUG, "W: on_stream_ready(%p)", stream);
   stream_obj *s = (stream_obj *)stream->annotation;
+  grpc_cronet_transport *t = (grpc_cronet_transport *)s->curr_ct;
   gpr_mu_lock(&s->mu);
   s->state.state_op_done[OP_SEND_INITIAL_METADATA] = true;
   s->state.state_callback_received[OP_SEND_INITIAL_METADATA] = true;
@@ -425,12 +425,12 @@ static void on_stream_ready(bidirectional_stream *stream) {
   }
 /* Send the initial metadata on wire if there is no SEND_MESSAGE or
  * SEND_TRAILING_METADATA ops pending */
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-  if (s->state.flush_cronet_when_ready) {
-    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_flush (%p)", s->cbs);
-    bidirectional_stream_flush(stream);
+  if (t->use_packet_coalescing) {
+    if (s->state.flush_cronet_when_ready) {
+      CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_flush (%p)", s->cbs);
+      bidirectional_stream_flush(stream);
+    }
   }
-#endif
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -540,6 +540,7 @@ static void on_response_trailers_received(
   CRONET_LOG(GPR_DEBUG, "R: on_response_trailers_received(%p,%p)", stream,
              trailers);
   stream_obj *s = (stream_obj *)stream->annotation;
+  grpc_cronet_transport *t = (grpc_cronet_transport *)s->curr_ct;
   gpr_mu_lock(&s->mu);
   memset(&s->state.rs.trailing_metadata, 0,
          sizeof(s->state.rs.trailing_metadata));
@@ -568,10 +569,10 @@ static void on_response_trailers_received(
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, 0)", s->cbs);
     s->state.state_callback_received[OP_SEND_MESSAGE] = false;
     bidirectional_stream_write(s->cbs, "", 0, true);
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
-    bidirectional_stream_flush(s->cbs);
-#endif
+    if (t->use_packet_coalescing) {
+      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
+      bidirectional_stream_flush(s->cbs);
+    }
     s->state.state_op_done[OP_SEND_TRAILING_METADATA] = true;
 
     gpr_mu_unlock(&s->mu);
@@ -695,8 +696,10 @@ static bool header_has_authority(grpc_linked_mdelem *head) {
   executed. This is the heart of the state machine.
 */
 static bool op_can_be_run(grpc_transport_stream_op *curr_op,
-                          struct op_state *stream_state,
-                          struct op_state *op_state, enum e_op_id op_id) {
+                          struct stream_obj *s, struct op_state *op_state,
+                          enum e_op_id op_id) {
+  struct op_state *stream_state = &s->state;
+  grpc_cronet_transport *t = s->curr_ct;
   bool result = true;
   /* When call is canceled, every op can be run, except under following
   conditions
@@ -768,11 +771,9 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
       result = false;
     /* we haven't got on_write_completed for the send yet */
     else if (stream_state->state_op_done[OP_SEND_MESSAGE] &&
-             !stream_state->state_callback_received[OP_SEND_MESSAGE]
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-             && !stream_state->pending_write_for_trailer
-#endif
-             )
+             !stream_state->state_callback_received[OP_SEND_MESSAGE] &&
+             !(t->use_packet_coalescing &&
+               stream_state->pending_write_for_trailer))
       result = false;
   } else if (op_id == OP_CANCEL_ERROR) {
     /* already executed */
@@ -845,42 +846,41 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                           struct op_and_state *oas) {
   grpc_transport_stream_op *stream_op = &oas->op;
   struct stream_obj *s = oas->s;
+  grpc_cronet_transport *t = (grpc_cronet_transport *)s->curr_ct;
   struct op_state *stream_state = &s->state;
   enum e_op_result result = NO_ACTION_POSSIBLE;
   if (stream_op->send_initial_metadata &&
-      op_can_be_run(stream_op, stream_state, &oas->state,
-                    OP_SEND_INITIAL_METADATA)) {
+      op_can_be_run(stream_op, s, &oas->state, OP_SEND_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p OP_SEND_INITIAL_METADATA", oas);
     /* Start new cronet stream. It is destroyed in on_succeeded, on_canceled,
      * on_failed */
     GPR_ASSERT(s->cbs == NULL);
     GPR_ASSERT(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
-    s->cbs = bidirectional_stream_create(s->curr_ct.engine, s->curr_gs,
+    s->cbs = bidirectional_stream_create(t->engine, s->curr_gs,
                                          &cronet_callbacks);
     CRONET_LOG(GPR_DEBUG, "%p = bidirectional_stream_create()", s->cbs);
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-    bidirectional_stream_disable_auto_flush(s->cbs, true);
-    bidirectional_stream_delay_request_headers_until_flush(s->cbs, true);
-#endif
+    if (t->use_packet_coalescing) {
+      bidirectional_stream_disable_auto_flush(s->cbs, true);
+      bidirectional_stream_delay_request_headers_until_flush(s->cbs, true);
+    }
     char *url = NULL;
     const char *method = "POST";
     s->header_array.headers = NULL;
     convert_metadata_to_cronet_headers(
-        stream_op->send_initial_metadata->list.head, s->curr_ct.host, &url,
+        stream_op->send_initial_metadata->list.head, t->host, &url,
         &s->header_array.headers, &s->header_array.count, &method);
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-    if (!stream_op->send_message && !stream_op->send_trailing_metadata) {
-      s->state.flush_cronet_when_ready = true;
+    if (t->use_packet_coalescing) {
+      if (!stream_op->send_message && !stream_op->send_trailing_metadata) {
+        s->state.flush_cronet_when_ready = true;
+      }
     }
-#endif
     result = ACTION_TAKEN_WITH_CALLBACK;
   } else if (stream_op->send_message &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
-                           OP_SEND_MESSAGE)) {
+             op_can_be_run(stream_op, s, &oas->state, OP_SEND_MESSAGE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_SEND_MESSAGE", oas);
     stream_state->unprocessed_send_message = false;
     if (stream_state->state_callback_received[OP_FAILED]) {
@@ -913,19 +913,18 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
         bidirectional_stream_write(s->cbs, stream_state->ws.write_buffer,
                                    (int)write_buffer_size, false);
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-        if (!stream_op->send_trailing_metadata) {
-          CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)",
-                     s->cbs);
-          bidirectional_stream_flush(s->cbs);
-          result = ACTION_TAKEN_WITH_CALLBACK;
+        if (t->use_packet_coalescing) {
+          if (!stream_op->send_trailing_metadata) {
+            CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
+            bidirectional_stream_flush(s->cbs);
+            result = ACTION_TAKEN_WITH_CALLBACK;
+          } else {
+            stream_state->pending_write_for_trailer = true;
+            result = ACTION_TAKEN_NO_CALLBACK;
+          }
         } else {
-          stream_state->pending_write_for_trailer = true;
-          result = ACTION_TAKEN_NO_CALLBACK;
+          result = ACTION_TAKEN_WITH_CALLBACK;
         }
-#else
-        result = ACTION_TAKEN_WITH_CALLBACK;
-#endif
       } else {
         result = NO_ACTION_POSSIBLE;
       }
@@ -933,7 +932,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;
     oas->state.state_op_done[OP_SEND_MESSAGE] = true;
   } else if (stream_op->send_trailing_metadata &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
+             op_can_be_run(stream_op, s, &oas->state,
                            OP_SEND_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_SEND_TRAILING_METADATA", oas);
     if (stream_state->state_callback_received[OP_FAILED]) {
@@ -944,15 +943,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                  s->cbs);
       stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
       bidirectional_stream_write(s->cbs, "", 0, true);
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
-      bidirectional_stream_flush(s->cbs);
-#endif
+      if (t->use_packet_coalescing) {
+        CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
+        bidirectional_stream_flush(s->cbs);
+      }
       result = ACTION_TAKEN_WITH_CALLBACK;
     }
     stream_state->state_op_done[OP_SEND_TRAILING_METADATA] = true;
   } else if (stream_op->recv_initial_metadata &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
+             op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
@@ -971,8 +970,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     stream_state->state_op_done[OP_RECV_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->recv_message &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
-                           OP_RECV_MESSAGE)) {
+             op_can_be_run(stream_op, s, &oas->state, OP_RECV_MESSAGE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_MESSAGE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
@@ -1084,7 +1082,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = ACTION_TAKEN_NO_CALLBACK;
     }
   } else if (stream_op->recv_trailing_metadata &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
+             op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
     if (oas->s->state.rs.trailing_metadata_valid) {
@@ -1096,8 +1094,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->cancel_error &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
-                           OP_CANCEL_ERROR)) {
+             op_can_be_run(stream_op, s, &oas->state, OP_CANCEL_ERROR)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_CANCEL_ERROR", oas);
     CRONET_LOG(GPR_DEBUG, "W: bidirectional_stream_cancel(%p)", s->cbs);
     if (s->cbs) {
@@ -1111,8 +1108,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       stream_state->cancel_error = GRPC_ERROR_REF(stream_op->cancel_error);
     }
   } else if (stream_op->on_complete &&
-             op_can_be_run(stream_op, stream_state, &oas->state,
-                           OP_ON_COMPLETE)) {
+             op_can_be_run(stream_op, s, &oas->state, OP_ON_COMPLETE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       grpc_closure_sched(exec_ctx, stream_op->on_complete,
@@ -1176,10 +1172,12 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
          sizeof(s->state.state_callback_received));
   s->state.fail_state = s->state.flush_read = false;
   s->state.cancel_error = NULL;
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
   s->state.flush_cronet_when_ready = s->state.pending_write_for_trailer = false;
-#endif
   s->state.unprocessed_send_message = false;
+
+  s->curr_gs = gs;
+  s->curr_ct = (grpc_cronet_transport *)gt;
+
   gpr_mu_init(&s->mu);
   return 0;
 }
@@ -1195,8 +1193,6 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                               grpc_stream *gs, grpc_transport_stream_op *op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
   stream_obj *s = (stream_obj *)gs;
-  s->curr_gs = gs;
-  memcpy(&s->curr_ct, gt, sizeof(grpc_cronet_transport));
   add_to_storage(s, op);
   if (op->send_initial_metadata &&
       header_has_authority(op->send_initial_metadata->list.head)) {
@@ -1244,14 +1240,55 @@ static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx,
 static void perform_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_transport_op *op) {}
 
-const grpc_transport_vtable grpc_cronet_vtable = {sizeof(stream_obj),
-                                                  "cronet_http",
-                                                  init_stream,
-                                                  set_pollset_do_nothing,
-                                                  set_pollset_set_do_nothing,
-                                                  perform_stream_op,
-                                                  perform_op,
-                                                  destroy_stream,
-                                                  destroy_transport,
-                                                  get_peer,
-                                                  get_endpoint};
+static const grpc_transport_vtable grpc_cronet_vtable = {
+    sizeof(stream_obj),
+    "cronet_http",
+    init_stream,
+    set_pollset_do_nothing,
+    set_pollset_set_do_nothing,
+    perform_stream_op,
+    perform_op,
+    destroy_stream,
+    destroy_transport,
+    get_peer,
+    get_endpoint};
+
+grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
+                                             const grpc_channel_args *args,
+                                             void *reserved) {
+  grpc_cronet_transport *ct = gpr_malloc(sizeof(grpc_cronet_transport));
+  if (!ct) {
+    goto error;
+  }
+  ct->base.vtable = &grpc_cronet_vtable;
+  ct->engine = engine;
+  ct->host = gpr_malloc(strlen(target) + 1);
+  if (!ct->host) {
+    goto error;
+  }
+  strcpy(ct->host, target);
+
+  ct->use_packet_coalescing = true;
+  for (size_t i = 0; i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_USE_CRONET_PACKET_COALESCING)) {
+      if (args->args[i].type != GRPC_ARG_INTEGER) {
+        gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+                GRPC_ARG_USE_CRONET_PACKET_COALESCING);
+      } else {
+        ct->use_packet_coalescing = (args->args[i].value.integer != 0);
+      }
+    }
+  }
+
+  return &ct->base;
+
+error:
+  if (ct) {
+    if (ct->host) {
+      gpr_free(ct->host);
+    }
+    gpr_free(ct);
+  }
+
+  return NULL;
+}

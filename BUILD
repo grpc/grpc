@@ -1028,6 +1028,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "third_party/Cronet/bidirectional_stream_c.h",
+        "src/core/ext/transport/cronet/transport/cronet_transport.h",
     ],
     language = "c",
     public_hdrs = [
