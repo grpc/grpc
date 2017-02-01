@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "title": "gRPC C# Core",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
