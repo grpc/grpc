@@ -57,7 +57,7 @@ static int g_connections_complete = 0;
 static grpc_endpoint *g_connecting = NULL;
 
 static gpr_timespec test_deadline(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  return grpc_timeout_seconds_to_deadline(10);
 }
 
 static void finish_connection() {
@@ -135,7 +135,7 @@ void test_succeeds(void) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC),
-                          GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))));
+                          grpc_timeout_seconds_to_deadline(5))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
