@@ -320,8 +320,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_call_context_set(
           call, GRPC_CONTEXT_TRACING,
           args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
-    } else if (0 ==
-               (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
+    } else if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
       add_init_error(&error,
                      GRPC_ERROR_CREATE("Census context propagation requested "
                                        "without Census tracing propagation"));
