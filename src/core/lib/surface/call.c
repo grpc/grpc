@@ -312,15 +312,18 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     /* TODO(ctiller): This should change to use the appropriate census start_op
      * call. */
     if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
-      GPR_ASSERT(args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
+      if (0 == (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
+        add_init_error(&error,
+                       GRPC_ERROR_CREATE("Census tracing propagation requested "
+                                         "without Census context propagation"));
+      }
       grpc_call_context_set(
           call, GRPC_CONTEXT_TRACING,
           args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
-    } else if (0 ==
-               (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
+    } else if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
       add_init_error(&error,
-                     GRPC_ERROR_CREATE("Census tracing propagation requested "
-                                       "without Census context propagation"));
+                     GRPC_ERROR_CREATE("Census context propagation requested "
+                                       "without Census tracing propagation"));
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
