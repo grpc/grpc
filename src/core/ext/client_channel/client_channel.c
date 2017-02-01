@@ -546,7 +546,11 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  chand->server_name = gpr_strdup(arg->value.string);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  GPR_ASSERT(uri->path[0] != '\0');
+  chand->server_name =
+      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  grpc_uri_destroy(uri);
   chand->proxy_name = grpc_get_http_proxy_server();
   char *name_to_resolve =
       chand->proxy_name == NULL ? chand->server_name : chand->proxy_name;
