@@ -199,7 +199,7 @@ static void writer_thread(void *arg) {
          This should never happen for circular logs. */
       printf("   Writer stalled due to out-of-space: %d out of %d written\n",
              records_written, args->num_records);
-      gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
     }
   }
   /* Done. Decrement count and signal. */

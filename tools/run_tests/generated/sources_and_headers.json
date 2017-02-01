@@ -7927,7 +7927,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/Cronet/bidirectional_stream_c.h"
+      "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 

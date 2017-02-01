@@ -38,7 +38,7 @@ library, so we can build it in all environments */
 
 #include <grpc/support/log.h>
 
-#include "third_party/Cronet/bidirectional_stream_c.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 /* link with the real CRONET library in the build system */
