@@ -82,7 +82,9 @@
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
-#define EXPECTED_INCOMING_DATA_LENGTH (size_t)300
+/* The 'bad' server will start sending responses after reading this amount of
+ * data from the client. */
+#define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
   char *target;
@@ -134,8 +136,10 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
 
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
-          state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
-  if (state.incoming_data_length >= EXPECTED_INCOMING_DATA_LENGTH) {
+          state.incoming_data_length,
+          SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD);
+  if (state.incoming_data_length >=
+      SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
