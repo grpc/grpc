@@ -215,6 +215,8 @@ struct grpc_call {
   void *saved_receiving_stream_ready_bctlp;
 };
 
+int grpc_call_error_trace = 0;
+
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
@@ -340,7 +342,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       args->server_transport_data, path, call->start_time, send_deadline,
       CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
-    cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE, GRPC_ERROR_REF(error));
+    cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
+                      GRPC_ERROR_REF(error));
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
@@ -589,21 +592,24 @@ static void cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
  * FINAL STATUS CODE MANIPULATION
  */
 
-static void get_final_status_from(grpc_call *call, status_source from_source,
-                                  void (*set_value)(grpc_status_code code,
-                                                    void *user_data),
-                                  void *set_value_user_data,
-                                  grpc_slice *details) {
+static bool get_final_status_from(
+    grpc_call *call, status_source from_source, bool allow_ok_status,
+    void (*set_value)(grpc_status_code code, void *user_data),
+    void *set_value_user_data, grpc_slice *details) {
   grpc_status_code code;
   const char *msg = NULL;
   grpc_error_get_status(call->status[from_source].error, call->send_deadline,
                         &code, &msg, NULL);
+  if (code == GRPC_STATUS_OK && !allow_ok_status) {
+    return false;
+  }
 
   set_value(code, set_value_user_data);
   if (details != NULL) {
     *details =
         msg == NULL ? grpc_empty_slice() : grpc_slice_from_copied_string(msg);
   }
+  return true;
 }
 
 static void get_final_status(grpc_call *call,
@@ -611,22 +617,37 @@ static void get_final_status(grpc_call *call,
                                                void *user_data),
                              void *set_value_user_data, grpc_slice *details) {
   int i;
-  /* search for the best status we can present: ideally the error we use has a
-     clearly defined grpc-status, and we'll prefer that. */
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set &&
-        grpc_error_has_clear_grpc_status(call->status[i].error)) {
-      get_final_status_from(call, (status_source)i, set_value,
-                            set_value_user_data, details);
-      return;
+  if (grpc_call_error_trace) {
+    gpr_log(GPR_DEBUG, "get_final_status %s", call->is_client ? "CLI" : "SVR");
+    for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+      if (call->status[i].is_set) {
+        gpr_log(GPR_DEBUG, "  %d: %s", i,
+                grpc_error_string(call->status[i].error));
+      }
     }
   }
-  /* If no clearly defined status exists, search for 'anything' */
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
-      get_final_status_from(call, (status_source)i, set_value,
-                            set_value_user_data, details);
-      return;
+  /* first search through ignoring "OK" statuses: if something went wrong,
+   * ensure we report it */
+  for (int allow_ok_status = 0; allow_ok_status < 2; allow_ok_status++) {
+    /* search for the best status we can present: ideally the error we use has a
+       clearly defined grpc-status, and we'll prefer that. */
+    for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+      if (call->status[i].is_set &&
+          grpc_error_has_clear_grpc_status(call->status[i].error)) {
+        if (get_final_status_from(call, (status_source)i, allow_ok_status != 0,
+                                  set_value, set_value_user_data, details)) {
+          return;
+        }
+      }
+    }
+    /* If no clearly defined status exists, search for 'anything' */
+    for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+      if (call->status[i].is_set) {
+        if (get_final_status_from(call, (status_source)i, allow_ok_status != 0,
+                                  set_value, set_value_user_data, details)) {
+          return;
+        }
+      }
     }
   }
   /* If nothing exists, set some default */
@@ -1149,7 +1170,8 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
   gpr_mu_lock(&bctl->call->mu);
   if (error != GRPC_ERROR_NONE) {
-    cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE, GRPC_ERROR_REF(error));
+    cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
+                      GRPC_ERROR_REF(error));
   }
   if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
