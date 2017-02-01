@@ -74,6 +74,10 @@ void grpc_resolver_registry_set_default_prefix(
   strcpy(g_default_resolver_prefix, default_resolver_prefix);
 }
 
+const char *grpc_resolver_registry_get_default_prefix() {
+  return g_default_resolver_prefix;
+}
+
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {
   int i;
   for (i = 0; i < g_number_of_resolvers; i++) {
