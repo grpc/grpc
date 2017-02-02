@@ -2026,8 +2026,6 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (uint32_t)(max_recv_bytes - s->incoming_window_delta);
     bool new_window_write_is_covered_by_poller =
         s->incoming_window_delta + initial_window_size < (int64_t)have_already;
-    bool force_send = (s->incoming_window_delta - s->announce_window <=
-                       -(int64_t)initial_window_size / 2);
     /*    gpr_log(GPR_DEBUG, "%d %d %d",
                 (int)(s->incoming_window_delta - s->announce_window),
                 (int)(-(int64_t)initial_window_size / 2), force_send); */
@@ -2035,6 +2033,13 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
+    bool force_send = (s->incoming_window_delta - s->announce_window <=
+                       -(int64_t)initial_window_size / 2) ||
+                      s->announce_window > initial_window_size / 2;
+    /*   gpr_log(GPR_DEBUG, "%s:%d: iwd=%d ann=%d iws=%d force=%d",
+       t->peer_string,
+               s->id, (int)s->incoming_window_delta, (int)s->announce_window,
+               initial_window_size, force_send); */
     if (force_send) {
       grpc_chttp2_become_writable(exec_ctx, t, s,
                                   new_window_write_is_covered_by_poller,
