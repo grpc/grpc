@@ -714,11 +714,21 @@ void grpc_chttp2_incoming_byte_stream_finished(
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id);
 
+typedef enum {
+  /* don't initiate a transport write, but piggyback on the next one */
+  GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
+  /* initiate a covered write */
+  GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
+  /* initiate an uncovered write */
+  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED
+} grpc_chttp2_stream_write_type;
+
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
 void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s, bool covered_by_poller,
+                                 grpc_chttp2_stream *s,
+                                 grpc_chttp2_stream_write_type type,
                                  const char *reason);
 
 void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
