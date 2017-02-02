@@ -144,7 +144,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                                 "secure_client_channel_factory_create_channel");
   grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_exec_ctx_finish(&exec_ctx);
-  return channel == NULL ? channel
+  return channel != NULL ? channel
                          : grpc_lame_client_channel_create(
                                target, GRPC_STATUS_INTERNAL,
                                "Failed to create secure client channel");
