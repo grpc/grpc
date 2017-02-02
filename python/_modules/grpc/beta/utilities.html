@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.utilities &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.beta.utilities &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,24 +113,20 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
       
-        <li><a href="../../grpc.html">grpc</a> &raquo;</li>
+          <li><a href="../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.beta.utilities</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -167,7 +162,6 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;Utilities for the gRPC Python Beta API.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">threading</span>
@@ -185,107 +179,107 @@
 
 <span class="k">class</span> <span class="nc">_ChannelReadyFuture</span><span class="p">(</span><span class="n">future</span><span class="o">.</span><span class="n">Future</span><span class="p">):</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="p">[]</span>
 
-  <span class="k">def</span> <span class="nf">_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-    <span class="n">until</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span><span class="p">:</span>
-          <span class="k">raise</span> <span class="n">future</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
-          <span class="k">return</span>
-        <span class="k">else</span><span class="p">:</span>
-          <span class="k">if</span> <span class="n">until</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-          <span class="k">else</span><span class="p">:</span>
-            <span class="n">remaining</span> <span class="o">=</span> <span class="n">until</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">remaining</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-              <span class="k">raise</span> <span class="n">future</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="n">until</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">future</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">until</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">remaining</span> <span class="o">=</span> <span class="n">until</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">remaining</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">future</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">remaining</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connectivity</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span>
+                    <span class="n">connectivity</span> <span class="ow">is</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="o">.</span><span class="n">READY</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+                <span class="n">done_callbacks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
-              <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">remaining</span><span class="p">)</span>
+                <span class="k">return</span>
 
-  <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connectivity</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span>
-          <span class="n">connectivity</span> <span class="ow">is</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="o">.</span><span class="n">READY</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
-        <span class="n">done_callbacks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="kc">None</span>
-      <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span>
+        <span class="k">for</span> <span class="n">done_callback</span> <span class="ow">in</span> <span class="n">done_callbacks</span><span class="p">:</span>
+            <span class="n">callable_util</span><span class="o">.</span><span class="n">call_logging_exceptions</span><span class="p">(</span>
+                <span class="n">done_callback</span><span class="p">,</span> <span class="n">_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">done_callback</span> <span class="ow">in</span> <span class="n">done_callbacks</span><span class="p">:</span>
-      <span class="n">callable_util</span><span class="o">.</span><span class="n">call_logging_exceptions</span><span class="p">(</span>
-          <span class="n">done_callback</span><span class="p">,</span> <span class="n">_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+                <span class="n">done_callbacks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
 
-  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
-        <span class="n">done_callbacks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span> <span class="o">=</span> <span class="kc">None</span>
-      <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">done_callback</span> <span class="ow">in</span> <span class="n">done_callbacks</span><span class="p">:</span>
+            <span class="n">callable_util</span><span class="o">.</span><span class="n">call_logging_exceptions</span><span class="p">(</span>
+                <span class="n">done_callback</span><span class="p">,</span> <span class="n">_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">done_callback</span> <span class="ow">in</span> <span class="n">done_callbacks</span><span class="p">:</span>
-      <span class="n">callable_util</span><span class="o">.</span><span class="n">call_logging_exceptions</span><span class="p">(</span>
-          <span class="n">done_callback</span><span class="p">,</span> <span class="n">_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span>
 
-  <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span>
+    <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span>
 
-  <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span>
 
-  <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span>
+    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
-  <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
-  <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
-  <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+                <span class="k">return</span>
 
-  <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_done_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
-        <span class="k">return</span>
+        <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-  <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-  <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
-      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancelled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matured</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.utilities.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a future.Future tracking when an implementations.Channel is ready.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a future.Future tracking when an implementations.Channel is ready.</span>
 
 <span class="sd">  Cancelling the returned future.Future does not tell the given</span>
 <span class="sd">  implementations.Channel to abandon attempts it may have been making to</span>
@@ -299,10 +293,9 @@
 <span class="sd">    A future.Future that matures when the given Channel has connectivity</span>
 <span class="sd">      interfaces.ChannelConnectivity.READY.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">ready_future</span> <span class="o">=</span> <span class="n">_ChannelReadyFuture</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
-  <span class="n">ready_future</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-  <span class="k">return</span> <span class="n">ready_future</span></div>
-
+    <span class="n">ready_future</span> <span class="o">=</span> <span class="n">_ChannelReadyFuture</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+    <span class="n">ready_future</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ready_future</span></div>
 </pre></div>
 
            </div>
@@ -314,7 +307,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -336,7 +329,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

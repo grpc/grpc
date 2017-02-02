@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face.utilities &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.framework.interfaces.face.utilities &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,24 +113,20 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
       
-        <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
+          <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.face.utilities</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -167,7 +162,6 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;Utilities for RPC Framework&#39;s Face interface.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">collections</span>
@@ -179,18 +173,24 @@
 <span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="k">import</span> <span class="n">face</span>
 
 
-<span class="k">class</span> <span class="nc">_MethodImplementation</span><span class="p">(</span>
-    <span class="n">face</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">,</span>
-    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
-        <span class="s1">&#39;_MethodImplementation&#39;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s1">&#39;cardinality&#39;</span><span class="p">,</span> <span class="s1">&#39;style&#39;</span><span class="p">,</span> <span class="s1">&#39;unary_unary_inline&#39;</span><span class="p">,</span> <span class="s1">&#39;unary_stream_inline&#39;</span><span class="p">,</span>
-         <span class="s1">&#39;stream_unary_inline&#39;</span><span class="p">,</span> <span class="s1">&#39;stream_stream_inline&#39;</span><span class="p">,</span> <span class="s1">&#39;unary_unary_event&#39;</span><span class="p">,</span>
-         <span class="s1">&#39;unary_stream_event&#39;</span><span class="p">,</span> <span class="s1">&#39;stream_unary_event&#39;</span><span class="p">,</span> <span class="s1">&#39;stream_stream_event&#39;</span><span class="p">,])):</span>
-  <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">_MethodImplementation</span><span class="p">(</span><span class="n">face</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">,</span>
+                            <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;_MethodImplementation&#39;</span><span class="p">,</span> <span class="p">[</span>
+                                <span class="s1">&#39;cardinality&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;style&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;unary_unary_inline&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;unary_stream_inline&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;stream_unary_inline&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;stream_stream_inline&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;unary_unary_event&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;unary_stream_event&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;stream_unary_event&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;stream_stream_event&#39;</span><span class="p">,</span>
+                            <span class="p">])):</span>
+    <span class="k">pass</span>
 
 
 <div class="viewcode-block" id="unary_unary_inline"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_unary_inline">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a unary-unary RPC method as a callable value</span>
@@ -200,13 +200,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="unary_stream_inline"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_stream_inline">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a unary-stream RPC method as a callable</span>
@@ -216,13 +216,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="stream_unary_inline"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.stream_unary_inline">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a stream-unary RPC method as a callable</span>
@@ -232,13 +232,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="stream_stream_inline"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.stream_stream_inline">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a stream-stream RPC method as a callable</span>
@@ -248,13 +248,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="unary_unary_event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_unary_event">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a unary-unary RPC method as a callable</span>
@@ -264,13 +264,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="unary_stream_event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_stream_event">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a unary-stream RPC method as a callable</span>
@@ -280,13 +280,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="stream_unary_event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.stream_unary_event">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a stream-unary RPC method as a callable</span>
@@ -297,13 +297,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="stream_stream_event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.stream_stream_event">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an face.MethodImplementation for the given behavior.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of a stream-stream RPC method as a callable</span>
@@ -314,9 +314,9 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An face.MethodImplementation derived from the given behavior.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
-      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span><span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -328,7 +328,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -350,7 +350,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

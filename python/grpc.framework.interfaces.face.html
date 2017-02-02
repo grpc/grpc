@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face package &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.framework.interfaces.face package &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="prev" title="grpc.framework.interfaces.base package" href="grpc.framework.interfaces.base.html"/> 
 
@@ -44,7 +44,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -64,7 +63,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -127,28 +126,24 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-        <li><a href="grpc.html">grpc package</a> &raquo;</li>
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
       
-        <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
       
-        <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
+          <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.face package</li>
-    <li class="wy-breadcrumbs-aside">
-      
-          
-          <a href="_sources/grpc.framework.interfaces.face.rst.txt" rel="nofollow"> View page source</a>
+      <li class="wy-breadcrumbs-aside">
         
-      
-    </li>
+          
+            <a href="_sources/grpc.framework.interfaces.face.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -207,6 +202,41 @@ details value was received.</p>
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#Abortion.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Types of RPC abortion.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = 'cancelled'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED">
+<code class="descname">EXPIRED</code><em class="property"> = 'expired'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE">
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = 'local failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN">
+<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = 'local shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE">
+<code class="descname">NETWORK_FAILURE</code><em class="property"> = 'network failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE">
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = 'remote failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN">
+<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = 'remote shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -214,7 +244,7 @@ details value was received.</p>
 <dl class="exception">
 <dt id="grpc.framework.interfaces.face.face.AbortionError">
 <em class="property">exception </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">AbortionError</code><span class="sig-paren">(</span><em>initial_metadata</em>, <em>terminal_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#AbortionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.AbortionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Common super type for exceptions indicating RPC abortion.</p>
 <dl class="docutils">
 <dt>initial_metadata: The initial metadata from the other side of the RPC or</dt>
@@ -937,7 +967,7 @@ and name for the RPC and is not able to service the RPC.</li>
 <dl class="exception">
 <dt id="grpc.framework.interfaces.face.face.NoSuchMethodError">
 <em class="property">exception </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">NoSuchMethodError</code><span class="sig-paren">(</span><em>group</em>, <em>method</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#NoSuchMethodError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.NoSuchMethodError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Raised by customer code to indicate an unrecognized method.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.NoSuchMethodError.group">
@@ -1704,7 +1734,7 @@ returns a response value.</td>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -1726,7 +1756,7 @@ returns a response value.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

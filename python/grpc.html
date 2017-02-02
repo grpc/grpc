@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc package &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc package &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="index.html"/>
         <link rel="next" title="grpc.beta package" href="grpc.beta.html"/>
         <link rel="prev" title="Welcome to grpcio’s documentation!" href="index.html"/> 
 
@@ -44,7 +44,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -64,7 +63,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -123,22 +122,18 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
     <li>grpc package</li>
-    <li class="wy-breadcrumbs-aside">
-      
-          
-          <a href="_sources/grpc.rst.txt" rel="nofollow"> View page source</a>
+      <li class="wy-breadcrumbs-aside">
         
-      
-    </li>
+          
+            <a href="_sources/grpc.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -214,14 +209,14 @@
 <dl class="exception">
 <dt id="grpc.FutureTimeoutError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">FutureTimeoutError</code><a class="reference internal" href="_modules/grpc.html#FutureTimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureTimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Indicates that a method call on a Future timed out.</p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="grpc.FutureCancelledError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">FutureCancelledError</code><a class="reference internal" href="_modules/grpc.html#FutureCancelledError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureCancelledError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Indicates that the computation underlying a Future was cancelled.</p>
 </dd></dl>
 
@@ -471,6 +466,31 @@ recover.</p>
 <dd><p>The channel has seen a failure from which it cannot recover.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt>
+<code class="descname">CONNECTING</code><em class="property"> = (1, 'connecting')</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">IDLE</code><em class="property"> = (0, 'idle')</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">READY</code><em class="property"> = (2, 'ready')</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">SHUTDOWN</code><em class="property"> = (4, 'shutdown')</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">TRANSIENT_FAILURE</code><em class="property"> = (3, 'transient failure')</em></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -478,12 +498,97 @@ recover.</p>
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StatusCode</code><a class="reference internal" href="_modules/grpc.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StatusCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Mirrors grpc_status_code in the gRPC Core.</p>
+<dl class="attribute">
+<dt id="grpc.StatusCode.ABORTED">
+<code class="descname">ABORTED</code><em class="property"> = (10, 'aborted')</em><a class="headerlink" href="#grpc.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.ALREADY_EXISTS">
+<code class="descname">ALREADY_EXISTS</code><em class="property"> = (6, 'already exists')</em><a class="headerlink" href="#grpc.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = (1, 'cancelled')</em><a class="headerlink" href="#grpc.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.DATA_LOSS">
+<code class="descname">DATA_LOSS</code><em class="property"> = (15, 'data loss')</em><a class="headerlink" href="#grpc.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.DEADLINE_EXCEEDED">
+<code class="descname">DEADLINE_EXCEEDED</code><em class="property"> = (4, 'deadline exceeded')</em><a class="headerlink" href="#grpc.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.FAILED_PRECONDITION">
+<code class="descname">FAILED_PRECONDITION</code><em class="property"> = (9, 'failed precondition')</em><a class="headerlink" href="#grpc.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.INTERNAL">
+<code class="descname">INTERNAL</code><em class="property"> = (13, 'internal')</em><a class="headerlink" href="#grpc.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.INVALID_ARGUMENT">
+<code class="descname">INVALID_ARGUMENT</code><em class="property"> = (3, 'invalid argument')</em><a class="headerlink" href="#grpc.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.NOT_FOUND">
+<code class="descname">NOT_FOUND</code><em class="property"> = (5, 'not found')</em><a class="headerlink" href="#grpc.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.OK">
+<code class="descname">OK</code><em class="property"> = (0, 'ok')</em><a class="headerlink" href="#grpc.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.OUT_OF_RANGE">
+<code class="descname">OUT_OF_RANGE</code><em class="property"> = (11, 'out of range')</em><a class="headerlink" href="#grpc.StatusCode.OUT_OF_RANGE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.PERMISSION_DENIED">
+<code class="descname">PERMISSION_DENIED</code><em class="property"> = (7, 'permission denied')</em><a class="headerlink" href="#grpc.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.RESOURCE_EXHAUSTED">
+<code class="descname">RESOURCE_EXHAUSTED</code><em class="property"> = (8, 'resource exhausted')</em><a class="headerlink" href="#grpc.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.UNAUTHENTICATED">
+<code class="descname">UNAUTHENTICATED</code><em class="property"> = (16, 'unauthenticated')</em><a class="headerlink" href="#grpc.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.UNAVAILABLE">
+<code class="descname">UNAVAILABLE</code><em class="property"> = (14, 'unavailable')</em><a class="headerlink" href="#grpc.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.UNIMPLEMENTED">
+<code class="descname">UNIMPLEMENTED</code><em class="property"> = (12, 'unimplemented')</em><a class="headerlink" href="#grpc.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.StatusCode.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = (2, 'unknown')</em><a class="headerlink" href="#grpc.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="exception">
 <dt id="grpc.RpcError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">RpcError</code><a class="reference internal" href="_modules/grpc.html#RpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Raised by the gRPC library to indicate non-OK-status RPC termination.</p>
 </dd></dl>
 
@@ -765,9 +870,9 @@ service-side of the RPC.</li>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a Future. In the event of</dt>
-<dd><p class="first last">RPC completion, the return Future&#8217;s result value will be the response
-message of the RPC. Should the event terminate with non-OK status, the
-returned Future&#8217;s exception value will be an RpcError.</p>
+<dd><p class="first last">RPC completion, the return Call-Future&#8217;s result value will be the
+response message of the RPC. Should the event terminate with non-OK
+status, the returned Call-Future&#8217;s exception value will be an RpcError.</p>
 </dd>
 </dl>
 </p>
@@ -832,8 +937,8 @@ service-side of the RPC.</li>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and an iterator of response</dt>
-<dd><p class="first last">values. Drawing response values from the returned iterator may raise
-RpcError indicating termination of the RPC with non-OK status.</p>
+<dd><p class="first last">values. Drawing response values from the returned Call-iterator may
+raise RpcError indicating termination of the RPC with non-OK status.</p>
 </dd>
 </dl>
 </p>
@@ -867,12 +972,7 @@ service-side of the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
-<dd><p class="first last">set to True at invocation.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.RpcError" title="grpc.RpcError"><code class="xref py py-exc docutils literal"><span class="pre">RpcError</span></code></a> &#8211; Indicating that the RPC terminated with non-OK status. The
@@ -903,9 +1003,9 @@ service-side of the RPC.</li>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a Future. In the event of</dt>
-<dd><p class="first last">RPC completion, the return Future&#8217;s result value will be the response
-message of the RPC. Should the event terminate with non-OK status, the
-returned Future&#8217;s exception value will be an RpcError.</p>
+<dd><p class="first last">RPC completion, the return Call-Future&#8217;s result value will be the
+response message of the RPC. Should the event terminate with non-OK
+status, the returned Call-Future&#8217;s exception value will be an RpcError.</p>
 </dd>
 </dl>
 </p>
@@ -970,8 +1070,8 @@ service-side of the RPC.</li>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and an iterator of response</dt>
-<dd><p class="first last">values. Drawing response values from the returned iterator may raise
-RpcError indicating termination of the RPC with non-OK status.</p>
+<dd><p class="first last">values. Drawing response values from the returned Call-iterator may
+raise RpcError indicating termination of the RPC with non-OK status.</p>
 </dd>
 </dl>
 </p>
@@ -1337,6 +1437,32 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dd>indicate that this object will not be servicing the RPC.</dd>
 </dl>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.ServiceRpcHandler">
+<em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">ServiceRpcHandler</code><a class="reference internal" href="_modules/grpc.html#ServiceRpcHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServiceRpcHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><code class="xref py py-class docutils literal"><span class="pre">grpc.GenericRpcHandler</span></code></a></p>
+<p>An implementation of RPC methods belonging to a service.</p>
+<p>A service handles RPC methods with structured names of the form
+&#8216;/Service.Name/Service.MethodX&#8217;, where &#8216;Service.Name&#8217; is the value
+returned by service_name(), and &#8216;Service.MethodX&#8217; is the service method
+name.  A service can have multiple service methods names, but only a single
+service name.</p>
+<dl class="method">
+<dt id="grpc.ServiceRpcHandler.service_name">
+<code class="descname">service_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServiceRpcHandler.service_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServiceRpcHandler.service_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this services name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The service name.</td>
 </tr>
 </tbody>
 </table>
@@ -1804,7 +1930,7 @@ the created channel.</li>
 
 <dl class="function">
 <dt id="grpc.server">
-<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>thread_pool</em>, <em>handlers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>thread_pool</em>, <em>handlers=None</em>, <em>options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server with which RPCs can be serviced.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1818,6 +1944,8 @@ RPCs after the returned Server is started. These handlers need not be the
 only handlers the server will use to service RPCs; other handlers may
 later be added by calling add_generic_rpc_handlers any time before the
 returned Server is started.</li>
+<li><strong>options</strong> &#8211; A sequence of string-value pairs according to which to configure
+the created server.</li>
 </ul>
 </td>
 </tr>
@@ -1865,7 +1993,7 @@ the key must end with &#8216;-bin&#8217;, i.e.
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -1887,7 +2015,7 @@ the key must end with &#8216;-bin&#8217;, i.e.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

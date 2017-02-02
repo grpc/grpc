@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation.stream &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.framework.foundation.stream &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../../../../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../grpc.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,24 +113,20 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="../../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
       
-        <li><a href="../../../grpc.html">grpc</a> &raquo;</li>
+          <li><a href="../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.foundation.stream</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -167,38 +162,38 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;Interfaces related to streams of values or objects.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
 
 <span class="kn">import</span> <span class="nn">six</span>
 
+
 <div class="viewcode-block" id="Consumer"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer">[docs]</a><span class="k">class</span> <span class="nc">Consumer</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Interface for consumers of finite streams of values or objects.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Interface for consumers of finite streams of values or objects.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Consumer.consume"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.consume">[docs]</a>  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accepts a value.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">      value: Any value accepted by this Consumer.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
-
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Consumer.terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.terminate">[docs]</a>  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Indicates to this Consumer that no more values will be supplied.&quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
-
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Consumer.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.consume_and_terminate">[docs]</a>  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Supplies a value and signals that no more values will be supplied.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Consumer.consume"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.consume">[docs]</a>    <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accepts a value.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      value: Any value accepted by this Consumer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Consumer.terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.terminate">[docs]</a>    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Indicates to this Consumer that no more values will be supplied.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Consumer.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer.consume_and_terminate">[docs]</a>    <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Supplies a value and signals that no more values will be supplied.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      value: Any value accepted by this Consumer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 </pre></div>
 
            </div>
@@ -210,7 +205,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -232,7 +227,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

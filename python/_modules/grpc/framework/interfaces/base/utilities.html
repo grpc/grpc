@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base.utilities &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.framework.interfaces.base.utilities &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,24 +113,20 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
       
-        <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
+          <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.base.utilities</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -167,7 +162,6 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;Utilities for use with the base interface of RPC Framework.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">collections</span>
@@ -175,27 +169,30 @@
 <span class="kn">from</span> <span class="nn">grpc.framework.interfaces.base</span> <span class="k">import</span> <span class="n">base</span>
 
 
-<span class="k">class</span> <span class="nc">_Completion</span><span class="p">(</span>
-    <span class="n">base</span><span class="o">.</span><span class="n">Completion</span><span class="p">,</span>
-    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
-        <span class="s1">&#39;_Completion&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;terminal_metadata&#39;</span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">,))):</span>
-  <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Completion.&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">_Completion</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">Completion</span><span class="p">,</span>
+                  <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;_Completion&#39;</span><span class="p">,</span> <span class="p">(</span>
+                      <span class="s1">&#39;terminal_metadata&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;code&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;message&#39;</span><span class="p">,))):</span>
+    <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Completion.&quot;&quot;&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">_Subscription</span><span class="p">(</span>
-    <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="p">,</span>
-    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
-        <span class="s1">&#39;_Subscription&#39;</span><span class="p">,</span>
-        <span class="p">(</span><span class="s1">&#39;kind&#39;</span><span class="p">,</span> <span class="s1">&#39;termination_callback&#39;</span><span class="p">,</span> <span class="s1">&#39;allowance&#39;</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">,</span>
-         <span class="s1">&#39;protocol_receiver&#39;</span><span class="p">,))):</span>
-  <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Subscription.&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">_Subscription</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="p">,</span>
+                    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;_Subscription&#39;</span><span class="p">,</span> <span class="p">(</span>
+                        <span class="s1">&#39;kind&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;termination_callback&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;allowance&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;operator&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;protocol_receiver&#39;</span><span class="p">,))):</span>
+    <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Subscription.&quot;&quot;&quot;</span>
 
-<span class="n">_NONE_SUBSCRIPTION</span> <span class="o">=</span> <span class="n">_Subscription</span><span class="p">(</span>
-    <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+<span class="n">_NONE_SUBSCRIPTION</span> <span class="o">=</span> <span class="n">_Subscription</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                   <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="completion"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.utilities.completion">[docs]</a><span class="k">def</span> <span class="nf">completion</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a base.Completion aggregating the given operation values.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a base.Completion aggregating the given operation values.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    terminal_metadata: A terminal metadata value for an operaton.</span>
@@ -205,11 +202,11 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A base.Completion aggregating the given operation values.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_Completion</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_Completion</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="full_subscription"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.utilities.full_subscription">[docs]</a><span class="k">def</span> <span class="nf">full_subscription</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">protocol_receiver</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a &quot;full&quot; base.Subscription for the given base.Operator.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a &quot;full&quot; base.Subscription for the given base.Operator.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    operator: A base.Operator to be used in an operation.</span>
@@ -219,8 +216,8 @@
 <span class="sd">    A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given</span>
 <span class="sd">      base.Operator and base.ProtocolReceiver.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_Subscription</span><span class="p">(</span>
-      <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span> <span class="n">protocol_receiver</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_Subscription</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span>
+                         <span class="n">protocol_receiver</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -232,7 +229,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -254,7 +251,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
