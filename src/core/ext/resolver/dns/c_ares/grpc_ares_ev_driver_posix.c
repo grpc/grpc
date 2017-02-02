@@ -114,7 +114,8 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
   GPR_ASSERT(!fdn->writable_registered);
   gpr_mu_destroy(&fdn->mu);
   grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
-  grpc_fd_shutdown(exec_ctx, fdn->grpc_fd);
+  grpc_fd_shutdown(exec_ctx, fdn->grpc_fd,
+                   GRPC_ERROR_CREATE("fd node destroyed"));
   grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, "c-ares query finished");
   gpr_free(fdn);
 }
@@ -295,7 +296,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
   while (ev_driver->fds != NULL) {
     fd_node *cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    grpc_fd_shutdown(exec_ctx, cur->grpc_fd);
+    // grpc_fd_shutdown(exec_ctx, cur->grpc_fd);
     fd_node_destroy(exec_ctx, cur);
   }
   ev_driver->fds = new_list;
