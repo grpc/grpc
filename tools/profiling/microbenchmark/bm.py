@@ -74,7 +74,7 @@ for bm_name in sys.argv[1:]:
        'CONFIG=basicprof', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/basicprof/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    link(line, 'reports/%s.txt' % fnize(line))
+    link(line, '%s.txt' % fnize(line))
     with open('reports/%s.txt' % fnize(line), 'w') as f:
       f.write(subprocess.check_output(['bins/basicprof/%s' % bm_name,
                                        '--benchmark_filter=^%s$' % line]))
@@ -99,7 +99,7 @@ for bm_name in sys.argv[1:]:
     with open('/tmp/bm.folded', 'w') as f:
       f.write(subprocess.check_output([
           '%s/stackcollapse-perf.pl' % flamegraph_dir, '/tmp/bm.perf']))
-    link(line, 'reports/%s.svg' % fnize(line))
+    link(line, '%s.svg' % fnize(line))
     with open('reports/%s.svg' % fnize(line), 'w') as f:
       f.write(subprocess.check_output([
           '%s/flamegraph.pl' % flamegraph_dir, '/tmp/bm.folded']))
