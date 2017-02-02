@@ -2046,7 +2046,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (int64_t)have_already) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
     }
-    if (s->incoming_window_delta - s->announce_window <
+    if (s->incoming_window_delta - s->announce_window >
         -(int64_t)initial_window_size / 2) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
     }
