@@ -51,7 +51,7 @@ static gpr_mu *g_mu;
 static grpc_polling_entity g_pops;
 
 static gpr_timespec n_seconds_time(int seconds) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
+  return grpc_timeout_seconds_to_deadline(seconds);
 }
 
 static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

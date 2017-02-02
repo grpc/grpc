@@ -73,7 +73,7 @@ bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   }
 
   // check fields
-  if (!ctxt->has_trace_id) {
+  if (!ctxt->has_trace_id_hi || !ctxt->has_trace_id_lo) {
     gpr_log(GPR_DEBUG, "Invalid TraceContext: missing trace_id");
     return false;
   }

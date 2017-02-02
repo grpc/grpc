@@ -90,7 +90,7 @@ static void on_done(grpc_exec_ctx *exec_ctx, void *ev, grpc_error *error) {
 static bool wait_loop(int deadline_seconds, gpr_event *ev) {
   while (deadline_seconds) {
     gpr_log(GPR_DEBUG, "Test: waiting for %d more seconds", deadline_seconds);
-    if (gpr_event_wait(ev, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))) return true;
+    if (gpr_event_wait(ev, grpc_timeout_seconds_to_deadline(1))) return true;
     deadline_seconds--;
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

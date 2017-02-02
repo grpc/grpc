@@ -135,9 +135,6 @@
   ${arg}_${name} = ${args.get(arg)}
   %   endif
   %  endfor
-  %  if args.get('timeout_multiplier', 1) != 1:
-  DEFINES_${name} += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=${args.timeout_multiplier}
-  %  endif
 
   % endfor
 
