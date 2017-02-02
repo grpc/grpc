@@ -10831,13 +10831,6 @@ endif (gRPC_BUILD_TESTS)
 
 
 
-if (gRPC_INSTALL)
-  install(EXPORT gRPCTargets
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-    NAMESPACE gRPC::
-  )
-endif()
-
 foreach(_config gRPCConfig gRPCConfigVersion)
   configure_file(tools/cmake/${_config}.cmake.in
     ${_config}.cmake @ONLY)
