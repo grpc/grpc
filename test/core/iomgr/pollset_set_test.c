@@ -268,7 +268,7 @@ static void pollset_set_test_basic() {
     make_test_fds_readable(tfds, num_fds);
 
     gpr_mu_lock(pollsets[i].mu);
-    deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
+    deadline = grpc_timeout_milliseconds_to_deadline(2);
     GPR_ASSERT(GRPC_ERROR_NONE ==
                grpc_pollset_work(&exec_ctx, pollsets[i].ps, &worker,
                                  gpr_now(GPR_CLOCK_MONOTONIC), deadline));
@@ -350,7 +350,7 @@ void pollset_set_test_dup_fds() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollset.mu);
-  deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
+  deadline = grpc_timeout_milliseconds_to_deadline(2);
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(&exec_ctx, pollset.ps, &worker,
                                gpr_now(GPR_CLOCK_MONOTONIC), deadline));
@@ -419,7 +419,7 @@ void pollset_set_test_empty_pollset() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollsets[0].mu);
-  deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
+  deadline = grpc_timeout_milliseconds_to_deadline(2);
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker,
                                gpr_now(GPR_CLOCK_MONOTONIC), deadline));
