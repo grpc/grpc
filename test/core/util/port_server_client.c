@@ -103,7 +103,7 @@ void grpc_free_port_using_server(char *server, int port) {
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/free");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
-                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
+                   grpc_timeout_seconds_to_deadline(10),
                    grpc_closure_create(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
@@ -115,7 +115,7 @@ void grpc_free_port_using_server(char *server, int port) {
             "pollset_work",
             grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                               &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                              GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1)))) {
+                              grpc_timeout_seconds_to_deadline(1)))) {
       pr.done = 1;
     }
   }
@@ -176,7 +176,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_resource_quota *resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
     grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, resource_quota, &req,
-                     GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
+                     grpc_timeout_seconds_to_deadline(10),
                      grpc_closure_create(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr->response);
@@ -226,7 +226,7 @@ int grpc_pick_port_using_server(char *server) {
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
       &exec_ctx, &context, &pr.pops, resource_quota, &req,
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
+      grpc_timeout_seconds_to_deadline(10),
       grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
@@ -238,7 +238,7 @@ int grpc_pick_port_using_server(char *server) {
             "pollset_work",
             grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                               &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                              GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1)))) {
+                              grpc_timeout_seconds_to_deadline(1)))) {
       pr.port = 0;
     }
   }

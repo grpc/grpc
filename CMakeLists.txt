@@ -42,7 +42,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.1.0-dev")
+set(PACKAGE_VERSION   "1.2.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -1615,6 +1615,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/rpc_method.h
   include/grpc++/impl/codegen/rpc_service_method.h
@@ -1960,6 +1961,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/rpc_method.h
   include/grpc++/impl/codegen/rpc_service_method.h
@@ -2225,6 +2227,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/rpc_method.h
   include/grpc++/impl/codegen/rpc_service_method.h
@@ -2383,6 +2386,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/rpc_method.h
   include/grpc++/impl/codegen/rpc_service_method.h

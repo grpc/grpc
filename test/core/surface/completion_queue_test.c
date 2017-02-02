@@ -232,7 +232,7 @@ static void test_too_many_plucks(void) {
   }
 
   /* wait until all other threads are plucking */
-  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(1000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
 
   ev = grpc_completion_queue_pluck(cc, create_test_tag(),
                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
@@ -266,7 +266,7 @@ typedef struct test_thread_options {
 } test_thread_options;
 
 gpr_timespec ten_seconds_time(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  return grpc_timeout_seconds_to_deadline(10);
 }
 
 static void free_completion(grpc_exec_ctx *exec_ctx, void *arg,

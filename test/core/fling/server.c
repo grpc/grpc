@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                     cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
