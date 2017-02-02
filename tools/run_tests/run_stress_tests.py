@@ -55,15 +55,16 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT = 8080
 _DEFAULT_METRICS_PORT = 8081
-_DEFAULT_TEST_CASES = 'empty_unary:20,large_unary:20,client_streaming:20,server_streaming:20,empty_stream:20'
+_DEFAULT_TEST_CASES = 'empty_unary:20,large_unary:20,client_streaming:20,' \
+                      'server_streaming:20,empty_stream:20'
 _DEFAULT_NUM_CHANNELS_PER_SERVER = 5
 _DEFAULT_NUM_STUBS_PER_CHANNEL = 10
 
 # 15 mins default
 _DEFAULT_TEST_DURATION_SECS = 900
 
-class CXXLanguage:
 
+class CXXLanguage:
   def __init__(self):
     self.client_cwd = None
     self.server_cwd = None
@@ -137,11 +138,11 @@ def cloud_to_cloud_jobspec(language,
                            docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
   cmdline = bash_login_cmdline(language.client_cmd([
-      '--test_cases=%s' % test_cases, '--server_addresses=%s' %
-      server_addresses, '--test_duration_secs=%s' % test_duration_secs,
-      '--num_stubs_per_channel=%s' % num_stubs_per_channel,
-      '--num_channels_per_server=%s' % num_channels_per_server,
-      '--metrics_port=%s' % metrics_port
+    '--test_cases=%s' % test_cases, '--server_addresses=%s' %
+    server_addresses, '--test_duration_secs=%s' % test_duration_secs,
+    '--num_stubs_per_channel=%s' % num_stubs_per_channel,
+    '--num_channels_per_server=%s' % num_channels_per_server,
+    '--metrics_port=%s' % metrics_port
   ]))
   print(cmdline)
   cwd = language.client_cwd
@@ -150,18 +151,18 @@ def cloud_to_cloud_jobspec(language,
     container_name = dockerjob.random_name('interop_client_%s' %
                                            language.safename)
     cmdline = docker_run_cmdline(
-        cmdline,
-        image=docker_image,
-        environ=environ,
-        cwd=cwd,
-        docker_args=['--net=host', '--name', container_name])
+      cmdline,
+      image=docker_image,
+      environ=environ,
+      cwd=cwd,
+      docker_args=['--net=host', '--name', container_name])
     cwd = None
 
   test_job = jobset.JobSpec(cmdline=cmdline,
                             cwd=cwd,
                             environ=environ,
                             shortname='cloud_to_cloud:%s:%s_server:stress_test' % (
-                                language, server_name),
+                              language, server_name),
                             timeout_seconds=test_duration_secs * 2,
                             flake_retries=0,
                             timeout_retries=0,
@@ -178,11 +179,11 @@ def server_jobspec(language, docker_image, test_duration_secs):
                                                     _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
   docker_cmdline = docker_run_cmdline(
-      cmdline,
-      image=docker_image,
-      cwd=language.server_cwd,
-      environ=environ,
-      docker_args=['-p', str(_DEFAULT_SERVER_PORT), '--name', container_name])
+    cmdline,
+    image=docker_image,
+    cwd=language.server_cwd,
+    environ=environ,
+    docker_args=['-p', str(_DEFAULT_SERVER_PORT), '--name', container_name])
 
   server_job = jobset.JobSpec(cmdline=docker_cmdline,
                               environ=environ,
@@ -198,12 +199,14 @@ def build_interop_stress_image_jobspec(language, tag=None):
     tag = 'grpc_interop_stress_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
          'BASE_NAME': 'grpc_interop_stress_%s' % language.safename}
-  build_job = jobset.JobSpec(cmdline=['tools/run_tests/dockerize/build_interop_stress_image.sh'],
-                             environ=env,
-                             shortname='build_docker_%s' % (language),
-                             timeout_seconds=30 * 60)
+  build_job = jobset.JobSpec(
+    cmdline=['tools/run_tests/dockerize/build_interop_stress_image.sh'],
+    environ=env,
+    shortname='build_docker_%s' % (language),
+    timeout_seconds=30 * 60)
   build_job.tag = tag
   return build_job
+
 
 argp = argparse.ArgumentParser(description='Run stress tests.')
 argp.add_argument('-l',
@@ -214,20 +217,20 @@ argp.add_argument('-l',
                   help='Clients to run.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument(
-    '-s',
-    '--server',
-    choices=['all'] + sorted(_SERVERS),
-    action='append',
-    help='Run cloud_to_cloud servers in a separate docker ' + 'image.',
-    default=[])
+  '-s',
+  '--server',
+  choices=['all'] + sorted(_SERVERS),
+  action='append',
+  help='Run cloud_to_cloud servers in a separate docker ' + 'image.',
+  default=[])
 argp.add_argument(
-    '--override_server',
-    action='append',
-    type=lambda kv: kv.split('='),
-    help=
-    'Use servername=HOST:PORT to explicitly specify a server. E.g. '
-    'csharp=localhost:50000',
-    default=[])
+  '--override_server',
+  action='append',
+  type=lambda kv: kv.split('='),
+  help=
+  'Use servername=HOST:PORT to explicitly specify a server. E.g. '
+  'csharp=localhost:50000',
+  default=[])
 argp.add_argument('--test_duration_secs',
                   help='The duration of the test in seconds',
                   default=_DEFAULT_TEST_DURATION_SECS)
@@ -235,19 +238,18 @@ argp.add_argument('--test_duration_secs',
 args = argp.parse_args()
 
 servers = set(
-    s
-    for s in itertools.chain.from_iterable(_SERVERS if x == 'all' else [x]
-                                           for x in args.server))
+  s
+  for s in itertools.chain.from_iterable(_SERVERS if x == 'all' else [x]
+                                         for x in args.server))
 
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(_LANGUAGES.iterkeys(
-                ) if x == 'all' else [x] for x in args.language))
+languages = set(_LANGUAGES[l] for l in itertools.chain.from_iterable(
+  iter(_LANGUAGES.keys()) if x == 'all' else [x] for x in args.language))
 
 docker_images = {}
 # languages for which to build docker images
 languages_to_build = set(
-    _LANGUAGES[k]
-    for k in set([str(l) for l in languages] + [s for s in servers]))
+  _LANGUAGES[k]
+  for k in set([str(l) for l in languages] + [s for s in servers]))
 build_jobs = []
 for l in languages_to_build:
   job = build_interop_stress_image_jobspec(l)
@@ -267,7 +269,7 @@ if build_jobs:
     jobset.message('FAILED',
                    'Failed to build interop docker images.',
                    do_newline=True)
-    for image in docker_images.itervalues():
+    for image in iter(docker_images.values()):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
@@ -277,7 +279,8 @@ server_addresses = {}
 try:
   for s in servers:
     lang = str(s)
-    spec = server_jobspec(_LANGUAGES[lang], docker_images.get(lang), args.test_duration_secs)
+    spec = server_jobspec(_LANGUAGES[lang], docker_images.get(lang),
+                          args.test_duration_secs)
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost',
@@ -294,19 +297,19 @@ try:
     (server_host, server_port) = server_address
     for language in languages:
       test_job = cloud_to_cloud_jobspec(
-          language,
-          _DEFAULT_TEST_CASES,
-          ('%s:%s' % (server_host, server_port)),
-          args.test_duration_secs,
-          _DEFAULT_NUM_CHANNELS_PER_SERVER,
-          _DEFAULT_NUM_STUBS_PER_CHANNEL,
-          _DEFAULT_METRICS_PORT,
-          docker_image=docker_images.get(str(language)))
+        language,
+        _DEFAULT_TEST_CASES,
+        ('%s:%s' % (server_host, server_port)),
+        args.test_duration_secs,
+        _DEFAULT_NUM_CHANNELS_PER_SERVER,
+        _DEFAULT_NUM_STUBS_PER_CHANNEL,
+        _DEFAULT_METRICS_PORT,
+        docker_image=docker_images.get(str(language)))
       jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
-    for image in docker_images.itervalues():
+    for image in iter(docker_images.values()):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
@@ -324,8 +327,8 @@ finally:
     if not job.is_running():
       print('Server "%s" has exited prematurely.' % server)
 
-  dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
+  dockerjob.finish_jobs([j for j in iter(server_jobs.values())])
 
-  for image in docker_images.itervalues():
+  for image in iter(docker_images.values()):
     print('Removing docker image %s' % image)
     dockerjob.remove_image(image)
