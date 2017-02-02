@@ -114,7 +114,8 @@ void test_succeeds(void) {
 
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
-                         (grpc_socklen_t *)&resolved_addr.len) == 0);
+                         (grpc_socklen *)&resolved_addr.len) == 0);
+
   grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));

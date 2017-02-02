@@ -152,14 +152,14 @@ static bool is_port_available(int *port, bool is_tcp) {
     } else {
       grpc_sockaddr_make_wildcard4(*port, &addr); /* 0.0.0.0:port */
     }
-    if (bind(fd, (struct sockaddr *)addr.addr, (socklen_t)addr.len) < 0) {
+    if (bind(fd, (struct sockaddr *)addr.addr, (grpc_socklen)addr.len) < 0) {
       gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
       close(fd);
       return false;
     }
 
     /* Get the bound port number */
-    if (getsockname(fd, (struct sockaddr *)addr.addr, (socklen_t *)&addr.len) <
+    if (getsockname(fd, (struct sockaddr *)addr.addr, (grpc_socklen *)&addr.len) <
         0) {
       gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
       close(fd);
