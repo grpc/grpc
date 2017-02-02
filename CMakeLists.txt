@@ -69,7 +69,23 @@ set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
 set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
+set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
+
+if(UNIX)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(_gRPC_PLATFORM_LINUX ON)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(_gRPC_PLATFORM_MAC ON)
+  else()
+    set(_gRPC_PLATFORM_POSIX ON)
+  endif()
+endif()
+if(WIN32)
+  set(_gRPC_PLATFORM_WINDOWS ON)
+endif()
 
 if (MSVC)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -158,6 +174,7 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
+    set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl)
@@ -193,9 +210,33 @@ elseif("${gRPC_GFLAGS_PROVIDER}" STREQUAL "package")
   set(_gRPC_FIND_GFLAGS "if(NOT gflags_FOUND)\n  find_package(gflags)\nendif()")
 endif()
 
+if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
+  if(NOT BENCHMARK_ROOT_DIR)
+    set(BENCHMARK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark)
+  endif()
+  if(EXISTS "${BENCHMARK_ROOT_DIR}/CMakeLists.txt")
+      add_subdirectory(${BENCHMARK_ROOT_DIR} third_party/benchmark)
+      if(TARGET benchmark)
+          set(_gRPC_BENCHMARK_LIBRARIES benchmark)
+      endif()
+  else()
+      message(WARNING "gRPC_BENCHMARK_PROVIDER is \"module\" but BENCHMARK_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "package")
+  find_package(benchmark)
+  if(TARGET benchmark::benchmark)
+    set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
+  endif()
+  set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark)\nendif()")
+endif()
+
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+if(UNIX)
+  set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
 endif()
 
 if(WIN32 AND MSVC)
@@ -256,6 +297,353 @@ function(protobuf_generate_grpc_cpp)
   endforeach()
 endfunction()
 
+add_custom_target(plugins
+  DEPENDS
+  grpc_cpp_plugin
+  grpc_csharp_plugin
+  grpc_node_plugin
+  grpc_objective_c_plugin
+  grpc_php_plugin
+  grpc_python_plugin
+  grpc_ruby_plugin
+)
+
+add_custom_target(tools_c
+  DEPENDS
+  gen_hpack_tables
+  gen_legal_metadata_characters
+  gen_percent_encoding_tables
+  grpc_create_jwt
+  grpc_print_google_default_creds_token
+  grpc_verify_jwt
+)
+
+add_custom_target(tools_cxx
+  DEPENDS
+)
+
+add_custom_target(tools
+  DEPENDS tools_c tools_cxx)
+
+if (gRPC_BUILD_TESTS)
+add_custom_target(buildtests_c)
+add_dependencies(buildtests_c alarm_test)
+add_dependencies(buildtests_c algorithm_test)
+add_dependencies(buildtests_c alloc_test)
+add_dependencies(buildtests_c alpn_test)
+add_dependencies(buildtests_c bad_server_response_test)
+add_dependencies(buildtests_c bdp_estimator_test)
+add_dependencies(buildtests_c bin_decoder_test)
+add_dependencies(buildtests_c bin_encoder_test)
+add_dependencies(buildtests_c census_context_test)
+add_dependencies(buildtests_c census_resource_test)
+add_dependencies(buildtests_c census_trace_context_test)
+add_dependencies(buildtests_c channel_create_test)
+add_dependencies(buildtests_c chttp2_hpack_encoder_test)
+add_dependencies(buildtests_c chttp2_stream_map_test)
+add_dependencies(buildtests_c chttp2_varint_test)
+add_dependencies(buildtests_c combiner_test)
+add_dependencies(buildtests_c compression_test)
+add_dependencies(buildtests_c concurrent_connectivity_test)
+add_dependencies(buildtests_c connection_refused_test)
+add_dependencies(buildtests_c dns_resolver_connectivity_test)
+add_dependencies(buildtests_c dns_resolver_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c dualstack_socket_test)
+endif()
+add_dependencies(buildtests_c endpoint_pair_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c ev_epoll_linux_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fd_conservation_posix_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fd_posix_test)
+endif()
+add_dependencies(buildtests_c fling_client)
+add_dependencies(buildtests_c fling_server)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fling_stream_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fling_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c goaway_server_test)
+endif()
+add_dependencies(buildtests_c gpr_avl_test)
+add_dependencies(buildtests_c gpr_backoff_test)
+add_dependencies(buildtests_c gpr_cmdline_test)
+add_dependencies(buildtests_c gpr_cpu_test)
+add_dependencies(buildtests_c gpr_env_test)
+add_dependencies(buildtests_c gpr_histogram_test)
+add_dependencies(buildtests_c gpr_host_port_test)
+add_dependencies(buildtests_c gpr_log_test)
+add_dependencies(buildtests_c gpr_mpscq_test)
+add_dependencies(buildtests_c gpr_stack_lockfree_test)
+add_dependencies(buildtests_c gpr_string_test)
+add_dependencies(buildtests_c gpr_sync_test)
+add_dependencies(buildtests_c gpr_thd_test)
+add_dependencies(buildtests_c gpr_time_test)
+add_dependencies(buildtests_c gpr_tls_test)
+add_dependencies(buildtests_c gpr_useful_test)
+add_dependencies(buildtests_c grpc_auth_context_test)
+add_dependencies(buildtests_c grpc_b64_test)
+add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
+add_dependencies(buildtests_c grpc_channel_args_test)
+add_dependencies(buildtests_c grpc_channel_stack_test)
+add_dependencies(buildtests_c grpc_completion_queue_test)
+add_dependencies(buildtests_c grpc_credentials_test)
+add_dependencies(buildtests_c grpc_fetch_oauth2)
+add_dependencies(buildtests_c grpc_invalid_channel_args_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c grpc_json_token_test)
+endif()
+add_dependencies(buildtests_c grpc_jwt_verifier_test)
+add_dependencies(buildtests_c grpc_security_connector_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c handshake_client)
+endif()
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c handshake_server)
+endif()
+add_dependencies(buildtests_c hpack_parser_test)
+add_dependencies(buildtests_c hpack_table_test)
+add_dependencies(buildtests_c http_parser_test)
+add_dependencies(buildtests_c httpcli_format_request_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c httpcli_test)
+endif()
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c httpscli_test)
+endif()
+add_dependencies(buildtests_c init_test)
+add_dependencies(buildtests_c internal_api_canary_iomgr_test)
+add_dependencies(buildtests_c internal_api_canary_support_test)
+add_dependencies(buildtests_c internal_api_canary_transport_test)
+add_dependencies(buildtests_c invalid_call_argument_test)
+add_dependencies(buildtests_c json_rewrite)
+add_dependencies(buildtests_c json_rewrite_test)
+add_dependencies(buildtests_c json_stream_error_test)
+add_dependencies(buildtests_c json_test)
+add_dependencies(buildtests_c lame_client_test)
+add_dependencies(buildtests_c lb_policies_test)
+add_dependencies(buildtests_c load_file_test)
+add_dependencies(buildtests_c memory_profile_client)
+add_dependencies(buildtests_c memory_profile_server)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c memory_profile_test)
+endif()
+add_dependencies(buildtests_c message_compress_test)
+add_dependencies(buildtests_c mlog_test)
+add_dependencies(buildtests_c multiple_server_queues_test)
+add_dependencies(buildtests_c murmur_hash_test)
+add_dependencies(buildtests_c no_server_test)
+add_dependencies(buildtests_c percent_encoding_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c resolve_address_posix_test)
+endif()
+add_dependencies(buildtests_c resolve_address_test)
+add_dependencies(buildtests_c resource_quota_test)
+add_dependencies(buildtests_c secure_channel_create_test)
+add_dependencies(buildtests_c secure_endpoint_test)
+add_dependencies(buildtests_c sequential_connectivity_test)
+add_dependencies(buildtests_c server_chttp2_test)
+add_dependencies(buildtests_c server_test)
+add_dependencies(buildtests_c set_initial_connect_string_test)
+add_dependencies(buildtests_c slice_buffer_test)
+add_dependencies(buildtests_c slice_string_helpers_test)
+add_dependencies(buildtests_c slice_test)
+add_dependencies(buildtests_c sockaddr_resolver_test)
+add_dependencies(buildtests_c sockaddr_utils_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c socket_utils_test)
+endif()
+add_dependencies(buildtests_c status_conversion_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c tcp_client_posix_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c tcp_posix_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c tcp_server_posix_test)
+endif()
+add_dependencies(buildtests_c time_averaged_stats_test)
+add_dependencies(buildtests_c timeout_encoding_test)
+add_dependencies(buildtests_c timer_heap_test)
+add_dependencies(buildtests_c timer_list_test)
+add_dependencies(buildtests_c transport_connectivity_state_test)
+add_dependencies(buildtests_c transport_metadata_test)
+add_dependencies(buildtests_c transport_pid_controller_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c transport_security_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c udp_server_test)
+endif()
+add_dependencies(buildtests_c uri_parser_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c wakeup_fd_cv_test)
+endif()
+add_dependencies(buildtests_c public_headers_must_be_c89)
+add_dependencies(buildtests_c badreq_bad_client_test)
+add_dependencies(buildtests_c connection_prefix_bad_client_test)
+add_dependencies(buildtests_c head_of_line_blocking_bad_client_test)
+add_dependencies(buildtests_c headers_bad_client_test)
+add_dependencies(buildtests_c initial_settings_frame_bad_client_test)
+add_dependencies(buildtests_c large_metadata_bad_client_test)
+add_dependencies(buildtests_c server_registered_method_bad_client_test)
+add_dependencies(buildtests_c simple_request_bad_client_test)
+add_dependencies(buildtests_c unknown_frame_bad_client_test)
+add_dependencies(buildtests_c window_overflow_bad_client_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c bad_ssl_cert_server)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c bad_ssl_cert_test)
+endif()
+add_dependencies(buildtests_c h2_census_test)
+add_dependencies(buildtests_c h2_compress_test)
+add_dependencies(buildtests_c h2_fakesec_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c h2_fd_test)
+endif()
+add_dependencies(buildtests_c h2_full_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c h2_full+pipe_test)
+endif()
+add_dependencies(buildtests_c h2_full+trace_test)
+add_dependencies(buildtests_c h2_http_proxy_test)
+add_dependencies(buildtests_c h2_load_reporting_test)
+add_dependencies(buildtests_c h2_oauth2_test)
+add_dependencies(buildtests_c h2_proxy_test)
+add_dependencies(buildtests_c h2_sockpair_test)
+add_dependencies(buildtests_c h2_sockpair+trace_test)
+add_dependencies(buildtests_c h2_sockpair_1byte_test)
+add_dependencies(buildtests_c h2_ssl_test)
+add_dependencies(buildtests_c h2_ssl_cert_test)
+add_dependencies(buildtests_c h2_ssl_proxy_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c h2_uds_test)
+endif()
+add_dependencies(buildtests_c h2_census_nosec_test)
+add_dependencies(buildtests_c h2_compress_nosec_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c h2_fd_nosec_test)
+endif()
+add_dependencies(buildtests_c h2_full_nosec_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c h2_full+pipe_nosec_test)
+endif()
+add_dependencies(buildtests_c h2_full+trace_nosec_test)
+add_dependencies(buildtests_c h2_http_proxy_nosec_test)
+add_dependencies(buildtests_c h2_load_reporting_nosec_test)
+add_dependencies(buildtests_c h2_proxy_nosec_test)
+add_dependencies(buildtests_c h2_sockpair_nosec_test)
+add_dependencies(buildtests_c h2_sockpair+trace_nosec_test)
+add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c h2_uds_nosec_test)
+endif()
+add_dependencies(buildtests_c api_fuzzer_one_entry)
+add_dependencies(buildtests_c client_fuzzer_one_entry)
+add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
+add_dependencies(buildtests_c http_request_fuzzer_test_one_entry)
+add_dependencies(buildtests_c http_response_fuzzer_test_one_entry)
+add_dependencies(buildtests_c json_fuzzer_test_one_entry)
+add_dependencies(buildtests_c nanopb_fuzzer_response_test_one_entry)
+add_dependencies(buildtests_c nanopb_fuzzer_serverlist_test_one_entry)
+add_dependencies(buildtests_c percent_decode_fuzzer_one_entry)
+add_dependencies(buildtests_c percent_encode_fuzzer_one_entry)
+add_dependencies(buildtests_c server_fuzzer_one_entry)
+add_dependencies(buildtests_c ssl_server_fuzzer_one_entry)
+add_dependencies(buildtests_c uri_fuzzer_test_one_entry)
+
+add_custom_target(buildtests_cxx)
+add_dependencies(buildtests_cxx alarm_cpp_test)
+add_dependencies(buildtests_cxx async_end2end_test)
+add_dependencies(buildtests_cxx auth_property_iterator_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_fullstack)
+endif()
+add_dependencies(buildtests_cxx channel_arguments_test)
+add_dependencies(buildtests_cxx channel_filter_test)
+add_dependencies(buildtests_cxx cli_call_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx client_crash_test)
+endif()
+add_dependencies(buildtests_cxx client_crash_test_server)
+add_dependencies(buildtests_cxx codegen_test_full)
+add_dependencies(buildtests_cxx codegen_test_minimal)
+add_dependencies(buildtests_cxx credentials_test)
+add_dependencies(buildtests_cxx cxx_byte_buffer_test)
+add_dependencies(buildtests_cxx cxx_slice_test)
+add_dependencies(buildtests_cxx cxx_string_ref_test)
+add_dependencies(buildtests_cxx cxx_time_test)
+add_dependencies(buildtests_cxx end2end_test)
+add_dependencies(buildtests_cxx filter_end2end_test)
+add_dependencies(buildtests_cxx generic_end2end_test)
+add_dependencies(buildtests_cxx golden_file_test)
+add_dependencies(buildtests_cxx grpc_cli)
+add_dependencies(buildtests_cxx grpc_tool_test)
+add_dependencies(buildtests_cxx grpclb_api_test)
+add_dependencies(buildtests_cxx grpclb_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx http2_client)
+endif()
+add_dependencies(buildtests_cxx hybrid_end2end_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx interop_client)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx interop_server)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx interop_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx json_run_localhost)
+endif()
+add_dependencies(buildtests_cxx metrics_client)
+add_dependencies(buildtests_cxx mock_test)
+add_dependencies(buildtests_cxx noop-benchmark)
+add_dependencies(buildtests_cxx proto_server_reflection_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx qps_interarrival_test)
+endif()
+add_dependencies(buildtests_cxx qps_json_driver)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx qps_openloop_test)
+endif()
+add_dependencies(buildtests_cxx qps_worker)
+add_dependencies(buildtests_cxx reconnect_interop_client)
+add_dependencies(buildtests_cxx reconnect_interop_server)
+add_dependencies(buildtests_cxx round_robin_end2end_test)
+add_dependencies(buildtests_cxx secure_auth_context_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
+endif()
+add_dependencies(buildtests_cxx server_builder_plugin_test)
+add_dependencies(buildtests_cxx server_context_test_spouse_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx server_crash_test)
+endif()
+add_dependencies(buildtests_cxx server_crash_test_client)
+add_dependencies(buildtests_cxx shutdown_test)
+add_dependencies(buildtests_cxx status_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx streaming_throughput_test)
+endif()
+add_dependencies(buildtests_cxx stress_test)
+add_dependencies(buildtests_cxx thread_manager_test)
+add_dependencies(buildtests_cxx thread_stress_test)
+
+add_custom_target(buildtests
+  DEPENDS buildtests_c buildtests_cxx)
+endif (gRPC_BUILD_TESTS)
+
 
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
@@ -311,10 +699,14 @@ target_include_directories(gpr
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
+target_link_libraries(gpr
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -385,11 +777,13 @@ target_include_directories(gpr_test_util
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_test_util
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
 
@@ -629,6 +1023,7 @@ target_include_directories(grpc
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
@@ -637,6 +1032,7 @@ target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
 
@@ -893,6 +1289,7 @@ target_include_directories(grpc_cronet
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
@@ -900,6 +1297,7 @@ target_include_directories(grpc_cronet
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
 
@@ -1101,11 +1499,13 @@ target_include_directories(grpc_test_util
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_test_util
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
   grpc
@@ -1176,11 +1576,13 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_test_util_unsecure
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   gpr_test_util
   grpc_unsecure
@@ -1395,12 +1797,14 @@ target_include_directories(grpc_unsecure
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
 
@@ -1464,11 +1868,13 @@ target_include_directories(reconnect_server
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(reconnect_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
   grpc_test_util
   grpc
@@ -1491,11 +1897,13 @@ target_include_directories(test_tcp_server
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(test_tcp_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -1552,14 +1960,17 @@ target_include_directories(grpc++
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
 
@@ -1899,13 +2310,17 @@ target_include_directories(grpc++_cronet
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_cronet
 )
@@ -2049,6 +2464,7 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2057,6 +2473,8 @@ target_include_directories(grpc++_proto_reflection_desc_db
 )
 
 target_link_libraries(grpc++_proto_reflection_desc_db
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
 
@@ -2091,12 +2509,15 @@ target_include_directories(grpc++_reflection
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++_reflection
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
 
@@ -2132,13 +2553,17 @@ target_include_directories(grpc++_test
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
 
@@ -2157,12 +2582,18 @@ target_include_directories(grpc++_test_config
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
+target_link_libraries(grpc++_test_config
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
 
 
 endif (gRPC_BUILD_TESTS)
@@ -2206,6 +2637,7 @@ target_include_directories(grpc++_test_util
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2214,6 +2646,8 @@ target_include_directories(grpc++_test_util
 )
 
 target_link_libraries(grpc++_test_util
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
 )
@@ -2324,13 +2758,16 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
 )
@@ -2468,6 +2905,7 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2476,6 +2914,8 @@ target_include_directories(grpc_cli_libs
 )
 
 target_link_libraries(grpc_cli_libs
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_proto_reflection_desc_db
   grpc++
 )
@@ -2509,12 +2949,16 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -2570,6 +3014,7 @@ target_include_directories(http2_client_main
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2578,6 +3023,8 @@ target_include_directories(http2_client_main
 )
 
 target_link_libraries(http2_client_main
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -2607,6 +3054,7 @@ target_include_directories(interop_client_helper
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2615,6 +3063,8 @@ target_include_directories(interop_client_helper
 )
 
 target_link_libraries(interop_client_helper
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -2659,6 +3109,7 @@ target_include_directories(interop_client_main
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2667,6 +3118,8 @@ target_include_directories(interop_client_main
 )
 
 target_link_libraries(interop_client_main
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_client_helper
   grpc++_test_util
   grpc_test_util
@@ -2692,13 +3145,17 @@ target_include_directories(interop_server_helper
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(interop_server_helper
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -2742,6 +3199,7 @@ target_include_directories(interop_server_lib
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2750,6 +3208,8 @@ target_include_directories(interop_server_lib
 )
 
 target_link_libraries(interop_server_lib
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_server_helper
   grpc++_test_util
   grpc_test_util
@@ -2775,13 +3235,17 @@ target_include_directories(interop_server_main
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(interop_server_main
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_server_lib
 )
 
@@ -2844,6 +3308,7 @@ target_include_directories(qps
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
@@ -2852,6 +3317,8 @@ target_include_directories(qps
 )
 
 target_link_libraries(qps
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_util
   grpc++
@@ -2859,1655 +3326,39 @@ target_link_libraries(qps
 
 
 endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 
-add_library(boringssl
-  src/boringssl/err_data.c
-  third_party/boringssl/crypto/aes/aes.c
-  third_party/boringssl/crypto/aes/mode_wrappers.c
-  third_party/boringssl/crypto/asn1/a_bitstr.c
-  third_party/boringssl/crypto/asn1/a_bool.c
-  third_party/boringssl/crypto/asn1/a_d2i_fp.c
-  third_party/boringssl/crypto/asn1/a_dup.c
-  third_party/boringssl/crypto/asn1/a_enum.c
-  third_party/boringssl/crypto/asn1/a_gentm.c
-  third_party/boringssl/crypto/asn1/a_i2d_fp.c
-  third_party/boringssl/crypto/asn1/a_int.c
-  third_party/boringssl/crypto/asn1/a_mbstr.c
-  third_party/boringssl/crypto/asn1/a_object.c
-  third_party/boringssl/crypto/asn1/a_octet.c
-  third_party/boringssl/crypto/asn1/a_print.c
-  third_party/boringssl/crypto/asn1/a_strnid.c
-  third_party/boringssl/crypto/asn1/a_time.c
-  third_party/boringssl/crypto/asn1/a_type.c
-  third_party/boringssl/crypto/asn1/a_utctm.c
-  third_party/boringssl/crypto/asn1/a_utf8.c
-  third_party/boringssl/crypto/asn1/asn1_lib.c
-  third_party/boringssl/crypto/asn1/asn1_par.c
-  third_party/boringssl/crypto/asn1/asn_pack.c
-  third_party/boringssl/crypto/asn1/f_enum.c
-  third_party/boringssl/crypto/asn1/f_int.c
-  third_party/boringssl/crypto/asn1/f_string.c
-  third_party/boringssl/crypto/asn1/t_bitst.c
-  third_party/boringssl/crypto/asn1/tasn_dec.c
-  third_party/boringssl/crypto/asn1/tasn_enc.c
-  third_party/boringssl/crypto/asn1/tasn_fre.c
-  third_party/boringssl/crypto/asn1/tasn_new.c
-  third_party/boringssl/crypto/asn1/tasn_typ.c
-  third_party/boringssl/crypto/asn1/tasn_utl.c
-  third_party/boringssl/crypto/asn1/x_bignum.c
-  third_party/boringssl/crypto/asn1/x_long.c
-  third_party/boringssl/crypto/base64/base64.c
-  third_party/boringssl/crypto/bio/bio.c
-  third_party/boringssl/crypto/bio/bio_mem.c
-  third_party/boringssl/crypto/bio/buffer.c
-  third_party/boringssl/crypto/bio/connect.c
-  third_party/boringssl/crypto/bio/fd.c
-  third_party/boringssl/crypto/bio/file.c
-  third_party/boringssl/crypto/bio/hexdump.c
-  third_party/boringssl/crypto/bio/pair.c
-  third_party/boringssl/crypto/bio/printf.c
-  third_party/boringssl/crypto/bio/socket.c
-  third_party/boringssl/crypto/bio/socket_helper.c
-  third_party/boringssl/crypto/bn/add.c
-  third_party/boringssl/crypto/bn/asm/x86_64-gcc.c
-  third_party/boringssl/crypto/bn/bn.c
-  third_party/boringssl/crypto/bn/bn_asn1.c
-  third_party/boringssl/crypto/bn/cmp.c
-  third_party/boringssl/crypto/bn/convert.c
-  third_party/boringssl/crypto/bn/ctx.c
-  third_party/boringssl/crypto/bn/div.c
-  third_party/boringssl/crypto/bn/exponentiation.c
-  third_party/boringssl/crypto/bn/gcd.c
-  third_party/boringssl/crypto/bn/generic.c
-  third_party/boringssl/crypto/bn/kronecker.c
-  third_party/boringssl/crypto/bn/montgomery.c
-  third_party/boringssl/crypto/bn/montgomery_inv.c
-  third_party/boringssl/crypto/bn/mul.c
-  third_party/boringssl/crypto/bn/prime.c
-  third_party/boringssl/crypto/bn/random.c
-  third_party/boringssl/crypto/bn/rsaz_exp.c
-  third_party/boringssl/crypto/bn/shift.c
-  third_party/boringssl/crypto/bn/sqrt.c
-  third_party/boringssl/crypto/buf/buf.c
-  third_party/boringssl/crypto/bytestring/asn1_compat.c
-  third_party/boringssl/crypto/bytestring/ber.c
-  third_party/boringssl/crypto/bytestring/cbb.c
-  third_party/boringssl/crypto/bytestring/cbs.c
-  third_party/boringssl/crypto/chacha/chacha.c
-  third_party/boringssl/crypto/cipher/aead.c
-  third_party/boringssl/crypto/cipher/cipher.c
-  third_party/boringssl/crypto/cipher/derive_key.c
-  third_party/boringssl/crypto/cipher/e_aes.c
-  third_party/boringssl/crypto/cipher/e_chacha20poly1305.c
-  third_party/boringssl/crypto/cipher/e_des.c
-  third_party/boringssl/crypto/cipher/e_null.c
-  third_party/boringssl/crypto/cipher/e_rc2.c
-  third_party/boringssl/crypto/cipher/e_rc4.c
-  third_party/boringssl/crypto/cipher/e_ssl3.c
-  third_party/boringssl/crypto/cipher/e_tls.c
-  third_party/boringssl/crypto/cipher/tls_cbc.c
-  third_party/boringssl/crypto/cmac/cmac.c
-  third_party/boringssl/crypto/conf/conf.c
-  third_party/boringssl/crypto/cpu-aarch64-linux.c
-  third_party/boringssl/crypto/cpu-arm-linux.c
-  third_party/boringssl/crypto/cpu-arm.c
-  third_party/boringssl/crypto/cpu-intel.c
-  third_party/boringssl/crypto/cpu-ppc64le.c
-  third_party/boringssl/crypto/crypto.c
-  third_party/boringssl/crypto/curve25519/curve25519.c
-  third_party/boringssl/crypto/curve25519/spake25519.c
-  third_party/boringssl/crypto/curve25519/x25519-x86_64.c
-  third_party/boringssl/crypto/des/des.c
-  third_party/boringssl/crypto/dh/check.c
-  third_party/boringssl/crypto/dh/dh.c
-  third_party/boringssl/crypto/dh/dh_asn1.c
-  third_party/boringssl/crypto/dh/params.c
-  third_party/boringssl/crypto/digest/digest.c
-  third_party/boringssl/crypto/digest/digests.c
-  third_party/boringssl/crypto/dsa/dsa.c
-  third_party/boringssl/crypto/dsa/dsa_asn1.c
-  third_party/boringssl/crypto/ec/ec.c
-  third_party/boringssl/crypto/ec/ec_asn1.c
-  third_party/boringssl/crypto/ec/ec_key.c
-  third_party/boringssl/crypto/ec/ec_montgomery.c
-  third_party/boringssl/crypto/ec/oct.c
-  third_party/boringssl/crypto/ec/p224-64.c
-  third_party/boringssl/crypto/ec/p256-64.c
-  third_party/boringssl/crypto/ec/p256-x86_64.c
-  third_party/boringssl/crypto/ec/simple.c
-  third_party/boringssl/crypto/ec/util-64.c
-  third_party/boringssl/crypto/ec/wnaf.c
-  third_party/boringssl/crypto/ecdh/ecdh.c
-  third_party/boringssl/crypto/ecdsa/ecdsa.c
-  third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c
-  third_party/boringssl/crypto/engine/engine.c
-  third_party/boringssl/crypto/err/err.c
-  third_party/boringssl/crypto/evp/digestsign.c
-  third_party/boringssl/crypto/evp/evp.c
-  third_party/boringssl/crypto/evp/evp_asn1.c
-  third_party/boringssl/crypto/evp/evp_ctx.c
-  third_party/boringssl/crypto/evp/p_dsa_asn1.c
-  third_party/boringssl/crypto/evp/p_ec.c
-  third_party/boringssl/crypto/evp/p_ec_asn1.c
-  third_party/boringssl/crypto/evp/p_rsa.c
-  third_party/boringssl/crypto/evp/p_rsa_asn1.c
-  third_party/boringssl/crypto/evp/pbkdf.c
-  third_party/boringssl/crypto/evp/print.c
-  third_party/boringssl/crypto/evp/sign.c
-  third_party/boringssl/crypto/ex_data.c
-  third_party/boringssl/crypto/hkdf/hkdf.c
-  third_party/boringssl/crypto/hmac/hmac.c
-  third_party/boringssl/crypto/lhash/lhash.c
-  third_party/boringssl/crypto/md4/md4.c
-  third_party/boringssl/crypto/md5/md5.c
-  third_party/boringssl/crypto/mem.c
-  third_party/boringssl/crypto/modes/cbc.c
-  third_party/boringssl/crypto/modes/cfb.c
-  third_party/boringssl/crypto/modes/ctr.c
-  third_party/boringssl/crypto/modes/gcm.c
-  third_party/boringssl/crypto/modes/ofb.c
-  third_party/boringssl/crypto/newhope/error_correction.c
-  third_party/boringssl/crypto/newhope/newhope.c
-  third_party/boringssl/crypto/newhope/ntt.c
-  third_party/boringssl/crypto/newhope/poly.c
-  third_party/boringssl/crypto/newhope/precomp.c
-  third_party/boringssl/crypto/newhope/reduce.c
-  third_party/boringssl/crypto/obj/obj.c
-  third_party/boringssl/crypto/obj/obj_xref.c
-  third_party/boringssl/crypto/pem/pem_all.c
-  third_party/boringssl/crypto/pem/pem_info.c
-  third_party/boringssl/crypto/pem/pem_lib.c
-  third_party/boringssl/crypto/pem/pem_oth.c
-  third_party/boringssl/crypto/pem/pem_pk8.c
-  third_party/boringssl/crypto/pem/pem_pkey.c
-  third_party/boringssl/crypto/pem/pem_x509.c
-  third_party/boringssl/crypto/pem/pem_xaux.c
-  third_party/boringssl/crypto/pkcs8/p5_pbe.c
-  third_party/boringssl/crypto/pkcs8/p5_pbev2.c
-  third_party/boringssl/crypto/pkcs8/p8_pkey.c
-  third_party/boringssl/crypto/pkcs8/pkcs8.c
-  third_party/boringssl/crypto/poly1305/poly1305.c
-  third_party/boringssl/crypto/poly1305/poly1305_arm.c
-  third_party/boringssl/crypto/poly1305/poly1305_vec.c
-  third_party/boringssl/crypto/rand/deterministic.c
-  third_party/boringssl/crypto/rand/rand.c
-  third_party/boringssl/crypto/rand/urandom.c
-  third_party/boringssl/crypto/rand/windows.c
-  third_party/boringssl/crypto/rc4/rc4.c
-  third_party/boringssl/crypto/refcount_c11.c
-  third_party/boringssl/crypto/refcount_lock.c
-  third_party/boringssl/crypto/rsa/blinding.c
-  third_party/boringssl/crypto/rsa/padding.c
-  third_party/boringssl/crypto/rsa/rsa.c
-  third_party/boringssl/crypto/rsa/rsa_asn1.c
-  third_party/boringssl/crypto/rsa/rsa_impl.c
-  third_party/boringssl/crypto/sha/sha1.c
-  third_party/boringssl/crypto/sha/sha256.c
-  third_party/boringssl/crypto/sha/sha512.c
-  third_party/boringssl/crypto/stack/stack.c
-  third_party/boringssl/crypto/thread.c
-  third_party/boringssl/crypto/thread_none.c
-  third_party/boringssl/crypto/thread_pthread.c
-  third_party/boringssl/crypto/thread_win.c
-  third_party/boringssl/crypto/time_support.c
-  third_party/boringssl/crypto/x509/a_digest.c
-  third_party/boringssl/crypto/x509/a_sign.c
-  third_party/boringssl/crypto/x509/a_strex.c
-  third_party/boringssl/crypto/x509/a_verify.c
-  third_party/boringssl/crypto/x509/algorithm.c
-  third_party/boringssl/crypto/x509/asn1_gen.c
-  third_party/boringssl/crypto/x509/by_dir.c
-  third_party/boringssl/crypto/x509/by_file.c
-  third_party/boringssl/crypto/x509/i2d_pr.c
-  third_party/boringssl/crypto/x509/pkcs7.c
-  third_party/boringssl/crypto/x509/rsa_pss.c
-  third_party/boringssl/crypto/x509/t_crl.c
-  third_party/boringssl/crypto/x509/t_req.c
-  third_party/boringssl/crypto/x509/t_x509.c
-  third_party/boringssl/crypto/x509/t_x509a.c
-  third_party/boringssl/crypto/x509/x509.c
-  third_party/boringssl/crypto/x509/x509_att.c
-  third_party/boringssl/crypto/x509/x509_cmp.c
-  third_party/boringssl/crypto/x509/x509_d2.c
-  third_party/boringssl/crypto/x509/x509_def.c
-  third_party/boringssl/crypto/x509/x509_ext.c
-  third_party/boringssl/crypto/x509/x509_lu.c
-  third_party/boringssl/crypto/x509/x509_obj.c
-  third_party/boringssl/crypto/x509/x509_r2x.c
-  third_party/boringssl/crypto/x509/x509_req.c
-  third_party/boringssl/crypto/x509/x509_set.c
-  third_party/boringssl/crypto/x509/x509_trs.c
-  third_party/boringssl/crypto/x509/x509_txt.c
-  third_party/boringssl/crypto/x509/x509_v3.c
-  third_party/boringssl/crypto/x509/x509_vfy.c
-  third_party/boringssl/crypto/x509/x509_vpm.c
-  third_party/boringssl/crypto/x509/x509cset.c
-  third_party/boringssl/crypto/x509/x509name.c
-  third_party/boringssl/crypto/x509/x509rset.c
-  third_party/boringssl/crypto/x509/x509spki.c
-  third_party/boringssl/crypto/x509/x509type.c
-  third_party/boringssl/crypto/x509/x_algor.c
-  third_party/boringssl/crypto/x509/x_all.c
-  third_party/boringssl/crypto/x509/x_attrib.c
-  third_party/boringssl/crypto/x509/x_crl.c
-  third_party/boringssl/crypto/x509/x_exten.c
-  third_party/boringssl/crypto/x509/x_info.c
-  third_party/boringssl/crypto/x509/x_name.c
-  third_party/boringssl/crypto/x509/x_pkey.c
-  third_party/boringssl/crypto/x509/x_pubkey.c
-  third_party/boringssl/crypto/x509/x_req.c
-  third_party/boringssl/crypto/x509/x_sig.c
-  third_party/boringssl/crypto/x509/x_spki.c
-  third_party/boringssl/crypto/x509/x_val.c
-  third_party/boringssl/crypto/x509/x_x509.c
-  third_party/boringssl/crypto/x509/x_x509a.c
-  third_party/boringssl/crypto/x509v3/pcy_cache.c
-  third_party/boringssl/crypto/x509v3/pcy_data.c
-  third_party/boringssl/crypto/x509v3/pcy_lib.c
-  third_party/boringssl/crypto/x509v3/pcy_map.c
-  third_party/boringssl/crypto/x509v3/pcy_node.c
-  third_party/boringssl/crypto/x509v3/pcy_tree.c
-  third_party/boringssl/crypto/x509v3/v3_akey.c
-  third_party/boringssl/crypto/x509v3/v3_akeya.c
-  third_party/boringssl/crypto/x509v3/v3_alt.c
-  third_party/boringssl/crypto/x509v3/v3_bcons.c
-  third_party/boringssl/crypto/x509v3/v3_bitst.c
-  third_party/boringssl/crypto/x509v3/v3_conf.c
-  third_party/boringssl/crypto/x509v3/v3_cpols.c
-  third_party/boringssl/crypto/x509v3/v3_crld.c
-  third_party/boringssl/crypto/x509v3/v3_enum.c
-  third_party/boringssl/crypto/x509v3/v3_extku.c
-  third_party/boringssl/crypto/x509v3/v3_genn.c
-  third_party/boringssl/crypto/x509v3/v3_ia5.c
-  third_party/boringssl/crypto/x509v3/v3_info.c
-  third_party/boringssl/crypto/x509v3/v3_int.c
-  third_party/boringssl/crypto/x509v3/v3_lib.c
-  third_party/boringssl/crypto/x509v3/v3_ncons.c
-  third_party/boringssl/crypto/x509v3/v3_pci.c
-  third_party/boringssl/crypto/x509v3/v3_pcia.c
-  third_party/boringssl/crypto/x509v3/v3_pcons.c
-  third_party/boringssl/crypto/x509v3/v3_pku.c
-  third_party/boringssl/crypto/x509v3/v3_pmaps.c
-  third_party/boringssl/crypto/x509v3/v3_prn.c
-  third_party/boringssl/crypto/x509v3/v3_purp.c
-  third_party/boringssl/crypto/x509v3/v3_skey.c
-  third_party/boringssl/crypto/x509v3/v3_sxnet.c
-  third_party/boringssl/crypto/x509v3/v3_utl.c
-  third_party/boringssl/ssl/custom_extensions.c
-  third_party/boringssl/ssl/d1_both.c
-  third_party/boringssl/ssl/d1_lib.c
-  third_party/boringssl/ssl/d1_pkt.c
-  third_party/boringssl/ssl/d1_srtp.c
-  third_party/boringssl/ssl/dtls_method.c
-  third_party/boringssl/ssl/dtls_record.c
-  third_party/boringssl/ssl/handshake_client.c
-  third_party/boringssl/ssl/handshake_server.c
-  third_party/boringssl/ssl/s3_both.c
-  third_party/boringssl/ssl/s3_enc.c
-  third_party/boringssl/ssl/s3_lib.c
-  third_party/boringssl/ssl/s3_pkt.c
-  third_party/boringssl/ssl/ssl_aead_ctx.c
-  third_party/boringssl/ssl/ssl_asn1.c
-  third_party/boringssl/ssl/ssl_buffer.c
-  third_party/boringssl/ssl/ssl_cert.c
-  third_party/boringssl/ssl/ssl_cipher.c
-  third_party/boringssl/ssl/ssl_ecdh.c
-  third_party/boringssl/ssl/ssl_file.c
-  third_party/boringssl/ssl/ssl_lib.c
-  third_party/boringssl/ssl/ssl_rsa.c
-  third_party/boringssl/ssl/ssl_session.c
-  third_party/boringssl/ssl/ssl_stat.c
-  third_party/boringssl/ssl/t1_enc.c
-  third_party/boringssl/ssl/t1_lib.c
-  third_party/boringssl/ssl/tls13_both.c
-  third_party/boringssl/ssl/tls13_client.c
-  third_party/boringssl/ssl/tls13_enc.c
-  third_party/boringssl/ssl/tls13_server.c
-  third_party/boringssl/ssl/tls_method.c
-  third_party/boringssl/ssl/tls_record.c
+add_library(grpc_csharp_ext
+  src/csharp/ext/grpc_csharp_ext.c
 )
 
 
-target_include_directories(boringssl
+target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
-target_link_libraries(boringssl
-  ${_gRPC_SSL_LIBRARIES}
+target_link_libraries(grpc_csharp_ext
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
 )
 
 
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 
-add_library(boringssl_test_util
-  third_party/boringssl/crypto/test/file_test.cc
-  third_party/boringssl/crypto/test/malloc.cc
-  third_party/boringssl/crypto/test/test_util.cc
-)
-
-
-target_include_directories(boringssl_test_util
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_test_util
-  ${_gRPC_SSL_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_aes_test_lib
-  third_party/boringssl/crypto/aes/aes_test.cc
-)
-
-
-target_include_directories(boringssl_aes_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_aes_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_asn1_test_lib
-  third_party/boringssl/crypto/asn1/asn1_test.cc
-)
-
-
-target_include_directories(boringssl_asn1_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_asn1_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_base64_test_lib
-  third_party/boringssl/crypto/base64/base64_test.cc
-)
-
-
-target_include_directories(boringssl_base64_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_base64_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_bio_test_lib
-  third_party/boringssl/crypto/bio/bio_test.cc
-)
-
-
-target_include_directories(boringssl_bio_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bio_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_bn_test_lib
-  third_party/boringssl/crypto/bn/bn_test.cc
-)
-
-
-target_include_directories(boringssl_bn_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bn_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_bytestring_test_lib
-  third_party/boringssl/crypto/bytestring/bytestring_test.cc
-)
-
-
-target_include_directories(boringssl_bytestring_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bytestring_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_chacha_test_lib
-  third_party/boringssl/crypto/chacha/chacha_test.cc
-)
-
-
-target_include_directories(boringssl_chacha_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_chacha_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_aead_test_lib
-  third_party/boringssl/crypto/cipher/aead_test.cc
-)
-
-
-target_include_directories(boringssl_aead_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_aead_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_cipher_test_lib
-  third_party/boringssl/crypto/cipher/cipher_test.cc
-)
-
-
-target_include_directories(boringssl_cipher_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_cipher_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_cmac_test_lib
-  third_party/boringssl/crypto/cmac/cmac_test.cc
-)
-
-
-target_include_directories(boringssl_cmac_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_cmac_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_constant_time_test_lib
-  third_party/boringssl/crypto/constant_time_test.c
-)
-
-
-target_include_directories(boringssl_constant_time_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_constant_time_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ed25519_test_lib
-  third_party/boringssl/crypto/curve25519/ed25519_test.cc
-)
-
-
-target_include_directories(boringssl_ed25519_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ed25519_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_spake25519_test_lib
-  third_party/boringssl/crypto/curve25519/spake25519_test.cc
-)
-
-
-target_include_directories(boringssl_spake25519_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_spake25519_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_x25519_test_lib
-  third_party/boringssl/crypto/curve25519/x25519_test.cc
-)
-
-
-target_include_directories(boringssl_x25519_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_x25519_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_dh_test_lib
-  third_party/boringssl/crypto/dh/dh_test.cc
-)
-
-
-target_include_directories(boringssl_dh_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_dh_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_digest_test_lib
-  third_party/boringssl/crypto/digest/digest_test.cc
-)
-
-
-target_include_directories(boringssl_digest_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_digest_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_dsa_test_lib
-  third_party/boringssl/crypto/dsa/dsa_test.c
-)
-
-
-target_include_directories(boringssl_dsa_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_dsa_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ec_test_lib
-  third_party/boringssl/crypto/ec/ec_test.cc
-)
-
-
-target_include_directories(boringssl_ec_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ec_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_example_mul_lib
-  third_party/boringssl/crypto/ec/example_mul.c
-)
-
-
-target_include_directories(boringssl_example_mul_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_example_mul_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ecdh_test_lib
-  third_party/boringssl/crypto/ecdh/ecdh_test.cc
-)
-
-
-target_include_directories(boringssl_ecdh_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdh_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ecdsa_sign_test_lib
-  third_party/boringssl/crypto/ecdsa/ecdsa_sign_test.cc
-)
-
-
-target_include_directories(boringssl_ecdsa_sign_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_sign_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ecdsa_test_lib
-  third_party/boringssl/crypto/ecdsa/ecdsa_test.cc
-)
-
-
-target_include_directories(boringssl_ecdsa_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ecdsa_verify_test_lib
-  third_party/boringssl/crypto/ecdsa/ecdsa_verify_test.cc
-)
-
-
-target_include_directories(boringssl_ecdsa_verify_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_verify_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_err_test_lib
-  third_party/boringssl/crypto/err/err_test.cc
-)
-
-
-target_include_directories(boringssl_err_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_err_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_evp_extra_test_lib
-  third_party/boringssl/crypto/evp/evp_extra_test.cc
-)
-
-
-target_include_directories(boringssl_evp_extra_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_evp_extra_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_evp_test_lib
-  third_party/boringssl/crypto/evp/evp_test.cc
-)
-
-
-target_include_directories(boringssl_evp_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_evp_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_pbkdf_test_lib
-  third_party/boringssl/crypto/evp/pbkdf_test.cc
-)
-
-
-target_include_directories(boringssl_pbkdf_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pbkdf_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_hkdf_test_lib
-  third_party/boringssl/crypto/hkdf/hkdf_test.c
-)
-
-
-target_include_directories(boringssl_hkdf_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_hkdf_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_hmac_test_lib
-  third_party/boringssl/crypto/hmac/hmac_test.cc
-)
-
-
-target_include_directories(boringssl_hmac_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_hmac_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_lhash_test_lib
-  third_party/boringssl/crypto/lhash/lhash_test.c
-)
-
-
-target_include_directories(boringssl_lhash_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_lhash_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_gcm_test_lib
-  third_party/boringssl/crypto/modes/gcm_test.cc
-)
-
-
-target_include_directories(boringssl_gcm_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_gcm_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_newhope_statistical_test_lib
-  third_party/boringssl/crypto/newhope/newhope_statistical_test.cc
-)
-
-
-target_include_directories(boringssl_newhope_statistical_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_statistical_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_newhope_test_lib
-  third_party/boringssl/crypto/newhope/newhope_test.cc
-)
-
-
-target_include_directories(boringssl_newhope_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_newhope_vectors_test_lib
-  third_party/boringssl/crypto/newhope/newhope_vectors_test.cc
-)
-
-
-target_include_directories(boringssl_newhope_vectors_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_vectors_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_obj_test_lib
-  third_party/boringssl/crypto/obj/obj_test.cc
-)
-
-
-target_include_directories(boringssl_obj_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_obj_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_pkcs12_test_lib
-  third_party/boringssl/crypto/pkcs8/pkcs12_test.cc
-)
-
-
-target_include_directories(boringssl_pkcs12_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pkcs12_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_pkcs8_test_lib
-  third_party/boringssl/crypto/pkcs8/pkcs8_test.cc
-)
-
-
-target_include_directories(boringssl_pkcs8_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pkcs8_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_poly1305_test_lib
-  third_party/boringssl/crypto/poly1305/poly1305_test.cc
-)
-
-
-target_include_directories(boringssl_poly1305_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_poly1305_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_refcount_test_lib
-  third_party/boringssl/crypto/refcount_test.c
-)
-
-
-target_include_directories(boringssl_refcount_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_refcount_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_rsa_test_lib
-  third_party/boringssl/crypto/rsa/rsa_test.cc
-)
-
-
-target_include_directories(boringssl_rsa_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_rsa_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_thread_test_lib
-  third_party/boringssl/crypto/thread_test.c
-)
-
-
-target_include_directories(boringssl_thread_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_thread_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_pkcs7_test_lib
-  third_party/boringssl/crypto/x509/pkcs7_test.c
-)
-
-
-target_include_directories(boringssl_pkcs7_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_pkcs7_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_x509_test_lib
-  third_party/boringssl/crypto/x509/x509_test.cc
-)
-
-
-target_include_directories(boringssl_x509_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_x509_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_tab_test_lib
-  third_party/boringssl/crypto/x509v3/tab_test.c
-)
-
-
-target_include_directories(boringssl_tab_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_tab_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_v3name_test_lib
-  third_party/boringssl/crypto/x509v3/v3name_test.c
-)
-
-
-target_include_directories(boringssl_v3name_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(boringssl_v3name_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(boringssl_ssl_test_lib
-  third_party/boringssl/ssl/ssl_test.cc
-)
-
-
-target_include_directories(boringssl_ssl_test_lib
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ssl_test_lib
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_test_util
-  boringssl
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(benchmark
-  third_party/benchmark/src/benchmark.cc
-  third_party/benchmark/src/benchmark_register.cc
-  third_party/benchmark/src/colorprint.cc
-  third_party/benchmark/src/commandlineflags.cc
-  third_party/benchmark/src/complexity.cc
-  third_party/benchmark/src/console_reporter.cc
-  third_party/benchmark/src/csv_reporter.cc
-  third_party/benchmark/src/json_reporter.cc
-  third_party/benchmark/src/reporter.cc
-  third_party/benchmark/src/sleep.cc
-  third_party/benchmark/src/string_util.cc
-  third_party/benchmark/src/sysinfo.cc
-  third_party/benchmark/src/timers.cc
-)
-
-
-target_include_directories(benchmark
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(benchmark
-  ${_gRPC_SSL_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(z
-  third_party/zlib/adler32.c
-  third_party/zlib/compress.c
-  third_party/zlib/crc32.c
-  third_party/zlib/deflate.c
-  third_party/zlib/gzclose.c
-  third_party/zlib/gzlib.c
-  third_party/zlib/gzread.c
-  third_party/zlib/gzwrite.c
-  third_party/zlib/infback.c
-  third_party/zlib/inffast.c
-  third_party/zlib/inflate.c
-  third_party/zlib/inftrees.c
-  third_party/zlib/trees.c
-  third_party/zlib/uncompr.c
-  third_party/zlib/zutil.c
-)
-
-
-target_include_directories(z
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(z
-  ${_gRPC_SSL_LIBRARIES}
-)
-
+if (gRPC_INSTALL)
+  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
-endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -4521,11 +3372,13 @@ target_include_directories(bad_client_test
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bad_client_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -4547,11 +3400,13 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bad_ssl_test_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4623,12 +3478,14 @@ target_include_directories(end2end_tests
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(end2end_tests
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4699,11 +3556,13 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(end2end_nosec_tests
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -4719,17 +3578,20 @@ add_executable(alarm_test
   test/core/surface/alarm_test.c
 )
 
+
 target_include_directories(alarm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(alarm_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4743,17 +3605,20 @@ add_executable(algorithm_test
   test/core/compression/algorithm_test.c
 )
 
+
 target_include_directories(algorithm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(algorithm_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4767,17 +3632,20 @@ add_executable(alloc_test
   test/core/support/alloc_test.c
 )
 
+
 target_include_directories(alloc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(alloc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -4789,17 +3657,20 @@ add_executable(alpn_test
   test/core/transport/chttp2/alpn_test.c
 )
 
+
 target_include_directories(alpn_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(alpn_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4813,17 +3684,20 @@ add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.c
 )
 
+
 target_include_directories(bad_server_response_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bad_server_response_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
   grpc_test_util
   grpc
@@ -4838,17 +3712,20 @@ add_executable(bdp_estimator_test
   test/core/transport/bdp_estimator_test.c
 )
 
+
 target_include_directories(bdp_estimator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bdp_estimator_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4862,17 +3739,20 @@ add_executable(bin_decoder_test
   test/core/transport/chttp2/bin_decoder_test.c
 )
 
+
 target_include_directories(bin_decoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bin_decoder_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
 )
@@ -4884,17 +3764,20 @@ add_executable(bin_encoder_test
   test/core/transport/chttp2/bin_encoder_test.c
 )
 
+
 target_include_directories(bin_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bin_encoder_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
 )
@@ -4906,17 +3789,20 @@ add_executable(census_context_test
   test/core/census/context_test.c
 )
 
+
 target_include_directories(census_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(census_context_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4930,17 +3816,20 @@ add_executable(census_resource_test
   test/core/census/resource_test.c
 )
 
+
 target_include_directories(census_resource_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(census_resource_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4954,17 +3843,20 @@ add_executable(census_trace_context_test
   test/core/census/trace_context_test.c
 )
 
+
 target_include_directories(census_trace_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(census_trace_context_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -4978,17 +3870,20 @@ add_executable(channel_create_test
   test/core/surface/channel_create_test.c
 )
 
+
 target_include_directories(channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(channel_create_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5002,17 +3897,20 @@ add_executable(chttp2_hpack_encoder_test
   test/core/transport/chttp2/hpack_encoder_test.c
 )
 
+
 target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(chttp2_hpack_encoder_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5026,17 +3924,20 @@ add_executable(chttp2_stream_map_test
   test/core/transport/chttp2/stream_map_test.c
 )
 
+
 target_include_directories(chttp2_stream_map_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(chttp2_stream_map_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5050,17 +3951,20 @@ add_executable(chttp2_varint_test
   test/core/transport/chttp2/varint_test.c
 )
 
+
 target_include_directories(chttp2_varint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(chttp2_varint_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5074,17 +3978,20 @@ add_executable(combiner_test
   test/core/iomgr/combiner_test.c
 )
 
+
 target_include_directories(combiner_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(combiner_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5098,17 +4005,20 @@ add_executable(compression_test
   test/core/compression/compression_test.c
 )
 
+
 target_include_directories(compression_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(compression_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5122,17 +4032,20 @@ add_executable(concurrent_connectivity_test
   test/core/surface/concurrent_connectivity_test.c
 )
 
+
 target_include_directories(concurrent_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(concurrent_connectivity_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5146,17 +4059,20 @@ add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.c
 )
 
+
 target_include_directories(connection_refused_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(connection_refused_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5170,17 +4086,20 @@ add_executable(dns_resolver_connectivity_test
   test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
 )
 
+
 target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(dns_resolver_connectivity_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5194,17 +4113,20 @@ add_executable(dns_resolver_test
   test/core/client_channel/resolvers/dns_resolver_test.c
 )
 
+
 target_include_directories(dns_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(dns_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5213,28 +4135,33 @@ target_link_libraries(dns_resolver_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(dualstack_socket_test
   test/core/end2end/dualstack_socket_test.c
 )
+
 
 target_include_directories(dualstack_socket_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(dualstack_socket_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5242,17 +4169,20 @@ add_executable(endpoint_pair_test
   test/core/iomgr/endpoint_pair_test.c
 )
 
+
 target_include_directories(endpoint_pair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(endpoint_pair_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5261,76 +4191,91 @@ target_link_libraries(endpoint_pair_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(ev_epoll_linux_test
   test/core/iomgr/ev_epoll_linux_test.c
 )
+
 
 target_include_directories(ev_epoll_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(ev_epoll_linux_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_conservation_posix_test
   test/core/iomgr/fd_conservation_posix_test.c
 )
+
 
 target_include_directories(fd_conservation_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fd_conservation_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_posix_test
   test/core/iomgr/fd_posix_test.c
 )
+
 
 target_include_directories(fd_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fd_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5338,17 +4283,20 @@ add_executable(fling_client
   test/core/fling/client.c
 )
 
+
 target_include_directories(fling_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fling_client
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5362,17 +4310,20 @@ add_executable(fling_server
   test/core/fling/server.c
 )
 
+
 target_include_directories(fling_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fling_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5381,69 +4332,82 @@ target_link_libraries(fling_server
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_stream_test
   test/core/fling/fling_stream_test.c
 )
+
 
 target_include_directories(fling_stream_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fling_stream_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_test
   test/core/fling/fling_test.c
 )
+
 
 target_include_directories(fling_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(fling_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 
 add_executable(gen_hpack_tables
   tools/codegen/core/gen_hpack_tables.c
 )
 
+
 target_include_directories(gen_hpack_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gen_hpack_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc
 )
@@ -5462,16 +4426,21 @@ add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.c
 )
 
+
 target_include_directories(gen_legal_metadata_characters
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
+target_link_libraries(gen_legal_metadata_characters
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
 
 
 if (gRPC_INSTALL)
@@ -5487,16 +4456,21 @@ add_executable(gen_percent_encoding_tables
   tools/codegen/core/gen_percent_encoding_tables.c
 )
 
+
 target_include_directories(gen_percent_encoding_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
+target_link_libraries(gen_percent_encoding_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
 
 
 if (gRPC_INSTALL)
@@ -5508,28 +4482,33 @@ if (gRPC_INSTALL)
 endif()
 
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(goaway_server_test
   test/core/end2end/goaway_server_test.c
 )
+
 
 target_include_directories(goaway_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(goaway_server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5537,17 +4516,20 @@ add_executable(gpr_avl_test
   test/core/support/avl_test.c
 )
 
+
 target_include_directories(gpr_avl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_avl_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5559,17 +4541,20 @@ add_executable(gpr_backoff_test
   test/core/support/backoff_test.c
 )
 
+
 target_include_directories(gpr_backoff_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_backoff_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5581,17 +4566,20 @@ add_executable(gpr_cmdline_test
   test/core/support/cmdline_test.c
 )
 
+
 target_include_directories(gpr_cmdline_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_cmdline_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5603,17 +4591,20 @@ add_executable(gpr_cpu_test
   test/core/support/cpu_test.c
 )
 
+
 target_include_directories(gpr_cpu_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_cpu_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5625,17 +4616,20 @@ add_executable(gpr_env_test
   test/core/support/env_test.c
 )
 
+
 target_include_directories(gpr_env_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_env_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5647,17 +4641,20 @@ add_executable(gpr_histogram_test
   test/core/support/histogram_test.c
 )
 
+
 target_include_directories(gpr_histogram_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_histogram_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5669,17 +4666,20 @@ add_executable(gpr_host_port_test
   test/core/support/host_port_test.c
 )
 
+
 target_include_directories(gpr_host_port_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_host_port_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5691,17 +4691,20 @@ add_executable(gpr_log_test
   test/core/support/log_test.c
 )
 
+
 target_include_directories(gpr_log_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_log_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5713,17 +4716,20 @@ add_executable(gpr_mpscq_test
   test/core/support/mpscq_test.c
 )
 
+
 target_include_directories(gpr_mpscq_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_mpscq_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5735,17 +4741,20 @@ add_executable(gpr_stack_lockfree_test
   test/core/support/stack_lockfree_test.c
 )
 
+
 target_include_directories(gpr_stack_lockfree_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_stack_lockfree_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5757,17 +4766,20 @@ add_executable(gpr_string_test
   test/core/support/string_test.c
 )
 
+
 target_include_directories(gpr_string_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_string_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5779,17 +4791,20 @@ add_executable(gpr_sync_test
   test/core/support/sync_test.c
 )
 
+
 target_include_directories(gpr_sync_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_sync_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5801,17 +4816,20 @@ add_executable(gpr_thd_test
   test/core/support/thd_test.c
 )
 
+
 target_include_directories(gpr_thd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_thd_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5823,17 +4841,20 @@ add_executable(gpr_time_test
   test/core/support/time_test.c
 )
 
+
 target_include_directories(gpr_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_time_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5845,17 +4866,20 @@ add_executable(gpr_tls_test
   test/core/support/tls_test.c
 )
 
+
 target_include_directories(gpr_tls_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_tls_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5867,17 +4891,20 @@ add_executable(gpr_useful_test
   test/core/support/useful_test.c
 )
 
+
 target_include_directories(gpr_useful_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(gpr_useful_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -5889,17 +4916,20 @@ add_executable(grpc_auth_context_test
   test/core/security/auth_context_test.c
 )
 
+
 target_include_directories(grpc_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_auth_context_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5913,17 +4943,20 @@ add_executable(grpc_b64_test
   test/core/security/b64_test.c
 )
 
+
 target_include_directories(grpc_b64_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_b64_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5937,17 +4970,20 @@ add_executable(grpc_byte_buffer_reader_test
   test/core/surface/byte_buffer_reader_test.c
 )
 
+
 target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_byte_buffer_reader_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5961,17 +4997,20 @@ add_executable(grpc_channel_args_test
   test/core/channel/channel_args_test.c
 )
 
+
 target_include_directories(grpc_channel_args_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_channel_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -5985,17 +5024,20 @@ add_executable(grpc_channel_stack_test
   test/core/channel/channel_stack_test.c
 )
 
+
 target_include_directories(grpc_channel_stack_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_channel_stack_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6009,17 +5051,20 @@ add_executable(grpc_completion_queue_test
   test/core/surface/completion_queue_test.c
 )
 
+
 target_include_directories(grpc_completion_queue_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_completion_queue_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6032,11 +5077,13 @@ add_executable(grpc_create_jwt
   test/core/security/create_jwt.c
 )
 
+
 target_include_directories(grpc_create_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -6044,6 +5091,7 @@ target_include_directories(grpc_create_jwt
 
 target_link_libraries(grpc_create_jwt
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
 )
@@ -6063,17 +5111,20 @@ add_executable(grpc_credentials_test
   test/core/security/credentials_test.c
 )
 
+
 target_include_directories(grpc_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6087,17 +5138,20 @@ add_executable(grpc_fetch_oauth2
   test/core/security/fetch_oauth2.c
 )
 
+
 target_include_directories(grpc_fetch_oauth2
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_fetch_oauth2
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6111,17 +5165,20 @@ add_executable(grpc_invalid_channel_args_test
   test/core/surface/invalid_channel_args_test.c
 )
 
+
 target_include_directories(grpc_invalid_channel_args_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_invalid_channel_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6130,28 +5187,33 @@ target_link_libraries(grpc_invalid_channel_args_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(grpc_json_token_test
   test/core/security/json_token_test.c
 )
+
 
 target_include_directories(grpc_json_token_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_json_token_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6159,17 +5221,20 @@ add_executable(grpc_jwt_verifier_test
   test/core/security/jwt_verifier_test.c
 )
 
+
 target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_jwt_verifier_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6182,17 +5247,20 @@ add_executable(grpc_print_google_default_creds_token
   test/core/security/print_google_default_creds_token.c
 )
 
+
 target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_print_google_default_creds_token
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
 )
@@ -6212,17 +5280,20 @@ add_executable(grpc_security_connector_test
   test/core/security/security_connector_test.c
 )
 
+
 target_include_directories(grpc_security_connector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_security_connector_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6235,17 +5306,20 @@ add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.c
 )
 
+
 target_include_directories(grpc_verify_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(grpc_verify_jwt
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
 )
@@ -6260,16 +5334,19 @@ if (gRPC_INSTALL)
 endif()
 
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_client
   test/core/handshake/client_ssl.c
 )
+
 
 target_include_directories(handshake_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -6277,24 +5354,29 @@ target_include_directories(handshake_client
 
 target_link_libraries(handshake_client
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_server
   test/core/handshake/server_ssl.c
 )
+
 
 target_include_directories(handshake_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -6302,12 +5384,14 @@ target_include_directories(handshake_server
 
 target_link_libraries(handshake_server
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6315,17 +5399,20 @@ add_executable(hpack_parser_test
   test/core/transport/chttp2/hpack_parser_test.c
 )
 
+
 target_include_directories(hpack_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(hpack_parser_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6339,17 +5426,20 @@ add_executable(hpack_table_test
   test/core/transport/chttp2/hpack_table_test.c
 )
 
+
 target_include_directories(hpack_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(hpack_table_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6363,17 +5453,20 @@ add_executable(http_parser_test
   test/core/http/parser_test.c
 )
 
+
 target_include_directories(http_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(http_parser_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6387,17 +5480,20 @@ add_executable(httpcli_format_request_test
   test/core/http/format_request_test.c
 )
 
+
 target_include_directories(httpcli_format_request_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(httpcli_format_request_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6406,52 +5502,62 @@ target_link_libraries(httpcli_format_request_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(httpcli_test
   test/core/http/httpcli_test.c
 )
+
 
 target_include_directories(httpcli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(httpcli_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(httpscli_test
   test/core/http/httpscli_test.c
 )
+
 
 target_include_directories(httpscli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(httpscli_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6459,17 +5565,20 @@ add_executable(init_test
   test/core/surface/init_test.c
 )
 
+
 target_include_directories(init_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(init_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6483,17 +5592,20 @@ add_executable(internal_api_canary_iomgr_test
   test/core/internal_api_canaries/iomgr.c
 )
 
+
 target_include_directories(internal_api_canary_iomgr_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(internal_api_canary_iomgr_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6507,17 +5619,20 @@ add_executable(internal_api_canary_support_test
   test/core/internal_api_canaries/iomgr.c
 )
 
+
 target_include_directories(internal_api_canary_support_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(internal_api_canary_support_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6531,17 +5646,20 @@ add_executable(internal_api_canary_transport_test
   test/core/internal_api_canaries/iomgr.c
 )
 
+
 target_include_directories(internal_api_canary_transport_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(internal_api_canary_transport_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6555,17 +5673,20 @@ add_executable(invalid_call_argument_test
   test/core/end2end/invalid_call_argument_test.c
 )
 
+
 target_include_directories(invalid_call_argument_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(invalid_call_argument_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6579,17 +5700,20 @@ add_executable(json_rewrite
   test/core/json/json_rewrite.c
 )
 
+
 target_include_directories(json_rewrite
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(json_rewrite
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
 )
@@ -6601,17 +5725,20 @@ add_executable(json_rewrite_test
   test/core/json/json_rewrite_test.c
 )
 
+
 target_include_directories(json_rewrite_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(json_rewrite_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6625,17 +5752,20 @@ add_executable(json_stream_error_test
   test/core/json/json_stream_error_test.c
 )
 
+
 target_include_directories(json_stream_error_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(json_stream_error_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6649,17 +5779,20 @@ add_executable(json_test
   test/core/json/json_test.c
 )
 
+
 target_include_directories(json_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(json_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6673,17 +5806,20 @@ add_executable(lame_client_test
   test/core/surface/lame_client_test.c
 )
 
+
 target_include_directories(lame_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(lame_client_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6697,17 +5833,20 @@ add_executable(lb_policies_test
   test/core/client_channel/lb_policies_test.c
 )
 
+
 target_include_directories(lb_policies_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(lb_policies_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6721,17 +5860,20 @@ add_executable(load_file_test
   test/core/iomgr/load_file_test.c
 )
 
+
 target_include_directories(load_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(load_file_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6745,17 +5887,20 @@ add_executable(memory_profile_client
   test/core/memory_usage/client.c
 )
 
+
 target_include_directories(memory_profile_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(memory_profile_client
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6769,17 +5914,20 @@ add_executable(memory_profile_server
   test/core/memory_usage/server.c
 )
 
+
 target_include_directories(memory_profile_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(memory_profile_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6788,28 +5936,33 @@ target_link_libraries(memory_profile_server
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(memory_profile_test
   test/core/memory_usage/memory_usage_test.c
 )
+
 
 target_include_directories(memory_profile_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(memory_profile_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6817,17 +5970,20 @@ add_executable(message_compress_test
   test/core/compression/message_compress_test.c
 )
 
+
 target_include_directories(message_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(message_compress_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6841,17 +5997,20 @@ add_executable(mlog_test
   test/core/census/mlog_test.c
 )
 
+
 target_include_directories(mlog_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(mlog_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6865,17 +6024,20 @@ add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.c
 )
 
+
 target_include_directories(multiple_server_queues_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(multiple_server_queues_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6889,17 +6051,20 @@ add_executable(murmur_hash_test
   test/core/support/murmur_hash_test.c
 )
 
+
 target_include_directories(murmur_hash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(murmur_hash_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -6911,17 +6076,20 @@ add_executable(no_server_test
   test/core/end2end/no_server_test.c
 )
 
+
 target_include_directories(no_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(no_server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6935,17 +6103,20 @@ add_executable(percent_encoding_test
   test/core/slice/percent_encoding_test.c
 )
 
+
 target_include_directories(percent_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(percent_encoding_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -6954,28 +6125,33 @@ target_link_libraries(percent_encoding_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolve_address_posix_test
   test/core/iomgr/resolve_address_posix_test.c
 )
+
 
 target_include_directories(resolve_address_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(resolve_address_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6983,17 +6159,20 @@ add_executable(resolve_address_test
   test/core/iomgr/resolve_address_test.c
 )
 
+
 target_include_directories(resolve_address_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(resolve_address_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7007,17 +6186,20 @@ add_executable(resource_quota_test
   test/core/iomgr/resource_quota_test.c
 )
 
+
 target_include_directories(resource_quota_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(resource_quota_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7031,17 +6213,20 @@ add_executable(secure_channel_create_test
   test/core/surface/secure_channel_create_test.c
 )
 
+
 target_include_directories(secure_channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(secure_channel_create_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7055,17 +6240,20 @@ add_executable(secure_endpoint_test
   test/core/security/secure_endpoint_test.c
 )
 
+
 target_include_directories(secure_endpoint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(secure_endpoint_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7079,17 +6267,20 @@ add_executable(sequential_connectivity_test
   test/core/surface/sequential_connectivity_test.c
 )
 
+
 target_include_directories(sequential_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(sequential_connectivity_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7103,17 +6294,20 @@ add_executable(server_chttp2_test
   test/core/surface/server_chttp2_test.c
 )
 
+
 target_include_directories(server_chttp2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(server_chttp2_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7127,17 +6321,20 @@ add_executable(server_test
   test/core/surface/server_test.c
 )
 
+
 target_include_directories(server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7151,17 +6348,20 @@ add_executable(set_initial_connect_string_test
   test/core/client_channel/set_initial_connect_string_test.c
 )
 
+
 target_include_directories(set_initial_connect_string_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(set_initial_connect_string_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
   grpc_test_util
   grpc
@@ -7176,17 +6376,20 @@ add_executable(slice_buffer_test
   test/core/slice/slice_buffer_test.c
 )
 
+
 target_include_directories(slice_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(slice_buffer_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7200,17 +6403,20 @@ add_executable(slice_string_helpers_test
   test/core/slice/slice_string_helpers_test.c
 )
 
+
 target_include_directories(slice_string_helpers_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(slice_string_helpers_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7224,17 +6430,20 @@ add_executable(slice_test
   test/core/slice/slice_test.c
 )
 
+
 target_include_directories(slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(slice_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7248,17 +6457,20 @@ add_executable(sockaddr_resolver_test
   test/core/client_channel/resolvers/sockaddr_resolver_test.c
 )
 
+
 target_include_directories(sockaddr_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(sockaddr_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7272,17 +6484,20 @@ add_executable(sockaddr_utils_test
   test/core/iomgr/sockaddr_utils_test.c
 )
 
+
 target_include_directories(sockaddr_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(sockaddr_utils_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7291,28 +6506,33 @@ target_link_libraries(sockaddr_utils_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(socket_utils_test
   test/core/iomgr/socket_utils_test.c
 )
+
 
 target_include_directories(socket_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(socket_utils_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7320,17 +6540,20 @@ add_executable(status_conversion_test
   test/core/transport/status_conversion_test.c
 )
 
+
 target_include_directories(status_conversion_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7339,76 +6562,91 @@ target_link_libraries(status_conversion_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_client_posix_test
   test/core/iomgr/tcp_client_posix_test.c
 )
+
 
 target_include_directories(tcp_client_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(tcp_client_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_posix_test
   test/core/iomgr/tcp_posix_test.c
 )
+
 
 target_include_directories(tcp_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(tcp_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_server_posix_test
   test/core/iomgr/tcp_server_posix_test.c
 )
+
 
 target_include_directories(tcp_server_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(tcp_server_posix_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7416,17 +6654,20 @@ add_executable(time_averaged_stats_test
   test/core/iomgr/time_averaged_stats_test.c
 )
 
+
 target_include_directories(time_averaged_stats_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(time_averaged_stats_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7440,17 +6681,20 @@ add_executable(timeout_encoding_test
   test/core/transport/timeout_encoding_test.c
 )
 
+
 target_include_directories(timeout_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(timeout_encoding_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7464,17 +6708,20 @@ add_executable(timer_heap_test
   test/core/iomgr/timer_heap_test.c
 )
 
+
 target_include_directories(timer_heap_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(timer_heap_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7488,17 +6735,20 @@ add_executable(timer_list_test
   test/core/iomgr/timer_list_test.c
 )
 
+
 target_include_directories(timer_list_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(timer_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7512,17 +6762,20 @@ add_executable(transport_connectivity_state_test
   test/core/transport/connectivity_state_test.c
 )
 
+
 target_include_directories(transport_connectivity_state_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(transport_connectivity_state_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7536,17 +6789,20 @@ add_executable(transport_metadata_test
   test/core/transport/metadata_test.c
 )
 
+
 target_include_directories(transport_metadata_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(transport_metadata_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7560,17 +6816,20 @@ add_executable(transport_pid_controller_test
   test/core/transport/pid_controller_test.c
 )
 
+
 target_include_directories(transport_pid_controller_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(transport_pid_controller_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7579,52 +6838,62 @@ target_link_libraries(transport_pid_controller_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(transport_security_test
   test/core/tsi/transport_security_test.c
 )
+
 
 target_include_directories(transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(udp_server_test
   test/core/iomgr/udp_server_test.c
 )
+
 
 target_include_directories(udp_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(udp_server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7632,17 +6901,20 @@ add_executable(uri_parser_test
   test/core/client_channel/uri_parser_test.c
 )
 
+
 target_include_directories(uri_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(uri_parser_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -7651,28 +6923,33 @@ target_link_libraries(uri_parser_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(wakeup_fd_cv_test
   test/core/iomgr/wakeup_fd_cv_test.c
 )
+
 
 target_include_directories(wakeup_fd_cv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(wakeup_fd_cv_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7681,19 +6958,24 @@ add_executable(alarm_cpp_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(alarm_cpp_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(alarm_cpp_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -7711,19 +6993,24 @@ add_executable(async_end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(async_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(async_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -7741,19 +7028,24 @@ add_executable(auth_property_iterator_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(auth_property_iterator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(auth_property_iterator_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -7765,25 +7057,31 @@ target_link_libraries(auth_property_iterator_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack
   test/cpp/microbenchmarks/bm_fullstack.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(bm_fullstack
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(bm_fullstack
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7794,6 +7092,7 @@ target_link_libraries(bm_fullstack
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7802,19 +7101,24 @@ add_executable(channel_arguments_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(channel_arguments_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(channel_arguments_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -7829,19 +7133,24 @@ add_executable(channel_filter_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(channel_filter_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(channel_filter_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -7856,19 +7165,24 @@ add_executable(cli_call_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(cli_call_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(cli_call_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_cli_libs
   grpc++_test_util
   grpc_test_util
@@ -7881,25 +7195,31 @@ target_link_libraries(cli_call_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(client_crash_test
   test/cpp/end2end/client_crash_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(client_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(client_crash_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -7909,6 +7229,7 @@ target_link_libraries(client_crash_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7917,19 +7238,24 @@ add_executable(client_crash_test_server
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(client_crash_test_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(client_crash_test_server
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -7943,13 +7269,44 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(codegen_test_full
-  src/proto/grpc/testing/control.proto
-  src/proto/grpc/testing/messages.proto
-  src/proto/grpc/testing/payloads.proto
-  src/proto/grpc/testing/services.proto
-  src/proto/grpc/testing/stats.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_full.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/control.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/payloads.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/services.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/stats.proto
 )
 
 target_include_directories(codegen_test_full
@@ -7957,14 +7314,18 @@ target_include_directories(codegen_test_full
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(codegen_test_full
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -7975,14 +7336,45 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(codegen_test_minimal
-  src/proto/grpc/testing/control.proto
-  src/proto/grpc/testing/messages.proto
-  src/proto/grpc/testing/payloads.proto
-  src/proto/grpc/testing/services.proto
-  src/proto/grpc/testing/stats.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
   src/cpp/codegen/codegen_init.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/control.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/payloads.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/services.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/stats.proto
 )
 
 target_include_directories(codegen_test_minimal
@@ -7990,14 +7382,18 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(codegen_test_minimal
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -8009,19 +7405,24 @@ add_executable(credentials_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(credentials_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -8036,19 +7437,24 @@ add_executable(cxx_byte_buffer_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(cxx_byte_buffer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc
@@ -8065,19 +7471,24 @@ add_executable(cxx_slice_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(cxx_slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(cxx_slice_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc
@@ -8094,19 +7505,24 @@ add_executable(cxx_string_ref_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(cxx_string_ref_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(cxx_string_ref_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -8119,19 +7535,24 @@ add_executable(cxx_time_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(cxx_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(cxx_time_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc
@@ -8148,19 +7569,24 @@ add_executable(end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8178,19 +7604,24 @@ add_executable(filter_end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(filter_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(filter_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8208,19 +7639,24 @@ add_executable(generic_end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(generic_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(generic_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8234,9 +7670,16 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(golden_file_test
-  src/proto/grpc/testing/compiler_test.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
   test/cpp/codegen/golden_file_test.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/compiler_test.proto
 )
 
 target_include_directories(golden_file_test
@@ -8244,14 +7687,18 @@ target_include_directories(golden_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(golden_file_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -8266,19 +7713,24 @@ add_executable(grpc_cli
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(grpc_cli
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_cli
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_cli_libs
   grpc++_proto_reflection_desc_db
   grpc++
@@ -8294,18 +7746,23 @@ add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )
 
+
 target_include_directories(grpc_cpp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_cpp_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8323,18 +7780,23 @@ add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
 )
 
+
 target_include_directories(grpc_csharp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_csharp_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8352,18 +7814,23 @@ add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
 )
 
+
 target_include_directories(grpc_node_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_node_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8381,18 +7848,23 @@ add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
 )
 
+
 target_include_directories(grpc_objective_c_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_objective_c_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8410,18 +7882,23 @@ add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
 )
 
+
 target_include_directories(grpc_php_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_php_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8439,18 +7916,23 @@ add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
 )
 
+
 target_include_directories(grpc_python_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_python_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8468,18 +7950,23 @@ add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
 )
 
+
 target_include_directories(grpc_ruby_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_ruby_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -8495,10 +7982,23 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_tool_test
-  src/proto/grpc/testing/echo.proto
-  src/proto/grpc/testing/echo_messages.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
   test/cpp/util/grpc_tool_test.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
 )
 
 target_include_directories(grpc_tool_test
@@ -8506,14 +8006,18 @@ target_include_directories(grpc_tool_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpc_tool_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_cli_libs
   grpc++_proto_reflection_desc_db
   grpc++_reflection
@@ -8530,9 +8034,16 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpclb_api_test
-  src/proto/grpc/lb/v1/load_balancer.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
 )
 
 target_include_directories(grpclb_api_test
@@ -8540,14 +8051,18 @@ target_include_directories(grpclb_api_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpclb_api_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8559,9 +8074,16 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpclb_test
-  src/proto/grpc/lb/v1/load_balancer.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_test.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
 )
 
 target_include_directories(grpclb_test
@@ -8569,14 +8091,18 @@ target_include_directories(grpclb_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(grpclb_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8588,24 +8114,30 @@ target_link_libraries(grpclb_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(http2_client
   third_party/googletest/src/gtest-all.cc
 )
+
 
 target_include_directories(http2_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(http2_client
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   http2_client_main
   grpc++_test_util
   grpc_test_util
@@ -8615,6 +8147,7 @@ target_link_libraries(http2_client
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8623,19 +8156,24 @@ add_executable(hybrid_end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(hybrid_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(hybrid_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8647,24 +8185,30 @@ target_link_libraries(hybrid_end2end_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_client
   third_party/googletest/src/gtest-all.cc
 )
+
 
 target_include_directories(interop_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(interop_client
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_client_main
   interop_client_helper
   grpc++_test_util
@@ -8677,26 +8221,33 @@ target_link_libraries(interop_client
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_server
   third_party/googletest/src/gtest-all.cc
 )
+
 
 target_include_directories(interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(interop_server
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_server_main
   interop_server_helper
   interop_server_lib
@@ -8710,27 +8261,34 @@ target_link_libraries(interop_server
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_test
   test/cpp/interop/interop_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(interop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(interop_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -8739,27 +8297,34 @@ target_link_libraries(interop_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(json_run_localhost
   test/cpp/qps/json_run_localhost.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(json_run_localhost
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(json_run_localhost
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8770,13 +8335,21 @@ target_link_libraries(json_run_localhost
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(metrics_client
-  src/proto/grpc/testing/metrics.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
   test/cpp/interop/metrics_client.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/metrics.proto
 )
 
 target_include_directories(metrics_client
@@ -8784,14 +8357,18 @@ target_include_directories(metrics_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(metrics_client
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -8807,19 +8384,24 @@ add_executable(mock_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(mock_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(mock_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -8837,19 +8419,24 @@ add_executable(noop-benchmark
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(noop-benchmark
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(noop-benchmark
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -8862,19 +8449,24 @@ add_executable(proto_server_reflection_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(proto_server_reflection_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(proto_server_reflection_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_proto_reflection_desc_db
   grpc++_reflection
   grpc++_test_util
@@ -8888,25 +8480,31 @@ target_link_libraries(proto_server_reflection_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_interarrival_test
   test/cpp/qps/qps_interarrival_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(qps_interarrival_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(qps_interarrival_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
   grpc++_test_util
   grpc_test_util
@@ -8917,6 +8515,7 @@ target_link_libraries(qps_interarrival_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8925,19 +8524,24 @@ add_executable(qps_json_driver
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(qps_json_driver
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(qps_json_driver
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
   grpc++_test_util
   grpc_test_util
@@ -8951,25 +8555,31 @@ target_link_libraries(qps_json_driver
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_openloop_test
   test/cpp/qps/qps_openloop_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(qps_openloop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(qps_openloop_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
   grpc++_test_util
   grpc_test_util
@@ -8981,6 +8591,7 @@ target_link_libraries(qps_openloop_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8989,19 +8600,24 @@ add_executable(qps_worker
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(qps_worker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(qps_worker
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
   grpc++_test_util
   grpc_test_util
@@ -9017,11 +8633,30 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(reconnect_interop_client
-  src/proto/grpc/testing/empty.proto
-  src/proto/grpc/testing/messages.proto
-  src/proto/grpc/testing/test.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_client.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/empty.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/test.proto
 )
 
 target_include_directories(reconnect_interop_client
@@ -9029,14 +8664,18 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(reconnect_interop_client
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9051,11 +8690,30 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(reconnect_interop_server
-  src/proto/grpc/testing/empty.proto
-  src/proto/grpc/testing/messages.proto
-  src/proto/grpc/testing/test.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_server.cc
   third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/empty.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/test.proto
 )
 
 target_include_directories(reconnect_interop_server
@@ -9063,14 +8721,18 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(reconnect_interop_server
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   reconnect_server
   test_tcp_server
   grpc++_test_util
@@ -9091,19 +8753,24 @@ add_executable(round_robin_end2end_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(round_robin_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(round_robin_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9121,19 +8788,24 @@ add_executable(secure_auth_context_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(secure_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(secure_auth_context_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9145,25 +8817,31 @@ target_link_libraries(secure_auth_context_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(secure_sync_unary_ping_pong_test
   test/cpp/qps/secure_sync_unary_ping_pong_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(secure_sync_unary_ping_pong_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
   grpc++_test_util
   grpc_test_util
@@ -9174,6 +8852,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9182,19 +8861,24 @@ add_executable(server_builder_plugin_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(server_builder_plugin_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(server_builder_plugin_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9212,19 +8896,24 @@ add_executable(server_context_test_spouse_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(server_context_test_spouse_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(server_context_test_spouse_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test
   grpc++
@@ -9236,25 +8925,31 @@ target_link_libraries(server_context_test_spouse_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(server_crash_test
   test/cpp/end2end/server_crash_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(server_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(server_crash_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9264,6 +8959,7 @@ target_link_libraries(server_crash_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9272,19 +8968,24 @@ add_executable(server_crash_test_client
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(server_crash_test_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(server_crash_test_client
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9302,19 +9003,24 @@ add_executable(shutdown_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(shutdown_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(shutdown_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9332,19 +9038,24 @@ add_executable(status_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(status_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(status_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc
@@ -9355,25 +9066,31 @@ target_link_libraries(status_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(streaming_throughput_test
   test/cpp/end2end/streaming_throughput_test.cc
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(streaming_throughput_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(streaming_throughput_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9383,14 +9100,27 @@ target_link_libraries(streaming_throughput_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stress_test
-  src/proto/grpc/testing/empty.proto
-  src/proto/grpc/testing/messages.proto
-  src/proto/grpc/testing/metrics.proto
-  src/proto/grpc/testing/test.proto
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
@@ -9399,19 +9129,36 @@ add_executable(stress_test
   third_party/googletest/src/gtest-all.cc
 )
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/empty.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/metrics.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/test.proto
+)
+
 target_include_directories(stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(stress_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9430,19 +9177,24 @@ add_executable(thread_manager_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(thread_manager_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(thread_manager_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
   gpr
@@ -9458,19 +9210,24 @@ add_executable(thread_stress_test
   third_party/googletest/src/gtest-all.cc
 )
 
+
 target_include_directories(thread_stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(thread_stress_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -9483,1243 +9240,26 @@ target_link_libraries(thread_stress_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(boringssl_aes_test
-  third_party/googletest/src/gtest-all.cc
+add_executable(public_headers_must_be_c89
+  test/core/surface/public_headers_must_be_c89.c
 )
 
-target_include_directories(boringssl_aes_test
+
+target_include_directories(public_headers_must_be_c89
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
 )
 
-target_link_libraries(boringssl_aes_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_aes_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_asn1_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_asn1_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_asn1_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_asn1_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_base64_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_base64_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_base64_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_base64_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_bio_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_bio_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bio_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_bio_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_bn_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_bn_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bn_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_bn_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_bytestring_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_bytestring_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_bytestring_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_bytestring_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_chacha_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_chacha_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_chacha_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_chacha_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_aead_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_aead_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_aead_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_aead_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_cipher_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_cipher_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_cipher_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_cipher_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_cmac_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_cmac_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_cmac_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_cmac_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_constant_time_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_constant_time_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_constant_time_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_constant_time_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ed25519_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ed25519_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ed25519_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ed25519_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_spake25519_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_spake25519_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_spake25519_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_spake25519_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_x25519_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_x25519_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_x25519_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_x25519_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_dh_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_dh_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_dh_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_dh_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_digest_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_digest_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_digest_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_digest_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_dsa_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_dsa_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_dsa_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_dsa_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ec_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ec_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ec_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ec_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_example_mul
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_example_mul
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_example_mul
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_example_mul_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ecdh_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ecdh_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdh_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ecdh_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ecdsa_sign_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ecdsa_sign_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_sign_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ecdsa_sign_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ecdsa_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ecdsa_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ecdsa_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ecdsa_verify_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ecdsa_verify_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ecdsa_verify_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ecdsa_verify_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_err_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_err_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_err_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_err_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_evp_extra_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_evp_extra_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_evp_extra_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_evp_extra_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_evp_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_evp_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_evp_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_evp_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_pbkdf_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_pbkdf_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pbkdf_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_pbkdf_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_hkdf_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_hkdf_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_hkdf_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_hkdf_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_hmac_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_hmac_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_hmac_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_hmac_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_lhash_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_lhash_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_lhash_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_lhash_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_gcm_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_gcm_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_gcm_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_gcm_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_newhope_statistical_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_newhope_statistical_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_statistical_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_newhope_statistical_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_newhope_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_newhope_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_newhope_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_newhope_vectors_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_newhope_vectors_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_newhope_vectors_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_newhope_vectors_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_obj_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_obj_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_obj_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_obj_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_pkcs12_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_pkcs12_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pkcs12_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_pkcs12_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_pkcs8_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_pkcs8_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pkcs8_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_pkcs8_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_poly1305_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_poly1305_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_poly1305_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_poly1305_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_refcount_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_refcount_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_refcount_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_refcount_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_rsa_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_rsa_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_rsa_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_rsa_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_thread_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_thread_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_thread_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_thread_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_pkcs7_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_pkcs7_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_pkcs7_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_pkcs7_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_x509_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_x509_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_x509_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_x509_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_tab_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_tab_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_tab_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_tab_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_v3name_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_v3name_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_v3name_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_v3name_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(boringssl_ssl_test
-  third_party/googletest/src/gtest-all.cc
-)
-
-target_include_directories(boringssl_ssl_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-)
-
-target_link_libraries(boringssl_ssl_test
-  ${_gRPC_SSL_LIBRARIES}
-  boringssl_ssl_test_lib
-  boringssl_test_util
-  boringssl
-  ${_gRPC_GFLAGS_LIBRARIES}
+target_link_libraries(public_headers_must_be_c89
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
 )
 
 endif (gRPC_BUILD_TESTS)
@@ -10729,11 +9269,13 @@ add_executable(badreq_bad_client_test
   test/core/bad_client/tests/badreq.c
 )
 
+
 target_include_directories(badreq_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10741,6 +9283,7 @@ target_include_directories(badreq_bad_client_test
 
 target_link_libraries(badreq_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10755,11 +9298,13 @@ add_executable(connection_prefix_bad_client_test
   test/core/bad_client/tests/connection_prefix.c
 )
 
+
 target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10767,6 +9312,7 @@ target_include_directories(connection_prefix_bad_client_test
 
 target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10781,11 +9327,13 @@ add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/tests/head_of_line_blocking.c
 )
 
+
 target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10793,6 +9341,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
 
 target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10807,11 +9356,13 @@ add_executable(headers_bad_client_test
   test/core/bad_client/tests/headers.c
 )
 
+
 target_include_directories(headers_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10819,6 +9370,7 @@ target_include_directories(headers_bad_client_test
 
 target_link_libraries(headers_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10833,11 +9385,13 @@ add_executable(initial_settings_frame_bad_client_test
   test/core/bad_client/tests/initial_settings_frame.c
 )
 
+
 target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10845,6 +9399,7 @@ target_include_directories(initial_settings_frame_bad_client_test
 
 target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10859,11 +9414,13 @@ add_executable(large_metadata_bad_client_test
   test/core/bad_client/tests/large_metadata.c
 )
 
+
 target_include_directories(large_metadata_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10871,6 +9428,7 @@ target_include_directories(large_metadata_bad_client_test
 
 target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10885,11 +9443,13 @@ add_executable(server_registered_method_bad_client_test
   test/core/bad_client/tests/server_registered_method.c
 )
 
+
 target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10897,6 +9457,7 @@ target_include_directories(server_registered_method_bad_client_test
 
 target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10911,11 +9472,13 @@ add_executable(simple_request_bad_client_test
   test/core/bad_client/tests/simple_request.c
 )
 
+
 target_include_directories(simple_request_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10923,6 +9486,7 @@ target_include_directories(simple_request_bad_client_test
 
 target_link_libraries(simple_request_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10937,11 +9501,13 @@ add_executable(unknown_frame_bad_client_test
   test/core/bad_client/tests/unknown_frame.c
 )
 
+
 target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10949,6 +9515,7 @@ target_include_directories(unknown_frame_bad_client_test
 
 target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10963,11 +9530,13 @@ add_executable(window_overflow_bad_client_test
   test/core/bad_client/tests/window_overflow.c
 )
 
+
 target_include_directories(window_overflow_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
@@ -10975,6 +9544,7 @@ target_include_directories(window_overflow_bad_client_test
 
 target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
@@ -10984,22 +9554,26 @@ target_link_libraries(window_overflow_bad_client_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_server
   test/core/bad_ssl/servers/cert.c
 )
+
 
 target_include_directories(bad_ssl_cert_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bad_ssl_cert_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_ssl_test_server
   grpc_test_util
   grpc
@@ -11007,30 +9581,36 @@ target_link_libraries(bad_ssl_cert_server
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_test
   test/core/bad_ssl/bad_ssl_test.c
 )
+
 
 target_include_directories(bad_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(bad_ssl_cert_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11038,17 +9618,20 @@ add_executable(h2_census_test
   test/core/end2end/fixtures/h2_census.c
 )
 
+
 target_include_directories(h2_census_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_census_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11063,17 +9646,20 @@ add_executable(h2_compress_test
   test/core/end2end/fixtures/h2_compress.c
 )
 
+
 target_include_directories(h2_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_compress_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11088,17 +9674,20 @@ add_executable(h2_fakesec_test
   test/core/end2end/fixtures/h2_fakesec.c
 )
 
+
 target_include_directories(h2_fakesec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_fakesec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11108,22 +9697,26 @@ target_link_libraries(h2_fakesec_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_test
   test/core/end2end/fixtures/h2_fd.c
 )
+
 
 target_include_directories(h2_fd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_fd_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11131,6 +9724,7 @@ target_link_libraries(h2_fd_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11138,17 +9732,20 @@ add_executable(h2_full_test
   test/core/end2end/fixtures/h2_full.c
 )
 
+
 target_include_directories(h2_full_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11158,22 +9755,26 @@ target_link_libraries(h2_full_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_test
   test/core/end2end/fixtures/h2_full+pipe.c
 )
+
 
 target_include_directories(h2_full+pipe_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full+pipe_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11181,6 +9782,7 @@ target_link_libraries(h2_full+pipe_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11188,17 +9790,20 @@ add_executable(h2_full+trace_test
   test/core/end2end/fixtures/h2_full+trace.c
 )
 
+
 target_include_directories(h2_full+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full+trace_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11213,17 +9818,20 @@ add_executable(h2_http_proxy_test
   test/core/end2end/fixtures/h2_http_proxy.c
 )
 
+
 target_include_directories(h2_http_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_http_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11238,17 +9846,20 @@ add_executable(h2_load_reporting_test
   test/core/end2end/fixtures/h2_load_reporting.c
 )
 
+
 target_include_directories(h2_load_reporting_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_load_reporting_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11263,17 +9874,20 @@ add_executable(h2_oauth2_test
   test/core/end2end/fixtures/h2_oauth2.c
 )
 
+
 target_include_directories(h2_oauth2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_oauth2_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11288,17 +9902,20 @@ add_executable(h2_proxy_test
   test/core/end2end/fixtures/h2_proxy.c
 )
 
+
 target_include_directories(h2_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11313,17 +9930,20 @@ add_executable(h2_sockpair_test
   test/core/end2end/fixtures/h2_sockpair.c
 )
 
+
 target_include_directories(h2_sockpair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11338,17 +9958,20 @@ add_executable(h2_sockpair+trace_test
   test/core/end2end/fixtures/h2_sockpair+trace.c
 )
 
+
 target_include_directories(h2_sockpair+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair+trace_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11363,17 +9986,20 @@ add_executable(h2_sockpair_1byte_test
   test/core/end2end/fixtures/h2_sockpair_1byte.c
 )
 
+
 target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair_1byte_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11388,17 +10014,20 @@ add_executable(h2_ssl_test
   test/core/end2end/fixtures/h2_ssl.c
 )
 
+
 target_include_directories(h2_ssl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_ssl_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11413,17 +10042,20 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/fixtures/h2_ssl_cert.c
 )
 
+
 target_include_directories(h2_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_ssl_cert_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11438,17 +10070,20 @@ add_executable(h2_ssl_proxy_test
   test/core/end2end/fixtures/h2_ssl_proxy.c
 )
 
+
 target_include_directories(h2_ssl_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_ssl_proxy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11458,22 +10093,26 @@ target_link_libraries(h2_ssl_proxy_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_test
   test/core/end2end/fixtures/h2_uds.c
 )
+
 
 target_include_directories(h2_uds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_uds_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util
   grpc
@@ -11481,6 +10120,7 @@ target_link_libraries(h2_uds_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11488,17 +10128,20 @@ add_executable(h2_census_nosec_test
   test/core/end2end/fixtures/h2_census.c
 )
 
+
 target_include_directories(h2_census_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_census_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11513,17 +10156,20 @@ add_executable(h2_compress_nosec_test
   test/core/end2end/fixtures/h2_compress.c
 )
 
+
 target_include_directories(h2_compress_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_compress_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11533,22 +10179,26 @@ target_link_libraries(h2_compress_nosec_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_nosec_test
   test/core/end2end/fixtures/h2_fd.c
 )
+
 
 target_include_directories(h2_fd_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_fd_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11556,6 +10206,7 @@ target_link_libraries(h2_fd_nosec_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11563,17 +10214,20 @@ add_executable(h2_full_nosec_test
   test/core/end2end/fixtures/h2_full.c
 )
 
+
 target_include_directories(h2_full_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11583,22 +10237,26 @@ target_link_libraries(h2_full_nosec_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_nosec_test
   test/core/end2end/fixtures/h2_full+pipe.c
 )
+
 
 target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full+pipe_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11606,6 +10264,7 @@ target_link_libraries(h2_full+pipe_nosec_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11613,17 +10272,20 @@ add_executable(h2_full+trace_nosec_test
   test/core/end2end/fixtures/h2_full+trace.c
 )
 
+
 target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_full+trace_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11638,17 +10300,20 @@ add_executable(h2_http_proxy_nosec_test
   test/core/end2end/fixtures/h2_http_proxy.c
 )
 
+
 target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_http_proxy_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11663,17 +10328,20 @@ add_executable(h2_load_reporting_nosec_test
   test/core/end2end/fixtures/h2_load_reporting.c
 )
 
+
 target_include_directories(h2_load_reporting_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_load_reporting_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11688,17 +10356,20 @@ add_executable(h2_proxy_nosec_test
   test/core/end2end/fixtures/h2_proxy.c
 )
 
+
 target_include_directories(h2_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_proxy_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11713,17 +10384,20 @@ add_executable(h2_sockpair_nosec_test
   test/core/end2end/fixtures/h2_sockpair.c
 )
 
+
 target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11738,17 +10412,20 @@ add_executable(h2_sockpair+trace_nosec_test
   test/core/end2end/fixtures/h2_sockpair+trace.c
 )
 
+
 target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair+trace_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11763,17 +10440,20 @@ add_executable(h2_sockpair_1byte_nosec_test
   test/core/end2end/fixtures/h2_sockpair_1byte.c
 )
 
+
 target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_sockpair_1byte_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11783,22 +10463,26 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_nosec_test
   test/core/end2end/fixtures/h2_uds.c
 )
+
 
 target_include_directories(h2_uds_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(h2_uds_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -11806,6 +10490,7 @@ target_link_libraries(h2_uds_nosec_test
   gpr
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11814,17 +10499,20 @@ add_executable(api_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(api_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(api_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11839,17 +10527,20 @@ add_executable(client_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(client_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(client_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11864,17 +10555,20 @@ add_executable(hpack_parser_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(hpack_parser_fuzzer_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11889,17 +10583,20 @@ add_executable(http_request_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(http_request_fuzzer_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11914,17 +10611,20 @@ add_executable(http_response_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(http_response_fuzzer_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11939,17 +10639,20 @@ add_executable(json_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(json_fuzzer_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11964,17 +10667,20 @@ add_executable(nanopb_fuzzer_response_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(nanopb_fuzzer_response_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -11989,17 +10695,20 @@ add_executable(nanopb_fuzzer_serverlist_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -12014,17 +10723,20 @@ add_executable(percent_decode_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(percent_decode_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -12039,17 +10751,20 @@ add_executable(percent_encode_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(percent_encode_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -12064,17 +10779,20 @@ add_executable(server_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(server_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -12089,17 +10807,20 @@ add_executable(ssl_server_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(ssl_server_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -12114,17 +10835,20 @@ add_executable(uri_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.c
 )
 
+
 target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
 target_link_libraries(uri_fuzzer_test_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util

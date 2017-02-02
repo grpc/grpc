@@ -33,8 +33,6 @@
 
 #include "test/cpp/interop/client_helper.h"
 
-#include <unistd.h>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
