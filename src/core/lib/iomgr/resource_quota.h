@@ -77,9 +77,9 @@
 
 extern int grpc_resource_quota_trace;
 
-grpc_resource_quota *grpc_resource_quota_internal_ref(
+grpc_resource_quota *grpc_resource_quota_ref_internal(
     grpc_resource_quota *resource_quota);
-void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
+void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_resource_quota *resource_quota);
 grpc_resource_quota *grpc_resource_quota_from_channel_args(
     const grpc_channel_args *channel_args);
@@ -88,6 +88,12 @@ typedef struct grpc_resource_user grpc_resource_user;
 
 grpc_resource_user *grpc_resource_user_create(
     grpc_resource_quota *resource_quota, const char *name);
+
+/* Returns a borrowed reference to the underlying resource quota for this
+   resource user. */
+grpc_resource_quota *grpc_resource_user_quota(
+    grpc_resource_user *resource_user);
+
 void grpc_resource_user_ref(grpc_resource_user *resource_user);
 void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
                               grpc_resource_user *resource_user);

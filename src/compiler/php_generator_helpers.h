@@ -41,14 +41,23 @@
 
 namespace grpc_php_generator {
 
-inline grpc::string GetPHPServiceFilename(const grpc::string& filename) {
-  return grpc_generator::StripProto(filename) + "_grpc_pb.php";
+inline grpc::string GetPHPServiceFilename(
+    const grpc::protobuf::FileDescriptor *file,
+    const grpc::protobuf::ServiceDescriptor *service) {
+  std::vector<grpc::string> tokens =
+      grpc_generator::tokenize(file->package(), ".");
+  std::ostringstream oss;
+  for (unsigned int i = 0; i < tokens.size(); i++) {
+    oss << (i == 0 ? "" : "/")
+        << grpc_generator::CapitalizeFirstLetter(tokens[i]);
+  }
+  return oss.str() + "/" + service->name() + "Client.php";
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetPHPComments(const DescriptorType* desc,
+inline grpc::string GetPHPComments(const DescriptorType *desc,
                                    grpc::string prefix) {
   return grpc_generator::GetPrefixedComments(desc, true, prefix);
 }

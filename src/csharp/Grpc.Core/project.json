@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0-dev",
+  "version": "1.2.0-dev",
   "title": "gRPC C# Core",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -27,11 +27,10 @@
     "embed": [ "../../../etc/roots.pem" ],
     "define": [ "SIGNED" ],
     "keyFile": "../keys/Grpc.snk",
-    "publicSign": true,
     "xmlDoc": true
   },
   "dependencies": {
-    "System.Interactive.Async": "3.0.0"
+    "System.Interactive.Async": "3.1.1"
   },
   "frameworks": {
     "net45": { },

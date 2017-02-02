@@ -57,6 +57,13 @@ class Channel final : public ChannelInterface,
   /// \a try_to_connect is set to true, try to connect.
   grpc_connectivity_state GetState(bool try_to_connect) override;
 
+  /// Returns the LB policy name, or the empty string if not yet available.
+  grpc::string GetLoadBalancingPolicyName() const;
+
+  /// Returns the service config in JSON form, or the empty string if
+  /// not available.
+  grpc::string GetServiceConfigJSON() const;
+
  private:
   template <class InputMessage, class OutputMessage>
   friend Status BlockingUnaryCall(ChannelInterface* channel,

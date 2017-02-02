@@ -35,8 +35,8 @@
 namespace Grpc;
 
 /**
- * Represents an active call that sends a single message and then gets a single
- * response.
+ * Represents an active call that sends a single message and then gets a
+ * single response.
  */
 class UnaryCall extends AbstractCall
 {
@@ -45,12 +45,13 @@ class UnaryCall extends AbstractCall
      *
      * @param mixed $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
-     * @param array $options  an array of options, possible keys:
-     *                        'flags' => a number
+     *                        (optional)
+     * @param array $options  An array of options, possible keys:
+     *                        'flags' => a number (optional)
      */
-    public function start($data, $metadata = [], $options = [])
+    public function start($data, array $metadata = [], array $options = [])
     {
-        $message_array = ['message' => $this->serializeMessage($data)];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (isset($options['flags'])) {
             $message_array['flags'] = $options['flags'];
         }
@@ -78,6 +79,6 @@ class UnaryCall extends AbstractCall
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
 
-        return [$this->deserializeResponse($event->message), $status];
+        return [$this->_deserializeResponse($event->message), $status];
     }
 }

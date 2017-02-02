@@ -178,8 +178,8 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *completion_queue, const char *method,
-    const char *host, gpr_timespec deadline, void *reserved);
+    grpc_completion_queue *completion_queue, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
     to ping); if the channel is not connected, posts a failed. */
@@ -202,9 +202,15 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
     Only one operation of each type can be active at once in any given
-    batch. You must call grpc_completion_queue_next or
-    grpc_completion_queue_pluck on the completion queue associated with 'call'
-    for work to be performed.
+    batch.
+    If a call to grpc_call_start_batch returns GRPC_CALL_OK you must call
+    grpc_completion_queue_next or grpc_completion_queue_pluck on the completion
+    queue associated with 'call' for work to be performed. If a call to
+    grpc_call_start_batch returns any value other than GRPC_CALL_OK it is
+    guaranteed that no state associated with 'call' is changed and it is not
+    appropriate to call grpc_completion_queue_next or
+    grpc_completion_queue_pluck consequent to the failed grpc_call_start_batch
+    call.
     THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
@@ -396,14 +402,14 @@ GRPCAPI void grpc_server_destroy(grpc_server *server);
 GRPCAPI int grpc_tracer_set_enabled(const char *name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
-GRPCAPI int grpc_header_key_is_legal(const char *key, size_t length);
+GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+GRPCAPI int grpc_header_nonbin_value_is_legal(grpc_slice slice);
 
 /** Check whether a metadata key corresponds to a binary value */
-GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
+GRPCAPI int grpc_is_binary_header(grpc_slice slice);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);

@@ -49,7 +49,7 @@ void grpc_connector_connect(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
   connector->vtable->connect(exec_ctx, connector, in_args, out_args, notify);
 }
 
-void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx,
-                             grpc_connector* connector) {
-  connector->vtable->shutdown(exec_ctx, connector);
+void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
+                             grpc_error* why) {
+  connector->vtable->shutdown(exec_ctx, connector, why);
 }

@@ -34,6 +34,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
@@ -49,7 +50,7 @@ static int detag(void *p) { return (int)(uintptr_t)p; }
 static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
@@ -60,7 +61,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_resource_quota_create("server_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
       grpc_slice_from_copied_buffer((const char *)data, size));

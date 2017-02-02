@@ -26,35 +26,35 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Interfaces related to streams of values or objects."""
 
 import abc
 
 import six
 
+
 class Consumer(six.with_metaclass(abc.ABCMeta)):
-  """Interface for consumers of finite streams of values or objects."""
+    """Interface for consumers of finite streams of values or objects."""
 
-  @abc.abstractmethod
-  def consume(self, value):
-    """Accepts a value.
-
-    Args:
-      value: Any value accepted by this Consumer.
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def terminate(self):
-    """Indicates to this Consumer that no more values will be supplied."""
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def consume_and_terminate(self, value):
-    """Supplies a value and signals that no more values will be supplied.
+    @abc.abstractmethod
+    def consume(self, value):
+        """Accepts a value.
 
     Args:
       value: Any value accepted by this Consumer.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def terminate(self):
+        """Indicates to this Consumer that no more values will be supplied."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def consume_and_terminate(self, value):
+        """Supplies a value and signals that no more values will be supplied.
+
+    Args:
+      value: Any value accepted by this Consumer.
+    """
+        raise NotImplementedError()

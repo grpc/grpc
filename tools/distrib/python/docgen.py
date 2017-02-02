@@ -28,11 +28,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
 import argparse
 import os
 import os.path
 import shutil
 import subprocess
+import sys
 import tempfile
 
 parser = argparse.ArgumentParser()
@@ -94,10 +97,12 @@ if args.submit:
   # specified repository, edit it, and push it. It's up to the user to then go
   # onto GitHub and make a PR against grpc/grpc:gh-pages.
   repo_parent_dir = tempfile.mkdtemp()
+  print('Documentation parent directory: {}'.format(repo_parent_dir))
   repo_dir = os.path.join(repo_parent_dir, 'grpc')
   python_doc_dir = os.path.join(repo_dir, 'python')
   doc_branch = args.doc_branch
 
+  print('Cloning your repository...')
   subprocess.check_call([
           'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
               github_user, github_repository_owner)
@@ -109,13 +114,20 @@ if args.submit:
   subprocess.check_call([
           'git', 'checkout', 'upstream/gh-pages', '-b', doc_branch
       ], cwd=repo_dir)
+  print('Updating documentation...')
   shutil.rmtree(python_doc_dir, ignore_errors=True)
   shutil.copytree(DOC_PATH, python_doc_dir)
-  subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
-  subprocess.check_call([
-          'git', 'commit', '-m', 'Auto-update Python documentation'
-      ], cwd=repo_dir)
-  subprocess.check_call([
-          'git', 'push', '--set-upstream', 'origin', doc_branch
-      ], cwd=repo_dir)
+  print('Attempting to push documentation...')
+  try:
+    subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
+    subprocess.check_call([
+            'git', 'commit', '-m', 'Auto-update Python documentation'
+        ], cwd=repo_dir)
+    subprocess.check_call([
+            'git', 'push', '--set-upstream', 'origin', doc_branch
+        ], cwd=repo_dir)
+  except subprocess.CalledProcessError:
+    print('Failed to push documentation. Examine this directory and push '
+          'manually: {}'.format(repo_parent_dir))
+    sys.exit(1)
   shutil.rmtree(repo_parent_dir)

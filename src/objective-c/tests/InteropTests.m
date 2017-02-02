@@ -46,6 +46,8 @@
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 
+#define TEST_TIMEOUT 32
+
 // Convenience constructors for the generated proto messages:
 
 @interface RMTStreamingOutputCallRequest (Constructors)
@@ -124,7 +126,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
@@ -147,7 +149,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)test4MBResponsesAreAccepted {
@@ -164,7 +166,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
@@ -185,7 +187,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
@@ -205,7 +207,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testClientStreamingRPC {
@@ -238,7 +240,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -275,7 +277,7 @@
     }
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -319,7 +321,7 @@
       [expectation fulfill];
     }
   }];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 #ifndef GRPC_COMPILE_WITH_CRONET
@@ -335,7 +337,7 @@
     XCTAssert(done, @"Unexpected response: %@", response);
     [expectation fulfill];
   }];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 #endif
 
@@ -361,7 +363,7 @@
   [call cancel];
   XCTAssertEqual(call.state, GRXWriterStateFinished);
 
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testCancelAfterFirstResponseRPC {
@@ -396,7 +398,7 @@
     }
   }];
   [call start];
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testRPCAfterClosingOpenConnections {
@@ -420,7 +422,7 @@
     }];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 @end

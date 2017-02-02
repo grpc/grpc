@@ -75,13 +75,16 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_error *associated_error,
                                  const char *reason);
 
+bool grpc_connectivity_state_has_watchers(
+    grpc_connectivity_state_tracker *tracker);
+
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker, grpc_error **current_error);
 
 /** Return 1 if the channel should start connecting, 0 otherwise.
     If current==NULL cancel notify if it is already queued (success==0 in that
     case) */
-int grpc_connectivity_state_notify_on_state_change(
+bool grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify);
 

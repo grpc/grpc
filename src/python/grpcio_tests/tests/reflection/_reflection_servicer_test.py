@@ -26,15 +26,14 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""Tests of grpc.reflection.v1alpha.reflection."""
+"""Tests of grpc_reflection.v1alpha.reflection."""
 
 import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-from grpc.reflection.v1alpha import reflection
-from grpc.reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection
+from grpc_reflection.v1alpha import reflection_pb2
 
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
@@ -45,141 +44,112 @@ from tests.unit.framework.common import test_constants
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
 _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
-_SERVICE_NAMES = (
-    'Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman', 'Galilei')
+_SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman',
+                  'Galilei')
+
 
 def _file_descriptor_to_proto(descriptor):
-  proto = descriptor_pb2.FileDescriptorProto()
-  descriptor.CopyToProto(proto)
-  return proto.SerializeToString()
+    proto = descriptor_pb2.FileDescriptorProto()
+    descriptor.CopyToProto(proto)
+    return proto.SerializeToString()
+
 
 class ReflectionServicerTest(unittest.TestCase):
 
-  def setUp(self):
-    servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
-    server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-    self._server = grpc.server(server_pool)
-    port = self._server.add_insecure_port('[::]:0')
-    reflection_pb2.add_ServerReflectionServicer_to_server(servicer, self._server)
-    self._server.start()
+    def setUp(self):
+        servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
+        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
+        self._server = grpc.server(server_pool)
+        port = self._server.add_insecure_port('[::]:0')
+        reflection_pb2.add_ServerReflectionServicer_to_server(servicer,
+                                                              self._server)
+        self._server.start()
 
-    channel = grpc.insecure_channel('localhost:%d' % port)
-    self._stub = reflection_pb2.ServerReflectionStub(channel)
+        channel = grpc.insecure_channel('localhost:%d' % port)
+        self._stub = reflection_pb2.ServerReflectionStub(channel)
 
-  def testFileByName(self):
-    requests = (
-      reflection_pb2.ServerReflectionRequest(
-        file_by_filename=_EMPTY_PROTO_FILE_NAME
-      ),
-      reflection_pb2.ServerReflectionRequest(
-        file_by_filename='i-donut-exist'
-      ),
-    )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
-    expected_responses = (
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        file_descriptor_response=reflection_pb2.FileDescriptorResponse(
-          file_descriptor_proto=(
-            _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),
-          )
-        )
-      ),
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        error_response=reflection_pb2.ErrorResponse(
-          error_code=grpc.StatusCode.NOT_FOUND.value[0],
-          error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-        )
-      ),
-    )
-    self.assertEqual(expected_responses, responses)
+    def testFileByName(self):
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_by_filename=_EMPTY_PROTO_FILE_NAME),
+            reflection_pb2.ServerReflectionRequest(
+                file_by_filename='i-donut-exist'),)
+        responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
+        expected_responses = (
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                file_descriptor_response=reflection_pb2.FileDescriptorResponse(
+                    file_descriptor_proto=(
+                        _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),))),
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                error_response=reflection_pb2.ErrorResponse(
+                    error_code=grpc.StatusCode.NOT_FOUND.value[0],
+                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
+                )),)
+        self.assertSequenceEqual(expected_responses, responses)
 
-  def testFileBySymbol(self):
-    requests = (
-      reflection_pb2.ServerReflectionRequest(
-        file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME
-      ),
-      reflection_pb2.ServerReflectionRequest(
-        file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
-      ),
-    )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
-    expected_responses = (
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        file_descriptor_response=reflection_pb2.FileDescriptorResponse(
-          file_descriptor_proto=(
-            _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),
-          )
-        )
-      ),
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        error_response=reflection_pb2.ErrorResponse(
-          error_code=grpc.StatusCode.NOT_FOUND.value[0],
-          error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-        )
-      ),
-    )
-    self.assertEqual(expected_responses, responses)
+    def testFileBySymbol(self):
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME),
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
+            ),)
+        responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
+        expected_responses = (
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                file_descriptor_response=reflection_pb2.FileDescriptorResponse(
+                    file_descriptor_proto=(
+                        _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),))),
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                error_response=reflection_pb2.ErrorResponse(
+                    error_code=grpc.StatusCode.NOT_FOUND.value[0],
+                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
+                )),)
+        self.assertSequenceEqual(expected_responses, responses)
 
-  @unittest.skip('TODO(atash): implement file-containing-extension reflection '
-                 '(see https://github.com/google/protobuf/issues/2248)')
-  def testFileContainingExtension(self):
-    requests = (
-      reflection_pb2.ServerReflectionRequest(
-        file_containing_extension=reflection_pb2.ExtensionRequest(
-          containing_type='grpc.testing.proto2.Empty',
-          extension_number=125,
-        ),
-      ),
-      reflection_pb2.ServerReflectionRequest(
-        file_containing_extension=reflection_pb2.ExtensionRequest(
-          containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
-          extension_number=55,
-        ),
-      ),
-    )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
-    expected_responses = (
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        file_descriptor_response=reflection_pb2.FileDescriptorResponse(
-          file_descriptor_proto=(
-            _file_descriptor_to_proto(empty_extensions_pb2.DESCRIPTOR),
-          )
-        )
-      ),
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        error_response=reflection_pb2.ErrorResponse(
-          error_code=grpc.StatusCode.NOT_FOUND.value[0],
-          error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-        )
-      ),
-    )
-    self.assertEqual(expected_responses, responses)
+    @unittest.skip(
+        'TODO(atash): implement file-containing-extension reflection '
+        '(see https://github.com/google/protobuf/issues/2248)')
+    def testFileContainingExtension(self):
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_extension=reflection_pb2.ExtensionRequest(
+                    containing_type='grpc.testing.proto2.Empty',
+                    extension_number=125,),),
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_extension=reflection_pb2.ExtensionRequest(
+                    containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
+                    extension_number=55,),),)
+        responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
+        expected_responses = (
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                file_descriptor_response=reflection_pb2.FileDescriptorResponse(
+                    file_descriptor_proto=(_file_descriptor_to_proto(
+                        empty_extensions_pb2.DESCRIPTOR),))),
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                error_response=reflection_pb2.ErrorResponse(
+                    error_code=grpc.StatusCode.NOT_FOUND.value[0],
+                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
+                )),)
+        self.assertSequenceEqual(expected_responses, responses)
 
-  def testListServices(self):
-    requests = (
-      reflection_pb2.ServerReflectionRequest(
-        list_services='',
-      ),
-    )
-    responses = tuple(self._stub.ServerReflectionInfo(requests))
-    expected_responses = (
-      reflection_pb2.ServerReflectionResponse(
-        valid_host='',
-        list_services_response=reflection_pb2.ListServiceResponse(
-          service=tuple(
-            reflection_pb2.ServiceResponse(name=name)
-            for name in _SERVICE_NAMES
-          )
-        )
-      ),
-    )
-    self.assertEqual(expected_responses, responses)
+    def testListServices(self):
+        requests = (reflection_pb2.ServerReflectionRequest(list_services='',),)
+        responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
+        expected_responses = (reflection_pb2.ServerReflectionResponse(
+            valid_host='',
+            list_services_response=reflection_pb2.ListServiceResponse(
+                service=tuple(
+                    reflection_pb2.ServiceResponse(name=name)
+                    for name in _SERVICE_NAMES))),)
+        self.assertSequenceEqual(expected_responses, responses)
+
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

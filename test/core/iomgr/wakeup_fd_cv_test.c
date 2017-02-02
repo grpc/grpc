@@ -195,16 +195,15 @@ void test_poll_cv_trigger(void) {
   GPR_ASSERT(pfds[4].revents == 0);
   GPR_ASSERT(pfds[5].revents == 0);
 
-  // Pollin on wakeup fd + socket fd
-  trigger_socket_event();
+  // Pollin on wakeupfd before poll()
   pargs.result = -2;
   gpr_thd_new(&t_id, &background_poll, &pargs, &opt);
   gpr_thd_join(t_id);
 
-  GPR_ASSERT(pargs.result == 2);
+  GPR_ASSERT(pargs.result == 1);
   GPR_ASSERT(pfds[0].revents == 0);
   GPR_ASSERT(pfds[1].revents == POLLIN);
-  GPR_ASSERT(pfds[2].revents == POLLIN);
+  GPR_ASSERT(pfds[2].revents == 0);
   GPR_ASSERT(pfds[3].revents == 0);
   GPR_ASSERT(pfds[4].revents == 0);
   GPR_ASSERT(pfds[5].revents == 0);

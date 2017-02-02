@@ -168,7 +168,8 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 #ifndef NDEBUG
   cc->outstanding_tag_count = 0;
 #endif
-  grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc);
+  grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc,
+                    grpc_schedule_on_exec_ctx);
 
   GPR_TIMER_END("grpc_completion_queue_create", 0);
 
@@ -252,7 +253,6 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (grpc_trace_operation_failures && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
-    grpc_error_free_string(errmsg);
   }
 
   storage->tag = tag;
@@ -293,7 +293,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (kick_error != GRPC_ERROR_NONE) {
       const char *msg = grpc_error_string(kick_error);
       gpr_log(GPR_ERROR, "Kick failed: %s", msg);
-      grpc_error_free_string(msg);
+
       GRPC_ERROR_UNREF(kick_error);
     }
   } else {
@@ -354,11 +354,13 @@ static void dump_pending_tags(grpc_completion_queue *cc) {
   gpr_strvec v;
   gpr_strvec_init(&v);
   gpr_strvec_add(&v, gpr_strdup("PENDING TAGS:"));
+  gpr_mu_lock(cc->mu);
   for (size_t i = 0; i < cc->outstanding_tag_count; i++) {
     char *s;
     gpr_asprintf(&s, " %p", cc->outstanding_tags[i]);
     gpr_strvec_add(&v, s);
   }
+  gpr_mu_unlock(cc->mu);
   char *out = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
   gpr_log(GPR_DEBUG, "%s", out);
@@ -400,8 +402,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       .stolen_completion = NULL,
       .tag = NULL,
       .first_loop = true};
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
-      cq_is_next_finished, &is_finished_arg);
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cc->mu);
@@ -458,7 +460,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        grpc_error_free_string(msg);
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
@@ -569,8 +571,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       .stolen_completion = NULL,
       .tag = tag,
       .first_loop = true};
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
-      cq_is_pluck_finished, &is_finished_arg);
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, cq_is_pluck_finished, &is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cc->mu);
@@ -644,7 +646,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        grpc_error_free_string(msg);
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;

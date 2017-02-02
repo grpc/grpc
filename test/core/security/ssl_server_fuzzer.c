@@ -58,17 +58,14 @@ struct handshake_state {
   bool done_callback_called;
 };
 
-static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
-                                     grpc_security_status status,
-                                     grpc_endpoint *secure_endpoint,
-                                     grpc_auth_context *auth_context) {
-  struct handshake_state *state = (struct handshake_state *)statep;
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
+                              grpc_error *error) {
+  grpc_handshaker_args *args = arg;
+  struct handshake_state *state = args->user_data;
   GPR_ASSERT(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(status != GRPC_SECURITY_OK);
-  GPR_ASSERT(secure_endpoint == NULL);
-  GPR_ASSERT(auth_context == NULL);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -82,7 +79,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_resource_quota_create("ssl_server_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
@@ -106,30 +103,33 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   // Create security connector
   grpc_server_security_connector *sc = NULL;
   grpc_security_status status =
-      grpc_server_credentials_create_security_connector(creds, &sc);
+      grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
   GPR_ASSERT(status == GRPC_SECURITY_OK);
-  sc->channel_args = NULL;
   gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                        gpr_time_from_seconds(1, GPR_TIMESPAN));
 
   struct handshake_state state;
   state.done_callback_called = false;
-  grpc_server_security_connector_do_handshake(&exec_ctx, sc, NULL,
-                                              mock_endpoint, NULL, deadline,
-                                              on_secure_handshake_done, &state);
+  grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
+  grpc_server_security_connector_add_handshakers(&exec_ctx, sc, handshake_mgr);
+  grpc_handshake_manager_do_handshake(
+      &exec_ctx, handshake_mgr, mock_endpoint, NULL /* channel_args */,
+      deadline, NULL /* acceptor */, on_handshake_done, &state);
   grpc_exec_ctx_flush(&exec_ctx);
 
   // If the given string happens to be part of the correct client hello, the
   // server will wait for more data. Explicitly fail the server by shutting down
   // the endpoint.
   if (!state.done_callback_called) {
-    grpc_endpoint_shutdown(&exec_ctx, mock_endpoint);
+    grpc_endpoint_shutdown(&exec_ctx, mock_endpoint,
+                           GRPC_ERROR_CREATE("Explicit close"));
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
   GPR_ASSERT(state.done_callback_called);
 
-  GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "test");
+  grpc_handshake_manager_destroy(&exec_ctx, handshake_mgr);
+  GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &sc->base, "test");
   grpc_server_credentials_release(creds);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);

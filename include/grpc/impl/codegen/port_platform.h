@@ -393,21 +393,21 @@ typedef unsigned __int64 uint64_t;
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_MUST_USE_RESULT
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define GRPC_MUST_USE_RESULT
 #endif
 #endif
 
-#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifndef GPR_PRINT_FORMAT_CHECK
 #ifdef __GNUC__
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
   __attribute__((format(printf, FORMAT_STR, ARGS)))
 #else
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
 #endif
-#endif /* GPRC_PRINT_FORMAT_CHECK */
+#endif /* GPR_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)

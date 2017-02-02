@@ -55,9 +55,8 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
   }
 
   this.quitWorker = function quitWorker(call, callback) {
-    server.tryShutdown(function() {
-      callback(null, {});
-    });
+    callback(null, {});
+    server.tryShutdown(function() {});
   };
 
   this.runClient = function runClient(call) {

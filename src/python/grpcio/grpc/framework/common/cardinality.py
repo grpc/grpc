@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Defines an enum for classifying RPC methods by streaming semantics."""
 
 import enum
@@ -34,9 +33,9 @@ import enum
 
 @enum.unique
 class Cardinality(enum.Enum):
-  """Describes the streaming semantics of an RPC method."""
+    """Describes the streaming semantics of an RPC method."""
 
-  UNARY_UNARY = 'request-unary/response-unary'
-  UNARY_STREAM = 'request-unary/response-streaming'
-  STREAM_UNARY = 'request-streaming/response-unary'
-  STREAM_STREAM = 'request-streaming/response-streaming'
+    UNARY_UNARY = 'request-unary/response-unary'
+    UNARY_STREAM = 'request-unary/response-streaming'
+    STREAM_UNARY = 'request-streaming/response-unary'
+    STREAM_STREAM = 'request-streaming/response-streaming'

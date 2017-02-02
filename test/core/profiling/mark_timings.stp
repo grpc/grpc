@@ -2,7 +2,7 @@
  * probe definition.
  *
  * For a statically build binary, that'd be the name of the binary itself.
- * For dinamically built ones, point to the location of the libgprc.so being
+ * For dynamically built ones, point to the location of the libgrpc.so being
  * used. */
 
 global starts, times, times_per_tag

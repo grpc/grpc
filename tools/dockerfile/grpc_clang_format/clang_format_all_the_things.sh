@@ -44,7 +44,7 @@ for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
+    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
   done
 done
 
@@ -54,7 +54,7 @@ if [ -n "$CHANGED_FILES" ]; then
   files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
 fi
 
-if [ "x$TEST" = "x" ]
+if [ "$TEST" == "" ]
 then
   echo $files | xargs $CLANG_FORMAT -i
 else

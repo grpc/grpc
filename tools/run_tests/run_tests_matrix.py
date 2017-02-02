@@ -31,12 +31,13 @@
 """Run test matrix."""
 
 import argparse
-import jobset
 import multiprocessing
 import os
-import report_utils
 import sys
-from filter_pull_request_tests import filter_tests
+
+import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
+from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -69,7 +70,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
   test_job = jobset.JobSpec(
-          cmdline=['tools/run_tests/run_tests_in_workspace.sh',
+          cmdline=['tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
                    '-x', '../report_%s.xml' % name,
@@ -189,6 +190,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 labels=['portability'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
+
   for compiler in ['gcc4.8', 'gcc5.3',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c++'],
@@ -229,6 +231,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='electron1.3',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
   return test_jobs
 
 
@@ -239,6 +250,17 @@ def _allowed_labels():
     for label in job.labels:
       all_labels.add(label)
   return sorted(all_labels)
+
+
+def _runs_per_test_type(arg_str):
+  """Auxiliary function to parse the "runs_per_test" flag."""
+  try:
+    n = int(arg_str)
+    if n <= 0: raise ValueError
+    return n
+  except:
+    msg = '\'{}\' is not a positive integer'.format(arg_str)
+    raise argparse.ArgumentTypeError(msg)
 
 
 if __name__ == "__main__":
@@ -252,6 +274,11 @@ if __name__ == "__main__":
                     nargs='+',
                     default=[],
                     help='Filter targets to run by label with AND semantics.')
+  argp.add_argument('--exclude',
+                    choices=_allowed_labels(),
+                    nargs='+',
+                    default=[],
+                    help='Exclude targets with any of given labels.')
   argp.add_argument('--build_only',
                     default=False,
                     action='store_const',
@@ -268,7 +295,7 @@ if __name__ == "__main__":
                     default=False,
                     action='store_const',
                     const=True,
-                    help='Filters out tests irrelavant to pull request changes.')
+                    help='Filters out tests irrelevant to pull request changes.')
   argp.add_argument('--base_branch',
                     default='origin/master',
                     type=str,
@@ -277,6 +304,9 @@ if __name__ == "__main__":
                     default=_DEFAULT_INNER_JOBS,
                     type=int,
                     help='Number of jobs in each run_tests.py instance')
+  argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
+                    help='How many times to run each tests. >1 runs implies ' +
+                    'omitting passing test from the output & reports.')
   args = argp.parse_args()
 
   extra_args = []
@@ -284,6 +314,10 @@ if __name__ == "__main__":
     extra_args.append('--build_only')
   if args.force_default_poller:
     extra_args.append('--force_default_poller')
+  if args.runs_per_test > 1:
+    extra_args.append('-n')
+    extra_args.append('%s' % args.runs_per_test)
+    extra_args.append('--quiet_success')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
@@ -291,7 +325,8 @@ if __name__ == "__main__":
   jobs = []
   for job in all_jobs:
     if not args.filter or all(filter in job.labels for filter in args.filter):
-      jobs.append(job)
+      if not any(exclude_label in job.labels for exclude_label in args.exclude):
+        jobs.append(job)
 
   if not jobs:
     jobset.message('FAILED', 'No test suites match given criteria.',
@@ -311,7 +346,9 @@ if __name__ == "__main__":
       print('No tests will be skipped.')
     else:
       print('These tests will be skipped:')
-      skipped_jobs = [job for job in jobs if job not in relevant_jobs]
+      skipped_jobs = list(set(jobs) - set(relevant_jobs))
+      # Sort by shortnames to make printing of skipped tests consistent
+      skipped_jobs.sort(key=lambda job: job.shortname)
       for job in list(skipped_jobs):
         print('  %s' % job.shortname)
     jobs = relevant_jobs

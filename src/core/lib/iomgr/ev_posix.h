@@ -51,7 +51,7 @@ typedef struct grpc_event_engine_vtable {
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
-  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
   void (*fd_notify_on_read)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -106,8 +106,7 @@ typedef struct grpc_event_engine_vtable {
   grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue);
   void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
-  void (*workqueue_enqueue)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error);
+  grpc_closure_scheduler *(*workqueue_scheduler)(grpc_workqueue *workqueue);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
@@ -141,7 +140,7 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
 bool grpc_fd_is_shutdown(grpc_fd *fd);
 
 /* Cause any current and future callbacks to fail. */
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by
@@ -183,6 +182,5 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

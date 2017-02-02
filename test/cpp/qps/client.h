@@ -51,7 +51,6 @@
 
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
@@ -163,10 +162,9 @@ class Client {
 
     MaybeStartRequests();
 
-    // avoid std::vector for old compilers that expect a copy constructor
     if (reset) {
-      Histogram* to_merge = new Histogram[threads_.size()];
-      StatusHistogram* to_merge_status = new StatusHistogram[threads_.size()];
+      std::vector<Histogram> to_merge(threads_.size());
+      std::vector<StatusHistogram> to_merge_status(threads_.size());
 
       for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i]->BeginSwap(&to_merge[i], &to_merge_status[i]);
@@ -177,8 +175,6 @@ class Client {
         latencies.Merge(to_merge[i]);
         MergeStatusHistogram(to_merge_status[i], &statuses);
       }
-      delete[] to_merge;
-      delete[] to_merge_status;
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram
@@ -377,7 +373,7 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
+      : cores_(gpr_cpu_num_cores()),
         channels_(config.client_channels()),
         create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
@@ -412,6 +408,7 @@ class ClientImpl : public Client {
       // old compilers happy with using this in std::vector
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
+      set_channel_args(config, &args);
       channel_ = CreateTestChannel(
           target, config.security_params().server_host_override(),
           config.has_security_params(), !config.security_params().use_test_ca(),
@@ -426,6 +423,18 @@ class ClientImpl : public Client {
     StubType* get_stub() { return stub_.get(); }
 
    private:
+    void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
+      for (auto channel_arg : config.channel_args()) {
+        if (channel_arg.value_case() == ChannelArg::kStrValue) {
+          args->SetString(channel_arg.name(), channel_arg.str_value());
+        } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
+          args->SetInt(channel_arg.name(), channel_arg.int_value());
+        } else {
+          gpr_log(GPR_ERROR, "Empty channel arg value.");
+        }
+      }
+    }
+
     std::shared_ptr<Channel> channel_;
     std::unique_ptr<StubType> stub_;
   };

@@ -184,7 +184,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
   return b;
 }
 
-void grpc_channel_args_destroy(grpc_channel_args *a) {
+void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a) {
   size_t i;
   if (!a) return;
   for (i = 0; i < a->num_args; i++) {
@@ -195,7 +195,8 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
       case GRPC_ARG_INTEGER:
         break;
       case GRPC_ARG_POINTER:
-        a->args[i].value.pointer.vtable->destroy(a->args[i].value.pointer.p);
+        a->args[i].value.pointer.vtable->destroy(exec_ctx,
+                                                 a->args[i].value.pointer.p);
         break;
     }
     gpr_free(a->args[i].key);
@@ -249,7 +250,8 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
 }
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_args **a,
+    grpc_compression_algorithm algorithm, int state) {
   int *states_arg = NULL;
   grpc_channel_args *result = *a;
   const int states_arg_found =
@@ -282,7 +284,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
       GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
     }
     result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
-    grpc_channel_args_destroy(*a);
+    grpc_channel_args_destroy(exec_ctx, *a);
     *a = result;
   }
   return result;
@@ -296,6 +298,12 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
   } else {
     return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
   }
+}
+
+grpc_channel_args *grpc_channel_args_set_socket_mutator(
+    grpc_channel_args *a, grpc_socket_mutator *mutator) {
+  grpc_arg tmp = grpc_socket_mutator_to_arg(mutator);
+  return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
 
 int grpc_channel_args_compare(const grpc_channel_args *a,

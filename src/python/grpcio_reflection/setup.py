@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Setup module for the GRPC Python package's optional reflection."""
 
 import os
@@ -41,18 +40,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import reflection_commands
 import grpc_version
 
-PACKAGE_DIRECTORIES = {
-    '': '.',
-}
+PACKAGE_DIRECTORIES = {'': '.',}
 
 SETUP_REQUIRES = (
-    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
-)
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
 INSTALL_REQUIRES = (
     'protobuf>=3.0.0',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),
-)
+    'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 COMMAND_CLASS = {
     # Run preprocess from the repository *before* doing any packaging!
@@ -66,8 +61,6 @@ setuptools.setup(
     license='3-clause BSD',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
-    namespace_packages=['grpc'],
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS
-)
+    cmdclass=COMMAND_CLASS)

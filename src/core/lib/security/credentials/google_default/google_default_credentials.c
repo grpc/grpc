@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
@@ -101,11 +102,10 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, grpc_error *e) {
   grpc_pollset_destroy(p);
 }
 
-static int is_stack_running_on_compute_engine(void) {
+static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure destroy_closure;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
@@ -128,13 +128,14 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
-      &exec_ctx, &context, &detector.pollent, resource_quota, &request,
+      exec_ctx, &context, &detector.pollent, resource_quota, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-      grpc_closure_create(on_compute_engine_detection_http_response, &detector),
+      grpc_closure_create(on_compute_engine_detection_http_response, &detector,
+                          grpc_schedule_on_exec_ctx),
       &detector.response);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_exec_ctx_flush(exec_ctx);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
@@ -143,7 +144,7 @@ static int is_stack_running_on_compute_engine(void) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx,
+            grpc_pollset_work(exec_ctx,
                               grpc_polling_entity_pollset(&detector.pollent),
                               &worker, gpr_now(GPR_CLOCK_MONOTONIC),
                               gpr_inf_future(GPR_CLOCK_MONOTONIC)))) {
@@ -155,12 +156,13 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_closure, destroy_pollset,
-                    grpc_polling_entity_pollset(&detector.pollent));
-  grpc_pollset_shutdown(&exec_ctx,
+                    grpc_polling_entity_pollset(&detector.pollent),
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(exec_ctx,
                         grpc_polling_entity_pollset(&detector.pollent),
                         &destroy_closure);
-  grpc_exec_ctx_finish(&exec_ctx);
   g_polling_mu = NULL;
+  grpc_exec_ctx_flush(exec_ctx);
 
   gpr_free(grpc_polling_entity_pollset(&detector.pollent));
   grpc_http_response_destroy(&detector.response);
@@ -170,12 +172,12 @@ static int is_stack_running_on_compute_engine(void) {
 
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error *create_default_creds_from_path(
-    char *creds_path, grpc_call_credentials **creds) {
+    grpc_exec_ctx *exec_ctx, char *creds_path, grpc_call_credentials **creds) {
   grpc_json *json = NULL;
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
-  grpc_slice creds_data = gpr_empty_slice();
+  grpc_slice creds_data = grpc_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
     error = GRPC_ERROR_CREATE("creds_path unset");
@@ -200,7 +202,7 @@ static grpc_error *create_default_creds_from_path(
   if (grpc_auth_json_key_is_valid(&key)) {
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-            key, grpc_max_auth_token_lifetime());
+            exec_ctx, key, grpc_max_auth_token_lifetime());
     if (result == NULL) {
       error = GRPC_ERROR_CREATE(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
@@ -225,7 +227,7 @@ static grpc_error *create_default_creds_from_path(
 end:
   GPR_ASSERT((result == NULL) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != NULL) gpr_free(creds_path);
-  grpc_slice_unref(creds_data);
+  grpc_slice_unref_internal(exec_ctx, creds_data);
   if (json != NULL) grpc_json_destroy(json);
   *creds = result;
   return error;
@@ -236,6 +238,7 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
   grpc_call_credentials *call_creds = NULL;
   grpc_error *error = GRPC_ERROR_CREATE("Failed to create Google credentials");
   grpc_error *err;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
 
@@ -250,20 +253,22 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
 
   /* First, try the environment variable. */
   err = create_default_creds_from_path(
-      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
+      &exec_ctx, gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
   if (err == GRPC_ERROR_NONE) goto end;
   error = grpc_error_add_child(error, err);
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(), &call_creds);
+      &exec_ctx, grpc_get_well_known_google_credentials_file_path(),
+      &call_creds);
   if (err == GRPC_ERROR_NONE) goto end;
   error = grpc_error_add_child(error, err);
 
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
   if (!compute_engine_detection_done) {
-    int need_compute_engine_creds = is_stack_running_on_compute_engine();
+    int need_compute_engine_creds =
+        is_stack_running_on_compute_engine(&exec_ctx);
     compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
       call_creds = grpc_google_compute_engine_credentials_create(NULL);
@@ -286,8 +291,8 @@ end:
           grpc_composite_channel_credentials_create(ssl_creds, call_creds,
                                                     NULL));
       GPR_ASSERT(default_credentials != NULL);
-      grpc_channel_credentials_unref(ssl_creds);
-      grpc_call_credentials_unref(call_creds);
+      grpc_channel_credentials_unref(&exec_ctx, ssl_creds);
+      grpc_call_credentials_unref(&exec_ctx, call_creds);
       result = default_credentials;
     } else {
       gpr_log(GPR_ERROR, "Could not create google default credentials.");
@@ -299,18 +304,21 @@ end:
   } else {
     GRPC_ERROR_UNREF(error);
   }
+  grpc_exec_ctx_finish(&exec_ctx);
   return result;
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
   if (default_credentials != NULL) {
-    grpc_channel_credentials_unref(default_credentials);
+    grpc_channel_credentials_unref(&exec_ctx, default_credentials);
     default_credentials = NULL;
   }
   compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /* -- Well known credentials path. -- */

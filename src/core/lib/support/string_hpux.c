@@ -85,10 +85,10 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 
 size_t gpr_strnlen(const char *s, size_t maxlen){
     size_t l;
-    for (l = 0; l < maxlen; l++) 
+    for (l = 0; l < maxlen; l++)
       if (!s[l]) 
         break;
-    
+
     return l;
 }
 

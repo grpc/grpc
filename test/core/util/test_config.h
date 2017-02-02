@@ -40,31 +40,17 @@
 extern "C" {
 #endif /*  __cplusplus */
 
-#ifndef GRPC_TEST_SLOWDOWN_BUILD_FACTOR
-#define GRPC_TEST_SLOWDOWN_BUILD_FACTOR 1.0
-#endif
+extern int64_t g_fixture_slowdown_factor;
+extern int64_t g_poller_slowdown_factor;
 
-#ifndef GRPC_TEST_SLOWDOWN_MACHINE_FACTOR
-#define GRPC_TEST_SLOWDOWN_MACHINE_FACTOR 1.0
-#endif
+/* Returns an appropriate scaling factor for timeouts. */
+int64_t grpc_test_slowdown_factor();
 
-extern double g_fixture_slowdown_factor;
+/* Converts a given timeout (in seconds) to a deadline. */
+gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
 
-#define GRPC_TEST_SLOWDOWN_FACTOR                                        \
-  (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR * \
-   g_fixture_slowdown_factor)
-
-#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                                  \
-  gpr_time_add(                                                              \
-      gpr_now(GPR_CLOCK_MONOTONIC),                                          \
-      gpr_time_from_millis((int64_t)(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)), \
-                           GPR_TIMESPAN))
-
-#define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x)                                   \
-  gpr_time_add(                                                              \
-      gpr_now(GPR_CLOCK_MONOTONIC),                                          \
-      gpr_time_from_micros((int64_t)(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)), \
-                           GPR_TIMESPAN))
+/* Converts a given timeout (in milliseconds) to a deadline. */
+gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 
 #ifndef GRPC_TEST_CUSTOM_PICK_PORT
 #define GRPC_TEST_PICK_PORT

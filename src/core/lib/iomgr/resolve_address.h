@@ -36,6 +36,7 @@
 
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
@@ -54,6 +55,7 @@ typedef struct {
 /* TODO(ctiller): add a timeout here */
 extern void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
                                     const char *default_port,
+                                    grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addresses);
 /* Destroy resolved addresses */

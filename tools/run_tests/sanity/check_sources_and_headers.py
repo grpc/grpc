@@ -34,7 +34,7 @@ import re
 import sys
 
 root = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-with open(os.path.join(root, 'tools', 'run_tests', 'sources_and_headers.json')) as f:
+with open(os.path.join(root, 'tools', 'run_tests', 'generated', 'sources_and_headers.json')) as f:
   js = json.loads(f.read())
 
 re_inc1 = re.compile(r'^#\s*include\s*"([^"]*)"')

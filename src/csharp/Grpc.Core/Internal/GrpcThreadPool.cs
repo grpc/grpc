@@ -37,6 +37,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Logging;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -53,6 +54,8 @@ namespace Grpc.Core.Internal
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+
+        readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
         bool stopRequested;
 
@@ -82,7 +85,8 @@ namespace Grpc.Core.Internal
 
                 for (int i = 0; i < poolSize; i++)
                 {
-                    threads.Add(CreateAndStartThread(i));
+                    var optionalProfiler = i < threadProfilers.Count ? threadProfilers[i] : null;
+                    threads.Add(CreateAndStartThread(i, optionalProfiler));
                 }
             }
         }
@@ -111,6 +115,11 @@ namespace Grpc.Core.Internal
                 {
                     cq.Dispose();
                 }
+
+                for (int i = 0; i < threadProfilers.Count; i++)
+                {
+                    threadProfilers[i].Dump(string.Format("grpc_trace_thread_{0}.txt", i));
+                }
             });
         }
 
@@ -137,12 +146,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private Thread CreateAndStartThread(int threadIndex)
+        private Thread CreateAndStartThread(int threadIndex, IProfiler optionalProfiler)
         {
             var cqIndex = threadIndex % completionQueues.Count;
             var cq = completionQueues.ElementAt(cqIndex);
 
-            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
+            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq, optionalProfiler)));
             thread.IsBackground = true;
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
             thread.Start();
@@ -153,8 +162,13 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Body of the polling thread.
         /// </summary>
-        private void RunHandlerLoop(CompletionQueueSafeHandle cq)
+        private void RunHandlerLoop(CompletionQueueSafeHandle cq, IProfiler optionalProfiler)
         {
+            if (optionalProfiler != null)
+            {
+                Profilers.SetForCurrentThread(optionalProfiler);
+            }
+
             CompletionQueueEvent ev;
             do
             {

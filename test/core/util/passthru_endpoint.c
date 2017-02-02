@@ -37,6 +37,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/iomgr/sockaddr.h"
+
+#include "src/core/lib/slice/slice_internal.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -62,11 +65,10 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -90,7 +92,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_ref(slices->slices[i]));
     }
-    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -98,7 +100,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     }
   }
   gpr_mu_unlock(&m->parent->mu);
-  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+  grpc_closure_sched(exec_ctx, cb, error);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -107,23 +109,25 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
-static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                        grpc_error *why) {
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);
   grpc_resource_user_shutdown(exec_ctx, m->resource_user);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
@@ -132,8 +136,8 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
-    grpc_slice_buffer_destroy(&p->client.read_buffer);
-    grpc_slice_buffer_destroy(&p->server.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->client.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->server.read_buffer);
     grpc_resource_user_unref(exec_ctx, p->client.resource_user);
     grpc_resource_user_unref(exec_ctx, p->server.resource_user);
     gpr_free(p);
@@ -145,6 +149,8 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
+
+static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
@@ -163,6 +169,7 @@ static const grpc_endpoint_vtable vtable = {
     me_destroy,
     me_get_resource_user,
     me_get_peer,
+    me_get_fd,
 };
 
 static void half_init(half *m, passthru_endpoint *parent,

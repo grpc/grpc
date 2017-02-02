@@ -58,12 +58,11 @@ abstract class AbstractCall
      *                              the response
      * @param array    $options     Call options (optional)
      */
-    public function __construct(
-        Channel $channel,
-        $method,
-        $deserialize,
-        $options = []
-    ) {
+    public function __construct(Channel $channel,
+                                $method,
+                                $deserialize,
+                                array $options = [])
+    {
         if (array_key_exists('timeout', $options) &&
             is_numeric($timeout = $options['timeout'])
         ) {
@@ -89,7 +88,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The metadata sent by the server.
+     * @return mixed The metadata sent by the server
      */
     public function getMetadata()
     {
@@ -97,7 +96,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The trailing metadata sent by the server.
+     * @return mixed The trailing metadata sent by the server
      */
     public function getTrailingMetadata()
     {
@@ -105,7 +104,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return string The URI of the endpoint.
+     * @return string The URI of the endpoint
      */
     public function getPeer()
     {
@@ -127,7 +126,7 @@ abstract class AbstractCall
      *
      * @return string The protobuf binary format
      */
-    protected function serializeMessage($data)
+    protected function _serializeMessage($data)
     {
         // Proto3 implementation
         if (method_exists($data, 'encode')) {
@@ -145,7 +144,7 @@ abstract class AbstractCall
      *
      * @return mixed The deserialized value
      */
-    protected function deserializeResponse($value)
+    protected function _deserializeResponse($value)
     {
         if ($value === null) {
             return;
@@ -167,8 +166,7 @@ abstract class AbstractCall
     /**
      * Set the CallCredentials for the underlying Call.
      *
-     * @param CallCredentials $call_credentials The CallCredentials
-     *                                          object
+     * @param CallCredentials $call_credentials The CallCredentials object
      */
     public function setCallCredentials($call_credentials)
     {

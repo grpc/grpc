@@ -48,22 +48,19 @@ namespace Grpc.Core.Internal
             
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
-            using (Profilers.ForCurrentThread().NewScope("MetadataArraySafeHandle.Create"))
+            if (metadata.Count == 0)
             {
-                if (metadata.Count == 0)
-                {
-                    return new MetadataArraySafeHandle();
-                }
-
-                // TODO(jtattermusch): we might wanna check that the metadata is readonly 
-                var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
-                for (int i = 0; i < metadata.Count; i++)
-                {
-                    var valueBytes = metadata[i].GetSerializedValueUnsafe();
-                    Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
-                }
-                return metadataArray;
+                return new MetadataArraySafeHandle();
             }
+
+            // TODO(jtattermusch): we might wanna check that the metadata is readonly
+            var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+            for (int i = 0; i < metadata.Count; i++)
+            {
+                var valueBytes = metadata[i].GetSerializedValueUnsafe();
+                Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+            }
+            return metadataArray;
         }
 
         /// <summary>
@@ -82,9 +79,13 @@ namespace Grpc.Core.Internal
             for (ulong i = 0; i < count; i++)
             {
                 var index = new UIntPtr(i);
-                string key = Marshal.PtrToStringAnsi(Native.grpcsharp_metadata_array_get_key(metadataArray, index));
-                var bytes = new byte[Native.grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
-                Marshal.Copy(Native.grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
+                UIntPtr keyLen;
+                IntPtr keyPtr = Native.grpcsharp_metadata_array_get_key(metadataArray, index, out keyLen);
+                string key = Marshal.PtrToStringAnsi(keyPtr, (int)keyLen.ToUInt32());
+                UIntPtr valueLen;
+                IntPtr valuePtr = Native.grpcsharp_metadata_array_get_value(metadataArray, index, out valueLen);
+                var bytes = new byte[valueLen.ToUInt64()];
+                Marshal.Copy(valuePtr, bytes, 0, bytes.Length);
                 metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
             }
             return metadata;

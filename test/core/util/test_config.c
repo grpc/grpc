@@ -33,14 +33,20 @@
 
 #include "test/core/util/test_config.h"
 
-#include <grpc/support/log.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
-double g_fixture_slowdown_factor = 1.0;
+int64_t g_fixture_slowdown_factor = 1;
+int64_t g_poller_slowdown_factor = 1;
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
@@ -275,12 +281,109 @@ static void install_crash_handler() {
 static void install_crash_handler() {}
 #endif
 
+bool BuiltUnderValgrind() {
+#ifdef RUNNING_ON_VALGRIND
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool BuiltUnderTsan() {
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef THREAD_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+bool BuiltUnderAsan() {
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef ADDRESS_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+bool BuiltUnderMsan() {
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef MEMORY_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+int64_t grpc_test_sanitizer_slowdown_factor() {
+  int64_t sanitizer_multiplier = 1;
+  if (BuiltUnderValgrind()) {
+    sanitizer_multiplier = 20;
+  } else if (BuiltUnderTsan()) {
+    sanitizer_multiplier = 5;
+  } else if (BuiltUnderAsan()) {
+    sanitizer_multiplier = 3;
+  } else if (BuiltUnderMsan()) {
+    sanitizer_multiplier = 4;
+  }
+  return sanitizer_multiplier;
+}
+
+int64_t grpc_test_slowdown_factor() {
+  return grpc_test_sanitizer_slowdown_factor() * g_fixture_slowdown_factor *
+         g_poller_slowdown_factor;
+}
+
+gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
+  return gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_millis(grpc_test_slowdown_factor() * (int64_t)1e3 * time_s,
+                           GPR_TIMESPAN));
+}
+
+gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
+  return gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_micros(grpc_test_slowdown_factor() * (int64_t)1e3 * time_ms,
+                           GPR_TIMESPAN));
+}
+
 void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
-  gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
-          (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
-          (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
-          (double)GRPC_TEST_SLOWDOWN_FACTOR);
+  { /* poll-cv poll strategy runs much more slowly than anything else */
+    char *s = gpr_getenv("GRPC_POLL_STRATEGY");
+    if (s != NULL && 0 == strcmp(s, "poll-cv")) {
+      g_poller_slowdown_factor = 5;
+    }
+    gpr_free(s);
+  }
+  gpr_log(GPR_DEBUG,
+          "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
+          ", poller=%" PRId64 ", total=%" PRId64,
+          grpc_test_sanitizer_slowdown_factor(), g_fixture_slowdown_factor,
+          g_poller_slowdown_factor, grpc_test_slowdown_factor());
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());

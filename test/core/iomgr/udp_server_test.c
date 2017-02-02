@@ -180,7 +180,7 @@ static void test_receive(int number_of_clients) {
   gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
-    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+    deadline = grpc_timeout_seconds_to_deadline(10);
 
     number_of_reads_before = g_number_of_reads;
     /* Create a socket, send a packet to the UDP server. */
@@ -235,11 +235,12 @@ int main(int argc, char **argv) {
   test_receive(1);
   test_receive(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
   return 0;
 }
 

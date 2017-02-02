@@ -54,8 +54,9 @@ void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
   ep->vtable->add_to_pollset_set(exec_ctx, ep, pollset_set);
 }
 
-void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
-  ep->vtable->shutdown(exec_ctx, ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                            grpc_error* why) {
+  ep->vtable->shutdown(exec_ctx, ep, why);
 }
 
 void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
@@ -65,6 +66,8 @@ void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
 char* grpc_endpoint_get_peer(grpc_endpoint* ep) {
   return ep->vtable->get_peer(ep);
 }
+
+int grpc_endpoint_get_fd(grpc_endpoint* ep) { return ep->vtable->get_fd(ep); }
 
 grpc_workqueue* grpc_endpoint_get_workqueue(grpc_endpoint* ep) {
   return ep->vtable->get_workqueue(ep);

@@ -35,8 +35,10 @@
 
 #include <grpc/support/useful.h>
 
-void gpr_backoff_init(gpr_backoff *backoff, double multiplier, double jitter,
+void gpr_backoff_init(gpr_backoff *backoff, int64_t initial_connect_timeout,
+                      double multiplier, double jitter,
                       int64_t min_timeout_millis, int64_t max_timeout_millis) {
+  backoff->initial_connect_timeout = initial_connect_timeout;
   backoff->multiplier = multiplier;
   backoff->jitter = jitter;
   backoff->min_timeout_millis = min_timeout_millis;
@@ -45,9 +47,10 @@ void gpr_backoff_init(gpr_backoff *backoff, double multiplier, double jitter,
 }
 
 gpr_timespec gpr_backoff_begin(gpr_backoff *backoff, gpr_timespec now) {
-  backoff->current_timeout_millis = backoff->min_timeout_millis;
-  return gpr_time_add(
-      now, gpr_time_from_millis(backoff->current_timeout_millis, GPR_TIMESPAN));
+  backoff->current_timeout_millis = backoff->initial_connect_timeout;
+  const int64_t first_timeout =
+      GPR_MAX(backoff->current_timeout_millis, backoff->min_timeout_millis);
+  return gpr_time_add(now, gpr_time_from_millis(first_timeout, GPR_TIMESPAN));
 }
 
 /* Generate a random number between 0 and 1. */
@@ -57,20 +60,28 @@ static double generate_uniform_random_number(uint32_t *rng_state) {
 }
 
 gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now) {
-  double new_timeout_millis =
+  const double new_timeout_millis =
       backoff->multiplier * (double)backoff->current_timeout_millis;
-  double jitter_range = backoff->jitter * new_timeout_millis;
-  double jitter =
-      (2 * generate_uniform_random_number(&backoff->rng_state) - 1) *
-      jitter_range;
   backoff->current_timeout_millis =
-      GPR_CLAMP((int64_t)(new_timeout_millis + jitter),
-                backoff->min_timeout_millis, backoff->max_timeout_millis);
-  return gpr_time_add(
+      GPR_MIN((int64_t)new_timeout_millis, backoff->max_timeout_millis);
+
+  const double jitter_range_width = backoff->jitter * new_timeout_millis;
+  const double jitter =
+      (2 * generate_uniform_random_number(&backoff->rng_state) - 1) *
+      jitter_range_width;
+
+  backoff->current_timeout_millis =
+      (int64_t)((double)(backoff->current_timeout_millis) + jitter);
+
+  const gpr_timespec current_deadline = gpr_time_add(
       now, gpr_time_from_millis(backoff->current_timeout_millis, GPR_TIMESPAN));
+
+  const gpr_timespec min_deadline = gpr_time_add(
+      now, gpr_time_from_millis(backoff->min_timeout_millis, GPR_TIMESPAN));
+
+  return gpr_time_max(current_deadline, min_deadline);
 }
 
 void gpr_backoff_reset(gpr_backoff *backoff) {
-  // forces step() to return a timeout of min_timeout_millis
-  backoff->current_timeout_millis = 0;
+  backoff->current_timeout_millis = backoff->initial_connect_timeout;
 }

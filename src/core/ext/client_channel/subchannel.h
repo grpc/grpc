@@ -40,6 +40,9 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
+// Channel arg containing a grpc_resolved_address to connect to.
+#define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
+
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
@@ -111,8 +114,8 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, grpc_mdstr *path, gpr_timespec deadline,
-    grpc_subchannel_call **subchannel_call);
+    grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
+    gpr_timespec deadline, grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(
@@ -164,15 +167,19 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
-  /** Server name */
-  const char *server_name;
-  /** Address to connect to */
-  grpc_resolved_address *addr;
 };
 
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args);
+
+/// Sets \a addr from \a args.
+void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
+                                     grpc_resolved_address *addr);
+
+/// Returns a new channel arg encoding the subchannel address as a string.
+/// Caller is responsible for freeing the string.
+grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */

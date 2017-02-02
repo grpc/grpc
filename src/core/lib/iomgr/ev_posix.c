@@ -45,13 +45,14 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
-#include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
+
+grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
@@ -67,7 +68,6 @@ static const event_engine_factory g_factories[] = {
     {"epoll", grpc_init_epoll_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
-    {"legacy", grpc_init_poll_and_epoll_posix},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -162,8 +162,8 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
   g_event_engine->fd_orphan(exec_ctx, fd, on_done, release_fd, reason);
 }
 
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  g_event_engine->fd_shutdown(exec_ctx, fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+  g_event_engine->fd_shutdown(exec_ctx, fd, why);
 }
 
 bool grpc_fd_is_shutdown(grpc_fd *fd) {
@@ -277,9 +277,8 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 }
 #endif
 
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error) {
-  g_event_engine->workqueue_enqueue(exec_ctx, workqueue, closure, error);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
+  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

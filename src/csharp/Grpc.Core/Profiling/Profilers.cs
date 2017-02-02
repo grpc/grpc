@@ -80,7 +80,7 @@ namespace Grpc.Core.Profiling
         ProfilerEntry[] entries;
         int count;
 
-        public BasicProfiler() : this(1024*1024)
+        public BasicProfiler() : this(20*1024*1024)
         {
         }
 

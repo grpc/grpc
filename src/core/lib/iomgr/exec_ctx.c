@@ -42,11 +42,16 @@
 #include "src/core/lib/profiling/timers.h"
 
 bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
-  if (!exec_ctx->cached_ready_to_finish) {
-    exec_ctx->cached_ready_to_finish = exec_ctx->check_ready_to_finish(
-        exec_ctx, exec_ctx->check_ready_to_finish_arg);
+  if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
+    if (exec_ctx->check_ready_to_finish(exec_ctx,
+                                        exec_ctx->check_ready_to_finish_arg)) {
+      exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+      return true;
+    }
+    return false;
+  } else {
+    return true;
   }
-  return exec_ctx->cached_ready_to_finish;
 }
 
 bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
@@ -57,7 +62,6 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
   return true;
 }
 
-#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
@@ -67,8 +71,10 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
       while (c != NULL) {
         grpc_closure *next = c->next_data.next;
+        grpc_error *error = c->error_data.error;
         did_something = true;
-        grpc_closure_run(exec_ctx, c, c->error_data.error);
+        c->cb(exec_ctx, c->cb_arg, error);
+        GRPC_ERROR_UNREF(error);
         c = next;
       }
     } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
@@ -76,137 +82,30 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
     }
   }
   GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  if (exec_ctx->stealing_from_workqueue != NULL) {
-    if (grpc_exec_ctx_ready_to_finish(exec_ctx)) {
-      grpc_workqueue_enqueue(exec_ctx, exec_ctx->stealing_from_workqueue,
-                             exec_ctx->stolen_closure,
-                             exec_ctx->stolen_closure->error_data.error);
-      GRPC_WORKQUEUE_UNREF(exec_ctx, exec_ctx->stealing_from_workqueue,
-                           "exec_ctx_sched");
-      exec_ctx->stealing_from_workqueue = NULL;
-      exec_ctx->stolen_closure = NULL;
-    } else {
-      grpc_closure *c = exec_ctx->stolen_closure;
-      GRPC_WORKQUEUE_UNREF(exec_ctx, exec_ctx->stealing_from_workqueue,
-                           "exec_ctx_sched");
-      exec_ctx->stealing_from_workqueue = NULL;
-      exec_ctx->stolen_closure = NULL;
-      grpc_error *error = c->error_data.error;
-      GPR_TIMER_BEGIN("grpc_exec_ctx_flush.stolen_cb", 0);
-      c->cb(exec_ctx, c->cb_arg, error);
-      GRPC_ERROR_UNREF(error);
-      GPR_TIMER_END("grpc_exec_ctx_flush.stolen_cb", 0);
-      grpc_exec_ctx_flush(exec_ctx);
-      did_something = true;
-    }
-  }
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
 
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
-  exec_ctx->cached_ready_to_finish = true;
+  exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error,
-                         grpc_workqueue *offload_target_or_null) {
-  GPR_TIMER_BEGIN("grpc_exec_ctx_sched", 0);
-  if (offload_target_or_null == NULL) {
-    grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
-  } else if (exec_ctx->stealing_from_workqueue == NULL) {
-    exec_ctx->stealing_from_workqueue = offload_target_or_null;
-    closure->error_data.error = error;
-    exec_ctx->stolen_closure = closure;
-  } else if (exec_ctx->stealing_from_workqueue != offload_target_or_null) {
-    grpc_workqueue_enqueue(exec_ctx, offload_target_or_null, closure, error);
-    GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
-  } else { /* stealing_from_workqueue == offload_target_or_null */
-    grpc_workqueue_enqueue(exec_ctx, offload_target_or_null,
-                           exec_ctx->stolen_closure,
-                           exec_ctx->stolen_closure->error_data.error);
-    closure->error_data.error = error;
-    exec_ctx->stolen_closure = closure;
-    GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
-  }
-  GPR_TIMER_END("grpc_exec_ctx_sched", 0);
+static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                         grpc_error *error) {
+  closure->cb(exec_ctx, closure->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
 }
 
-void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
-                                grpc_closure_list *list,
-                                grpc_workqueue *offload_target_or_null) {
-  grpc_closure_list_move(list, &exec_ctx->closure_list);
+static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                           grpc_error *error) {
+  grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
 void grpc_exec_ctx_global_init(void) {}
 void grpc_exec_ctx_global_shutdown(void) {}
-#else
-static gpr_mu g_mu;
-static gpr_cv g_cv;
-static int g_threads = 0;
 
-static void run_closure(void *arg) {
-  grpc_closure *closure = arg;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  closure->cb(&exec_ctx, closure->cb_arg, (closure->final_data & 1) != 0);
-  grpc_exec_ctx_finish(&exec_ctx);
-  gpr_mu_lock(&g_mu);
-  if (--g_threads == 0) {
-    gpr_cv_signal(&g_cv);
-  }
-  gpr_mu_unlock(&g_mu);
-}
-
-static void start_closure(grpc_closure *closure) {
-  gpr_thd_id id;
-  gpr_mu_lock(&g_mu);
-  g_threads++;
-  gpr_mu_unlock(&g_mu);
-  gpr_thd_new(&id, run_closure, closure, NULL);
-}
-
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) { return false; }
-
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {}
-
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           bool success,
-                           grpc_workqueue *offload_target_or_null) {
-  GPR_ASSERT(offload_target_or_null == NULL);
-  if (closure == NULL) return;
-  closure->final_data = success;
-  start_closure(closure);
-}
-
-void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
-                                grpc_closure_list *list,
-                                grpc_workqueue *offload_target_or_null) {
-  GPR_ASSERT(offload_target_or_null == NULL);
-  if (list == NULL) return;
-  grpc_closure *p = list->head;
-  while (p) {
-    grpc_closure *start = p;
-    p = grpc_closure_next(start);
-    start_closure(start);
-  }
-  grpc_closure_list r = GRPC_CLOSURE_LIST_INIT;
-  *list = r;
-}
-
-void grpc_exec_ctx_global_init(void) {
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_cv);
-}
-
-void grpc_exec_ctx_global_shutdown(void) {
-  gpr_mu_lock(&g_mu);
-  while (g_threads != 0) {
-    gpr_cv_wait(&g_cv, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  gpr_mu_unlock(&g_mu);
-
-  gpr_mu_destroy(&g_mu);
-  gpr_cv_destroy(&g_cv);
-}
-#endif
+static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
+    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
+static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
+grpc_closure_scheduler *grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;

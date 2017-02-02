@@ -28,10 +28,21 @@
   # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
   FROM debian:jessie
-  
+
   <%include file="../../apt_get_basic.include"/>
+
+  # Install Electron apt dependencies
+  RUN apt-get update && apt-get install -y ${'\\'}
+    libasound2 ${'\\'}
+    libgconf-2-4 ${'\\'}
+    libgtk2.0-0 ${'\\'}
+    libnss3 ${'\\'}
+    libxss1 ${'\\'}
+    libxtst6 ${'\\'}
+    xvfb
+
   <%include file="../../python_deps.include"/>
   <%include file="../../node_deps.include"/>
   <%include file="../../run_tests_addons.include"/>

@@ -57,10 +57,11 @@ struct grpc_endpoint_vtable {
                          grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                              grpc_pollset_set *pollset);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_error *why);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
+  int (*get_fd)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -72,6 +73,10 @@ void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         grpc_slice_buffer *slices, grpc_closure *cb);
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
+
+/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
+   */
+int grpc_endpoint_get_fd(grpc_endpoint *ep);
 
 /* Retrieve a reference to the workqueue associated with this endpoint */
 grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
@@ -91,7 +96,8 @@ void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                            grpc_error *why);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 
 /* Add an endpoint to a pollset, so that when the pollset is polled, events from

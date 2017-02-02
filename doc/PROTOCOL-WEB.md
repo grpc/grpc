@@ -60,8 +60,7 @@ HTTP/2 related behavior (specified in [gRPC over HTTP2](http://www.grpc.io/docs/
 Message framing (vs. [http2-transport-mapping](http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
-  * Key-value pairs formatted as HTTP/1.1 headers block (without the empty
-  newline \r\n to terminate the block)
+  * Key-value pairs encoded in the HTTP/2 [literal header format](https://tools.ietf.org/html/rfc7541#section-6.2) as a single header block.
 2. 8th (MSB) bit of the 1st gRPC frame byte
   * 0: data
   * 1: trailers
