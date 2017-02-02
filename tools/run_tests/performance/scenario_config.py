@@ -73,6 +73,7 @@ def remove_nonproto_fields(scenario):
   scenario.pop('CATEGORIES', None)
   scenario.pop('CLIENT_LANGUAGE', None)
   scenario.pop('SERVER_LANGUAGE', None)
+  scenario.pop('EXCLUDED_POLL_ENGINES', None)
   return scenario
 
 
@@ -109,7 +110,8 @@ def _ping_pong_scenario(name, rpc_type,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
-                        resource_quota_size=None):
+                        resource_quota_size=None,
+                        excluded_poll_engines=[]):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -169,6 +171,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['SERVER_LANGUAGE'] = server_language
   if categories:
     scenario['CATEGORIES'] = categories
+  if len(excluded_poll_engines):
+    # The polling engines for which this scenario is excluded
+    scenario['EXCLUDED_POLL_ENGINES'] = excluded_poll_engines
   return scenario
 
 
@@ -224,7 +229,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories + [SCALABLE])
+          categories=smoketest_categories + [SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
@@ -233,7 +239,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories+[SCALABLE])
+          categories=smoketest_categories+[SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
