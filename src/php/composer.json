@@ -2,7 +2,7 @@
   "name": "grpc/grpc-dev",
   "description": "gRPC library for PHP - for Developement use only",
   "license": "BSD-3-Clause",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "require": {
     "php": ">=5.5.0",
     "google/protobuf": "v3.1.0-alpha-1"
@@ -13,10 +13,8 @@
   "autoload": {
     "psr-4": {
       "Grpc\\": "lib/Grpc/",
-      "Grpc\\Testing\\": "tests/interop/Grpc/Testing/",
-      "GPBMetadata\\Src\\Proto\\Grpc\\Testing\\": "tests/interop/GPBMetadata/Src/Proto/Grpc/Testing/",
-      "Math\\": "tests/generated_code/Math/",
-      "GPBMetadata\\": "tests/generated_code/GPBMetadata/"
+      "": ["tests/interop/",
+           "tests/generated_code/"]
     }
   }
 }
