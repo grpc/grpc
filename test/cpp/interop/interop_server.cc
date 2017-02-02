@@ -31,8 +31,6 @@
  *
  */
 
-#include <unistd.h>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -45,6 +43,7 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/support/string.h"
@@ -348,6 +347,7 @@ void grpc::testing::interop::RunServer(
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
-    sleep(5);
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }
