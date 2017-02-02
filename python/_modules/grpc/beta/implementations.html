@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.implementations &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc.beta.implementations &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,24 +113,20 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
       
-        <li><a href="../../grpc.html">grpc</a> &raquo;</li>
+          <li><a href="../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.beta.implementations</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -167,7 +162,6 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;Entry points into the Beta API of gRPC Python.&quot;&quot;&quot;</span>
 
 <span class="c1"># threading is referenced from specification in this module.</span>
@@ -184,7 +178,6 @@
 <span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">cardinality</span>  <span class="c1"># pylint: disable=unused-import</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="k">import</span> <span class="n">face</span>  <span class="c1"># pylint: disable=unused-import</span>
 
-
 <span class="n">ChannelCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span>
 <span class="n">ssl_channel_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ssl_channel_credentials</span>
 <span class="n">CallCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span>
@@ -192,7 +185,7 @@
 
 
 <div class="viewcode-block" id="google_call_credentials"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.google_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">google_call_credentials</span><span class="p">(</span><span class="n">credentials</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Construct CallCredentials from GoogleCredentials.</span>
+    <span class="sd">&quot;&quot;&quot;Construct CallCredentials from GoogleCredentials.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    credentials: A GoogleCredentials object from the oauth2client library.</span>
@@ -200,7 +193,8 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A CallCredentials object for use in a GRPCCallOptions object.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">metadata_call_credentials</span><span class="p">(</span><span class="n">_auth</span><span class="o">.</span><span class="n">GoogleCallCredentials</span><span class="p">(</span><span class="n">credentials</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">metadata_call_credentials</span><span class="p">(</span><span class="n">_auth</span><span class="o">.</span><span class="n">GoogleCallCredentials</span><span class="p">(</span><span class="n">credentials</span><span class="p">))</span></div>
+
 
 <span class="n">access_token_call_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">access_token_call_credentials</span>
 <span class="n">composite_call_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">composite_call_credentials</span>
@@ -208,18 +202,18 @@
 
 
 <div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A channel to a remote host through which RPCs may be conducted.</span>
+    <span class="sd">&quot;&quot;&quot;A channel to a remote host through which RPCs may be conducted.</span>
 
 <span class="sd">  Only the &quot;subscribe&quot; and &quot;unsubscribe&quot; methods are supported for application</span>
 <span class="sd">  use. This class&#39; instance constructor and all other attributes are</span>
 <span class="sd">  unsupported.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
 
-<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.subscribe">[docs]</a>  <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Subscribes to this Channel&#39;s connectivity.</span>
+<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.subscribe">[docs]</a>    <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subscribes to this Channel&#39;s connectivity.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      callback: A callable to be invoked and passed an</span>
@@ -231,20 +225,20 @@
 <span class="sd">        attempt to connect if it is not already connected and ready to conduct</span>
 <span class="sd">        RPCs.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="n">try_to_connect</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="n">try_to_connect</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Channel.unsubscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.unsubscribe">[docs]</a>  <span class="k">def</span> <span class="nf">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Unsubscribes a callback from this Channel&#39;s connectivity.</span>
+<div class="viewcode-block" id="Channel.unsubscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.unsubscribe">[docs]</a>    <span class="k">def</span> <span class="nf">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unsubscribes a callback from this Channel&#39;s connectivity.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      callback: A callable previously registered with this Channel from having</span>
 <span class="sd">        been passed to its &quot;subscribe&quot; method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="insecure_channel"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.insecure_channel">[docs]</a><span class="k">def</span> <span class="nf">insecure_channel</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a remote host.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a remote host.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    host: The name of the remote host to which to connect.</span>
@@ -254,13 +248,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A Channel to the remote host through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">insecure_channel</span><span class="p">(</span>
-      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
-  <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">insecure_channel</span><span class="p">(</span><span class="n">host</span>
+                                    <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">channel_credentials</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a remote host.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a remote host.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    host: The name of the remote host to which to connect.</span>
@@ -271,37 +265,39 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A secure Channel to the remote host through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">secure_channel</span><span class="p">(</span>
-      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="n">channel_credentials</span><span class="p">)</span>
-  <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">secure_channel</span><span class="p">(</span><span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span>
+                                  <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="n">channel_credentials</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StubOptions"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.StubOptions">[docs]</a><span class="k">class</span> <span class="nc">StubOptions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A value encapsulating the various options for creation of a Stub.</span>
+    <span class="sd">&quot;&quot;&quot;A value encapsulating the various options for creation of a Stub.</span>
 
 <span class="sd">  This class and its instances have no supported interface - it exists to define</span>
 <span class="sd">  the type of its instances and its instances exist to be passed to other</span>
 <span class="sd">  functions.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">request_serializers</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="p">,</span>
-      <span class="n">metadata_transformer</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">request_serializers</span> <span class="o">=</span> <span class="n">request_serializers</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">response_deserializers</span> <span class="o">=</span> <span class="n">response_deserializers</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">metadata_transformer</span> <span class="o">=</span> <span class="n">metadata_transformer</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool</span> <span class="o">=</span> <span class="n">thread_pool</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span></div>
-
-<span class="n">_EMPTY_STUB_OPTIONS</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">(</span>
-    <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">request_serializers</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="p">,</span>
+                 <span class="n">metadata_transformer</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_serializers</span> <span class="o">=</span> <span class="n">request_serializers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_deserializers</span> <span class="o">=</span> <span class="n">response_deserializers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata_transformer</span> <span class="o">=</span> <span class="n">metadata_transformer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool</span> <span class="o">=</span> <span class="n">thread_pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span></div>
 
 
-<div class="viewcode-block" id="stub_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.stub_options">[docs]</a><span class="k">def</span> <span class="nf">stub_options</span><span class="p">(</span>
-    <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">request_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">metadata_transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a StubOptions value to be passed at stub creation.</span>
+<span class="n">_EMPTY_STUB_OPTIONS</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="stub_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.stub_options">[docs]</a><span class="k">def</span> <span class="nf">stub_options</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">request_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">response_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata_transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a StubOptions value to be passed at stub creation.</span>
 
 <span class="sd">  All parameters are optional and should always be passed by keyword.</span>
 
@@ -321,13 +317,12 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A StubOptions value created from the passed parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">StubOptions</span><span class="p">(</span>
-      <span class="n">host</span><span class="p">,</span> <span class="n">request_serializers</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="p">,</span>
-      <span class="n">metadata_transformer</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">StubOptions</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">request_serializers</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="p">,</span>
+                       <span class="n">metadata_transformer</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="generic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.generic_stub">[docs]</a><span class="k">def</span> <span class="nf">generic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a face.GenericStub on which RPCs can be made.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a face.GenericStub on which RPCs can be made.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    channel: A Channel for use by the created stub.</span>
@@ -336,16 +331,17 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A face.GenericStub on which RPCs can be made.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
-  <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">generic_stub</span><span class="p">(</span>
-      <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">metadata_transformer</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">request_serializers</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">response_deserializers</span><span class="p">)</span></div>
+    <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
+    <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">generic_stub</span><span class="p">(</span>
+        <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">metadata_transformer</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">request_serializers</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">response_deserializers</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="dynamic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.dynamic_stub">[docs]</a><span class="k">def</span> <span class="nf">dynamic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">cardinalities</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a face.DynamicStub with which RPCs can be invoked.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a face.DynamicStub with which RPCs can be invoked.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    channel: A Channel for the returned face.DynamicStub to use.</span>
@@ -358,13 +354,15 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A face.DynamicStub with which RPCs can be invoked.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
-  <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">dynamic_stub</span><span class="p">(</span>
-      <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
-      <span class="n">service</span><span class="p">,</span> <span class="n">cardinalities</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">metadata_transformer</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">request_serializers</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">response_deserializers</span><span class="p">)</span></div>
+    <span class="n">effective_options</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
+    <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">dynamic_stub</span><span class="p">(</span>
+        <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
+        <span class="n">service</span><span class="p">,</span>
+        <span class="n">cardinalities</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">metadata_transformer</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">request_serializers</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">response_deserializers</span><span class="p">)</span></div>
 
 
 <span class="n">ServerCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span>
@@ -372,34 +370,36 @@
 
 
 <div class="viewcode-block" id="ServerOptions"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.ServerOptions">[docs]</a><span class="k">class</span> <span class="nc">ServerOptions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A value encapsulating the various options for creation of a Server.</span>
+    <span class="sd">&quot;&quot;&quot;A value encapsulating the various options for creation of a Server.</span>
 
 <span class="sd">  This class and its instances have no supported interface - it exists to define</span>
 <span class="sd">  the type of its instances and its instances exist to be passed to other</span>
 <span class="sd">  functions.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">multi_method_implementation</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="p">,</span>
-      <span class="n">response_serializers</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span>
-      <span class="n">maximum_timeout</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">multi_method_implementation</span> <span class="o">=</span> <span class="n">multi_method_implementation</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">request_deserializers</span> <span class="o">=</span> <span class="n">request_deserializers</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">response_serializers</span> <span class="o">=</span> <span class="n">response_serializers</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool</span> <span class="o">=</span> <span class="n">thread_pool</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">default_timeout</span> <span class="o">=</span> <span class="n">default_timeout</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">maximum_timeout</span> <span class="o">=</span> <span class="n">maximum_timeout</span></div>
-
-<span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="o">=</span> <span class="n">ServerOptions</span><span class="p">(</span>
-    <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multi_method_implementation</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="p">,</span>
+                 <span class="n">response_serializers</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">,</span>
+                 <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multi_method_implementation</span> <span class="o">=</span> <span class="n">multi_method_implementation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_deserializers</span> <span class="o">=</span> <span class="n">request_deserializers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_serializers</span> <span class="o">=</span> <span class="n">response_serializers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool</span> <span class="o">=</span> <span class="n">thread_pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_timeout</span> <span class="o">=</span> <span class="n">default_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maximum_timeout</span> <span class="o">=</span> <span class="n">maximum_timeout</span></div>
 
 
-<div class="viewcode-block" id="server_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server_options">[docs]</a><span class="k">def</span> <span class="nf">server_options</span><span class="p">(</span>
-    <span class="n">multi_method_implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">response_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">default_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a ServerOptions value to be passed at server creation.</span>
+<span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="o">=</span> <span class="n">ServerOptions</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="server_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server_options">[docs]</a><span class="k">def</span> <span class="nf">server_options</span><span class="p">(</span><span class="n">multi_method_implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">request_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">response_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">default_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">maximum_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ServerOptions value to be passed at server creation.</span>
 
 <span class="sd">  All parameters are optional and should always be passed by keyword.</span>
 
@@ -423,13 +423,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A StubOptions value created from the passed parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">ServerOptions</span><span class="p">(</span>
-      <span class="n">multi_method_implementation</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="p">,</span> <span class="n">response_serializers</span><span class="p">,</span>
-      <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">ServerOptions</span><span class="p">(</span><span class="n">multi_method_implementation</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="p">,</span>
+                         <span class="n">response_serializers</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">,</span>
+                         <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">service_implementations</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an interfaces.Server with which RPCs can be serviced.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an interfaces.Server with which RPCs can be serviced.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    service_implementations: A dictionary from service name-method name pair to</span>
@@ -440,12 +440,12 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An interfaces.Server with which RPCs can be serviced.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
-  <span class="k">return</span> <span class="n">_server_adaptations</span><span class="o">.</span><span class="n">server</span><span class="p">(</span>
-      <span class="n">service_implementations</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">multi_method_implementation</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">request_deserializers</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">response_serializers</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">thread_pool</span><span class="p">,</span>
-      <span class="n">effective_options</span><span class="o">.</span><span class="n">thread_pool_size</span><span class="p">)</span></div>
+    <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
+    <span class="k">return</span> <span class="n">_server_adaptations</span><span class="o">.</span><span class="n">server</span><span class="p">(</span>
+        <span class="n">service_implementations</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">multi_method_implementation</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">request_deserializers</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">response_serializers</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">thread_pool</span><span class="p">,</span>
+        <span class="n">effective_options</span><span class="o">.</span><span class="n">thread_pool_size</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -457,7 +457,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -479,7 +479,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

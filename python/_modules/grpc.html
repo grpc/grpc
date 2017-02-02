@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc &mdash; grpcio 1.0.4 documentation</title>
+  <title>grpc &mdash; grpcio 1.1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="grpcio 1.0.4 documentation" href="../index.html"/>
+    <link rel="top" title="grpcio 1.1.0 documentation" href="../index.html"/>
         <link rel="up" title="Module code" href="index.html"/> 
 
   
@@ -43,7 +43,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                1.0.4
+                1.1.0
               </div>
             
           
@@ -114,22 +113,18 @@
 
 
 
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html">Docs</a> &raquo;</li>
       
-        <li><a href="index.html">Module code</a> &raquo;</li>
+          <li><a href="index.html">Module code</a> &raquo;</li>
       
     <li>grpc</li>
-    <li class="wy-breadcrumbs-aside">
-      
+      <li class="wy-breadcrumbs-aside">
+        
           
-      
-    </li>
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -165,7 +160,6 @@
 <span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
 <span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
-
 <span class="sd">&quot;&quot;&quot;gRPC&#39;s Python API.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
@@ -176,28 +170,27 @@
 
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="k">import</span> <span class="n">cygrpc</span> <span class="k">as</span> <span class="n">_cygrpc</span>
 
-
 <span class="c1">############################## Future Interface  ###############################</span>
 
 
 <div class="viewcode-block" id="FutureTimeoutError"><a class="viewcode-back" href="../grpc.html#grpc.FutureTimeoutError">[docs]</a><span class="k">class</span> <span class="nc">FutureTimeoutError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Indicates that a method call on a Future timed out.&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;Indicates that a method call on a Future timed out.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="FutureCancelledError"><a class="viewcode-back" href="../grpc.html#grpc.FutureCancelledError">[docs]</a><span class="k">class</span> <span class="nc">FutureCancelledError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Indicates that the computation underlying a Future was cancelled.&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;Indicates that the computation underlying a Future was cancelled.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="Future"><a class="viewcode-back" href="../grpc.html#grpc.Future">[docs]</a><span class="k">class</span> <span class="nc">Future</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;A representation of a computation in another control flow.</span>
+    <span class="sd">&quot;&quot;&quot;A representation of a computation in another control flow.</span>
 
 <span class="sd">  Computations represented by a Future may be yet to be begun, may be ongoing,</span>
 <span class="sd">  or may have already completed.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.cancel"><a class="viewcode-back" href="../grpc.html#grpc.Future.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Attempts to cancel the computation.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.cancel"><a class="viewcode-back" href="../grpc.html#grpc.Future.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Attempts to cancel the computation.</span>
 
 <span class="sd">    This method does not block.</span>
 
@@ -210,11 +203,11 @@
 <span class="sd">        remote system for which a determination of whether or not it commenced</span>
 <span class="sd">        before being cancelled cannot be made without blocking.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.cancelled"><a class="viewcode-back" href="../grpc.html#grpc.Future.cancelled">[docs]</a>  <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Describes whether the computation was cancelled.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.cancelled"><a class="viewcode-back" href="../grpc.html#grpc.Future.cancelled">[docs]</a>    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describes whether the computation was cancelled.</span>
 
 <span class="sd">    This method does not block.</span>
 
@@ -224,11 +217,11 @@
 <span class="sd">        not limited to this object&#39;s cancel method not having been called and</span>
 <span class="sd">        the computation&#39;s result having become immediately available.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.running"><a class="viewcode-back" href="../grpc.html#grpc.Future.running">[docs]</a>  <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Describes whether the computation is taking place.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.running"><a class="viewcode-back" href="../grpc.html#grpc.Future.running">[docs]</a>    <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describes whether the computation is taking place.</span>
 
 <span class="sd">    This method does not block.</span>
 
@@ -237,11 +230,11 @@
 <span class="sd">        taking place now, or False if the computation took place in the past or</span>
 <span class="sd">        was cancelled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.done"><a class="viewcode-back" href="../grpc.html#grpc.Future.done">[docs]</a>  <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Describes whether the computation has taken place.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.done"><a class="viewcode-back" href="../grpc.html#grpc.Future.done">[docs]</a>    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describes whether the computation has taken place.</span>
 
 <span class="sd">    This method does not block.</span>
 
@@ -250,11 +243,11 @@
 <span class="sd">        unscheduled or interrupted. False if the computation may possibly be</span>
 <span class="sd">        executing or scheduled to execute later.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.result"><a class="viewcode-back" href="../grpc.html#grpc.Future.result">[docs]</a>  <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the outcome of the computation or raises its exception.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.result"><a class="viewcode-back" href="../grpc.html#grpc.Future.result">[docs]</a>    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the outcome of the computation or raises its exception.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
 
@@ -273,11 +266,11 @@
 <span class="sd">      Exception: If the computation raised an exception, this call will raise</span>
 <span class="sd">        the same exception.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.exception"><a class="viewcode-back" href="../grpc.html#grpc.Future.exception">[docs]</a>  <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return the exception raised by the computation.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.exception"><a class="viewcode-back" href="../grpc.html#grpc.Future.exception">[docs]</a>    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the exception raised by the computation.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
 
@@ -296,11 +289,11 @@
 <span class="sd">        not terminate within the allotted time.</span>
 <span class="sd">      FutureCancelledError: If the computation was cancelled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.traceback"><a class="viewcode-back" href="../grpc.html#grpc.Future.traceback">[docs]</a>  <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Access the traceback of the exception raised by the computation.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.traceback"><a class="viewcode-back" href="../grpc.html#grpc.Future.traceback">[docs]</a>    <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Access the traceback of the exception raised by the computation.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
 
@@ -319,11 +312,11 @@
 <span class="sd">        not terminate within the allotted time.</span>
 <span class="sd">      FutureCancelledError: If the computation was cancelled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.add_done_callback"><a class="viewcode-back" href="../grpc.html#grpc.Future.add_done_callback">[docs]</a>  <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Adds a function to be called at completion of the computation.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Future.add_done_callback"><a class="viewcode-back" href="../grpc.html#grpc.Future.add_done_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a function to be called at completion of the computation.</span>
 
 <span class="sd">    The callback will be passed this Future object describing the outcome of</span>
 <span class="sd">    the computation.</span>
@@ -334,7 +327,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">      fn: A callable taking this Future object as its single parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">################################  gRPC Enums  ##################################</span>
@@ -342,7 +335,7 @@
 
 <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
 <div class="viewcode-block" id="ChannelConnectivity"><a class="viewcode-back" href="../grpc.html#grpc.ChannelConnectivity">[docs]</a><span class="k">class</span> <span class="nc">ChannelConnectivity</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Mirrors grpc_connectivity_state in the gRPC Core.</span>
+    <span class="sd">&quot;&quot;&quot;Mirrors grpc_connectivity_state in the gRPC Core.</span>
 
 <span class="sd">  Attributes:</span>
 <span class="sd">    IDLE: The channel is idle.</span>
@@ -352,81 +345,80 @@
 <span class="sd">      recover.</span>
 <span class="sd">    SHUTDOWN: The channel has seen a failure from which it cannot recover.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">IDLE</span>              <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">idle</span><span class="p">,</span> <span class="s1">&#39;idle&#39;</span><span class="p">)</span>
-  <span class="n">CONNECTING</span>        <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">connecting</span><span class="p">,</span> <span class="s1">&#39;connecting&#39;</span><span class="p">)</span>
-  <span class="n">READY</span>             <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">ready</span><span class="p">,</span> <span class="s1">&#39;ready&#39;</span><span class="p">)</span>
-  <span class="n">TRANSIENT_FAILURE</span> <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">transient_failure</span><span class="p">,</span> <span class="s1">&#39;transient failure&#39;</span><span class="p">)</span>
-  <span class="n">SHUTDOWN</span>          <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">shutdown</span><span class="p">,</span> <span class="s1">&#39;shutdown&#39;</span><span class="p">)</span></div>
+    <span class="n">IDLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">idle</span><span class="p">,</span> <span class="s1">&#39;idle&#39;</span><span class="p">)</span>
+    <span class="n">CONNECTING</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">connecting</span><span class="p">,</span> <span class="s1">&#39;connecting&#39;</span><span class="p">)</span>
+    <span class="n">READY</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">ready</span><span class="p">,</span> <span class="s1">&#39;ready&#39;</span><span class="p">)</span>
+    <span class="n">TRANSIENT_FAILURE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">transient_failure</span><span class="p">,</span>
+                         <span class="s1">&#39;transient failure&#39;</span><span class="p">)</span>
+    <span class="n">SHUTDOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">shutdown</span><span class="p">,</span> <span class="s1">&#39;shutdown&#39;</span><span class="p">)</span></div>
 
 
 <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
 <div class="viewcode-block" id="StatusCode"><a class="viewcode-back" href="../grpc.html#grpc.StatusCode">[docs]</a><span class="k">class</span> <span class="nc">StatusCode</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Mirrors grpc_status_code in the gRPC Core.&quot;&quot;&quot;</span>
-  <span class="n">OK</span>                  <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="s1">&#39;ok&#39;</span><span class="p">)</span>
-  <span class="n">CANCELLED</span>           <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">cancelled</span><span class="p">,</span> <span class="s1">&#39;cancelled&#39;</span><span class="p">)</span>
-  <span class="n">UNKNOWN</span>             <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unknown</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
-  <span class="n">INVALID_ARGUMENT</span>    <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">invalid_argument</span><span class="p">,</span> <span class="s1">&#39;invalid argument&#39;</span><span class="p">)</span>
-  <span class="n">DEADLINE_EXCEEDED</span>   <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">deadline_exceeded</span><span class="p">,</span> <span class="s1">&#39;deadline exceeded&#39;</span><span class="p">)</span>
-  <span class="n">NOT_FOUND</span>           <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">not_found</span><span class="p">,</span> <span class="s1">&#39;not found&#39;</span><span class="p">)</span>
-  <span class="n">ALREADY_EXISTS</span>      <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">already_exists</span><span class="p">,</span> <span class="s1">&#39;already exists&#39;</span><span class="p">)</span>
-  <span class="n">PERMISSION_DENIED</span>   <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">permission_denied</span><span class="p">,</span> <span class="s1">&#39;permission denied&#39;</span><span class="p">)</span>
-  <span class="n">RESOURCE_EXHAUSTED</span>  <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">resource_exhausted</span><span class="p">,</span> <span class="s1">&#39;resource exhausted&#39;</span><span class="p">)</span>
-  <span class="n">FAILED_PRECONDITION</span> <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">failed_precondition</span><span class="p">,</span> <span class="s1">&#39;failed precondition&#39;</span><span class="p">)</span>
-  <span class="n">ABORTED</span>             <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">aborted</span><span class="p">,</span> <span class="s1">&#39;aborted&#39;</span><span class="p">)</span>
-  <span class="n">OUT_OF_RANGE</span>        <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">out_of_range</span><span class="p">,</span> <span class="s1">&#39;out of range&#39;</span><span class="p">)</span>
-  <span class="n">UNIMPLEMENTED</span>       <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unimplemented</span><span class="p">,</span> <span class="s1">&#39;unimplemented&#39;</span><span class="p">)</span>
-  <span class="n">INTERNAL</span>            <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">internal</span><span class="p">,</span> <span class="s1">&#39;internal&#39;</span><span class="p">)</span>
-  <span class="n">UNAVAILABLE</span>         <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unavailable</span><span class="p">,</span> <span class="s1">&#39;unavailable&#39;</span><span class="p">)</span>
-  <span class="n">DATA_LOSS</span>           <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">data_loss</span><span class="p">,</span> <span class="s1">&#39;data loss&#39;</span><span class="p">)</span>
-  <span class="n">UNAUTHENTICATED</span>     <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unauthenticated</span><span class="p">,</span> <span class="s1">&#39;unauthenticated&#39;</span><span class="p">)</span></div>
+    <span class="sd">&quot;&quot;&quot;Mirrors grpc_status_code in the gRPC Core.&quot;&quot;&quot;</span>
+    <span class="n">OK</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="s1">&#39;ok&#39;</span><span class="p">)</span>
+    <span class="n">CANCELLED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">cancelled</span><span class="p">,</span> <span class="s1">&#39;cancelled&#39;</span><span class="p">)</span>
+    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unknown</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+    <span class="n">INVALID_ARGUMENT</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">invalid_argument</span><span class="p">,</span> <span class="s1">&#39;invalid argument&#39;</span><span class="p">)</span>
+    <span class="n">DEADLINE_EXCEEDED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">deadline_exceeded</span><span class="p">,</span>
+                         <span class="s1">&#39;deadline exceeded&#39;</span><span class="p">)</span>
+    <span class="n">NOT_FOUND</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">not_found</span><span class="p">,</span> <span class="s1">&#39;not found&#39;</span><span class="p">)</span>
+    <span class="n">ALREADY_EXISTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">already_exists</span><span class="p">,</span> <span class="s1">&#39;already exists&#39;</span><span class="p">)</span>
+    <span class="n">PERMISSION_DENIED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">permission_denied</span><span class="p">,</span>
+                         <span class="s1">&#39;permission denied&#39;</span><span class="p">)</span>
+    <span class="n">RESOURCE_EXHAUSTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">resource_exhausted</span><span class="p">,</span>
+                          <span class="s1">&#39;resource exhausted&#39;</span><span class="p">)</span>
+    <span class="n">FAILED_PRECONDITION</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">failed_precondition</span><span class="p">,</span>
+                           <span class="s1">&#39;failed precondition&#39;</span><span class="p">)</span>
+    <span class="n">ABORTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">aborted</span><span class="p">,</span> <span class="s1">&#39;aborted&#39;</span><span class="p">)</span>
+    <span class="n">OUT_OF_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">out_of_range</span><span class="p">,</span> <span class="s1">&#39;out of range&#39;</span><span class="p">)</span>
+    <span class="n">UNIMPLEMENTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unimplemented</span><span class="p">,</span> <span class="s1">&#39;unimplemented&#39;</span><span class="p">)</span>
+    <span class="n">INTERNAL</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">internal</span><span class="p">,</span> <span class="s1">&#39;internal&#39;</span><span class="p">)</span>
+    <span class="n">UNAVAILABLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unavailable</span><span class="p">,</span> <span class="s1">&#39;unavailable&#39;</span><span class="p">)</span>
+    <span class="n">DATA_LOSS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">data_loss</span><span class="p">,</span> <span class="s1">&#39;data loss&#39;</span><span class="p">)</span>
+    <span class="n">UNAUTHENTICATED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unauthenticated</span><span class="p">,</span> <span class="s1">&#39;unauthenticated&#39;</span><span class="p">)</span></div>
 
 
 <span class="c1">#############################  gRPC Exceptions  ################################</span>
 
 
 <div class="viewcode-block" id="RpcError"><a class="viewcode-back" href="../grpc.html#grpc.RpcError">[docs]</a><span class="k">class</span> <span class="nc">RpcError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Raised by the gRPC library to indicate non-OK-status RPC termination.&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;Raised by the gRPC library to indicate non-OK-status RPC termination.&quot;&quot;&quot;</span></div>
 
 
 <span class="c1">##############################  Shared Context  ################################</span>
 
 
 <div class="viewcode-block" id="RpcContext"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext">[docs]</a><span class="k">class</span> <span class="nc">RpcContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Provides RPC-related information and action.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Provides RPC-related information and action.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.is_active"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.is_active">[docs]</a>  <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Describes whether the RPC is active or has terminated.&quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.is_active"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.is_active">[docs]</a>    <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describes whether the RPC is active or has terminated.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.time_remaining">[docs]</a>  <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A nonnegative float indicating the length of allowed time in seconds</span>
 <span class="sd">      remaining for the RPC to complete before it is considered to have timed</span>
 <span class="sd">      out, or None if no deadline was specified for the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.cancel"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Cancels the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.cancel"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancels the RPC.</span>
 
 <span class="sd">    Idempotent and has no effect if the RPC has already terminated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.add_callback"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.add_callback">[docs]</a>  <span class="k">def</span> <span class="nf">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Registers a callback to be called on RPC termination.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.add_callback"><a class="viewcode-back" href="../grpc.html#grpc.RpcContext.add_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Registers a callback to be called on RPC termination.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      callback: A no-parameter callable to be called on RPC termination.</span>
@@ -436,76 +428,76 @@
 <span class="sd">        callback was not added and will not later be called (because the RPC</span>
 <span class="sd">        already terminated or some other reason).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">#########################  Invocation-Side Context  ############################</span>
 
 
 <div class="viewcode-block" id="Call"><a class="viewcode-back" href="../grpc.html#grpc.Call">[docs]</a><span class="k">class</span> <span class="nc">Call</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">RpcContext</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Invocation-side utility object for an RPC.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Invocation-side utility object for an RPC.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.initial_metadata"><a class="viewcode-back" href="../grpc.html#grpc.Call.initial_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the initial metadata from the service-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Call.initial_metadata"><a class="viewcode-back" href="../grpc.html#grpc.Call.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the initial metadata from the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The initial :term:`metadata`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.trailing_metadata"><a class="viewcode-back" href="../grpc.html#grpc.Call.trailing_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the trailing metadata from the service-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Call.trailing_metadata"><a class="viewcode-back" href="../grpc.html#grpc.Call.trailing_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the trailing metadata from the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The trailing :term:`metadata`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.code"><a class="viewcode-back" href="../grpc.html#grpc.Call.code">[docs]</a>  <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the status code emitted by the service-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Call.code"><a class="viewcode-back" href="../grpc.html#grpc.Call.code">[docs]</a>    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the status code emitted by the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The StatusCode value for the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.details"><a class="viewcode-back" href="../grpc.html#grpc.Call.details">[docs]</a>  <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the details value emitted by the service-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Call.details"><a class="viewcode-back" href="../grpc.html#grpc.Call.details">[docs]</a>    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the details value emitted by the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The details string of the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">############  Authentication &amp; Authorization Interfaces &amp; Classes  #############</span>
 
 
 <div class="viewcode-block" id="ChannelCredentials"><a class="viewcode-back" href="../grpc.html#grpc.ChannelCredentials">[docs]</a><span class="k">class</span> <span class="nc">ChannelCredentials</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A value encapsulating the data required to create a secure Channel.</span>
+    <span class="sd">&quot;&quot;&quot;A value encapsulating the data required to create a secure Channel.</span>
 
 <span class="sd">  This class has no supported interface - it exists to define the type of its</span>
 <span class="sd">  instances and its instances exist to be passed to other functions.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
 
 
 <div class="viewcode-block" id="CallCredentials"><a class="viewcode-back" href="../grpc.html#grpc.CallCredentials">[docs]</a><span class="k">class</span> <span class="nc">CallCredentials</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A value encapsulating data asserting an identity over a channel.</span>
+    <span class="sd">&quot;&quot;&quot;A value encapsulating data asserting an identity over a channel.</span>
 
 <span class="sd">  A CallCredentials may be composed with ChannelCredentials to always assert</span>
 <span class="sd">  identity for every call over that Channel.</span>
@@ -514,12 +506,12 @@
 <span class="sd">  instances and its instances exist to be passed to other functions.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
 
 
 <div class="viewcode-block" id="AuthMetadataContext"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataContext">[docs]</a><span class="k">class</span> <span class="nc">AuthMetadataContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Provides information to call credentials metadata plugins.</span>
+    <span class="sd">&quot;&quot;&quot;Provides information to call credentials metadata plugins.</span>
 
 <span class="sd">  Attributes:</span>
 <span class="sd">    service_url: A string URL of the service being called into.</span>
@@ -528,23 +520,23 @@
 
 
 <div class="viewcode-block" id="AuthMetadataPluginCallback"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPluginCallback">[docs]</a><span class="k">class</span> <span class="nc">AuthMetadataPluginCallback</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Callback object received by a metadata plugin.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Callback object received by a metadata plugin.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="AuthMetadataPluginCallback.__call__"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPluginCallback.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Inform the gRPC runtime of the metadata to construct a CallCredentials.</span>
+<div class="viewcode-block" id="AuthMetadataPluginCallback.__call__"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPluginCallback.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Inform the gRPC runtime of the metadata to construct a CallCredentials.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      metadata: The :term:`metadata` used to construct the CallCredentials.</span>
 <span class="sd">      error: An Exception to indicate error or None to indicate success.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="AuthMetadataPlugin"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPlugin">[docs]</a><span class="k">class</span> <span class="nc">AuthMetadataPlugin</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;A specification for custom authentication.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;A specification for custom authentication.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="AuthMetadataPlugin.__call__"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPlugin.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Implements authentication by passing metadata to a callback.</span>
+<div class="viewcode-block" id="AuthMetadataPlugin.__call__"><a class="viewcode-back" href="../grpc.html#grpc.AuthMetadataPlugin.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implements authentication by passing metadata to a callback.</span>
 
 <span class="sd">    Implementations of this method must not block.</span>
 
@@ -554,29 +546,29 @@
 <span class="sd">      callback: An AuthMetadataPluginCallback to be invoked either synchronously</span>
 <span class="sd">        or asynchronously.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="ServerCredentials"><a class="viewcode-back" href="../grpc.html#grpc.ServerCredentials">[docs]</a><span class="k">class</span> <span class="nc">ServerCredentials</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;A value encapsulating the data required to open a secure port on a Server.</span>
+    <span class="sd">&quot;&quot;&quot;A value encapsulating the data required to open a secure port on a Server.</span>
 
 <span class="sd">  This class has no supported interface - it exists to define the type of its</span>
 <span class="sd">  instances and its instances exist to be passed to other functions.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
 
 
 <span class="c1">########################  Multi-Callable Interfaces  ###########################</span>
 
 
 <div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Affords invoking a unary-unary RPC.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Affords invoking a unary-unary RPC.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request: The request value for the RPC.</span>
@@ -593,11 +585,11 @@
 <span class="sd">        raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">        metadata, status code, and details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.with_call">[docs]</a>  <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.with_call">[docs]</a>    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request: The request value for the RPC.</span>
@@ -614,11 +606,11 @@
 <span class="sd">        raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">        metadata, status code, and details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.future">[docs]</a>  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.future">[docs]</a>    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request: The request value for the RPC.</span>
@@ -629,19 +621,19 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An object that is both a Call for the RPC and a Future. In the event of</span>
-<span class="sd">        RPC completion, the return Future&#39;s result value will be the response</span>
-<span class="sd">        message of the RPC. Should the event terminate with non-OK status, the</span>
-<span class="sd">        returned Future&#39;s exception value will be an RpcError.</span>
+<span class="sd">        RPC completion, the return Call-Future&#39;s result value will be the</span>
+<span class="sd">        response message of the RPC. Should the event terminate with non-OK</span>
+<span class="sd">        status, the returned Call-Future&#39;s exception value will be an RpcError.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="UnaryStreamMultiCallable"><a class="viewcode-back" href="../grpc.html#grpc.UnaryStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Affords invoking a unary-stream RPC.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Affords invoking a unary-stream RPC.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryStreamMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request: The request value for the RPC.</span>
@@ -652,19 +644,22 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An object that is both a Call for the RPC and an iterator of response</span>
-<span class="sd">        values. Drawing response values from the returned iterator may raise</span>
-<span class="sd">        RpcError indicating termination of the RPC with non-OK status.</span>
+<span class="sd">        values. Drawing response values from the returned Call-iterator may</span>
+<span class="sd">        raise RpcError indicating termination of the RPC with non-OK status.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="StreamUnaryMultiCallable"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Affords invoking a stream-unary RPC in any call style.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Affords invoking a stream-unary RPC in any call style.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request_iterator</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
@@ -674,20 +669,22 @@
 <span class="sd">      credentials: An optional CallCredentials for the RPC.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      The response value for the RPC, and a Call for the RPC if with_call was</span>
-<span class="sd">        set to True at invocation.</span>
+<span class="sd">      The response value for the RPC.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">      RpcError: Indicating that the RPC terminated with non-OK status. The</span>
 <span class="sd">        raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">        metadata, status code, and details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.with_call">[docs]</a>  <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.with_call">[docs]</a>    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">request_iterator</span><span class="p">,</span>
+                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
@@ -704,12 +701,15 @@
 <span class="sd">        raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">        metadata, status code, and details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.future">[docs]</a>  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.future">[docs]</a>    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="n">request_iterator</span><span class="p">,</span>
+               <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
@@ -720,20 +720,23 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An object that is both a Call for the RPC and a Future. In the event of</span>
-<span class="sd">        RPC completion, the return Future&#39;s result value will be the response</span>
-<span class="sd">        message of the RPC. Should the event terminate with non-OK status, the</span>
-<span class="sd">        returned Future&#39;s exception value will be an RpcError.</span>
+<span class="sd">        RPC completion, the return Call-Future&#39;s result value will be the</span>
+<span class="sd">        response message of the RPC. Should the event terminate with non-OK</span>
+<span class="sd">        status, the returned Call-Future&#39;s exception value will be an RpcError.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="StreamStreamMultiCallable"><a class="viewcode-back" href="../grpc.html#grpc.StreamStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Affords invoking a stream-stream RPC in any call style.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Affords invoking a stream-stream RPC in any call style.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamStreamMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">request_iterator</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
@@ -744,21 +747,21 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An object that is both a Call for the RPC and an iterator of response</span>
-<span class="sd">        values. Drawing response values from the returned iterator may raise</span>
-<span class="sd">        RpcError indicating termination of the RPC with non-OK status.</span>
+<span class="sd">        values. Drawing response values from the returned Call-iterator may</span>
+<span class="sd">        raise RpcError indicating termination of the RPC with non-OK status.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">#############################  Channel Interface  ##############################</span>
 
 
 <div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../grpc.html#grpc.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Affords RPC invocation via generic methods.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Affords RPC invocation via generic methods.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../grpc.html#grpc.Channel.subscribe">[docs]</a>  <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Subscribes to this Channel&#39;s connectivity.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../grpc.html#grpc.Channel.subscribe">[docs]</a>    <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subscribes to this Channel&#39;s connectivity.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      callback: A callable to be invoked and passed a ChannelConnectivity value</span>
@@ -770,22 +773,24 @@
 <span class="sd">        attempt to connect if it is not already connected and ready to conduct</span>
 <span class="sd">        RPCs.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.unsubscribe"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unsubscribe">[docs]</a>  <span class="k">def</span> <span class="nf">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Unsubscribes a callback from this Channel&#39;s connectivity.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.unsubscribe"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unsubscribe">[docs]</a>    <span class="k">def</span> <span class="nf">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unsubscribes a callback from this Channel&#39;s connectivity.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      callback: A callable previously registered with this Channel from having</span>
 <span class="sd">        been passed to its &quot;subscribe&quot; method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.unary_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_unary">[docs]</a>  <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.unary_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_unary">[docs]</a>    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">method</span><span class="p">,</span>
+                    <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
@@ -797,12 +802,14 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.unary_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_stream">[docs]</a>  <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.unary_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_stream">[docs]</a>    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">method</span><span class="p">,</span>
+                     <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
@@ -814,12 +821,14 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A UnaryStreamMultiCallable value for the name unary-stream method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.stream_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_unary">[docs]</a>  <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.stream_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_unary">[docs]</a>    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">method</span><span class="p">,</span>
+                     <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
@@ -831,12 +840,14 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A StreamUnaryMultiCallable value for the named stream-unary method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Channel.stream_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_stream">[docs]</a>  <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.stream_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_stream">[docs]</a>    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">method</span><span class="p">,</span>
+                      <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
@@ -848,36 +859,36 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A StreamStreamMultiCallable value for the named stream-stream method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">##########################  Service-Side Context  ##############################</span>
 
 
 <div class="viewcode-block" id="ServicerContext"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext">[docs]</a><span class="k">class</span> <span class="nc">ServicerContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">RpcContext</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;A context object passed to method implementations.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;A context object passed to method implementations.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.invocation_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accesses the metadata from the invocation-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.invocation_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the metadata from the invocation-side of the RPC.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The invocation :term:`metadata`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.peer"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.peer">[docs]</a>  <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Identifies the peer that invoked the RPC being serviced.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.peer"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.peer">[docs]</a>    <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Identifies the peer that invoked the RPC being serviced.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A string identifying the peer that invoked the RPC being serviced.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.send_initial_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the invocation-side of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.send_initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the invocation-side of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
 <span class="sd">    service-side initial metadata to transmit.</span>
@@ -885,11 +896,11 @@
 <span class="sd">    Args:</span>
 <span class="sd">      initial_metadata: The initial :term:`metadata`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.set_trailing_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_trailing_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accepts the trailing metadata value of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.set_trailing_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_trailing_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">set_trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accepts the trailing metadata value of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
 <span class="sd">    service-side trailing metadata to transmit.</span>
@@ -897,11 +908,11 @@
 <span class="sd">    Args:</span>
 <span class="sd">      trailing_metadata: The trailing :term:`metadata`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.set_code"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_code">[docs]</a>  <span class="k">def</span> <span class="nf">set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accepts the status code of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.set_code"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_code">[docs]</a>    <span class="k">def</span> <span class="nf">set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accepts the status code of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they wish the</span>
 <span class="sd">    gRPC runtime to determine the status code of the RPC.</span>
@@ -910,11 +921,11 @@
 <span class="sd">      code: A StatusCode value to be transmitted to the invocation side of the</span>
 <span class="sd">        RPC as the status code of the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.set_details"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_details">[docs]</a>  <span class="k">def</span> <span class="nf">set_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Accepts the service-side details of the RPC.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServicerContext.set_details"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_details">[docs]</a>    <span class="k">def</span> <span class="nf">set_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accepts the service-side details of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
 <span class="sd">    details to transmit.</span>
@@ -923,14 +934,14 @@
 <span class="sd">      details: A string to be transmitted to the invocation side of the RPC as</span>
 <span class="sd">        the status details of the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">#####################  Service-Side Handler Interfaces  ########################</span>
 
 
 <div class="viewcode-block" id="RpcMethodHandler"><a class="viewcode-back" href="../grpc.html#grpc.RpcMethodHandler">[docs]</a><span class="k">class</span> <span class="nc">RpcMethodHandler</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;An implementation of a single RPC method.</span>
+    <span class="sd">&quot;&quot;&quot;An implementation of a single RPC method.</span>
 
 <span class="sd">  Attributes:</span>
 <span class="sd">    request_streaming: Whether the RPC supports exactly one request message or</span>
@@ -965,7 +976,7 @@
 
 
 <div class="viewcode-block" id="HandlerCallDetails"><a class="viewcode-back" href="../grpc.html#grpc.HandlerCallDetails">[docs]</a><span class="k">class</span> <span class="nc">HandlerCallDetails</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Describes an RPC that has just arrived for service.</span>
+    <span class="sd">&quot;&quot;&quot;Describes an RPC that has just arrived for service.</span>
 <span class="sd">  Attributes:</span>
 <span class="sd">    method: The method name of the RPC.</span>
 <span class="sd">    invocation_metadata: The :term:`metadata` from the invocation side of the RPC.</span>
@@ -973,11 +984,11 @@
 
 
 <div class="viewcode-block" id="GenericRpcHandler"><a class="viewcode-back" href="../grpc.html#grpc.GenericRpcHandler">[docs]</a><span class="k">class</span> <span class="nc">GenericRpcHandler</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;An implementation of arbitrarily many RPC methods.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;An implementation of arbitrarily many RPC methods.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericRpcHandler.service"><a class="viewcode-back" href="../grpc.html#grpc.GenericRpcHandler.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_call_details</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Services an RPC (or not).</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="GenericRpcHandler.service"><a class="viewcode-back" href="../grpc.html#grpc.GenericRpcHandler.service">[docs]</a>    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_call_details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Services an RPC (or not).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      handler_call_details: A HandlerCallDetails describing the RPC.</span>
@@ -986,18 +997,38 @@
 <span class="sd">      An RpcMethodHandler with which the RPC may be serviced, or None to</span>
 <span class="sd">        indicate that this object will not be servicing the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="ServiceRpcHandler"><a class="viewcode-back" href="../grpc.html#grpc.ServiceRpcHandler">[docs]</a><span class="k">class</span> <span class="nc">ServiceRpcHandler</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">GenericRpcHandler</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;An implementation of RPC methods belonging to a service.</span>
+
+<span class="sd">  A service handles RPC methods with structured names of the form</span>
+<span class="sd">  &#39;/Service.Name/Service.MethodX&#39;, where &#39;Service.Name&#39; is the value</span>
+<span class="sd">  returned by service_name(), and &#39;Service.MethodX&#39; is the service method</span>
+<span class="sd">  name.  A service can have multiple service methods names, but only a single</span>
+<span class="sd">  service name.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ServiceRpcHandler.service_name"><a class="viewcode-back" href="../grpc.html#grpc.ServiceRpcHandler.service_name">[docs]</a>    <span class="k">def</span> <span class="nf">service_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns this services name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The service name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">#############################  Server Interface  ###############################</span>
 
 
 <div class="viewcode-block" id="Server"><a class="viewcode-back" href="../grpc.html#grpc.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
-  <span class="sd">&quot;&quot;&quot;Services RPCs.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Services RPCs.&quot;&quot;&quot;</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.add_generic_rpc_handlers"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_generic_rpc_handlers">[docs]</a>  <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_rpc_handlers</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Server.add_generic_rpc_handlers"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_generic_rpc_handlers">[docs]</a>    <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_rpc_handlers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
 
 <span class="sd">    This method is only safe to call before the server is started.</span>
 
@@ -1005,11 +1036,11 @@
 <span class="sd">      generic_rpc_handlers: An iterable of GenericRpcHandlers that will be used</span>
 <span class="sd">        to service RPCs after this Server is started.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_insecure_port">[docs]</a>  <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Reserves a port for insecure RPC service once this Server becomes active.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_insecure_port">[docs]</a>    <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reserves a port for insecure RPC service once this Server becomes active.</span>
 
 <span class="sd">    This method may only be called before calling this Server&#39;s start method is</span>
 <span class="sd">    called.</span>
@@ -1023,11 +1054,11 @@
 <span class="sd">        in the passed address, but will likely be different if the port number</span>
 <span class="sd">        contained in the passed address was zero.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_secure_port">[docs]</a>  <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Reserves a port for secure RPC service after this Server becomes active.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_secure_port">[docs]</a>    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reserves a port for secure RPC service after this Server becomes active.</span>
 
 <span class="sd">    This method may only be called before calling this Server&#39;s start method is</span>
 <span class="sd">    called.</span>
@@ -1042,20 +1073,20 @@
 <span class="sd">        in the passed address, but will likely be different if the port number</span>
 <span class="sd">        contained in the passed address was zero.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../grpc.html#grpc.Server.start">[docs]</a>  <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Starts this Server&#39;s service of RPCs.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../grpc.html#grpc.Server.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Starts this Server&#39;s service of RPCs.</span>
 
 <span class="sd">    This method may only be called while the server is not serving RPCs (i.e. it</span>
 <span class="sd">    is not idempotent).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../grpc.html#grpc.Server.stop">[docs]</a>  <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stops this Server&#39;s service of RPCs.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../grpc.html#grpc.Server.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stops this Server&#39;s service of RPCs.</span>
 
 <span class="sd">    All calls to this method immediately stop service of new RPCs. When existing</span>
 <span class="sd">    RPCs are aborted is controlled by the grace period parameter passed to this</span>
@@ -1086,15 +1117,16 @@
 <span class="sd">      at the time it was stopped or if all RPCs that it had underway completed</span>
 <span class="sd">      very early in the grace period).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <span class="c1">#################################  Functions    ################################</span>
 
 
-<div class="viewcode-block" id="unary_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_rpc_method_handler</span><span class="p">(</span>
-    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-unary RPC method.</span>
+<div class="viewcode-block" id="unary_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
+                                   <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-unary RPC method.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of an RPC method as a callable behavior taking</span>
@@ -1106,15 +1138,16 @@
 <span class="sd">    An RpcMethodHandler for a unary-unary RPC method constructed from the given</span>
 <span class="sd">      parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
-      <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
+                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                       <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="unary_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_rpc_method_handler</span><span class="p">(</span>
-    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-stream RPC method.</span>
+<div class="viewcode-block" id="unary_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
+                                    <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-stream RPC method.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of an RPC method as a callable behavior taking</span>
@@ -1126,15 +1159,16 @@
 <span class="sd">    An RpcMethodHandler for a unary-stream RPC method constructed from the</span>
 <span class="sd">      given parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
-      <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
-      <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
+                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
+                                       <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="stream_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_rpc_method_handler</span><span class="p">(</span>
-    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-unary RPC method.</span>
+<div class="viewcode-block" id="stream_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
+                                    <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-unary RPC method.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of an RPC method as a callable behavior taking</span>
@@ -1146,15 +1180,16 @@
 <span class="sd">    An RpcMethodHandler for a stream-unary RPC method constructed from the</span>
 <span class="sd">      given parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
-      <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
+                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                       <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="stream_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_rpc_method_handler</span><span class="p">(</span>
-        <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-stream RPC method.</span>
+<div class="viewcode-block" id="stream_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
+                                     <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-stream RPC method.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    behavior: The implementation of an RPC method as a callable behavior taking</span>
@@ -1167,14 +1202,14 @@
 <span class="sd">    An RpcMethodHandler for a stream-stream RPC method constructed from the</span>
 <span class="sd">      given parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
-      <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-      <span class="n">behavior</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
+                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                                       <span class="n">behavior</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="method_handlers_generic_handler"><a class="viewcode-back" href="../grpc.html#grpc.method_handlers_generic_handler">[docs]</a><span class="k">def</span> <span class="nf">method_handlers_generic_handler</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a grpc.GenericRpcHandler from RpcMethodHandlers.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a grpc.GenericRpcHandler from RpcMethodHandlers.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    service: A service name to be used for the given method handlers.</span>
@@ -1184,13 +1219,14 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A GenericRpcHandler constructed from the given parameters.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">DictionaryGenericHandler</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">DictionaryGenericHandler</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ssl_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_channel_credentials</span><span class="p">(</span>
-    <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a ChannelCredentials for use with an SSL-enabled Channel.</span>
+<div class="viewcode-block" id="ssl_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_channel_credentials</span><span class="p">(</span><span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ChannelCredentials for use with an SSL-enabled Channel.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    root_certificates: The PEM-encoded root certificates or unset to ask for</span>
@@ -1203,16 +1239,16 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A ChannelCredentials for use with an SSL-enabled Channel.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">if</span> <span class="n">private_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">certificate_chain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">pair</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">)</span>
-  <span class="k">else</span><span class="p">:</span>
-    <span class="n">pair</span> <span class="o">=</span> <span class="kc">None</span>
-  <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-      <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_ssl</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="n">pair</span><span class="p">))</span></div>
+    <span class="k">if</span> <span class="n">private_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">certificate_chain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pair</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pair</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_ssl</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="n">pair</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="metadata_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.metadata_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">metadata_call_credentials</span><span class="p">(</span><span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Construct CallCredentials from an AuthMetadataPlugin.</span>
+    <span class="sd">&quot;&quot;&quot;Construct CallCredentials from an AuthMetadataPlugin.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    metadata_plugin: An AuthMetadataPlugin to use as the authentication behavior</span>
@@ -1222,21 +1258,21 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A CallCredentials.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_plugin_wrapping</span>
-  <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-      <span class="n">effective_name</span> <span class="o">=</span> <span class="n">metadata_plugin</span><span class="o">.</span><span class="n">__name__</span>
-    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-      <span class="n">effective_name</span> <span class="o">=</span> <span class="n">metadata_plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-  <span class="k">else</span><span class="p">:</span>
-    <span class="n">effective_name</span> <span class="o">=</span> <span class="n">name</span>
-  <span class="k">return</span> <span class="n">CallCredentials</span><span class="p">(</span>
-      <span class="n">_plugin_wrapping</span><span class="o">.</span><span class="n">call_credentials_metadata_plugin</span><span class="p">(</span>
-          <span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">effective_name</span><span class="p">))</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_plugin_wrapping</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">effective_name</span> <span class="o">=</span> <span class="n">metadata_plugin</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">effective_name</span> <span class="o">=</span> <span class="n">metadata_plugin</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">effective_name</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="k">return</span> <span class="n">CallCredentials</span><span class="p">(</span>
+        <span class="n">_plugin_wrapping</span><span class="o">.</span><span class="n">call_credentials_metadata_plugin</span><span class="p">(</span><span class="n">metadata_plugin</span><span class="p">,</span>
+                                                          <span class="n">effective_name</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="access_token_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.access_token_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">access_token_call_credentials</span><span class="p">(</span><span class="n">access_token</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Construct CallCredentials from an access token.</span>
+    <span class="sd">&quot;&quot;&quot;Construct CallCredentials from an access token.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    access_token: A string to place directly in the http request</span>
@@ -1245,13 +1281,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A CallCredentials.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_auth</span>
-  <span class="k">return</span> <span class="n">metadata_call_credentials</span><span class="p">(</span>
-      <span class="n">_auth</span><span class="o">.</span><span class="n">AccessTokenCallCredentials</span><span class="p">(</span><span class="n">access_token</span><span class="p">))</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_auth</span>
+    <span class="k">return</span> <span class="n">metadata_call_credentials</span><span class="p">(</span>
+        <span class="n">_auth</span><span class="o">.</span><span class="n">AccessTokenCallCredentials</span><span class="p">(</span><span class="n">access_token</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="composite_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.composite_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">composite_call_credentials</span><span class="p">(</span><span class="o">*</span><span class="n">call_credentials</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Compose multiple CallCredentials to make a new CallCredentials.</span>
+    <span class="sd">&quot;&quot;&quot;Compose multiple CallCredentials to make a new CallCredentials.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    *call_credentials: At least two CallCredentials objects.</span>
@@ -1259,16 +1295,16 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A CallCredentials object composed of the given CallCredentials objects.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_credential_composition</span>
-  <span class="n">cygrpc_call_credentials</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-      <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
-      <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">)</span>
-  <span class="k">return</span> <span class="n">CallCredentials</span><span class="p">(</span>
-      <span class="n">_credential_composition</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">cygrpc_call_credentials</span><span class="p">))</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_credential_composition</span>
+    <span class="n">cygrpc_call_credentials</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
+        <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">CallCredentials</span><span class="p">(</span>
+        <span class="n">_credential_composition</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">cygrpc_call_credentials</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="composite_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.composite_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">composite_channel_credentials</span><span class="p">(</span><span class="n">channel_credentials</span><span class="p">,</span> <span class="o">*</span><span class="n">call_credentials</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Compose a ChannelCredentials and one or more CallCredentials objects.</span>
+    <span class="sd">&quot;&quot;&quot;Compose a ChannelCredentials and one or more CallCredentials objects.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    channel_credentials: A ChannelCredentials.</span>
@@ -1278,19 +1314,19 @@
 <span class="sd">    A ChannelCredentials composed of the given ChannelCredentials and</span>
 <span class="sd">      CallCredentials objects.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_credential_composition</span>
-  <span class="n">cygrpc_call_credentials</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-      <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
-      <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">)</span>
-  <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-      <span class="n">_credential_composition</span><span class="o">.</span><span class="n">channel</span><span class="p">(</span>
-          <span class="n">channel_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span> <span class="n">cygrpc_call_credentials</span><span class="p">))</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_credential_composition</span>
+    <span class="n">cygrpc_call_credentials</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
+        <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_credential_composition</span><span class="o">.</span><span class="n">channel</span><span class="p">(</span><span class="n">channel_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span>
+                                        <span class="n">cygrpc_call_credentials</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_credentials</span><span class="p">(</span>
-    <span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span> <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">require_client_auth</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with an SSL-enabled Server.</span>
+<div class="viewcode-block" id="ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_credentials</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span>
+                           <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">require_client_auth</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with an SSL-enabled Server.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    private_key_certificate_chain_pairs: A nonempty sequence each element of</span>
@@ -1306,23 +1342,23 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A ServerCredentials for use with an SSL-enabled Server.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-        <span class="s1">&#39;At least one private key-certificate chain pair is required!&#39;</span><span class="p">)</span>
-  <span class="k">elif</span> <span class="n">require_client_auth</span> <span class="ow">and</span> <span class="n">root_certificates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-        <span class="s1">&#39;Illegal to require client auth without providing root certificates!&#39;</span><span class="p">)</span>
-  <span class="k">else</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl</span><span class="p">(</span>
-        <span class="n">root_certificates</span><span class="p">,</span>
-        <span class="p">[</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
-         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span><span class="p">],</span>
-        <span class="n">require_client_auth</span><span class="p">))</span></div>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;At least one private key-certificate chain pair is required!&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">require_client_auth</span> <span class="ow">and</span> <span class="n">root_certificates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Illegal to require client auth without providing root certificates!&#39;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
+            <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="p">[</span>
+                <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
+            <span class="p">],</span> <span class="n">require_client_auth</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../grpc.html#grpc.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a Future tracking when a Channel is ready.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Future tracking when a Channel is ready.</span>
 
 <span class="sd">  Cancelling the returned Future does not tell the given Channel to abandon</span>
 <span class="sd">  attempts it may have been making to connect; cancelling merely deactivates the</span>
@@ -1335,12 +1371,12 @@
 <span class="sd">    A Future that matures when the given Channel has connectivity</span>
 <span class="sd">      ChannelConnectivity.READY.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
-  <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_utilities</span>
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="insecure_channel"><a class="viewcode-back" href="../grpc.html#grpc.insecure_channel">[docs]</a><span class="k">def</span> <span class="nf">insecure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a server.</span>
+    <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a server.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    target: The target to which to connect.</span>
@@ -1350,12 +1386,12 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A Channel to the target through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>
-  <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a server.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a server.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    target: The target to which to connect.</span>
@@ -1366,12 +1402,13 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A Channel to the target through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>
-  <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+                            <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="server"><a class="viewcode-back" href="../grpc.html#grpc.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
+<div class="viewcode-block" id="server"><a class="viewcode-back" href="../grpc.html#grpc.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    thread_pool: A futures.ThreadPoolExecutor to be used by the returned Server</span>
@@ -1381,16 +1418,18 @@
 <span class="sd">      only handlers the server will use to service RPCs; other handlers may</span>
 <span class="sd">      later be added by calling add_generic_rpc_handlers any time before the</span>
 <span class="sd">      returned Server is started.</span>
+<span class="sd">    options: A sequence of string-value pairs according to which to configure</span>
+<span class="sd">      the created server.</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    A Server with which RPCs can be serviced.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_server</span>
-  <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">Server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">)</span></div>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_server</span>
+    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">Server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span> <span class="p">()</span>
+                          <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">)</span></div>
 
 
 <span class="c1">###################################  __all__  #################################</span>
-
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s1">&#39;FutureTimeoutError&#39;</span><span class="p">,</span>
@@ -1416,6 +1455,7 @@
     <span class="s1">&#39;RpcMethodHandler&#39;</span><span class="p">,</span>
     <span class="s1">&#39;HandlerCallDetails&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GenericRpcHandler&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ServiceRpcHandler&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Server&#39;</span><span class="p">,</span>
     <span class="s1">&#39;unary_unary_rpc_method_handler&#39;</span><span class="p">,</span>
     <span class="s1">&#39;unary_stream_rpc_method_handler&#39;</span><span class="p">,</span>
@@ -1431,29 +1471,26 @@
     <span class="s1">&#39;channel_ready_future&#39;</span><span class="p">,</span>
     <span class="s1">&#39;insecure_channel&#39;</span><span class="p">,</span>
     <span class="s1">&#39;secure_channel&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;server&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-
+    <span class="s1">&#39;server&#39;</span><span class="p">,)</span>
 
 <span class="c1">############################### Extension Shims ################################</span>
 
-
 <span class="c1"># Here to maintain backwards compatibility; avoid using these in new code!</span>
 <span class="k">try</span><span class="p">:</span>
-  <span class="kn">import</span> <span class="nn">grpc_tools</span>
-  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.tools&#39;</span><span class="p">:</span> <span class="n">grpc_tools</span><span class="p">})</span>
+    <span class="kn">import</span> <span class="nn">grpc_tools</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.tools&#39;</span><span class="p">:</span> <span class="n">grpc_tools</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-  <span class="k">pass</span>
+    <span class="k">pass</span>
 <span class="k">try</span><span class="p">:</span>
-  <span class="kn">import</span> <span class="nn">grpc_health</span>
-  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.health&#39;</span><span class="p">:</span> <span class="n">grpc_health</span><span class="p">})</span>
+    <span class="kn">import</span> <span class="nn">grpc_health</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.health&#39;</span><span class="p">:</span> <span class="n">grpc_health</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-  <span class="k">pass</span>
+    <span class="k">pass</span>
 <span class="k">try</span><span class="p">:</span>
-  <span class="kn">import</span> <span class="nn">grpc_reflection</span>
-  <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.reflection&#39;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
+    <span class="kn">import</span> <span class="nn">grpc_reflection</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.reflection&#39;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-  <span class="k">pass</span>
+    <span class="k">pass</span>
 </pre></div>
 
            </div>
@@ -1465,7 +1502,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Author.
+        &copy; Copyright 2016, The gRPC Authors.
 
     </p>
   </div>
@@ -1487,7 +1524,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'1.0.4',
+            VERSION:'1.1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -13,36 +13,33 @@ function ThemeNav () {
         winPosition: 0,
         winHeight: null,
         docHeight: null,
-        isRunning: false
+        isRunning: null
     };
 
     nav.enable = function () {
         var self = this;
 
-        if (!self.isRunning) {
-            self.isRunning = true;
-            jQuery(function ($) {
-                self.init($);
+        jQuery(function ($) {
+            self.init($);
 
-                self.reset();
-                self.win.on('hashchange', self.reset);
+            self.reset();
+            self.win.on('hashchange', self.reset);
 
-                // Set scroll monitor
-                self.win.on('scroll', function () {
-                    if (!self.linkScroll) {
-                        self.winScroll = true;
-                    }
-                });
-                setInterval(function () { if (self.winScroll) self.onScroll(); }, 25);
-
-                // Set resize monitor
-                self.win.on('resize', function () {
-                    self.winResize = true;
-                });
-                setInterval(function () { if (self.winResize) self.onResize(); }, 25);
-                self.onResize();
+            // Set scroll monitor
+            self.win.on('scroll', function () {
+                if (!self.linkScroll) {
+                    self.winScroll = true;
+                }
             });
-        };
+            setInterval(function () { if (self.winScroll) self.onScroll(); }, 25);
+
+            // Set resize monitor
+            self.win.on('resize', function () {
+                self.winResize = true;
+            });
+            setInterval(function () { if (self.winResize) self.onResize(); }, 25);
+            self.onResize();
+        });
     };
 
     nav.init = function ($) {
