@@ -59,6 +59,7 @@ xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* pr
 %DOTNET% restore . || goto :error
 
 %DOTNET% pack --configuration Release Grpc.Core\project.json --output ..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.Testing\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Auth\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.HealthCheck\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Reflection\project.json --output ..\..\artifacts || goto :error
