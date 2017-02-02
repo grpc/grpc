@@ -362,6 +362,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
 
+  end_test(&f);
+  config.tear_down_data(&f);
+
   free(client_calls);
   free(server_calls);
   free(initial_metadata_recv);
@@ -372,9 +375,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(details);
   free(request_payload_recv);
   free(was_cancelled);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void resource_quota_server_pre_init(void) {}
