@@ -90,7 +90,7 @@ for bm_name in sys.argv[1:]:
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['sudo', 'perf', 'record', '-g', '-F', '99',
+    subprocess.check_call(['sudo', 'perf', 'record', '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
