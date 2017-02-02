@@ -52,7 +52,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal abstract class AsyncCallBase<TWrite, TRead>
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
         protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
 
         readonly Func<TWrite, byte[]> serializer;

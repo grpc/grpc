@@ -44,8 +44,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
-
         readonly CallInvocationDetails<TRequest, TResponse> details;
         readonly INativeCall injectedNativeCall;  // for testing
 
@@ -62,6 +60,9 @@ namespace Grpc.Core.Internal
 
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
+
+        GlobalLoggerProxy<AsyncCall<TRequest, TResponse>> globalLoggerProxy 
+            = new GlobalLoggerProxy<AsyncCall<TRequest, TResponse>>();
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
             : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
@@ -121,7 +122,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate.");
+                        globalLoggerProxy.GetLogger().Error(e, "Exception occured while invoking completion delegate.");
                     }
                 }
                     

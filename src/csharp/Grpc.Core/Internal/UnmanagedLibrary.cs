@@ -51,8 +51,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class UnmanagedLibrary
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnmanagedLibrary>();
-
         // flags for dlopen
         const int RTLD_LAZY = 1;
         const int RTLD_GLOBAL = 8;
@@ -60,11 +58,13 @@ namespace Grpc.Core.Internal
         readonly string libraryPath;
         readonly IntPtr handle;
 
+        GlobalLoggerProxy<UnmanagedLibrary> globalLoggerProxy = new GlobalLoggerProxy<UnmanagedLibrary>();
+
         public UnmanagedLibrary(string[] libraryPathAlternatives)
         {
             this.libraryPath = FirstValidLibraryPath(libraryPathAlternatives);
 
-            Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
+            globalLoggerProxy.GetLogger().Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
             this.handle = PlatformSpecificLoadLibrary(this.libraryPath);
 

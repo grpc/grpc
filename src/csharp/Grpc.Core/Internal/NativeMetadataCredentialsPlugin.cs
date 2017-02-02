@@ -43,13 +43,14 @@ namespace Grpc.Core.Internal
     internal class NativeMetadataCredentialsPlugin
     {
         const string GetMetadataExceptionMsg = "Exception occured in metadata credentials plugin.";
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
         static readonly NativeMethods Native = NativeMethods.Get();
 
         AsyncAuthInterceptor interceptor;
         GCHandle gcHandle;
         NativeMetadataInterceptor nativeInterceptor;
         CallCredentialsSafeHandle credentials;
+
+        GlobalLoggerProxy<NativeMetadataCredentialsPlugin> globalLoggerProxy = new GlobalLoggerProxy<NativeMetadataCredentialsPlugin>();
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
@@ -83,7 +84,7 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                globalLoggerProxy.GetLogger().Error(e, GetMetadataExceptionMsg);
             }
         }
 
@@ -102,7 +103,7 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                globalLoggerProxy.GetLogger().Error(e, GetMetadataExceptionMsg);
             }
         }
     }

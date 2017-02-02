@@ -48,7 +48,6 @@ namespace Grpc.Core
     public class Server
     {
         const int InitialAllowRpcTokenCountPerCq = 10;
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
 
@@ -67,6 +66,7 @@ namespace Grpc.Core
         bool startRequested;
         volatile bool shutdownRequested;
 
+        GlobalLoggerProxy<Server> globalLoggerProxy = new GlobalLoggerProxy<Server>();
 
         /// <summary>
         /// Creates a new server.
@@ -302,7 +302,7 @@ namespace Grpc.Core
             var activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
             {
-                Logger.Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);
+                globalLoggerProxy.GetLogger().Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);
             }
             handle.Dispose();
         }
@@ -323,7 +323,7 @@ namespace Grpc.Core
             }
             catch (Exception e)
             {
-                Logger.Warning(e, "Exception while handling RPC.");
+                globalLoggerProxy.GetLogger().Warning(e, "Exception while handling RPC.");
             }
         }
 
@@ -332,7 +332,7 @@ namespace Grpc.Core
         /// </summary>
         private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx, CompletionQueueSafeHandle cq)
         {
-			Task.Run(() => AllowOneRpc(cq));
+            Task.Run(() => AllowOneRpc(cq));
 
             if (success)
             {

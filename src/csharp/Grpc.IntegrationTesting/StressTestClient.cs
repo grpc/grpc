@@ -49,8 +49,9 @@ namespace Grpc.IntegrationTesting
 {
     public class StressTestClient
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<StressTestClient>();
         const double SecondsToNanos = 1e9;
+
+        GlobalLoggerProxy<StressTestClient> globalLoggerProxy = new GlobalLoggerProxy<StressTestClient>();
 
         private class ClientOptions
         {
@@ -152,7 +153,8 @@ namespace Grpc.IntegrationTesting
 
         async Task RunBodyAsync(TestService.TestServiceClient client)
         {
-            Logger.Info("Starting stress test client thread.");
+            ILogger logger = globalLoggerProxy.GetLogger();
+            logger.Info("Starting stress test client thread.");
             while (!finishedTokenSource.Token.IsCancellationRequested)
             {
                 var testCase = testCaseGenerator.GetNext();
@@ -164,7 +166,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
                 histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
             }
-            Logger.Info("Stress test client thread finished.");
+            logger.Info("Stress test client thread finished.");
         }
 
         async Task RunTestCaseAsync(TestService.TestServiceClient client, string testCase)

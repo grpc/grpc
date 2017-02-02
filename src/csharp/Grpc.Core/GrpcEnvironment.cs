@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -59,6 +60,7 @@ namespace Grpc.Core
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), DefaultLogLevel);
+        internal static EventHandler<LoggerChangedEventArgs> LoggerChangedEvent;
 
         readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
@@ -198,6 +200,11 @@ namespace Grpc.Core
         {
             GrpcPreconditions.CheckNotNull(customLogger, "customLogger");
             logger = customLogger;
+
+            if (LoggerChangedEvent != null)
+            {
+                LoggerChangedEvent(null, new LoggerChangedEventArgs(customLogger));
+            }
         }
 
         /// <summary>

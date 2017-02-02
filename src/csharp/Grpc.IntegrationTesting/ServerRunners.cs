@@ -53,27 +53,28 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class ServerRunners
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerRunners>();
+        static GlobalLoggerProxy<ServerRunners> GlobalLoggerProxy = new GlobalLoggerProxy<ServerRunners>();
 
         /// <summary>
         /// Creates a started server runner.
         /// </summary>
         public static IServerRunner CreateStarted(ServerConfig config)
         {
-            Logger.Debug("ServerConfig: {0}", config);
+            ILogger logger = GlobalLoggerProxy.GetLogger();
+            logger.Debug("ServerConfig: {0}", config);
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
 
             if (config.AsyncServerThreads != 0)
             {
-                Logger.Warning("ServerConfig.AsyncServerThreads is not supported for C#. Ignoring the value");
+                logger.Warning("ServerConfig.AsyncServerThreads is not supported for C#. Ignoring the value");
             }
             if (config.CoreLimit != 0)
             {
-                Logger.Warning("ServerConfig.CoreLimit is not supported for C#. Ignoring the value");
+                logger.Warning("ServerConfig.CoreLimit is not supported for C#. Ignoring the value");
             }
             if (config.CoreList.Count > 0)
             {
-                Logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
+                logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
             ServerServiceDefinition service = null;

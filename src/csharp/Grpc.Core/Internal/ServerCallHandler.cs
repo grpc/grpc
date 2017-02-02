@@ -51,10 +51,11 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly UnaryServerMethod<TRequest, TResponse> handler;
+
+        GlobalLoggerProxy<UnaryServerCallHandler<TRequest, TResponse>> globalLoggerProxy 
+            = new GlobalLoggerProxy<UnaryServerCallHandler<TRequest, TResponse>>();
 
         public UnaryServerCallHandler(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler)
         {
@@ -89,7 +90,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    globalLoggerProxy.GetLogger().Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
             }
@@ -110,10 +111,11 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly ServerStreamingServerMethod<TRequest, TResponse> handler;
+
+        GlobalLoggerProxy<ServerStreamingServerCallHandler<TRequest, TResponse>> globalLoggerProxy 
+            = new GlobalLoggerProxy<ServerStreamingServerCallHandler<TRequest, TResponse>>();
 
         public ServerStreamingServerCallHandler(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler)
         {
@@ -146,7 +148,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    globalLoggerProxy.GetLogger().Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
             }
@@ -168,10 +170,10 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly ClientStreamingServerMethod<TRequest, TResponse> handler;
+
+        GlobalLoggerProxy<ClientStreamingServerCallHandler<TRequest, TResponse>> globalLoggerProxy = new GlobalLoggerProxy<ClientStreamingServerCallHandler<TRequest, TResponse>>();
 
         public ClientStreamingServerCallHandler(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler)
         {
@@ -204,7 +206,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    globalLoggerProxy.GetLogger().Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
             }
@@ -226,10 +228,10 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly DuplexStreamingServerMethod<TRequest, TResponse> handler;
+
+        GlobalLoggerProxy<DuplexStreamingServerCallHandler<TRequest, TResponse>> globalLoggerProxy = new GlobalLoggerProxy<DuplexStreamingServerCallHandler<TRequest,TResponse>>();
 
         public DuplexStreamingServerCallHandler(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler)
         {
@@ -260,7 +262,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    globalLoggerProxy.GetLogger().Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
             }

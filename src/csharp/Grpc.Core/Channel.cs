@@ -47,8 +47,6 @@ namespace Grpc.Core
     /// </summary>
     public class Channel
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
-
         readonly object myLock = new object();
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
         readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
@@ -58,6 +56,8 @@ namespace Grpc.Core
         readonly CompletionQueueSafeHandle completionQueue;
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
+
+        GlobalLoggerProxy<Channel> globalLoggerProxy = new GlobalLoggerProxy<Channel>();
 
         bool shutdownRequested;
 
@@ -239,7 +239,8 @@ namespace Grpc.Core
             var activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
             {
-                Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
+                globalLoggerProxy.GetLogger().Warning(
+                    "Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 
             handle.Dispose();
