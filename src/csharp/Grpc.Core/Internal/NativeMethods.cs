@@ -336,7 +336,7 @@ namespace Grpc.Core.Internal
             public delegate CallError grpcsharp_call_send_close_from_client_delegate(CallSafeHandle call,
                 BatchContextSafeHandle ctx);
             public delegate CallError grpcsharp_call_send_status_from_server_delegate(CallSafeHandle call,
-                BatchContextSafeHandle ctx, StatusCode statusCode, string statusMessage, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+                BatchContextSafeHandle ctx, StatusCode statusCode, byte[] statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
                 byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags);
             public delegate CallError grpcsharp_call_recv_message_delegate(CallSafeHandle call,
                 BatchContextSafeHandle ctx);

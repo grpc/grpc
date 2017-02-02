@@ -327,9 +327,10 @@ static request_sequences perform_request(servers_fixture *f,
                grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     s_idx = -1;
-    while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(RETRY_TIMEOUT), NULL))
-               .type != GRPC_QUEUE_TIMEOUT) {
+    while (
+        (ev = grpc_completion_queue_next(
+             f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), NULL))
+            .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
       const grpc_connectivity_state conn_state =
@@ -406,9 +407,10 @@ static request_sequences perform_request(servers_fixture *f,
       }
     }
 
-    GPR_ASSERT(grpc_completion_queue_next(
-                   f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(RETRY_TIMEOUT), NULL)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), NULL)
+            .type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -563,7 +565,7 @@ static void test_ping() {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f->cq, tag(99));
+        client, state, grpc_timeout_seconds_to_deadline(3), f->cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(client, 0);
