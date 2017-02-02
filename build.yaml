@@ -2957,6 +2957,10 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -3383,6 +3387,10 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: metrics_client
   build: test
   run: false
