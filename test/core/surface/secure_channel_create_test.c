@@ -47,8 +47,8 @@ void test_unknown_scheme_target(void) {
   grpc_resolver_registry_init();
   grpc_channel_credentials *creds =
       grpc_fake_transport_security_credentials_create();
-  grpc_channel *chan = grpc_secure_channel_create(creds, "blah://blah", NULL,
-                                                  NULL);
+  grpc_channel *chan =
+      grpc_secure_channel_create(creds, "blah://blah", NULL, NULL);
   grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
