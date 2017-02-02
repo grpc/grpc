@@ -36,4 +36,11 @@ export GRPC_CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-tools/run_tests/helper_scripts/bundle_install_wrapper.sh
+if [ "$SYSTEM" == "Darwin" ] ; then
+  # Workaround for crash during bundle install
+  # See suggestion in https://github.com/bundler/bundler/issues/3692
+  BUNDLE_SPECIFIC_PLATFORM=true bundle install
+else
+  bundle install
+fi
+

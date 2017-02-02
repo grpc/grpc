@@ -53,13 +53,7 @@ set +ex
 rvm use default
 gem install bundler --update
 
-if [ "$SYSTEM" == "Darwin" ] ; then
-  # Workaround for crash during bundle install
-  # See suggestion in https://github.com/bundler/bundler/issues/3692
-  BUNDLE_SPECIFIC_PLATFORM=true bundle install
-else
-  bundle install
-fi
+tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
 set -ex
 
