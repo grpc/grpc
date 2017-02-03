@@ -447,15 +447,6 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
-- name: grpc_debug_macros
-  headers:
-  - src/core/ext/debug/debugger_macros.h
-  src:
-  - src/core/ext/debug/debugger_macros.c
-  uses:
-  - grpc_base
-  - grpc_client_channel
-  - grpc_transport_chttp2
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/grpclb.h
@@ -569,6 +560,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
+  - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
@@ -583,6 +575,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
+  - test/core/util/debugger_macros.c
   - test/core/util/grpc_profiler.c
   - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
@@ -596,8 +589,6 @@ filegroups:
   deps:
   - grpc
   - gpr_test_util
-  uses:
-  - grpc_debug_macros
 - name: grpc_transport_chttp2
   headers:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h

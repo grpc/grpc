@@ -41,7 +41,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/debug/debugger_macros.h"
+#include "test/core/util/debugger_macros.h"
 
 static bool g_pre_init_called = false;
 
