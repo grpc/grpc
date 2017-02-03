@@ -106,7 +106,9 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     iter = client_metadata.find("user-agent");
     if (iter != client_metadata.end()) {
-      context->AddInitialMetadata(kEchoUserAgentKey, iter->second.data());
+      context->AddInitialMetadata(
+          kEchoUserAgentKey,
+          grpc::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
