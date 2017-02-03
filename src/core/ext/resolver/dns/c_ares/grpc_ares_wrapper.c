@@ -191,6 +191,22 @@ static void on_done_cb(void *arg, int status, int timeouts,
   grpc_ares_request_unref(NULL, r);
 }
 
+static void start_resolving(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error) {
+  grpc_ares_request *r = (grpc_ares_request *)arg;
+  ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
+  // An extra reference is put here to avoid destroying the request in
+  // on_done_cb before calling grpc_ares_ev_driver_start.
+  gpr_ref_init(&r->pending_queries, 2);
+  if (grpc_ipv6_loopback_available()) {
+    gpr_ref(&r->pending_queries);
+    ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
+  }
+  ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
+  grpc_ares_ev_driver_start(exec_ctx, r->ev_driver);
+  grpc_ares_request_unref(exec_ctx, r);
+}
+
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
                                     grpc_pollset_set *interested_parties,
@@ -233,17 +249,9 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->host = host;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
-  ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
-  // An extra reference is put here to avoid destroying the request in
-  // on_done_cb before calling grpc_ares_ev_driver_start.
-  gpr_ref_init(&r->pending_queries, 2);
-  if (grpc_ipv6_loopback_available()) {
-    gpr_ref(&r->pending_queries);
-    ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
-  }
-  ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  grpc_ares_ev_driver_start(exec_ctx, ev_driver);
-  grpc_ares_request_unref(exec_ctx, r);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(start_resolving, r,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
   return;
 
 error_cleanup:
