@@ -87,10 +87,11 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 if (MSVC)
+  include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
-  # needed to compile boringssl
-  add_definitions(/wd4464 /wd4623 /wd4668 /wd4701 /wd4702 /wd4777 /wd5027)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
@@ -3321,7 +3322,7 @@ target_link_libraries(qps
 
 endif (gRPC_BUILD_TESTS)
 
-add_library(grpc_csharp_ext
+add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
@@ -10829,13 +10830,6 @@ endif (gRPC_BUILD_TESTS)
 
 
 
-
-if (gRPC_INSTALL)
-  install(EXPORT gRPCTargets
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-    NAMESPACE gRPC::
-  )
-endif()
 
 foreach(_config gRPCConfig gRPCConfigVersion)
   configure_file(tools/cmake/${_config}.cmake.in
