@@ -2452,7 +2452,9 @@
     ]
   }, 
   {
-    "args": [], 
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
     "ci_platforms": [
       "linux", 
       "mac", 

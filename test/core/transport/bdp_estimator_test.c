@@ -124,7 +124,8 @@ static void test_get_estimate_random_values(size_t n) {
   grpc_bdp_estimator est;
   grpc_bdp_estimator_init(&est, "test");
   int min = INT_MAX;
-  int max = INT_MIN;
+  int max = 65535;  // Windows rand() has limited range, make sure the ASSERT
+                    // passes
   for (size_t i = 0; i < n; i++) {
     int sample = rand();
     if (sample < min) min = sample;
