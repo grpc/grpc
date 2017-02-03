@@ -33,7 +33,17 @@ import os
 import subprocess
 import sys
 
+import python_utils.jobset as jobset
+import python_utils.start_port_server as start_port_server
+
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
+
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+if not os.path.exists('reports'):
+  os.makedirs('reports')
+
+port_server_port = 32766
+start_port_server.start_port_server(port_server_port)
 
 def fnize(s):
   out = ''
@@ -44,10 +54,6 @@ def fnize(s):
     else:
       out += c
   return out
-
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-if not os.path.exists('reports'):
-  os.makedirs('reports')
 
 # index html
 index_html = """
@@ -66,6 +72,9 @@ def link(txt, tgt):
   global index_html
   index_html += "<p><a href=\"%s\">%s</a></p>\n" % (tgt, txt)
 
+benchmarks = []
+profile_analysis = []
+
 for bm_name in sys.argv[1:]:
   # generate latency profiles
   heading('Latency Profiles: %s' % bm_name)
@@ -75,13 +84,18 @@ for bm_name in sys.argv[1:]:
   for line in subprocess.check_output(['bins/basicprof/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
     link(line, '%s.txt' % fnize(line))
-    with open('reports/%s.txt' % fnize(line), 'w') as f:
-      f.write(subprocess.check_output(['bins/basicprof/%s' % bm_name,
-                                       '--benchmark_filter=^%s$' % line]))
-      f.write('\n***********************************************************\n')
-      f.write(subprocess.check_output([
-          sys.executable, 'tools/profiling/latency_profile/profile_analyzer.py',
-          '--source', 'latency_trace.txt', '--fmt', 'simple']))
+    benchmarks.append(
+        jobset.JobSpec(['bins/basicprof/%s' % bm_name, '--benchmark_filter=^%s$' % line],
+                       environ={'LATENCY_TRACE': '%s.trace' % fnize(line)}))
+    profile_analysis.append(
+        jobset.JobSpec([sys.executable,
+                        'tools/profiling/latency_profile/profile_analyzer.py',
+                        '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
+                        '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
+  
+  jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
+             add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+  jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
 
   # generate flamegraphs
   heading('Flamegraphs: %s' % bm_name)
