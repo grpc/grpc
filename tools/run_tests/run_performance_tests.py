@@ -591,12 +591,13 @@ if perf_cmd and not args.skip_generate_flamegraphs:
   # write the index fil to the output dir, with all profiles from all scenarios/workers
   report_utils.render_perf_profiling_results('%s/index.html' % args.flame_graph_reports, profile_output_files)
 
+report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
+                                     suite_name='benchmarks')
+
 if total_scenario_failures > 0 or qps_workers_killed > 0:
   print('%s scenarios failed and %s qps worker jobs killed' % (total_scenario_failures, qps_workers_killed))
   sys.exit(1)
 
-report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
-                                     suite_name='benchmarks')
 if perf_report_failures > 0:
   print('%s perf profile collection jobs failed' % perf_report_failures)
   sys.exit(1)
