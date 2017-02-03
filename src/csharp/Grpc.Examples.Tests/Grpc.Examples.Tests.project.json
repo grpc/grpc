@@ -4,5 +4,11 @@
   },
   "runtimes": {
     "win": { }
+  },
+  "dependencies": {
+    "Google.Protobuf": "3.0.0-beta3",
+    "Ix-Async": "1.2.5",
+    "NUnit": "3.2.0",
+    "NUnitLite": "3.2.0"
   }
 }

@@ -4,5 +4,10 @@
   },
   "runtimes": {
     "win": { }
+  },
+  "dependencies": {
+    "Newtonsoft.Json": "7.0.1",
+    "NUnit": "3.2.0",
+    "NUnitLite": "3.2.0"
   }
 }
