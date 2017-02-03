@@ -42,7 +42,14 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+static void destroy_context(void *c) {}
+
+void grpc_call_set_lb_cost_context(grpc_call *call, grpc_lb_cost_context *ctx) {
+  grpc_call_context_set(call, GRPC_CONTEXT_LB_COST, ctx, destroy_context);
+}
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
