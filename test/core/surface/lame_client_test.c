@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   grpc_slice host = grpc_slice_from_static_string("anywhere");
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   grpc_slice_from_static_string("/Foo"), &host,
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
+                                  grpc_timeout_seconds_to_deadline(100), NULL);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 

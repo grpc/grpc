@@ -7669,8 +7669,10 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_debug_macros"
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
@@ -7933,7 +7935,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/Cronet/bidirectional_stream_c.h"
+      "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -8145,6 +8147,7 @@
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
+      "include/grpc++/impl/codegen/metadata_map.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 
@@ -8179,6 +8182,7 @@
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
+      "include/grpc++/impl/codegen/metadata_map.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 

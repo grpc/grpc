@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
   grpc_call *call1 =
       grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
-                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
+                               grpc_timeout_seconds_to_deadline(20), NULL);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
   grpc_call *call2 =
       grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
-                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
+                               grpc_timeout_seconds_to_deadline(20), NULL);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;

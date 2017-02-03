@@ -34,8 +34,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include <unistd.h>
-
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
