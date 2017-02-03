@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef DEBUGGER_MACROS_H
-#define DEBUGGER_MACROS_H
+#ifndef GRPC_CORE_EXT_DEBUG_DEBUGGER_MACROS_H
+#define GRPC_CORE_EXT_DEBUG_DEBUGGER_MACROS_H
 
 void grpc_summon_debugger_macros();
 
-#endif
+#endif /* GRPC_CORE_EXT_DEBUG_DEBUGGER_MACROS_H */
