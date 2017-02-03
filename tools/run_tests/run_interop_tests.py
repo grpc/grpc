@@ -830,7 +830,7 @@ if not args.use_docker and servers:
 
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      iter(_LANGUAGES.keys()) if x == 'all' else [x]
                       for x in args.language))
 
 http2Interop = Http2Client() if args.http2_interop else None
@@ -863,7 +863,7 @@ if args.use_docker:
     else:
       jobset.message('FAILED', 'Failed to build interop docker images.',
                      do_newline=True)
-      for image in docker_images.itervalues():
+      for image in iter(docker_images.values()):
         dockerjob.remove_image(image, skip_nonexistent=True)
       sys.exit(1)
 
@@ -975,7 +975,7 @@ try:
 
   if not jobs:
     print('No jobs to run.')
-    for image in docker_images.itervalues():
+    for image in iter(docker_images.values()):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
@@ -1004,8 +1004,8 @@ finally:
     if not job.is_running():
       print('Server "%s" has exited prematurely.' % server)
 
-  dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
+  dockerjob.finish_jobs([j for j in iter(server_jobs.values())])
 
-  for image in docker_images.itervalues():
+  for image in iter(docker_images.values()):
     print('Removing docker image %s' % image)
     dockerjob.remove_image(image)
