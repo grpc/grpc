@@ -353,11 +353,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded);
 
-  /* The call may be cancelled after the server has sent its status but before
-   * the client has received it. This means that we should see strictly more
-   * failures on the client than on the server. */
-  GPR_ASSERT(cancelled_calls_on_client >= cancelled_calls_on_server);
-
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
