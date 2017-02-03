@@ -121,19 +121,19 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   if (metadata) {
     statusMetadata = metadata;
   }
-  status.metadata = statusMetadata._getCoreRepresentation();
-  if (!call.metadataSent) {
-    end_batch[grpc.opType.SEND_INITIAL_METADATA] =
-        (new Metadata())._getCoreRepresentation();
-    call.metadataSent = true;
-  }
   var message;
   try {
     message = serialize(value);
   } catch (e) {
     e.code = grpc.status.INTERNAL;
-    handleError(e);
+    handleError(call, e);
     return;
+  }
+  status.metadata = statusMetadata._getCoreRepresentation();
+  if (!call.metadataSent) {
+    end_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
+    call.metadataSent = true;
   }
   message.grpcWriteFlags = flags;
   end_batch[grpc.opType.SEND_MESSAGE] = message;
@@ -280,11 +280,6 @@ function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
   var self = this;
-  if (!this.call.metadataSent) {
-    batch[grpc.opType.SEND_INITIAL_METADATA] =
-        (new Metadata())._getCoreRepresentation();
-    this.call.metadataSent = true;
-  }
   var message;
   try {
     message = this.serialize(chunk);
@@ -292,6 +287,11 @@ function _write(chunk, encoding, callback) {
     e.code = grpc.status.INTERNAL;
     callback(e);
     return;
+  }
+  if (!this.call.metadataSent) {
+    batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
+    this.call.metadataSent = true;
   }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
