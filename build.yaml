@@ -2955,6 +2955,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --benchmark_min_time=0
   platforms:
   - mac
   - linux
