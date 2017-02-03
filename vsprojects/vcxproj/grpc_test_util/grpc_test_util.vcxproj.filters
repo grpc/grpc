@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -60,9 +63,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
       <Filter>test\core\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\debug\debugger_macros.c">
-      <Filter>src\core\ext\debug</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
@@ -415,132 +415,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\channel_connectivity.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_plugin.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\default_initial_connect_string.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_plugin.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\parsing.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_lists.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
-      <Filter>src\core\ext\transport\chttp2\alpn</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer.h">
@@ -650,6 +524,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
@@ -673,9 +550,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">
       <Filter>test\core\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\debug\debugger_macros.h">
-      <Filter>src\core\ext\debug</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
@@ -992,117 +866,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\internal.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h">
-      <Filter>src\core\ext\transport\chttp2\alpn</Filter>
-    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1123,27 +886,6 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{f7bfac91-5eb2-dea7-4601-6c63edbbf997}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext">
-      <UniqueIdentifier>{5db70e06-741d-708c-bf0a-b59f8ca1f8bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\client_channel">
-      <UniqueIdentifier>{7f75a084-6bc4-e813-f85b-120148aa35da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\debug">
-      <UniqueIdentifier>{88f64b2c-ca67-05ef-c15b-8ab420357a2a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport">
-      <UniqueIdentifier>{b5f17b17-8012-87c9-dfb2-428dd29d0b94}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\chttp2">
-      <UniqueIdentifier>{608f56aa-d257-f25b-14aa-1776a771defd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\chttp2\alpn">
-      <UniqueIdentifier>{49d381db-172f-9765-4135-d7a10c4485bf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\chttp2\transport">
-      <UniqueIdentifier>{4395ba2e-6b6d-ea05-8a1e-915b8f0f85f6}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{f4e8c61e-1ca6-0fdd-7b5e-b7f9a30c9a21}</UniqueIdentifier>
