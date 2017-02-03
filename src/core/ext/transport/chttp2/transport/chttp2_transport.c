@@ -2037,7 +2037,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
 
   /* add some small lookahead to keep pipelines flowing */
   GPR_ASSERT(max_recv_bytes <= UINT32_MAX - initial_window_size);
-  if (s->incoming_window_delta < max_recv_bytes) {
+  if (s->incoming_window_delta < max_recv_bytes && !s->read_closed) {
     uint32_t add_max_recv_bytes =
         (uint32_t)(max_recv_bytes - s->incoming_window_delta);
     grpc_chttp2_stream_write_type write_type =
