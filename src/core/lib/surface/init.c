@@ -201,6 +201,7 @@ void grpc_init(void) {
     grpc_cq_event_timeout_trace = 1;
     grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
     grpc_register_tracer("resource_quota", &grpc_resource_quota_trace);
+    grpc_register_tracer("call_error", &grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
 #endif

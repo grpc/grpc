@@ -113,7 +113,7 @@ static void server_thread(void *arg) {
   // sleeping between polls.
   int retries = 10;
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
-    const gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
+    const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
   }
@@ -122,7 +122,7 @@ static void server_thread(void *arg) {
   grpc_server_shutdown_and_notify(server, cq, NULL);
   grpc_completion_queue_shutdown(cq);
 
-  const gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
