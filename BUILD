@@ -1040,7 +1040,7 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
-        "third_party/Cronet/bidirectional_stream_c.h",
+        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1185,6 +1185,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/core_codegen_interface.h",
         "include/grpc++/impl/codegen/create_auth_context.h",
         "include/grpc++/impl/codegen/grpc_library.h",
+        "include/grpc++/impl/codegen/metadata_map.h",
         "include/grpc++/impl/codegen/method_handler_impl.h",
         "include/grpc++/impl/codegen/rpc_method.h",
         "include/grpc++/impl/codegen/rpc_service_method.h",
@@ -1193,6 +1194,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/server_context.h",
         "include/grpc++/impl/codegen/server_interface.h",
         "include/grpc++/impl/codegen/service_type.h",
+        "include/grpc++/impl/codegen/slice.h",
         "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/status_code_enum.h",
         "include/grpc++/impl/codegen/status_helper.h",

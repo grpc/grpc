@@ -37,7 +37,7 @@ class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest
 {
     public function setUp()
     {
-        self::$client = new math\MathClient(
+        self::$client = new Math\MathClient(
         getenv('GRPC_TEST_HOST'),
         ['credentials' => Grpc\ChannelCredentials::createInsecure(),
          'update_metadata' => function ($a_hash,
