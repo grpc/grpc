@@ -491,7 +491,8 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       }
 
       // Send 'max_ping_pongs' number of ping pong messages
-      while (state.iterations() < max_ping_pongs) {
+      int ping_pong_cnt = 0;
+      while (ping_pong_cnt < max_ping_pongs) {
         request_rw->Write(send_request, tag(0));   // Start client send
         response_rw.Read(&recv_request, tag(1));   // Start server recv
         request_rw->Read(&recv_response, tag(2));  // Start client recv
@@ -510,6 +511,8 @@ static void BM_StreamingPingPong(benchmark::State& state) {
           GPR_ASSERT(need_tags & (1 << i));
           need_tags &= ~(1 << i);
         }
+
+        ping_pong_cnt++;
       }
 
       request_rw->WritesDone(tag(0));
@@ -828,20 +831,26 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
 // only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
   int msg_size = 0;
-  int num_ping_pongs = 0;
-  for (msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
-    for (num_ping_pongs = 0; num_ping_pongs <= 2; num_ping_pongs++) {
-      b->Args({msg_size, num_ping_pongs});
-    }
+
+  b->Args({0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
+
+  for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
+       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+    b->Args({msg_size, 1});
+    b->Args({msg_size, 2});
   }
 }
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
     ->Apply(StreamingPingPongArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPong, TCP, NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongArgs);
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, TCP, NoOpMutator, NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 
 }  // namespace testing
