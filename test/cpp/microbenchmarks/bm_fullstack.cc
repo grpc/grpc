@@ -491,8 +491,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       }
 
       // Send 'max_ping_pongs' number of ping pong messages
-      int ping_pong_cnt = 0;
-      while (ping_pong_cnt < max_ping_pongs) {
+      while (state.iterations() < max_ping_pongs) {
         request_rw->Write(send_request, tag(0));   // Start client send
         response_rw.Read(&recv_request, tag(1));   // Start server recv
         request_rw->Read(&recv_response, tag(2));  // Start client recv
@@ -511,8 +510,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
           GPR_ASSERT(need_tags & (1 << i));
           need_tags &= ~(1 << i);
         }
-
-        ping_pong_cnt++;
       }
 
       request_rw->WritesDone(tag(0));
@@ -543,7 +540,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   const int msg_size = state.range(0);
-  int ping_pong_cnt = 0;
 
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
@@ -602,8 +598,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
         GPR_ASSERT(need_tags & (1 << i));
         need_tags &= ~(1 << i);
       }
-
-      ping_pong_cnt++;
     }
 
     request_rw->WritesDone(tag(0));
@@ -624,7 +618,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(msg_size * state.iterations() * ping_pong_cnt * 2);
+  state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
 
 template <class Fixture>
@@ -835,8 +829,7 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
 static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
   int msg_size = 0;
   int num_ping_pongs = 0;
-  for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
-       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+  for (msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
     for (num_ping_pongs = 0; num_ping_pongs <= 2; num_ping_pongs++) {
       b->Args({msg_size, num_ping_pongs});
     }
