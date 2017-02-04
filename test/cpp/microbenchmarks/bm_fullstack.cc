@@ -830,6 +830,8 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, SockPair)
 BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
     ->Range(0, 128 * 1024 * 1024);
 
+// Generate Args for StreamingPingPong benchmarks. Currently generates args for
+// only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
   int msg_size = 0;
   int num_ping_pongs = 0;
