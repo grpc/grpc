@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,9 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
+#ifndef GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
+#define GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 
-#include "src/core/lib/channel/channel_stack_builder.h"
+void grpc_summon_debugger_macros();
 
-extern const grpc_channel_filter grpc_connected_filter;
-
-bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
-                               grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
-
-/* Debug helper to dig the transport stream out of a call element */
-grpc_stream *grpc_connected_channel_get_stream(grpc_call_element *elem);
-
-#endif /* GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H */
+#endif /* GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H */
