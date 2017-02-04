@@ -2046,14 +2046,15 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (int64_t)have_already) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
     }
-    if (s->incoming_window_delta - s->announce_window >
-        -(int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
-    }
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
+    if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
+            (int64_t)s->announce_window >
+        (int64_t)initial_window_size / 2) {
+      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
+    }
     grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
                                 "read_incoming_stream");
   }
