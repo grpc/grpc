@@ -3753,6 +3753,10 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: public_headers_must_be_c89
   build: test
   language: c89
