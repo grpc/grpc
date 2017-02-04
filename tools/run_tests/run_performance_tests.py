@@ -96,16 +96,18 @@ def create_qpsworker_job(language, shortname=None, port=10000, remote_host=None,
     # specify -o output file so perf.data gets collected when worker stopped
     cmdline = perf_cmd + ['-o', '%s-perf.data' % perf_file_base_name] + cmdline
 
+  worker_timeout = 3 * 60
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     ssh_cmd = ['ssh']
+    cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
     ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && %s' % ' '.join(cmdline)])
     cmdline = ssh_cmd
 
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=5*60,  # workers get restarted after each scenario
+      timeout_seconds=worker_timeout,  # workers get restarted after each scenario
       verbose_success=True)
   return QpsWorkerJob(jobspec, language, host_and_port, perf_file_base_name)
 
