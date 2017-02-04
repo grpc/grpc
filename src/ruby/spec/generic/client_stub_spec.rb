@@ -1,3 +1,4 @@
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -410,6 +411,30 @@ describe 'ClientStub' do
       end
 
       it_behaves_like 'bidi streaming'
+    end
+  end
+
+  describe 'creating a stub with a channel that is insecure' do
+    it 'attempts to create a call with call creds should fail as invalid' do
+      server_port = create_test_server
+      host = "localhost:#{server_port}"
+      request =  'request'
+      response = 'response'
+      metadata = { k1: 'v1', k2: 'v2' }
+      creds_callback_md = { k3: 'k3' }
+      server_thd = run_request_response(request, response,
+                                        GRPC::Core::StatusCodes::OK,
+                                        metadata.merge(creds_callback_md))
+      @stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+
+      dummy_creds_callback = proc { creds_callback_md }
+      call_creds = GRPC::Core::CallCredentials.new(dummy_creds_callback)
+      expect do
+        @stub.request_response(@method, request, noop, noop,
+                               metadata: metadata,
+                               credentials: call_creds)
+      end.to raise_error(ArgumentError)
+      server_thd.kill
     end
   end
 
