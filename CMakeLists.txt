@@ -640,7 +640,9 @@ endif()
 add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
+endif()
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
@@ -9241,6 +9243,7 @@ target_link_libraries(thread_stress_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(writes_per_rpc_test
   test/cpp/performance/writes_per_rpc_test.cc
@@ -9274,6 +9277,7 @@ target_link_libraries(writes_per_rpc_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
