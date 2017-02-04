@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,41 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
+/*
+ * A collection of 'macros' that help navigating the grpc object hierarchy
+ * Not intended to be robust for main-line code, often cuts across abstraction
+ * boundaries.
+ */
 
-#include "src/core/lib/channel/channel_stack_builder.h"
+#include <stdio.h>
 
-extern const grpc_channel_filter grpc_connected_filter;
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/surface/call.h"
 
-bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
-                               grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
+void grpc_summon_debugger_macros() {}
 
-/* Debug helper to dig the transport stream out of a call element */
-grpc_stream *grpc_connected_channel_get_stream(grpc_call_element *elem);
+grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
+  grpc_call_stack *cs = grpc_call_get_call_stack(call);
+  for (;;) {
+    grpc_call_element *el = grpc_call_stack_element(cs, cs->count - 1);
+    if (el->filter == &grpc_client_channel_filter) {
+      grpc_subchannel_call *scc = grpc_client_channel_get_subchannel_call(el);
+      if (scc == NULL) {
+        fprintf(stderr, "No subchannel-call");
+        return NULL;
+      }
+      cs = grpc_subchannel_call_get_call_stack(scc);
+    } else if (el->filter == &grpc_connected_filter) {
+      return grpc_connected_channel_get_stream(el);
+    } else {
+      fprintf(stderr, "Unrecognized filter: %s", el->filter->name);
+      return NULL;
+    }
+  }
+}
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H */
+grpc_chttp2_stream *grpc_chttp2_stream_from_call(grpc_call *call) {
+  return (grpc_chttp2_stream *)grpc_transport_stream_from_call(call);
+}
