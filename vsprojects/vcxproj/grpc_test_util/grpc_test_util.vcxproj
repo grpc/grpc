@@ -285,6 +285,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.h" />
@@ -551,6 +552,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>

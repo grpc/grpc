@@ -31,47 +31,46 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
-#define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
-/* \file Simple PID controller.
-   Implements a proportional-integral-derivative controller.
-   Used when we want to iteratively control a variable to converge some other
-   observed value to a 'set-point'.
-   Gains can be set to adjust sensitivity to current error (p), the integral
-   of error (i), and the derivative of error (d). */
+#include <stdbool.h>
+#include <stdint.h>
 
-typedef struct {
-  double gain_p;
-  double gain_i;
-  double gain_d;
-  double initial_control_value;
-  double min_control_value;
-  double max_control_value;
-  double integral_range;
-} grpc_pid_controller_args;
+#define GRPC_BDP_SAMPLES 16
+#define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
-typedef struct {
-  double last_error;
-  double error_integral;
-  double last_control_value;
-  double last_dc_dt;
-  grpc_pid_controller_args args;
-} grpc_pid_controller;
+extern int grpc_bdp_estimator_trace;
 
-/** Initialize the controller */
-void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              grpc_pid_controller_args args);
+typedef enum {
+  GRPC_BDP_PING_UNSCHEDULED,
+  GRPC_BDP_PING_SCHEDULED,
+  GRPC_BDP_PING_STARTED
+} grpc_bdp_estimator_ping_state;
 
-/** Reset the controller: useful when things have changed significantly */
-void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
+typedef struct grpc_bdp_estimator {
+  grpc_bdp_estimator_ping_state ping_state;
+  int64_t accumulator;
+  int64_t estimate;
+  const char *name;
+} grpc_bdp_estimator;
 
-/** Update the controller: given a current error estimate, and the time since
-    the last update, returns a new control value */
-double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
-                                  double error, double dt);
+void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 
-/** Returns the last control value calculated */
-double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
+// Returns true if a reasonable estimate could be obtained
+bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
+                                     int64_t *estimate);
+// Returns true if the user should schedule a ping
+bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+                                           int64_t num_bytes);
+// Schedule a ping: call in response to receiving a true from
+// grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
+// transport (but not necessarily started)
+void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator);
+// Start a ping: call after calling grpc_bdp_estimator_schedule_ping and once
+// the ping is on the wire
+void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
+// Completes a previously started ping
+void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator);
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */
+#endif

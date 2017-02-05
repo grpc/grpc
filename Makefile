@@ -899,6 +899,7 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
+bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
@@ -1090,6 +1091,7 @@ streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
+writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
@@ -1259,6 +1261,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
@@ -1485,6 +1488,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
   $(BINDIR)/$(CONFIG)/boringssl_base64_test \
@@ -1587,6 +1591,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
 
 endif
 
@@ -1606,6 +1611,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bdp_estimator_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
@@ -1918,6 +1925,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing writes_per_rpc_test"
+	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -2729,6 +2738,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3037,6 +3047,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3336,6 +3347,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3561,6 +3573,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -4152,6 +4165,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -7963,6 +7977,38 @@ deps_bad_server_response_test: $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BDP_ESTIMATOR_TEST_SRC = \
+    test/core/transport/bdp_estimator_test.c \
+
+BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14723,6 +14769,49 @@ deps_thread_stress_test: $(THREAD_STRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(THREAD_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+WRITES_PER_RPC_TEST_SRC = \
+    test/cpp/performance/writes_per_rpc_test.cc \
+
+WRITES_PER_RPC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WRITES_PER_RPC_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: $(PROTOBUF_DEP) $(WRITES_PER_RPC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(WRITES_PER_RPC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/performance/writes_per_rpc_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_writes_per_rpc_test: $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
 endif
 endif
 

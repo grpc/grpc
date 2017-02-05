@@ -322,6 +322,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
+      <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
@@ -949,6 +952,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h">
       <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h">
+      <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h">
       <Filter>src\core\lib\transport</Filter>
