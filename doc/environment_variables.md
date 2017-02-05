@@ -35,6 +35,7 @@ some configuration as environment variables that can be set.
   A comma separated list of tracers that provide additional insight into how
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
+  - bdp_estimator - traces behavior of bdp estimation logic
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - combiner - traces combiner lock state
