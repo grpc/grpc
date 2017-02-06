@@ -205,9 +205,7 @@ def check_and_update_cythonization(extensions):
             base, file_ext = os.path.splitext(source)
             if file_ext == '.pyx':
                 generated_pyx_source = next((base + gen_ext
-                                             for gen_ext in (
-                                                 '.c',
-                                                 '.cpp',)
+                                             for gen_ext in ('.c', '.cpp',)
                                              if os.path.isfile(base + gen_ext)),
                                             None)
                 if generated_pyx_source:
