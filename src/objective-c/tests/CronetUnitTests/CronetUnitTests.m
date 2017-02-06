@@ -273,11 +273,11 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_destroy(cq);
 }
 
-- (void)packetCoalescing:(BOOL)use_coalescing {
+- (void)packetCoalescing:(BOOL)useCoalescing {
   grpc_arg arg;
   arg.key = GRPC_ARG_USE_CRONET_PACKET_COALESCING;
   arg.type = GRPC_ARG_INTEGER;
-  arg.value.integer = use_coalescing ? 1 : 0;
+  arg.value.integer = useCoalescing ? 1 : 0;
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   grpc_call *c;
   grpc_slice request_payload_slice =
@@ -418,7 +418,7 @@ unsigned int parse_h2_length(const char *field) {
           }
         }
 
-        XCTAssert(coalesced == use_coalescing);
+        XCTAssert(coalesced == useCoalescing);
         SSL_free(ssl);
         SSL_CTX_free(ctx);
         close(s);
