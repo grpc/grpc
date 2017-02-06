@@ -1,8 +1,4 @@
-# This file has been automatically generated from a template file.
-# Please make modifications to
-# `templates/gRPC-RxLibrary.podspec.template` instead. This file can be
-# regenerated from the template by running
-# `tools/buildgen/generate_projects.sh`.
+#!/bin/bash
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -33,30 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
-Pod::Spec.new do |s|
-  s.name     = 'gRPC-RxLibrary'
-  version = '1.1.1'
-  s.version  = version
-  s.summary  = 'Reactive Extensions library for iOS/OSX.'
-  s.homepage = 'http://www.grpc.io'
-  s.license  = 'New BSD'
-  s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-  s.source = {
-    :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{version}",
-  }
+SYSTEM=`uname | cut -f 1 -d_`
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+if [ "$SYSTEM" == "Darwin" ] ; then
+  # Workaround for crash during bundle install
+  # See suggestion in https://github.com/bundler/bundler/issues/3692
+  BUNDLE_SPECIFIC_PLATFORM=true bundle install
+else
+  bundle install
+fi
 
-  name = 'RxLibrary'
-  s.module_name = name
-  s.header_dir = name
-
-  src_dir = 'src/objective-c/RxLibrary'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
-  s.header_mappings_dir = "#{src_dir}"
-end

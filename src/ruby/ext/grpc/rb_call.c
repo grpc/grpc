@@ -641,7 +641,7 @@ static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
 
   for (i = 0; i < st->op_num; i++) {
     if (st->ops[i].op == GRPC_OP_SEND_MESSAGE) {
-      grpc_byte_buffer_destroy(st->ops[i].data.send_message);
+      grpc_byte_buffer_destroy(st->ops[i].data.send_message.send_message);
     }
   }
 }
@@ -673,8 +673,9 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
             st->send_metadata.metadata;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        st->ops[st->op_num].data.send_message = grpc_rb_s_to_byte_buffer(
-            RSTRING_PTR(this_value), RSTRING_LEN(this_value));
+        st->ops[st->op_num].data.send_message.send_message =
+            grpc_rb_s_to_byte_buffer(RSTRING_PTR(this_value),
+                                     RSTRING_LEN(this_value));
         st->ops[st->op_num].flags = st->write_flag;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -686,10 +687,11 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
             &st->ops[st->op_num], &st->send_trailing_metadata, this_value);
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        st->ops[st->op_num].data.recv_initial_metadata = &st->recv_metadata;
+        st->ops[st->op_num].data.recv_initial_metadata.recv_initial_metadata =
+            &st->recv_metadata;
         break;
       case GRPC_OP_RECV_MESSAGE:
-        st->ops[st->op_num].data.recv_message = &st->recv_message;
+        st->ops[st->op_num].data.recv_message.recv_message = &st->recv_message;
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         st->ops[st->op_num].data.recv_status_on_client.trailing_metadata =

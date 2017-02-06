@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0-pre1",
+  "version": "1.1.1",
   "title": "gRPC C# Auth",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "Grpc.Core": "1.1.0-pre1",
+    "Grpc.Core": "1.1.1",
     "Google.Apis.Auth": "1.16.0"
   },
   "frameworks": {

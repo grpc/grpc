@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.1.0-pre1'
+  version = '1.1.1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -853,12 +853,21 @@ Pod::Spec.new do |s|
 
   s.subspec 'Cronet-Implementation' do |ss|
     ss.header_mappings_dir = '.'
+
+    ss.dependency "#{s.name}/Interface", version
+    ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Cronet-Interface", version
+
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.c'
+                      'src/core/ext/transport/cronet/transport/cronet_transport.c',
+                      'third_party/Cronet/bidirectional_stream_c.h'
   end
 
   s.subspec 'Tests' do |ss|
     ss.header_mappings_dir = '.'
+
+    ss.dependency "#{s.name}/Interface", version
+    ss.dependency "#{s.name}/Implementation", version
 
     ss.source_files = 'test/core/end2end/cq_verifier.{c,h}',
                       'test/core/end2end/end2end_tests.{c,h}',
@@ -869,7 +878,5 @@ Pod::Spec.new do |s|
                       'test/core/util/port.h',
                       'test/core/util/port_posix.c',
                       'test/core/util/port_server_client.{c,h}'
-
-    ss.dependency 'CronetFramework'
   end
 end
