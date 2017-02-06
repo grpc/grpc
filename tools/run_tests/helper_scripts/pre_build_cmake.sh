@@ -1,4 +1,5 @@
-# Copyright 2017, Google Inc.
+#!/bin/bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,63 +28,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+set -ex
 
-cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "test_config.c",
-        "memory_counters.c",
-    ],
-    hdrs = [
-        "test_config.h",
-        "memory_counters.h",
-    ],
-    deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
-)
+cd $(dirname $0)/../../..
 
-cc_library(
-    name = "grpc_test_util",
-    srcs = [
-        "debugger_macros.c",
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port_posix.c",
-        "port_server_client.c",
-        "port_windows.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-        "grpc_profiler.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
-        "slice_splitter.h",
-        "test_tcp_server.h",
-    ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
-)
+mkdir -p cmake/build
+cd cmake/build
 
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
-)
-
-sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
-)
+# MSBUILD_CONFIG's values are suitable for cmake as well
+cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=${MSBUILD_CONFIG} ../..
