@@ -72,9 +72,10 @@ in the body.
 
 ---
 
-User Agent
+User Agent and Server headers
 
-* grpc-web-javascript/0.1
+* U-A: grpc-web-javascript/0.1
+* Server: grpc-web-gateway/0.1
 
 ---
 
