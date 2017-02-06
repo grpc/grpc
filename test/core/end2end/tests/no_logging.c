@@ -68,12 +68,19 @@ static void test_no_error_log(gpr_log_func_args *args) {
   }
 }
 
+static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+
+static void log_dispatcher_func(gpr_log_func_args *args) {
+  gpr_log_func log_func = (gpr_log_func)gpr_atm_no_barrier_load(&g_log_func);
+  log_func(args);
+}
+
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -81,7 +88,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -97,7 +104,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -118,7 +125,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -131,14 +139,15 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
   char *peer;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -162,7 +171,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -170,7 +179,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -201,7 +209,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -218,13 +227,14 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -241,7 +251,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 
   f = begin_test(config, "test_invoke_simple_request_with_no_error_logging",
                  NULL, NULL);
-  simple_request_body(f);
+  simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -252,10 +262,10 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
       begin_test(config, "test_invoke_10_simple_requests_with_no_error_logging",
                  NULL, NULL);
   for (i = 0; i < 10; i++) {
-    simple_request_body(f);
+    simple_request_body(config, f);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
-  simple_request_body(f);
+  simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -263,12 +273,12 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 static void test_no_error_logging_in_entire_process(
     grpc_end2end_test_config config) {
   int i;
-  gpr_set_log_function(test_no_error_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_error_log);
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }
   test_invoke_10_simple_requests(config);
-  gpr_set_log_function(gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 
 static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
@@ -276,18 +286,22 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_no_logging_in_last_request", NULL, NULL);
   for (i = 0; i < 10; i++) {
-    simple_request_body(f);
+    simple_request_body(config, f);
   }
-  gpr_set_log_function(test_no_log);
-  simple_request_body(f);
-  gpr_set_log_function(gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_log);
+  simple_request_body(config, f);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void no_logging(grpc_end2end_test_config config) {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+  grpc_tracer_set_enabled("all", 0);
+  gpr_set_log_function(log_dispatcher_func);
   test_no_logging_in_one_request(config);
   test_no_error_logging_in_entire_process(config);
+  gpr_set_log_function(gpr_default_log);
 }
 
 void no_logging_pre_init(void) {}

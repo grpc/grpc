@@ -115,11 +115,21 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['scenario']['clientConfig'] = json.dumps(scenario_result['scenario']['clientConfig'])
   scenario_result['scenario']['serverConfig'] = json.dumps(scenario_result['scenario']['serverConfig'])
   scenario_result['latencies'] = json.dumps(scenario_result['latencies'])
+  scenario_result['serverCpuStats'] = []
+  for stats in scenario_result['serverStats']:
+    scenario_result['serverCpuStats'].append(dict())
+    scenario_result['serverCpuStats'][-1]['totalCpuTime'] = stats.pop('totalCpuTime', None)
+    scenario_result['serverCpuStats'][-1]['idleCpuTime'] = stats.pop('idleCpuTime', None)
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
+    stats.pop('requestResults', None)
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
   scenario_result['clientSuccess'] = json.dumps(scenario_result['clientSuccess'])
   scenario_result['serverSuccess'] = json.dumps(scenario_result['serverSuccess'])
+  scenario_result['requestResults'] = json.dumps(scenario_result.get('requestResults', []))
+  scenario_result['serverCpuUsage'] = scenario_result['summary'].pop('serverCpuUsage', None)
+  scenario_result['summary'].pop('successfulRequestsPerSecond', None)
+  scenario_result['summary'].pop('failedRequestsPerSecond', None)
 
 
 def _populate_metadata_inplace(scenario_result):

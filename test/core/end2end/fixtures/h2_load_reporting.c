@@ -41,7 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -88,7 +88,11 @@ void chttp2_init_server_load_reporting(grpc_end2end_test_fixture *f,
   }
   server_args = grpc_channel_args_copy_and_add(server_args, &arg, 1);
   f->server = grpc_server_create(server_args, NULL);
-  grpc_channel_args_destroy(server_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
@@ -103,7 +107,9 @@ void chttp2_tear_down_load_reporting(grpc_end2end_test_fixture *f) {
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack+load_reporting",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_load_reporting, chttp2_init_client_load_reporting,
      chttp2_init_server_load_reporting, chttp2_tear_down_load_reporting},
 };

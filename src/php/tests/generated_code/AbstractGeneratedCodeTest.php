@@ -32,7 +32,11 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
-require_once dirname(__FILE__).'/math.php';
+
+// The following includes are needed when using protobuf 3.1.0
+// and will suppress warnings when using protobuf 3.2.0+
+@include_once dirname(__FILE__).'/math.pb.php';
+@include_once dirname(__FILE__).'/math_grpc_pb.php';
 
 abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 {
@@ -69,7 +73,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testClose()
     {
         self::$client->close();
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
     }
 
@@ -78,28 +82,28 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidMetadata()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
 
     public function testGetCallMetadata()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $this->assertTrue(is_array($call->getMetadata()));
     }
 
     public function testTimeout()
     {
-        $div_arg = new math\DivArgs();
-        $call = self::$client->Div($div_arg, [], ['timeout' => 100]);
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, [], ['timeout' => 1]);
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);
     }
 
     public function testCancel()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $call->cancel();
         list($response, $status) = $call->wait();
@@ -108,7 +112,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testCallCredentialsCallback()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, array(), array(
             'call_credentials_callback' => function ($context) {
                 return array();
@@ -121,7 +125,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testCallCredentialsCallback2()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
             function ($context) {
@@ -142,7 +146,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $invalid_client = new DummyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
     }
 
@@ -165,7 +169,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testWriteFlags()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, [],
@@ -179,7 +183,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testWriteFlagsServerStreaming()
     {
-        $fib_arg = new math\FibArgs();
+        $fib_arg = new Math\FibArgs();
         $fib_arg->setLimit(7);
         $call = self::$client->Fib($fib_arg, [],
                                    ['flags' => Grpc\WRITE_NO_COMPRESS]);
@@ -191,7 +195,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testWriteFlagsClientStreaming()
     {
         $call = self::$client->Sum();
-        $num = new math\Num();
+        $num = new Math\Num();
         $num->setNum(1);
         $call->write($num, ['flags' => Grpc\WRITE_NO_COMPRESS]);
         list($response, $status) = $call->wait();
@@ -201,7 +205,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testWriteFlagsBidiStreaming()
     {
         $call = self::$client->DivMany();
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call->write($div_arg, ['flags' => Grpc\WRITE_NO_COMPRESS]);
@@ -213,7 +217,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testSimpleRequest()
     {
-        $div_arg = new math\DivArgs();
+        $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg);
@@ -226,7 +230,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testServerStreaming()
     {
-        $fib_arg = new math\FibArgs();
+        $fib_arg = new Math\FibArgs();
         $fib_arg->setLimit(7);
         $call = self::$client->Fib($fib_arg);
         $this->assertTrue(is_string($call->getPeer()));
@@ -245,7 +249,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call = self::$client->Sum();
         $this->assertTrue(is_string($call->getPeer()));
         for ($i = 0; $i < 7; ++$i) {
-            $num = new math\Num();
+            $num = new Math\Num();
             $num->setNum($i);
             $call->write($num);
         }
@@ -259,7 +263,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call = self::$client->DivMany();
         $this->assertTrue(is_string($call->getPeer()));
         for ($i = 0; $i < 7; ++$i) {
-            $div_arg = new math\DivArgs();
+            $div_arg = new Math\DivArgs();
             $div_arg->setDividend(2 * $i + 1);
             $div_arg->setDivisor(2);
             $call->write($div_arg);
@@ -275,7 +279,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
 class DummyInvalidClient extends \Grpc\BaseStub
 {
-    public function InvalidUnaryCall(\math\DivArgs $argument,
+    public function InvalidUnaryCall(\Math\DivArgs $argument,
                                      $metadata = [],
                                      $options = [])
     {

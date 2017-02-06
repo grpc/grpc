@@ -8,6 +8,7 @@ objs
 # Python items
 cython_debug/
 python_build/
+python_format_venv/
 .coverage*
 .eggs
 htmlcov/
@@ -17,7 +18,7 @@ py27/
 py34/
 
 # Node installation output
-node_modules/
+node_modules
 src/node/extension_binary/
 
 # gcov coverage data
@@ -31,7 +32,7 @@ coverage
 # python compiled objects
 *.pyc
 
-#eclipse project files
+# eclipse project files
 .cproject
 .project
 .settings
@@ -96,10 +97,20 @@ DerivedData
 Pods/
 
 # Artifacts directory
-artifacts/
+/artifacts/
 
 # Git generated files for conflicting
 *.orig
 
 # IDE specific folder for JetBrains IDEs
 .idea/
+
+# Blaze files
+bazel-bin
+bazel-genfiles
+bazel-grpc
+bazel-out
+bazel-testlogs
+
+# Debug output
+gdb.txt

@@ -34,7 +34,9 @@
 #include "src/core/lib/support/string.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -120,11 +122,6 @@ char *gpr_dump(const char *buf, size_t len, uint32_t flags) {
   return out.data;
 }
 
-char *gpr_dump_slice(gpr_slice s, uint32_t flags) {
-  return gpr_dump((const char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s),
-                  flags);
-}
-
 int gpr_parse_bytes_to_uint32(const char *buf, size_t len, uint32_t *result) {
   uint32_t out = 0;
   uint32_t new;
@@ -194,6 +191,13 @@ int int64_ttoa(int64_t value, char *string) {
   return i;
 }
 
+int gpr_parse_nonnegative_int(const char *value) {
+  char *end;
+  long result = strtol(value, &end, 0);
+  if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
+  return (int)result;
+}
+
 char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
@@ -239,50 +243,6 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
   return out;
 }
 
-/** Finds the initial (\a begin) and final (\a end) offsets of the next
- * substring from \a str + \a read_offset until the next \a sep or the end of \a
- * str.
- *
- * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
-static int slice_find_separator_offset(const gpr_slice str, const char *sep,
-                                       const size_t read_offset, size_t *begin,
-                                       size_t *end) {
-  size_t i;
-  const uint8_t *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
-  const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
-  const size_t sep_len = strlen(sep);
-  if (str_len < sep_len) {
-    return 0;
-  }
-
-  for (i = 0; i <= str_len - sep_len; i++) {
-    if (memcmp(str_ptr + i, sep, sep_len) == 0) {
-      *begin = read_offset;
-      *end = read_offset + i;
-      return 1;
-    }
-  }
-  return 0;
-}
-
-void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst) {
-  const size_t sep_len = strlen(sep);
-  size_t begin, end;
-
-  GPR_ASSERT(sep_len > 0);
-
-  if (slice_find_separator_offset(str, sep, 0, &begin, &end) != 0) {
-    do {
-      gpr_slice_buffer_add_indexed(dst, gpr_slice_sub(str, begin, end));
-    } while (slice_find_separator_offset(str, sep, end + sep_len, &begin,
-                                         &end) != 0);
-    gpr_slice_buffer_add_indexed(
-        dst, gpr_slice_sub(str, end + sep_len, GPR_SLICE_LENGTH(str)));
-  } else { /* no sep found, add whole input */
-    gpr_slice_buffer_add_indexed(dst, gpr_slice_ref(str));
-  }
-}
-
 void gpr_strvec_init(gpr_strvec *sv) { memset(sv, 0, sizeof(*sv)); }
 
 void gpr_strvec_destroy(gpr_strvec *sv) {
@@ -303,4 +263,53 @@ void gpr_strvec_add(gpr_strvec *sv, char *str) {
 
 char *gpr_strvec_flatten(gpr_strvec *sv, size_t *final_length) {
   return gpr_strjoin((const char **)sv->strs, sv->count, final_length);
+}
+
+int gpr_stricmp(const char *a, const char *b) {
+  int ca, cb;
+  do {
+    ca = tolower(*a);
+    cb = tolower(*b);
+    ++a;
+    ++b;
+  } while (ca == cb && ca && cb);
+  return ca - cb;
+}
+
+static void add_string_to_split(const char *beg, const char *end, char ***strs,
+                                size_t *nstrs, size_t *capstrs) {
+  char *out = gpr_malloc((size_t)(end - beg) + 1);
+  memcpy(out, beg, (size_t)(end - beg));
+  out[end - beg] = 0;
+  if (*nstrs == *capstrs) {
+    *capstrs = GPR_MAX(8, 2 * *capstrs);
+    *strs = gpr_realloc(*strs, sizeof(*strs) * *capstrs);
+  }
+  (*strs)[*nstrs] = out;
+  ++*nstrs;
+}
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {
+  char *next;
+  *strs = NULL;
+  *nstrs = 0;
+  size_t capstrs = 0;
+  while ((next = strstr(input, sep))) {
+    add_string_to_split(input, next, strs, nstrs, &capstrs);
+    input = next + strlen(sep);
+  }
+  add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
+}
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
 }

@@ -43,15 +43,22 @@
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
+#import "GRPCConnectivityMonitor.h"
 #import "NSDictionary+GRPC.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 // TODO(jcanizales): Generate the version in a standalone header, from templates. Like
 // templates/src/core/surface/version.c.template .
-#define GRPC_OBJC_VERSION_STRING @"1.0.0"
+#define GRPC_OBJC_VERSION_STRING @"1.0.2"
 
 static NSMutableDictionary *kHostCache;
+
+// This connectivity monitor flushes the host cache when connectivity status
+// changes or when connection switch between Wifi and Cellular data, so that a
+// new call will use a new channel. Otherwise, a new call will still use the
+// cached channel which is no longer available and will cause gRPC to hang.
+static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
@@ -98,6 +105,17 @@ static NSMutableDictionary *kHostCache;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
+    }
+    // Keep a single monitor to flush the cache if the connectivity status changes
+    // Thread safety guarded by @synchronized(kHostCache)
+    if (!connectivityMonitor) {
+      connectivityMonitor =
+      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
+      void (^handler)() = ^{
+        [GRPCHost flushChannelCache];
+      };
+      [connectivityMonitor handleLossWithHandler:handler
+                         wifiStatusChangeHandler:handler];
     }
   }
   return self;
@@ -161,7 +179,7 @@ static NSMutableDictionary *kHostCache;
   NSData *rootsASCII;
   if (pemRootCerts != nil) {
     rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding
-                     allowLossyConversion:YES];
+                            allowLossyConversion:YES];
   } else {
     if (kDefaultRootsASCII == nil) {
       if (errorPtr) {
@@ -217,8 +235,10 @@ static NSMutableDictionary *kHostCache;
   }
 
   if (_responseSizeLimitOverride) {
-    args[@GRPC_ARG_MAX_MESSAGE_LENGTH] = _responseSizeLimitOverride;
+    args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
+  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
+  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
   return args;
 }
 
@@ -228,24 +248,24 @@ static NSMutableDictionary *kHostCache;
   BOOL useCronet = [GRPCCall isUsingCronet];
 #endif
   if (_secure) {
-      GRPCChannel *channel;
-      @synchronized(self) {
-        if (_channelCreds == nil) {
-          [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
-        }
-#ifdef GRPC_COMPILE_WITH_CRONET
-        if (useCronet) {
-          channel = [GRPCChannel secureCronetChannelWithHost:_address
-                                                 channelArgs:args];
-        } else
-#endif
-        {
-          channel = [GRPCChannel secureChannelWithHost:_address
-                                            credentials:_channelCreds
-                                            channelArgs:args];
-        }
+    GRPCChannel *channel;
+    @synchronized(self) {
+      if (_channelCreds == nil) {
+        [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
       }
-      return channel;
+#ifdef GRPC_COMPILE_WITH_CRONET
+      if (useCronet) {
+        channel = [GRPCChannel secureCronetChannelWithHost:_address
+                                               channelArgs:args];
+      } else
+#endif
+      {
+        channel = [GRPCChannel secureChannelWithHost:_address
+                                         credentials:_channelCreds
+                                         channelArgs:args];
+      }
+    }
+    return channel;
   } else {
     return [GRPCChannel insecureChannelWithHost:_address channelArgs:args];
   }

@@ -88,7 +88,7 @@ const void* census_log_read_next(size_t* bytes_available);
 */
 size_t census_log_remaining_space(void);
 
-/* Returns the number of times gprc_stats_log_start_write() failed due to
+/* Returns the number of times grpc_stats_log_start_write() failed due to
    out-of-space. */
 int64_t census_log_out_of_space_count(void);
 

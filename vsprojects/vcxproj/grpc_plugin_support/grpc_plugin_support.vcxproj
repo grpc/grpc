@@ -161,6 +161,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_helpers-inl.h" />
@@ -175,6 +177,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\compiler\node_generator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_generator.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\php_generator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\python_generator.cc">
     </ClCompile>

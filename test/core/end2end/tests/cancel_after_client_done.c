@@ -51,7 +51,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -59,7 +59,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -75,7 +75,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -113,20 +113,24 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -140,7 +144,6 @@ static void test_cancel_after_accept_and_writes_closed(
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -150,7 +153,7 @@ static void test_cancel_after_accept_and_writes_closed(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -159,12 +162,12 @@ static void test_cancel_after_accept_and_writes_closed(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -180,7 +183,7 @@ static void test_cancel_after_accept_and_writes_closed(
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -195,7 +198,7 @@ static void test_cancel_after_accept_and_writes_closed(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload;
+  op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -220,7 +223,7 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);

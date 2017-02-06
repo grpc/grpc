@@ -33,6 +33,8 @@
 
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -40,8 +42,8 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -59,7 +61,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     gpr_event_set(ev_, (void*)1);
     while (!context->IsCancelled()) {
     }
@@ -74,7 +76,7 @@ class ShutdownTest : public ::testing::Test {
  public:
   ShutdownTest() : shutdown_(false), service_(&ev_) { gpr_event_init(&ev_); }
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     server_ = SetUpServer(port_);
   }
@@ -89,7 +91,7 @@ class ShutdownTest : public ::testing::Test {
     return server;
   }
 
-  void TearDown() GRPC_OVERRIDE { GPR_ASSERT(shutdown_); }
+  void TearDown() override { GPR_ASSERT(shutdown_); }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);

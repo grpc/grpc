@@ -44,6 +44,9 @@
 extern int grpc_cq_pluck_trace;
 extern int grpc_cq_event_timeout_trace;
 extern int grpc_trace_operation_failures;
+#ifndef NDEBUG
+extern int grpc_trace_pending_tags;
+#endif
 
 typedef struct grpc_cq_completion {
   /** user supplied tag */
@@ -56,6 +59,8 @@ typedef struct grpc_cq_completion {
   /** next pointer; low bit is used to indicate success or not */
   uintptr_t next;
 } grpc_cq_completion;
+
+//#define GRPC_CQ_REF_COUNT_DEBUG
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,

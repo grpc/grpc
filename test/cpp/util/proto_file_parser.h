@@ -64,9 +64,9 @@ class ProtoFileParser {
   // descriptor database queries.
   grpc::string GetFullMethodName(const grpc::string& method);
 
-  // Formated method name is in the form of /Service/Method, it's good to be
+  // Formatted method name is in the form of /Service/Method, it's good to be
   // used as the argument of Stub::Call()
-  grpc::string GetFormatedMethodName(const grpc::string& method);
+  grpc::string GetFormattedMethodName(const grpc::string& method);
 
   grpc::string GetSerializedProtoFromMethod(
       const grpc::string& method, const grpc::string& text_format_proto,
@@ -83,6 +83,8 @@ class ProtoFileParser {
   grpc::string GetTextFormatFromMessageType(
       const grpc::string& message_type_name,
       const grpc::string& serialized_proto);
+
+  bool IsStreaming(const grpc::string& method, bool is_request);
 
   bool HasError() const { return has_error_; }
 
@@ -104,6 +106,7 @@ class ProtoFileParser {
   std::unique_ptr<protobuf::DynamicMessageFactory> dynamic_factory_;
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
+  std::unordered_map<grpc::string, grpc::string> known_methods_;
   std::vector<const protobuf::ServiceDescriptor*> service_desc_list_;
 };
 

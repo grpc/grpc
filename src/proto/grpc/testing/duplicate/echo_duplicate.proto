@@ -38,4 +38,5 @@ package grpc.testing.duplicate;
 
 service EchoTestService {
   rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
 }

@@ -148,8 +148,11 @@
 
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h" />
@@ -162,9 +165,15 @@
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
     </ClCompile>
@@ -179,6 +188,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>

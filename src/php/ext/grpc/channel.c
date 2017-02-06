@@ -125,7 +125,7 @@ void php_grpc_read_args_array(zval *args_array,
  * "credentials" key mapping to a ChannelCredentials object, a secure channel
  * will be created with those credentials.
  * @param string $target The hostname to associate with this channel
- * @param array $args The arguments to pass to the Channel (optional)
+ * @param array $args_array The arguments to pass to the Channel
  */
 PHP_METHOD(Channel, __construct) {
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
@@ -182,7 +182,7 @@ PHP_METHOD(Channel, getTarget) {
 
 /**
  * Get the connectivity state of the channel
- * @param bool (optional) try to connect on the channel
+ * @param bool $try_to_connect Try to connect on the channel (optional)
  * @return long The grpc connectivity state
  */
 PHP_METHOD(Channel, getConnectivityState) {
@@ -202,8 +202,8 @@ PHP_METHOD(Channel, getConnectivityState) {
 
 /**
  * Watch the connectivity state of the channel until it changed
- * @param long The previous connectivity state of the channel
- * @param Timeval The deadline this function should wait until
+ * @param long $last_state The previous connectivity state of the channel
+ * @param Timeval $deadline_obj The deadline this function should wait until
  * @return bool If the connectivity state changes from last_state
  *              before deadline
  */
@@ -233,6 +233,7 @@ PHP_METHOD(Channel, watchConnectivityState) {
 
 /**
  * Close the channel
+ * @return void
  */
 PHP_METHOD(Channel, close) {
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());

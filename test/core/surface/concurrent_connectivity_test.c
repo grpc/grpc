@@ -31,6 +31,12 @@
  *
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <memory.h>
 #include <stdio.h>
 
@@ -42,6 +48,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -63,11 +70,13 @@ void create_loop_destroy(void *addr) {
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
-      gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(DELAY_MILLIS);
+      gpr_timespec later_time =
+          grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
-      gpr_timespec poll_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(POLL_MILLIS);
+      gpr_timespec poll_time =
+          grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, NULL).type ==
                  GRPC_OP_COMPLETE);
     }
@@ -98,9 +107,9 @@ void server_thread(void *vargs) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   struct server_thread_args *args = (struct server_thread_args *)vargs;
-  (void)acceptor;
-  grpc_endpoint_shutdown(exec_ctx, tcp);
+  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
 }
@@ -109,16 +118,15 @@ void bad_server_thread(void *vargs) {
   struct server_thread_args *args = (struct server_thread_args *)vargs;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_storage *addr = (struct sockaddr_storage *)resolved_addr.addr;
   int port;
   grpc_tcp_server *s;
-  grpc_error *error = grpc_tcp_server_create(NULL, NULL, &s);
+  grpc_error *error = grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  memset(&addr, 0, sizeof(addr));
-  addr.ss_family = AF_INET;
-  error =
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len, &port);
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  addr->ss_family = AF_INET;
+  error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
@@ -223,9 +231,9 @@ int main(int argc, char **argv) {
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_shutdown(
-      &exec_ctx, args.pollset,
-      grpc_closure_create(done_pollset_shutdown, args.pollset));
+  grpc_pollset_shutdown(&exec_ctx, args.pollset,
+                        grpc_closure_create(done_pollset_shutdown, args.pollset,
+                                            grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();

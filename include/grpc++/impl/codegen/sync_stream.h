@@ -42,7 +42,6 @@
 #include <grpc++/impl/codegen/server_context.h>
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/log.h>
 
 namespace grpc {
 
@@ -132,7 +131,7 @@ class ClientReaderInterface : public ClientStreamingInterface,
 };
 
 template <class R>
-class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
+class ClientReader final : public ClientReaderInterface<R> {
  public:
   /// Blocking create a stream and write the first request out.
   template <class W>
@@ -151,7 +150,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() GRPC_OVERRIDE {
+  void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -160,12 +159,12 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_.max_message_size();
+  bool NextMessageSize(uint32_t* sz) override {
+    *sz = INT_MAX;
     return true;
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE {
+  bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -175,7 +174,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
-  Status Finish() GRPC_OVERRIDE {
+  Status Finish() override {
     CallOpSet<CallOpClientRecvStatus> ops;
     Status status;
     ops.ClientRecvStatus(context_, &status);
@@ -231,7 +230,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const W& msg, const WriteOptions& options) override {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
@@ -240,7 +239,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  bool WritesDone() GRPC_OVERRIDE {
+  bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
@@ -248,7 +247,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   }
 
   /// Read the final response and wait for the final status.
-  Status Finish() GRPC_OVERRIDE {
+  Status Finish() override {
     Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -288,7 +287,7 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
 };
 
 template <class W, class R>
-class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
+class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
   /// Blocking create a stream.
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
@@ -301,7 +300,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() GRPC_OVERRIDE {
+  void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -310,12 +309,12 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_.max_message_size();
+  bool NextMessageSize(uint32_t* sz) override {
+    *sz = INT_MAX;
     return true;
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE {
+  bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -326,21 +325,21 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const W& msg, const WriteOptions& options) override {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) return false;
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops);
   }
 
-  bool WritesDone() GRPC_OVERRIDE {
+  bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops);
   }
 
-  Status Finish() GRPC_OVERRIDE {
+  Status Finish() override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -364,11 +363,11 @@ class ServerReaderInterface : public ServerStreamingInterface,
                               public ReaderInterface<R> {};
 
 template <class R>
-class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
+class ServerReader final : public ServerReaderInterface<R> {
  public:
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() GRPC_OVERRIDE {
+  void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -382,12 +381,12 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_->max_message_size();
+  bool NextMessageSize(uint32_t* sz) override {
+    *sz = INT_MAX;
     return true;
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE {
+  bool Read(R* msg) override {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
@@ -405,11 +404,11 @@ class ServerWriterInterface : public ServerStreamingInterface,
                               public WriterInterface<W> {};
 
 template <class W>
-class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
+class ServerWriter final : public ServerWriterInterface<W> {
  public:
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() GRPC_OVERRIDE {
+  void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -424,7 +423,7 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const W& msg, const WriteOptions& options) override {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
@@ -455,7 +454,7 @@ class ServerReaderWriterInterface : public ServerStreamingInterface,
 // Actual implementation of bi-directional streaming
 namespace internal {
 template <class W, class R>
-class ServerReaderWriterBody GRPC_FINAL {
+class ServerReaderWriterBody final {
  public:
   ServerReaderWriterBody(Call* call, ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -475,7 +474,7 @@ class ServerReaderWriterBody GRPC_FINAL {
   }
 
   bool NextMessageSize(uint32_t* sz) {
-    *sz = call_->max_message_size();
+    *sz = INT_MAX;
     return true;
   }
 
@@ -511,20 +510,20 @@ class ServerReaderWriterBody GRPC_FINAL {
 
 // class to represent the user API for a bidirectional streaming call
 template <class W, class R>
-class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
+class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
 
-  void SendInitialMetadata() GRPC_OVERRIDE { body_.SendInitialMetadata(); }
+  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE { return body_.Read(msg); }
+  bool Read(R* msg) override { return body_.Read(msg); }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const W& msg, const WriteOptions& options) override {
     return body_.Write(msg, options);
   }
 
@@ -539,22 +538,22 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
 /// the \a NextMessageSize method to determine an upper-bound on the size of
 /// the message.
 /// A key difference relative to streaming: ServerUnaryStreamer
-///  must have exactly 1 Read and exactly 1 Write, in that order, to function
+/// must have exactly 1 Read and exactly 1 Write, in that order, to function
 /// correctly. Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
-class ServerUnaryStreamer GRPC_FINAL
+class ServerUnaryStreamer final
     : public ServerReaderWriterInterface<ResponseType, RequestType> {
  public:
   ServerUnaryStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 
-  void SendInitialMetadata() GRPC_OVERRIDE { body_.SendInitialMetadata(); }
+  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
-  bool Read(RequestType* request) GRPC_OVERRIDE {
+  bool Read(RequestType* request) override {
     if (read_done_) {
       return false;
     }
@@ -564,7 +563,7 @@ class ServerUnaryStreamer GRPC_FINAL
 
   using WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
-             const WriteOptions& options) GRPC_OVERRIDE {
+             const WriteOptions& options) override {
     if (write_done_ || !read_done_) {
       return false;
     }
@@ -576,6 +575,43 @@ class ServerUnaryStreamer GRPC_FINAL
   internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
   bool read_done_;
   bool write_done_;
+};
+
+/// A class to represent a flow-controlled server-side streaming call.
+/// This is something of a hybrid between server-side and bidi streaming.
+/// This is invoked through a server-side streaming call on the client side,
+/// but the server responds to it as though it were a bidi streaming call that
+/// must first have exactly 1 Read and then any number of Writes.
+template <class RequestType, class ResponseType>
+class ServerSplitStreamer final
+    : public ServerReaderWriterInterface<ResponseType, RequestType> {
+ public:
+  ServerSplitStreamer(Call* call, ServerContext* ctx)
+      : body_(call, ctx), read_done_(false) {}
+
+  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
+
+  bool NextMessageSize(uint32_t* sz) override {
+    return body_.NextMessageSize(sz);
+  }
+
+  bool Read(RequestType* request) override {
+    if (read_done_) {
+      return false;
+    }
+    read_done_ = true;
+    return body_.Read(request);
+  }
+
+  using WriterInterface<ResponseType>::Write;
+  bool Write(const ResponseType& response,
+             const WriteOptions& options) override {
+    return read_done_ && body_.Write(response, options);
+  }
+
+ private:
+  internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
+  bool read_done_;
 };
 
 }  // namespace grpc

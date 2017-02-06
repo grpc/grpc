@@ -59,7 +59,6 @@ namespace Grpc.Core
 
         static ILogger logger = new NullLogger();
 
-        readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
@@ -351,11 +350,11 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
-                        // TODO(jtattermusch): register shutdownhooks for CoreCLR as well
-#if !NETSTANDARD1_5
-
-                        AppDomain.CurrentDomain.ProcessExit += ShutdownHookHandler;
-                        AppDomain.CurrentDomain.DomainUnload += ShutdownHookHandler;
+#if NETSTANDARD1_5
+                        System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += (assemblyLoadContext) => { HandleShutdown(); };
+#else
+                        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
+                        AppDomain.CurrentDomain.DomainUnload += (sender, eventArgs) => { HandleShutdown(); };
 #endif
                     }
                     hooksRegistered = true;
@@ -363,9 +362,9 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Handler for AppDomain.DomainUnload and AppDomain.ProcessExit hooks.
+            /// Handler for AppDomain.DomainUnload, AppDomain.ProcessExit and AssemblyLoadContext.Unloading hooks.
             /// </summary>
-            private static void ShutdownHookHandler(object sender, EventArgs e)
+            private static void HandleShutdown()
             {
                 Task.WaitAll(GrpcEnvironment.ShutdownChannelsAsync(), GrpcEnvironment.KillServersAsync());
             }

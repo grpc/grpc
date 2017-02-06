@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+message Message1
+{
+	optional uint32	fieldA = 1;
+	extensions 30 to max;
+}
+
+message Message2
+{
+	extend Message1
+	{
+		optional Message2 extras = 30;
+	}
+	
+	optional uint32	field1 = 1;
+	optional uint32 field2 = 2;
+}

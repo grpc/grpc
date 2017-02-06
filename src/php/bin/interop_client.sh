@@ -31,5 +31,6 @@
 set -e
 cd $(dirname $0)
 source ./determine_extension_dir.sh
+cd ../tests/interop
 php $extension_dir -d max_execution_time=300 \
-  ../tests/interop/interop_client.php $@ 1>&2
+  interop_client.php $@ 1>&2

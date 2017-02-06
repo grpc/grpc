@@ -46,6 +46,8 @@
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 
+#define TEST_TIMEOUT 32
+
 // Convenience constructors for the generated proto messages:
 
 @interface RMTStreamingOutputCallRequest (Constructors)
@@ -92,20 +94,21 @@
   return 0;
 }
 
++ (void)setUp {
+#ifdef GRPC_COMPILE_WITH_CRONET
+  // Cronet setup
+  [Cronet setHttp2Enabled:YES];
+  [Cronet start];
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+#endif
+}
+
 - (void)setUp {
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
 
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
-#ifdef GRPC_COMPILE_WITH_CRONET
-  if (cronetEngine == NULL) {
-    // Cronet setup
-    [Cronet setHttp2Enabled:YES];
-    [Cronet start];
-    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-  }
-#endif
 }
 
 - (void)testEmptyUnaryRPC {
@@ -123,7 +126,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
@@ -146,7 +149,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)test4MBResponsesAreAccepted {
@@ -163,7 +166,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
@@ -180,11 +183,11 @@
     // - If you're developing the server, consider using response streaming, or let clients filter
     //   responses by setting a google.protobuf.FieldMask in the request:
     //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
-    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded");
+    XCTAssertEqualObjects(error.localizedDescription, @"Received message larger than max (4194305 vs. 4194304)");
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
@@ -204,7 +207,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testClientStreamingRPC {
@@ -237,7 +240,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -274,7 +277,7 @@
     }
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -318,7 +321,7 @@
       [expectation fulfill];
     }
   }];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 #ifndef GRPC_COMPILE_WITH_CRONET
@@ -334,7 +337,7 @@
     XCTAssert(done, @"Unexpected response: %@", response);
     [expectation fulfill];
   }];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 #endif
 
@@ -360,7 +363,7 @@
   [call cancel];
   XCTAssertEqual(call.state, GRXWriterStateFinished);
 
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testCancelAfterFirstResponseRPC {
@@ -395,7 +398,7 @@
     }
   }];
   [call start];
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testRPCAfterClosingOpenConnections {
@@ -419,7 +422,7 @@
     }];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 @end

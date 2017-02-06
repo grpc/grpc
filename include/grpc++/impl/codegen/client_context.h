@@ -51,20 +51,20 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
+#include <grpc++/impl/codegen/metadata_map.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
+#include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
-#include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/impl/codegen/time.h>
 
 struct census_context;
 struct grpc_call;
@@ -195,7 +195,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
-    return recv_initial_metadata_;
+    return *recv_initial_metadata_.map();
   }
 
   /// Return a collection of trailing metadata key-value pairs. Note that keys
@@ -207,7 +207,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
-    return trailing_metadata_;
+    return *trailing_metadata_.map();
   }
 
   /// Set the deadline for the client call.
@@ -225,15 +225,22 @@ class ClientContext {
   /// EXPERIMENTAL: Set this request to be idempotent
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
-  /// EXPERIMENTAL: Trigger fail-fast or not on this request
-  void set_fail_fast(bool fail_fast) { fail_fast_ = fail_fast; }
+  /// EXPERIMENTAL: Set this request to be cacheable
+  void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-#ifndef GRPC_CXX0X_NO_CHRONO
+  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
+  void set_wait_for_ready(bool wait_for_ready) {
+    wait_for_ready_ = wait_for_ready;
+    wait_for_ready_explicitly_set_ = true;
+  }
+
+  /// DEPRECATED: Use set_wait_for_ready() instead.
+  void set_fail_fast(bool fail_fast) { set_wait_for_ready(!fail_fast); }
+
   /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
@@ -346,16 +353,22 @@ class ClientContext {
 
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
-           (fail_fast_ ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY);
+           (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
+           (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
+           (wait_for_ready_explicitly_set_
+                ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+                : 0);
   }
 
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
-  bool fail_fast_;
+  bool wait_for_ready_;
+  bool wait_for_ready_explicitly_set_;
   bool idempotent_;
+  bool cacheable_;
   std::shared_ptr<Channel> channel_;
-  grpc::mutex mu_;
+  std::mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
@@ -364,8 +377,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> recv_initial_metadata_;
-  std::multimap<grpc::string_ref, grpc::string_ref> trailing_metadata_;
+  MetadataMap recv_initial_metadata_;
+  MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

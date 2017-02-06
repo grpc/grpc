@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal
 
             Status status;
             Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
@@ -134,7 +134,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
@@ -193,7 +193,7 @@ namespace Grpc.Core.Internal
 
             Status status;
             Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
@@ -250,7 +250,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context).ConfigureAwait(false);
@@ -277,20 +277,31 @@ namespace Grpc.Core.Internal
         }
     }
 
-    internal class NoSuchMethodCallHandler : IServerCallHandler
+    internal class UnimplementedMethodCallHandler : IServerCallHandler
     {
-        public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
+        public static readonly UnimplementedMethodCallHandler Instance = new UnimplementedMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        DuplexStreamingServerCallHandler<byte[], byte[]> callHandlerImpl;
+
+        public UnimplementedMethodCallHandler()
         {
-            // We don't care about the payload type here.
-            var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, newRpc.Server);
-            
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
-            await finishedTask.ConfigureAwait(false);
+            var marshaller = new Marshaller<byte[]>((payload) => payload, (payload) => payload);
+            var method = new Method<byte[], byte[]>(MethodType.DuplexStreaming, "", "", marshaller, marshaller);
+            this.callHandlerImpl = new DuplexStreamingServerCallHandler<byte[], byte[]>(method, new DuplexStreamingServerMethod<byte[], byte[]>(UnimplementedMethod));
+        }
+
+        /// <summary>
+        /// Handler used for unimplemented method.
+        /// </summary>
+        private Task UnimplementedMethod(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext ctx)
+        {
+            ctx.Status = new Status(StatusCode.Unimplemented, "");
+            return TaskUtils.CompletedTask;
+        }
+
+        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        {
+            return callHandlerImpl.HandleCall(newRpc, cq);
         }
     }
 
@@ -313,13 +324,13 @@ namespace Grpc.Core.Internal
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
+        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
             where TRequest : class
             where TResponse : class
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
 
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
+            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
         }
     }

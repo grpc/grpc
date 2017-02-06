@@ -40,13 +40,14 @@
 #include <gflags/gflags.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
-#include <grpc++/impl/thd.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
@@ -66,8 +67,7 @@ DEFINE_int32(test_duration_secs, -1,
              " forcefully terminated.");
 
 DEFINE_string(server_addresses, "localhost:8080",
-              "The list of server"
-              " addresses in the format:\n"
+              "The list of server addresses. The format is: \n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
 
@@ -113,6 +113,13 @@ DEFINE_int32(log_level, GPR_LOG_SEVERITY_INFO,
 DEFINE_bool(do_not_abort_on_transient_failures, true,
             "If set to 'true', abort() is not called in case of transient "
             "failures like temporary connection failures.");
+
+// Options from client.cc (for compatibility with interop test).
+// TODO(sreek): Consolidate overlapping options
+DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
+DEFINE_string(server_host_override, "foo.test.google.fr",
+              "Override the server host which is sent in HTTP header");
 
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
@@ -246,7 +253,7 @@ int main(int argc, char** argv) {
 
   // Parse test cases and weights
   if (FLAGS_test_cases.length() == 0) {
-    gpr_log(GPR_ERROR, "Not running tests. The 'test_cases' string is empty");
+    gpr_log(GPR_ERROR, "No test cases supplied");
     return 1;
   }
 
@@ -264,7 +271,7 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
-  std::vector<grpc::thread> test_threads;
+  std::vector<std::thread> test_threads;
 
   // Create and start the test threads.
   // Note that:
@@ -282,9 +289,10 @@ int main(int argc, char** argv) {
     // Create channel(s) for each server
     for (int channel_idx = 0; channel_idx < FLAGS_num_channels_per_server;
          channel_idx++) {
-      // TODO (sreek). This won't work for tests that require Authentication
-      std::shared_ptr<grpc::Channel> channel(
-          grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
+      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
+              channel_idx);
+      std::shared_ptr<grpc::Channel> channel = grpc::CreateTestChannel(
+          *it, FLAGS_server_host_override, FLAGS_use_tls, !FLAGS_use_test_ca);
 
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
@@ -299,7 +307,7 @@ int main(int argc, char** argv) {
                       "/stress_test/server_%d/channel_%d/stub_%d/qps",
                       server_idx, channel_idx, stub_idx);
 
-        test_threads.emplace_back(grpc::thread(
+        test_threads.emplace_back(std::thread(
             &StressTestInteropClient::MainLoop, client,
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
@@ -310,8 +318,10 @@ int main(int argc, char** argv) {
   }
 
   // Start metrics server before waiting for the stress test threads
-  std::unique_ptr<grpc::Server> metrics_server =
-      metrics_service.StartServer(FLAGS_metrics_port);
+  std::unique_ptr<grpc::Server> metrics_server;
+  if (FLAGS_metrics_port > 0) {
+    metrics_server = metrics_service.StartServer(FLAGS_metrics_port);
+  }
 
   // Wait for the stress test threads to complete
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {

@@ -31,16 +31,24 @@
  *
  */
 
+/* This header transitively includes other headers that care about include
+ * order, so it should be included first. As a consequence, it should not be
+ * included in any other header. */
+
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include <uv.h>
+#endif
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #endif
 
-#ifdef GPR_POSIX_SOCKETADDR
+#ifdef GRPC_POSIX_SOCKETADDR
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #endif
 

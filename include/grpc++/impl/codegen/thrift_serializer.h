@@ -34,10 +34,8 @@
 #ifndef GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 #define GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TCompactProtocol.h>
 #include <thrift/protocol/TProtocolException.h>
@@ -111,12 +109,12 @@ class ThriftSerializer {
 
     Serialize(fields, &byte_buffer, &byte_buffer_size);
 
-    gpr_slice slice = gpr_slice_from_copied_buffer(
+    grpc_slice slice = grpc_slice_from_copied_buffer(
         reinterpret_cast<const char*>(byte_buffer), byte_buffer_size);
 
     *bp = grpc_raw_byte_buffer_create(&slice, 1);
 
-    gpr_slice_unref(slice);
+    grpc_slice_unref(slice);
   }
 
   // Deserialize the passed char array into  the passed type, returns the number
@@ -158,12 +156,12 @@ class ThriftSerializer {
     grpc_byte_buffer_reader reader;
     grpc_byte_buffer_reader_init(&reader, buffer);
 
-    gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
+    grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
 
     uint32_t len =
-        Deserialize(GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice), msg);
+        Deserialize(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice), msg);
 
-    gpr_slice_unref(slice);
+    grpc_slice_unref(slice);
 
     grpc_byte_buffer_reader_destroy(&reader);
 
@@ -216,4 +214,4 @@ typedef ThriftSerializer<void, TCompactProtocolT<TBufferBase>>
 }  // namespace thrift
 }  // namespace apache
 
-#endif
+#endif  // GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H

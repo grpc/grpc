@@ -73,7 +73,7 @@ namespace Grpc.Core.Internal
 
             if (result == null)
             {
-                await call.StreamingCallFinishedTask.ConfigureAwait(false);
+                await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
                 return false;
             }
             return true;

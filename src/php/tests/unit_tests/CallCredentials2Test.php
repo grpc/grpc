@@ -170,7 +170,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->assertTrue(is_string($context->service_url));
         $this->assertTrue(is_string($context->method_name));
 
-        return "a string";
+        return 'a string';
     }
 
     public function testCallbackWithInvalidReturnValue()
@@ -196,5 +196,4 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->assertTrue($event->send_close);
         $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
     }
-
 }

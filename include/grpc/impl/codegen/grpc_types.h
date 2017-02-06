@@ -34,14 +34,37 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+  GRPC_BB_RAW
+  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+} grpc_byte_buffer_type;
+
+typedef struct grpc_byte_buffer {
+  void *reserved;
+  grpc_byte_buffer_type type;
+  union {
+    struct {
+      void *reserved[8];
+    } reserved;
+    struct {
+      grpc_compression_algorithm compression;
+      grpc_slice_buffer slice_buffer;
+    } raw;
+  } data;
+} grpc_byte_buffer;
 
 /** Completion Queues enable notification of the completion of asynchronous
     actions. */
@@ -61,6 +84,9 @@ typedef struct grpc_server grpc_server;
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
 
+/** The Socket Mutator interface allows changes on socket options */
+typedef struct grpc_socket_mutator grpc_socket_mutator;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -70,7 +96,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void *(*copy)(void *p);
-  void (*destroy)(void *p);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *p);
   int (*cmp)(void *p, void *q);
 } grpc_arg_pointer_vtable;
 
@@ -126,8 +152,14 @@ typedef struct {
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
-/** Maximum message length that the channel can receive. Int valued, bytes. */
-#define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
+/** Maximum message length that the channel can receive. Int valued, bytes.
+    -1 means unlimited. */
+#define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
+/** \deprecated For backward compatibility. */
+#define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+/** Maximum message length that the channel can send. Int valued, bytes.
+    -1 means unlimited. */
+#define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -142,6 +174,23 @@ typedef struct {
 /** How much memory to use for hpack encoding. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
+/** How big a frame are we willing to receive via HTTP2.
+    Min 16384, max 16777215.
+    Larger values give lower CPU usage for large messages, but more head of line
+    blocking for small messages. */
+#define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Minimum time (in milliseconds) between successive ping frames being sent */
+#define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
+  "grpc.http2.min_time_between_pings_ms"
+/** How many pings can we send before needing to send a data frame or header
+    frame?
+    (0 indicates that an infinite number of pings can be sent without sending
+     a data frame or header frame) */
+#define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
+  "grpc.http2.max_pings_without_data"
+/** How much data are we willing to queue up per stream if
+    GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
+#define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -153,6 +202,9 @@ typedef struct {
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
+/** The time between the first and second connection attempts, in ms */
+#define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
+  "grpc.initial_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
    type \a GRPC_ARG_STRING. This *should* be used for testing only.
@@ -165,6 +217,15 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
+   to fetch an appropriate pointer arg vtable) */
+#define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
+/** Service config data in JSON form. Not intended for use outside of tests. */
+#define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
+/** LB policy name. */
+#define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** The grpc_socket_mutator instance that set the socket options. A pointer. */
+#define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -206,6 +267,11 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
+/* Default send/receive message size limits in bytes. -1 for unlimited. */
+/* TODO(roth) Make this match the default receive limit after next release */
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
+
 /* Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
     immediately. GRPC is free to buffer the message until the next non-buffered
@@ -221,21 +287,27 @@ typedef enum grpc_call_error {
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+/** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
+    by the calling application. */
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK        \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
+  /* the key, value values are expected to line up with grpc_mdelem: if changing
+     them, update metadata.h at the same time. */
+  grpc_slice key;
+  grpc_slice value;
+
   uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
@@ -277,10 +349,8 @@ typedef struct {
 } grpc_metadata_array;
 
 typedef struct {
-  char *method;
-  size_t method_capacity;
-  char *host;
-  size_t host_capacity;
+  grpc_slice method;
+  grpc_slice host;
   gpr_timespec deadline;
   uint32_t flags;
   void *reserved;
@@ -331,6 +401,8 @@ typedef enum {
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
+struct grpc_byte_buffer;
+
 /** Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT
    which has no arguments) */
 typedef struct grpc_op {
@@ -355,23 +427,32 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    grpc_byte_buffer *send_message;
+    struct {
+      struct grpc_byte_buffer *send_message;
+    } send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
-      const char *status_details;
+      /* optional: set to NULL if no details need sending, non-NULL if they do
+       * pointer will not be retained past the start_batch call
+       */
+      grpc_slice *status_details;
     } send_status_from_server;
     /** ownership of the array is with the caller, but ownership of the elements
         stays with the call object (ie key, value members are owned by the call
         object, recv_initial_metadata->array is owned by the caller).
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
-    grpc_metadata_array *recv_initial_metadata;
+    struct {
+      grpc_metadata_array *recv_initial_metadata;
+    } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    grpc_byte_buffer **recv_message;
+    struct {
+      struct grpc_byte_buffer **recv_message;
+    } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned
@@ -381,28 +462,7 @@ typedef struct grpc_op {
           value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
-      /** status_details is a buffer owned by the application before the op
-          completes and after the op has completed. During the operation
-          status_details may be reallocated to a size larger than
-          *status_details_capacity, in which case *status_details_capacity will
-          be updated with the new array capacity.
-
-          Pre-allocating space:
-          size_t my_capacity = 8;
-          char *my_details = gpr_malloc(my_capacity);
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          Not pre-allocating space:
-          size_t my_capacity = 0;
-          char *my_details = NULL;
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          After the call:
-          gpr_free(my_details); */
-      char **status_details;
-      size_t *status_details_capacity;
+      grpc_slice *status_details;
     } recv_status_on_client;
     struct {
       /** out argument, set to 1 if the call failed in any way (seen as a
@@ -411,6 +471,18 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+/** Information requested from the channel. */
+typedef struct {
+  /* If non-NULL, will be set to point to a string indicating the LB
+   * policy name.  Caller takes ownership. */
+  char **lb_policy_name;
+  /* If non-NULL, will be set to point to a string containing the
+   * service config used by the channel in JSON form. */
+  char **service_config_json;
+} grpc_channel_info;
+
+typedef struct grpc_resource_quota grpc_resource_quota;
 
 #ifdef __cplusplus
 }

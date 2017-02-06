@@ -90,11 +90,26 @@ LICENSE_PREFIX = {
   'Makefile':   r'#\s*',
   'Dockerfile': r'#\s*',
   'LICENSE':    '',
+  'BUILD':      r'#\s*',
 }
 
-KNOWN_BAD = set([
+_EXEMPT = frozenset((
+  # Generated protocol compiler output.
+  'examples/python/helloworld/helloworld_pb2.py',
+  'examples/python/helloworld/helloworld_pb2_grpc.py',
+  'examples/python/multiplex/helloworld_pb2.py',
+  'examples/python/multiplex/helloworld_pb2_grpc.py',
+  'examples/python/multiplex/route_guide_pb2.py',
+  'examples/python/multiplex/route_guide_pb2_grpc.py',
+  'examples/python/route_guide/route_guide_pb2.py',
+  'examples/python/route_guide/route_guide_pb2_grpc.py',
+
+  'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
+  'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
+
+  # An older file originally from outside gRPC.
   'src/php/tests/bootstrap.php',
-])
+))
 
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+), Google Inc\.'
@@ -140,7 +155,8 @@ except subprocess.CalledProcessError:
   sys.exit(0)
 
 for filename in filename_list:
-  if filename in KNOWN_BAD: continue
+  if filename in _EXEMPT:
+    continue
   ext = os.path.splitext(filename)[1]
   base = os.path.basename(filename)
   if ext in RE_LICENSE:
@@ -157,7 +173,7 @@ for filename in filename_list:
   m = re.search(re_license, text)
   if m:
     pass
-  elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename and filename != 'src/boringssl/err_data.c':
+  elif 'DO NOT EDIT' not in text and filename != 'src/boringssl/err_data.c':
     log(1, 'copyright missing', filename)
     ok = False
 

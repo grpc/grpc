@@ -61,8 +61,8 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instace of wrapped_grpc_server_credentials to be associated
- * with an object of a class specified by class_type */
+/* Initializes an instace of wrapped_grpc_server_credentials to be
+ * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server_credentials);
@@ -113,9 +113,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, &pem_key_cert_pair, 1,
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-  zval *creds_object;
-  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
-  creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 

@@ -63,21 +63,6 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-#==================
-# Ruby dependencies
-
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable
-
-# Install Ruby 2.1
-RUN /bin/bash -l -c "rvm install ruby-2.1"
-RUN /bin/bash -l -c "rvm use --default ruby-2.1"
-RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
-RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
-
 #=================
 # PHP dependencies
 
@@ -97,24 +82,9 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 RUN mkdir /var/local/jenkins
 
-# ronn: a ruby tool used to convert markdown to man pages, used during the
-# install of Protobuf extensions
-#
-# rake: a ruby version of make used to build the PHP Protobuf extension
-RUN /bin/bash -l -c "rvm all do gem install ronn rake"
-
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
-
-# Download the patched PHP protobuf so that PHP gRPC clients can be generated
-# from proto3 schemas.
-RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
-
-RUN /bin/bash -l -c "rvm use ruby-2.1 \
-  && cd /var/local/git/protobuf-php \
-  && rvm all do rake pear:package version=1.0 \
-  && pear install Protobuf-1.0.tgz"
 
 # Define the default command.
 CMD ["bash"]

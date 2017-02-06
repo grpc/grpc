@@ -255,7 +255,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 }
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
-    std::vector<std::string>* output) {
+    std::vector<grpc::string>* output) {
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
@@ -288,7 +288,7 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
 
 const protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
-    const std::string& byte_fd_proto) {
+    const grpc::string& byte_fd_proto) {
   protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
@@ -314,13 +314,16 @@ ProtoReflectionDescriptorDatabase::GetStream() {
   return stream_;
 }
 
-void ProtoReflectionDescriptorDatabase::DoOneRequest(
+bool ProtoReflectionDescriptorDatabase::DoOneRequest(
     const ServerReflectionRequest& request,
     ServerReflectionResponse& response) {
+  bool success = false;
   stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
+  if (GetStream()->Write(request) && GetStream()->Read(&response)) {
+    success = true;
+  }
   stream_mutex_.unlock();
+  return success;
 }
 
 }  // namespace grpc

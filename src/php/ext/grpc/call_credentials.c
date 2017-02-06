@@ -87,8 +87,8 @@ zval *grpc_php_wrap_call_credentials(grpc_call_credentials
 
 /**
  * Create composite credentials from two existing credentials.
- * @param CallCredentials cred1 The first credential
- * @param CallCredentials cred2 The second credential
+ * @param CallCredentials $cred1_obj The first credential
+ * @param CallCredentials $cred2_obj The second credential
  * @return CallCredentials The new composite credentials object
  */
 PHP_METHOD(CallCredentials, createComposite) {
@@ -111,15 +111,13 @@ PHP_METHOD(CallCredentials, createComposite) {
   grpc_call_credentials *creds =
       grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
                                              NULL);
-  zval *creds_object;
-  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
-  creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
 /**
  * Create a call credentials object from the plugin API
- * @param function callback The callback function
+ * @param function $fci The callback function
  * @return CallCredentials The new call credentials object
  */
 PHP_METHOD(CallCredentials, createFromPlugin) {
@@ -155,9 +153,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 
   grpc_call_credentials *creds =
     grpc_metadata_credentials_create_from_plugin(plugin, NULL);
-  zval *creds_object;
-  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
-  creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -211,6 +207,8 @@ void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
   efree(state->fci);
   efree(state->fci_cache);
+  PHP_GRPC_FREE_STD_ZVAL(state->fci->params);
+  PHP_GRPC_FREE_STD_ZVAL(state->fci->retval);
   efree(state);
 }
 

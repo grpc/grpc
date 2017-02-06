@@ -83,6 +83,7 @@ static int g_shutdown;
 static gpr_thd_id g_writing_thread;
 static __thread int g_thread_id;
 static int g_next_thread_id;
+static int g_writing_enabled = 1;
 
 static int timer_log_push_back(gpr_timer_log_list *list, gpr_timer_log *log) {
   if (list->head == NULL) {
@@ -177,7 +178,7 @@ static void flush_logs(gpr_timer_log_list *list) {
   }
 }
 
-static void finish_writing() {
+static void finish_writing(void) {
   pthread_mutex_lock(&g_mu);
   g_shutdown = 1;
   pthread_cond_signal(&g_cv);
@@ -230,6 +231,10 @@ static void gpr_timers_log_add(const char *tagstr, marker_type type,
                                int important, const char *file, int line) {
   gpr_timer_entry *entry;
 
+  if (!g_writing_enabled) {
+    return;
+  }
+
   if (g_thread_log == NULL || g_thread_log->num_entries == MAX_COUNT) {
     rotate_log();
   }
@@ -261,6 +266,8 @@ void gpr_timer_end(const char *tagstr, int important, const char *file,
   gpr_timers_log_add(tagstr, END, important, file, line);
 }
 
+void gpr_timer_set_enabled(int enabled) { g_writing_enabled = enabled; }
+
 /* Basic profiler specific API functions. */
 void gpr_timers_global_init(void) {}
 
@@ -272,4 +279,6 @@ void gpr_timers_global_init(void) {}
 void gpr_timers_global_destroy(void) {}
 
 void gpr_timers_set_log_filename(const char *filename) {}
+
+void gpr_timer_set_enabled(int enabled) {}
 #endif /* GRPC_BASIC_PROFILER */

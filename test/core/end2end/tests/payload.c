@@ -50,7 +50,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -58,7 +58,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -74,7 +74,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -95,16 +95,38 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void request_response_with_payload(grpc_end2end_test_fixture f) {
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
+static grpc_slice generate_random_slice() {
+  size_t i;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+  char *output;
+  const size_t output_size = 1024 * 1024;
+  output = gpr_malloc(output_size);
+  for (i = 0; i < output_size - 1; ++i) {
+    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+  }
+  output[output_size - 1] = '\0';
+  grpc_slice out = grpc_slice_from_copied_string(output);
+  gpr_free(output);
+  return out;
+}
+
+static void request_response_with_payload(grpc_end2end_test_config config,
+                                          grpc_end2end_test_fixture f) {
+  /* Create large request and response bodies. These are big enough to require
+   * multiple round trips to deliver to the peer, and their exact contents of
+   * will be verified on completion. */
+  grpc_slice request_payload_slice = generate_random_slice();
+  grpc_slice response_payload_slice = generate_random_slice();
+
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(60);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -116,12 +138,14 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -137,7 +161,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -146,12 +170,12 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -159,7 +183,6 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -181,7 +204,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -199,14 +222,15 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload;
+  op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -218,14 +242,16 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -248,7 +274,7 @@ static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(
       config, "test_invoke_request_response_with_payload", NULL, NULL);
-  request_response_with_payload(f);
+  request_response_with_payload(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -259,7 +285,7 @@ static void test_invoke_10_request_response_with_payload(
   grpc_end2end_test_fixture f = begin_test(
       config, "test_invoke_10_request_response_with_payload", NULL, NULL);
   for (i = 0; i < 10; i++) {
-    request_response_with_payload(f);
+    request_response_with_payload(config, f);
   }
   end_test(&f);
   config.tear_down_data(&f);

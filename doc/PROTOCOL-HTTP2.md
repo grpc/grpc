@@ -153,6 +153,7 @@ DATA (flags = END_STREAM)
 HEADERS (flags = END_HEADERS)
 :status = 200
 grpc-encoding = gzip
+content-type = application/grpc+proto
 
 DATA
 <Length-Prefixed Message>
@@ -175,6 +176,16 @@ grpc-ruby/1.2.3
 grpc-ruby-jruby/1.3.4
 grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 ```
+
+####Idempotency and Retries
+
+Unless explicitly defined to be, gRPC Calls are not assumed to be idempotent.  Specifically:
+
+* Calls that cannot be proven to have started will not be retried.
+* There is no mechanisim for duplicate suppression as it is not necessary.
+* Calls that are marked as idempotent may be sent multiple times.
+
+
 ####HTTP2 Transport Mapping
 
 #####Stream Identification

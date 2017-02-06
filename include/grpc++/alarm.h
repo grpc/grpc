@@ -78,7 +78,7 @@ class Alarm : private GrpcLibraryCodegen {
   class AlarmEntry : public CompletionQueueTag {
    public:
     AlarmEntry(void* tag) : tag_(tag) {}
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    bool FinalizeResult(void** tag, bool* status) override {
       *tag = tag_;
       return true;
     }

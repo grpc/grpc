@@ -41,6 +41,12 @@
     g++-4.4 ${'\\'}
     g++-4.4-multilib
 
+  # set up backport to allow installation of Git version > 1.7
+  RUN echo "deb http://http.debian.net/debian wheezy-backports main" \
+    >/etc/apt/sources.list.d/wheezy-backports.list
+  RUN apt-get update -qq
+  RUN apt-get -t wheezy-backports install -qq git
+  
   RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
 
   ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh

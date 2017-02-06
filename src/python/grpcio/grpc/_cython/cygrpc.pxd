@@ -27,12 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include "grpc/_cython/_cygrpc/grpc.pxi"
+include "_cygrpc/grpc.pxi"
 
-include "grpc/_cython/_cygrpc/call.pxd.pxi"
-include "grpc/_cython/_cygrpc/channel.pxd.pxi"
-include "grpc/_cython/_cygrpc/credentials.pxd.pxi"
-include "grpc/_cython/_cygrpc/completion_queue.pxd.pxi"
-include "grpc/_cython/_cygrpc/records.pxd.pxi"
-include "grpc/_cython/_cygrpc/security.pxd.pxi"
-include "grpc/_cython/_cygrpc/server.pxd.pxi"
+include "_cygrpc/call.pxd.pxi"
+include "_cygrpc/channel.pxd.pxi"
+include "_cygrpc/credentials.pxd.pxi"
+include "_cygrpc/completion_queue.pxd.pxi"
+include "_cygrpc/records.pxd.pxi"
+include "_cygrpc/security.pxd.pxi"
+include "_cygrpc/server.pxd.pxi"

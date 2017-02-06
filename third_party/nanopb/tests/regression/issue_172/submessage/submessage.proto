@@ -1,0 +1,4 @@
+syntax = "proto2";
+message submessage {
+    required bytes data = 1;
+}

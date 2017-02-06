@@ -42,21 +42,22 @@
 // context, which is at least correct, if not performant or in the spirit of
 // workqueues.
 
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
-
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                        const char *reason) {}
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
+  return workqueue;
+}
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                           const char *file, int line, const char *reason) {}
 #else
-void grpc_workqueue_ref(grpc_workqueue *workqueue) {}
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  return workqueue;
+}
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 #endif
 
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error) {
-  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
+  return grpc_schedule_on_exec_ctx;
 }
 
 #endif /* GPR_WINDOWS */

@@ -100,28 +100,6 @@ class RectangleEnum
   end
 end
 
-# A EnumeratorQueue wraps a Queue to yield the items added to it.
-class EnumeratorQueue
-  extend Forwardable
-  def_delegators :@q, :push
-
-  def initialize(sentinel)
-    @q = Queue.new
-    @sentinel = sentinel
-    @received_notes = {}
-  end
-
-  def each_item
-    return enum_for(:each_item) unless block_given?
-    loop do
-      r = @q.pop
-      break if r.equal?(@sentinel)
-      fail r if r.is_a? Exception
-      yield r
-    end
-  end
-end
-
 # ServerImpl provides an implementation of the RouteGuide service.
 class ServerImpl < RouteGuide::Service
   # @param [Hash] feature_db {location => name}
@@ -166,28 +144,33 @@ class ServerImpl < RouteGuide::Service
   end
 
   def route_chat(notes)
-    q = EnumeratorQueue.new(self)
-    # run a separate thread that processes the incoming requests
-    t = Thread.new do
-      begin
-        notes.each do |n|
-          key = {
-            'latitude' => n.location.latitude,
-            'longitude' => n.location.longitude
-          }
-          earlier_msgs = @received_notes[key]
-          @received_notes[key] << n.message
-          # send back the earlier messages at this point
-          earlier_msgs.each do |r|
-            q.push(RouteNote.new(location: n.location, message: r))
-          end
+    RouteChatEnumerator.new(notes, @received_notes).each_item
+  end
+end
+
+class RouteChatEnumerator
+  def initialize(notes, received_notes)
+    @notes = notes
+    @received_notes = received_notes
+  end
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    begin
+      @notes.each do |n|
+        key = {
+          'latitude' => n.location.latitude,
+          'longitude' => n.location.longitude
+        }
+        earlier_msgs = @received_notes[key]
+        @received_notes[key] << n.message
+        # send back the earlier messages at this point
+        earlier_msgs.each do |r|
+          yield RouteNote.new(location: n.location, message: r)
         end
-        q.push(self)  # signal completion
-      rescue StandardError => e
-        q.push(e)  # signal completion via an error
       end
+    rescue StandardError => e
+      fail e # signal completion via an error
     end
-    q.each_item
   end
 end
 

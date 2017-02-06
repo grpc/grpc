@@ -43,6 +43,8 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 
+#define TEST_TIMEOUT 16
+
 static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
@@ -137,7 +139,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testEmptyRPC {
@@ -159,7 +161,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -191,7 +193,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testMetadata {
@@ -225,7 +227,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponseMetadataKVO {
@@ -256,7 +258,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
   
   [call startWithWriteable:responsesWriteable];
   
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testUserAgentPrefix {
@@ -287,7 +289,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 // TODO(makarandd): Move to a different file that contains only unit tests
@@ -315,6 +317,39 @@ static GRPCProtoMethod *kUnaryCallMethod;
     NSLog(@"Received exception as expected: %@", theException.name);
   }
 
+}
+
+- (void)testIdempotentProtoRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Expected response."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = 100;
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kUnaryCallMethod.HTTPPath
+                                   requestsWriter:requestsWriter];
+  [GRPCCall setCallSafety:GRPCCallSafetyIdempotentRequest host:kHostAddress path:kUnaryCallMethod.HTTPPath];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
+    RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
+    // We expect empty strings, not nil:
+    XCTAssertNotNil(responseProto.username, @"Response's username is nil.");
+    XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 @end

@@ -42,46 +42,6 @@
 # 4: Output dir not an absolute path.
 # 5: Couldn't create output directory (2nd argument).
 
-read -r -d '' COPYRIGHT <<'EOF'
-/*
- *
- * Copyright <YEAR>, Google Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-
-EOF
-
-CURRENT_YEAR=$(date +%Y)
-COPYRIGHT_FILE=$(mktemp)
-echo "${COPYRIGHT/<YEAR>/$CURRENT_YEAR}" > $COPYRIGHT_FILE
-
 set -ex
 if [ $# -lt 2 ] || [ $# -gt 3 ]; then
   echo "Usage: $0 <input.proto> <absolute path to output dir> [grpc path]"
@@ -123,7 +83,7 @@ popd
 
 # this should be the same version as the submodule we compile against
 # ideally we'd update this as a template to ensure that
-pip install protobuf==3.0.0b2
+pip install protobuf==3.0.0
 
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
@@ -142,13 +102,6 @@ readonly INCLUDE_GUARD_BASE=`echo $GRPC_OUTPUT_DIR | tr [a-z/] [A-Z_] | sed s:^.
 readonly UC_PROTO_BASENAME=`echo $PROTO_BASENAME | tr [a-z] [A-Z]`
 sed -i "s:PB_${UC_PROTO_BASENAME}_PB_H_INCLUDED:GRPC_${INCLUDE_GUARD_BASE}_${UC_PROTO_BASENAME}_PB_H:g" \
   "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
-
-# prepend copyright
-TMPFILE=$(mktemp)
-cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
-mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
-cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
-mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 deactivate
 rm -rf $VENV_DIR

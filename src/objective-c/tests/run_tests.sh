@@ -44,8 +44,8 @@ BINDIR=../../../bins/$CONFIG
              "interop_server before calling this script."
     exit 1
 }
-$BINDIR/interop_server --port=5050 &
-$BINDIR/interop_server --port=5051 --use_tls &
+$BINDIR/interop_server --port=5050 --max_send_message_size=8388608 &
+$BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p`' EXIT
 

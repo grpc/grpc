@@ -34,23 +34,23 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef struct {
   uint8_t byte;
   uint8_t is_ack;
-  uint8_t opaque_8bytes[8];
+  uint64_t opaque_8bytes;
 } grpc_chttp2_ping_parser;
 
-gpr_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes);
+grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes);
 
 grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
                                                 uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_ping_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s,
+                                          grpc_slice slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H */

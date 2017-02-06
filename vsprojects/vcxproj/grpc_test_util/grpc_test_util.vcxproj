@@ -153,35 +153,38 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h" />
@@ -196,9 +199,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
@@ -206,11 +213,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -225,32 +233,46 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\port.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -262,11 +284,18 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\http2_errors.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
@@ -284,9 +313,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
     </ClCompile>
@@ -302,6 +337,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
@@ -316,11 +353,19 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
@@ -336,17 +381,19 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
@@ -362,6 +409,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
@@ -370,15 +419,25 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_uv.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_uv.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_windows.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
     </ClCompile>
@@ -386,9 +445,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_windows.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_windows.c">
     </ClCompile>
@@ -396,21 +461,29 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>
@@ -420,7 +493,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
     </ClCompile>
@@ -431,6 +504,18 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
     </ClCompile>
@@ -468,15 +553,25 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\service_config.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
     </ClCompile>

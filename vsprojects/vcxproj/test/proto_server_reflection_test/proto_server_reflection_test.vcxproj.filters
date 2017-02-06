@@ -4,14 +4,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\proto_server_reflection_test.cc">
       <Filter>test\cpp\end2end</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -23,9 +15,6 @@
     </Filter>
     <Filter Include="test\cpp\end2end">
       <UniqueIdentifier>{130f224c-89a5-54ea-7045-b54b4188c52b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\cpp\util">
-      <UniqueIdentifier>{aae81aad-5563-fceb-1461-10fdec84c5b0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -219,3 +219,7 @@ exports.getClientChannel = client.getClientChannel;
  * @see module:src/client.waitForClientReady
  */
 exports.waitForClientReady = client.waitForClientReady;
+
+exports.closeClient = function closeClient(client_obj) {
+  client.getClientChannel(client_obj).close();
+};

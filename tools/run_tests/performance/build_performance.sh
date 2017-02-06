@@ -37,10 +37,14 @@ CONFIG=${CONFIG:-opt}
 
 # build C++ qps worker & driver always - we need at least the driver to
 # run any of the scenarios.
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+# TODO(jtattermusch): C++ worker and driver are not buildable on Windows yet
+if [ "$OSTYPE" != "msys" ]
+then
+  # TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
+  # grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
+  # this build will be reused.
+  make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+fi
 
 for language in $@
 do
@@ -54,8 +58,11 @@ do
   "go")
     tools/run_tests/performance/build_performance_go.sh
     ;;
+  "csharp")
+    python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
+    ;;
   *)
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
+    python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
     ;;
   esac
 done

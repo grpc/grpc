@@ -33,194 +33,45 @@
 
 #include <grpc/grpc.h>
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/client_channel.h"
-#include "src/core/ext/client_config/resolver_registry.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/compress_filter.h"
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 
-typedef struct {
-  grpc_connector base;
-  gpr_refcount refs;
-
-  grpc_closure *notify;
-  grpc_connect_in_args args;
-  grpc_connect_out_args *result;
-  grpc_closure initial_string_sent;
-  gpr_slice_buffer initial_string_buffer;
-
-  grpc_endpoint *tcp;
-
-  grpc_closure connected;
-
-  grpc_handshake_manager *handshake_mgr;
-} connector;
-
-static void connector_ref(grpc_connector *con) {
-  connector *c = (connector *)con;
-  gpr_ref(&c->refs);
-}
-
-static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
-  connector *c = (connector *)con;
-  if (gpr_unref(&c->refs)) {
-    /* c->initial_string_buffer does not need to be destroyed */
-    grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
-    gpr_free(c);
-  }
-}
-
-static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           grpc_error *error) {
-  connector_unref(exec_ctx, arg);
-}
-
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args,
-                              gpr_slice_buffer *read_buffer, void *user_data,
-                              grpc_error *error) {
-  connector *c = user_data;
-  if (error != GRPC_ERROR_NONE) {
-    grpc_channel_args_destroy(args);
-    gpr_free(read_buffer);
-  } else {
-    c->result->transport =
-        grpc_create_chttp2_transport(exec_ctx, args, endpoint, 1);
-    GPR_ASSERT(c->result->transport);
-    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport,
-                                        read_buffer);
-    c->result->channel_args = args;
-  }
-  grpc_closure *notify = c->notify;
-  c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
-}
-
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  connector *c = arg;
-  grpc_endpoint *tcp = c->tcp;
-  if (tcp != NULL) {
-    if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
-      grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
-                        c);
-      gpr_slice_buffer_init(&c->initial_string_buffer);
-      gpr_slice_buffer_add(&c->initial_string_buffer,
-                           c->args.initial_connect_string);
-      connector_ref(arg);
-      grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
-                          &c->initial_string_sent);
-    } else {
-      grpc_handshake_manager_do_handshake(
-          exec_ctx, c->handshake_mgr, tcp, c->args.channel_args,
-          c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-    }
-  } else {
-    memset(c->result, 0, sizeof(*c->result));
-    grpc_closure *notify = c->notify;
-    c->notify = NULL;
-    grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
-  }
-}
-
-static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}
-
-static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
-                              const grpc_connect_in_args *args,
-                              grpc_connect_out_args *result,
-                              grpc_closure *notify) {
-  connector *c = (connector *)con;
-  GPR_ASSERT(c->notify == NULL);
-  GPR_ASSERT(notify->cb);
-  c->notify = notify;
-  c->args = *args;
-  c->result = result;
-  c->tcp = NULL;
-  grpc_closure_init(&c->connected, connected, c);
-  grpc_tcp_client_connect(exec_ctx, &c->connected, &c->tcp,
-                          args->interested_parties, args->addr, args->addr_len,
-                          args->deadline);
-}
-
-static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_shutdown, connector_connect};
-
-typedef struct {
-  grpc_client_channel_factory base;
-  gpr_refcount refs;
-  grpc_channel_args *merge_args;
-  grpc_channel *master;
-} client_channel_factory;
-
 static void client_channel_factory_ref(
-    grpc_client_channel_factory *cc_factory) {
-  client_channel_factory *f = (client_channel_factory *)cc_factory;
-  gpr_ref(&f->refs);
-}
+    grpc_client_channel_factory *cc_factory) {}
 
 static void client_channel_factory_unref(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {
-  client_channel_factory *f = (client_channel_factory *)cc_factory;
-  if (gpr_unref(&f->refs)) {
-    if (f->master != NULL) {
-      GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master,
-                                  "client_channel_factory");
-    }
-    grpc_channel_args_destroy(f->merge_args);
-    gpr_free(f);
-  }
-}
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {}
 
 static grpc_subchannel *client_channel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    grpc_subchannel_args *args) {
-  client_channel_factory *f = (client_channel_factory *)cc_factory;
-  connector *c = gpr_malloc(sizeof(*c));
-  grpc_channel_args *final_args =
-      grpc_channel_args_merge(args->args, f->merge_args);
-  grpc_subchannel *s;
-  memset(c, 0, sizeof(*c));
-  c->base.vtable = &connector_vtable;
-  gpr_ref_init(&c->refs, 1);
-  c->handshake_mgr = grpc_handshake_manager_create();
-  args->args = final_args;
-  s = grpc_subchannel_create(exec_ctx, &c->base, args);
-  grpc_connector_unref(exec_ctx, &c->base);
-  grpc_channel_args_destroy(final_args);
+    const grpc_subchannel_args *args) {
+  grpc_connector *connector = grpc_chttp2_connector_create();
+  grpc_subchannel *s = grpc_subchannel_create(exec_ctx, connector, args);
+  grpc_connector_unref(exec_ctx, connector);
   return s;
 }
 
 static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
-  client_channel_factory *f = (client_channel_factory *)cc_factory;
-  grpc_channel_args *final_args = grpc_channel_args_merge(args, f->merge_args);
-  grpc_channel *channel = grpc_channel_create(exec_ctx, target, final_args,
+    const grpc_channel_args *args) {
+  // Add channel arg containing the server URI.
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_SERVER_URI;
+  arg.value.string = (char *)target;
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
-  grpc_channel_args_destroy(final_args);
-  grpc_resolver *resolver = grpc_resolver_create(target, &f->base);
-  if (!resolver) {
-    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
-                                "client_channel_factory_create_channel");
-    return NULL;
-  }
-
-  grpc_client_channel_set_resolver(
-      exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
-  GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create_channel");
-
+  grpc_channel_args_destroy(exec_ctx, new_args);
   return channel;
 }
 
@@ -228,6 +79,9 @@ static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
     {client_channel_factory_ref, client_channel_factory_unref,
      client_channel_factory_create_subchannel,
      client_channel_factory_create_channel};
+
+static grpc_client_channel_factory client_channel_factory = {
+    &client_channel_factory_vtable};
 
 /* Create a client channel:
    Asynchronously: - resolve target
@@ -240,24 +94,18 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
       (target, args, reserved));
-  GPR_ASSERT(!reserved);
-
-  client_channel_factory *f = gpr_malloc(sizeof(*f));
-  memset(f, 0, sizeof(*f));
-  f->base.vtable = &client_channel_factory_vtable;
-  gpr_ref_init(&f->refs, 1);
-  f->merge_args = grpc_channel_args_copy(args);
-
+  GPR_ASSERT(reserved == NULL);
+  // Add channel arg containing the client channel factory.
+  grpc_arg arg =
+      grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  // Create channel.
   grpc_channel *channel = client_channel_factory_create_channel(
-      &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
-  if (channel != NULL) {
-    f->master = channel;
-    GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_insecure_channel_create");
-  }
-  grpc_client_channel_factory_unref(&exec_ctx, &f->base);
-
+      &exec_ctx, &client_channel_factory, target,
+      GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
+  // Clean up.
+  grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_exec_ctx_finish(&exec_ctx);
-
   return channel != NULL ? channel : grpc_lame_client_channel_create(
                                          target, GRPC_STATUS_INTERNAL,
                                          "Failed to create client channel");

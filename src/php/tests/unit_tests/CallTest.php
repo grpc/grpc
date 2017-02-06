@@ -94,7 +94,7 @@ class CallTest extends PHPUnit_Framework_TestCase
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
                                               'key2' => ['value2',
-                                                         'value3'], ],
+                                                         'value3', ], ],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);

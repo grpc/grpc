@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
@@ -50,7 +50,7 @@ struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
   int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-              gpr_slice *slice, size_t max_size_hint,
+              grpc_slice *slice, size_t max_size_hint,
               grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
@@ -65,7 +65,7 @@ struct grpc_byte_stream {
  * once a slice is returned into *slice, it is owned by the caller.
  */
 int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, gpr_slice *slice,
+                          grpc_byte_stream *byte_stream, grpc_slice *slice,
                           size_t max_size_hint, grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -74,12 +74,12 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 /* grpc_byte_stream that wraps a slice buffer */
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
-  gpr_slice_buffer *backing_buffer;
+  grpc_slice_buffer *backing_buffer;
   size_t cursor;
 } grpc_slice_buffer_stream;
 
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   gpr_slice_buffer *slice_buffer,
+                                   grpc_slice_buffer *slice_buffer,
                                    uint32_t flags);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

@@ -52,15 +52,23 @@ int main(int argc, char **argv) {
      of descriptors */
   rlim.rlim_cur = rlim.rlim_max = 10;
   GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("fd_conservation_posix_test");
 
   for (i = 0; i < 100; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    p = grpc_iomgr_create_endpoint_pair("test", 1);
+    p = grpc_iomgr_create_endpoint_pair("test", resource_quota, 1);
     grpc_endpoint_destroy(&exec_ctx, p.client);
     grpc_endpoint_destroy(&exec_ctx, p.server);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
-  grpc_iomgr_shutdown();
+  grpc_resource_quota_unref(resource_quota);
+
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return 0;
 }

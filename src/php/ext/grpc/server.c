@@ -49,6 +49,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 
 #include "completion_queue.h"
 #include "server.h"
@@ -72,8 +74,8 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instance of wrapped_grpc_call to be associated with an object
- * of a class specified by class_type */
+/* Initializes an instance of wrapped_grpc_call to be associated with an
+ * object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
                                                 TSRMLS_DC) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server);
@@ -84,7 +86,7 @@ php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
 
 /**
  * Constructs a new instance of the Server class
- * @param array $args The arguments to pass to the server (optional)
+ * @param array $args_array The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
@@ -116,7 +118,7 @@ PHP_METHOD(Server, __construct) {
  * Request a call on a server. Creates a single GRPC_SERVER_RPC_NEW event.
  * @param long $tag_new The tag to associate with the new request
  * @param long $tag_cancel The tag to use if the call is cancelled
- * @return Void
+ * @return void
  */
 PHP_METHOD(Server, requestCall) {
   grpc_call_error error_code;
@@ -149,8 +151,12 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  php_grpc_add_property_string(result, "method", details.method, true);
-  php_grpc_add_property_string(result, "host", details.host, true);
+  char *method_text = grpc_slice_to_c_string(details.method);
+  char *host_text = grpc_slice_to_c_string(details.host);
+  php_grpc_add_property_string(result, "method", method_text, true);
+  php_grpc_add_property_string(result, "host", host_text, true);
+  gpr_free(method_text);
+  gpr_free(host_text);
 #if PHP_MAJOR_VERSION < 7
   add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
   add_property_zval(result, "absolute_deadline",
@@ -180,7 +186,7 @@ PHP_METHOD(Server, requestCall) {
 /**
  * Add a http2 over tcp listener.
  * @param string $addr The address to add
- * @return true on success, false on failure
+ * @return bool True on success, false on failure
  */
 PHP_METHOD(Server, addHttp2Port) {
   const char *addr;
@@ -197,6 +203,12 @@ PHP_METHOD(Server, addHttp2Port) {
   RETURN_LONG(grpc_server_add_insecure_http2_port(server->wrapped, addr));
 }
 
+/**
+ * Add a secure http2 over tcp listener.
+ * @param string $addr The address to add
+ * @param ServerCredentials The ServerCredentials object
+ * @return bool True on success, false on failure
+ */
 PHP_METHOD(Server, addSecureHttp2Port) {
   const char *addr;
   php_grpc_int addr_len;
@@ -220,7 +232,7 @@ PHP_METHOD(Server, addSecureHttp2Port) {
 
 /**
  * Start a server - tells all listeners to start listening
- * @return Void
+ * @return void
  */
 PHP_METHOD(Server, start) {
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());

@@ -52,6 +52,7 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -78,6 +79,11 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 # in Cython modules.
 ENABLE_CYTHON_TRACING = os.environ.get(
     'GRPC_PYTHON_ENABLE_CYTHON_TRACING', False)
+
+# Environment variable specifying whether or not there's interest in setting up
+# documentation building.
+ENABLE_DOCUMENTATION_BUILD = os.environ.get(
+    'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD', False)
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -198,26 +204,32 @@ PACKAGE_DIRECTORIES = {
 INSTALL_REQUIRES = (
     'six>=1.5.2',
     'enum34>=1.0.4',
-    'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
     'protobuf>=3.0.0',
 )
 
+if not PY3:
+  INSTALL_REQUIRES += ('futures>=2.2.0',)
+
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
     'sphinx_rtd_theme>=0.1.8',
     'six>=1.10',
-)
-if BUILD_WITH_CYTHON:
-  sys.stderr.write(
-    "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
-    "but do not have Cython installed. We won't stop you from using "
-    "other commands, but the extension files will fail to build.\n")
-elif need_cython:
-  sys.stderr.write(
-      'We could not find Cython. Setup may take 10-20 minutes.\n')
-  SETUP_REQUIRES += ('cython>=0.23',)
+  ) if ENABLE_DOCUMENTATION_BUILD else ()
+
+try:
+  import Cython
+except ImportError:
+  if BUILD_WITH_CYTHON:
+    sys.stderr.write(
+      "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
+      "but do not have Cython installed. We won't stop you from using "
+      "other commands, but the extension files will fail to build.\n")
+  elif need_cython:
+    sys.stderr.write(
+        'We could not find Cython. Setup may take 10-20 minutes.\n')
+    SETUP_REQUIRES += ('cython>=0.23',)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
@@ -251,6 +263,7 @@ setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
   license=LICENSE,
+  long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,

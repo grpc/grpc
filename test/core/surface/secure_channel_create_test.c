@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/surface/channel.h"
@@ -46,12 +46,14 @@ void test_unknown_scheme_target(void) {
   grpc_channel *chan;
   grpc_channel_credentials *creds;
   grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init("");
+  grpc_resolver_registry_init();
 
   creds = grpc_fake_transport_security_credentials_create();
   chan = grpc_secure_channel_create(creds, "blah://blah", NULL, NULL);
   GPR_ASSERT(chan == NULL);
-  grpc_channel_credentials_unref(creds);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_channel_credentials_unref(&exec_ctx, creds);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void test_security_connector_already_in_arg(void) {

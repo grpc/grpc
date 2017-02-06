@@ -28,6 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+cdef bytes _slice_bytes(grpc_slice slice)
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil
+cdef grpc_slice _slice_from_bytes(bytes value) nogil
+
+
 cdef class Timespec:
 
   cdef gpr_timespec c_time
@@ -84,6 +89,7 @@ cdef class SslPemKeyCertPair:
 cdef class ChannelArg:
 
   cdef grpc_arg c_arg
+  cdef grpc_arg_pointer_vtable ptr_vtable
   cdef readonly object key, value
 
 
@@ -96,13 +102,13 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   cdef grpc_metadata c_metadata
-  cdef object _key, _value
+  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil
 
 
 cdef class Metadata:
 
   cdef grpc_metadata_array c_metadata_array
-  cdef object metadata
+  cdef void _claim_slice_ownership(self)
 
 
 cdef class Operation:
@@ -111,8 +117,7 @@ cdef class Operation:
   cdef ByteBuffer _received_message
   cdef Metadata _received_metadata
   cdef grpc_status_code _received_status_code
-  cdef char *_received_status_details
-  cdef size_t _received_status_details_capacity
+  cdef grpc_slice _status_details
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references

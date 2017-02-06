@@ -39,6 +39,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
@@ -50,7 +51,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -58,7 +59,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -72,7 +73,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -93,18 +94,34 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static gpr_slice large_slice(void) {
-  gpr_slice slice = gpr_slice_malloc(1000000);
-  memset(GPR_SLICE_START_PTR(slice), 'x', GPR_SLICE_LENGTH(slice));
+static grpc_slice large_slice(void) {
+  grpc_slice slice = grpc_slice_malloc(1000000);
+  memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
 
-static void test_invoke_large_request(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_invoke_large_request", NULL, NULL);
+static void test_invoke_large_request(grpc_end2end_test_config config,
+                                      int max_frame_size, int lookahead_bytes) {
+  char *name;
+  gpr_asprintf(&name,
+               "test_invoke_large_request:max_frame_size=%d:lookahead_bytes=%d",
+               max_frame_size, lookahead_bytes);
 
-  gpr_slice request_payload_slice = large_slice();
-  gpr_slice response_payload_slice = large_slice();
+  grpc_arg args[2];
+  args[0].type = GRPC_ARG_INTEGER;
+  args[0].key = GRPC_ARG_HTTP2_MAX_FRAME_SIZE;
+  args[0].value.integer = max_frame_size;
+  args[1].type = GRPC_ARG_INTEGER;
+  args[1].key = GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES;
+  args[1].value.integer = lookahead_bytes;
+  grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
+
+  grpc_end2end_test_fixture f =
+      begin_test(config, name, &channel_args, &channel_args);
+  gpr_free(name);
+
+  grpc_slice request_payload_slice = large_slice();
+  grpc_slice response_payload_slice = large_slice();
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -123,12 +140,14 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -144,7 +163,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -153,12 +172,12 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -166,7 +185,6 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -188,7 +206,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -206,14 +224,15 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload;
+  op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -225,12 +244,13 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -245,15 +265,34 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_slice_unref(request_payload_slice);
-  gpr_slice_unref(response_payload_slice);
+  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref(response_payload_slice);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void invoke_large_request(grpc_end2end_test_config config) {
-  test_invoke_large_request(config);
+  test_invoke_large_request(config, 16384, 65536);
+  test_invoke_large_request(config, 32768, 65536);
+
+  test_invoke_large_request(config, 1000000 - 1, 65536);
+  test_invoke_large_request(config, 1000000, 65536);
+  test_invoke_large_request(config, 1000000 + 1, 65536);
+  test_invoke_large_request(config, 1000000 + 2, 65536);
+  test_invoke_large_request(config, 1000000 + 3, 65536);
+  test_invoke_large_request(config, 1000000 + 4, 65536);
+  test_invoke_large_request(config, 1000000 + 5, 65536);
+  test_invoke_large_request(config, 1000000 + 6, 65536);
+
+  test_invoke_large_request(config, 1000000 - 1, 2000000);
+  test_invoke_large_request(config, 1000000, 2000000);
+  test_invoke_large_request(config, 1000000 + 1, 2000000);
+  test_invoke_large_request(config, 1000000 + 2, 2000000);
+  test_invoke_large_request(config, 1000000 + 3, 2000000);
+  test_invoke_large_request(config, 1000000 + 4, 2000000);
+  test_invoke_large_request(config, 1000000 + 5, 2000000);
+  test_invoke_large_request(config, 1000000 + 6, 2000000);
 }
 
 void invoke_large_request_pre_init(void) {}

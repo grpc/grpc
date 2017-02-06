@@ -69,6 +69,7 @@ namespace Grpc.Core.Internal
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
         protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
         protected TaskCompletionSource<object> sendStatusFromServerTcs;
+        protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
         protected bool halfcloseRequested;  // True if send close have been initiated.
@@ -180,25 +181,28 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected bool ReleaseResourcesIfPossible()
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.ReleaseResourcesIfPossible"))
+            if (!disposed && call != null)
             {
-                if (!disposed && call != null)
+                bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
+                if (noMoreSendCompletions && readingDone && finished)
                 {
-                    bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
-                    if (noMoreSendCompletions && readingDone && finished)
-                    {
-                        ReleaseResources();
-                        return true;
-                    }
+                    ReleaseResources();
+                    return true;
                 }
-                return false;
             }
+            return false;
         }
 
         protected abstract bool IsClient
         {
             get;
         }
+
+        /// <summary>
+        /// Returns an exception to throw for a failed send operation.
+        /// It is only allowed to call this method for a call that has already finished.
+        /// </summary>
+        protected abstract Exception GetRpcExceptionClientOnly();
 
         private void ReleaseResources()
         {
@@ -222,28 +226,20 @@ namespace Grpc.Core.Internal
 
         protected byte[] UnsafeSerialize(TWrite msg)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.UnsafeSerialize"))
-            {
-                return serializer(msg);
-            }
+            return serializer(msg);
         }
 
         protected Exception TryDeserialize(byte[] payload, out TRead msg)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.TryDeserialize"))
+            try
             {
-                try
-                {
-                
-                    msg = deserializer(payload);
-                    return null;
-             
-                }
-                catch (Exception e)
-                {
-                    msg = default(TRead);
-                    return e;
-                }
+                msg = deserializer(payload);
+                return null;
+            }
+            catch (Exception e)
+            {
+                msg = default(TRead);
+                return e;
             }
         }
 
@@ -252,18 +248,43 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleSendFinished(bool success)
         {
+            bool delayCompletion = false;
             TaskCompletionSource<object> origTcs = null;
             lock (myLock)
             {
-                origTcs = streamingWriteTcs;
-                streamingWriteTcs = null;
+                if (!success && !finished && IsClient) {
+                    // We should be setting this only once per call, following writes will be short circuited
+                    // because they cannot start until the entire call finishes.
+                    GrpcPreconditions.CheckState(!isStreamingWriteCompletionDelayed);
+
+                    // leave streamingWriteTcs set, it will be completed once call finished.
+                    isStreamingWriteCompletionDelayed = true;
+                    delayCompletion = true;
+                }
+                else
+                {
+                    origTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;    
+                }
 
                 ReleaseResourcesIfPossible();
             }
 
             if (!success)
             {
-                origTcs.SetException(new InvalidOperationException("Send failed"));
+                if (!delayCompletion)
+                {
+                    if (IsClient)
+                    {
+                        GrpcPreconditions.CheckState(finished);  // implied by !success && !delayCompletion && IsClient
+                        origTcs.SetException(GetRpcExceptionClientOnly());
+                    }
+                    else
+                    {
+                        origTcs.SetException (new IOException("Error sending from server."));
+                    }
+                }
+                // if delayCompletion == true, postpone SetException until call finishes.
             }
             else
             {
@@ -283,7 +304,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                sendStatusFromServerTcs.SetException(new InvalidOperationException("Error sending status from server."));
+                sendStatusFromServerTcs.SetException(new IOException("Error sending status from server."));
             }
             else
             {

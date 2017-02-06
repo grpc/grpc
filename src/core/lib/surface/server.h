@@ -40,6 +40,9 @@
 
 extern const grpc_channel_filter grpc_server_top_filter;
 
+/** Lightweight tracing of server channel state */
+extern int grpc_server_channel_trace;
+
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
 void grpc_server_add_listener(
@@ -59,5 +62,10 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *server,
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
 int grpc_server_has_open_connections(grpc_server *server);
+
+/* Do not call this before grpc_server_start. Returns the pollsets and the
+ * number of pollsets via 'pollsets' and 'pollset_count'. */
+void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
+                              size_t *pollset_count);
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

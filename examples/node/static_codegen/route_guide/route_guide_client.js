@@ -56,6 +56,7 @@ function runGetFeature(callback) {
   function featureCallback(error, feature) {
     if (error) {
       callback(error);
+      return;
     }
     var latitude = feature.getLocation().getLatitude();
     var longitude = feature.getLocation().getLongitude();
@@ -115,7 +116,10 @@ function runRecordRoute(callback) {
     string: 'db_path'
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) callback(err);
+    if (err) {
+      callback(err);
+      return;
+    }
     // Transform the loaded features to Feature objects
     var feature_list = _.map(JSON.parse(data), function(value) {
       var feature = new messages.Feature();
@@ -131,6 +135,7 @@ function runRecordRoute(callback) {
     var call = client.recordRoute(function(error, stats) {
       if (error) {
         callback(error);
+        return;
       }
       console.log('Finished trip with', stats.getPointCount(), 'points');
       console.log('Passed', stats.getFeatureCount(), 'features');

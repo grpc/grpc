@@ -52,6 +52,7 @@ def load_test_certs
   files.map { |f| File.open(File.join(data_dir, f)).read }
 end
 
+
 # A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
 class EnumeratorQueue
   extend Forwardable
@@ -73,4 +74,19 @@ class EnumeratorQueue
   end
 end
 
+# A PingPongEnumerator reads requests and responds one-by-one when enumerated
+# via #each_item
+class PingPongEnumerator
+  def initialize(reqs)
+    @reqs = reqs
+  end
 
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    sr = Grpc::Testing::SimpleResponse
+    pl = Grpc::Testing::Payload
+    @reqs.each do |req|
+      yield sr.new(payload: pl.new(body: nulls(req.response_size)))
+    end
+  end
+end

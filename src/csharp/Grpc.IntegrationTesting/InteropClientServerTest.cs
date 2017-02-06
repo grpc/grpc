@@ -146,9 +146,15 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
+        public void UnimplementedService()
+        {
+            InteropClient.RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
+        }
+
+        [Test]
         public void UnimplementedMethod()
         {
-            InteropClient.RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
+            InteropClient.RunUnimplementedMethod(client);
         }
     }
 }

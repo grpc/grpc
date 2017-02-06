@@ -185,7 +185,7 @@ static void writer_thread(void* arg) {
             "written\n",
             args->index, records_written, args->num_records);
       }
-      gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
     }
   }
   // Done. Decrement count and signal.

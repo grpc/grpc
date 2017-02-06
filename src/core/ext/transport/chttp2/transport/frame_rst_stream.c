@@ -39,13 +39,14 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/transport/http2_errors.h"
 
-gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
-                                        grpc_transport_one_way_stats *stats) {
+grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
+                                         grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  gpr_slice slice = gpr_slice_malloc(frame_size);
+  grpc_slice slice = grpc_slice_malloc(frame_size);
   stats->framing_bytes += frame_size;
-  uint8_t *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
   *p++ = 0;
@@ -83,12 +84,13 @@ grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_rst_stream_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
+                                                void *parser,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_rst_stream_parser *p = parser;
 
@@ -97,19 +99,20 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(
     cur++;
     p->byte++;
   }
-  stream_parsing->stats.incoming.framing_bytes += (uint64_t)(end - cur);
+  s->stats.incoming.framing_bytes += (uint64_t)(end - cur);
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
-    stream_parsing->received_close = 1;
-    if (stream_parsing->forced_close_error == GRPC_ERROR_NONE) {
-      stream_parsing->forced_close_error = grpc_error_set_int(
-          GRPC_ERROR_CREATE("RST_STREAM"), GRPC_ERROR_INT_HTTP2_ERROR,
-          (intptr_t)((((uint32_t)p->reason_bytes[0]) << 24) |
-                     (((uint32_t)p->reason_bytes[1]) << 16) |
-                     (((uint32_t)p->reason_bytes[2]) << 8) |
-                     (((uint32_t)p->reason_bytes[3]))));
+    uint32_t reason = (((uint32_t)p->reason_bytes[0]) << 24) |
+                      (((uint32_t)p->reason_bytes[1]) << 16) |
+                      (((uint32_t)p->reason_bytes[2]) << 8) |
+                      (((uint32_t)p->reason_bytes[3]));
+    grpc_error *error = GRPC_ERROR_NONE;
+    if (reason != GRPC_HTTP2_NO_ERROR || s->header_frames_received < 2) {
+      error = grpc_error_set_int(GRPC_ERROR_CREATE("RST_STREAM"),
+                                 GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
     }
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
   }
 
   return GRPC_ERROR_NONE;

@@ -35,8 +35,8 @@
 namespace Grpc;
 
 /**
- * Represents an active call that sends a single message and then gets a stream
- * of responses.
+ * Represents an active call that sends a single message and then gets a
+ * stream of responses.
  */
 class ServerStreamingCall extends AbstractCall
 {
@@ -45,12 +45,13 @@ class ServerStreamingCall extends AbstractCall
      *
      * @param mixed $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
-     * @param array $options  an array of options, possible keys:
-     *                        'flags' => a number
+     *                        (optional)
+     * @param array $options  An array of options, possible keys:
+     *                        'flags' => a number (optional)
      */
-    public function start($data, $metadata = [], $options = [])
+    public function start($data, array $metadata = [], array $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
@@ -72,7 +73,7 @@ class ServerStreamingCall extends AbstractCall
             OP_RECV_MESSAGE => true,
         ])->message;
         while ($response !== null) {
-            yield $this->deserializeResponse($response);
+            yield $this->_deserializeResponse($response);
             $response = $this->call->startBatch([
                 OP_RECV_MESSAGE => true,
             ])->message;
@@ -82,8 +83,8 @@ class ServerStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return \stdClass The status object, with integer $code, string $details,
-     *                   and array $metadata members
+     * @return \stdClass The status object, with integer $code, string
+     *                   $details, and array $metadata members
      */
     public function getStatus()
     {

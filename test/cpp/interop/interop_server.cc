@@ -31,8 +31,6 @@
  *
  */
 
-#include <unistd.h>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -45,8 +43,10 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -55,7 +55,9 @@
 #include "test/cpp/util/test_config.h"
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -88,7 +90,9 @@ void MaybeEchoMetadata(ServerContext* context) {
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
-    context->AddInitialMetadata(kEchoInitialMetadataKey, iter->second.data());
+    context->AddInitialMetadata(
+        kEchoInitialMetadataKey,
+        grpc::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
@@ -102,7 +106,9 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     iter = client_metadata.find("user-agent");
     if (iter != client_metadata.end()) {
-      context->AddInitialMetadata(kEchoUserAgentKey, iter->second.data());
+      context->AddInitialMetadata(
+          kEchoUserAgentKey,
+          grpc::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
@@ -149,6 +155,17 @@ class TestServiceImpl : public TestService::Service {
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
     MaybeEchoMetadata(context);
+    return Status::OK;
+  }
+
+  // Response contains current timestamp. We ignore everything in the request.
+  Status CacheableUnaryCall(ServerContext* context,
+                            const SimpleRequest* request,
+                            SimpleResponse* response) {
+    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+    context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 
@@ -256,6 +273,11 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
+      if (request.has_response_status()) {
+        return Status(
+            static_cast<grpc::StatusCode>(request.response_status().code()),
+            request.response_status().message());
+      }
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
@@ -321,9 +343,13 @@ void grpc::testing::interop::RunServer(
   ServerBuilder builder;
   builder.RegisterService(&service);
   builder.AddListeningPort(server_address.str(), creds);
+  if (FLAGS_max_send_message_size >= 0) {
+    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!g_got_sigint) {
-    sleep(5);
+  while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }

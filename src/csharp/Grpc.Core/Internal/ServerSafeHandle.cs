@@ -85,12 +85,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void RequestCall(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
+        public void RequestCall(RequestCallCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
             using (completionQueue.NewScope())
             {
-                var ctx = BatchContextSafeHandle.Create();
-                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+                var ctx = RequestCallContextSafeHandle.Create();
+                completionQueue.CompletionRegistry.RegisterRequestCallCompletion(ctx, callback);
                 Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
             }
         }

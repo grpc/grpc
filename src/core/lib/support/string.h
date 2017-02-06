@@ -37,8 +37,6 @@
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,9 +51,6 @@ extern "C" {
 /* Converts array buf, of length len, into a C string  according to the flags.
    Result should be freed with gpr_free() */
 char *gpr_dump(const char *buf, size_t len, uint32_t flags);
-
-/* Calls gpr_dump on a slice. */
-char *gpr_dump_slice(gpr_slice slice, uint32_t flags);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
@@ -80,6 +75,9 @@ NOTE: This function ensures sufficient bit width even on Win x64,
 where long is 32bit is size.*/
 int int64_ttoa(int64_t value, char *output);
 
+// Parses a non-negative number from a value string.  Returns -1 on error.
+int gpr_parse_nonnegative_int(const char *value);
+
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
 
@@ -98,9 +96,8 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
 char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
                       size_t *total_length);
 
-/** Split \a str by the separator \a sep. Results are stored in \a dst, which
- * should be a properly initialized instance. */
-void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
@@ -117,6 +114,12 @@ void gpr_strvec_add(gpr_strvec *strs, char *add);
 /* Return a joined string with all added substrings, optionally setting
    total_length as per gpr_strjoin */
 char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
+
+/** Case insensitive string comparison... return <0 if lower(a)<lower(b), ==0 if
+    lower(a)==lower(b), >0 if lower(a)>lower(b) */
+int gpr_stricmp(const char *a, const char *b);
+
+void *gpr_memrchr(const void *s, int c, size_t n);
 
 #ifdef __cplusplus
 }

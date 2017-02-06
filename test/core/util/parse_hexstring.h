@@ -34,8 +34,8 @@
 #ifndef GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
 #define GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
-gpr_slice parse_hexstring(const char *hexstring);
+grpc_slice parse_hexstring(const char *hexstring);
 
 #endif /* GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H */

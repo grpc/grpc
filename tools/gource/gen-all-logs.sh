@@ -34,7 +34,7 @@ outdir=`pwd`
 
 tmpdir=`mktemp -d`
 mkdir -p $tmpdir/logs
-repos="grpc grpc-common grpc-go grpc-java grpc.github.io grpc-tools homebrew-grpc grpc-docker-library"
+repos="grpc grpc-common grpc-go grpc-java grpc.github.io"
 for repo in $repos
 do
   cd $tmpdir

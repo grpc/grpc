@@ -34,29 +34,30 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include "src/core/lib/iomgr/timer_uv.h"
+#else
+#include "src/core/lib/iomgr/timer_generic.h"
+#endif /* GRPC_UV */
+
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-typedef struct grpc_timer {
-  gpr_timespec deadline;
-  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
-  int triggered;
-  struct grpc_timer *next;
-  struct grpc_timer *prev;
-  grpc_closure closure;
-} grpc_timer;
+typedef struct grpc_timer grpc_timer;
 
-/* Initialize *timer. When expired or canceled, timer_cb will be called with
-   *timer_cb_arg and status to indicate if it expired (SUCCESS) or was
-   canceled (CANCELLED). timer_cb is guaranteed to be called exactly once,
-   and application code should check the status to determine how it was
-   invoked. The application callback is also responsible for maintaining
-   information about when to free up any user-level state. */
+/* Initialize *timer. When expired or canceled, closure will be called with
+   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
+   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+   application code should check the error to determine how it was invoked. The
+   application callback is also responsible for maintaining information about
+   when to free up any user-level state. */
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now);
+                     gpr_timespec deadline, grpc_closure *closure,
+                     gpr_timespec now);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
@@ -74,8 +75,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
    In all of these cases, the cancellation is still considered successful.
    They are essentially distinguished in that the timer_cb will be run
-   exactly once from either the cancellation (with status CANCELLED)
-   or from the activation (with status SUCCESS)
+   exactly once from either the cancellation (with error GRPC_ERROR_CANCELLED)
+   or from the activation (with error GRPC_ERROR_NONE).
 
    Note carefully that the callback function MAY occur in the same callstack
    as grpc_timer_cancel. It's expected that most timers will be cancelled (their
@@ -83,14 +84,13 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
    that cancellation costs as little as possible. Making callbacks run inline
    matches this aim.
 
-   Requires:  cancel() must happen after add() on a given timer */
+   Requires: cancel() must happen after init() on a given timer */
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
 
 /* iomgr internal api for dealing with timers */
 
 /* Check for timers to be run, and run them.
    Return true if timer callbacks were executed.
-   Drops drop_mu if it is non-null before executing callbacks.
    If next is non-null, TRY to update *next with the next running timer
    IF that timer occurs before *next current value.
    *next is never guaranteed to be updated on any given execution; however,

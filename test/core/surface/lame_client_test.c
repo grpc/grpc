@@ -49,32 +49,33 @@ static void *tag(intptr_t x) { return (void *)x; }
 
 void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
-  grpc_transport_op *op = arg;
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *op->connectivity_state);
+  grpc_connectivity_state *state = arg;
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *state);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
 void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void test_transport_op(grpc_channel *channel) {
-  grpc_transport_op op;
+  grpc_transport_op *op;
   grpc_channel_element *elem;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  memset(&op, 0, sizeof(op));
-  grpc_closure_init(&transport_op_cb, verify_connectivity, &op);
+  grpc_closure_init(&transport_op_cb, verify_connectivity, &state,
+                    grpc_schedule_on_exec_ctx);
 
-  op.on_connectivity_state_change = &transport_op_cb;
-  op.connectivity_state = &state;
+  op = grpc_make_transport_op(NULL);
+  op->on_connectivity_state_change = &transport_op_cb;
+  op->connectivity_state = &state;
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
-  elem->filter->start_transport_op(&exec_ctx, elem, &op);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  memset(&op, 0, sizeof(op));
-  grpc_closure_init(&transport_op_cb, do_nothing, NULL);
-  op.on_consumed = &transport_op_cb;
-  elem->filter->start_transport_op(&exec_ctx, elem, &op);
+  grpc_closure_init(&transport_op_cb, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
+  op = grpc_make_transport_op(&transport_op_cb);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -89,8 +90,7 @@ int main(int argc, char **argv) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   char *peer;
 
   grpc_test_init(argc, argv);
@@ -110,9 +110,10 @@ int main(int argc, char **argv) {
 
   cq = grpc_completion_queue_create(NULL);
 
+  grpc_slice host = grpc_slice_from_static_string("anywhere");
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Foo", "anywhere",
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
+                                  grpc_slice_from_static_string("/Foo"), &host,
+                                  grpc_timeout_seconds_to_deadline(100), NULL);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -124,7 +125,7 @@ int main(int argc, char **argv) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -141,7 +142,6 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   grpc_shutdown();
 

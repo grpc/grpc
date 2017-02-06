@@ -31,8 +31,7 @@
  *
  */
 
-#include <thread>
-
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -49,10 +48,10 @@
 namespace grpc {
 namespace testing {
 
-class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
+class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) GRPC_OVERRIDE {
+                   SimpleResponse* response) override {
     if (request->response_size() > 0) {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
@@ -64,7 +63,7 @@ class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
   }
   Status StreamingCall(
       ServerContext* context,
-      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) GRPC_OVERRIDE {
+      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
     SimpleRequest request;
     while (stream->Read(&request)) {
       SimpleResponse response;
@@ -81,7 +80,7 @@ class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
   }
 };
 
-class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
+class SynchronousServer final : public grpc::testing::Server {
  public:
   explicit SynchronousServer(const ServerConfig& config) : Server(config) {
     ServerBuilder builder;
@@ -92,6 +91,11 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
     builder.AddListeningPort(server_address,
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
+
+    if (config.resource_quota_size() > 0) {
+      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                   .Resize(config.resource_quota_size()));
+    }
 
     builder.RegisterService(&service_);
 

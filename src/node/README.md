@@ -1,9 +1,6 @@
 [![npm](https://img.shields.io/npm/v/grpc.svg)](https://www.npmjs.com/package/grpc)
 # Node.js gRPC Library
 
-## Status
-Beta
-
 ## PREREQUISITES
 - `node`: This requires `node` to be installed, version `0.12` or above. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
 
@@ -39,7 +36,7 @@ npm install grpc
 To run the test suite, simply run `npm test` in the install location.
 
 ## API
-This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library
+This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library.
 
 If you require this module, you will get an object with the following members
 
@@ -63,7 +60,7 @@ function loadObject(reflectionObject)
 Returns the same structure that `load` returns, but takes a reflection object from `ProtoBuf.js` instead of a file name.
 
 ```javascript
-function Server([serverOpions])
+function Server([serverOptions])
 ```
 
 Constructs a server to which service/implementation pairs can be added.

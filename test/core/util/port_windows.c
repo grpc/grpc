@@ -31,9 +31,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
-#if defined(GPR_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
+#if defined(GRPC_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
+
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include "test/core/util/port.h"
 
@@ -242,4 +244,4 @@ int grpc_pick_unused_port_or_die(void) {
 
 void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
 
-#endif /* GPR_WINSOCK_SOCKET && GRPC_TEST_PICK_PORT */
+#endif /* GRPC_WINSOCK_SOCKET && GRPC_TEST_PICK_PORT */

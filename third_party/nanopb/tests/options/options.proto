@@ -1,0 +1,91 @@
+/* Test nanopb option parsing.
+ * options.expected lists the patterns that are searched for in the output.
+ */
+
+syntax = "proto2";
+
+import "nanopb.proto";
+
+// File level options
+option (nanopb_fileopt).max_size = 20;
+
+message Message1
+{
+    required string filesize = 1;
+}
+
+// Message level options
+message Message2
+{
+    option (nanopb_msgopt).max_size = 30;
+    required string msgsize = 1;
+}
+
+// Field level options
+message Message3
+{
+    option (nanopb_msgopt).msgid = 103;
+    required string fieldsize = 1 [(nanopb).max_size = 40];
+}
+
+// Forced callback field
+message Message4
+{
+    option (nanopb_msgopt).msgid = 104;
+    required int32 int32_callback = 1 [(nanopb).type = FT_CALLBACK];
+}
+
+// Short enum names
+enum Enum1
+{
+    option (nanopb_enumopt).long_names = false;
+    EnumValue1 = 1;
+    EnumValue2 = 2;
+}
+
+message EnumTest
+{
+    required Enum1 field = 1 [default = EnumValue2];
+}
+
+// Short enum names inside message
+message Message5
+{
+    option (nanopb_msgopt).msgid = 105;
+    enum Enum2
+    {
+       option (nanopb_enumopt).long_names = false;
+       EnumValue1 = 1;
+    }
+    required Enum2 field = 1 [default = EnumValue1];
+}
+
+// Packed structure
+message my_packed_struct
+{
+    option (nanopb_msgopt).packed_struct = true;
+    optional int32 myfield = 1;
+}
+
+// Message with ignored field
+message Message6
+{
+    required int32 field1 = 1;
+    optional int32 skipped_field = 2 [(nanopb).type = FT_IGNORE];
+}
+
+// Message that is skipped
+message SkippedMessage
+{
+    option (nanopb_msgopt).skip_message = true;
+    required int32 foo = 1;
+}
+
+// Message with oneof field
+message OneofMessage
+{
+    oneof foo {
+        int32 bar = 1;
+    }
+}
+

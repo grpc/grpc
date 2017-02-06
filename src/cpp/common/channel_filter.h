@@ -36,12 +36,13 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/alloc.h>
+#include <grpc/support/alloc.h>
 
 #include <functional>
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -53,11 +54,6 @@
 ///   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
 ///       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
 /// \endcode
-
-/// Forward declaration to avoid including the file
-/// "src/core/lib/security/context/security_context.h"
-struct grpc_client_security_context;
-struct grpc_server_security_context;
 
 namespace grpc {
 
@@ -74,13 +70,14 @@ class MetadataBatch {
   /// Adds metadata and returns the newly allocated storage.
   /// The caller takes ownership of the result, which must exist for the
   /// lifetime of the gRPC call.
-  grpc_linked_mdelem *AddMetadata(const string &key, const string &value);
+  grpc_linked_mdelem *AddMetadata(grpc_exec_ctx *exec_ctx, const string &key,
+                                  const string &value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem &operator*() const { return *elem_->md; }
-    const grpc_mdelem *operator->() const { return elem_->md; }
+    const grpc_mdelem &operator*() const { return elem_->md; }
+    const grpc_mdelem operator->() const { return elem_->md; }
 
     const_iterator &operator++() {
       elem_ = elem_->next;
@@ -136,7 +133,7 @@ class TransportOp {
   grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->send_goaway; }
+  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -220,23 +217,24 @@ class TransportStreamOp {
 /// Represents channel data.
 class ChannelData {
  public:
-  virtual ~ChannelData() {
-    if (peer_) gpr_free((void *)peer_);
+  virtual ~ChannelData() {}
+
+  /// Initializes the call data.
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
+                           grpc_channel_element_args *args) {
+    return GRPC_ERROR_NONE;
   }
 
-  /// Caller does NOT take ownership of result.
-  const char *peer() const { return peer_; }
-
   // TODO(roth): Find a way to avoid passing elem into these methods.
+
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
 
- protected:
-  /// Takes ownership of \a peer.
-  ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
+  virtual void GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                       const grpc_channel_info *channel_info);
 
- private:
-  const char *peer_;
+ protected:
+  ChannelData() {}
 };
 
 /// Represents call data.
@@ -245,7 +243,10 @@ class CallData {
   virtual ~CallData() {}
 
   /// Initializes the call data.
-  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
+                           grpc_call_element_args *args) {
+    return GRPC_ERROR_NONE;
+  }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
@@ -263,7 +264,7 @@ class CallData {
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
  protected:
-  explicit CallData(const ChannelData &) {}
+  CallData() {}
 };
 
 namespace internal {
@@ -272,19 +273,15 @@ namespace internal {
 // Members of this class correspond to the members of the C
 // grpc_channel_filter struct.
 template <typename ChannelDataType, typename CallDataType>
-class ChannelFilter GRPC_FINAL {
+class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static void InitChannelElement(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem,
-                                 grpc_channel_element_args *args) {
-    const char *peer =
-        args->optional_transport
-            ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
-            : nullptr;
-    // Construct the object in the already-allocated memory.
-    new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
+  static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_element *elem,
+                                        grpc_channel_element_args *args) {
+    ChannelDataType *channel_data = new (elem->channel_data) ChannelDataType();
+    return channel_data->Init(exec_ctx, args);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
@@ -300,16 +297,22 @@ class ChannelFilter GRPC_FINAL {
     channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
   }
 
+  static void GetChannelInfo(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_element *elem,
+                             const grpc_channel_info *channel_info) {
+    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    channel_data->GetInfo(exec_ctx, elem, channel_info);
+  }
+
   static const size_t call_data_size = sizeof(CallDataType);
 
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
-    const ChannelDataType &channel_data =
-        *(ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
-    CallDataType *call_data = new (elem->call_data) CallDataType(channel_data);
-    return call_data->Init();
+    CallDataType *call_data = new (elem->call_data) CallDataType();
+    return call_data->Init(exec_ctx, channel_data, args);
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
@@ -380,7 +383,8 @@ void RegisterChannelFilter(
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetPeer, name}};
+       FilterType::DestroyChannelElement, FilterType::GetPeer,
+       FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);
 }
 

@@ -79,7 +79,11 @@ static grpc_channel *create_proxy_client(const char *target,
   channel =
       grpc_secure_channel_create(ssl_creds, target, new_client_args, NULL);
   grpc_channel_credentials_release(ssl_creds);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   return channel;
 }
 
@@ -151,7 +155,11 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 static int fail_server_auth_check(grpc_channel_args *server_args) {
@@ -184,7 +192,10 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,

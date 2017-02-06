@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include "src/core/lib/iomgr/tcp_server.h"
 
 #include <errno.h>
@@ -46,6 +51,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -98,7 +104,7 @@ static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
 static void server_weak_ref_init(server_weak_ref *weak_ref) {
   weak_ref->server = NULL;
   grpc_closure_init(&weak_ref->server_shutdown, server_weak_ref_shutdown,
-                    weak_ref);
+                    weak_ref, grpc_schedule_on_exec_ctx);
 }
 
 /* Make weak_ref->server_shutdown a shutdown_starting cb on server.
@@ -115,11 +121,15 @@ static void server_weak_ref_set(server_weak_ref *weak_ref,
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
-  grpc_endpoint_shutdown(exec_ctx, tcp);
+  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
 
+  on_connect_result temp_result;
+  on_connect_result_set(&temp_result, acceptor);
+  gpr_free(acceptor);
+
   gpr_mu_lock(g_mu);
-  on_connect_result_set(&g_result, acceptor);
+  g_result = temp_result;
   g_nconnects++;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
@@ -129,7 +139,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
 static void test_no_op(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s));
   grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -137,7 +148,8 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s));
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(&exec_ctx, s);
@@ -146,16 +158,19 @@ static void test_no_op_with_start(void) {
 
 static void test_no_op_with_port(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_in addr;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port");
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
   int port;
-  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      &port) == GRPC_ERROR_NONE &&
+  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
+                 GRPC_ERROR_NONE &&
              port > 0);
 
   grpc_tcp_server_unref(&exec_ctx, s);
@@ -164,16 +179,19 @@ static void test_no_op_with_port(void) {
 
 static void test_no_op_with_port_and_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_in addr;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port;
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      &port) == GRPC_ERROR_NONE &&
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
+                 GRPC_ERROR_NONE &&
              port > 0);
 
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
@@ -184,7 +202,7 @@ static void test_no_op_with_port_and_start(void) {
 
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
                         socklen_t remote_len, on_connect_result *result) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   int clifd = socket(remote->sa_family, SOCK_STREAM, 0);
   int nconnects_before;
 
@@ -218,33 +236,37 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
    the same port should be tested. */
 static void test_connect(unsigned n) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_storage addr;
-  struct sockaddr_storage addr1;
-  socklen_t addr_len = sizeof(addr);
+  grpc_resolved_address resolved_addr;
+  grpc_resolved_address resolved_addr1;
+  struct sockaddr_storage *addr = (struct sockaddr_storage *)resolved_addr.addr;
+  struct sockaddr_storage *addr1 =
+      (struct sockaddr_storage *)resolved_addr1.addr;
   unsigned svr_fd_count;
   int svr_port;
   unsigned svr1_fd_count;
   int svr1_port;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s));
   unsigned i;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
   LOG_TEST("test_connect");
   gpr_log(GPR_INFO, "clients=%d", n);
-  memset(&addr, 0, sizeof(addr));
-  memset(&addr1, 0, sizeof(addr1));
-  addr.ss_family = addr1.ss_family = AF_INET;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  memset(&resolved_addr1, 0, sizeof(resolved_addr1));
+  resolved_addr.len = sizeof(struct sockaddr_storage);
+  resolved_addr1.len = sizeof(struct sockaddr_storage);
+  addr->ss_family = addr1->ss_family = AF_INET;
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len,
-                                      &svr_port));
+             grpc_tcp_server_add_port(s, &resolved_addr, &svr_port));
   GPR_ASSERT(svr_port > 0);
   /* Cannot use wildcard (port==0), because add_port() will try to reuse the
      same port as a previous add_port(). */
   svr1_port = grpc_pick_unused_port_or_die();
-  grpc_sockaddr_set_port((struct sockaddr *)&addr1, svr1_port);
-  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr1, addr_len,
-                                      &svr_port) == GRPC_ERROR_NONE &&
+  grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
+  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr1, &svr_port) ==
+                 GRPC_ERROR_NONE &&
              svr_port == svr1_port);
 
   /* Bad port_index. */
@@ -265,16 +287,18 @@ static void test_connect(unsigned n) {
     int fd = grpc_tcp_server_port_fd(s, 0, i);
     GPR_ASSERT(fd >= 0);
     if (i == 0) {
-      GPR_ASSERT(getsockname(fd, (struct sockaddr *)&addr, &addr_len) == 0);
-      GPR_ASSERT(addr_len <= sizeof(addr));
+      GPR_ASSERT(getsockname(fd, (struct sockaddr *)addr,
+                             (socklen_t *)&resolved_addr.len) == 0);
+      GPR_ASSERT(resolved_addr.len <= sizeof(*addr));
     }
   }
   for (i = 0; i < svr1_fd_count; ++i) {
     int fd = grpc_tcp_server_port_fd(s, 1, i);
     GPR_ASSERT(fd >= 0);
     if (i == 0) {
-      GPR_ASSERT(getsockname(fd, (struct sockaddr *)&addr1, &addr_len) == 0);
-      GPR_ASSERT(addr_len <= sizeof(addr1));
+      GPR_ASSERT(getsockname(fd, (struct sockaddr *)addr1,
+                             (socklen_t *)&resolved_addr1.len) == 0);
+      GPR_ASSERT(resolved_addr1.len <= sizeof(*addr1));
     }
   }
 
@@ -284,7 +308,8 @@ static void test_connect(unsigned n) {
     on_connect_result result;
     int svr_fd;
     on_connect_result_init(&result);
-    tcp_connect(&exec_ctx, (struct sockaddr *)&addr, addr_len, &result);
+    tcp_connect(&exec_ctx, (struct sockaddr *)addr,
+                (socklen_t)resolved_addr.len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     svr_fd = result.server_fd;
     GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index) ==
@@ -298,7 +323,8 @@ static void test_connect(unsigned n) {
     grpc_tcp_server_unref(&exec_ctx, result.server);
 
     on_connect_result_init(&result);
-    tcp_connect(&exec_ctx, (struct sockaddr *)&addr1, addr_len, &result);
+    tcp_connect(&exec_ctx, (struct sockaddr *)addr1,
+                (socklen_t)resolved_addr1.len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     GPR_ASSERT(result.server_fd != svr_fd);
     GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index) ==
@@ -314,11 +340,10 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
 
   grpc_tcp_server_unref(&exec_ctx, s);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Weak ref lost. */
   GPR_ASSERT(weak_ref.server == NULL);
-
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
@@ -341,10 +366,17 @@ int main(int argc, char **argv) {
   test_connect(1);
   test_connect(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   gpr_free(g_pollset);
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

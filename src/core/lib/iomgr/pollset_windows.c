@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -109,7 +109,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -167,8 +167,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_exec_ctx_sched(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE,
-                            NULL);
+        grpc_closure_sched(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE);
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -241,4 +240,4 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
 
 void grpc_kick_poller(void) { grpc_iocp_kick(); }
 
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

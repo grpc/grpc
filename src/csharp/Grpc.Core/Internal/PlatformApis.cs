@@ -50,6 +50,7 @@ namespace Grpc.Core.Internal
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
+        static readonly bool isNetCore;
 
         static PlatformApis()
         {
@@ -57,6 +58,7 @@ namespace Grpc.Core.Internal
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            isNetCore = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
 #else
             var platform = Environment.OSVersion.Platform;
 
@@ -64,6 +66,7 @@ namespace Grpc.Core.Internal
             isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
             isLinux = (platform == PlatformID.Unix && !isMacOSX);
             isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
+            isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
         }
@@ -86,6 +89,14 @@ namespace Grpc.Core.Internal
         public static bool IsMono
         {
             get { return isMono; }
+        }
+
+        /// <summary>
+        /// true if running on .NET Core (CoreCLR), false otherwise.
+        /// </summary>
+        public static bool IsNetCore
+        {
+            get { return isNetCore; }
         }
 
         public static bool Is64Bit

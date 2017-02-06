@@ -32,15 +32,14 @@
  */
 
 #include <signal.h>
-#include <unistd.h>
 
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-bool grpc::testing::interop::g_got_sigint = false;
+gpr_atm grpc::testing::interop::g_got_sigint;
 
 static void sigint_handler(int x) {
-  grpc::testing::interop::g_got_sigint = true;
+  gpr_atm_no_barrier_store(&grpc::testing::interop::g_got_sigint, true);
 }
 
 int main(int argc, char** argv) {

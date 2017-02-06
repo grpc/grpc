@@ -36,12 +36,16 @@ cd $(dirname $0)/../..
 
 # run 8core client vs 8core server
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp node ruby java python go \
+    -l c++ csharp node ruby java python go node_express \
     --netperf \
-    --category all \
+    --category scalable \
     --bq_result_table performance_test.performance_experiment \
     --remote_worker_host grpc-performance-server-8core grpc-performance-client-8core grpc-performance-client2-8core \
+    --xml_report report_8core.xml \
     || EXIT_CODE=1
+
+# prevent pushing leftover build files to remote hosts in the next step.
+git clean -fdxq --exclude='report*.xml'
 
 # scalability with 32cores (and upload to a different BQ table)
 tools/run_tests/run_performance_tests.py \
@@ -50,7 +54,19 @@ tools/run_tests/run_performance_tests.py \
     --category scalable \
     --bq_result_table performance_test.performance_experiment_32core \
     --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
+    --xml_report report_32core.xml \
+    || EXIT_CODE=1
+
+# prevent pushing leftover build files to remote hosts in the next step.
+git clean -fdxq --exclude='report*.xml'
+
+# selected scenarios on Windows
+tools/run_tests/run_performance_tests.py \
+    -l csharp \
+    --category scalable \
+    --bq_result_table performance_test.performance_experiment_windows \
+    --remote_worker_host grpc-performance-windows1 grpc-performance-windows2 \
+    --xml_report report_windows.xml \
     || EXIT_CODE=1
 
 exit $EXIT_CODE
-

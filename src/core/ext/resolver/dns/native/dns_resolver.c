@@ -37,36 +37,36 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/lb_policy_registry.h"
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/string.h"
 
-#define BACKOFF_MULTIPLIER 1.6
-#define BACKOFF_JITTER 0.2
-#define BACKOFF_MIN_SECONDS 1
-#define BACKOFF_MAX_SECONDS 120
+#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
+#define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
+#define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
+#define GRPC_DNS_RECONNECT_JITTER 0.2
 
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
-  /** refcount */
-  gpr_refcount refs;
   /** name to resolve */
-  char *name;
+  char *name_to_resolve;
   /** default port to use */
   char *default_port;
-  /** subchannel factory */
-  grpc_client_channel_factory *client_channel_factory;
-  /** load balancing policy name */
-  char *lb_policy_name;
+  /** channel args. */
+  grpc_channel_args *channel_args;
+  /** pollset_set to drive the name resolution process */
+  grpc_pollset_set *interested_parties;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** are we currently resolving? */
-  int resolving;
+  bool resolving;
   /** which version of the result have we published? */
   int published_version;
   /** which version of the result is current? */
@@ -74,12 +74,13 @@ typedef struct {
   /** pending next completion, or NULL */
   grpc_closure *next_completion;
   /** target result address for next completion */
-  grpc_resolver_result **target_result;
+  grpc_channel_args **target_result;
   /** current (fully resolved) result */
-  grpc_resolver_result *resolved_result;
+  grpc_channel_args *resolved_result;
   /** retry timer */
   bool have_retry_timer;
   grpc_timer retry_timer;
+  grpc_closure on_retry;
   /** retry backoff state */
   gpr_backoff backoff_state;
 
@@ -97,7 +98,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                     grpc_resolver_result **target_result,
+                     grpc_channel_args **target_result,
                      grpc_closure *on_complete);
 
 static const grpc_resolver_vtable dns_resolver_vtable = {
@@ -111,8 +112,8 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion,
-                        GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
+    grpc_closure_sched(exec_ctx, r->next_completion,
+                       GRPC_ERROR_CREATE("Resolver Shutdown"));
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -130,7 +131,7 @@ static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx,
 }
 
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                     grpc_resolver_result **target_result,
+                     grpc_channel_args **target_result,
                      grpc_closure *on_complete) {
   dns_resolver *r = (dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
@@ -165,46 +166,44 @@ static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
 static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
   dns_resolver *r = arg;
-  grpc_resolver_result *result = NULL;
-  grpc_lb_policy *lb_policy;
+  grpc_channel_args *result = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
-  r->resolving = 0;
-  grpc_resolved_addresses *addresses = r->addresses;
-  if (addresses != NULL) {
-    grpc_lb_policy_args lb_policy_args;
-    result = grpc_resolver_result_create();
-    memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.addresses = addresses;
-    lb_policy_args.client_channel_factory = r->client_channel_factory;
-    lb_policy =
-        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    if (lb_policy != NULL) {
-      grpc_resolver_result_set_lb_policy(result, lb_policy);
-      GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
+  r->resolving = false;
+  if (r->addresses != NULL) {
+    grpc_lb_addresses *addresses = grpc_lb_addresses_create(
+        r->addresses->naddrs, NULL /* user_data_vtable */);
+    for (size_t i = 0; i < r->addresses->naddrs; ++i) {
+      grpc_lb_addresses_set_address(
+          addresses, i, &r->addresses->addrs[i].addr,
+          r->addresses->addrs[i].len, false /* is_balancer */,
+          NULL /* balancer_name */, NULL /* user_data */);
     }
-    grpc_resolved_addresses_destroy(addresses);
+    grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(addresses);
+    result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
+    grpc_resolved_addresses_destroy(r->addresses);
+    grpc_lb_addresses_destroy(exec_ctx, addresses);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
-    const char *msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
-    grpc_error_free_string(msg);
+    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
+            grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) <= 0) {
+    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
               timeout.tv_nsec);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, dns_on_retry_timer, r,
-                    now);
+    grpc_closure_init(&r->on_retry, dns_on_retry_timer, r,
+                      grpc_schedule_on_exec_ctx);
+    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
   }
-  if (r->resolved_result) {
-    grpc_resolver_result_unref(exec_ctx, r->resolved_result);
+  if (r->resolved_result != NULL) {
+    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
   r->resolved_result = result;
   r->resolved_version++;
@@ -218,21 +217,22 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
                                        dns_resolver *r) {
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
-  r->resolving = 1;
+  r->resolving = true;
   r->addresses = NULL;
-  grpc_resolve_address(exec_ctx, r->name, r->default_port,
-                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
+  grpc_resolve_address(
+      exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
+      grpc_closure_create(dns_on_resolved, r, grpc_schedule_on_exec_ctx),
+      &r->addresses);
 }
 
 static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                          dns_resolver *r) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
-    *r->target_result = r->resolved_result;
-    if (r->resolved_result) {
-      grpc_resolver_result_ref(r->resolved_result);
-    }
-    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    *r->target_result = r->resolved_result == NULL
+                            ? NULL
+                            : grpc_channel_args_copy(r->resolved_result);
+    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
@@ -241,41 +241,44 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  if (r->resolved_result) {
-    grpc_resolver_result_unref(exec_ctx, r->resolved_result);
+  if (r->resolved_result != NULL) {
+    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
-  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
-  gpr_free(r->name);
+  grpc_pollset_set_destroy(r->interested_parties);
+  gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
-  gpr_free(r->lb_policy_name);
+  grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
 }
 
-static grpc_resolver *dns_create(grpc_resolver_args *args,
-                                 const char *default_port,
-                                 const char *lb_policy_name) {
-  dns_resolver *r;
-  const char *path = args->uri->path;
-
+static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
+                                 grpc_resolver_args *args,
+                                 const char *default_port) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-
+  // Get name from args.
+  char *path = args->uri->path;
   if (path[0] == '/') ++path;
-
-  r = gpr_malloc(sizeof(dns_resolver));
+  // Create resolver.
+  dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
-  gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
-  r->name = gpr_strdup(path);
+  r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
-  r->client_channel_factory = args->client_channel_factory;
-  gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
-                   BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
-  grpc_client_channel_factory_ref(r->client_channel_factory);
-  r->lb_policy_name = gpr_strdup(lb_policy_name);
+  r->channel_args = grpc_channel_args_copy(args->args);
+  r->interested_parties = grpc_pollset_set_create();
+  if (args->pollset_set != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
+                                     args->pollset_set);
+  }
+  gpr_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
+                   GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
+                   GRPC_DNS_RECONNECT_JITTER,
+                   GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+                   GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   return &r->base;
 }
 
@@ -288,8 +291,9 @@ static void dns_factory_ref(grpc_resolver_factory *factory) {}
 static void dns_factory_unref(grpc_resolver_factory *factory) {}
 
 static grpc_resolver *dns_factory_create_resolver(
-    grpc_resolver_factory *factory, grpc_resolver_args *args) {
-  return dns_create(args, "https", "pick_first");
+    grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,
+    grpc_resolver_args *args) {
+  return dns_create(exec_ctx, args, "https");
 }
 
 static char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,

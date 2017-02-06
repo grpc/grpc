@@ -35,6 +35,8 @@
 #include <mutex>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -45,9 +47,9 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -119,9 +121,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   // Only implement the one method we will be calling for brevity.
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
@@ -145,7 +147,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
 class End2endTest : public ::testing::Test {
  protected:
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -156,7 +158,7 @@ class End2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =

@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>
 
@@ -178,8 +178,8 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *completion_queue, const char *method,
-    const char *host, gpr_timespec deadline, void *reserved);
+    grpc_completion_queue *completion_queue, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
     to ping); if the channel is not connected, posts a failed. */
@@ -202,9 +202,15 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
     Only one operation of each type can be active at once in any given
-    batch. You must call grpc_completion_queue_next or
-    grpc_completion_queue_pluck on the completion queue associated with 'call'
-    for work to be performed.
+    batch.
+    If a call to grpc_call_start_batch returns GRPC_CALL_OK you must call
+    grpc_completion_queue_next or grpc_completion_queue_pluck on the completion
+    queue associated with 'call' for work to be performed. If a call to
+    grpc_call_start_batch returns any value other than GRPC_CALL_OK it is
+    guaranteed that no state associated with 'call' is changed and it is not
+    appropriate to call grpc_completion_queue_next or
+    grpc_completion_queue_pluck consequent to the failed grpc_call_start_batch
+    call.
     THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
@@ -236,6 +242,13 @@ GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
 /** Return a newly allocated string representing the target a channel was
     created for. */
 GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
+
+/** Request info about the channel.
+    \a channel_info indicates what information is being requested and
+    how that information will be returned.
+    \a channel_info is owned by the caller. */
+GRPCAPI void grpc_channel_get_info(grpc_channel *channel,
+                                   const grpc_channel_info *channel_info);
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
@@ -389,17 +402,34 @@ GRPCAPI void grpc_server_destroy(grpc_server *server);
 GRPCAPI int grpc_tracer_set_enabled(const char *name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
-GRPCAPI int grpc_header_key_is_legal(const char *key, size_t length);
+GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+GRPCAPI int grpc_header_nonbin_value_is_legal(grpc_slice slice);
 
 /** Check whether a metadata key corresponds to a binary value */
-GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
+GRPCAPI int grpc_is_binary_header(grpc_slice slice);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
+
+/** Create a buffer pool */
+GRPCAPI grpc_resource_quota *grpc_resource_quota_create(const char *trace_name);
+
+/** Add a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_ref(grpc_resource_quota *resource_quota);
+
+/** Drop a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota *resource_quota);
+
+/** Update the size of a buffer pool */
+GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
+                                        size_t new_size);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
+ */
+GRPCAPI const grpc_arg_pointer_vtable *grpc_resource_quota_arg_vtable(void);
 
 #ifdef __cplusplus
 }

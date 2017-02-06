@@ -37,15 +37,15 @@
 
 #include "src/core/lib/json/json.h"
 
-grpc_json *grpc_json_create(grpc_json_type type) {
-  grpc_json *json = gpr_malloc(sizeof(*json));
+grpc_json* grpc_json_create(grpc_json_type type) {
+  grpc_json* json = gpr_malloc(sizeof(*json));
   memset(json, 0, sizeof(*json));
   json->type = type;
 
   return json;
 }
 
-void grpc_json_destroy(grpc_json *json) {
+void grpc_json_destroy(grpc_json* json) {
   while (json->child) {
     grpc_json_destroy(json->child);
   }

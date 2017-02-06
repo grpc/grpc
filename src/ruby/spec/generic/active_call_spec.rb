@@ -137,6 +137,8 @@ describe GRPC::ActiveCall do
         msg = 'message is a string'
         client_call.write_flag = f
         client_call.remote_send(msg)
+        # flush the message in case writes are set to buffered
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil) if f == 1
 
         # confirm that the message was marshalled
         recvd_rpc =  @server.request_call
@@ -400,7 +402,7 @@ describe GRPC::ActiveCall do
                                    @pass_through, deadline)
       msg = 'message is a string'
       client_call.remote_send(msg)
-      client_call.writes_done(false)
+      call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'OK')
@@ -458,7 +460,7 @@ describe GRPC::ActiveCall do
       msg = 'message is a string'
       reply = 'server_response'
       client_call.remote_send(msg)
-      client_call.writes_done(false)
+      call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
       server_call = expect_server_to_receive(msg)
       e = client_call.each_remote_read
       n = 3 # arbitrary value > 1
@@ -471,7 +473,7 @@ describe GRPC::ActiveCall do
     end
   end
 
-  describe '#writes_done' do
+  describe '#closing the call from the client' do
     it 'finishes ok if the server sends a status response' do
       call = make_test_call
       ActiveCall.client_invoke(call)
@@ -479,7 +481,9 @@ describe GRPC::ActiveCall do
                                    @pass_through, deadline)
       msg = 'message is a string'
       client_call.remote_send(msg)
-      expect { client_call.writes_done(false) }.to_not raise_error
+      expect do
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
+      end.to_not raise_error
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('server_response')
@@ -498,11 +502,13 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
-      expect { client_call.writes_done(false) }.to_not raise_error
+      expect do
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
+      end.to_not raise_error
       expect { client_call.finished }.to_not raise_error
     end
 
-    it 'finishes ok if writes_done is true' do
+    it 'finishes ok if SEND_CLOSE and RECV_STATUS has been sent' do
       call = make_test_call
       ActiveCall.client_invoke(call)
       client_call = ActiveCall.new(call, @pass_through,
@@ -513,7 +519,11 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
-      expect { client_call.writes_done(true) }.to_not raise_error
+      expect do
+        call.run_batch(
+          CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+          CallOps::RECV_STATUS_ON_CLIENT => nil)
+      end.to_not raise_error
     end
   end
 

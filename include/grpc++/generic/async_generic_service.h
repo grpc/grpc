@@ -44,7 +44,7 @@ namespace grpc {
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
 
-class GenericServerContext GRPC_FINAL : public ServerContext {
+class GenericServerContext final : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -57,7 +57,7 @@ class GenericServerContext GRPC_FINAL : public ServerContext {
   grpc::string host_;
 };
 
-class AsyncGenericService GRPC_FINAL {
+class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
 

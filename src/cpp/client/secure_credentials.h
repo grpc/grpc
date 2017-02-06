@@ -43,34 +43,34 @@
 
 namespace grpc {
 
-class SecureChannelCredentials GRPC_FINAL : public ChannelCredentials {
+class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<grpc::Channel> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
-  SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+      const string& target, const grpc::ChannelArguments& args) override;
+  SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   grpc_channel_credentials* const c_creds_;
 };
 
-class SecureCallCredentials GRPC_FINAL : public CallCredentials {
+class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
-  SecureCallCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+  bool ApplyToCall(grpc_call* call) override;
+  SecureCallCredentials* AsSecureCredentials() override { return this; }
 
  private:
   grpc_call_credentials* const c_creds_;
 };
 
-class MetadataCredentialsPluginWrapper GRPC_FINAL {
+class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
   static void GetMetadata(void* wrapper, grpc_auth_metadata_context context,

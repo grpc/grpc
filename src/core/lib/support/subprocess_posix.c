@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,7 +53,7 @@
 
 struct gpr_subprocess {
   int pid;
-  int joined;
+  bool joined;
 };
 
 const char *gpr_subprocess_binary_extension() { return ""; }
@@ -97,9 +98,11 @@ retry:
     if (errno == EINTR) {
       goto retry;
     }
-    gpr_log(GPR_ERROR, "waitpid failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "waitpid failed for pid %d: %s", p->pid,
+            strerror(errno));
     return -1;
   }
+  p->joined = true;
   return status;
 }
 

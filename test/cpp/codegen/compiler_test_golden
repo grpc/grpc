@@ -67,7 +67,7 @@ namespace testing {
 // ServiceA detached comment 2
 //
 // ServiceA leading comment 1
-class ServiceA GRPC_FINAL {
+class ServiceA final {
  public:
   class StubInterface {
    public:
@@ -94,10 +94,10 @@ class ServiceA GRPC_FINAL {
     virtual ::grpc::ClientWriterInterface< ::grpc::testing::Request>* MethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response) = 0;
     virtual ::grpc::ClientAsyncWriterInterface< ::grpc::testing::Request>* AsyncMethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::CompletionQueue* cq, void* tag) = 0;
   };
-  class Stub GRPC_FINAL : public StubInterface {
+  class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
-    ::grpc::Status MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) GRPC_OVERRIDE;
+    ::grpc::Status MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>> AsyncMethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>>(AsyncMethodA1Raw(context, request, cq));
     }
@@ -110,9 +110,9 @@ class ServiceA GRPC_FINAL {
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
-    ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
-    ::grpc::ClientWriter< ::grpc::testing::Request>* MethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response) GRPC_OVERRIDE;
-    ::grpc::ClientAsyncWriter< ::grpc::testing::Request>* AsyncMethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
+    ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientWriter< ::grpc::testing::Request>* MethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response) override;
+    ::grpc::ClientAsyncWriter< ::grpc::testing::Request>* AsyncMethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::CompletionQueue* cq, void* tag) override;
     const ::grpc::RpcMethod rpcmethod_MethodA1_;
     const ::grpc::RpcMethod rpcmethod_MethodA2_;
   };
@@ -140,11 +140,11 @@ class ServiceA GRPC_FINAL {
     WithAsyncMethod_MethodA1() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_MethodA1() GRPC_OVERRIDE {
+    ~WithAsyncMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -160,11 +160,11 @@ class ServiceA GRPC_FINAL {
     WithAsyncMethod_MethodA2() {
       ::grpc::Service::MarkMethodAsync(1);
     }
-    ~WithAsyncMethod_MethodA2() GRPC_OVERRIDE {
+    ~WithAsyncMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -181,11 +181,11 @@ class ServiceA GRPC_FINAL {
     WithGenericMethod_MethodA1() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_MethodA1() GRPC_OVERRIDE {
+    ~WithGenericMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -198,11 +198,11 @@ class ServiceA GRPC_FINAL {
     WithGenericMethod_MethodA2() {
       ::grpc::Service::MarkMethodGeneric(1);
     }
-    ~WithGenericMethod_MethodA2() GRPC_OVERRIDE {
+    ~WithGenericMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -213,14 +213,14 @@ class ServiceA GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_MethodA1() {
-      ::grpc::Service::MarkMethodStreamedUnary(0,
+      ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodA1<BaseClass>::StreamedMethodA1, this, std::placeholders::_1, std::placeholders::_2)));
     }
-    ~WithStreamedUnaryMethod_MethodA1() GRPC_OVERRIDE {
+    ~WithStreamedUnaryMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -228,10 +228,12 @@ class ServiceA GRPC_FINAL {
     virtual ::grpc::Status StreamedMethodA1(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::grpc::testing::Request,::grpc::testing::Response>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_MethodA1<Service > StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef WithStreamedUnaryMethod_MethodA1<Service > StreamedService;
 };
 
 // ServiceB leading comment 1
-class ServiceB GRPC_FINAL {
+class ServiceB final {
  public:
   class StubInterface {
    public:
@@ -245,17 +247,17 @@ class ServiceB GRPC_FINAL {
   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
   };
-  class Stub GRPC_FINAL : public StubInterface {
+  class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
-    ::grpc::Status MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) GRPC_OVERRIDE;
+    ::grpc::Status MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>> AsyncMethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>>(AsyncMethodB1Raw(context, request, cq));
     }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
-    ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
+    ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::RpcMethod rpcmethod_MethodB1_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -276,11 +278,11 @@ class ServiceB GRPC_FINAL {
     WithAsyncMethod_MethodB1() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_MethodB1() GRPC_OVERRIDE {
+    ~WithAsyncMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -297,11 +299,11 @@ class ServiceB GRPC_FINAL {
     WithGenericMethod_MethodB1() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_MethodB1() GRPC_OVERRIDE {
+    ~WithGenericMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -312,14 +314,14 @@ class ServiceB GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_MethodB1() {
-      ::grpc::Service::MarkMethodStreamedUnary(0,
+      ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodB1<BaseClass>::StreamedMethodB1, this, std::placeholders::_1, std::placeholders::_2)));
     }
-    ~WithStreamedUnaryMethod_MethodB1() GRPC_OVERRIDE {
+    ~WithStreamedUnaryMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -327,6 +329,8 @@ class ServiceB GRPC_FINAL {
     virtual ::grpc::Status StreamedMethodB1(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::grpc::testing::Request,::grpc::testing::Response>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_MethodB1<Service > StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef WithStreamedUnaryMethod_MethodB1<Service > StreamedService;
 };
 // ServiceB trailing comment 1
 

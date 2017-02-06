@@ -35,7 +35,6 @@
 #define GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc/impl/codegen/log.h>
 
 namespace grpc {
 

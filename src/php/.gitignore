@@ -20,3 +20,6 @@ mkinstalldirs
 ext/grpc/ltmain.sh
 composer.lock
 vendor/
+
+*.pb.php
+*_grpc_pb.php

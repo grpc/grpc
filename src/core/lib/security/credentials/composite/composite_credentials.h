@@ -53,7 +53,7 @@ grpc_call_credentials *grpc_credentials_contains_type(
     grpc_call_credentials *creds, const char *type,
     grpc_call_credentials **composite_creds);
 
-/* -- Channel composite credentials. -- */
+/* -- Composite channel credentials. -- */
 
 typedef struct {
   grpc_channel_credentials base;
@@ -61,7 +61,7 @@ typedef struct {
   grpc_call_credentials *call_creds;
 } grpc_composite_channel_credentials;
 
-/* -- Composite credentials. -- */
+/* -- Composite call credentials. -- */
 
 typedef struct {
   grpc_call_credentials base;

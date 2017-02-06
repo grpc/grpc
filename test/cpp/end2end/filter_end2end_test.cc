@@ -78,35 +78,35 @@ namespace {
 
 int global_num_connections = 0;
 int global_num_calls = 0;
-mutex global_mu;
+std::mutex global_mu;
 
 void IncrementConnectionCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   ++global_num_connections;
 }
 
 void ResetConnectionCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   global_num_connections = 0;
 }
 
 int GetConnectionCounterValue() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   return global_num_connections;
 }
 
 void IncrementCallCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   ++global_num_calls;
 }
 
 void ResetCallCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   global_num_calls = 0;
 }
 
 int GetCallCounterValue() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   return global_num_calls;
 }
 
@@ -114,20 +114,17 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  ChannelDataImpl(const grpc_channel_args& args, const char* peer)
-      : ChannelData(args, peer) {
+  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element_args* args) {
     IncrementConnectionCounter();
+    return GRPC_ERROR_NONE;
   }
 };
 
 class CallDataImpl : public CallData {
  public:
-  explicit CallDataImpl(const ChannelDataImpl& channel_data)
-      : CallData(channel_data) {}
-
   void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              TransportStreamOp* op) GRPC_OVERRIDE {
-    // Incrementing the counter could be done from the ctor, but we want
+                              TransportStreamOp* op) override {
+    // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
     grpc_call_next_op(exec_ctx, elem, op->op());
@@ -138,7 +135,7 @@ class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
     // Setup server
@@ -150,7 +147,7 @@ class FilterEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;

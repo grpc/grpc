@@ -108,10 +108,10 @@ class SynchronousClient
   std::vector<SimpleResponse> responses_;
 
  private:
-  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL { EndThreads(); }
+  void DestroyMultithreading() override final { EndThreads(); }
 };
 
-class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
+class SynchronousUnaryClient final : public SynchronousClient {
  public:
   SynchronousUnaryClient(const ClientConfig& config)
       : SynchronousClient(config) {
@@ -119,7 +119,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   }
   ~SynchronousUnaryClient() {}
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
@@ -130,17 +130,17 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     entry->set_value((UsageTimer::Now() - start) * 1e9);
-    return s.ok();
+    entry->set_status(s.error_code());
+    return true;
   }
 };
 
-class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
+class SynchronousStreamingClient final : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config)
-      : SynchronousClient(config) {
-    context_ = new grpc::ClientContext[num_threads_];
-    stream_ = new std::unique_ptr<
-        grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>[num_threads_];
+      : SynchronousClient(config),
+        context_(num_threads_),
+        stream_(num_threads_) {
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -153,18 +153,15 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
       if (*stream) {
         (*stream)->WritesDone();
         Status s = (*stream)->Finish();
-        EXPECT_TRUE(s.ok());
         if (!s.ok()) {
           gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
                   s.error_message().c_str());
         }
       }
     }
-    delete[] stream_;
-    delete[] context_;
   }
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
@@ -175,14 +172,19 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
       return true;
     }
-    return false;
+    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    context_[thread_idx].~ClientContext();
+    new (&context_[thread_idx]) ClientContext();
+    stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
+    return true;
   }
 
  private:
   // These are both conceptually std::vector but cannot be for old compilers
   // that expect contained classes to support copy constructors
-  grpc::ClientContext* context_;
-  std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>*
+  std::vector<grpc::ClientContext> context_;
+  std::vector<
+      std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>>
       stream_;
 };
 

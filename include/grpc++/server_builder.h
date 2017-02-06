@@ -34,6 +34,7 @@
 #ifndef GRPCXX_SERVER_BUILDER_H
 #define GRPCXX_SERVER_BUILDER_H
 
+#include <climits>
 #include <map>
 #include <memory>
 #include <vector>
@@ -42,10 +43,15 @@
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/useful.h>
+
+struct grpc_resource_quota;
 
 namespace grpc {
 
 class AsyncGenericService;
+class ResourceQuota;
 class CompletionQueue;
 class RpcService;
 class Server;
@@ -61,6 +67,9 @@ class ServerBuilderPluginTest;
 class ServerBuilder {
  public:
   ServerBuilder();
+  ~ServerBuilder();
+
+  enum SyncServerOption { NUM_CQS, MIN_POLLERS, MAX_POLLERS, CQ_TIMEOUT_MSEC };
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -78,10 +87,21 @@ class ServerBuilder {
   /// Only matches requests with :authority \a host
   ServerBuilder& RegisterService(const grpc::string& host, Service* service);
 
-  /// Set max message size in bytes.
-  ServerBuilder& SetMaxMessageSize(int max_message_size) {
-    max_message_size_ = max_message_size;
+  /// Set max receive message size in bytes.
+  ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
+    max_receive_message_size_ = max_receive_message_size;
     return *this;
+  }
+
+  /// Set max send message size in bytes.
+  ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
+    max_send_message_size_ = max_send_message_size;
+    return *this;
+  }
+
+  /// \deprecated For backward compatibility.
+  ServerBuilder& SetMaxMessageSize(int max_message_size) {
+    return SetMaxReceiveMessageSize(max_message_size);
   }
 
   /// Set the support status for compression algorithms. All algorithms are
@@ -102,7 +122,13 @@ class ServerBuilder {
   ServerBuilder& SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
 
+  /// Set the attached buffer pool for this server
+  ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
+
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
+
+  /// Only useful if this is a Synchronous server.
+  ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -159,6 +185,28 @@ class ServerBuilder {
     int* selected_port;
   };
 
+  struct SyncServerSettings {
+    SyncServerSettings()
+        : num_cqs(1),
+          min_pollers(1),
+          max_pollers(INT_MAX),
+          cq_timeout_msec(1000) {}
+
+    // Number of server completion queues to create to listen to incoming RPCs.
+    int num_cqs;
+
+    // Minimum number of threads per completion queue that should be listening
+    // to incoming RPCs.
+    int min_pollers;
+
+    // Maximum number of threads per completion queue that can be listening to
+    // incoming RPCs.
+    int max_pollers;
+
+    // The timeout for server completion queue's AsyncNext call.
+    int cq_timeout_msec;
+  };
+
   typedef std::unique_ptr<grpc::string> HostString;
   struct NamedService {
     explicit NamedService(Service* s) : service(s) {}
@@ -168,13 +216,20 @@ class ServerBuilder {
     Service* service;
   };
 
-  int max_message_size_;
+  int max_receive_message_size_;
+  int max_send_message_size_;
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+
+  SyncServerSettings sync_server_settings_;
+
+  // List of completion queues added via AddCompletionQueue() method
   std::vector<ServerCompletionQueue*> cqs_;
+
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
+  grpc_resource_quota* resource_quota_;
   AsyncGenericService* generic_service_;
   struct {
     bool is_set;

@@ -34,18 +34,18 @@
 'use strict';
 
 var console = require('console');
-var worker_service_impl = require('./worker_service_impl');
+var WorkerServiceImpl = require('./worker_service_impl');
 
 var grpc = require('../../../');
 var serviceProto = grpc.load({
   root: __dirname + '/../../..',
   file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
 
-function runServer(port) {
+function runServer(port, benchmark_impl) {
   var server_creds = grpc.ServerCredentials.createInsecure();
   var server = new grpc.Server();
   server.addProtoService(serviceProto.WorkerService.service,
-                         worker_service_impl);
+                         new WorkerServiceImpl(benchmark_impl, server));
   var address = '0.0.0.0:' + port;
   server.bind(address, server_creds);
   server.start();
@@ -57,9 +57,9 @@ if (require.main === module) {
   Error.stackTraceLimit = Infinity;
   var parseArgs = require('minimist');
   var argv = parseArgs(process.argv, {
-    string: ['driver_port']
+    string: ['driver_port', 'benchmark_impl']
   });
-  runServer(argv.driver_port);
+  runServer(argv.driver_port, argv.benchmark_impl);
 }
 
 exports.runServer = runServer;

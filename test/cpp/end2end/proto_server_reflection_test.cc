@@ -56,7 +56,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
  public:
   ProtoServerReflectionTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     ref_desc_pool_ = protobuf::DescriptorPool::generated_pool();
 
@@ -144,7 +144,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
 TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
   ResetStub();
 
-  std::vector<std::string> services;
+  std::vector<grpc::string> services;
   desc_db_->GetServices(&services);
   // The service list has at least one service (reflection servcie).
   EXPECT_TRUE(services.size() > 0);

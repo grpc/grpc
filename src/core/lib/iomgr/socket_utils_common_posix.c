@@ -31,10 +31,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <arpa/inet.h>
@@ -78,7 +79,7 @@ grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
 }
 
 grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
-#ifdef GPR_HAVE_SO_NOSIGPIPE
+#ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -96,7 +97,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IP_PKTINFO
+#ifdef GRPC_HAVE_IP_PKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
@@ -107,7 +108,7 @@ grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IPV6_RECVPKTINFO
+#ifdef GRPC_HAVE_IPV6_RECVPKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
@@ -208,6 +209,15 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   return GRPC_ERROR_NONE;
 }
 
+/* set a socket using a grpc_socket_mutator */
+grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator) {
+  GPR_ASSERT(mutator);
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
+    return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
+  }
+  return GRPC_ERROR_NONE;
+}
+
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
 static int g_ipv6_loopback_available;
 
@@ -253,7 +263,7 @@ static int set_socket_dualstack(int fd) {
   }
 }
 
-static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
+static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
   char *addr_str;
   grpc_sockaddr_to_string(&addr_str, addr, 0);
@@ -263,10 +273,10 @@ static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
   return err;
 }
 
-grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
-                                         int protocol,
-                                         grpc_dualstack_mode *dsmode,
-                                         int *newfd) {
+grpc_error *grpc_create_dualstack_socket(
+    const grpc_resolved_address *resolved_addr, int type, int protocol,
+    grpc_dualstack_mode *dsmode, int *newfd) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
@@ -281,9 +291,9 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
       return GRPC_ERROR_NONE;
     }
     /* If this isn't an IPv4 address, then return whatever we've got. */
-    if (!grpc_sockaddr_is_v4mapped(addr, NULL)) {
+    if (!grpc_sockaddr_is_v4mapped(resolved_addr, NULL)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return error_for_fd(*newfd, addr);
+      return error_for_fd(*newfd, resolved_addr);
     }
     /* Fall back to AF_INET. */
     if (*newfd >= 0) {
@@ -293,7 +303,12 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
-  return error_for_fd(*newfd, addr);
+  return error_for_fd(*newfd, resolved_addr);
+}
+
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  GPR_ASSERT(size <= (socklen_t)-1);
+  return inet_ntop(af, src, dst, (socklen_t)size);
 }
 
 #endif

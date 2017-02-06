@@ -99,7 +99,18 @@ function ClientWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
-  var message = this.serialize(chunk);
+  var message;
+  try {
+    message = this.serialize(chunk);
+  } catch (e) {
+    /* Sending this error to the server and emitting it immediately on the
+       client may put the call in a slightly weird state on the client side,
+       but passing an object that causes a serialization failure is a misuse
+       of the API anyway, so that's OK. The primary purpose here is to give the
+       programmer a useful error and to stop the stream properly */
+    this.call.cancelWithStatus(grpc.status.INTERNAL, "Serialization failure");
+    callback(e);
+  }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
      * can get to checking that it is valid flags */
@@ -184,14 +195,15 @@ function _emitStatusIfDone() {
     } else {
       status = this.received_status;
     }
-    this.emit('status', status);
-    if (status.code !== grpc.status.OK) {
+    if (status.code === grpc.status.OK) {
+      this.push(null);
+    } else {
       var error = new Error(status.details);
       error.code = status.code;
       error.metadata = status.metadata;
       this.emit('error', error);
-      return;
     }
+    this.emit('status', status);
   }
 }
 
@@ -224,9 +236,11 @@ function _read(size) {
     } catch (e) {
       self._readsDone({code: grpc.status.INTERNAL,
                        details: 'Failed to parse server response'});
+      return;
     }
     if (data === null) {
       self._readsDone();
+      return;
     }
     if (self.push(deserialized) && data !== null) {
       var read_batch = {};
@@ -382,6 +396,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     if (args.options) {
       message.grpcWriteFlags = args.options.flags;
     }
+
     client_batch[grpc.opType.SEND_INITIAL_METADATA] =
         metadata._getCoreRepresentation();
     client_batch[grpc.opType.SEND_MESSAGE] = message;
@@ -395,6 +410,8 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       var status = response.status;
       var error;
       var deserialized;
+      emitter.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
       if (status.code === grpc.status.OK) {
         if (err) {
           // Got a batch error, but OK status. Something went wrong
@@ -422,8 +439,6 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         args.callback(null, deserialized);
       }
       emitter.emit('status', status);
-      emitter.emit('metadata', Metadata._fromCoreRepresentation(
-          response.metadata));
     });
     return emitter;
   }

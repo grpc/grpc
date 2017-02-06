@@ -33,6 +33,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -191,6 +192,11 @@ namespace Grpc.Core.Internal
         protected override bool IsClient
         {
             get { return false; }
+        }
+
+        protected override Exception GetRpcExceptionClientOnly()
+        {
+            throw new InvalidOperationException("Call be only called for client calls");
         }
 
         protected override void OnAfterReleaseResources()

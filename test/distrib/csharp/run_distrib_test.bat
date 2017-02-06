@@ -31,12 +31,22 @@
 cd /d %~dp0
 
 @rem extract input artifacts
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('../../../input_artifacts/csharp_nugets.zip', 'TestNugetFeed');"
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('../../../input_artifacts/csharp_nugets_dotnetcli.zip', 'TestNugetFeed');"
 
 update_version.sh auto
 
 set NUGET=C:\nuget\nuget.exe
-%NUGET% restore || goto :error
+
+@rem TODO(jtattermusch): Get rid of this hack. See #8034
+@rem We can't do just "nuget restore" because restoring a .sln solution doesn't work
+@rem with nuget 3.X. On the other hand, we need nuget 2.12+ to be able to restore
+@rem some of the packages (e.g. System.Interactive.Async), but nuget 2.12
+@rem hasn't been officially released.
+@rem Please note that "Restore nuget packages" in VS2013 and VS2015 GUI works as usual.
+
+cd DistribTest || goto :error
+%NUGET% restore -PackagesDirectory ../packages || goto :error
+cd ..
 
 @call build_vs2015.bat DistribTest.sln %MSBUILD_EXTRA_ARGS% || goto :error
 

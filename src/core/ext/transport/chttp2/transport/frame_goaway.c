@@ -67,12 +67,13 @@ grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_goaway_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
+                                            void *parser,
+                                            grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s,
+                                            grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_goaway_parser *p = parser;
 
@@ -148,12 +149,9 @@ grpc_error *grpc_chttp2_goaway_parser_parse(
       p->debug_pos += (uint32_t)(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
-        transport_parsing->goaway_received = 1;
-        transport_parsing->goaway_last_stream_index = p->last_stream_id;
-        gpr_slice_unref(transport_parsing->goaway_text);
-        transport_parsing->goaway_error = (grpc_status_code)p->error_code;
-        transport_parsing->goaway_text =
-            gpr_slice_new(p->debug_data, p->debug_length, gpr_free);
+        grpc_chttp2_add_incoming_goaway(
+            exec_ctx, t, (uint32_t)p->error_code,
+            grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = NULL;
       }
       return GRPC_ERROR_NONE;
@@ -162,13 +160,13 @@ grpc_error *grpc_chttp2_goaway_parser_parse(
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               gpr_slice debug_data,
-                               gpr_slice_buffer *slice_buffer) {
-  gpr_slice header = gpr_slice_malloc(9 + 4 + 4);
-  uint8_t *p = GPR_SLICE_START_PTR(header);
+                               grpc_slice debug_data,
+                               grpc_slice_buffer *slice_buffer) {
+  grpc_slice header = grpc_slice_malloc(9 + 4 + 4);
+  uint8_t *p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
-  GPR_ASSERT(GPR_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + (uint32_t)GPR_SLICE_LENGTH(debug_data);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  frame_length = 4 + 4 + (uint32_t)GRPC_SLICE_LENGTH(debug_data);
 
   /* frame header: length */
   *p++ = (uint8_t)(frame_length >> 16);
@@ -193,7 +191,7 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   *p++ = (uint8_t)(error_code >> 16);
   *p++ = (uint8_t)(error_code >> 8);
   *p++ = (uint8_t)(error_code);
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(header));
-  gpr_slice_buffer_add(slice_buffer, header);
-  gpr_slice_buffer_add(slice_buffer, debug_data);
+  GPR_ASSERT(p == GRPC_SLICE_END_PTR(header));
+  grpc_slice_buffer_add(slice_buffer, header);
+  grpc_slice_buffer_add(slice_buffer, debug_data);
 }

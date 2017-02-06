@@ -42,10 +42,10 @@ using Grpc.Core;
 
 namespace Grpc.Testing {
   /// <summary>
-  ///  A simple service to test the various types of RPCs and experiment with
-  ///  performance with various types of payload.
+  /// A simple service to test the various types of RPCs and experiment with
+  /// performance with various types of payload.
   /// </summary>
-  public static class TestService
+  public static partial class TestService
   {
     static readonly string __ServiceName = "grpc.testing.TestService";
 
@@ -68,6 +68,13 @@ namespace Grpc.Testing {
         MethodType.Unary,
         __ServiceName,
         "UnaryCall",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
+    static readonly Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_CacheableUnaryCall = new Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        MethodType.Unary,
+        __ServiceName,
+        "CacheableUnaryCall",
         __Marshaller_SimpleRequest,
         __Marshaller_SimpleResponse);
 
@@ -99,6 +106,13 @@ namespace Grpc.Testing {
         __Marshaller_StreamingOutputCallRequest,
         __Marshaller_StreamingOutputCallResponse);
 
+    static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_UnimplementedCall = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+        MethodType.Unary,
+        __ServiceName,
+        "UnimplementedCall",
+        __Marshaller_Empty,
+        __Marshaller_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -106,59 +120,105 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
-    public abstract class TestServiceBase
+    public abstract partial class TestServiceBase
     {
       /// <summary>
-      ///  One empty request followed by one empty response.
+      /// One empty request followed by one empty response.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  One request followed by one response.
+      /// One request followed by one response.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
+      /// One request followed by one response. Response has cache control
+      /// headers set such that a caching HTTP proxy (such as GFE) can
+      /// satisfy subsequent requests.
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// One request followed by a sequence of responses (streamed download).
+      /// The server returns the payload with client desired type and sizes.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
+      /// A sequence of requests followed by one response (streamed upload).
+      /// The server returns the aggregated size of client payload as the result.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<global::Grpc.Testing.StreamingInputCallRequest> requestStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
+      /// A sequence of requests with each request served by the server immediately.
+      /// As one request could lead to multiple responses, this interface
+      /// demonstrates the idea of full duplexing.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task FullDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
+      /// A sequence of requests followed by a sequence of responses.
+      /// The server buffers all the client requests and then serves them in order. A
+      /// stream of responses are returned to the client when the server starts with
+      /// first request.
       /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task HalfDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// The test server will not implement this method. It will be used
+      /// to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -166,7 +226,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for TestService</summary>
-    public class TestServiceClient : ClientBase<TestServiceClient>
+    public partial class TestServiceClient : ClientBase<TestServiceClient>
     {
       /// <summary>Creates a new client for TestService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -189,131 +249,290 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  One empty request followed by one empty response.
+      /// One empty request followed by one empty response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return EmptyCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One empty request followed by one empty response.
+      /// One empty request followed by one empty response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_EmptyCall, null, options, request);
       }
       /// <summary>
-      ///  One empty request followed by one empty response.
+      /// One empty request followed by one empty response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return EmptyCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One empty request followed by one empty response.
+      /// One empty request followed by one empty response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_EmptyCall, null, options, request);
       }
       /// <summary>
-      ///  One request followed by one response.
+      /// One request followed by one response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by one response.
+      /// One request followed by one response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
-      ///  One request followed by one response.
+      /// One request followed by one response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by one response.
+      /// One request followed by one response.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
+      /// One request followed by one response. Response has cache control
+      /// headers set such that a caching HTTP proxy (such as GFE) can
+      /// satisfy subsequent requests.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// One request followed by one response. Response has cache control
+      /// headers set such that a caching HTTP proxy (such as GFE) can
+      /// satisfy subsequent requests.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
+      /// One request followed by one response. Response has cache control
+      /// headers set such that a caching HTTP proxy (such as GFE) can
+      /// satisfy subsequent requests.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// One request followed by one response. Response has cache control
+      /// headers set such that a caching HTTP proxy (such as GFE) can
+      /// satisfy subsequent requests.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
+      /// One request followed by a sequence of responses (streamed download).
+      /// The server returns the payload with client desired type and sizes.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return StreamingOutputCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
+      /// One request followed by a sequence of responses (streamed download).
+      /// The server returns the payload with client desired type and sizes.
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_StreamingOutputCall, null, options, request);
       }
       /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
+      /// A sequence of requests followed by one response (streamed upload).
+      /// The server returns the aggregated size of client payload as the result.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return StreamingInputCall(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
+      /// A sequence of requests followed by one response (streamed upload).
+      /// The server returns the aggregated size of client payload as the result.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_StreamingInputCall, null, options);
       }
       /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
+      /// A sequence of requests with each request served by the server immediately.
+      /// As one request could lead to multiple responses, this interface
+      /// demonstrates the idea of full duplexing.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return FullDuplexCall(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
+      /// A sequence of requests with each request served by the server immediately.
+      /// As one request could lead to multiple responses, this interface
+      /// demonstrates the idea of full duplexing.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_FullDuplexCall, null, options);
       }
       /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
+      /// A sequence of requests followed by a sequence of responses.
+      /// The server buffers all the client requests and then serves them in order. A
+      /// stream of responses are returned to the client when the server starts with
+      /// first request.
       /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return HalfDuplexCall(new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
+      /// A sequence of requests followed by a sequence of responses.
+      /// The server buffers all the client requests and then serves them in order. A
+      /// stream of responses are returned to the client when the server starts with
+      /// first request.
       /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_HalfDuplexCall, null, options);
       }
+      /// <summary>
+      /// The test server will not implement this method. It will be used
+      /// to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// The test server will not implement this method. It will be used
+      /// to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      /// <summary>
+      /// The test server will not implement this method. It will be used
+      /// to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// The test server will not implement this method. It will be used
+      /// to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override TestServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new TestServiceClient(configuration);
@@ -321,23 +540,26 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_CacheableUnaryCall, serviceImpl.CacheableUnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
           .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
           .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
   }
   /// <summary>
-  ///  A simple service NOT implemented at servers so clients can test for
-  ///  that case.
+  /// A simple service NOT implemented at servers so clients can test for
+  /// that case.
   /// </summary>
-  public static class UnimplementedService
+  public static partial class UnimplementedService
   {
     static readonly string __ServiceName = "grpc.testing.UnimplementedService";
 
@@ -357,11 +579,14 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
-    public abstract class UnimplementedServiceBase
+    public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
-      ///  A call that no server should implement
+      /// A call that no server should implement
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -370,7 +595,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for UnimplementedService</summary>
-    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
+    public partial class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
     {
       /// <summary>Creates a new client for UnimplementedService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -393,33 +618,50 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  A call that no server should implement
+      /// A call that no server should implement
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnimplementedCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  A call that no server should implement
+      /// A call that no server should implement
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_UnimplementedCall, null, options, request);
       }
       /// <summary>
-      ///  A call that no server should implement
+      /// A call that no server should implement
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return UnimplementedCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  A call that no server should implement
+      /// A call that no server should implement
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override UnimplementedServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new UnimplementedServiceClient(configuration);
@@ -427,6 +669,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
@@ -435,9 +678,9 @@ namespace Grpc.Testing {
 
   }
   /// <summary>
-  ///  A service used to control reconnect server.
+  /// A service used to control reconnect server.
   /// </summary>
-  public static class ReconnectService
+  public static partial class ReconnectService
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
@@ -466,7 +709,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
-    public abstract class ReconnectServiceBase
+    public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context)
       {
@@ -481,7 +724,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for ReconnectService</summary>
-    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
+    public partial class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
     {
       /// <summary>Creates a new client for ReconnectService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -535,6 +778,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_Stop, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override ReconnectServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new ReconnectServiceClient(configuration);
@@ -542,6 +786,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()

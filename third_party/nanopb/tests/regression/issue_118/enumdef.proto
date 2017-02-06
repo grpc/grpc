@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+import 'nanopb.proto';
+
+enum MyEnum {
+	option (nanopb_enumopt).long_names = false;
+	FOOBAR = 1;
+}

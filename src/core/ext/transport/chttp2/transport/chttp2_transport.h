@@ -48,6 +48,6 @@ grpc_transport *grpc_create_chttp2_transport(
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
-                                         gpr_slice_buffer *read_buffer);
+                                         grpc_slice_buffer *read_buffer);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

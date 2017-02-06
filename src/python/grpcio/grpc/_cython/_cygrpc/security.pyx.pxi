@@ -35,7 +35,7 @@ import pkg_resources
 cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
     char **pem_root_certs) with gil:
   temporary_pem_root_certs = pkg_resources.resource_string(
-      'grpc._cython', '_credentials/roots.pem')
+      __name__.rstrip('.cygrpc'), '_credentials/roots.pem')
   pem_root_certs[0] = <char *>gpr_malloc(len(temporary_pem_root_certs) + 1)
   memcpy(
       pem_root_certs[0], <char *>temporary_pem_root_certs,

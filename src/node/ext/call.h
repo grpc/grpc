@@ -51,48 +51,12 @@ namespace node {
 using std::unique_ptr;
 using std::shared_ptr;
 
-typedef Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>> PersistentValue;
-
 v8::Local<v8::Value> nanErrorWithCode(const char *msg, grpc_call_error code);
 
 v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
-struct Resources {
-  std::vector<unique_ptr<Nan::Utf8String> > strings;
-  std::vector<unique_ptr<PersistentValue> > handles;
-};
-
 bool CreateMetadataArray(v8::Local<v8::Object> metadata,
-                         grpc_metadata_array *array,
-                         shared_ptr<Resources> resources);
-
-class Op {
- public:
-  virtual v8::Local<v8::Value> GetNodeValue() const = 0;
-  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out,
-                       shared_ptr<Resources> resources) = 0;
-  virtual ~Op();
-  v8::Local<v8::Value> GetOpType() const;
-
- protected:
-  virtual std::string GetTypeString() const = 0;
-};
-
-typedef std::vector<unique_ptr<Op>> OpVec;
-struct tag {
-  tag(Nan::Callback *callback, OpVec *ops,
-      shared_ptr<Resources> resources);
-  ~tag();
-  Nan::Callback *callback;
-  OpVec *ops;
-  shared_ptr<Resources> resources;
-};
-
-v8::Local<v8::Value> GetTagNodeValue(void *tag);
-
-Nan::Callback *GetTagCallback(void *tag);
-
-void DestroyTag(void *tag);
+                         grpc_metadata_array *array);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public Nan::ObjectWrap {
@@ -101,6 +65,8 @@ class Call : public Nan::ObjectWrap {
   static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_call struct in a javascript object */
   static v8::Local<v8::Value> WrapStruct(grpc_call *call);
+
+  void CompleteBatch(bool is_final_op);
 
  private:
   explicit Call(grpc_call *call);
@@ -121,7 +87,42 @@ class Call : public Nan::ObjectWrap {
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_call *wrapped_call;
+  // The number of ops that were started but not completed on this call
+  int pending_batches;
+  /* Indicates whether the "final" op on a call has completed. For a client
+     call, this is GRPC_OP_RECV_STATUS_ON_CLIENT and for a server call, this
+     is GRPC_OP_SEND_STATUS_FROM_SERVER */
+  bool has_final_op_completed;
 };
+
+class Op {
+ public:
+  virtual v8::Local<v8::Value> GetNodeValue() const = 0;
+  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out) = 0;
+  virtual ~Op();
+  v8::Local<v8::Value> GetOpType() const;
+  virtual bool IsFinalOp() = 0;
+
+ protected:
+  virtual std::string GetTypeString() const = 0;
+};
+
+typedef std::vector<unique_ptr<Op>> OpVec;
+struct tag {
+  tag(Nan::Callback *callback, OpVec *ops, Call *call);
+  ~tag();
+  Nan::Callback *callback;
+  OpVec *ops;
+  Call *call;
+};
+
+v8::Local<v8::Value> GetTagNodeValue(void *tag);
+
+Nan::Callback *GetTagCallback(void *tag);
+
+void DestroyTag(void *tag);
+
+void CompleteTag(void *tag);
 
 }  // namespace node
 }  // namespace grpc

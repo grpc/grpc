@@ -39,6 +39,8 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/support/log.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to bind to");
@@ -56,11 +58,10 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl GRPC_FINAL
-    : public ::grpc::testing::EchoTestService::Service {
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {

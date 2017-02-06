@@ -32,7 +32,7 @@ default_extension_dir=$(php-config --extension-dir)
 if [ ! -e $default_extension_dir/grpc.so ]; then
   # the grpc extension is not found in the default PHP extension dir
   # try the source modules directory
-  module_dir=../ext/grpc/modules
+  module_dir=$(pwd)/../ext/grpc/modules
   if [ ! -e $module_dir/grpc.so ]; then
     echo "Please run 'phpize && ./configure && make' from ext/grpc first"
     exit 1

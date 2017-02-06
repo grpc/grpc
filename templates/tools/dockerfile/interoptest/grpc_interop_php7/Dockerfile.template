@@ -32,6 +32,5 @@
   FROM debian:jessie
   
   <%include file="../../php7_deps.include"/>
-  <%include file="../../ruby_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
   <%include file="../../php_common_deps.include"/>

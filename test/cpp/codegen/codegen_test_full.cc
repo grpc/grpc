@@ -32,6 +32,7 @@
  */
 
 #include <grpc++/completion_queue.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

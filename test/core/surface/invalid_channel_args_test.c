@@ -84,38 +84,6 @@ static void one_test(grpc_channel_args *args, char *expected_error_message) {
 
 static void test_no_error_message(void) { one_test(NULL, NULL); }
 
-static void test_max_message_length_type(void) {
-  grpc_arg client_arg;
-  grpc_channel_args client_args;
-  char *expected_error_message;
-
-  client_arg.type = GRPC_ARG_STRING;
-  client_arg.key = GRPC_ARG_MAX_MESSAGE_LENGTH;
-  client_arg.value.string = NULL;
-
-  client_args.num_args = 1;
-  client_args.args = &client_arg;
-  expected_error_message = compose_error_string(
-      GRPC_ARG_MAX_MESSAGE_LENGTH, " ignored: it must be an integer");
-  one_test(&client_args, expected_error_message);
-}
-
-static void test_max_message_length_negative(void) {
-  grpc_arg client_arg;
-  grpc_channel_args client_args;
-  char *expected_error_message;
-
-  client_arg.type = GRPC_ARG_INTEGER;
-  client_arg.key = GRPC_ARG_MAX_MESSAGE_LENGTH;
-  client_arg.value.integer = -1;
-
-  client_args.num_args = 1;
-  client_args.args = &client_arg;
-  expected_error_message = compose_error_string(GRPC_ARG_MAX_MESSAGE_LENGTH,
-                                                " ignored: it must be >= 0");
-  one_test(&client_args, expected_error_message);
-}
-
 static void test_default_authority_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
@@ -174,8 +142,6 @@ int main(int argc, char **argv) {
   gpr_set_log_function(log_error_sink);
 
   test_no_error_message();
-  test_max_message_length_type();
-  test_max_message_length_negative();
   test_default_authority_type();
   test_ssl_name_override_type();
   test_ssl_name_override_failed();

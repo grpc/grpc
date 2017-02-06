@@ -37,8 +37,8 @@
 /* utility function to split/merge slices together to help create test
    cases */
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
 typedef enum {
   /* merge all input slices into a single slice */
@@ -51,17 +51,17 @@ typedef enum {
 
 /* allocates *dst_slices; caller must unref all slices in dst_slices then free
    it */
-void grpc_split_slices(grpc_slice_split_mode mode, gpr_slice *src_slices,
-                       size_t src_slice_count, gpr_slice **dst_slices,
+void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
+                       size_t src_slice_count, grpc_slice **dst_slices,
                        size_t *dst_slice_count);
 
 void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
-                                 gpr_slice *src_slices, size_t src_slice_count,
-                                 gpr_slice_buffer *dst);
-void grpc_split_slice_buffer(grpc_slice_split_mode mode, gpr_slice_buffer *src,
-                             gpr_slice_buffer *dst);
+                                 grpc_slice *src_slices, size_t src_slice_count,
+                                 grpc_slice_buffer *dst);
+void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer *src,
+                             grpc_slice_buffer *dst);
 
-gpr_slice grpc_slice_merge(gpr_slice *slices, size_t nslices);
+grpc_slice grpc_slice_merge(grpc_slice *slices, size_t nslices);
 
 const char *grpc_slice_split_mode_name(grpc_slice_split_mode mode);
 

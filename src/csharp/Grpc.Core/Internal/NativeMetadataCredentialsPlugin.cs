@@ -78,7 +78,10 @@ namespace Grpc.Core.Internal
             {
                 var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
                                                          Marshal.PtrToStringAnsi(methodNamePtr));
-                StartGetMetadata(context, callbackPtr, userDataPtr);
+                // Don't await, we are in a native callback and need to return.
+                #pragma warning disable 4014
+                GetMetadataAsync(context, callbackPtr, userDataPtr);
+                #pragma warning restore 4014
             }
             catch (Exception e)
             {
@@ -87,7 +90,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async Task StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async Task GetMetadataAsync(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {

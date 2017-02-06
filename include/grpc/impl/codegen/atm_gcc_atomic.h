@@ -69,4 +69,6 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
                                      __ATOMIC_RELAXED);
 }
 
+#define gpr_atm_full_xchg(p, n) __atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL)
+
 #endif /* GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H */

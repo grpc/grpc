@@ -62,6 +62,12 @@
         return warning[3:]
       else:
         return 'no-' + warning
+
+    lang_to_var = {
+      'c': 'CORE',
+      'c++': 'CPP',
+      'csharp': 'CSHARP'
+    }
   %>
 
 
@@ -129,9 +135,6 @@
   ${arg}_${name} = ${args.get(arg)}
   %   endif
   %  endfor
-  %  if args.get('timeout_multiplier', 1) != 1:
-  DEFINES_${name} += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=${args.timeout_multiplier}
-  %  endif
 
   % endfor
 
@@ -176,10 +179,17 @@
   endif
   STRIP ?= strip -x
   else
+  ifeq ($(SYSTEM),MINGW32)
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
+  STRIP ?= strip --strip-unneeded
+  else
   ifeq ($(origin AR), default)
   AR = ar rcs
   endif
   STRIP ?= strip
+  endif
   endif
   endif
   INSTALL ?= install
@@ -218,10 +228,6 @@
   HOST_CXX ?= $(CXX)
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
-
-  ifdef EXTRA_DEFINES
-  DEFINES += $(EXTRA_DEFINES)
-  endif
 
   CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   ifeq ($(HAS_CXX11),true)
@@ -315,7 +321,9 @@
   Q = @
   endif
 
-  VERSION = ${settings.core_version}
+  CORE_VERSION = ${settings.core_version}
+  CPP_VERSION = ${settings.cpp_version}
+  CSHARP_VERSION = ${settings.csharp_version}
 
   CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
   CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -323,6 +331,11 @@
   LDFLAGS += $(ARCH_FLAGS)
   LDLIBS += $(addprefix -l, $(LIBS))
   LDLIBSXX += $(addprefix -l, $(LIBSXX))
+
+
+  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES', 'LDLIBS']:
+  ${arg} += $(EXTRA_${arg})
+  % endfor
 
   HOST_CPPFLAGS = $(CPPFLAGS)
   HOST_CFLAGS = $(CFLAGS)
@@ -343,31 +356,72 @@
   CACHE_MK += HAS_PKG_CONFIG = true,
   endif
 
-  PC_TEMPLATE = prefix=$(prefix),\
+  CORE_PC_TEMPLATE = prefix=$(prefix),\
   exec_prefix=${'\$${prefix}'},\
   includedir=${'\$${prefix}'}/include,\
   libdir=${'\$${exec_prefix}'}/lib,\
   ,\
   Name: $(PC_NAME),\
   Description: $(PC_DESCRIPTION),\
-  Version: $(VERSION),\
+  Version: $(CORE_VERSION),\
+  Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
+  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Libs: -L${'\$${libdir}'} $(PC_LIB),\
+  Libs.private: $(PC_LIBS_PRIVATE)
+
+  CPP_PC_TEMPLATE = prefix=$(prefix),\
+  exec_prefix=${'\$${prefix}'},\
+  includedir=${'\$${prefix}'}/include,\
+  libdir=${'\$${exec_prefix}'}/lib,\
+  ,\
+  Name: $(PC_NAME),\
+  Description: $(PC_DESCRIPTION),\
+  Version: $(CPP_VERSION),\
+  Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
+  Requires.private: $(PC_REQUIRES_PRIVATE),\
+  Libs: -L${'\$${libdir}'} $(PC_LIB),\
+  Libs.private: $(PC_LIBS_PRIVATE)
+
+  CSHARP_PC_TEMPLATE = prefix=$(prefix),\
+  exec_prefix=${'\$${prefix}'},\
+  includedir=${'\$${prefix}'}/include,\
+  libdir=${'\$${exec_prefix}'}/lib,\
+  ,\
+  Name: $(PC_NAME),\
+  Description: $(PC_DESCRIPTION),\
+  Version: $(CSHARP_VERSION),\
   Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
   Requires.private: $(PC_REQUIRES_PRIVATE),\
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
   ifeq ($(SYSTEM),MINGW32)
-  SHARED_EXT = dll
+  EXECUTABLE_SUFFIX = .exe
+  SHARED_EXT_CORE = dll
+  SHARED_EXT_CPP = dll
+  SHARED_EXT_CSHARP = dll
   SHARED_PREFIX =
-  SHARED_VERSION = -${settings.core_version.major}
+  SHARED_VERSION_CORE = -${settings.core_version.major}
+  SHARED_VERSION_CPP = -${settings.cpp_version.major}
+  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
-  SHARED_EXT = dylib
+  EXECUTABLE_SUFFIX = 
+  SHARED_EXT_CORE = dylib
+  SHARED_EXT_CPP = dylib
+  SHARED_EXT_CSHARP = dylib
   SHARED_PREFIX = lib
-  SHARED_VERSION =
+  SHARED_VERSION_CORE =
+  SHARED_VERSION_CPP =
+  SHARED_VERSION_CSHARP =
   else
-  SHARED_EXT = so.$(VERSION)
+  EXECUTABLE_SUFFIX = 
+  SHARED_EXT_CORE = so.$(CORE_VERSION)
+  SHARED_EXT_CPP = so.$(CPP_VERSION)
+  SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
   SHARED_PREFIX = lib
-  SHARED_VERSION =
+  SHARED_VERSION_CORE =
+  SHARED_VERSION_CPP =
+  SHARED_VERSION_CSHARP =
   endif
 
   ifeq ($(wildcard .git),)
@@ -602,7 +656,7 @@
   PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
-  GRPC_PC_FILE := $(PC_TEMPLATE)
+  GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
 
   # grpc_unsecure .pc file
   PC_NAME = gRPC unsecure
@@ -611,7 +665,7 @@
   PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
-  GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+  GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
   PROTOBUF_PKG_CONFIG = false
 
@@ -679,7 +733,7 @@
   PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++
-  GRPCXX_PC_FILE := $(PC_TEMPLATE)
+  GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
 
   # grpc++_unsecure .pc file
   PC_NAME = gRPC++ unsecure
@@ -688,7 +742,7 @@
   PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
   PC_LIB = -lgrpc++
-  GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+  GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
@@ -854,7 +908,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
   % endif
   % endif
   % endfor
@@ -863,7 +917,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)\
   % endif
   % endif
   % endfor
@@ -873,7 +927,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
   % endif
   % endif
   % endfor
@@ -1075,8 +1129,8 @@
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
   % endif
   % endif
   % endif
@@ -1090,8 +1144,8 @@
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
   % endif
   % endif
   % endif
@@ -1104,8 +1158,8 @@
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
   % endif
   % endif
   % endif
@@ -1149,7 +1203,7 @@
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
   endif
 
   % endfor
@@ -1244,14 +1298,14 @@
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
   	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
   ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
   % endif
@@ -1275,9 +1329,6 @@
   ${install_shared("csharp")}
 
   install-plugins: $(PROTOC_PLUGINS)
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) false
-  else
   	$(E) "[INSTALL] Installing grpc protoc plugins"
   % for tgt in targets:
   % if tgt.build == 'protoc':
@@ -1285,7 +1336,6 @@
   	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
   % endif
   % endfor
-  endif
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
@@ -1363,7 +1413,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): openssl_dep_error
   % endif
 
   else
@@ -1376,7 +1426,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
@@ -1393,7 +1443,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
@@ -1439,12 +1489,12 @@
     else:
       ld = '$(LD)'
 
-    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION)'
-    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION)'
+    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
+    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
-    libs = ''
+    link_libs = ''
     lib_deps = ' $(ZLIB_DEP)'
     mingw_libs = ''
     mingw_lib_deps = ' $(ZLIB_DEP)'
@@ -1459,10 +1509,15 @@
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
       for dep in lib.get('deps', []):
-        libs = libs + ' -l' + dep
-        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
-        mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
+        dep_lib = None
+        for dl in libs:
+          if dl.name == dep:
+            dep_lib = dl
+        assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
+        link_libs = link_libs + ' -l' + dep
+        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+        mingw_libs = mingw_libs + ' -l' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
+        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
 
     security = lib.get('secure', 'check')
     if security == True:
@@ -1491,20 +1546,20 @@
 
   % if lib.build == "all":
   ifeq ($(SYSTEM),MINGW32)
-  ${out_mingbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
+  ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared ${lib.name}.def -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
   else
-  ${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
+  ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so.${settings.core_version.major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
   % endif

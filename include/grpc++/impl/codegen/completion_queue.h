@@ -52,7 +52,7 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/time.h>
+#include <grpc/impl/codegen/atm.h>
 
 struct grpc_completion_queue;
 
@@ -94,14 +94,17 @@ class ServerContext;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
-/// A thin wrapper around \a grpc_completion_queue (see / \a
-/// src/core/surface/completion_queue.h).
+/// A thin wrapper around \ref grpc_completion_queue (see \ref
+/// src/core/lib/surface/completion_queue.h).
+/// See \ref doc/cpp/perf_notes.md for notes on best practices for high
+/// performance servers.
 class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
   CompletionQueue() {
     cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
+    InitialAvalanching();  // reserve this for the future shutdown
   }
 
   /// Wrap \a take, taking ownership of the instance.
@@ -152,7 +155,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Request the shutdown of the queue.
   ///
-  /// \warning This method must be called at some point. Once invoked, \a Next
+  /// \warning This method must be called at some point if this completion queue
+  /// is accessed with Next or AsyncNext. Once invoked, \a Next
   /// will start to return false and \a AsyncNext will return \a
   /// NextStatus::SHUTDOWN. Only once either one of these methods does that
   /// (that is, once the queue has been \em drained) can an instance of this
@@ -165,6 +169,21 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// \warning Remember that the returned instance is owned. No transfer of
   /// owership is performed.
   grpc_completion_queue* cq() { return cq_; }
+
+  /// Manage state of avalanching operations : completion queue tags that
+  /// trigger other completion queue operations. The underlying core completion
+  /// queue should not really shutdown until all avalanching operations have
+  /// been finalized. Note that we maintain the requirement that an avalanche
+  /// registration must take place before CQ shutdown (which must be maintained
+  /// elsehwere)
+  void InitialAvalanching() {
+    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+  }
+  void RegisterAvalanching() {
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
+                                 static_cast<gpr_atm>(1));
+  };
+  void CompleteAvalanching();
 
  private:
   // Friend synchronous wrappers so that they can access Pluck(), which is
@@ -219,7 +238,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// Performs a single polling pluck on \a tag.
   /// \warning Must not be mixed with calls to \a Next.
   void TryPluck(CompletionQueueTag* tag) {
-    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
@@ -230,6 +249,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   }
 
   grpc_completion_queue* cq_;  // owned
+
+  gpr_atm avalanches_in_flight_;
 };
 
 /// A specific type of completion queue used by the processing of notifications
@@ -241,7 +262,7 @@ class ServerCompletionQueue : public CompletionQueue {
  private:
   bool is_frequently_polled_;
   friend class ServerBuilder;
-  /// \param is_frequently_polled Informs the GPRC library about whether the
+  /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.

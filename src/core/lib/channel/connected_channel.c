@@ -38,9 +38,9 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
@@ -114,12 +114,13 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   channel_data *cd = (channel_data *)elem->channel_data;
   GPR_ASSERT(args->is_last);
   cd->transport = NULL;
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel_data */
@@ -134,7 +135,12 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_transport_get_peer(exec_ctx, chand->transport);
 }
 
-static const grpc_channel_filter connected_channel_filter = {
+/* No-op. */
+static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem,
+                                 const grpc_channel_info *channel_info) {}
+
+const grpc_channel_filter grpc_connected_filter = {
     con_start_transport_stream_op,
     con_start_transport_op,
     sizeof(call_data),
@@ -145,13 +151,14 @@ static const grpc_channel_filter connected_channel_filter = {
     init_channel_elem,
     destroy_channel_elem,
     con_get_peer,
+    con_get_channel_info,
     "connected",
 };
 
 static void bind_transport(grpc_channel_stack *channel_stack,
                            grpc_channel_element *elem, void *t) {
   channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(elem->filter == &connected_channel_filter);
+  GPR_ASSERT(elem->filter == &grpc_connected_filter);
   GPR_ASSERT(cd->transport == NULL);
   cd->transport = t;
 
@@ -164,13 +171,14 @@ static void bind_transport(grpc_channel_stack *channel_stack,
   channel_stack->call_stack_size += grpc_transport_stream_size(t);
 }
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
+bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
+                               grpc_channel_stack_builder *builder,
                                void *arg_must_be_null) {
   GPR_ASSERT(arg_must_be_null == NULL);
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
   GPR_ASSERT(t != NULL);
   return grpc_channel_stack_builder_append_filter(
-      builder, &connected_channel_filter, bind_transport, t);
+      builder, &grpc_connected_filter, bind_transport, t);
 }
 
 grpc_stream *grpc_connected_channel_get_stream(grpc_call_element *elem) {

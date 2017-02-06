@@ -4,13 +4,11 @@
   <PropertyGroup Condition=" '$(NativeDependenciesConfiguration)' == '' ">
     <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Debug' ">Debug</NativeDependenciesConfiguration>
     <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Release' ">Release</NativeDependenciesConfiguration>
-    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'ReleaseSigned' ">Release</NativeDependenciesConfiguration>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(NativeDependenciesConfigurationUnix)' == '' ">
     <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Debug' ">dbg</NativeDependenciesConfigurationUnix>
     <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Release' ">opt</NativeDependenciesConfigurationUnix>
-    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'ReleaseSigned' ">opt</NativeDependenciesConfigurationUnix>
   </PropertyGroup>
 
   <!-- Autodetect platform -->

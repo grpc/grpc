@@ -65,16 +65,13 @@ namespace Grpc.Core.Internal
 
         public CallSafeHandle CreateCall(CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
-            using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
+            var result = Native.grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
+            if (credentials != null)
             {
-                var result = Native.grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
-                if (credentials != null)
-                {
-                    result.SetCredentials(credentials);
-                }
-                result.Initialize(cq);
-                return result;
+                result.SetCredentials(credentials);
             }
+            result.Initialize(cq);
+            return result;
         }
 
         public ChannelState CheckConnectivityState(bool tryToConnect)

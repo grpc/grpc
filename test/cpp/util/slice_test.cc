@@ -33,7 +33,7 @@
 
 #include <grpc++/support/slice.h>
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -51,15 +51,15 @@ class SliceTest : public ::testing::Test {
 };
 
 TEST_F(SliceTest, Steal) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::STEAL_REF);
   CheckSlice(spp, kContent);
 }
 
 TEST_F(SliceTest, Add) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::ADD_REF);
-  gpr_slice_unref(s);
+  grpc_slice_unref(s);
   CheckSlice(spp, kContent);
 }
 
@@ -69,13 +69,13 @@ TEST_F(SliceTest, Empty) {
 }
 
 TEST_F(SliceTest, Cslice) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::STEAL_REF);
   CheckSlice(spp, kContent);
-  gpr_slice c_slice = spp.c_slice();
-  EXPECT_EQ(GPR_SLICE_START_PTR(s), GPR_SLICE_START_PTR(c_slice));
-  EXPECT_EQ(GPR_SLICE_END_PTR(s), GPR_SLICE_END_PTR(c_slice));
-  gpr_slice_unref(c_slice);
+  grpc_slice c_slice = spp.c_slice();
+  EXPECT_EQ(GRPC_SLICE_START_PTR(s), GRPC_SLICE_START_PTR(c_slice));
+  EXPECT_EQ(GRPC_SLICE_END_PTR(s), GRPC_SLICE_END_PTR(c_slice));
+  grpc_slice_unref(c_slice);
 }
 
 }  // namespace

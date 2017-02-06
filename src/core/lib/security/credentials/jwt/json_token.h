@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <openssl/rsa.h>
 
 #include "src/core/lib/json/json.h"

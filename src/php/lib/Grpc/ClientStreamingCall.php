@@ -35,8 +35,8 @@
 namespace Grpc;
 
 /**
- * Represents an active call that sends a stream of messages and then gets a
- * single response.
+ * Represents an active call that sends a stream of messages and then gets
+ * a single response.
  */
 class ClientStreamingCall extends AbstractCall
 {
@@ -44,8 +44,9 @@ class ClientStreamingCall extends AbstractCall
      * Start the call.
      *
      * @param array $metadata Metadata to send with the call, if applicable
+     *                        (optional)
      */
-    public function start($metadata = [])
+    public function start(array $metadata = [])
     {
         $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
@@ -57,12 +58,12 @@ class ClientStreamingCall extends AbstractCall
      * wait is called.
      *
      * @param ByteBuffer $data    The data to write
-     * @param array      $options an array of options, possible keys:
-     *                            'flags' => a number
+     * @param array      $options An array of options, possible keys:
+     *                            'flags' => a number (optional)
      */
     public function write($data, array $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
@@ -89,6 +90,6 @@ class ClientStreamingCall extends AbstractCall
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
 
-        return [$this->deserializeResponse($event->message), $status];
+        return [$this->_deserializeResponse($event->message), $status];
     }
 }

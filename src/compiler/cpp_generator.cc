@@ -322,7 +322,7 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
       printer->Print(
           *vars,
           "::grpc::Status $Method$(::grpc::ClientContext* context, "
-          "const $Request$& request, $Response$* response) GRPC_OVERRIDE;\n");
+          "const $Request$& request, $Response$* response) override;\n");
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
@@ -417,37 +417,34 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
                      "::grpc::ClientAsyncResponseReader< $Response$>* "
                      "Async$Method$Raw(::grpc::ClientContext* context, "
                      "const $Request$& request, "
-                     "::grpc::CompletionQueue* cq) GRPC_OVERRIDE;\n");
+                     "::grpc::CompletionQueue* cq) override;\n");
     } else if (method->ClientOnlyStreaming()) {
       printer->Print(*vars,
                      "::grpc::ClientWriter< $Request$>* $Method$Raw("
                      "::grpc::ClientContext* context, $Response$* response) "
-                     "GRPC_OVERRIDE;\n");
-      printer->Print(
-          *vars,
-          "::grpc::ClientAsyncWriter< $Request$>* Async$Method$Raw("
-          "::grpc::ClientContext* context, $Response$* response, "
-          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+                     "override;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientAsyncWriter< $Request$>* Async$Method$Raw("
+                     "::grpc::ClientContext* context, $Response$* response, "
+                     "::grpc::CompletionQueue* cq, void* tag) override;\n");
     } else if (method->ServerOnlyStreaming()) {
       printer->Print(*vars,
                      "::grpc::ClientReader< $Response$>* $Method$Raw("
                      "::grpc::ClientContext* context, const $Request$& request)"
-                     " GRPC_OVERRIDE;\n");
+                     " override;\n");
       printer->Print(
           *vars,
           "::grpc::ClientAsyncReader< $Response$>* Async$Method$Raw("
           "::grpc::ClientContext* context, const $Request$& request, "
-          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+          "::grpc::CompletionQueue* cq, void* tag) override;\n");
     } else if (method->BidiStreaming()) {
-      printer->Print(
-          *vars,
-          "::grpc::ClientReaderWriter< $Request$, $Response$>* "
-          "$Method$Raw(::grpc::ClientContext* context) GRPC_OVERRIDE;\n");
-      printer->Print(
-          *vars,
-          "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
-          "Async$Method$Raw(::grpc::ClientContext* context, "
-          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientReaderWriter< $Request$, $Response$>* "
+                     "$Method$Raw(::grpc::ClientContext* context) override;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
+                     "Async$Method$Raw(::grpc::ClientContext* context, "
+                     "::grpc::CompletionQueue* cq, void* tag) override;\n");
     }
   }
 }
@@ -509,7 +506,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
                  "  ::grpc::Service::MarkMethodAsync($Idx$);\n"
                  "}\n");
   printer->Print(*vars,
-                 "~WithAsyncMethod_$Method$() GRPC_OVERRIDE {\n"
+                 "~WithAsyncMethod_$Method$() override {\n"
                  "  BaseClassMustBeDerivedFromService(this);\n"
                  "}\n");
   if (method->NoStreaming()) {
@@ -518,7 +515,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "$Response$* response) final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -540,7 +537,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "$Response$* response) final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -561,7 +558,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE "
+        "::grpc::ServerWriter< $Response$>* writer) final override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -585,7 +582,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
-        "GRPC_FINAL GRPC_OVERRIDE {\n"
+        "final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -624,7 +621,7 @@ void PrintHeaderServerMethodStreamedUnary(
     printer->Indent();
     printer->Print(*vars,
                    "WithStreamedUnaryMethod_$Method$() {\n"
-                   "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
+                   "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
                    "    new ::grpc::StreamedUnaryHandler< $Request$, "
                    "$Response$>(std::bind"
                    "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
@@ -632,7 +629,7 @@ void PrintHeaderServerMethodStreamedUnary(
                    "std::placeholders::_2)));\n"
                    "}\n");
     printer->Print(*vars,
-                   "~WithStreamedUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
+                   "~WithStreamedUnaryMethod_$Method$() override {\n"
                    "  BaseClassMustBeDerivedFromService(this);\n"
                    "}\n");
     printer->Print(
@@ -640,7 +637,7 @@ void PrintHeaderServerMethodStreamedUnary(
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "$Response$* response) final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -650,6 +647,58 @@ void PrintHeaderServerMethodStreamedUnary(
                    "::grpc::ServerContext* context, "
                    "::grpc::ServerUnaryStreamer< "
                    "$Request$,$Response$>* server_unary_streamer)"
+                   " = 0;\n");
+    printer->Outdent();
+    printer->Print(*vars, "};\n");
+  }
+}
+
+void PrintHeaderServerMethodSplitStreaming(
+    Printer *printer, const Method *method,
+    std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+  if (method->ServerOnlyStreaming()) {
+    printer->Print(*vars, "template <class BaseClass>\n");
+    printer->Print(*vars,
+                   "class WithSplitStreamingMethod_$Method$ : "
+                   "public BaseClass {\n");
+    printer->Print(
+        " private:\n"
+        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "{}\n");
+    printer->Print(" public:\n");
+    printer->Indent();
+    printer->Print(*vars,
+                   "WithSplitStreamingMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
+                   "    new ::grpc::SplitServerStreamingHandler< $Request$, "
+                   "$Response$>(std::bind"
+                   "(&WithSplitStreamingMethod_$Method$<BaseClass>::"
+                   "Streamed$Method$, this, std::placeholders::_1, "
+                   "std::placeholders::_2)));\n"
+                   "}\n");
+    printer->Print(*vars,
+                   "~WithSplitStreamingMethod_$Method$() override {\n"
+                   "  BaseClassMustBeDerivedFromService(this);\n"
+                   "}\n");
+    printer->Print(
+        *vars,
+        "// disable regular version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "::grpc::ServerWriter< $Response$>* writer) final override "
+        "{\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+    printer->Print(*vars,
+                   "// replace default version of method with split streamed\n"
+                   "virtual ::grpc::Status Streamed$Method$("
+                   "::grpc::ServerContext* context, "
+                   "::grpc::ServerSplitStreamer< "
+                   "$Request$,$Response$>* server_split_streamer)"
                    " = 0;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
@@ -675,7 +724,7 @@ void PrintHeaderServerMethodGeneric(
                  "  ::grpc::Service::MarkMethodGeneric($Idx$);\n"
                  "}\n");
   printer->Print(*vars,
-                 "~WithGenericMethod_$Method$() GRPC_OVERRIDE {\n"
+                 "~WithGenericMethod_$Method$() override {\n"
                  "  BaseClassMustBeDerivedFromService(this);\n"
                  "}\n");
   if (method->NoStreaming()) {
@@ -684,7 +733,7 @@ void PrintHeaderServerMethodGeneric(
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "$Response$* response) final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -695,7 +744,7 @@ void PrintHeaderServerMethodGeneric(
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "$Response$* response) final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -705,7 +754,7 @@ void PrintHeaderServerMethodGeneric(
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE "
+        "::grpc::ServerWriter< $Response$>* writer) final override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -717,7 +766,7 @@ void PrintHeaderServerMethodGeneric(
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
-        "GRPC_FINAL GRPC_OVERRIDE {\n"
+        "final override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -732,7 +781,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
 
   printer->Print(service->GetLeadingComments().c_str());
   printer->Print(*vars,
-                 "class $Service$ GRPC_FINAL {\n"
+                 "class $Service$ final {\n"
                  " public:\n");
   printer->Indent();
 
@@ -758,7 +807,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
-      "class Stub GRPC_FINAL : public StubInterface"
+      "class Stub final : public StubInterface"
       " {\n public:\n");
   printer->Indent();
   printer->Print(
@@ -843,6 +892,48 @@ void PrintHeaderService(Printer *printer, const Service *service,
     }
   }
   printer->Print(" StreamedUnaryService;\n");
+
+  // Server side - controlled server-side streaming
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
+    PrintHeaderServerMethodSplitStreaming(printer, service->method(i).get(),
+                                          vars);
+  }
+
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" SplitStreamedService;\n");
+
+  // Server side - typedef for controlled both unary and server-side streaming
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
+    }
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(*vars, "WithStreamedUnaryMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->NoStreaming() ||
+        service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" StreamedService;\n");
 
   printer->Outdent();
   printer->Print("};\n");
@@ -1127,13 +1218,15 @@ void PrintSourceService(Printer *printer, const Service *service,
                         std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
-  printer->Print(*vars,
-                 "static const char* $prefix$$Service$_method_names[] = {\n");
-  for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["Method"] = service->method(i).get()->name();
-    printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
+  if (service->method_count() > 0) {
+    printer->Print(*vars,
+                   "static const char* $prefix$$Service$_method_names[] = {\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      (*vars)["Method"] = service->method(i).get()->name();
+      printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
+    }
+    printer->Print(*vars, "};\n\n");
   }
-  printer->Print(*vars, "};\n\n");
 
   printer->Print(*vars,
                  "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
@@ -1181,7 +1274,6 @@ void PrintSourceService(Printer *printer, const Service *service,
 
   printer->Print(*vars, "$ns$$Service$::Service::Service() {\n");
   printer->Indent();
-  printer->Print(*vars, "(void)$prefix$$Service$_method_names;\n");
   for (int i = 0; i < service->method_count(); ++i) {
     auto method = service->method(i);
     (*vars)["Idx"] = as_string(i);

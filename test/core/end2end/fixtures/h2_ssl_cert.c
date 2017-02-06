@@ -186,7 +186,11 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
     grpc_channel_args *new_client_args =                                     \
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
-    grpc_channel_args_destroy(new_client_args);                              \
+    {                                                                        \
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;                           \
+      grpc_channel_args_destroy(&exec_ctx, new_client_args);                 \
+      grpc_exec_ctx_finish(&exec_ctx);                                       \
+    }                                                                        \
   }
 
 CLIENT_INIT(NONE)
@@ -203,7 +207,8 @@ typedef enum { SUCCESS, FAIL } test_result;
   {                                                                       \
     {TEST_NAME(request_type, cert_type, result),                          \
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                           \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,                      \
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                     \
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                            \
      chttp2_create_fixture_secure_fullstack, CLIENT_INIT_NAME(cert_type), \
      SERVER_INIT_NAME(request_type), chttp2_tear_down_secure_fullstack},  \
         result                                                            \
@@ -270,7 +275,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -286,7 +291,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -316,9 +321,10 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   grpc_op *op;
   grpc_call_error error;
 
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));

@@ -35,22 +35,25 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+#include "src/core/lib/slice/slice_internal.h"
+
+grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
                                               size_t nslices) {
   return grpc_raw_compressed_byte_buffer_create(slices, nslices,
                                                 GRPC_COMPRESS_NONE);
 }
 
 grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
-    gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression) {
+    grpc_slice *slices, size_t nslices,
+    grpc_compression_algorithm compression) {
   size_t i;
   grpc_byte_buffer *bb = gpr_malloc(sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = compression;
-  gpr_slice_buffer_init(&bb->data.raw.slice_buffer);
+  grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
   for (i = 0; i < nslices; i++) {
-    gpr_slice_ref(slices[i]);
-    gpr_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
+    grpc_slice_ref_internal(slices[i]);
+    grpc_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
   }
   return bb;
 }
@@ -58,13 +61,13 @@ grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
 grpc_byte_buffer *grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader *reader) {
   grpc_byte_buffer *bb = gpr_malloc(sizeof(grpc_byte_buffer));
-  gpr_slice slice;
+  grpc_slice slice;
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
-  gpr_slice_buffer_init(&bb->data.raw.slice_buffer);
+  grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
 
   while (grpc_byte_buffer_reader_next(reader, &slice)) {
-    gpr_slice_buffer_add(&bb->data.raw.slice_buffer, slice);
+    grpc_slice_buffer_add(&bb->data.raw.slice_buffer, slice);
   }
   return bb;
 }
@@ -72,20 +75,23 @@ grpc_byte_buffer *grpc_raw_byte_buffer_from_reader(
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_RAW:
-      return grpc_raw_byte_buffer_create(bb->data.raw.slice_buffer.slices,
-                                         bb->data.raw.slice_buffer.count);
+      return grpc_raw_compressed_byte_buffer_create(
+          bb->data.raw.slice_buffer.slices, bb->data.raw.slice_buffer.count,
+          bb->data.raw.compression);
   }
   GPR_UNREACHABLE_CODE(return NULL);
 }
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
   if (!bb) return;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   switch (bb->type) {
     case GRPC_BB_RAW:
-      gpr_slice_buffer_destroy(&bb->data.raw.slice_buffer);
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &bb->data.raw.slice_buffer);
       break;
   }
   gpr_free(bb);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) {

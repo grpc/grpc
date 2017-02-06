@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+message MessageOne
+{
+    required uint32 one = 1;
+    required uint32 two = 2;
+    required uint32 three = 3;
+    required int32 four = 4;
+}
+
+enum EnumTwo
+{
+    SOME_ENUM_1 = 1;
+    SOME_ENUM_2 = 5;
+    SOME_ENUM_3 = 6;
+    SOME_ENUM_4 = 9;
+    SOME_ENUM_5 = 10;
+    SOME_ENUM_6 = 12;
+    SOME_ENUM_7 = 39;  
+    SOME_ENUM_8 = 401;
+}
+
+message OneofMessage
+{
+    oneof payload {
+        MessageOne message = 1;
+        EnumTwo enum = 2;
+    }
+}

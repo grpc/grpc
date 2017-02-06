@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\connection_refused_test.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{4b0c4345-e702-8911-ab5a-c8fb187ff62a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{bf069703-6525-081f-b965-b73017288d02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{4700e535-ec1c-027a-7d48-afa5ba66e3d3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

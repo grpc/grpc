@@ -36,6 +36,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 
@@ -51,12 +52,23 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
                                                   const grpc_arg *to_add,
                                                   size_t num_to_add);
 
+/** Copies the arguments in \a src except for those whose keys are in
+    \a to_remove. */
+grpc_channel_args *grpc_channel_args_copy_and_remove(
+    const grpc_channel_args *src, const char **to_remove, size_t num_to_remove);
+
+/** Copies the arguments from \a src except for those whose keys are in
+    \a to_remove and appends the arguments in \a to_add. */
+grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
+    const grpc_channel_args *src, const char **to_remove, size_t num_to_remove,
+    const grpc_arg *to_add, size_t num_to_add);
+
 /** Concatenate args from \a a and \a b into a new instance */
 grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
-void grpc_channel_args_destroy(grpc_channel_args *a);
+void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a);
 
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
@@ -76,7 +88,8 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
  * modified to point to the returned instance (which may be different from the
  * input value of \a a). */
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args **a, grpc_compression_algorithm algorithm, int enabled);
+    grpc_exec_ctx *exec_ctx, grpc_channel_args **a,
+    grpc_compression_algorithm algorithm, int enabled);
 
 /** Returns the bitset representing the support state (true for enabled, false
  * for disabled) for compression algorithms.
@@ -88,5 +101,24 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
+
+/** Returns a channel arg instance with socket mutator added. The socket mutator
+ * will perform its mutate_fd method on all file descriptors used by the
+ * channel.
+ * If \a a is non-MULL, its args are copied. */
+grpc_channel_args *grpc_channel_args_set_socket_mutator(
+    grpc_channel_args *a, grpc_socket_mutator *mutator);
+
+/** Returns the value of argument \a name from \a args, or NULL if not found. */
+const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
+                                       const char *name);
+
+typedef struct grpc_integer_options {
+  int default_value;  // Return this if value is outside of expected bounds.
+  int min_value;
+  int max_value;
+} grpc_integer_options;
+/** Returns the value of \a arg, subject to the contraints in \a options. */
+int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

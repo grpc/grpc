@@ -40,30 +40,29 @@ struct grpc_auth_context;
 
 namespace grpc {
 
-class SecureAuthContext GRPC_FINAL : public AuthContext {
+class SecureAuthContext final : public AuthContext {
  public:
   SecureAuthContext(grpc_auth_context* ctx, bool take_ownership);
 
-  ~SecureAuthContext() GRPC_OVERRIDE;
+  ~SecureAuthContext() override;
 
-  bool IsPeerAuthenticated() const GRPC_OVERRIDE;
+  bool IsPeerAuthenticated() const override;
 
-  std::vector<grpc::string_ref> GetPeerIdentity() const GRPC_OVERRIDE;
+  std::vector<grpc::string_ref> GetPeerIdentity() const override;
 
-  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
+  grpc::string GetPeerIdentityPropertyName() const override;
 
   std::vector<grpc::string_ref> FindPropertyValues(
-      const grpc::string& name) const GRPC_OVERRIDE;
+      const grpc::string& name) const override;
 
-  AuthPropertyIterator begin() const GRPC_OVERRIDE;
+  AuthPropertyIterator begin() const override;
 
-  AuthPropertyIterator end() const GRPC_OVERRIDE;
+  AuthPropertyIterator end() const override;
 
   void AddProperty(const grpc::string& key,
-                   const grpc::string_ref& value) GRPC_OVERRIDE;
+                   const grpc::string_ref& value) override;
 
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name)
-      GRPC_OVERRIDE;
+  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) override;
 
  private:
   grpc_auth_context* ctx_;

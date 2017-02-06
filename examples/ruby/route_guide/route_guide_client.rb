@@ -140,10 +140,24 @@ ROUTE_CHAT_NOTES = [
 def run_route_chat(stub)
   p 'Route Chat'
   p '----------'
-  # TODO: decouple sending and receiving, i.e have the response enumerator run
-  # on its own thread.
-  resps = stub.route_chat(ROUTE_CHAT_NOTES)
-  resps.each { |r| p "received #{r.inspect}" }
+  sleeping_enumerator = SleepingEnumerator.new(ROUTE_CHAT_NOTES, 1)
+  stub.route_chat(sleeping_enumerator.each_item) { |r| p "received #{r.inspect}" }
+end
+
+# SleepingEnumerator yields through items, and sleeps between each one
+class SleepingEnumerator
+  def initialize(items, delay)
+    @items = items
+    @delay = delay
+  end
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    @items.each do |item|
+      sleep @delay
+      p "next item to send is #{item.inspect}"
+      yield item
+    end
+  end
 end
 
 def main

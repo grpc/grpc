@@ -31,6 +31,10 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_TIMER_USE_GENERIC
+
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <string.h>
@@ -144,3 +148,5 @@ grpc_timer *grpc_timer_heap_top(grpc_timer_heap *heap) {
 void grpc_timer_heap_pop(grpc_timer_heap *heap) {
   grpc_timer_heap_remove(heap, grpc_timer_heap_top(heap));
 }
+
+#endif /* GRPC_TIMER_USE_GENERIC */

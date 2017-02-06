@@ -35,6 +35,7 @@
 
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

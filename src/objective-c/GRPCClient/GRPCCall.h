@@ -155,6 +155,18 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 };
 
 /**
+ * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
+ */
+typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
+  /** Signal that there is no guarantees on how the call affects the server state. */
+  GRPCCallSafetyDefault = 0,
+  /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
+  GRPCCallSafetyIdempotentRequest = 1,
+  /** Signal that the call is cacheable and will not affect server state. gRPC is free to use GET verb. */
+  GRPCCallSafetyCacheableRequest = 2,
+};
+
+/**
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
@@ -232,6 +244,14 @@ extern id const kGRPCTrailersKey;
  * finishes the response side of the call with an error of code CANCELED.
  */
 - (void)cancel;
+
+/**
+ * Set the call flag for a specific host path.
+ *
+ * Host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * and the port number, for example @"localhost:5050".
+ */
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end

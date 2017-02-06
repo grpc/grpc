@@ -34,17 +34,20 @@
 
 #include <sstream>
 
+#include <grpc++/grpc++.h>
+#include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+extern "C" {
 #include "src/core/lib/channel/channel_args.h"
-
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
+}
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
-  std::ostringstream user_agent_prefix;
-  user_agent_prefix << "grpc-c++/" << grpc_version_string();
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -88,6 +91,26 @@ void ChannelArguments::SetCompressionAlgorithm(
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
+void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
+  if (!mutator) {
+    return;
+  }
+  grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
+  bool replaced = false;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    if (it->type == mutator_arg.type &&
+        grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
+      it->value.pointer = mutator_arg.value.pointer;
+    }
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+  if (!replaced) {
+    args_.push_back(mutator_arg);
+  }
+}
+
 // Note: a second call to this will add in front the result of the first call.
 // An example is calling this on a copy of ChannelArguments which already has a
 // prefix. The user can build up a prefix string by calling this multiple times,
@@ -113,6 +136,31 @@ void ChannelArguments::SetUserAgentPrefix(
   }
 }
 
+void ChannelArguments::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
+                       resource_quota.c_resource_quota(),
+                       grpc_resource_quota_arg_vtable());
+}
+
+void ChannelArguments::SetMaxReceiveMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, size);
+}
+
+void ChannelArguments::SetMaxSendMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, size);
+}
+
+void ChannelArguments::SetLoadBalancingPolicyName(
+    const grpc::string& lb_policy_name) {
+  SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
+}
+
+void ChannelArguments::SetServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
+}
+
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
@@ -127,12 +175,18 @@ void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
+  SetPointerWithVtable(key, value, &vtable);
+}
+
+void ChannelArguments::SetPointerWithVtable(
+    const grpc::string& key, void* value,
+    const grpc_arg_pointer_vtable* vtable) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.pointer.p = value;
-  arg.value.pointer.vtable = &vtable;
+  arg.value.pointer.vtable = vtable;
   args_.push_back(arg);
 }
 

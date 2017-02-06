@@ -42,7 +42,6 @@
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
@@ -51,7 +50,7 @@ namespace testing {
 class Server {
  public:
   explicit Server(const ServerConfig& config) : timer_(new UsageTimer) {
-    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
+    cores_ = gpr_cpu_num_cores();
     if (config.port()) {
       port_ = config.port();
 
@@ -75,6 +74,8 @@ class Server {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_total_cpu_time(timer_result.total_cpu_time);
+    stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     return stats;
   }
 

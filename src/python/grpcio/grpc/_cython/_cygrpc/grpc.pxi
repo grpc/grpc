@@ -51,25 +51,33 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
+cdef extern from "grpc/impl/codegen/exec_ctx_fwd.h":
+
+  struct grpc_exec_ctx:
+    # We don't care about the internals
+    pass
+
+
 cdef extern from "grpc/grpc.h":
 
-  ctypedef struct gpr_slice:
-    # don't worry about writing out the members of gpr_slice; we never access
+  ctypedef struct grpc_slice:
+    # don't worry about writing out the members of grpc_slice; we never access
     # them directly.
     pass
 
-  gpr_slice gpr_slice_ref(gpr_slice s) nogil
-  void gpr_slice_unref(gpr_slice s) nogil
-  gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
-  gpr_slice gpr_slice_new_with_len(
+  grpc_slice grpc_slice_ref(grpc_slice s) nogil
+  void grpc_slice_unref(grpc_slice s) nogil
+  grpc_slice grpc_empty_slice() nogil
+  grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
+  grpc_slice grpc_slice_new_with_len(
       void *p, size_t len, void (*destroy)(void *, size_t)) nogil
-  gpr_slice gpr_slice_malloc(size_t length) nogil
-  gpr_slice gpr_slice_from_copied_string(const char *source) nogil
-  gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len) nogil
+  grpc_slice grpc_slice_malloc(size_t length) nogil
+  grpc_slice grpc_slice_from_copied_string(const char *source) nogil
+  grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
 
   # Declare functions for function-like macros (because Cython)...
-  void *gpr_slice_start_ptr "GPR_SLICE_START_PTR" (gpr_slice s) nogil
-  size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s) nogil
+  void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
+  size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
@@ -101,7 +109,7 @@ cdef extern from "grpc/grpc.h":
     # We don't care about the internals.
     pass
 
-  grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+  grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
                                                 size_t nslices) nogil
   size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
   void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
@@ -109,7 +117,7 @@ cdef extern from "grpc/grpc.h":
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                    grpc_byte_buffer *buffer) nogil
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                   gpr_slice *slice) nogil
+                                   grpc_slice *slice) nogil
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
 
   ctypedef enum grpc_status_code:
@@ -135,7 +143,8 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
   const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
-  const char *GRPC_ARG_MAX_MESSAGE_LENGTH
+  const char *GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  const char *GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
   const char *GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   const char *GRPC_ARG_DEFAULT_AUTHORITY
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
@@ -172,10 +181,14 @@ cdef extern from "grpc/grpc.h":
     GRPC_ARG_INTEGER
     GRPC_ARG_POINTER
 
+  ctypedef struct grpc_arg_pointer_vtable:
+    void *(*copy)(void *)
+    void (*destroy)(grpc_exec_ctx *, void *)
+    int (*cmp)(void *, void *)
+
   ctypedef struct grpc_arg_value_pointer:
     void *address "p"
-    void *(*copy)(void *)
-    void (*destroy)(void *)
+    grpc_arg_pointer_vtable *vtable
 
   union grpc_arg_value:
     char *string
@@ -212,9 +225,8 @@ cdef extern from "grpc/grpc.h":
     GRPC_CHANNEL_SHUTDOWN
 
   ctypedef struct grpc_metadata:
-    const char *key
-    const char *value
-    size_t value_length
+    grpc_slice key
+    grpc_slice value
     # ignore the 'internal_data.obfuscated' fields.
 
   ctypedef enum grpc_completion_type:
@@ -236,10 +248,8 @@ cdef extern from "grpc/grpc.h":
   void grpc_metadata_array_destroy(grpc_metadata_array *array) nogil
 
   ctypedef struct grpc_call_details:
-    char *method
-    size_t method_capacity
-    char *host
-    size_t host_capacity
+    grpc_slice method
+    grpc_slice host
     gpr_timespec deadline
 
   void grpc_call_details_init(grpc_call_details *details) nogil
@@ -263,23 +273,31 @@ cdef extern from "grpc/grpc.h":
     size_t trailing_metadata_count
     grpc_metadata *trailing_metadata
     grpc_status_code status
-    const char *status_details
+    grpc_slice *status_details
 
   ctypedef struct grpc_op_data_recv_status_on_client:
     grpc_metadata_array *trailing_metadata
     grpc_status_code *status
-    char **status_details
-    size_t *status_details_capacity
+    grpc_slice *status_details
 
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
 
+  ctypedef struct grpc_op_data_send_message:
+    grpc_byte_buffer *send_message
+
+  ctypedef struct grpc_op_data_receive_message:
+    grpc_byte_buffer **receive_message "recv_message"
+
+  ctypedef struct grpc_op_data_receive_initial_metadata:
+    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
+
   union grpc_op_data:
     grpc_op_data_send_initial_metadata send_initial_metadata
-    grpc_byte_buffer *send_message
+    grpc_op_data_send_message send_message
     grpc_op_data_send_status_from_server send_status_from_server
-    grpc_metadata_array *receive_initial_metadata "recv_initial_metadata"
-    grpc_byte_buffer **receive_message "recv_message"
+    grpc_op_data_receive_initial_metadata receive_initial_metadata "recv_initial_metadata"
+    grpc_op_data_receive_message receive_message "recv_message"
     grpc_op_data_recv_status_on_client receive_status_on_client "recv_status_on_client"
     grpc_op_data_recv_close_on_server receive_close_on_server "recv_close_on_server"
 
@@ -316,9 +334,9 @@ cdef extern from "grpc/grpc.h":
                                              const grpc_channel_args *args,
                                              void *reserved) nogil
   grpc_call *grpc_channel_create_call(
-      grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-      grpc_completion_queue *completion_queue, const char *method,
-      const char *host, gpr_timespec deadline, void *reserved) nogil
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_completion_queue *completion_queue, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved) nogil
   grpc_connectivity_state grpc_channel_check_connectivity_state(
       grpc_channel *channel, int try_to_connect) nogil
   void grpc_channel_watch_connectivity_state(
@@ -468,8 +486,7 @@ cdef extern from "grpc/compression.h":
     grpc_compression_algorithm default_compression_algorithm
 
   int grpc_compression_algorithm_parse(
-      const char *name, size_t name_length,
-      grpc_compression_algorithm *algorithm) nogil
+      grpc_slice value, grpc_compression_algorithm *algorithm) nogil
   int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                       char **name) nogil
   grpc_compression_algorithm grpc_compression_algorithm_for_level(

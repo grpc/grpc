@@ -44,7 +44,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class MetricsService
+  public static partial class MetricsService
   {
     static readonly string __ServiceName = "grpc.testing.MetricsService";
 
@@ -73,20 +73,27 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of MetricsService</summary>
-    public abstract class MetricsServiceBase
+    public abstract partial class MetricsServiceBase
     {
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -95,7 +102,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for MetricsService</summary>
-    public class MetricsServiceClient : ClientBase<MetricsServiceClient>
+    public partial class MetricsServiceClient : ClientBase<MetricsServiceClient>
     {
       /// <summary>Creates a new client for MetricsService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -118,49 +125,74 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.GaugeResponse> GetAllGauges(global::Grpc.Testing.EmptyMessage request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetAllGauges(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the values of all the gauges that are currently being maintained by
-      ///  the service
+      /// Returns the values of all the gauges that are currently being maintained by
+      /// the service
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncServerStreamingCall<global::Grpc.Testing.GaugeResponse> GetAllGauges(global::Grpc.Testing.EmptyMessage request, CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_GetAllGauges, null, options, request);
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.GaugeResponse GetGauge(global::Grpc.Testing.GaugeRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetGauge(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Testing.GaugeResponse GetGauge(global::Grpc.Testing.GaugeRequest request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_GetGauge, null, options, request);
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.GaugeResponse> GetGaugeAsync(global::Grpc.Testing.GaugeRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return GetGaugeAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Returns the value of one gauge
+      /// Returns the value of one gauge
       /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual AsyncUnaryCall<global::Grpc.Testing.GaugeResponse> GetGaugeAsync(global::Grpc.Testing.GaugeRequest request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetGauge, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override MetricsServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new MetricsServiceClient(configuration);
@@ -168,6 +200,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static ServerServiceDefinition BindService(MetricsServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()

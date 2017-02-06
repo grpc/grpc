@@ -37,6 +37,7 @@
 #include <thread>
 
 #include <grpc++/grpc++.h>
+#include <grpc/support/log.h>
 
 #include "helloworld.grpc.pb.h"
 

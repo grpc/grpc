@@ -36,6 +36,7 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Forward decl of struct grpc_server */
 /* This is not typedef'ed to avoid a typedef-redefinition error */
@@ -48,6 +49,10 @@ typedef struct grpc_udp_server grpc_udp_server;
 typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                                         struct grpc_server *server);
 
+/* Called when the socket is writeable. */
+typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx,
+                                         grpc_fd *emfd);
+
 /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
 typedef void (*grpc_udp_server_orphan_cb)(grpc_fd *emfd);
 
@@ -59,7 +64,7 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *udp_server,
                            grpc_pollset **pollsets, size_t pollset_count,
                            struct grpc_server *server);
 
-int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
+int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
@@ -71,8 +76,10 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             size_t addr_len, grpc_udp_server_read_cb read_cb,
+int grpc_udp_server_add_port(grpc_udp_server *s,
+                             const grpc_resolved_address *addr,
+                             grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_write_cb write_cb,
                              grpc_udp_server_orphan_cb orphan_cb);
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,

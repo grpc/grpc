@@ -35,16 +35,16 @@
 #define GRPCXX_SUPPORT_SLICE_H
 
 #include <grpc++/support/config.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 namespace grpc {
 
-/// A wrapper around \a gpr_slice.
+/// A wrapper around \a grpc_slice.
 ///
 /// A slice represents a contiguous reference counted array of bytes.
 /// It is cheap to take references to a slice, and it is cheap to create a
 /// slice pointing to a subset of another slice.
-class Slice GRPC_FINAL {
+class Slice final {
  public:
   /// Construct an empty slice.
   Slice();
@@ -53,11 +53,11 @@ class Slice GRPC_FINAL {
 
   enum AddRef { ADD_REF };
   /// Construct a slice from \a slice, adding a reference.
-  Slice(gpr_slice slice, AddRef);
+  Slice(grpc_slice slice, AddRef);
 
   enum StealRef { STEAL_REF };
   /// Construct a slice from \a slice, stealing a reference.
-  Slice(gpr_slice slice, StealRef);
+  Slice(grpc_slice slice, StealRef);
 
   /// Copy constructor, adds a reference.
   Slice(const Slice& other);
@@ -69,21 +69,21 @@ class Slice GRPC_FINAL {
   }
 
   /// Byte size.
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
+  size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
 
   /// Raw pointer to the beginning (first element) of the slice.
-  const uint8_t* begin() const { return GPR_SLICE_START_PTR(slice_); }
+  const uint8_t* begin() const { return GRPC_SLICE_START_PTR(slice_); }
 
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
-  const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
+  const uint8_t* end() const { return GRPC_SLICE_END_PTR(slice_); }
 
-  /// Raw C slice. Caller needs to call gpr_slice_unref when done.
-  gpr_slice c_slice() const { return gpr_slice_ref(slice_); }
+  /// Raw C slice. Caller needs to call grpc_slice_unref when done.
+  grpc_slice c_slice() const { return grpc_slice_ref(slice_); }
 
  private:
   friend class ByteBuffer;
 
-  gpr_slice slice_;
+  grpc_slice slice_;
 };
 
 }  // namespace grpc

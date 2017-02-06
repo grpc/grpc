@@ -1,0 +1,22 @@
+{
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+  "dependencies": {
+    "Grpc.Auth": "__GRPC_NUGET_VERSION__",
+    "Grpc.Core": "__GRPC_NUGET_VERSION__",
+    // Necessary for native deps to get copied correctly.
+    "Microsoft.NETCore.Platforms": "1.0.1"
+  },
+  "frameworks": {
+    "net45": { },
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
+      }
+    }
+  }
+}

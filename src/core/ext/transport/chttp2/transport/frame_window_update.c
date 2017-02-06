@@ -38,12 +38,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-gpr_slice grpc_chttp2_window_update_create(
+grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  gpr_slice slice = gpr_slice_malloc(frame_size);
+  grpc_slice slice = grpc_slice_malloc(frame_size);
   stats->header_bytes += frame_size;
-  uint8_t *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
 
@@ -80,11 +80,10 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
 }
 
 grpc_error *grpc_chttp2_window_update_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+    grpc_exec_ctx *exec_ctx, void *parser, grpc_chttp2_transport *t,
+    grpc_chttp2_stream *s, grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_window_update_parser *p = parser;
 
@@ -94,8 +93,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     p->byte++;
   }
 
-  if (stream_parsing != NULL) {
-    stream_parsing->stats.incoming.framing_bytes += (uint32_t)(end - cur);
+  if (s != NULL) {
+    s->stats.incoming.framing_bytes += (uint32_t)(end - cur);
   }
 
   if (p->byte == 4) {
@@ -109,17 +108,25 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     }
     GPR_ASSERT(is_last);
 
-    if (transport_parsing->incoming_stream_id != 0) {
-      if (stream_parsing != NULL) {
-        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", transport_parsing,
-                                       stream_parsing, outgoing_window,
+    if (t->incoming_stream_id != 0) {
+      if (s != NULL) {
+        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window_delta,
                                        received_update);
-        grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
-                                                 stream_parsing);
+        if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
+          grpc_chttp2_become_writable(
+              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
+              "stream.read_flow_control");
+        }
       }
     } else {
-      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", transport_parsing,
-                                        outgoing_window, received_update);
+      bool was_zero = t->outgoing_window <= 0;
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", t, outgoing_window,
+                                        received_update);
+      bool is_zero = t->outgoing_window <= 0;
+      if (was_zero && !is_zero) {
+        grpc_chttp2_initiate_write(exec_ctx, t, false,
+                                   "new_global_flow_control");
+      }
     }
   }
 

@@ -4,10 +4,13 @@ gRPC C#
 
 A C# implementation of gRPC.
 
-Status
-------
+SUPPORTED PLATFORMS
+------------------
 
-Beta
+- .NET Framework 4.5+ (Windows)
+- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X (starting from version 1.0.1)
+- Mono 4+ on Linux, Windows and Mac OS X
+
 
 PREREQUISITES
 --------------
@@ -15,6 +18,7 @@ PREREQUISITES
 - Windows: .NET Framework 4.5+, Visual Studio 2013 or 2015
 - Linux: Mono 4+, MonoDevelop 5.9+ (with NuGet add-in installed)
 - Mac OS X: Xamarin Studio 5.9+
+
 
 HOW TO USE
 --------------
@@ -69,12 +73,6 @@ different languages.
 tools/run_tests/run_tests.py -l csharp
 ```
 
-ON .NET CORE SUPPORT
-------------------
-
-We are committed to providing full support for [.NET Core](https://dotnet.github.io/) in near future,
-but currently, the support is for .NET Core is experimental/work-in-progress.
-
 DOCUMENTATION
 -------------
 - [API Reference][]
@@ -102,9 +100,7 @@ CONTENTS
 THE NATIVE DEPENDENCY
 ---------------
 
-Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes its functionality via P/Invoke. `grpc_csharp_ext` library is a native extension library that facilitates this by wrapping some C core API into a form that's more digestible for P/Invoke.
-
-Prior to version 0.13, installing `grpc_csharp_ext` was required to make gRPC work on Linux and MacOS. Starting with version 0.13, we have improved the packaging story significantly and precompiled versions of the native library for all supported platforms are now shipped with the NuGet package. Just installing the `Grpc` NuGet package should be the only step needed to use gRPC C#, regardless of your platform (Windows, Linux or Mac) and the bitness (32 or 64bit).
+Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes its functionality via P/Invoke. The fact that a native library is used should be fully transparent to the users and just installing the `Grpc.Core` NuGet package is the only step needed to use gRPC C# on all supported platforms.
 
 [API Reference]: http://www.grpc.io/grpc/csharp/
 [Helloworld Example]: ../../examples/csharp/helloworld

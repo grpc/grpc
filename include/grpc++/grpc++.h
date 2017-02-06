@@ -44,6 +44,10 @@
 /// peer, compression settings, authentication, etc.
 /// - grpc::Server, representing a gRPC server, created by grpc::ServerBuilder.
 ///
+/// Streaming calls are handled with the streaming classes in
+/// \ref sync_stream.h and
+/// \ref async_stream.h.
+///
 /// Refer to the
 /// [examples](https://github.com/grpc/grpc/blob/master/examples/cpp)
 /// for code putting these pieces into play.
@@ -66,5 +70,9 @@
 #include <grpc++/server_context.h>
 #include <grpc++/server_posix.h>
 // IWYU pragma: end_exports
+
+namespace grpc {
+grpc::string Version();
+}  // namespace grpc
 
 #endif  // GRPCXX_GRPCXX_H

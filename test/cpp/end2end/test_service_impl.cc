@@ -38,7 +38,8 @@
 
 #include <grpc++/security/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -193,7 +194,7 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
     return Status::CANCELLED;
   }
 
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
@@ -211,7 +212,7 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
   }
   gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read);
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;
@@ -247,7 +248,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   }
 
   EchoResponse response;
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
@@ -258,7 +259,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
     writer->Write(response);
   }
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;
@@ -294,7 +295,7 @@ Status TestServiceImpl::BidiStream(
     return Status::CANCELLED;
   }
 
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
@@ -306,7 +307,7 @@ Status TestServiceImpl::BidiStream(
     stream->Write(response);
   }
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;

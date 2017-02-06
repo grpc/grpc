@@ -129,27 +129,58 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
-# A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
-class EnumeratorQueue
-  extend Forwardable
-  def_delegators :@q, :push
+def maybe_echo_metadata(_call)
+  
+  # these are consistent for all interop tests
+  initial_metadata_key = "x-grpc-test-echo-initial"
+  trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
 
-  def initialize(sentinel)
-    @q = Queue.new
-    @sentinel = sentinel
+  if _call.metadata.has_key?(initial_metadata_key)
+    _call.metadata_to_send[initial_metadata_key] = _call.metadata[initial_metadata_key]
   end
-
-  def each_item
-    return enum_for(:each_item) unless block_given?
-    loop do
-      r = @q.pop
-      break if r.equal?(@sentinel)
-      fail r if r.is_a? Exception
-      yield r
-    end
+  if _call.metadata.has_key?(trailing_metadata_key)
+    _call.output_metadata[trailing_metadata_key] = _call.metadata[trailing_metadata_key]
   end
 end
 
+def maybe_echo_status_and_message(req)
+  unless req.response_status.nil?
+    fail GRPC::BadStatus.new_status_exception(
+        req.response_status.code, req.response_status.message)
+  end
+end
+
+# A FullDuplexEnumerator passes requests to a block and yields generated responses
+class FullDuplexEnumerator
+  include Grpc::Testing
+  include Grpc::Testing::PayloadType
+
+  def initialize(requests)
+    @requests = requests
+  end
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    GRPC.logger.info('interop-server: started receiving')
+    begin
+      cls = StreamingOutputCallResponse
+      @requests.each do |req|
+        maybe_echo_status_and_message(req)
+        req.response_parameters.each do |params|
+          resp_size = params.size
+          GRPC.logger.info("read a req, response size is #{resp_size}")
+          yield cls.new(payload: Payload.new(type: req.response_type,
+                                              body: nulls(resp_size)))
+        end
+      end
+      GRPC.logger.info('interop-server: finished receiving')
+    rescue StandardError => e
+      GRPC.logger.info('interop-server: failed')
+      GRPC.logger.warn(e)
+      fail e
+    end
+  end
+end
+    
 # A runnable implementation of the schema-specified testing service, with each
 # service method implemented as required by the interop testing spec.
 class TestTarget < Grpc::Testing::TestService::Service
@@ -161,6 +192,8 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def unary_call(simple_req, _call)
+    maybe_echo_metadata(_call)
+    maybe_echo_status_and_message(simple_req)
     req_size = simple_req.response_size
     SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
                                             body: nulls(req_size)))
@@ -180,33 +213,12 @@ class TestTarget < Grpc::Testing::TestService::Service
     end
   end
 
-  def full_duplex_call(reqs)
+  def full_duplex_call(reqs, _call)
+    maybe_echo_metadata(_call)
     # reqs is a lazy Enumerator of the requests sent by the client.
-    q = EnumeratorQueue.new(self)
-    cls = StreamingOutputCallResponse
-    Thread.new do
-      begin
-        GRPC.logger.info('interop-server: started receiving')
-        reqs.each do |req|
-          req.response_parameters.each do |params|
-            resp_size = params.size
-            GRPC.logger.info("read a req, response size is #{resp_size}")
-            resp = cls.new(payload: Payload.new(type: req.response_type,
-                                                body: nulls(resp_size)))
-            q.push(resp)
-          end
-        end
-        GRPC.logger.info('interop-server: finished receiving')
-        q.push(self)
-      rescue StandardError => e
-        GRPC.logger.info('interop-server: failed')
-        GRPC.logger.warn(e)
-        q.push(e)  # share the exception with the enumerator
-      end
-    end
-    q.each_item
+    FullDuplexEnumerator.new(reqs).each_item
   end
-
+        
   def half_duplex_call(reqs)
     # TODO: update with unique behaviour of the half_duplex_call if that's
     # ever required by any of the tests.

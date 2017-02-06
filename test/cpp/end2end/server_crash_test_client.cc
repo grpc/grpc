@@ -40,6 +40,8 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc/support/log.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to connect to");
@@ -63,7 +65,7 @@ int main(int argc, char** argv) {
   EchoRequest request;
   EchoResponse response;
   grpc::ClientContext context;
-  context.set_fail_fast(false);
+  context.set_wait_for_ready(true);
 
   if (FLAGS_mode == "bidi") {
     auto stream = stub->BidiStream(&context);
