@@ -13,8 +13,8 @@
  <date>2017-01-13</date>
  <time>16:06:07</time>
  <version>
-  <release>1.1.0dev</release>
-  <api>1.1.0dev</api>
+  <release>1.2.0dev</release>
+  <api>1.2.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -200,6 +200,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
@@ -252,6 +253,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
@@ -265,14 +267,18 @@
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
@@ -289,11 +295,9 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_table.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
@@ -446,6 +450,8 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.c" role="src" />
@@ -465,14 +471,16 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/error_utils.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
@@ -493,7 +501,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.c" role="src" />

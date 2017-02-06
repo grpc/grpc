@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -313,6 +316,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
@@ -370,13 +379,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
+      <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
@@ -392,6 +404,9 @@
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
+      <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
@@ -512,6 +527,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
@@ -606,6 +624,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error_internal.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
@@ -764,6 +785,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
@@ -803,13 +827,22 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h">
+      <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h">
+      <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.h">
+      <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\http2_errors.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h">
@@ -825,6 +858,9 @@
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h">
+      <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h">

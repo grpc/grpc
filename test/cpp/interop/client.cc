@@ -32,8 +32,7 @@
  */
 
 #include <memory>
-
-#include <unistd.h>
+#include <unordered_map>
 
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
@@ -108,119 +107,78 @@ int main(int argc, char** argv) {
   grpc::testing::InteropClient client(CreateChannelForTestCase(FLAGS_test_case),
                                       true,
                                       FLAGS_do_not_abort_on_transient_failures);
-  if (FLAGS_test_case == "empty_unary") {
-    client.DoEmpty();
-  } else if (FLAGS_test_case == "large_unary") {
-    client.DoLargeUnary();
-  } else if (FLAGS_test_case == "server_compressed_unary") {
-    client.DoServerCompressedUnary();
-  } else if (FLAGS_test_case == "client_compressed_unary") {
-    client.DoClientCompressedUnary();
-  } else if (FLAGS_test_case == "client_streaming") {
-    client.DoRequestStreaming();
-  } else if (FLAGS_test_case == "server_streaming") {
-    client.DoResponseStreaming();
-  } else if (FLAGS_test_case == "server_compressed_streaming") {
-    client.DoServerCompressedStreaming();
-  } else if (FLAGS_test_case == "client_compressed_streaming") {
-    client.DoClientCompressedStreaming();
-  } else if (FLAGS_test_case == "slow_consumer") {
-    client.DoResponseStreamingWithSlowConsumer();
-  } else if (FLAGS_test_case == "half_duplex") {
-    client.DoHalfDuplex();
-  } else if (FLAGS_test_case == "ping_pong") {
-    client.DoPingPong();
-  } else if (FLAGS_test_case == "cancel_after_begin") {
-    client.DoCancelAfterBegin();
-  } else if (FLAGS_test_case == "cancel_after_first_response") {
-    client.DoCancelAfterFirstResponse();
-  } else if (FLAGS_test_case == "timeout_on_sleeping_server") {
-    client.DoTimeoutOnSleepingServer();
-  } else if (FLAGS_test_case == "empty_stream") {
-    client.DoEmptyStream();
-  } else if (FLAGS_test_case == "compute_engine_creds") {
-    client.DoComputeEngineCreds(FLAGS_default_service_account,
-                                FLAGS_oauth_scope);
-  } else if (FLAGS_test_case == "jwt_token_creds") {
-    grpc::string json_key = GetServiceAccountJsonKey();
-    client.DoJwtTokenCreds(json_key);
-  } else if (FLAGS_test_case == "oauth2_auth_token") {
-    client.DoOauth2AuthToken(FLAGS_default_service_account, FLAGS_oauth_scope);
-  } else if (FLAGS_test_case == "per_rpc_creds") {
-    grpc::string json_key = GetServiceAccountJsonKey();
-    client.DoPerRpcCreds(json_key);
-  } else if (FLAGS_test_case == "status_code_and_message") {
-    client.DoStatusWithMessage();
-  } else if (FLAGS_test_case == "custom_metadata") {
-    client.DoCustomMetadata();
-  } else if (FLAGS_test_case == "unimplemented_method") {
-    client.DoUnimplementedMethod();
-  } else if (FLAGS_test_case == "unimplemented_service") {
-    client.DoUnimplementedService();
-  } else if (FLAGS_test_case == "cacheable_unary") {
-    client.DoCacheableUnary();
-  } else if (FLAGS_test_case == "all") {
-    client.DoEmpty();
-    client.DoLargeUnary();
-    client.DoClientCompressedUnary();
-    client.DoServerCompressedUnary();
-    client.DoRequestStreaming();
-    client.DoResponseStreaming();
-    client.DoClientCompressedStreaming();
-    client.DoServerCompressedStreaming();
-    client.DoHalfDuplex();
-    client.DoPingPong();
-    client.DoCancelAfterBegin();
-    client.DoCancelAfterFirstResponse();
-    client.DoTimeoutOnSleepingServer();
-    client.DoEmptyStream();
-    client.DoStatusWithMessage();
-    client.DoCustomMetadata();
-    client.DoUnimplementedMethod();
-    client.DoUnimplementedService();
-    client.DoCacheableUnary();
-    // service_account_creds and jwt_token_creds can only run with ssl.
-    if (FLAGS_use_tls) {
-      grpc::string json_key = GetServiceAccountJsonKey();
-      client.DoJwtTokenCreds(json_key);
-      client.DoOauth2AuthToken(FLAGS_default_service_account,
-                               FLAGS_oauth_scope);
-      client.DoPerRpcCreds(json_key);
-    }
-    // compute_engine_creds only runs in GCE.
-  } else {
-    const char* testcases[] = {"all",
-                               "cacheable_unary",
-                               "cancel_after_begin",
-                               "cancel_after_first_response",
-                               "client_compressed_streaming",
-                               "client_compressed_unary",
-                               "client_streaming",
-                               "compute_engine_creds",
-                               "custom_metadata",
-                               "empty_stream",
-                               "empty_unary",
-                               "half_duplex",
-                               "jwt_token_creds",
-                               "large_unary",
-                               "oauth2_auth_token",
-                               "oauth2_auth_token",
-                               "per_rpc_creds",
-                               "per_rpc_creds",
-                               "ping_pong",
-                               "server_compressed_streaming",
-                               "server_compressed_unary",
-                               "server_streaming",
-                               "status_code_and_message",
-                               "timeout_on_sleeping_server",
-                               "unimplemented_method",
-                               "unimplemented_service"};
-    char* joined_testcases =
-        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 
+  std::unordered_map<grpc::string, std::function<bool()>> actions;
+  actions["empty_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoEmpty, &client);
+  actions["large_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoLargeUnary, &client);
+  actions["server_compressed_unary"] = std::bind(
+      &grpc::testing::InteropClient::DoServerCompressedUnary, &client);
+  actions["client_compressed_unary"] = std::bind(
+      &grpc::testing::InteropClient::DoClientCompressedUnary, &client);
+  actions["client_streaming"] =
+      std::bind(&grpc::testing::InteropClient::DoRequestStreaming, &client);
+  actions["server_streaming"] =
+      std::bind(&grpc::testing::InteropClient::DoResponseStreaming, &client);
+  actions["server_compressed_streaming"] = std::bind(
+      &grpc::testing::InteropClient::DoServerCompressedStreaming, &client);
+  actions["client_compressed_streaming"] = std::bind(
+      &grpc::testing::InteropClient::DoClientCompressedStreaming, &client);
+  actions["slow_consumer"] = std::bind(
+      &grpc::testing::InteropClient::DoResponseStreamingWithSlowConsumer,
+      &client);
+  actions["half_duplex"] =
+      std::bind(&grpc::testing::InteropClient::DoHalfDuplex, &client);
+  actions["ping_pong"] =
+      std::bind(&grpc::testing::InteropClient::DoPingPong, &client);
+  actions["cancel_after_begin"] =
+      std::bind(&grpc::testing::InteropClient::DoCancelAfterBegin, &client);
+  actions["cancel_after_first_response"] = std::bind(
+      &grpc::testing::InteropClient::DoCancelAfterFirstResponse, &client);
+  actions["timeout_on_sleeping_server"] = std::bind(
+      &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
+  actions["empty_stream"] =
+      std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
+  if (FLAGS_use_tls) {
+    actions["compute_engine_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
+                  FLAGS_default_service_account, FLAGS_oauth_scope);
+    actions["jwt_token_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoJwtTokenCreds, &client,
+                  GetServiceAccountJsonKey());
+    actions["oauth2_auth_token"] =
+        std::bind(&grpc::testing::InteropClient::DoOauth2AuthToken, &client,
+                  FLAGS_default_service_account, FLAGS_oauth_scope);
+    actions["per_rpc_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoPerRpcCreds, &client,
+                  GetServiceAccountJsonKey());
+  }
+  actions["status_code_and_message"] =
+      std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);
+  actions["custom_metadata"] =
+      std::bind(&grpc::testing::InteropClient::DoCustomMetadata, &client);
+  actions["unimplemented_method"] =
+      std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod, &client);
+  actions["unimplemented_service"] =
+      std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
+  // actions["cacheable_unary"] =
+  //    std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+
+  if (FLAGS_test_case == "all") {
+    for (const auto& action : actions) {
+      action.second();
+    }
+  } else if (actions.find(FLAGS_test_case) != actions.end()) {
+    actions.find(FLAGS_test_case)->second();
+  } else {
+    grpc::string test_cases;
+    for (const auto& action : actions) {
+      if (!test_cases.empty()) test_cases += "\n";
+      test_cases += action.first;
+    }
     gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
-            FLAGS_test_case.c_str(), joined_testcases);
-    gpr_free(joined_testcases);
+            FLAGS_test_case.c_str(), test_cases.c_str());
     ret = 1;
   }
 

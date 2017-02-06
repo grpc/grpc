@@ -86,7 +86,8 @@ typedef struct {
 
   /// Shuts down the handshaker (e.g., to clean up when the operation is
   /// aborted in the middle).
-  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
+                   grpc_error* why);
 
   /// Performs handshaking, modifying \a args as needed (e.g., to
   /// replace \a endpoint with a wrapped endpoint).
@@ -111,7 +112,7 @@ void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
 void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                              grpc_handshaker* handshaker);
 void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                              grpc_handshaker* handshaker);
+                              grpc_handshaker* handshaker, grpc_error* why);
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
                                   grpc_tcp_server_acceptor* acceptor,
@@ -141,7 +142,8 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 /// The caller must still call grpc_handshake_manager_destroy() after
 /// calling this function.
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
-                                     grpc_handshake_manager* mgr);
+                                     grpc_handshake_manager* mgr,
+                                     grpc_error* why);
 
 /// Invokes handshakers in the order they were added.
 /// Takes ownership of \a endpoint, and then passes that ownership to

@@ -341,10 +341,10 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
 }
 
-static void endpoint_shutdown(grpc_exec_ctx *exec_ctx,
-                              grpc_endpoint *secure_ep) {
+static void endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
+                              grpc_error *why) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  grpc_endpoint_shutdown(exec_ctx, ep->wrapped_ep);
+  grpc_endpoint_shutdown(exec_ctx, ep->wrapped_ep, why);
 }
 
 static void endpoint_destroy(grpc_exec_ctx *exec_ctx,

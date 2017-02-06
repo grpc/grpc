@@ -61,7 +61,7 @@ typedef struct grpc_call_create_args {
 
   const void *server_transport_data;
 
-  grpc_mdelem **add_initial_metadata;
+  grpc_mdelem *add_initial_metadata;
   size_t add_initial_metadata_count;
 
   gpr_timespec send_deadline;
@@ -124,6 +124,8 @@ uint8_t grpc_call_is_client(grpc_call *call);
  * level in the context of \a call. */
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level);
+
+extern int grpc_call_error_trace;
 
 #ifdef __cplusplus
 }

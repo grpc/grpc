@@ -33,6 +33,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using Grpc.Core;
 
 namespace Grpc.Core.Internal
@@ -42,6 +43,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid
     {
+        static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
         static readonly NativeMethods Native = NativeMethods.Get();
 
         private BatchContextSafeHandle()
@@ -71,7 +73,9 @@ namespace Grpc.Core.Internal
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
+            UIntPtr detailsLength;
+            IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
+            string details = PtrToStringUtf8(detailsPtr, (int) detailsLength.ToUInt32());
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
@@ -103,6 +107,13 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
+        }
+
+        string PtrToStringUtf8(IntPtr ptr, int len)
+        {
+            var bytes = new byte[len];
+            Marshal.Copy(ptr, bytes, 0, len);
+            return EncodingUTF8.GetString(bytes);
         }
     }
 }

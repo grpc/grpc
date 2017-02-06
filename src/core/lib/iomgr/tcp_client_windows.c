@@ -135,12 +135,10 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
-                             grpc_endpoint **endpoint,
-                             grpc_pollset_set *interested_parties,
-                             const grpc_channel_args *channel_args,
-                             const grpc_resolved_address *addr,
-                             gpr_timespec deadline) {
+static void tcp_client_connect_impl(
+    grpc_exec_ctx *exec_ctx, grpc_closure *on_done, grpc_endpoint **endpoint,
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const grpc_resolved_address *addr, gpr_timespec deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -250,6 +248,23 @@ failure:
   }
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_closure_sched(exec_ctx, on_done, final_error);
+}
+
+// overridden by api_fuzzer.c
+void (*grpc_tcp_client_connect_impl)(
+    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const grpc_resolved_address *addr,
+    gpr_timespec deadline) = tcp_client_connect_impl;
+
+void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                             grpc_endpoint **ep,
+                             grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
+                             const grpc_resolved_address *addr,
+                             gpr_timespec deadline) {
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
+                               channel_args, addr, deadline);
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */

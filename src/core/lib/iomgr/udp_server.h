@@ -49,6 +49,10 @@ typedef struct grpc_udp_server grpc_udp_server;
 typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                                         struct grpc_server *server);
 
+/* Called when the socket is writeable. */
+typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx,
+                                         grpc_fd *emfd);
+
 /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
 typedef void (*grpc_udp_server_orphan_cb)(grpc_fd *emfd);
 
@@ -75,6 +79,7 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 int grpc_udp_server_add_port(grpc_udp_server *s,
                              const grpc_resolved_address *addr,
                              grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_write_cb write_cb,
                              grpc_udp_server_orphan_cb orphan_cb);
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,

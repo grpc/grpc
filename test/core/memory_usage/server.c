@@ -110,7 +110,8 @@ static void send_status(void *tag) {
   status_op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op.data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op.data.send_status_from_server.trailing_metadata_count = 0;
-  status_op.data.send_status_from_server.status_details = "";
+  grpc_slice details = grpc_slice_from_static_string("");
+  status_op.data.send_status_from_server.status_details = &details;
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call *)tag).call,
                                                    &status_op, 1, tag, NULL));
@@ -140,7 +141,8 @@ static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status_details = "";
+  grpc_slice details = grpc_slice_from_static_string("");
+  op->data.send_status_from_server.status_details = &details;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -230,7 +232,7 @@ int main(int argc, char **argv) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                     cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -245,25 +247,27 @@ int main(int argc, char **argv) {
         switch (s->state) {
           case FLING_SERVER_NEW_REQUEST:
             request_call_unary(++next_call_idx);
-            if (0 ==
-                strcmp(s->call_details.method, "/Reflector/reflectUnary")) {
+            if (0 == grpc_slice_str_cmp(s->call_details.method,
+                                        "/Reflector/reflectUnary")) {
               s->state = FLING_SERVER_SEND_INIT_METADATA;
               send_initial_metadata_unary(s);
-            } else if (0 == strcmp(s->call_details.method,
-                                   "Reflector/GetBeforeSvrCreation")) {
+            } else if (0 ==
+                       grpc_slice_str_cmp(s->call_details.method,
+                                          "Reflector/GetBeforeSvrCreation")) {
               s->state = FLING_SERVER_SEND_STATUS_SNAPSHOT;
               send_snapshot(s, &before_server_create);
-            } else if (0 == strcmp(s->call_details.method,
-                                   "Reflector/GetAfterSvrCreation")) {
+            } else if (0 ==
+                       grpc_slice_str_cmp(s->call_details.method,
+                                          "Reflector/GetAfterSvrCreation")) {
               s->state = FLING_SERVER_SEND_STATUS_SNAPSHOT;
               send_snapshot(s, &after_server_create);
-            } else if (0 == strcmp(s->call_details.method,
-                                   "Reflector/SimpleSnapshot")) {
+            } else if (0 == grpc_slice_str_cmp(s->call_details.method,
+                                               "Reflector/SimpleSnapshot")) {
               s->state = FLING_SERVER_SEND_STATUS_SNAPSHOT;
               current_snapshot = grpc_memory_counters_snapshot();
               send_snapshot(s, &current_snapshot);
-            } else if (0 == strcmp(s->call_details.method,
-                                   "Reflector/DestroyCalls")) {
+            } else if (0 == grpc_slice_str_cmp(s->call_details.method,
+                                               "Reflector/DestroyCalls")) {
               s->state = FLING_SERVER_BATCH_SEND_STATUS_FLING_CALL;
               current_snapshot = grpc_memory_counters_snapshot();
               send_snapshot(s, &current_snapshot);
