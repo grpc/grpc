@@ -41,6 +41,8 @@
 
 #include <grpc/support/log.h>
 
+#include "test/core/util/debugger_macros.h"
+
 static bool g_pre_init_called = false;
 
 extern void authority_not_supported(grpc_end2end_test_config config);
@@ -143,6 +145,7 @@ extern void write_buffering_at_end_pre_init(void);
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
+  grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
   binary_metadata_pre_init();

@@ -134,29 +134,15 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   out->Outdent();
   out->Print("}\n\n");
 }
-
-void PrintServices(const FileDescriptor *file, Printer *out) {
-  map<grpc::string, grpc::string> vars;
-  vars["package"] = MessageIdentifierName(file->package());
-  out->Print(vars, "namespace $package$ {\n\n");
-  out->Indent();
-  for (int i = 0; i < file->service_count(); i++) {
-    PrintService(file->service(i), out);
-  }
-  out->Outdent();
-  out->Print("}\n");
-}
 }
 
-grpc::string GenerateFile(const FileDescriptor *file) {
+grpc::string GenerateFile(const FileDescriptor *file,
+                          const ServiceDescriptor *service) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
     Printer out(&output_stream, '$');
 
-    if (file->service_count() == 0) {
-      return output;
-    }
     out.Print("<?php\n");
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
 
@@ -166,7 +152,15 @@ grpc::string GenerateFile(const FileDescriptor *file) {
       out.Print(leading_comments.c_str());
     }
 
-    PrintServices(file, &out);
+    map<grpc::string, grpc::string> vars;
+    vars["package"] = MessageIdentifierName(file->package());
+    out.Print(vars, "namespace $package$ {\n\n");
+    out.Indent();
+
+    PrintService(service, &out);
+
+    out.Outdent();
+    out.Print("}\n");
   }
   return output;
 }

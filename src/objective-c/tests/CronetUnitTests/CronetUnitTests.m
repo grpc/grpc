@@ -54,7 +54,7 @@
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -97,7 +97,7 @@ static void drain_cq(grpc_completion_queue *cq) {
   grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
   grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_metadata meta_c[2] = {
     {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
     {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};

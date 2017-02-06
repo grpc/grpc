@@ -57,7 +57,7 @@
 static void *tag(intptr_t i) { return (void *)i; }
 
 static gpr_timespec ms_from_now(int ms) {
-  return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);
+  return grpc_timeout_milliseconds_to_deadline(ms);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -88,8 +88,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_metadata_array request_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
   grpc_call_details call_details;
   char *peer;
@@ -135,7 +134,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     grpc_slice_split(uri_slice, ",", &uri_parts);
     hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
-      char *uri_part_str = grpc_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      char *uri_part_str = grpc_slice_to_c_string(uri_parts.slices[i]);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
       gpr_free(uri_part_str);
     }
@@ -168,8 +167,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
+  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
@@ -192,7 +193,6 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -216,7 +216,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count = 0;
     op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-    op->data.send_status_from_server.status_details = "xyz";
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
     op->flags = 0;
     op++;
     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -235,9 +236,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     gpr_free(peer);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-    GPR_ASSERT(0 == strcmp(details, "xyz"));
-    GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-    GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    GPR_ASSERT(0 ==
+               grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
     GPR_ASSERT(was_cancelled == 1);
 
     grpc_call_destroy(s);
@@ -259,7 +261,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
@@ -271,7 +273,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_metadata_array_destroy(&request_metadata_recv);
 
   grpc_call_details_destroy(&call_details);
-  gpr_free(details);
+  grpc_slice_unref(details);
   if (picked_port) {
     grpc_recycle_unused_port(port);
   }

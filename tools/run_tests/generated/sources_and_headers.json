@@ -104,6 +104,23 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "bdp_estimator_test", 
+    "src": [
+      "test/core/transport/bdp_estimator_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc_test_util"
     ], 
@@ -213,23 +230,6 @@
     "name": "chttp2_hpack_encoder_test", 
     "src": [
       "test/core/transport/chttp2/hpack_encoder_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "chttp2_status_conversion_test", 
-    "src": [
-      "test/core/transport/chttp2/status_conversion_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1737,6 +1737,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "resolve_address_posix_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "resolve_address_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.c"
@@ -1996,6 +2013,23 @@
     "name": "ssl_server_fuzzer", 
     "src": [
       "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "status_conversion_test", 
+    "src": [
+      "test/core/transport/status_conversion_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3423,6 +3457,25 @@
     "name": "thread_stress_test", 
     "src": [
       "test/cpp/end2end/thread_stress_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "writes_per_rpc_test", 
+    "src": [
+      "test/cpp/performance/writes_per_rpc_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7011,6 +7064,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
@@ -7063,6 +7117,7 @@
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
       "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/api_trace.h", 
@@ -7076,14 +7131,18 @@
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
       "src/core/lib/surface/server.h", 
+      "src/core/lib/surface/validate_metadata.h", 
+      "src/core/lib/transport/bdp_estimator.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
-      "src/core/lib/transport/mdstr_hash_table.h", 
+      "src/core/lib/transport/error_utils.h", 
+      "src/core/lib/transport/http2_errors.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
+      "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h"
@@ -7150,6 +7209,7 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll_linux.c", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -7261,6 +7321,9 @@
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
       "src/core/lib/slice/slice_buffer.c", 
+      "src/core/lib/slice/slice_hash_table.c", 
+      "src/core/lib/slice/slice_hash_table.h", 
+      "src/core/lib/slice/slice_intern.c", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.c", 
       "src/core/lib/slice/slice_string_helpers.h", 
@@ -7292,13 +7355,17 @@
       "src/core/lib/surface/server.c", 
       "src/core/lib/surface/server.h", 
       "src/core/lib/surface/validate_metadata.c", 
+      "src/core/lib/surface/validate_metadata.h", 
       "src/core/lib/surface/version.c", 
+      "src/core/lib/transport/bdp_estimator.c", 
+      "src/core/lib/transport/bdp_estimator.h", 
       "src/core/lib/transport/byte_stream.c", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.c", 
       "src/core/lib/transport/connectivity_state.h", 
-      "src/core/lib/transport/mdstr_hash_table.c", 
-      "src/core/lib/transport/mdstr_hash_table.h", 
+      "src/core/lib/transport/error_utils.c", 
+      "src/core/lib/transport/error_utils.h", 
+      "src/core/lib/transport/http2_errors.h", 
       "src/core/lib/transport/metadata.c", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
@@ -7309,6 +7376,8 @@
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
+      "src/core/lib/transport/status_conversion.c", 
+      "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/timeout_encoding.c", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.c", 
@@ -7622,6 +7691,7 @@
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
+      "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.h", 
@@ -7645,6 +7715,8 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
       "test/core/iomgr/endpoint_tests.h", 
+      "test/core/util/debugger_macros.c", 
+      "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.c", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/memory_counters.c", 
@@ -7687,11 +7759,9 @@
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
-      "src/core/ext/transport/chttp2/transport/http2_errors.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.h", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
       "src/core/ext/transport/chttp2/transport/varint.h"
     ], 
@@ -7725,15 +7795,12 @@
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.c", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
-      "src/core/ext/transport/chttp2/transport/http2_errors.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.c", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.c", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
       "src/core/ext/transport/chttp2/transport/parsing.c", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.c", 
-      "src/core/ext/transport/chttp2/transport/status_conversion.h", 
       "src/core/ext/transport/chttp2/transport/stream_lists.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
@@ -7882,7 +7949,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "third_party/Cronet/bidirectional_stream_c.h"
+      "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -8094,6 +8161,7 @@
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
+      "include/grpc++/impl/codegen/metadata_map.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 
@@ -8102,6 +8170,7 @@
       "include/grpc++/impl/codegen/server_context.h", 
       "include/grpc++/impl/codegen/server_interface.h", 
       "include/grpc++/impl/codegen/service_type.h", 
+      "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
       "include/grpc++/impl/codegen/status_helper.h", 
@@ -8127,6 +8196,7 @@
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
+      "include/grpc++/impl/codegen/metadata_map.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 
@@ -8135,6 +8205,7 @@
       "include/grpc++/impl/codegen/server_context.h", 
       "include/grpc++/impl/codegen/server_interface.h", 
       "include/grpc++/impl/codegen/service_type.h", 
+      "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
       "include/grpc++/impl/codegen/status_helper.h", 

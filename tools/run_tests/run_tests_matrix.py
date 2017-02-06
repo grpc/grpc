@@ -214,6 +214,18 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                   extra_args=extra_args,
                                   inner_jobs=inner_jobs)
 
+  # cmake build for C and C++
+  # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+  # to make sure it's buildable at least.
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
+                              configs=['dbg'],
+                              platforms=['linux', 'windows'],
+                              arch='default',
+                              compiler='cmake',
+                              labels=['portability'],
+                              extra_args=extra_args + ['--build_only'],
+                              inner_jobs=inner_jobs)
+
   test_jobs += _generate_jobs(languages=['python'],
                               configs=['dbg'],
                               platforms=['linux'],

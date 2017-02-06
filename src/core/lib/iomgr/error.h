@@ -124,7 +124,11 @@ typedef enum {
   /// filename that we were trying to read/write when this error occurred
   GRPC_ERROR_STR_FILENAME,
   /// which data was queued for writing when the error occurred
-  GRPC_ERROR_STR_QUEUED_BUFFERS
+  GRPC_ERROR_STR_QUEUED_BUFFERS,
+  /// key associated with the error
+  GRPC_ERROR_STR_KEY,
+  /// value associated with the error
+  GRPC_ERROR_STR_VALUE,
 } grpc_error_strs;
 
 typedef enum {
@@ -141,7 +145,6 @@ typedef enum {
 #define GRPC_ERROR_CANCELLED ((grpc_error *)4)
 
 const char *grpc_error_string(grpc_error *error);
-void grpc_error_free_string(const char *str);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
 grpc_error *grpc_error_create(const char *file, int line, const char *desc,
@@ -188,12 +191,6 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
 /// Returns NULL if the specified string is not set.
 /// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
-
-/// A utility function to get the status code and message to be returned
-/// to the application.  If not set in the top-level message, looks
-/// through child errors until it finds the first one with these attributes.
-void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
-                           const char **msg);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

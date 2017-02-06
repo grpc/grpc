@@ -118,7 +118,7 @@ static void handle_unary_method(void) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status_details = "";
+  op->data.send_status_from_server.status_details = NULL;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -168,7 +168,7 @@ static void start_send_status(void) {
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
-  status_op[0].data.send_status_from_server.status_details = "";
+  status_op[0].data.send_status_from_server.status_details = NULL;
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                     cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -259,8 +259,8 @@ int main(int argc, char **argv) {
         switch ((intptr_t)s) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != NULL) {
-              if (0 ==
-                  strcmp(call_details.method, "/Reflector/reflectStream")) {
+              if (0 == grpc_slice_str_cmp(call_details.method,
+                                          "/Reflector/reflectStream")) {
                 /* Received streaming call. Send metadata here. */
                 start_read_op(FLING_SERVER_READ_FOR_STREAMING);
                 send_initial_metadata();
