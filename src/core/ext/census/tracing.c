@@ -34,16 +34,18 @@
 //#include "src/core/ext/census/tracing.h"
 
 #include <grpc/census.h>
+#include <stdlib.h>
 
 /* TODO(aveitch): These are all placeholder implementations. */
 
-// int census_trace_mask(const census_context *context) {
-//   return CENSUS_TRACE_MASK_NONE;
-// }
+int census_trace_mask(const census_context *context) {
+  abort();
+  return CENSUS_TRACE_MASK_NONE;
+}
 
-// void census_set_trace_mask(int trace_mask) {}
+void census_set_trace_mask(int trace_mask) { abort(); }
 
-// void census_trace_print(census_context *context, uint32_t type,
-//                         const char *buffer, size_t n) {}
-
-// void SetTracerParams(const Params& params);
+void census_trace_print(census_context *context, uint32_t type,
+                        const char *buffer, size_t n) {
+  abort();
+}

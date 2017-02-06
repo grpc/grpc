@@ -37,6 +37,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
@@ -51,7 +52,7 @@ static void *tag(int n) { return (void *)(uintptr_t)n; }
 static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
@@ -71,9 +72,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_channel *channel = grpc_channel_create(
       &exec_ctx, "test-target", NULL, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-  grpc_call *call =
-      grpc_channel_create_call(channel, NULL, 0, cq, "/foo", "localhost",
-                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
+  grpc_call *call = grpc_channel_create_call(
+      channel, NULL, 0, cq, grpc_slice_from_static_string("/foo"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -81,8 +83,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_status_code status;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details = grpc_empty_slice();
 
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
@@ -97,12 +98,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -110,7 +111,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -155,7 +155,7 @@ done:
   grpc_completion_queue_destroy(cq);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_channel_destroy(channel);
   if (response_payload_recv != NULL) {
     grpc_byte_buffer_destroy(response_payload_recv);

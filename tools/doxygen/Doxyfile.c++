@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.1.0-dev
+PROJECT_NUMBER         = 1.2.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -785,6 +785,7 @@ doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/service_config.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \
@@ -813,6 +814,7 @@ include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/grpc_library.h \
+include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/rpc_method.h \
 include/grpc++/impl/codegen/rpc_service_method.h \
@@ -821,6 +823,7 @@ include/grpc++/impl/codegen/serialization_traits.h \
 include/grpc++/impl/codegen/server_context.h \
 include/grpc++/impl/codegen/server_interface.h \
 include/grpc++/impl/codegen/service_type.h \
+include/grpc++/impl/codegen/slice.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
 include/grpc++/impl/codegen/status_helper.h \
@@ -866,6 +869,7 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/port_platform.h \

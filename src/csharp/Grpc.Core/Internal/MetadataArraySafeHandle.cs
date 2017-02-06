@@ -79,9 +79,13 @@ namespace Grpc.Core.Internal
             for (ulong i = 0; i < count; i++)
             {
                 var index = new UIntPtr(i);
-                string key = Marshal.PtrToStringAnsi(Native.grpcsharp_metadata_array_get_key(metadataArray, index));
-                var bytes = new byte[Native.grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
-                Marshal.Copy(Native.grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
+                UIntPtr keyLen;
+                IntPtr keyPtr = Native.grpcsharp_metadata_array_get_key(metadataArray, index, out keyLen);
+                string key = Marshal.PtrToStringAnsi(keyPtr, (int)keyLen.ToUInt32());
+                UIntPtr valueLen;
+                IntPtr valuePtr = Native.grpcsharp_metadata_array_get_value(metadataArray, index, out valueLen);
+                var bytes = new byte[valueLen.ToUInt64()];
+                Marshal.Copy(valuePtr, bytes, 0, bytes.Length);
                 metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
             }
             return metadata;

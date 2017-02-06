@@ -31,7 +31,6 @@
  *
  */
 
-#include <unistd.h>
 #include <cinttypes>
 #include <fstream>
 #include <memory>
@@ -43,6 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
@@ -109,7 +109,10 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
 
 UnimplementedService::Stub*
 InteropClient::ServiceStub::GetUnimplementedServiceStub() {
-  return UnimplementedService::NewStub(channel_).get();
+  if (unimplemented_service_stub_ == nullptr) {
+    unimplemented_service_stub_ = UnimplementedService::NewStub(channel_);
+  }
+  return unimplemented_service_stub_.get();
 }
 
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
@@ -615,7 +618,9 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_DEBUG, "received message %d", i);
-    usleep(kReceiveDelayMilliSeconds * 1000);
+    gpr_sleep_until(gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME),
+        gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
     ++i;
   }
 
@@ -943,7 +948,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
-    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    GPR_ASSERT(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
@@ -994,7 +999,7 @@ bool InteropClient::DoCustomMetadata() {
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
-    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    GPR_ASSERT(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());

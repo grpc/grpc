@@ -135,7 +135,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
           state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
-  if (state.incoming_data_length > EXPECTED_INCOMING_DATA_LENGTH) {
+  if (state.incoming_data_length >= EXPECTED_INCOMING_DATA_LENGTH) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
@@ -172,16 +172,17 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_status_code status;
   grpc_call_error error;
   cq_verifier *cqv;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
 
   state.cq = grpc_completion_queue_create(NULL);
   cqv = cq_verifier_create(state.cq);
   gpr_join_host_port(&state.target, "127.0.0.1", target_port);
   state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
-      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
-      "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq,
+      grpc_slice_from_static_string("/Service/Method"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -198,7 +199,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -206,7 +207,6 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -218,13 +218,13 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
   GPR_ASSERT(status == expected_status);
-  GPR_ASSERT(NULL != strstr(details, expected_detail));
+  GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                 expected_detail)));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
   cq_verifier_destroy(cqv);
 }
 
@@ -298,7 +298,8 @@ static void run_test(const char *response_payload,
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   /* clean up */
-  grpc_endpoint_shutdown(&exec_ctx, state.tcp);
+  grpc_endpoint_shutdown(&exec_ctx, state.tcp,
+                         GRPC_ERROR_CREATE("Test Shutdown"));
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
   cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);

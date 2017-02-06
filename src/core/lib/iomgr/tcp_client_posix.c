@@ -118,11 +118,11 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
-    grpc_error_free_string(str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(exec_ctx, ac->fd);
+    grpc_fd_shutdown(exec_ctx, ac->fd,
+                     GRPC_ERROR_CREATE("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -178,7 +178,6 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
-    grpc_error_free_string(str);
   }
 
   gpr_mu_lock(&ac->mu);

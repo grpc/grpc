@@ -31,18 +31,18 @@ from grpc._cython import cygrpc
 
 
 def _call(call_credentialses):
-  call_credentials_iterator = iter(call_credentialses)
-  composition = next(call_credentials_iterator)
-  for additional_call_credentials in call_credentials_iterator:
-    composition = cygrpc.call_credentials_composite(
-        composition, additional_call_credentials)
-  return composition
+    call_credentials_iterator = iter(call_credentialses)
+    composition = next(call_credentials_iterator)
+    for additional_call_credentials in call_credentials_iterator:
+        composition = cygrpc.call_credentials_composite(
+            composition, additional_call_credentials)
+    return composition
 
 
 def call(call_credentialses):
-  return _call(call_credentialses)
+    return _call(call_credentialses)
 
 
 def channel(channel_credentials, call_credentialses):
-  return cygrpc.channel_credentials_composite(
-      channel_credentials, _call(call_credentialses))
+    return cygrpc.channel_credentials_composite(channel_credentials,
+                                                _call(call_credentialses))

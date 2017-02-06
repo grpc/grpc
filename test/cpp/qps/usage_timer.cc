@@ -39,8 +39,15 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#ifdef __linux__
 #include <sys/resource.h>
 #include <sys/time.h>
+
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
+}
+#endif
+
 UsageTimer::UsageTimer() : start_(Sample()) {}
 
 double UsageTimer::Now() {
@@ -48,8 +55,16 @@ double UsageTimer::Now() {
   return ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
-static double time_double(struct timeval* tv) {
-  return tv->tv_sec + 1e-6 * tv->tv_usec;
+static void get_resource_usage(double* utime, double* stime) {
+#ifdef __linux__
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  *utime = time_double(&usage.ru_utime);
+  *stime = time_double(&usage.ru_stime);
+#else
+  *utime = 0;
+  *stime = 0;
+#endif
 }
 
 static void get_cpu_usage(unsigned long long* total_cpu_time,
@@ -74,15 +89,9 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
 }
 
 UsageTimer::Result UsageTimer::Sample() {
-  struct rusage usage;
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  getrusage(RUSAGE_SELF, &usage);
-
   Result r;
-  r.wall = time_double(&tv);
-  r.user = time_double(&usage.ru_utime);
-  r.system = time_double(&usage.ru_stime);
+  r.wall = Now();
+  get_resource_usage(&r.user, &r.system);
   r.total_cpu_time = 0;
   r.idle_cpu_time = 0;
   get_cpu_usage(&r.total_cpu_time, &r.idle_cpu_time);

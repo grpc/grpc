@@ -187,7 +187,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
                                 size_t slice_size, bool shutdown) {
   struct read_and_write_test_state state;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -233,9 +233,11 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
-    grpc_endpoint_shutdown(&exec_ctx, state.read_ep);
+    grpc_endpoint_shutdown(&exec_ctx, state.read_ep,
+                           GRPC_ERROR_CREATE("Test Shutdown"));
     gpr_log(GPR_DEBUG, "shutdown write");
-    grpc_endpoint_shutdown(&exec_ctx, state.write_ep);
+    grpc_endpoint_shutdown(&exec_ctx, state.write_ep,
+                           GRPC_ERROR_CREATE("Test Shutdown"));
   }
   grpc_exec_ctx_flush(&exec_ctx);
 
@@ -296,7 +298,8 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                      grpc_closure_create(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 0);
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
+  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
+                         GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&exec_ctx, &fail_count, 1);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
                      grpc_closure_create(inc_on_failure, &fail_count,
@@ -307,7 +310,8 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                       grpc_closure_create(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
+  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
+                         GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
 
   grpc_slice_buffer_destroy_internal(&exec_ctx, &slice_buffer);

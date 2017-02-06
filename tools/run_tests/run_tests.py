@@ -197,10 +197,17 @@ class CLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    if self.platform == 'windows':
+    if self.args.compiler == 'cmake':
+      _check_arch(self.args.arch, ['default'])
+      self._use_cmake = True
+      self._docker_distro = 'jessie'
+      self._make_options = []
+    elif self.platform == 'windows':
+      self._use_cmake = False
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
+      self._use_cmake = False
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
     if args.iomgr_platform == "uv":
@@ -220,6 +227,9 @@ class CLanguage(object):
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
     for target in binaries:
+      if self._use_cmake and target.get('boringssl', False):
+        # cmake doesn't build boringssl tests
+        continue
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['all'])
@@ -234,17 +244,37 @@ class CLanguage(object):
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
           timeout_scaling *= 5
+
+        if polling_strategy in target.get('excluded_poll_engines', []):
+          continue
+
+        # Scale overall test timeout if running under various sanitizers.
+        config = self.args.config
+        if ('asan' in config
+            or config == 'msan'
+            or config == 'tsan'
+            or config == 'ubsan'
+            or config == 'helgrind'
+            or config == 'memcheck'):
+          timeout_scaling *= 20
+
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
-          binary = 'vsprojects/%s%s/%s.exe' % (
-              'x64/' if self.args.arch == 'x64' else '',
-              _MSBUILD_CONFIG[self.config.build_config],
-              target['name'])
+          if self._use_cmake:
+            binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
+          else:
+            binary = 'vsprojects/%s%s/%s.exe' % (
+                'x64/' if self.args.arch == 'x64' else '',
+                _MSBUILD_CONFIG[self.config.build_config],
+                target['name'])
         else:
-          binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+          if self._use_cmake:
+            binary = 'cmake/build/%s' % target['name']
+          else:
+            binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
         cpu_cost = target['cpu_cost']
         if cpu_cost == 'capacity':
           cpu_cost = multiprocessing.cpu_count()
@@ -299,10 +329,16 @@ class CLanguage(object):
     return self._make_options;
 
   def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
+    if self._use_cmake:
+      if self.platform == 'windows':
+        return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat']]
+      else:
+        return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
-      return []
+      if self.platform == 'windows':
+        return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
+      else:
+        return []
 
   def build_steps(self):
     return []
@@ -314,7 +350,10 @@ class CLanguage(object):
       return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    if self._use_cmake:
+      return 'cmake/build/Makefile'
+    else:
+      return 'Makefile'
 
   def _clang_make_options(self, version_suffix=''):
     return ['CC=clang%s' % version_suffix,
@@ -371,27 +410,43 @@ class NodeLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
+    # Note: electron ABI only depends on major and minor version, so that's all
+    # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7'])
+                                         'node7', 'electron1.3'])
     if self.args.compiler == 'default':
+      self.runtime = 'node'
       self.node_version = '4'
     else:
-      # Take off the word "node"
-      self.node_version = self.args.compiler[4:]
+      if self.args.compiler.startswith('electron'):
+        self.runtime = 'electron'
+        self.node_version = self.args.compiler[8:]
+      else:
+        self.runtime = 'node'
+        # Take off the word "node"
+        self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
       return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
     else:
-      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_node.sh', self.node_version],
+      run_script = 'run_node'
+      if self.runtime == 'electron':
+        run_script += '_electron'
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/{}.sh'.format(run_script),
+                                    self.node_version],
+                                   None,
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
       return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
+      build_script = 'pre_build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
 
   def make_targets(self):
     return []
@@ -403,7 +458,12 @@ class NodeLanguage(object):
     if self.platform == 'windows':
       return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
     else:
-      return [['tools/run_tests/helper_scripts/build_node.sh', self.node_version]]
+      build_script = 'build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+        # building for electron requires a patch version
+        self.node_version += '.0'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
 
   def post_tests_steps(self):
     return []
@@ -1076,7 +1136,9 @@ argp.add_argument('--compiler',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
-                           'coreclr'],
+                           'electron1.3',
+                           'coreclr',
+                           'cmake'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
@@ -1212,6 +1274,12 @@ _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
+    if makefile.startswith('cmake/build/'):
+      return [jobset.JobSpec(['cmake', '--build', '.',
+                              '--target', '%s' % target,
+                              '--config', _MSBUILD_CONFIG[cfg]],
+                             cwd='cmake/build',
+                             timeout_seconds=None) for target in targets]
     extra_args = []
     # better do parallel compilation
     # empirically /m:2 gives the best performance/price and should prevent
@@ -1228,6 +1296,13 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
                       shell=True, timeout_seconds=None)
       for target in targets]
   else:
+    if targets and makefile.startswith('cmake/build/'):
+      # With cmake, we've passed all the build configuration in the pre-build step already
+      return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                              '-j', '%d' % args.jobs] +
+                             targets,
+                             cwd='cmake/build',
+                             timeout_seconds=None)]
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,

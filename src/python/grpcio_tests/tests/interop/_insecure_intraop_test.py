@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Insecure client-server interoperability as a unit test."""
 
 from concurrent import futures
@@ -40,19 +39,18 @@ from tests.interop import methods
 from tests.interop import server
 
 
-class InsecureIntraopTest(
-    _intraop_test_case.IntraopTestCase,
-    unittest.TestCase):
+class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
+                          unittest.TestCase):
 
-  def setUp(self):
-    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2.add_TestServiceServicer_to_server(
-        methods.TestService(), self.server)
-    port = self.server.add_insecure_port('[::]:0')
-    self.server.start()
-    self.stub = test_pb2.TestServiceStub(
-        grpc.insecure_channel('localhost:{}'.format(port)))
+    def setUp(self):
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        test_pb2.add_TestServiceServicer_to_server(methods.TestService(),
+                                                   self.server)
+        port = self.server.add_insecure_port('[::]:0')
+        self.server.start()
+        self.stub = test_pb2.TestServiceStub(
+            grpc.insecure_channel('localhost:{}'.format(port)))
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

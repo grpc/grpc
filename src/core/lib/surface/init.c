@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -62,6 +63,7 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -178,6 +180,7 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
     grpc_register_tracer("api", &grpc_api_trace);
@@ -190,6 +193,7 @@ void grpc_init(void) {
     grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
     grpc_register_tracer("combiner", &grpc_combiner_trace);
     grpc_register_tracer("server_channel", &grpc_server_channel_trace);
+    grpc_register_tracer("bdp_estimator", &grpc_bdp_estimator_trace);
     // Default pluck trace to 1
     grpc_cq_pluck_trace = 1;
     grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
@@ -197,6 +201,7 @@ void grpc_init(void) {
     grpc_cq_event_timeout_trace = 1;
     grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
     grpc_register_tracer("resource_quota", &grpc_resource_quota_trace);
+    grpc_register_tracer("call_error", &grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
 #endif
@@ -242,6 +247,7 @@ void grpc_shutdown(void) {
     }
     grpc_mdctx_global_shutdown(&exec_ctx);
     grpc_handshaker_factory_registry_shutdown(&exec_ctx);
+    grpc_slice_intern_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
   grpc_exec_ctx_finish(&exec_ctx);
