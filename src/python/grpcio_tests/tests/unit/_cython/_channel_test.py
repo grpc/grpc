@@ -71,9 +71,7 @@ class ChannelTest(unittest.TestCase):
 
     def test_single_channel_lonely_connectivity(self):
         channel, completion_queue = _channel_and_completion_queue()
-        _in_parallel(_connectivity_loop, (
-            channel,
-            completion_queue,))
+        _in_parallel(_connectivity_loop, (channel, completion_queue,))
         completion_queue.shutdown()
 
     def test_multiple_channels_lonely_connectivity(self):

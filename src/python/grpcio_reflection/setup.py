@@ -40,14 +40,15 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import reflection_commands
 import grpc_version
 
-PACKAGE_DIRECTORIES = {'': '.',}
+PACKAGE_DIRECTORIES = {
+    '': '.',
+}
 
 SETUP_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
-INSTALL_REQUIRES = (
-    'protobuf>=3.0.0',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = ('protobuf>=3.0.0',
+                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 COMMAND_CLASS = {
     # Run preprocess from the repository *before* doing any packaging!
