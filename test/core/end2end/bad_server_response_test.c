@@ -135,7 +135,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
           state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
-  if (state.incoming_data_length > EXPECTED_INCOMING_DATA_LENGTH) {
+  if (state.incoming_data_length >= EXPECTED_INCOMING_DATA_LENGTH) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,

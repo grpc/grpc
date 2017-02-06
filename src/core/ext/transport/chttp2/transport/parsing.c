@@ -376,25 +376,45 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     return err;
   }
 
+  uint32_t target_incoming_window = GPR_MAX(
+      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      1024);
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
+  if (t->incoming_window <= target_incoming_window / 2) {
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
+  }
 
   if (s != NULL) {
-    if (incoming_frame_size > s->incoming_window) {
+    if (incoming_frame_size >
+        s->incoming_window_delta +
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
       char *msg;
       gpr_asprintf(&msg,
                    "frame of size %d overflows incoming window of %" PRId64,
-                   t->incoming_frame_size, s->incoming_window);
+                   t->incoming_frame_size,
+                   s->incoming_window_delta +
+                       t->settings[GRPC_ACKED_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
       grpc_error *err = GRPC_ERROR_CREATE(msg);
       gpr_free(msg);
       return err;
     }
 
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window,
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
                                   incoming_frame_size);
+    if ((int64_t)t->settings[GRPC_SENT_SETTINGS]
+                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
+            (int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
+        (int64_t)t->settings[GRPC_SENT_SETTINGS]
+                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
+            2) {
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
+                                  "window-update-required");
+    }
     s->received_bytes += incoming_frame_size;
-    s->max_recv_bytes -=
-        (uint32_t)GPR_MIN(s->max_recv_bytes, incoming_frame_size);
   }
 
   return GRPC_ERROR_NONE;

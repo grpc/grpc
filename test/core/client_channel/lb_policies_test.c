@@ -517,7 +517,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   grpc_channel *client;
   char *client_hostport;
   char *servers_hostports_str;
-  grpc_arg arg_array[2];
+  grpc_arg arg_array[3];
   grpc_channel_args args;
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
@@ -530,7 +530,10 @@ static grpc_channel *create_client(const servers_fixture *f) {
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
   arg_array[1].value.string = "ROUND_ROBIN";
-  args.num_args = 2;
+  arg_array[2].type = GRPC_ARG_INTEGER;
+  arg_array[2].key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS;
+  arg_array[2].value.integer = 0;
+  args.num_args = GPR_ARRAY_SIZE(arg_array);
   args.args = arg_array;
 
   client = grpc_insecure_channel_create(client_hostport, &args, NULL);

@@ -652,6 +652,12 @@ typedef struct client_channel_call_data {
   grpc_linked_mdelem lb_token_mdelem;
 } call_data;
 
+grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
+    grpc_call_element *call_elem) {
+  grpc_subchannel_call *scc = GET_CALL((call_data *)call_elem->call_data);
+  return scc == CANCELLED_CALL ? NULL : scc;
+}
+
 static void add_waiting_locked(call_data *calld, grpc_transport_stream_op *op) {
   GPR_TIMER_BEGIN("add_waiting_locked", 0);
   if (calld->waiting_ops_count == calld->waiting_ops_capacity) {
