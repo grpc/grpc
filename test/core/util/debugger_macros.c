@@ -31,47 +31,41 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
-#define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+/*
+ * A collection of 'macros' that help navigating the grpc object hierarchy
+ * Not intended to be robust for main-line code, often cuts across abstraction
+ * boundaries.
+ */
 
-/* \file Simple PID controller.
-   Implements a proportional-integral-derivative controller.
-   Used when we want to iteratively control a variable to converge some other
-   observed value to a 'set-point'.
-   Gains can be set to adjust sensitivity to current error (p), the integral
-   of error (i), and the derivative of error (d). */
+#include <stdio.h>
 
-typedef struct {
-  double gain_p;
-  double gain_i;
-  double gain_d;
-  double initial_control_value;
-  double min_control_value;
-  double max_control_value;
-  double integral_range;
-} grpc_pid_controller_args;
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/surface/call.h"
 
-typedef struct {
-  double last_error;
-  double error_integral;
-  double last_control_value;
-  double last_dc_dt;
-  grpc_pid_controller_args args;
-} grpc_pid_controller;
+void grpc_summon_debugger_macros() {}
 
-/** Initialize the controller */
-void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              grpc_pid_controller_args args);
+grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
+  grpc_call_stack *cs = grpc_call_get_call_stack(call);
+  for (;;) {
+    grpc_call_element *el = grpc_call_stack_element(cs, cs->count - 1);
+    if (el->filter == &grpc_client_channel_filter) {
+      grpc_subchannel_call *scc = grpc_client_channel_get_subchannel_call(el);
+      if (scc == NULL) {
+        fprintf(stderr, "No subchannel-call");
+        return NULL;
+      }
+      cs = grpc_subchannel_call_get_call_stack(scc);
+    } else if (el->filter == &grpc_connected_filter) {
+      return grpc_connected_channel_get_stream(el);
+    } else {
+      fprintf(stderr, "Unrecognized filter: %s", el->filter->name);
+      return NULL;
+    }
+  }
+}
 
-/** Reset the controller: useful when things have changed significantly */
-void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
-
-/** Update the controller: given a current error estimate, and the time since
-    the last update, returns a new control value */
-double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
-                                  double error, double dt);
-
-/** Returns the last control value calculated */
-double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
-
-#endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */
+grpc_chttp2_stream *grpc_chttp2_stream_from_call(grpc_call *call) {
+  return (grpc_chttp2_stream *)grpc_transport_stream_from_call(call);
+}

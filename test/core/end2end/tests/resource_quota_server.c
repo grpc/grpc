@@ -160,6 +160,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int pending_server_end_calls = 0;
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
+  int deadline_exceeded = 0;
 
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -246,6 +247,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
       switch (status[call_id]) {
         case GRPC_STATUS_RESOURCE_EXHAUSTED:
           cancelled_calls_on_client++;
+          break;
+        case GRPC_STATUS_DEADLINE_EXCEEDED:
+          deadline_exceeded++;
           break;
         case GRPC_STATUS_OK:
           break;
@@ -343,19 +347,18 @@ void resource_quota_server(grpc_end2end_test_config config) {
     }
   }
 
-  gpr_log(
-      GPR_INFO,
-      "Done. %d total calls: %d cancelled at server, %d cancelled at client.",
-      NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client);
-
-  /* The call may be cancelled after the server has sent its status but before
-   * the client has received it. This means that we should see strictly more
-   * failures on the client than on the server. */
-  GPR_ASSERT(cancelled_calls_on_client >= cancelled_calls_on_server);
+  gpr_log(GPR_INFO,
+          "Done. %d total calls: %d cancelled at server, %d cancelled at "
+          "client, %d timed out.",
+          NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
+          deadline_exceeded);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
+
+  end_test(&f);
+  config.tear_down_data(&f);
 
   free(client_calls);
   free(server_calls);
@@ -367,9 +370,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(details);
   free(request_payload_recv);
   free(was_cancelled);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void resource_quota_server_pre_init(void) {}

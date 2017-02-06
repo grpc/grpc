@@ -1301,6 +1301,8 @@ src/core/lib/surface/validate_metadata.c \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.c \
 src/core/lib/transport/README.md \
+src/core/lib/transport/bdp_estimator.c \
+src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/byte_stream.c \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.c \

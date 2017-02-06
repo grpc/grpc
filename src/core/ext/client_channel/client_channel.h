@@ -57,4 +57,8 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete);
 
+/* Debug helper: pull the subchannel call from a call stack element */
+grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
+    grpc_call_element *elem);
+
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_H */
