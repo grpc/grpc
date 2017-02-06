@@ -273,7 +273,7 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_destroy(cq);
 }
 
-- (void)PacketCoalescing:(bool)use_coalescing {
+- (void)packetCoalescing:(BOOL)use_coalescing {
   grpc_arg arg;
   arg.key = GRPC_ARG_USE_CRONET_PACKET_COALESCING;
   arg.type = GRPC_ARG_INTEGER;
@@ -390,7 +390,7 @@ unsigned int parse_h2_length(const char *field) {
 
         char buf[4096];
         long len;
-        bool coalesced = false;
+        BOOL coalesced = NO;
         while ((len = SSL_read(ssl, buf, sizeof(buf))) > 0) {
           gpr_log(GPR_DEBUG, "Read len: %ld", len);
 
@@ -408,7 +408,7 @@ unsigned int parse_h2_length(const char *field) {
                 (buf[p + 4] & 1) != 0 &&             // EOS bit is set
                 0 == memcmp("hello world", &buf[p + 14],
                             11)) {  // Message is correct
-              coalesced = true;
+              coalesced = YES;
               break;
             }
             p += (parse_h2_length(&buf[p]) + 9);
@@ -448,8 +448,8 @@ unsigned int parse_h2_length(const char *field) {
 }
 
 - (void)testPacketCoalescing {
-  [self PacketCoalescing:true];
-  [self PacketCoalescing:false];
+  [self packetCoalescing:YES];
+  [self packetCoalescing:NO];
 }
 
 @end
