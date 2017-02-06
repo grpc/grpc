@@ -40,6 +40,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
+  - dns - traces DNS requests
   - http - traces state in the http2 transport engine
   - http1 - traces HTTP/1.x operations performed by gRPC
   - flowctl - traces http2 flow control
@@ -55,10 +56,10 @@ some configuration as environment variables that can be set.
   - secure_endpoint - traces bytes flowing through encrypted channels
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
-  
+
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
- 
+
   Example:
   export GRPC_TRACE=all,-pending_tags
 
