@@ -40,12 +40,16 @@ from grpc._cython import cygrpc
 _EMPTY_METADATA = cygrpc.Metadata(())
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
-    cygrpc.ConnectivityState.idle: grpc.ChannelConnectivity.IDLE,
-    cygrpc.ConnectivityState.connecting: grpc.ChannelConnectivity.CONNECTING,
-    cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
+    cygrpc.ConnectivityState.idle:
+    grpc.ChannelConnectivity.IDLE,
+    cygrpc.ConnectivityState.connecting:
+    grpc.ChannelConnectivity.CONNECTING,
+    cygrpc.ConnectivityState.ready:
+    grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
     grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.shutdown: grpc.ChannelConnectivity.SHUTDOWN,
+    cygrpc.ConnectivityState.shutdown:
+    grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {

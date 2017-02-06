@@ -69,11 +69,10 @@ class ReflectionServicerTest(unittest.TestCase):
         self._stub = reflection_pb2.ServerReflectionStub(channel)
 
     def testFileByName(self):
-        requests = (
-            reflection_pb2.ServerReflectionRequest(
-                file_by_filename=_EMPTY_PROTO_FILE_NAME),
-            reflection_pb2.ServerReflectionRequest(
-                file_by_filename='i-donut-exist'),)
+        requests = (reflection_pb2.ServerReflectionRequest(
+            file_by_filename=_EMPTY_PROTO_FILE_NAME),
+                    reflection_pb2.ServerReflectionRequest(
+                        file_by_filename='i-donut-exist'),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -90,12 +89,10 @@ class ReflectionServicerTest(unittest.TestCase):
         self.assertSequenceEqual(expected_responses, responses)
 
     def testFileBySymbol(self):
-        requests = (
-            reflection_pb2.ServerReflectionRequest(
-                file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME),
-            reflection_pb2.ServerReflectionRequest(
-                file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
-            ),)
+        requests = (reflection_pb2.ServerReflectionRequest(
+            file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME
+        ), reflection_pb2.ServerReflectionRequest(
+            file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -115,15 +112,14 @@ class ReflectionServicerTest(unittest.TestCase):
         'TODO(atash): implement file-containing-extension reflection '
         '(see https://github.com/google/protobuf/issues/2248)')
     def testFileContainingExtension(self):
-        requests = (
-            reflection_pb2.ServerReflectionRequest(
-                file_containing_extension=reflection_pb2.ExtensionRequest(
-                    containing_type='grpc.testing.proto2.Empty',
-                    extension_number=125,),),
-            reflection_pb2.ServerReflectionRequest(
-                file_containing_extension=reflection_pb2.ExtensionRequest(
-                    containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
-                    extension_number=55,),),)
+        requests = (reflection_pb2.ServerReflectionRequest(
+            file_containing_extension=reflection_pb2.ExtensionRequest(
+                containing_type='grpc.testing.proto2.Empty',
+                extension_number=125,),
+        ), reflection_pb2.ServerReflectionRequest(
+            file_containing_extension=reflection_pb2.ExtensionRequest(
+                containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
+                extension_number=55,),),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -140,7 +136,8 @@ class ReflectionServicerTest(unittest.TestCase):
         self.assertSequenceEqual(expected_responses, responses)
 
     def testListServices(self):
-        requests = (reflection_pb2.ServerReflectionRequest(list_services='',),)
+        requests = (reflection_pb2.ServerReflectionRequest(
+            list_services='',),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (reflection_pb2.ServerReflectionResponse(
             valid_host='',
