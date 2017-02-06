@@ -47,10 +47,8 @@ _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 class _SerializationBehaviors(
         collections.namedtuple('_SerializationBehaviors', (
-            'request_serializers',
-            'request_deserializers',
-            'response_serializers',
-            'response_deserializers',))):
+            'request_serializers', 'request_deserializers',
+            'response_serializers', 'response_deserializers',))):
     pass
 
 
@@ -89,9 +87,9 @@ class _Implementation(test_interfaces.Implementation):
             thread_pool_size=test_constants.POOL_SIZE)
         server = implementations.server(
             method_implementations, options=server_options)
-        server_credentials = implementations.ssl_server_credentials([(
-            resources.private_key(),
-            resources.certificate_chain(),),])
+        server_credentials = implementations.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain(),),
+        ])
         port = server.add_secure_port('[::]:0', server_credentials)
         server.start()
         channel_credentials = implementations.ssl_channel_credentials(
