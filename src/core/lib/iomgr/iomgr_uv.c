@@ -37,11 +37,13 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_uv.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
 
 void grpc_iomgr_platform_init(void) {
   grpc_pollset_global_init();
   grpc_register_tracer("tcp", &grpc_tcp_trace);
+  grpc_register_tracer("dns", &grpc_dns_trace);
 }
 void grpc_iomgr_platform_flush(void) {}
 void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
