@@ -87,10 +87,11 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 if (MSVC)
+  include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
-  # needed to compile boringssl
-  add_definitions(/wd4464 /wd4623 /wd4668 /wd4701 /wd4702 /wd4777 /wd5027)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
@@ -332,6 +333,7 @@ add_dependencies(buildtests_c algorithm_test)
 add_dependencies(buildtests_c alloc_test)
 add_dependencies(buildtests_c alpn_test)
 add_dependencies(buildtests_c bad_server_response_test)
+add_dependencies(buildtests_c bdp_estimator_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
 add_dependencies(buildtests_c census_context_test)
@@ -638,6 +640,9 @@ endif()
 add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx writes_per_rpc_test)
+endif()
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
@@ -896,6 +901,7 @@ add_library(grpc
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/error_utils.c
@@ -1190,6 +1196,7 @@ add_library(grpc_cronet
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/error_utils.c
@@ -1359,6 +1366,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c
@@ -1474,6 +1482,7 @@ add_library(grpc_test_util
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/error_utils.c
@@ -1553,6 +1562,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c
@@ -1696,6 +1706,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/error_utils.c
@@ -2241,6 +2252,7 @@ add_library(grpc++_cronet
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/error_utils.c
@@ -3321,7 +3333,7 @@ target_link_libraries(qps
 
 endif (gRPC_BUILD_TESTS)
 
-add_library(grpc_csharp_ext
+add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
@@ -3693,6 +3705,33 @@ target_include_directories(bad_server_response_test
 target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(bdp_estimator_test
+  test/core/transport/bdp_estimator_test.c
+)
+
+
+target_include_directories(bdp_estimator_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(bdp_estimator_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -9206,6 +9245,43 @@ target_link_libraries(thread_stress_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(writes_per_rpc_test
+  test/cpp/performance/writes_per_rpc_test.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(writes_per_rpc_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(writes_per_rpc_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 
 add_executable(public_headers_must_be_c89
   test/core/surface/public_headers_must_be_c89.c
@@ -10829,13 +10905,6 @@ endif (gRPC_BUILD_TESTS)
 
 
 
-
-if (gRPC_INSTALL)
-  install(EXPORT gRPCTargets
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-    NAMESPACE gRPC::
-  )
-endif()
 
 foreach(_config gRPCConfig gRPCConfigVersion)
   configure_file(tools/cmake/${_config}.cmake.in
