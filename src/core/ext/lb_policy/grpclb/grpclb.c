@@ -778,7 +778,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, true, NULL);
   GPR_ASSERT(uri->path[0] != '\0');
   glb_policy->server_name =
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);

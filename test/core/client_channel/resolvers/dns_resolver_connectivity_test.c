@@ -66,7 +66,7 @@ static grpc_error *my_resolve_address(const char *name, const char *addr,
 static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
                                       const char *name) {
   grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
-  grpc_uri *uri = grpc_uri_parse(name, 0);
+  grpc_uri *uri = grpc_uri_parse(name, false, NULL);
   GPR_ASSERT(uri);
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));

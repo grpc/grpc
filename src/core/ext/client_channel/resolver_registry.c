@@ -74,6 +74,10 @@ void grpc_resolver_registry_set_default_prefix(
   strcpy(g_default_resolver_prefix, default_resolver_prefix);
 }
 
+const char *grpc_resolver_registry_get_default_prefix() {
+  return g_default_resolver_prefix;
+}
+
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {
   int i;
   for (i = 0; i < g_number_of_resolvers; i++) {
@@ -114,16 +118,16 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   grpc_resolver_factory *factory = NULL;
 
   GPR_ASSERT(uri != NULL);
-  *uri = grpc_uri_parse(target, 1);
+  *uri = grpc_uri_parse(target, true, NULL);
   factory = lookup_factory_by_uri(*uri);
   if (factory == NULL) {
     grpc_uri_destroy(*uri);
     gpr_asprintf(canonical_target, "%s%s", g_default_resolver_prefix, target);
-    *uri = grpc_uri_parse(*canonical_target, 1);
+    *uri = grpc_uri_parse(*canonical_target, true, NULL);
     factory = lookup_factory_by_uri(*uri);
     if (factory == NULL) {
-      grpc_uri_destroy(grpc_uri_parse(target, 0));
-      grpc_uri_destroy(grpc_uri_parse(*canonical_target, 0));
+      grpc_uri_destroy(grpc_uri_parse(target, false, NULL));
+      grpc_uri_destroy(grpc_uri_parse(*canonical_target, false, NULL));
       gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
               *canonical_target);
     }

@@ -39,6 +39,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -64,14 +66,37 @@ static grpc_channel *client_channel_factory_create_channel(
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
   // Add channel arg containing the server URI.
+  // Firstly, let's make sure \a target is a valid URI.
+  grpc_uri *target_uri = NULL;
+  char *target_uri_str = NULL;
+  grpc_uri_section uri_section = GRPC_URI_SECTION_NONE;
+  if ((target_uri = grpc_uri_parse(target, true /* suppress errors */,
+                                   &uri_section)) == NULL) {
+    if (uri_section == GRPC_URI_SECTION_SCHEME) {
+      // If the parsing error was due to the lack of scheme, try to fix that by
+      // prepending the default resolver prefix.
+      gpr_asprintf(&target_uri_str, "%s%s",
+                   grpc_resolver_registry_get_default_prefix(), target);
+      // try again...
+      if ((target_uri = grpc_uri_parse(
+               target_uri_str, true /* suppress errors */, NULL)) == NULL) {
+        gpr_free(target_uri_str);
+        return NULL;
+      }
+    } else {
+      return NULL;
+    }
+  }
+  grpc_uri_destroy(target_uri);
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVER_URI;
-  arg.value.string = (char *)target;
+  arg.value.string = target_uri_str;
   grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(exec_ctx, new_args);
+  gpr_free(target_uri_str);
   return channel;
 }
 

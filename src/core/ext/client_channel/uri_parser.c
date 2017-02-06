@@ -47,13 +47,32 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
-static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
-                         int suppress_errors) {
+static const char *section_name(grpc_uri_section section) {
+  switch (section) {
+    case GRPC_URI_SECTION_NONE:
+      return "<none>";
+    case GRPC_URI_SECTION_SCHEME:
+      return "scheme";
+    case GRPC_URI_SECTION_AUTHORITY:
+      return "authority";
+    case GRPC_URI_SECTION_PATH:
+      return "path";
+    case GRPC_URI_SECTION_QUERY:
+      return "query";
+    case GRPC_URI_SECTION_FRAGMENT:
+      return "fragment";
+  }
+  GPR_UNREACHABLE_CODE(return NULL;);
+}
+
+static grpc_uri *bad_uri(const char *uri_text, size_t pos,
+                         grpc_uri_section section, int suppress_errors,
+                         grpc_uri_section *error_section) {
   char *line_prefix;
   size_t pfx_len;
 
   if (!suppress_errors) {
-    gpr_asprintf(&line_prefix, "bad uri.%s: '", section);
+    gpr_asprintf(&line_prefix, "bad uri.%s: '", section_name(section));
     pfx_len = strlen(line_prefix) + pos;
     gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
     gpr_free(line_prefix);
@@ -64,7 +83,7 @@ static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
     gpr_log(GPR_ERROR, "%s^ here", line_prefix);
     gpr_free(line_prefix);
   }
-
+  if (error_section != NULL) *error_section = section;
   return NULL;
 }
 
@@ -175,7 +194,8 @@ static void parse_query_parts(grpc_uri *uri) {
   }
 }
 
-grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
+grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors,
+                         grpc_uri_section *error_section) {
   grpc_uri *uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
@@ -205,7 +225,8 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
     break;
   }
   if (scheme_end == NOT_SET) {
-    return bad_uri(uri_text, i, "scheme", suppress_errors);
+    return bad_uri(uri_text, i, GRPC_URI_SECTION_SCHEME, suppress_errors,
+                   error_section);
   }
 
   if (uri_text[scheme_end + 1] == '/' && uri_text[scheme_end + 2] == '/') {
@@ -220,7 +241,8 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
       authority_end = i;
     }
     if (authority_end == NOT_SET) {
-      return bad_uri(uri_text, i, "authority", suppress_errors);
+      return bad_uri(uri_text, i, GRPC_URI_SECTION_AUTHORITY, suppress_errors,
+                     error_section);
     }
     /* TODO(ctiller): parse the authority correctly */
     path_begin = authority_end;
@@ -238,26 +260,31 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
     path_end = i;
   }
   if (path_end == NOT_SET) {
-    return bad_uri(uri_text, i, "path", suppress_errors);
+    return bad_uri(uri_text, i, GRPC_URI_SECTION_PATH, suppress_errors,
+                   error_section);
   }
 
   if (uri_text[i] == '?') {
     query_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i, "query", suppress_errors);
+      return bad_uri(uri_text, i, GRPC_URI_SECTION_QUERY, suppress_errors,
+                     error_section);
     } else if (uri_text[i] != 0 && uri_text[i] != '#') {
       /* We must be at the end or at the beginning of a fragment */
-      return bad_uri(uri_text, i, "query", suppress_errors);
+      return bad_uri(uri_text, i, GRPC_URI_SECTION_QUERY, suppress_errors,
+                     error_section);
     }
     query_end = i;
   }
   if (uri_text[i] == '#') {
     fragment_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i - fragment_end, "fragment", suppress_errors);
+      return bad_uri(uri_text, i - fragment_end, GRPC_URI_SECTION_FRAGMENT,
+                     suppress_errors, error_section);
     } else if (uri_text[i] != 0) {
       /* We must be at the end */
-      return bad_uri(uri_text, i, "fragment", suppress_errors);
+      return bad_uri(uri_text, i - fragment_end, GRPC_URI_SECTION_FRAGMENT,
+                     suppress_errors, error_section);
     }
     fragment_end = i;
   }
