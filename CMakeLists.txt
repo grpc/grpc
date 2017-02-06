@@ -612,6 +612,7 @@ add_library(grpc
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -1375,6 +1376,7 @@ add_library(grpc_unsecure
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -1876,6 +1878,7 @@ add_library(grpc++_cronet
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -4888,6 +4891,30 @@ target_include_directories(census_context_test
 )
 
 target_link_libraries(census_context_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(census_intrusive_hash_map_test
+  test/core/census/intrusive_hash_map_test.c
+)
+
+target_include_directories(census_intrusive_hash_map_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(census_intrusive_hash_map_test
   grpc_test_util
   grpc
   gpr_test_util

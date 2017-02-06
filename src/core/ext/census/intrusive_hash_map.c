@@ -32,38 +32,86 @@
  */
 
 #include "src/core/ext/census/intrusive_hash_map.h"
+#include <string.h>
 
-void chunked_vector_init(chunked_vector *vec) {
+/* Simple hashing function that takes lower 32 bits. */
+static inline uint32_t chunked_vector_hasher(uint64_t key) {
+  return (uint32_t)key;
+}
+
+/* Vector chunks are 1MB divided by pointer size. */
+const size_t VECTOR_CHUNK_SIZE = (1 << 20) / sizeof(void *);
+
+/* Helper functions which return buckets from the chunked vector. */
+static inline void **get_mutable_bucket(const chunked_vector *buckets,
+                                        uint32_t index) {
+  if (index < VECTOR_CHUNK_SIZE) {
+    return &buckets->first_[index];
+  }
+  size_t rest_index = (index - VECTOR_CHUNK_SIZE) / VECTOR_CHUNK_SIZE;
+  return &buckets->rest_[rest_index][index % VECTOR_CHUNK_SIZE];
+}
+
+static inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
+  if (index < VECTOR_CHUNK_SIZE) {
+    return buckets->first_[index];
+  }
+  size_t rest_index = (index - VECTOR_CHUNK_SIZE) / VECTOR_CHUNK_SIZE;
+  return buckets->rest_[rest_index][index % VECTOR_CHUNK_SIZE];
+}
+
+/* Helper function. */
+static inline size_t RestSize(const chunked_vector *vec) {
+  if (vec->size_ <= VECTOR_CHUNK_SIZE) return 0;
+  return (vec->size_ - VECTOR_CHUNK_SIZE - 1) / VECTOR_CHUNK_SIZE + 1;
+}
+
+/* Initialize chunked vector to size of 0. */
+static void chunked_vector_init(chunked_vector *vec) {
   vec->size_ = 0;
   vec->first_ = NULL;
   vec->rest_ = NULL;
 }
 
-void chunked_vector_clear(chunked_vector *vec) {
-  gpr_free(vec->first_);
-  uint32_t rest_size = RestSize(vec);
-  for (uint32_t i = 0; i < rest_size; ++i) {
-    gpr_free(vec->rest_[i]);
+/* Clear chunked vector and free all memory that has been allocated then
+   initialize chunked vector. */
+static void chunked_vector_clear(chunked_vector *vec) {
+  if(vec->first_ != NULL) {
+    gpr_free(vec->first_);
   }
-  gpr_free(vec->rest_);
+  if(vec->rest_ != NULL) {
+    size_t rest_size = RestSize(vec);
+    for (uint32_t i = 0; i < rest_size; ++i) {
+      if(vec->rest_[i] != NULL) {
+        gpr_free(vec->rest_[i]);
+      }
+    }
+    gpr_free(vec->rest_);
+  }
   chunked_vector_init(vec);
 }
 
-void chunked_vector_reset(chunked_vector *vec, size_t entry_size, size_t n) {
+/* Clear chunked vector and then resize it to n entries. Allow the first 1MB to
+   be read w/o an extra cache miss. The rest of the elements are stored in an
+   array of arrays to avoid large mallocs. */
+static void chunked_vector_reset(chunked_vector *vec, size_t n) {
   chunked_vector_clear(vec);
   vec->size_ = n;
   if (n <= VECTOR_CHUNK_SIZE) {
-    vec->first_ = gpr_malloc(entry_size * n);
-    vec->rest_ = NULL;
+    vec->first_ = gpr_malloc(sizeof(void *) * n);
+    memset(vec->first_, 0, sizeof(void *) * n);
   } else {
-    vec->first_ = (void *)gpr_malloc(entry_size * VECTOR_CHUNK_SIZE);
-    uint32_t rest_size = RestSize(vec);
+    vec->first_ = (void *)gpr_malloc(sizeof(void *) * VECTOR_CHUNK_SIZE);
+    memset(vec->first_, 0, sizeof(void *) * VECTOR_CHUNK_SIZE);
+    size_t rest_size = RestSize(vec);
     vec->rest_ = (void *)gpr_malloc(sizeof(void **) * rest_size);
+    memset(vec->rest_, 0, sizeof(void **) * rest_size);
     int i = 0;
     n -= VECTOR_CHUNK_SIZE;
     while (n > 0) {
       size_t this_size = GPR_MIN(n, VECTOR_CHUNK_SIZE);
-      vec->rest_[i] = (void *)gpr_malloc(entry_size * this_size);
+      vec->rest_[i] = (void *)gpr_malloc(sizeof(void *) * this_size);
+      memset(vec->rest_[i], 0, sizeof(void *) * this_size);
       n -= this_size;
       ++i;
     }
@@ -77,7 +125,8 @@ void intrusive_hash_map_init(intrusive_hash_map *hash,
   uint32_t num_buckets = (uint32_t)1 << hash->log2_num_buckets;
   hash->extend_threshold =
       (uint32_t)((float)num_buckets * kIntrusiveLoadFactor);
-  chunked_vector_reset(&hash->buckets, sizeof(item *), num_buckets);
+  chunked_vector_init(&hash->buckets);
+  chunked_vector_reset(&hash->buckets, num_buckets);
   hash->hash_mask = num_buckets - 1;
 }
 
@@ -89,61 +138,72 @@ size_t intrusive_hash_map_size(const intrusive_hash_map *hash) {
   return hash->num_items;
 }
 
-void *intrusive_hash_map_find(intrusive_hash_map *hash, const uint64_t key) {
-  uint32_t index = hasher_(key) & hash->hash_mask;
+ht_item *intrusive_hash_map_find(const intrusive_hash_map *hash, uint64_t key) {
+  uint32_t index = chunked_vector_hasher(key) & hash->hash_mask;
 
-  item *p = (item *)get_bucket(&hash->buckets, index);
+  ht_item *p = (ht_item *)get_bucket(&hash->buckets, index);
   while (p != NULL) {
     if (key == p->key) {
-      return p->value;
+      return p;
     }
     p = p->hash_link;
   }
   return NULL;
 }
 
+typedef struct ht_index {
+  uint32_t bucket_index;  // Hash table bucket index.
+  ht_item *item;          // Pointer to ht_item within hash table.
+} ht_index;
+
+static inline bool ht_index_compare(const ht_index *A, const ht_index *B) {
+  return (A->bucket_index == B->bucket_index && A->item == B->item);
+}
+
+/* Helper functions for iterating over the hash table. */
 /* Returns a invalid index which is always equal to hash->buckets.size_ */
-void intrusive_hash_map_end(const intrusive_hash_map *hash, uint32_t *index,
-                            item **value) {
-  *index = (uint32_t)hash->buckets.size_;
-  *value = NULL;
+static void intrusive_hash_map_end(const intrusive_hash_map *hash,
+                                   ht_index *idx) {
+  idx->bucket_index = (uint32_t)hash->buckets.size_;
+  idx->item = NULL;
 }
 
 /* Iterates index to the next valid entry in the hash table. */
-void intrusive_hash_map_next(const intrusive_hash_map *hash, uint32_t *index,
-                             item **value) {
-  *value = (*value)->hash_link;
-  while (*value == NULL) {
-    (*index)++;
-    if (*index >= hash->buckets.size_) {
-      *value = NULL;
+static void intrusive_hash_map_next(const intrusive_hash_map *hash,
+                                    ht_index *idx) {
+  idx->item = idx->item->hash_link;
+  while (idx->item == NULL) {
+    idx->bucket_index++;
+    if (idx->bucket_index >= hash->buckets.size_) {
+      idx->item = NULL;
       return;
     }
-    *value = (item *)get_bucket(&hash->buckets, *index);
+    idx->item = (ht_item *)get_bucket(&hash->buckets, idx->bucket_index);
   }
 }
 
 /* Returns first non-null entry in hash table.  If hash table is empty this will
    return the same values as end(). */
-void intrusive_hash_map_begin(const intrusive_hash_map *hash, uint32_t *index,
-                              item **value) {
+static void intrusive_hash_map_begin(const intrusive_hash_map *hash,
+                                     ht_index *idx) {
   for (uint32_t i = 0; i < hash->buckets.size_; ++i) {
     if (get_bucket(&hash->buckets, i) != NULL) {
-      *index = i;
-      *value = (item *)get_bucket(&hash->buckets, i);
+      idx->bucket_index = i;
+      idx->item = (ht_item *)get_bucket(&hash->buckets, i);
       return;
     }
   }
-  end(hash, index, value);
+  intrusive_hash_map_end(hash, idx);
 }
 
-/* Erase the item for @p key. If the item is found, return the pointer to the
-   item. Else return a null pointer. */
-item *intrusive_hash_map_erase(intrusive_hash_map *hash, const uint64_t key) {
-  uint32_t index = hasher_(key) & hash->hash_mask;
+/* Erase the ht_item for @p key. If the ht_item is found, return the pointer to
+   the ht_item. Else return a null pointer. */
+ht_item *intrusive_hash_map_erase(intrusive_hash_map *hash,
+                                  uint64_t key) {
+  uint32_t index = chunked_vector_hasher(key) & hash->hash_mask;
 
-  item **slot = (item **)get_mutable_bucket(&hash->buckets, index);
-  item *p = *slot;
+  ht_item **slot = (ht_item **)get_mutable_bucket(&hash->buckets, index);
+  ht_item *p = *slot;
   if (p == NULL) {
     return NULL;
   }
@@ -154,7 +214,7 @@ item *intrusive_hash_map_erase(intrusive_hash_map *hash, const uint64_t key) {
     return p;
   }
 
-  item *prev = p;
+  ht_item *prev = p;
   p = p->hash_link;
 
   while (p) {
@@ -169,15 +229,16 @@ item *intrusive_hash_map_erase(intrusive_hash_map *hash, const uint64_t key) {
   return NULL;
 }
 
-/* Insert an item into a hash array. hash_mask is array_size-1.
-   Returns true if it is a new item and false if the item already existed. */
+/* Insert an ht_item into a hash array. hash_mask is array_size-1.
+   Returns true if it is a new ht_item and false if the ht_item already existed.
+   */
 static inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
                                                       uint32_t hash_mask,
-                                                      item *new_item) {
+                                                      ht_item *new_item) {
   const uint64_t key = new_item->key;
-  uint32_t index = hasher_(key) & hash_mask;
-  item **slot = (item **)get_mutable_bucket(buckets, index);
-  item *p = *slot;
+  uint32_t index = chunked_vector_hasher(key) & hash_mask;
+  ht_item **slot = (ht_item **)get_mutable_bucket(buckets, index);
+  ht_item *p = *slot;
   new_item->hash_link = p;
 
   /* Check to see if key already exists. */
@@ -198,20 +259,18 @@ void intrusive_hash_map_extend(intrusive_hash_map *hash) {
   uint32_t new_log2_num_buckets = 1 + hash->log2_num_buckets;
   uint32_t new_num_buckets = (uint32_t)1 << new_log2_num_buckets;
   chunked_vector new_buckets;
-  init_chunked_vector(&new_buckets);
-  chunked_vector_reset(&new_buckets, sizeof(item *), new_num_buckets);
+  chunked_vector_init(&new_buckets);
+  chunked_vector_reset(&new_buckets, new_num_buckets);
   uint32_t new_hash_mask = new_num_buckets - 1;
 
-  item *value;
-  item *end_value;
-  uint32_t index;
-  uint32_t end_index;
-  end(hash, &end_index, &end_value);
-  begin(hash, &index, &value);
-  while (!(index == end_index && value == end_value)) {
-    item *new_value = value;
-    next(hash, &index, &value);
-    internal_insert(&new_buckets, new_hash_mask, new_value);
+  ht_index cur_idx;
+  ht_index end_idx;
+  intrusive_hash_map_end(hash, &end_idx);
+  intrusive_hash_map_begin(hash, &cur_idx);
+  while (!ht_index_compare(&cur_idx, &end_idx)) {
+    ht_item *new_item = cur_idx.item;
+    intrusive_hash_map_next(hash, &cur_idx);
+    intrusive_hash_map_internal_insert(&new_buckets, new_hash_mask, new_item);
   }
 
   /* Set values for new chunked_vector. */
@@ -223,17 +282,51 @@ void intrusive_hash_map_extend(intrusive_hash_map *hash) {
       (uint32_t)((float)new_num_buckets * kIntrusiveLoadFactor);
 }
 
-/* Insert an item. @p item must remain live until it is removed from the table.
-   This object does not take the ownership of @p item. The caller must remove
-   this @p item from the table and delete it before this table is deleted. If
-   item exists already num_items is not changed. */
-void *intrusive_hash_map_insert(intrusive_hash_map *hash, uint64_t key, item *new_item) {
+/* Insert a ht_item. The ht_item must remain live until it is removed from the
+   table. This object does not take the ownership of ht_item. The caller must
+   remove this ht_item from the table and delete it before this table is
+   deleted. If ht_item exists already num_items is not changed. */
+bool intrusive_hash_map_insert(intrusive_hash_map *hash, uint64_t key,
+                               ht_item *new_item) {
   if (hash->num_items >= hash->extend_threshold) {
     intrusive_hash_map_extend(hash);
   }
   if (intrusive_hash_map_internal_insert(&hash->buckets, hash->hash_mask,
                                          new_item)) {
     hash->num_items++;
+    return true;
   }
-  return new_item;
+  return false;
+}
+
+void intrusive_hash_map_clear(intrusive_hash_map *hash) {
+  ht_index cur;
+  ht_index end;
+  intrusive_hash_map_end(hash, &end);
+  intrusive_hash_map_begin(hash, &cur);
+
+  while (!ht_index_compare(&cur, &end)) {
+    ht_index next = cur;
+    intrusive_hash_map_next(hash, &next);
+    if (cur.item != NULL) {
+      ht_item *item = intrusive_hash_map_erase(hash, cur.item->key);
+      if(item->value != NULL) {
+        gpr_free(item->value);
+      }
+      gpr_free(item);
+    }
+    cur = next;
+  }
+}
+
+/* Erase all contents of hash map and free the memory. Hash table is invalid
+   after calling this function and cannot be used until it has been
+   reinitialized (intrusive_hash_map_init()). */
+void intrusive_hash_map_free(intrusive_hash_map *hash) {
+  intrusive_hash_map_clear(hash);
+  hash->num_items = 0;
+  hash->extend_threshold = 0;
+  hash->log2_num_buckets = 0;
+  hash->hash_mask = 0;
+  chunked_vector_clear(&hash->buckets);
 }
