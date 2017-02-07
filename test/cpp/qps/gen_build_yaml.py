@@ -92,7 +92,8 @@ print yaml.dump({
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, False),
       'exclude_configs': ['tsan', 'asan'],
-      'timeout_seconds': 6*60
+      'timeout_seconds': 6*60,
+      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', [])
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
     if 'scalable' in scenario_json.get('CATEGORIES', [])
@@ -109,8 +110,9 @@ print yaml.dump({
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, True),
       'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
-      'timeout_seconds': 6*60
-    }
+      'timeout_seconds': 6*60,
+      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', [])
+   }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
     if 'scalable' in scenario_json.get('CATEGORIES', [])
   ]

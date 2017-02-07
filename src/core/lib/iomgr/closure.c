@@ -51,20 +51,22 @@ void grpc_closure_list_init(grpc_closure_list *closure_list) {
   closure_list->head = closure_list->tail = NULL;
 }
 
-void grpc_closure_list_append(grpc_closure_list *closure_list,
+bool grpc_closure_list_append(grpc_closure_list *closure_list,
                               grpc_closure *closure, grpc_error *error) {
   if (closure == NULL) {
     GRPC_ERROR_UNREF(error);
-    return;
+    return false;
   }
   closure->error_data.error = error;
   closure->next_data.next = NULL;
-  if (closure_list->head == NULL) {
+  bool was_empty = (closure_list->head == NULL);
+  if (was_empty) {
     closure_list->head = closure;
   } else {
     closure_list->tail->next_data.next = closure;
   }
   closure_list->tail = closure;
+  return was_empty;
 }
 
 void grpc_closure_list_fail_all(grpc_closure_list *list,

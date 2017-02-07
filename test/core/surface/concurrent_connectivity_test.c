@@ -70,11 +70,13 @@ void create_loop_destroy(void *addr) {
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
-      gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(DELAY_MILLIS);
+      gpr_timespec later_time =
+          grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
-      gpr_timespec poll_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(POLL_MILLIS);
+      gpr_timespec poll_time =
+          grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, NULL).type ==
                  GRPC_OP_COMPLETE);
     }

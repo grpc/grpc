@@ -28,7 +28,7 @@
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @rem Current package versions
-set VERSION=1.1.0-dev
+set VERSION=1.2.0-dev
 set PROTOBUF_VERSION=3.0.0
 
 @rem Adjust the location of nuget.exe
@@ -59,6 +59,7 @@ xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* pr
 %DOTNET% restore . || goto :error
 
 %DOTNET% pack --configuration Release Grpc.Core\project.json --output ..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.Testing\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Auth\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.HealthCheck\project.json --output ..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Reflection\project.json --output ..\..\artifacts || goto :error

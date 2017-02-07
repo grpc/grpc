@@ -60,21 +60,22 @@ HTTP/2 related behavior (specified in [gRPC over HTTP2](http://www.grpc.io/docs/
 Message framing (vs. [http2-transport-mapping](http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
-  * Key-value pairs encoded in the HTTP/2 [literal header format](https://tools.ietf.org/html/rfc7541#section-6.2) as a single header block.
+  * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline).
 2. 8th (MSB) bit of the 1st gRPC frame byte
   * 0: data
   * 1: trailers
 3. Trailers must be the last message of the response, as enforced
 by the implementation
 4. Trailers-only responses: no change to the gRPC protocol spec.
-Trailers will be sent together with response headers, with no message
+Trailers may be sent together with response headers, with no message
 in the body.
 
 ---
 
-User Agent
+User Agent and Server headers
 
-* grpc-web-javascript/0.1
+* U-A: grpc-web-javascript/0.1
+* Server: grpc-web-gateway/0.1
 
 ---
 

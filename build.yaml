@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 2.0.0-dev
-  g_stands_for: good
-  version: 1.1.0-dev
+  core_version: 3.0.0-dev
+  g_stands_for: green
+  version: 1.2.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -256,6 +256,7 @@ filegroups:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -375,6 +376,7 @@ filegroups:
   - src/core/lib/surface/server.c
   - src/core/lib/surface/validate_metadata.c
   - src/core/lib/surface/version.c
+  - src/core/lib/transport/bdp_estimator.c
   - src/core/lib/transport/byte_stream.c
   - src/core/lib/transport/connectivity_state.c
   - src/core/lib/transport/error_utils.c
@@ -560,6 +562,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
+  - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
@@ -574,6 +577,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
+  - test/core/util/debugger_macros.c
   - test/core/util/grpc_profiler.c
   - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
@@ -695,7 +699,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - third_party/Cronet/bidirectional_stream_c.h
+  - third_party/objective_c/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
@@ -833,6 +837,7 @@ filegroups:
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
   - include/grpc++/impl/codegen/grpc_library.h
+  - include/grpc++/impl/codegen/metadata_map.h
   - include/grpc++/impl/codegen/method_handler_impl.h
   - include/grpc++/impl/codegen/rpc_method.h
   - include/grpc++/impl/codegen/rpc_service_method.h
@@ -1448,6 +1453,16 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: bdp_estimator_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/bdp_estimator_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_decoder_test
   build: test
   language: c
@@ -2951,6 +2966,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -3309,7 +3330,7 @@ targets:
   - linux
   - posix
 - name: hybrid_end2end_test
-  gtest: true
+  flaky: true
   build: test
   language: c++
   src:
@@ -3390,6 +3411,10 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: metrics_client
   build: test
   run: false
@@ -3738,6 +3763,24 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: writes_per_rpc_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/cpp/performance/writes_per_rpc_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: public_headers_must_be_c89
   build: test
   language: c89
@@ -3778,7 +3821,6 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
@@ -3790,7 +3832,6 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
-    timeout_multiplier: 3
   asan-trace-cmp:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
@@ -3803,7 +3844,6 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
-    timeout_multiplier: 3
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
@@ -3822,13 +3862,11 @@ configs:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
-    timeout_multiplier: 20
     valgrind: --tool=helgrind
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
-    timeout_multiplier: 10
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
@@ -3842,7 +3880,6 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
-    timeout_multiplier: 4
   mutrace:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
@@ -3865,7 +3902,6 @@ configs:
     compile_the_world: true
     test_environ:
       TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-    timeout_multiplier: 5
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow
@@ -3878,7 +3914,6 @@ configs:
     compile_the_world: true
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-    timeout_multiplier: 1.5
 defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX

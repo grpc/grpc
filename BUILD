@@ -526,6 +526,7 @@ grpc_cc_library(
         "src/core/lib/transport/metadata.c",
         "src/core/lib/transport/metadata_batch.c",
         "src/core/lib/transport/pid_controller.c",
+        "src/core/lib/transport/bdp_estimator.c",
         "src/core/lib/transport/service_config.c",
         "src/core/lib/transport/static_metadata.c",
         "src/core/lib/transport/status_conversion.c",
@@ -633,6 +634,7 @@ grpc_cc_library(
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/pid_controller.h",
+        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/service_config.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
@@ -1038,7 +1040,7 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
-        "third_party/Cronet/bidirectional_stream_c.h",
+        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1191,6 +1193,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/core_codegen_interface.h",
         "include/grpc++/impl/codegen/create_auth_context.h",
         "include/grpc++/impl/codegen/grpc_library.h",
+        "include/grpc++/impl/codegen/metadata_map.h",
         "include/grpc++/impl/codegen/method_handler_impl.h",
         "include/grpc++/impl/codegen/rpc_method.h",
         "include/grpc++/impl/codegen/rpc_service_method.h",
@@ -1199,6 +1202,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/server_context.h",
         "include/grpc++/impl/codegen/server_interface.h",
         "include/grpc++/impl/codegen/service_type.h",
+        "include/grpc++/impl/codegen/slice.h",
         "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/status_code_enum.h",
         "include/grpc++/impl/codegen/status_helper.h",
@@ -1240,6 +1244,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
+    ],
+    external_deps = [
+        "protobuf",
     ],
 )
 
