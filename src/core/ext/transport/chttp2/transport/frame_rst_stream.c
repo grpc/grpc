@@ -109,8 +109,14 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
                       (((uint32_t)p->reason_bytes[3]));
     grpc_error *error = GRPC_ERROR_NONE;
     if (reason != GRPC_HTTP2_NO_ERROR || s->header_frames_received < 2) {
-      error = grpc_error_set_int(GRPC_ERROR_CREATE("RST_STREAM"),
-                                 GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
+      char *message;
+      gpr_asprintf(&message, "Received RST_STREAM with error code %d",
+                   reason);
+      error = grpc_error_set_int(
+          grpc_error_set_str(GRPC_ERROR_CREATE("RST_STREAM"), 
+                            GRPC_ERROR_STR_GRPC_MESSAGE, message),
+          GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
+      gpr_free(message);
     }
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
   }
