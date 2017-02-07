@@ -546,10 +546,18 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  chand->server_name = gpr_strdup(arg->value.string);
+  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  if (uri == NULL) return GRPC_ERROR_CREATE("cannot parse server URI");
+  if (uri->path[0] == '\0') {
+    grpc_uri_destroy(uri);
+    return GRPC_ERROR_CREATE("server URI is missing path");
+  }
+  chand->server_name =
+      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  grpc_uri_destroy(uri);
   chand->proxy_name = grpc_get_http_proxy_server();
   char *name_to_resolve =
-      chand->proxy_name == NULL ? chand->server_name : chand->proxy_name;
+      chand->proxy_name == NULL ? arg->value.string : chand->proxy_name;
   chand->resolver = grpc_resolver_create(
       exec_ctx, name_to_resolve, args->channel_args, chand->interested_parties);
   if (chand->resolver == NULL) {
