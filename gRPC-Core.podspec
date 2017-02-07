@@ -1,8 +1,10 @@
-# GRPC CocoaPods podspec
-# This file has been automatically generated from a template file. Please make modifications to
-# `templates/gRPC-Core.podspec.template` instead. This file can be regenerated from the template by
-# running `tools/buildgen/generate_projects.sh`.
+# This file has been automatically generated from a template file.
+# Please make modifications to `templates/gRPC-Core.podspec.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
 
+# gRPC Core CocoaPods podspec
+#
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -35,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.1.0'
+  version = '1.1.1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
