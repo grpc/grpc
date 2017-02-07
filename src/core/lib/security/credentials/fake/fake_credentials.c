@@ -35,12 +35,12 @@
 
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/executor.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/support/string.h"
 
 /* -- Fake transport security credentials. -- */
 
@@ -49,7 +49,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
     grpc_call_credentials *call_creds, const char *target,
     const grpc_channel_args *args, grpc_channel_security_connector **sc,
     grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds);
+  *sc = grpc_fake_channel_security_connector_create(call_creds, target, args);
   return GRPC_SECURITY_OK;
 }
 

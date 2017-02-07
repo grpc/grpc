@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 
-/* -- Fake transport security credentials. -- */
+/** Return a channel argument containing \a targets_info. */
+grpc_arg grpc_lb_targets_info_create_channel_arg(
+    grpc_slice_hash_table *targets_info);
 
-/* Used to verify the target names given to the fake transport security
- * connector.
- *
- * Its syntax by example:
- * For LB channels:
- *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
- * For regular channels:
- *     "backend_taget_1,backend_target_2,..."
- *
- * That is to say, LB channels have a heading list of LB targets separated from
- * the list of backend targets by a semicolon. For non-LB channels, only the
- * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
+/** Return the instance of targets info in \a args or NULL */
+grpc_slice_hash_table *grpc_lb_targets_info_find_in_args(
+    const grpc_channel_args *args);
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
-
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
-/* --  Metadata-only Test credentials. -- */
-
-typedef struct {
-  grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
-} grpc_md_only_test_credentials;
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H */
