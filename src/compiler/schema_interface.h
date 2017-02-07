@@ -70,13 +70,15 @@ namespace grpc_generator {
     virtual grpc::string input_type_name() const = 0;
     virtual grpc::string output_type_name() const = 0;
 
-    virtual bool get_module_and_message_path_input(grpc::string str, 
+    virtual bool get_module_and_message_path_input(grpc::string *str,
                                                   grpc::string generator_file_name,
                                                   bool generate_in_pb2_grpc) const = 0;
-    virtual bool get_module_and_message_path_output(grpc::string str,
+    virtual bool get_module_and_message_path_output(grpc::string *str,
                                                     grpc::string generator_file_name, 
                                                     bool generate_in_pb2_grpc) const = 0;
 
+    virtual grpc::string get_input_type_name() const = 0;
+    virtual grpc::string get_output_type_name() const = 0;
     virtual bool NoStreaming() const = 0;
     virtual bool ClientStreaming() const = 0;
     virtual bool ServerStreaming() const = 0;
@@ -91,7 +93,6 @@ namespace grpc_generator {
 
     virtual int method_count() const = 0;
     virtual std::unique_ptr<const Method> method(int i) const = 0;
-    virtual std::unique_ptr<const grpc::protobuf::MethodDescriptor> get_method(int i) const = 0;
   };
 
   struct Printer {

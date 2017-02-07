@@ -31,19 +31,26 @@ class ProtoBufMethod : public grpc_generator::Method {
       return grpc_cpp_generator::ClassName(method_->output_type(), true);
     }
 
-    bool get_module_and_message_path_input(grpc::string str, 
+    grpc::string get_input_type_name() const {
+      return method_->input_type()->file()->name();
+    }
+    grpc::string get_output_type_name() const {
+      return method_->output_type()->file()->name();
+    }
+
+    bool get_module_and_message_path_input(grpc::string *str,
                                            grpc::string generator_file_name,
                                            bool generate_in_pb2_grpc) const {
       return grpc_python_generator::GetModuleAndMessagePath(method_->input_type(),
-                                                            &str, generator_file_name,
+                                                            str, generator_file_name,
                                                             generate_in_pb2_grpc);
     }
 
-    bool get_module_and_message_path_output(grpc::string str,
+    bool get_module_and_message_path_output(grpc::string *str,
                                             grpc::string generator_file_name,
                                             bool generate_in_pb2_grpc) const {
       return grpc_python_generator::GetModuleAndMessagePath(method_->output_type(),
-                                                            &str, generator_file_name,
+                                                            str, generator_file_name,
                                                             generate_in_pb2_grpc);
     }
 
@@ -90,10 +97,6 @@ class ProtoBufService : public grpc_generator::Service {
    std::unique_ptr<const grpc_generator::Method> method(int i) const {
      return std::unique_ptr<const grpc_generator::Method>(
          new ProtoBufMethod(service_->method(i)));
-   };
-   std::unique_ptr<const grpc::protobuf::MethodDescriptor> get_method(int i) const {
-     return std::unique_ptr<const grpc::protobuf::MethodDescriptor>(
-      service_->method(i));
    };
 
    grpc::string GetLeadingComments(const grpc::string prefix) const {

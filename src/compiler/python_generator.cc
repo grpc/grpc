@@ -107,7 +107,8 @@ PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
                                    const grpc_generator::File* file)
     : config(config), file(file) {}
 
-void PrivateGenerator::PrintAllComments(StringVector comments) {
+void PrivateGenerator::PrintAllComments(StringVector comments,
+                                        grpc_generator::Printer* out) {
 
     if (comments.empty()) {
       return;
@@ -124,7 +125,8 @@ void PrivateGenerator::PrintAllComments(StringVector comments) {
     out->Print("\"\"\"\n");
 }
 
-bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service) {
+bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
+                                         grpc_generator::Printer* out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -139,7 +141,7 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service)
         "only to ease transition from grpcio<0.15.0 to "
         "grpcio>=0.15.0.\"\"\"\n");
     StringVector service_comments = service->GetAllComments();
-    PrintAllComments(service_comments);
+    PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
@@ -151,7 +153,7 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service)
       {
         IndentScope raii_method_indent(out);
         StringVector method_comments = method.get()->GetAllComments();
-        PrintAllComments(method_comments);
+        PrintAllComments(method_comments, out);
         out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
     }
@@ -159,7 +161,8 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service)
   return true;
 }
 
-bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service) {
+bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service,
+                                      grpc_generator::Printer* out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -174,7 +177,7 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service) {
         "only to ease transition from grpcio<0.15.0 to "
         "grpcio>=0.15.0.\"\"\"\n");
     StringVector service_comments = service->GetAllComments();
-    PrintAllComments(service_comments);
+    PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
@@ -188,7 +191,7 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service) {
       {
         IndentScope raii_method_indent(out);
         StringVector method_comments = method.get()->GetAllComments();
-        PrintAllComments(method_comments);
+        PrintAllComments(method_comments, out);
         out->Print("raise NotImplementedError()\n");
       }
       if (!method.get()->ServerStreaming()) {
@@ -201,7 +204,7 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service) {
 
 bool PrivateGenerator::PrintBetaServerFactory(
     const grpc::string& package_qualified_service_name,
-    const grpc_generator::Service* service) {
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -226,12 +229,12 @@ bool PrivateGenerator::PrintBetaServerFactory(
           grpc::string(method.get()->ServerStreaming() ? "stream_" : "unary_") +
           "inline";
       grpc::string input_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_input(input_message_module_and_class,
+      if (!method.get()->get_module_and_message_path_input(&input_message_module_and_class,
                                                            generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       grpc::string output_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_output(output_message_module_and_class,
+      if (!method.get()->get_module_and_message_path_output(&output_message_module_and_class,
                                                             generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
@@ -304,7 +307,8 @@ bool PrivateGenerator::PrintBetaServerFactory(
 
 bool PrivateGenerator::PrintBetaStubFactory(
     const grpc::string& package_qualified_service_name,
-    const grpc_generator::Service* service) {
+    const grpc_generator::Service* service,
+    grpc_generator::Printer* out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -328,12 +332,12 @@ bool PrivateGenerator::PrintBetaStubFactory(
           grpc::string(method.get()->ClientStreaming() ? "STREAM" : "UNARY") + "_" +
           grpc::string(method.get()->ServerStreaming() ? "STREAM" : "UNARY");
       grpc::string input_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_input(input_message_module_and_class,
+      if (!method.get()->get_module_and_message_path_input(&input_message_module_and_class,
                                                            generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       grpc::string output_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_output(output_message_module_and_class,
+      if (!method.get()->get_module_and_message_path_output(&output_message_module_and_class,
                                                             generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
@@ -401,7 +405,8 @@ bool PrivateGenerator::PrintBetaStubFactory(
 
 bool PrivateGenerator::PrintStub(
     const grpc::string& package_qualified_service_name,
-    const grpc_generator::Service* service) {
+    const grpc_generator::Service* service,
+    grpc_generator::Printer* out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -409,7 +414,7 @@ bool PrivateGenerator::PrintStub(
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
-    PrintAllComments(service_comments);
+    PrintAllComments(service_comments, out);
     out->Print("\n");
     out->Print("def __init__(self, channel):\n");
     {
@@ -428,12 +433,12 @@ bool PrivateGenerator::PrintStub(
             grpc::string(method.get()->ClientStreaming() ? "stream" : "unary") +
             "_" + grpc::string(method.get()->ServerStreaming() ? "stream" : "unary");
         grpc::string request_module_and_class;
-        if (!method.get()->get_module_and_message_path_input(request_module_and_class,
+        if (!method.get()->get_module_and_message_path_input(&request_module_and_class,
                                                              generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         grpc::string response_module_and_class;
-        if (!method.get()->get_module_and_message_path_output(response_module_and_class,
+        if (!method.get()->get_module_and_message_path_output(&response_module_and_class,
                                                               generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
@@ -460,7 +465,8 @@ bool PrivateGenerator::PrintStub(
   return true;
 }
 
-bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service) {
+bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
+                                    grpc_generator::Printer* out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -468,7 +474,7 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service) {
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
-    PrintAllComments(service_comments);
+    PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
@@ -481,7 +487,7 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service) {
       {
         IndentScope raii_method_indent(out);
         StringVector method_comments = method.get()->GetAllComments();
-        PrintAllComments(method_comments);
+        PrintAllComments(method_comments, out);
         out->Print("context.set_code(grpc.StatusCode.UNIMPLEMENTED)\n");
         out->Print("context.set_details('Method not implemented!')\n");
         out->Print("raise NotImplementedError('Method not implemented!')\n");
@@ -493,7 +499,7 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service) {
 
 bool PrivateGenerator::PrintAddServicerToServer(
     const grpc::string& package_qualified_service_name,
-    const grpc_generator::Service* service) {
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -512,12 +518,12 @@ bool PrivateGenerator::PrintAddServicerToServer(
             grpc::string(method.get()->ServerStreaming() ? "stream" : "unary") +
             "_rpc_method_handler";
         grpc::string request_module_and_class;
-        if (!method.get()->get_module_and_message_path_input(request_module_and_class, 
+        if (!method.get()->get_module_and_message_path_input(&request_module_and_class,
                                                              generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         grpc::string response_module_and_class;
-        if (!method.get()->get_module_and_message_path_output(response_module_and_class,
+        if (!method.get()->get_module_and_message_path_output(&response_module_and_class,
                                                               generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
@@ -554,7 +560,7 @@ bool PrivateGenerator::PrintAddServicerToServer(
   return true;
 }
 
-bool PrivateGenerator::PrintBetaPreamble() {
+bool PrivateGenerator::PrintBetaPreamble(grpc_generator::Printer *out) {
   StringMap var;
   var["Package"] = config.beta_package_root;
   out->Print(var, "from $Package$ import implementations as beta_implementations\n");
@@ -566,7 +572,7 @@ bool PrivateGenerator::PrintBetaPreamble() {
   return true;
 }
 
-bool PrivateGenerator::PrintPreamble() {
+bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   StringMap var;
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
@@ -574,23 +580,22 @@ bool PrivateGenerator::PrintPreamble() {
     out->Print("\n");
     StringPairSet imports_set;
     for (int i = 0; i < file->service_count(); ++i) {
-      auto service = file->service(i).get();
+      auto service = file->service(i);
       for (int j = 0; j < service->method_count(); ++j) {
-        const MethodDescriptor* method = service->get_method(j).get();
-        const Descriptor* types[2] = {method->input_type(),
-                                      method->output_type()};
-        for (int k = 0; k < 2; ++k) {
-          const Descriptor* type = types[k];
-          grpc::string type_file_name = type->file()->name();
-          grpc::string module_name =
-              ModuleName(type_file_name, config.import_prefix);
-          grpc::string module_alias =
-              ModuleAlias(type_file_name, config.import_prefix);
-          imports_set.insert(std::make_tuple(module_name, module_alias));
-        }
+        auto method = service.get()->method(j);
+
+        grpc::string input_type_file_name = method->get_input_type_name();
+        grpc::string input_module_name = ModuleName(input_type_file_name);
+        grpc::string input_module_alias = ModuleAlias(input_type_file_name);
+        imports_set.insert(std::make_tuple(input_module_name, input_module_alias));
+
+        grpc::string output_type_file_name = method->get_output_type_name();
+        grpc::string output_module_name = ModuleName(output_type_file_name);
+        grpc::string output_module_alias = ModuleAlias(output_type_file_name);
+        imports_set.insert(std::make_tuple(output_module_name, output_module_alias));
       }
     }
-    StringMap var;
+
     for (StringPairSet::iterator it = imports_set.begin();
          it != imports_set.end(); ++it) {
       var["ModuleName"] = std::get<0>(*it);
@@ -601,34 +606,34 @@ bool PrivateGenerator::PrintPreamble() {
   return true;
 }
 
-bool PrivateGenerator::PrintGAServices() {
+bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
   grpc::string package = file->package();
   if (!package.empty()) {
     package = package.append(".");
   }
   for (int i = 0; i < file->service_count(); ++i) {
-    auto service = file->service(i).get();
+    auto service = file->service(i);
     grpc::string package_qualified_service_name = package + service->name();
-    if (!(PrintStub(package_qualified_service_name, service) &&
-          PrintServicer(service) &&
-          PrintAddServicerToServer(package_qualified_service_name, service))) {
+    if (!(PrintStub(package_qualified_service_name, service.get(), out) &&
+          PrintServicer(service.get(), out) &&
+          PrintAddServicerToServer(package_qualified_service_name, service.get(), out))) {
       return false;
     }
   }
   return true;
 }
 
-bool PrivateGenerator::PrintBetaServices() {
+bool PrivateGenerator::PrintBetaServices(grpc_generator::Printer* out) {
   grpc::string package = file->package();
   if (!package.empty()) {
     package = package.append(".");
   }
   for (int i = 0; i < file->service_count(); ++i) {
-    auto service = file->service(i).get();
+    auto service = file->service(i);
     grpc::string package_qualified_service_name = package + service->name();
-    if (!(PrintBetaServicer(service) && PrintBetaStub(service) &&
-          PrintBetaServerFactory(package_qualified_service_name, service) &&
-          PrintBetaStubFactory(package_qualified_service_name, service))) {
+    if (!(PrintBetaServicer(service.get(), out) && PrintBetaStub(service.get(), out) &&
+          PrintBetaServerFactory(package_qualified_service_name, service.get(), out) &&
+          PrintBetaStubFactory(package_qualified_service_name, service.get(), out))) {
       return false;
     }
   }
@@ -639,41 +644,40 @@ pair<bool, grpc::string> PrivateGenerator::GetGrpcServices() {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
-    auto out = file->CreatePrinter(&output).get();
-
+    auto out = file->CreatePrinter(&output);
     if (generate_in_pb2_grpc) {
       out->Print(
           "# Generated by the gRPC Python protocol compiler plugin. "
           "DO NOT EDIT!\n");
-      if (!PrintPreamble()) {
+      if (!PrintPreamble(out.get())) {
         return make_pair(false, "");
       }
-      if (!PrintGAServices()) {
+      if (!PrintGAServices(out.get())) {
         return make_pair(false, "");
       }
     } else {
       out->Print("try:\n");
       {
-        IndentScope raii_dict_try_indent(out);
+        IndentScope raii_dict_try_indent(out.get());
         out->Print(
             "# THESE ELEMENTS WILL BE DEPRECATED.\n"
             "# Please use the generated *_pb2_grpc.py files instead.\n");
-        if (!PrintPreamble()) {
+        if (!PrintPreamble(out.get())) {
           return make_pair(false, "");
         }
-        if (!PrintBetaPreamble()) {
+        if (!PrintBetaPreamble(out.get())) {
           return make_pair(false, "");
         }
-        if (!PrintGAServices()) {
+        if (!PrintGAServices(out.get())) {
           return make_pair(false, "");
         }
-        if (!PrintBetaServices()) {
+        if (!PrintBetaServices(out.get())) {
           return make_pair(false, "");
         }
       }
       out->Print("except ImportError:\n");
       {
-        IndentScope raii_dict_except_indent(out);
+        IndentScope raii_dict_except_indent(out.get());
         out->Print("pass");
       }
     }
