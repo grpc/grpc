@@ -611,6 +611,7 @@ add_dependencies(buildtests_cxx metrics_client)
 add_dependencies(buildtests_cxx mock_test)
 add_dependencies(buildtests_cxx noop-benchmark)
 add_dependencies(buildtests_cxx proto_server_reflection_test)
+add_dependencies(buildtests_cxx proto_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx qps_interarrival_test)
 endif()
@@ -8481,6 +8482,37 @@ target_link_libraries(proto_server_reflection_test
   grpc
   gpr_test_util
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(proto_utils_test
+  test/cpp/codegen/proto_utils_test.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(proto_utils_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(proto_utils_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

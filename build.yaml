@@ -3442,6 +3442,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: proto_utils_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/codegen/proto_utils_test.cc
+  deps:
+  - grpc++
+  - grpc
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_proto
 - name: qps_interarrival_test
   build: test
   run: false

@@ -31,24 +31,60 @@
  *
  */
 
-#include <grpc++/completion_queue.h>
-#include <grpc/support/time.h>
+#include <grpc++/impl/codegen/proto_utils.h>
+#include <grpc++/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
-namespace {
+namespace internal {
 
-class CodegenTestFull : public ::testing::Test {};
+static GrpcLibraryInitializer g_gli_initializer;
 
-TEST_F(CodegenTestFull, Init) {
-  grpc::CompletionQueue cq;
-  void* tag;
-  bool ok;
-  cq.AsyncNext(&tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
-  ASSERT_FALSE(ok);
+// Provide access to GrpcBufferWriter internals.
+class GrpcBufferWriterPeer {
+ public:
+  explicit GrpcBufferWriterPeer(internal::GrpcBufferWriter* writer)
+      : writer_(writer) {}
+  bool have_backup() const { return writer_->have_backup_; }
+  const grpc_slice& backup_slice() const { return writer_->backup_slice_; }
+  const grpc_slice& slice() const { return writer_->slice_; }
+
+ private:
+  GrpcBufferWriter* writer_;
+};
+
+class ProtoUtilsTest : public ::testing::Test {};
+
+// Regression test for a memory corruption bug where a series of
+// GrpcBufferWriter Next()/Backup() invocations could result in a dangling
+// pointer returned by Next() due to the interaction between grpc_slice inlining
+// and GRPC_SLICE_START_PTR.
+TEST_F(ProtoUtilsTest, BackupNext) {
+  // Ensure the GrpcBufferWriter internals are initialized.
+  g_gli_initializer.summon();
+
+  grpc_byte_buffer* bp;
+  GrpcBufferWriter writer(&bp, 8192);
+  GrpcBufferWriterPeer peer(&writer);
+
+  void* data;
+  int size;
+  // Allocate a slice.
+  ASSERT_TRUE(writer.Next(&data, &size));
+  EXPECT_EQ(8192, size);
+  // Return a single byte. Before the fix that this test acts as a regression
+  // for, this would have resulted in an inlined backup slice.
+  writer.BackUp(1);
+  EXPECT_TRUE(!peer.have_backup());
+  // On the next allocation, the slice is non-inlined.
+  ASSERT_TRUE(writer.Next(&data, &size));
+  EXPECT_TRUE(peer.slice().refcount != NULL);
+
+  // Cleanup.
+  g_core_codegen_interface->grpc_byte_buffer_destroy(bp);
 }
 
-}  // namespace
+}  // namespace internal
 }  // namespace grpc
 
 int main(int argc, char** argv) {
