@@ -45,28 +45,24 @@ _EMPTY_FLAGS = 0
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 _EMPTY_METADATA = cygrpc.Metadata(())
 
-_UNARY_UNARY_INITIAL_DUE = (
-    cygrpc.OperationType.send_initial_metadata,
-    cygrpc.OperationType.send_message,
-    cygrpc.OperationType.send_close_from_client,
-    cygrpc.OperationType.receive_initial_metadata,
-    cygrpc.OperationType.receive_message,
-    cygrpc.OperationType.receive_status_on_client,)
-_UNARY_STREAM_INITIAL_DUE = (
-    cygrpc.OperationType.send_initial_metadata,
-    cygrpc.OperationType.send_message,
-    cygrpc.OperationType.send_close_from_client,
-    cygrpc.OperationType.receive_initial_metadata,
-    cygrpc.OperationType.receive_status_on_client,)
-_STREAM_UNARY_INITIAL_DUE = (
-    cygrpc.OperationType.send_initial_metadata,
-    cygrpc.OperationType.receive_initial_metadata,
-    cygrpc.OperationType.receive_message,
-    cygrpc.OperationType.receive_status_on_client,)
-_STREAM_STREAM_INITIAL_DUE = (
-    cygrpc.OperationType.send_initial_metadata,
-    cygrpc.OperationType.receive_initial_metadata,
-    cygrpc.OperationType.receive_status_on_client,)
+_UNARY_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
+                            cygrpc.OperationType.send_message,
+                            cygrpc.OperationType.send_close_from_client,
+                            cygrpc.OperationType.receive_initial_metadata,
+                            cygrpc.OperationType.receive_message,
+                            cygrpc.OperationType.receive_status_on_client,)
+_UNARY_STREAM_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
+                             cygrpc.OperationType.send_message,
+                             cygrpc.OperationType.send_close_from_client,
+                             cygrpc.OperationType.receive_initial_metadata,
+                             cygrpc.OperationType.receive_status_on_client,)
+_STREAM_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
+                             cygrpc.OperationType.receive_initial_metadata,
+                             cygrpc.OperationType.receive_message,
+                             cygrpc.OperationType.receive_status_on_client,)
+_STREAM_STREAM_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
+                              cygrpc.OperationType.receive_initial_metadata,
+                              cygrpc.OperationType.receive_status_on_client,)
 
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
@@ -568,9 +564,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                     )), event_handler)
                 operations = (
                     cygrpc.operation_send_initial_metadata(
-                        _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
-                    cygrpc.operation_send_message(serialized_request,
-                                                  _EMPTY_FLAGS),
+                        _common.cygrpc_metadata(metadata),
+                        _EMPTY_FLAGS), cygrpc.operation_send_message(
+                            serialized_request, _EMPTY_FLAGS),
                     cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
                     cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
                 call_error = call.start_client_batch(
@@ -828,10 +824,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 def _spawn_delivery(state, callbacks):
     delivering_thread = threading.Thread(
-        target=_deliver, args=(
-            state,
-            state.connectivity,
-            callbacks,))
+        target=_deliver, args=(state, state.connectivity, callbacks,))
     delivering_thread.start()
     state.delivering = True
 

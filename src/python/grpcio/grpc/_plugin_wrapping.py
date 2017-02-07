@@ -37,8 +37,7 @@ from grpc._cython import cygrpc
 
 class AuthMetadataContext(
         collections.namedtuple('AuthMetadataContext', (
-            'service_url',
-            'method_name',)), grpc.AuthMetadataContext):
+            'service_url', 'method_name',)), grpc.AuthMetadataContext):
     pass
 
 
