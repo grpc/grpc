@@ -49,21 +49,14 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
   // The service impl to register with the server.
   class HealthCheckServiceImpl : public Service {
    public:
-    HealthCheckServiceImpl(DefaultHealthCheckService* service, bool sync);
+    explicit HealthCheckServiceImpl(DefaultHealthCheckService* service);
 
     Status Check(ServerContext* context, const ByteBuffer* request,
                  ByteBuffer* response);
 
-    bool sync() { return sync_; }
-
-    // This is only useful for the async mode. It should be called after
-    // RegisterService returns.
-    void* server_tag() const { return method_->server_tag(); }
-
    private:
     const DefaultHealthCheckService* const service_;
     RpcServiceMethod* method_;
-    const bool sync_;
   };
 
   DefaultHealthCheckService();
@@ -72,7 +65,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
   void SetServingStatus(bool serving) override;
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
   ServingStatus GetServingStatus(const grpc::string& service_name) const;
-  HealthCheckServiceImpl* GetHealthCheckService(bool sync);
+  HealthCheckServiceImpl* GetHealthCheckService();
 
  private:
   mutable std::mutex mu_;
