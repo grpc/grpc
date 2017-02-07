@@ -179,6 +179,8 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Should BDP probing be performed? */
+#define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"

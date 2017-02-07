@@ -227,6 +227,9 @@ struct grpc_chttp2_transport {
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading;
 
+  /** should we probe bdp? */
+  bool enable_bdp_probe;
+
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];
 
