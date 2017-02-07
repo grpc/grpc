@@ -212,6 +212,14 @@ CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
 LDFLAGS_mutrace = -rdynamic
 DEFINES_mutrace = NDEBUG
 
+VALID_CONFIG_counters = 1
+CC_counters = $(DEFAULT_CC)
+CXX_counters = $(DEFAULT_CXX)
+LD_counters = $(DEFAULT_CC)
+LDXX_counters = $(DEFAULT_CXX)
+CPPFLAGS_counters = -O2 -DGPR_MU_COUNTERS
+DEFINES_counters = NDEBUG
+
 
 
 # General settings.
