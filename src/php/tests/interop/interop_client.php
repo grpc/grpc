@@ -32,8 +32,12 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
-require 'src/proto/grpc/testing/test.pb.php';
-require 'src/proto/grpc/testing/test_grpc_pb.php';
+
+// The following includes are needed when using protobuf 3.1.0
+// and will suppress warnings when using protobuf 3.2.0+
+@include_once 'src/proto/grpc/testing/test.pb.php';
+@include_once 'src/proto/grpc/testing/test_grpc_pb.php';
+
 use Google\Auth\CredentialsLoader;
 use Google\Auth\ApplicationDefaultCredentials;
 use GuzzleHttp\ClientInterface;
@@ -70,7 +74,7 @@ function hardAssertIfStatusOk($status)
 function emptyUnary($stub)
 {
     list($result, $status) =
-        $stub->EmptyCall(new grpc\testing\EmptyMessage())->wait();
+        $stub->EmptyCall(new Grpc\Testing\EmptyMessage())->wait();
     hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call completed with a null response');
 }
@@ -98,11 +102,11 @@ function performLargeUnary($stub, $fillUsername = false,
     $request_len = 271828;
     $response_len = 314159;
 
-    $request = new grpc\testing\SimpleRequest();
-    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+    $request = new Grpc\Testing\SimpleRequest();
+    $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $request->setResponseSize($response_len);
-    $payload = new grpc\testing\Payload();
-    $payload->setType(grpc\testing\PayloadType::COMPRESSABLE);
+    $payload = new Grpc\Testing\Payload();
+    $payload->setType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $payload->setBody(str_repeat("\0", $request_len));
     $request->setPayload($payload);
     $request->setFillUsername($fillUsername);
@@ -117,7 +121,7 @@ function performLargeUnary($stub, $fillUsername = false,
     hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call returned a null response');
     $payload = $result->getPayload();
-    hardAssert($payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
+    hardAssert($payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
                'Payload had the wrong type');
     hardAssert(strlen($payload->getBody()) === $response_len,
                'Payload had the wrong length');
@@ -249,8 +253,8 @@ function clientStreaming($stub)
 
     $requests = array_map(
         function ($length) {
-            $request = new grpc\testing\StreamingInputCallRequest();
-            $payload = new grpc\testing\Payload();
+            $request = new Grpc\Testing\StreamingInputCallRequest();
+            $payload = new Grpc\Testing\Payload();
             $payload->setBody(str_repeat("\0", $length));
             $request->setPayload($payload);
 
@@ -276,10 +280,10 @@ function serverStreaming($stub)
 {
     $sizes = [31415, 9, 2653, 58979];
 
-    $request = new grpc\testing\StreamingOutputCallRequest();
-    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+    $request = new Grpc\Testing\StreamingOutputCallRequest();
+    $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
     foreach ($sizes as $size) {
-        $response_parameters = new grpc\testing\ResponseParameters();
+        $response_parameters = new Grpc\Testing\ResponseParameters();
         $response_parameters->setSize($size);
         $request->getResponseParameters()[] = $response_parameters;
     }
@@ -290,7 +294,7 @@ function serverStreaming($stub)
         hardAssert($i < 4, 'Too many responses');
         $payload = $value->getPayload();
         hardAssert(
-            $payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
+            $payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
             'Payload '.$i.' had the wrong type');
         hardAssert(strlen($payload->getBody()) === $sizes[$i],
                    'Response '.$i.' had the wrong length');
@@ -311,12 +315,12 @@ function pingPong($stub)
 
     $call = $stub->FullDuplexCall();
     for ($i = 0; $i < 4; ++$i) {
-        $request = new grpc\testing\StreamingOutputCallRequest();
-        $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
-        $response_parameters = new grpc\testing\ResponseParameters();
+        $request = new Grpc\Testing\StreamingOutputCallRequest();
+        $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
+        $response_parameters = new Grpc\Testing\ResponseParameters();
         $response_parameters->setSize($response_lengths[$i]);
         $request->getResponseParameters()[] = $response_parameters;
-        $payload = new grpc\testing\Payload();
+        $payload = new Grpc\Testing\Payload();
         $payload->setBody(str_repeat("\0", $request_lengths[$i]));
         $request->setPayload($payload);
 
@@ -326,7 +330,7 @@ function pingPong($stub)
         hardAssert($response !== null, 'Server returned too few responses');
         $payload = $response->getPayload();
         hardAssert(
-            $payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
+            $payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
             'Payload '.$i.' had the wrong type');
         hardAssert(strlen($payload->getBody()) === $response_lengths[$i],
                    'Payload '.$i.' had the wrong length');
@@ -371,12 +375,12 @@ function cancelAfterBegin($stub)
 function cancelAfterFirstResponse($stub)
 {
     $call = $stub->FullDuplexCall();
-    $request = new grpc\testing\StreamingOutputCallRequest();
-    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
-    $response_parameters = new grpc\testing\ResponseParameters();
+    $request = new Grpc\Testing\StreamingOutputCallRequest();
+    $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
+    $response_parameters = new Grpc\Testing\ResponseParameters();
     $response_parameters->setSize(31415);
     $request->getResponseParameters()[] = $response_parameters;
-    $payload = new grpc\testing\Payload();
+    $payload = new Grpc\Testing\Payload();
     $payload->setBody(str_repeat("\0", 27182));
     $request->setPayload($payload);
 
@@ -391,12 +395,12 @@ function cancelAfterFirstResponse($stub)
 function timeoutOnSleepingServer($stub)
 {
     $call = $stub->FullDuplexCall([], ['timeout' => 1000]);
-    $request = new grpc\testing\StreamingOutputCallRequest();
-    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
-    $response_parameters = new grpc\testing\ResponseParameters();
+    $request = new Grpc\Testing\StreamingOutputCallRequest();
+    $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
+    $response_parameters = new Grpc\Testing\ResponseParameters();
     $response_parameters->setSize(8);
     $request->getResponseParameters()[] = $response_parameters;
-    $payload = new grpc\testing\Payload();
+    $payload = new Grpc\Testing\Payload();
     $payload->setBody(str_repeat("\0", 9));
     $request->setPayload($payload);
 
@@ -416,11 +420,11 @@ function customMetadata($stub)
     $request_len = 271828;
     $response_len = 314159;
 
-    $request = new grpc\testing\SimpleRequest();
-    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+    $request = new Grpc\Testing\SimpleRequest();
+    $request->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $request->setResponseSize($response_len);
-    $payload = new grpc\testing\Payload();
-    $payload->setType(grpc\testing\PayloadType::COMPRESSABLE);
+    $payload = new Grpc\Testing\Payload();
+    $payload->setType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $payload->setBody(str_repeat("\0", $request_len));
     $request->setPayload($payload);
 
@@ -449,9 +453,9 @@ function customMetadata($stub)
 
     $streaming_call = $stub->FullDuplexCall($metadata);
 
-    $streaming_request = new grpc\testing\StreamingOutputCallRequest();
+    $streaming_request = new Grpc\Testing\StreamingOutputCallRequest();
     $streaming_request->setPayload($payload);
-    $response_parameters = new grpc\testing\ResponseParameters();
+    $response_parameters = new Grpc\Testing\ResponseParameters();
     $response_parameters->setSize($response_len);
     $streaming_request->getResponseParameters()[] = $response_parameters;
     $streaming_call->write($streaming_request);
@@ -477,11 +481,11 @@ function customMetadata($stub)
 
 function statusCodeAndMessage($stub)
 {
-    $echo_status = new grpc\testing\EchoStatus();
+    $echo_status = new Grpc\Testing\EchoStatus();
     $echo_status->setCode(2);
     $echo_status->setMessage('test status message');
 
-    $request = new grpc\testing\SimpleRequest();
+    $request = new Grpc\Testing\SimpleRequest();
     $request->setResponseStatus($echo_status);
 
     $call = $stub->UnaryCall($request);
@@ -496,7 +500,7 @@ function statusCodeAndMessage($stub)
 
     $streaming_call = $stub->FullDuplexCall();
 
-    $streaming_request = new grpc\testing\StreamingOutputCallRequest();
+    $streaming_request = new Grpc\Testing\StreamingOutputCallRequest();
     $streaming_request->setResponseStatus($echo_status);
     $streaming_call->write($streaming_request);
     $streaming_call->writesDone();
@@ -514,7 +518,7 @@ function statusCodeAndMessage($stub)
 # NOTE: the stub input to this function is from UnimplementedService
 function unimplementedService($stub)
 {
-    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());
     list($result, $status) = $call->wait();
     hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
                'Received unexpected status code');
@@ -523,7 +527,7 @@ function unimplementedService($stub)
 # NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
-    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());
     list($result, $status) = $call->wait();
     hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
                'Received unexpected status code');
@@ -614,10 +618,10 @@ function _makeStub($args)
     }
 
     if ($test_case === 'unimplemented_service') {
-        $stub = new grpc\testing\UnimplementedServiceClient($server_address,
+        $stub = new Grpc\Testing\UnimplementedServiceClient($server_address,
                                                             $opts);
     } else {
-        $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+        $stub = new Grpc\Testing\TestServiceClient($server_address, $opts);
     }
 
     return $stub;

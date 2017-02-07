@@ -84,6 +84,16 @@ static class InitializeStuff {
  * FIXTURES
  */
 
+static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
+  b->SetMaxReceiveMessageSize(INT_MAX);
+  b->SetMaxSendMessageSize(INT_MAX);
+}
+
+static void ApplyCommonChannelArguments(ChannelArguments* c) {
+  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
+  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+}
+
 class FullstackFixture {
  public:
   FullstackFixture(Service* service, const grpc::string& address) {
@@ -91,8 +101,11 @@ class FullstackFixture {
     b.AddListeningPort(address, InsecureServerCredentials());
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
+    ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
-    channel_ = CreateChannel(address, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(&args);
+    channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
   }
 
   virtual ~FullstackFixture() {
@@ -117,6 +130,8 @@ class TCP : public FullstackFixture {
  public:
   TCP(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
+  void Finish(benchmark::State& state) {}
+
  private:
   static grpc::string MakeAddress() {
     int port = grpc_pick_unused_port_or_die();
@@ -129,6 +144,8 @@ class TCP : public FullstackFixture {
 class UDS : public FullstackFixture {
  public:
   UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
+
+  void Finish(benchmark::State& state) {}
 
  private:
   static grpc::string MakeAddress() {
@@ -146,6 +163,7 @@ class EndpointPairFixture {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
+    ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -174,6 +192,7 @@ class EndpointPairFixture {
     {
       ChannelArguments args;
       args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
@@ -213,6 +232,8 @@ class SockPair : public EndpointPairFixture {
       : EndpointPairFixture(service, grpc_iomgr_create_endpoint_pair(
                                          "test", initialize_stuff.rq(), 8192)) {
   }
+
+  void Finish(benchmark::State& state) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
@@ -220,10 +241,20 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service)
       : EndpointPairFixture(service, MakeEndpoints()) {}
 
+  void Finish(benchmark::State& state) {
+    std::ostringstream out;
+    out << "writes/iteration:"
+        << ((double)stats_.num_writes / (double)state.iterations());
+    state.SetLabel(out.str());
+  }
+
  private:
+  grpc_passthru_endpoint_stats stats_;
+
   grpc_endpoint_pair MakeEndpoints() {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq());
+    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
+                                  &stats_);
     return p;
   }
 };
@@ -343,6 +374,12 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
+  if (state.range(0) > 0) {
+    send_request.set_message(std::string(state.range(0), 'a'));
+  }
+  if (state.range(1) > 0) {
+    send_response.set_message(std::string(state.range(1), 'a'));
+  }
   Status recv_status;
   struct ServerEnv {
     ServerContext ctx;
@@ -365,6 +402,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
+    recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
@@ -393,58 +431,427 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
+  fixture->Finish(state);
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
+  state.SetBytesProcessed(state.range(0) * state.iterations() +
+                          state.range(1) * state.iterations());
+}
+
+// Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
+// messages in each call) in a loop on a single channel
+//
+//  First parmeter (i.e state.range(0)):  Message size (in bytes) to use
+//  Second parameter (i.e state.range(1)): Number of ping pong messages.
+//      Note: One ping-pong means two messages (one from client to server and
+//      the other from server to client):
+template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+static void BM_StreamingPingPong(benchmark::State& state) {
+  const int msg_size = state.range(0);
+  const int max_ping_pongs = state.range(1);
+
+  EchoTestService::AsyncService service;
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  {
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    EchoRequest send_request;
+    EchoRequest recv_request;
+
+    if (msg_size > 0) {
+      send_request.set_message(std::string(msg_size, 'a'));
+      send_response.set_message(std::string(msg_size, 'b'));
+    }
+
+    std::unique_ptr<EchoTestService::Stub> stub(
+        EchoTestService::NewStub(fixture->channel()));
+
+    while (state.KeepRunning()) {
+      ServerContext svr_ctx;
+      ServerContextMutator svr_ctx_mut(&svr_ctx);
+      ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+      service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
+                                fixture->cq(), tag(0));
+
+      ClientContext cli_ctx;
+      ClientContextMutator cli_ctx_mut(&cli_ctx);
+      auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+
+      // Establish async stream between client side and server side
+      void* t;
+      bool ok;
+      int need_tags = (1 << 0) | (1 << 1);
+      while (need_tags) {
+        GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+        GPR_ASSERT(ok);
+        int i = (int)(intptr_t)t;
+        GPR_ASSERT(need_tags & (1 << i));
+        need_tags &= ~(1 << i);
+      }
+
+      // Send 'max_ping_pongs' number of ping pong messages
+      int ping_pong_cnt = 0;
+      while (ping_pong_cnt < max_ping_pongs) {
+        request_rw->Write(send_request, tag(0));   // Start client send
+        response_rw.Read(&recv_request, tag(1));   // Start server recv
+        request_rw->Read(&recv_response, tag(2));  // Start client recv
+
+        need_tags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+        while (need_tags) {
+          GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+          GPR_ASSERT(ok);
+          int i = (int)(intptr_t)t;
+
+          // If server recv is complete, start the server send operation
+          if (i == 1) {
+            response_rw.Write(send_response, tag(3));
+          }
+
+          GPR_ASSERT(need_tags & (1 << i));
+          need_tags &= ~(1 << i);
+        }
+
+        ping_pong_cnt++;
+      }
+
+      request_rw->WritesDone(tag(0));
+      response_rw.Finish(Status::OK, tag(1));
+
+      Status recv_status;
+      request_rw->Finish(&recv_status, tag(2));
+
+      need_tags = (1 << 0) | (1 << 1) | (1 << 2);
+      while (need_tags) {
+        GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+        int i = (int)(intptr_t)t;
+        GPR_ASSERT(need_tags & (1 << i));
+        need_tags &= ~(1 << i);
+      }
+
+      GPR_ASSERT(recv_status.ok());
+    }
+  }
+
+  fixture->Finish(state);
+  fixture.reset();
+  state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
+}
+
+// Repeatedly sends ping pong messages in a single streaming Bidi call in a loop
+//     First parmeter (i.e state.range(0)):  Message size (in bytes) to use
+template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+static void BM_StreamingPingPongMsgs(benchmark::State& state) {
+  const int msg_size = state.range(0);
+
+  EchoTestService::AsyncService service;
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  {
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    EchoRequest send_request;
+    EchoRequest recv_request;
+
+    if (msg_size > 0) {
+      send_request.set_message(std::string(msg_size, 'a'));
+      send_response.set_message(std::string(msg_size, 'b'));
+    }
+
+    std::unique_ptr<EchoTestService::Stub> stub(
+        EchoTestService::NewStub(fixture->channel()));
+
+    ServerContext svr_ctx;
+    ServerContextMutator svr_ctx_mut(&svr_ctx);
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
+                              fixture->cq(), tag(0));
+
+    ClientContext cli_ctx;
+    ClientContextMutator cli_ctx_mut(&cli_ctx);
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+
+    // Establish async stream between client side and server side
+    void* t;
+    bool ok;
+    int need_tags = (1 << 0) | (1 << 1);
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      GPR_ASSERT(ok);
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+
+    while (state.KeepRunning()) {
+      request_rw->Write(send_request, tag(0));   // Start client send
+      response_rw.Read(&recv_request, tag(1));   // Start server recv
+      request_rw->Read(&recv_response, tag(2));  // Start client recv
+
+      need_tags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+      while (need_tags) {
+        GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+        GPR_ASSERT(ok);
+        int i = (int)(intptr_t)t;
+
+        // If server recv is complete, start the server send operation
+        if (i == 1) {
+          response_rw.Write(send_response, tag(3));
+        }
+
+        GPR_ASSERT(need_tags & (1 << i));
+        need_tags &= ~(1 << i);
+      }
+    }
+
+    request_rw->WritesDone(tag(0));
+    response_rw.Finish(Status::OK, tag(1));
+    Status recv_status;
+    request_rw->Finish(&recv_status, tag(2));
+
+    need_tags = (1 << 0) | (1 << 1) | (1 << 2);
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+
+    GPR_ASSERT(recv_status.ok());
+  }
+
+  fixture->Finish(state);
+  fixture.reset();
+  state.SetBytesProcessed(msg_size * state.iterations() * 2);
+}
+
+template <class Fixture>
+static void BM_PumpStreamClientToServer(benchmark::State& state) {
+  EchoTestService::AsyncService service;
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  {
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    if (state.range(0) > 0) {
+      send_request.set_message(std::string(state.range(0), 'a'));
+    }
+    Status recv_status;
+    ServerContext svr_ctx;
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
+                              fixture->cq(), tag(0));
+    std::unique_ptr<EchoTestService::Stub> stub(
+        EchoTestService::NewStub(fixture->channel()));
+    ClientContext cli_ctx;
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+    int need_tags = (1 << 0) | (1 << 1);
+    void* t;
+    bool ok;
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      GPR_ASSERT(ok);
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+    response_rw.Read(&recv_request, tag(0));
+    while (state.KeepRunning()) {
+      request_rw->Write(send_request, tag(1));
+      while (true) {
+        GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+        if (t == tag(0)) {
+          response_rw.Read(&recv_request, tag(0));
+        } else if (t == tag(1)) {
+          break;
+        } else {
+          GPR_ASSERT(false);
+        }
+      }
+    }
+    request_rw->WritesDone(tag(1));
+    need_tags = (1 << 0) | (1 << 1);
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+  }
+  fixture->Finish(state);
+  fixture.reset();
+  state.SetBytesProcessed(state.range(0) * state.iterations());
+}
+
+template <class Fixture>
+static void BM_PumpStreamServerToClient(benchmark::State& state) {
+  EchoTestService::AsyncService service;
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  {
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    if (state.range(0) > 0) {
+      send_response.set_message(std::string(state.range(0), 'a'));
+    }
+    Status recv_status;
+    ServerContext svr_ctx;
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
+                              fixture->cq(), tag(0));
+    std::unique_ptr<EchoTestService::Stub> stub(
+        EchoTestService::NewStub(fixture->channel()));
+    ClientContext cli_ctx;
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+    int need_tags = (1 << 0) | (1 << 1);
+    void* t;
+    bool ok;
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      GPR_ASSERT(ok);
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+    request_rw->Read(&recv_response, tag(0));
+    while (state.KeepRunning()) {
+      response_rw.Write(send_response, tag(1));
+      while (true) {
+        GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+        if (t == tag(0)) {
+          request_rw->Read(&recv_response, tag(0));
+        } else if (t == tag(1)) {
+          break;
+        } else {
+          GPR_ASSERT(false);
+        }
+      }
+    }
+    response_rw.Finish(Status::OK, tag(1));
+    need_tags = (1 << 0) | (1 << 1);
+    while (need_tags) {
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
+      int i = (int)(intptr_t)t;
+      GPR_ASSERT(need_tags & (1 << i));
+      need_tags &= ~(1 << i);
+    }
+  }
+  fixture->Finish(state);
+  fixture.reset();
+  state.SetBytesProcessed(state.range(0) * state.iterations());
 }
 
 /*******************************************************************************
  * CONFIGURATIONS
  */
 
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator);
+static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
+  b->Args({0, 0});
+  for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
+    b->Args({i, 0});
+    b->Args({0, i});
+    b->Args({i, i});
+  }
+}
+
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
+    ->Apply(SweepSizesArgs);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator)
+    ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator);
+                   NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator);
+                   NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>);
+                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>,
-                   NoOpMutator);
+                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>);
+                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
+    ->Args({0, 0});
+
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, SockPair)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcessCHTTP2)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, TCP)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, UDS)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, SockPair)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
+    ->Range(0, 128 * 1024 * 1024);
+
+// Generate Args for StreamingPingPong benchmarks. Currently generates args for
+// only "small streams" (i.e streams with 0, 1 or 2 messages)
+static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
+  int msg_size = 0;
+
+  b->Args({0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
+
+  for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
+       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+    b->Args({msg_size, 1});
+    b->Args({msg_size, 2});
+  }
+}
+
+BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcessCHTTP2, NoOpMutator,
+                   NoOpMutator)
+    ->Apply(StreamingPingPongArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPong, TCP, NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongArgs);
+
+BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcessCHTTP2, NoOpMutator,
+                   NoOpMutator)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, TCP, NoOpMutator, NoOpMutator)
+    ->Range(0, 128 * 1024 * 1024);
 
 }  // namespace testing
 }  // namespace grpc

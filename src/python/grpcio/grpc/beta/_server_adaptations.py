@@ -256,14 +256,9 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 class _SimpleMethodHandler(
         collections.namedtuple('_MethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming', 'response_streaming', 'request_deserializer',
+            'response_serializer', 'unary_unary', 'unary_stream',
+            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
     pass
 
 
@@ -393,5 +388,4 @@ def server(service_implementations, multi_method_implementation,
     else:
         effective_thread_pool = thread_pool
     return _Server(
-        grpc.server(
-            effective_thread_pool, handlers=(generic_rpc_handler,)))
+        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)))

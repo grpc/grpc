@@ -167,11 +167,8 @@ class CancelManyCallsTest(unittest.TestCase):
 
         state = _State()
 
-        server_thread_args = (
-            state,
-            server,
-            server_completion_queue,
-            server_thread_pool,)
+        server_thread_args = (state, server, server_completion_queue,
+                              server_thread_pool,)
         server_thread = threading.Thread(target=_serve, args=server_thread_args)
         server_thread.start()
 

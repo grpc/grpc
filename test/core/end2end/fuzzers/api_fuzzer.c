@@ -442,7 +442,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server, g_resource_quota);
+    grpc_passthru_endpoint_create(&client, &server, g_resource_quota, NULL);
     *fc->ep = client;
 
     grpc_transport *transport =
@@ -564,7 +564,7 @@ typedef struct call_state {
   // array of slices to unref
   size_t num_slices_to_unref;
   size_t cap_slices_to_unref;
-  grpc_slice *slices_to_unref;
+  grpc_slice **slices_to_unref;
 
   struct call_state *next;
   struct call_state *prev;
@@ -604,11 +604,12 @@ static call_state *maybe_delete_call_state(call_state *call) {
   grpc_slice_unref(call->recv_status_details);
   grpc_call_details_destroy(&call->call_details);
 
+  for (size_t i = 0; i < call->num_slices_to_unref; i++) {
+    grpc_slice_unref(*call->slices_to_unref[i]);
+    gpr_free(call->slices_to_unref[i]);
+  }
   for (size_t i = 0; i < call->num_to_free; i++) {
     gpr_free(call->to_free[i]);
-  }
-  for (size_t i = 0; i < call->num_slices_to_unref; i++) {
-    grpc_slice_unref(call->slices_to_unref[i]);
   }
   gpr_free(call->to_free);
   gpr_free(call->slices_to_unref);
@@ -627,15 +628,17 @@ static void add_to_free(call_state *call, void *p) {
   call->to_free[call->num_to_free++] = p;
 }
 
-static grpc_slice *add_to_slice_unref(call_state *call, grpc_slice s) {
+static grpc_slice *add_slice_to_unref(call_state *call, grpc_slice s) {
   if (call->num_slices_to_unref == call->cap_slices_to_unref) {
     call->cap_slices_to_unref = GPR_MAX(8, 2 * call->cap_slices_to_unref);
     call->slices_to_unref =
         gpr_realloc(call->slices_to_unref,
                     sizeof(*call->slices_to_unref) * call->cap_slices_to_unref);
   }
-  call->slices_to_unref[call->num_slices_to_unref++] = s;
-  return &call->slices_to_unref[call->num_slices_to_unref - 1];
+  call->slices_to_unref[call->num_slices_to_unref] =
+      gpr_malloc(sizeof(grpc_slice));
+  *call->slices_to_unref[call->num_slices_to_unref++] = s;
+  return call->slices_to_unref[call->num_slices_to_unref - 1];
 }
 
 static void read_metadata(input_stream *inp, size_t *count,
@@ -648,8 +651,8 @@ static void read_metadata(input_stream *inp, size_t *count,
       (*metadata)[i].key = read_string_like_slice(inp);
       (*metadata)[i].value = read_buffer_like_slice(inp);
       (*metadata)[i].flags = read_uint32(inp);
-      add_to_slice_unref(cs, (*metadata)[i].key);
-      add_to_slice_unref(cs, (*metadata)[i].value);
+      add_slice_to_unref(cs, (*metadata)[i].key);
+      add_slice_to_unref(cs, (*metadata)[i].value);
     }
   } else {
     *metadata = gpr_malloc(1);
@@ -1008,7 +1011,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                   g_active_call);
               op->data.send_status_from_server.status = next_byte(&inp);
               op->data.send_status_from_server.status_details =
-                  add_to_slice_unref(g_active_call,
+                  add_slice_to_unref(g_active_call,
                                      read_buffer_like_slice(&inp));
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
@@ -1055,22 +1058,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (!ok && (has_ops & (1 << GRPC_OP_SEND_MESSAGE))) {
           grpc_byte_buffer_destroy(g_active_call->send_message);
           g_active_call->send_message = NULL;
-        }
-        for (i = 0; i < num_ops; i++) {
-          op = &ops[i];
-          switch (op->op) {
-            case GRPC_OP_SEND_STATUS_FROM_SERVER:
-              gpr_free((void *)op->data.send_status_from_server.status_details);
-              break;
-            case GRPC_OP_SEND_MESSAGE:
-            case GRPC_OP_SEND_INITIAL_METADATA:
-            case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-            case GRPC_OP_RECV_INITIAL_METADATA:
-            case GRPC_OP_RECV_MESSAGE:
-            case GRPC_OP_RECV_STATUS_ON_CLIENT:
-            case GRPC_OP_RECV_CLOSE_ON_SERVER:
-              break;
-          }
         }
         gpr_free(ops);
 

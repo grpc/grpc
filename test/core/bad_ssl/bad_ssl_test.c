@@ -60,7 +60,7 @@ static void run_test(const char *target, size_t nops) {
   grpc_slice details;
   grpc_status_code status;
   grpc_call_error error;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   cq_verifier *cqv = cq_verifier_create(cq);
 

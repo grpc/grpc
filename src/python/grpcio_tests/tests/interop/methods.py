@@ -165,11 +165,7 @@ def _large_unary(stub):
 
 
 def _client_streaming(stub):
-    payload_body_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    payload_body_sizes = (27182, 8, 1828, 45904,)
     payloads = (messages_pb2.Payload(body=b'\x00' * size)
                 for size in payload_body_sizes)
     requests = (messages_pb2.StreamingInputCallRequest(payload=payload)
@@ -181,19 +177,14 @@ def _client_streaming(stub):
 
 
 def _server_streaming(stub):
-    sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
+    sizes = (31415, 9, 2653, 58979,)
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
-        response_parameters=(
-            messages_pb2.ResponseParameters(size=sizes[0]),
-            messages_pb2.ResponseParameters(size=sizes[1]),
-            messages_pb2.ResponseParameters(size=sizes[2]),
-            messages_pb2.ResponseParameters(size=sizes[3]),))
+        response_parameters=(messages_pb2.ResponseParameters(size=sizes[0]),
+                             messages_pb2.ResponseParameters(size=sizes[1]),
+                             messages_pb2.ResponseParameters(size=sizes[2]),
+                             messages_pb2.ResponseParameters(size=sizes[3]),))
     response_iterator = stub.StreamingOutputCall(request)
     for index, response in enumerate(response_iterator):
         _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE,
@@ -240,16 +231,8 @@ class _Pipe(object):
 
 
 def _ping_pong(stub):
-    request_response_sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
-    request_payload_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    request_response_sizes = (31415, 9, 2653, 58979,)
+    request_payload_sizes = (27182, 8, 1828, 45904,)
 
     with _Pipe() as pipe:
         response_iterator = stub.FullDuplexCall(pipe)
@@ -277,16 +260,8 @@ def _cancel_after_begin(stub):
 
 
 def _cancel_after_first_response(stub):
-    request_response_sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
-    request_payload_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    request_response_sizes = (31415, 9, 2653, 58979,)
+    request_payload_sizes = (27182, 8, 1828, 45904,)
     with _Pipe() as pipe:
         response_iterator = stub.FullDuplexCall(pipe)
 
@@ -351,8 +326,7 @@ def _status_code_and_message(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=1,
         payload=messages_pb2.Payload(body=b'\x00'),
-        response_status=messages_pb2.EchoStatus(
-            code=code, message=details))
+        response_status=messages_pb2.EchoStatus(code=code, message=details))
     response_future = stub.UnaryCall.future(request)
     _validate_status_code_and_details(response_future, status, details)
 
@@ -363,8 +337,7 @@ def _status_code_and_message(stub):
             response_type=messages_pb2.COMPRESSABLE,
             response_parameters=(messages_pb2.ResponseParameters(size=1),),
             payload=messages_pb2.Payload(body=b'\x00'),
-            response_status=messages_pb2.EchoStatus(
-                code=code, message=details))
+            response_status=messages_pb2.EchoStatus(code=code, message=details))
         pipe.add(request)  # sends the initial request.
     # Dropping out of with block closes the pipe
     _validate_status_code_and_details(response_iterator, status, details)
@@ -428,8 +401,8 @@ def _compute_engine_creds(stub, args):
 
 
 def _oauth2_auth_token(stub, args):
-    json_key_filename = os.environ[oauth2client_client.
-                                   GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[
+        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
@@ -441,8 +414,8 @@ def _oauth2_auth_token(stub, args):
 
 
 def _jwt_token_creds(stub, args):
-    json_key_filename = os.environ[oauth2client_client.
-                                   GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[
+        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
@@ -451,8 +424,8 @@ def _jwt_token_creds(stub, args):
 
 
 def _per_rpc_creds(stub, args):
-    json_key_filename = os.environ[oauth2client_client.
-                                   GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[
+        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     credentials = oauth2client_client.GoogleCredentials.get_application_default()
     scoped_credentials = credentials.create_scoped([args.oauth_scope])

@@ -38,6 +38,9 @@
 
 #include "src/core/ext/census/gen/trace_context.pb.h"
 
+/* Span option flags. */
+#define SPAN_OPTIONS_IS_SAMPLED 0x01
+
 /* Maximum number of bytes required to encode a TraceContext (31)
 1 byte for trace_id field
 1 byte for trace_id length
