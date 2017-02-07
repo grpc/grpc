@@ -61,6 +61,7 @@ cp $EXTERNAL_GIT_ROOT/architecture=x64,language=protoc,platform=macos/artifacts/
 dotnet restore .
 
 dotnet pack --configuration Release Grpc.Core/project.json --output ../../artifacts
+dotnet pack --configuration Release Grpc.Core.Testing/project.json --output ../../artifacts
 dotnet pack --configuration Release Grpc.Auth/project.json --output ../../artifacts
 dotnet pack --configuration Release Grpc.HealthCheck/project.json --output ../../artifacts
 dotnet pack --configuration Release Grpc.Reflection/project.json --output ../../artifacts

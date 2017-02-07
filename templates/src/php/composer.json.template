@@ -7,7 +7,7 @@
     "version": "${settings.php_version.php_composer()}",
     "require": {
       "php": ">=5.5.0",
-      "google/protobuf": "v3.1.0-alpha-1"
+      "google/protobuf": "v3.1.0"
     },
     "require-dev": {
       "google/auth": "v0.9"
@@ -15,10 +15,8 @@
     "autoload": {
       "psr-4": {
         "Grpc\\": "lib/Grpc/",
-        "Grpc\\Testing\\": "tests/interop/Grpc/Testing/",
-        "GPBMetadata\\Src\\Proto\\Grpc\\Testing\\": "tests/interop/GPBMetadata/Src/Proto/Grpc/Testing/",
-        "Math\\": "tests/generated_code/Math/",
-        "GPBMetadata\\": "tests/generated_code/GPBMetadata/"
+        "": ["tests/interop/",
+             "tests/generated_code/"]
       }
     }
   }
