@@ -451,7 +451,7 @@ static void client_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory,
     const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr) {
   grpc_channel_security_connector *security_connector =
-      (grpc_channel_security_connector *)grpc_find_security_connector_in_args(
+      (grpc_channel_security_connector *)grpc_security_connector_find_in_args(
           args);
   grpc_channel_security_connector_add_handshakers(exec_ctx, security_connector,
                                                   handshake_mgr);
@@ -461,7 +461,7 @@ static void server_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *hf,
     const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr) {
   grpc_server_security_connector *security_connector =
-      (grpc_server_security_connector *)grpc_find_security_connector_in_args(
+      (grpc_server_security_connector *)grpc_security_connector_find_in_args(
           args);
   grpc_server_security_connector_add_handshakers(exec_ctx, security_connector,
                                                  handshake_mgr);
