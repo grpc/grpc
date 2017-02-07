@@ -35,6 +35,7 @@ import subprocess
 import tempfile
 import sys
 import time
+import jobset
 
 def start_port_server(port_server_port):
   # check if a compatible port server is running
@@ -69,7 +70,7 @@ def start_port_server(port_server_port):
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform_string() == 'windows':
+    if jobset.platform_string() == 'windows':
       # Working directory of port server needs to be outside of Jenkins
       # workspace to prevent file lock issues.
       tempdir = tempfile.mkdtemp()

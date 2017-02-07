@@ -74,6 +74,7 @@ def link(txt, tgt):
 
 benchmarks = []
 profile_analysis = []
+cleanup = []
 
 for bm_name in sys.argv[1:]:
   # generate latency profiles
@@ -92,10 +93,20 @@ for bm_name in sys.argv[1:]:
                         'tools/profiling/latency_profile/profile_analyzer.py',
                         '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
                         '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
-  
-  jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
-             add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
-  jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+    cleanup.append('rm', '%s.trace' % fnize(line))
+    if len(benchmarks) >= 2 * multiprocessing.cpu_count():
+      jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
+                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+      jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
+      benchmarks = []
+      profile_analysis = []
+      cleanup = []
+  if len(benchmarks):
+    jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
+               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+    jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
   # generate flamegraphs
   heading('Flamegraphs: %s' % bm_name)
