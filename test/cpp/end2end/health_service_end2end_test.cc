@@ -273,12 +273,13 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsyncOnly) {
   SetUpServer(false, true, false, nullptr);
   cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
 
-  VerifyHealthCheckService();
+  HealthCheckServiceInterface* default_service =
+      server_->GetHealthCheckService();
+  EXPECT_TRUE(default_service == nullptr);
 
-  // The default service has a size limit of the service name.
-  const grpc::string kTooLongServiceName(201, 'x');
-  SendHealthCheckRpc(kTooLongServiceName,
-                     Status(StatusCode::INVALID_ARGUMENT, ""));
+  ResetStubs();
+
+  SendHealthCheckRpc("", Status(StatusCode::UNIMPLEMENTED, ""));
 }
 
 // Provide an empty service to disable the default service.

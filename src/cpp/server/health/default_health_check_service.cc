@@ -49,14 +49,11 @@ const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
 }  // namespace
 
 DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
-    DefaultHealthCheckService* service, bool sync)
-    : service_(service), method_(nullptr), sync_(sync) {
-  MethodHandler* handler = nullptr;
-  if (sync_) {
-    handler =
-        new RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
-            std::mem_fn(&HealthCheckServiceImpl::Check), this);
-  }
+    DefaultHealthCheckService* service)
+    : service_(service), method_(nullptr) {
+  MethodHandler* handler =
+      new RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
+          std::mem_fn(&HealthCheckServiceImpl::Check), this);
   method_ = new RpcServiceMethod(kHealthCheckMethodName, RpcMethod::NORMAL_RPC,
                                  handler);
   AddMethod(method_);
@@ -160,9 +157,9 @@ DefaultHealthCheckService::GetServingStatus(
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl*
-DefaultHealthCheckService::GetHealthCheckService(bool sync) {
+DefaultHealthCheckService::GetHealthCheckService() {
   GPR_ASSERT(impl_ == nullptr);
-  impl_.reset(new HealthCheckServiceImpl(this, sync));
+  impl_.reset(new HealthCheckServiceImpl(this));
   return impl_.get();
 }
 

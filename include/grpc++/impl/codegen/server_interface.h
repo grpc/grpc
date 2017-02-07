@@ -158,8 +158,7 @@ class ServerInterface : public CallHook {
    public:
     RegisteredAsyncRequest(ServerInterface* server, ServerContext* context,
                            ServerAsyncStreamingInterface* stream,
-                           CompletionQueue* call_cq, void* tag,
-                           bool delete_on_finalize);
+                           CompletionQueue* call_cq, void* tag);
 
     // uses BaseAsyncRequest::FinalizeResult
 
@@ -175,7 +174,7 @@ class ServerInterface : public CallHook {
                           ServerAsyncStreamingInterface* stream,
                           CompletionQueue* call_cq,
                           ServerCompletionQueue* notification_cq, void* tag)
-        : RegisteredAsyncRequest(server, context, stream, call_cq, tag, true) {
+        : RegisteredAsyncRequest(server, context, stream, call_cq, tag) {
       IssueRequest(registered_method, nullptr, notification_cq);
     }
 
@@ -191,7 +190,7 @@ class ServerInterface : public CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* request)
-        : RegisteredAsyncRequest(server, context, stream, call_cq, tag, true),
+        : RegisteredAsyncRequest(server, context, stream, call_cq, tag),
           request_(request) {
       IssueRequest(registered_method, &payload_, notification_cq);
     }

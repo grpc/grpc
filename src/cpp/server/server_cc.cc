@@ -119,79 +119,6 @@ class Server::UnimplementedAsyncResponse final
   UnimplementedAsyncRequest* const request_;
 };
 
-// This is a dummy implementation of the interface so that
-// HealthCheckAsyncRequest can get Call from RegisteredAsyncRequest. It does not
-// do any reading or writing.
-class HealthCheckAsyncResponseWriter final
-    : public ServerAsyncStreamingInterface {
- public:
-  HealthCheckAsyncResponseWriter() : call_(nullptr, nullptr, nullptr) {}
-  void SendInitialMetadata(void* tag) override {
-    abort();  // should not be called.
-  }
-  void BindCall(Call* call) override { call_ = *call; }
-  Call* call() { return &call_; }
-
- private:
-  Call call_;
-};
-
-class Server::HealthCheckAsyncRequestContext {
- protected:
-  ServerContext server_context_;
-  HealthCheckAsyncResponseWriter rpc_;
-};
-
-class Server::HealthCheckAsyncRequest final
-    : public HealthCheckAsyncRequestContext,
-      public RegisteredAsyncRequest {
- public:
-  HealthCheckAsyncRequest(
-      DefaultHealthCheckService::HealthCheckServiceImpl* service,
-      Server* server, ServerCompletionQueue* cq)
-      : RegisteredAsyncRequest(server, &server_context_, &rpc_, cq, this,
-                               false),
-        service_(service),
-        server_(server),
-        cq_(cq) {
-    IssueRequest(service->server_tag(), &payload_, cq);
-  }
-
-  bool FinalizeResult(void** tag, bool* status) override;
-  Call* call() { return rpc_.call(); }
-  ByteBuffer* response() { return &response_; }
-  Status* status() { return &status_; }
-  ServerContext* server_context() { return &server_context_; }
-
- private:
-  DefaultHealthCheckService::HealthCheckServiceImpl* service_;
-  Server* const server_;
-  ServerCompletionQueue* const cq_;
-  grpc_byte_buffer* payload_;
-  ByteBuffer request_;
-  ByteBuffer response_;
-  Status status_;
-};
-
-typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                        CallOpServerSendStatus>
-    HealthCheckAsyncResponseOp;
-class Server::HealthCheckAsyncResponse final
-    : public HealthCheckAsyncResponseOp {
- public:
-  HealthCheckAsyncResponse(HealthCheckAsyncRequest* request);
-  ~HealthCheckAsyncResponse() { delete request_; }
-
-  bool FinalizeResult(void** tag, bool* status) override {
-    HealthCheckAsyncResponseOp::FinalizeResult(tag, status);
-    delete this;
-    return false;
-  }
-
- private:
-  HealthCheckAsyncRequest* const request_;
-};
-
 class ShutdownTag : public CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) { return false; }
@@ -572,14 +499,16 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
-  DefaultHealthCheckService::HealthCheckServiceImpl* health_service = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    auto* default_hc_service = new DefaultHealthCheckService;
-    health_check_service_.reset(default_hc_service);
-    health_service =
-        default_hc_service->GetHealthCheckService(!sync_server_cqs_->empty());
-    RegisterService(nullptr, health_service);
+    if (sync_server_cqs_->empty()) {
+      gpr_log(GPR_ERROR,
+              "Default health check service disabled at async-only server.");
+    } else {
+      auto* default_hc_service = new DefaultHealthCheckService;
+      health_check_service_.reset(default_hc_service);
+      RegisterService(nullptr, default_hc_service->GetHealthCheckService());
+    }
   }
 
   grpc_server_start(server_);
@@ -592,14 +521,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     for (size_t i = 0; i < num_cqs; i++) {
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
-      }
-    }
-  }
-
-  if (health_service && !health_service->sync()) {
-    for (size_t i = 0; i < num_cqs; i++) {
-      if (cqs[i]->IsFrequentlyPolled()) {
-        new HealthCheckAsyncRequest(health_service, this, cqs[i]);
       }
     }
   }
@@ -715,10 +636,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
-    bool delete_on_finalize)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag,
-                       delete_on_finalize) {}
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+    : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
 
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
@@ -774,45 +693,6 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
   Status status(StatusCode::UNIMPLEMENTED, "");
   UnknownMethodHandler::FillOps(request_->context(), this);
   request_->stream()->call_.PerformOps(this);
-}
-
-bool Server::HealthCheckAsyncRequest::FinalizeResult(void** tag, bool* status) {
-  bool serialization_status =
-      *status && payload_ &&
-      SerializationTraits<ByteBuffer>::Deserialize(payload_, &request_).ok();
-  RegisteredAsyncRequest::FinalizeResult(tag, status);
-  *status = serialization_status && *status;
-  if (*status) {
-    new HealthCheckAsyncRequest(service_, server_, cq_);
-    status_ = service_->Check(&server_context_, &request_, &response_);
-    new HealthCheckAsyncResponse(this);
-    return false;
-  } else {
-    delete this;
-    return false;
-  }
-}
-
-Server::HealthCheckAsyncResponse::HealthCheckAsyncResponse(
-    HealthCheckAsyncRequest* request)
-    : request_(request) {
-  ServerContext* context = request_->server_context();
-  if (!context->sent_initial_metadata_) {
-    SendInitialMetadata(context->initial_metadata_,
-                        context->initial_metadata_flags());
-    if (context->compression_level_set()) {
-      set_compression_level(context->compression_level());
-    }
-    context->sent_initial_metadata_ = true;
-  }
-  Status* status = request_->status();
-  if (status->ok()) {
-    ServerSendStatus(context->trailing_metadata_,
-                     SendMessage(*request_->response()));
-  } else {
-    ServerSendStatus(context->trailing_metadata_, *status);
-  }
-  request_->call()->PerformOps(this);
 }
 
 ServerInitializer* Server::initializer() { return server_initializer_.get(); }
