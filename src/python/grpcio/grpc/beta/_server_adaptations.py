@@ -256,14 +256,9 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 class _SimpleMethodHandler(
         collections.namedtuple('_MethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming', 'response_streaming', 'request_deserializer',
+            'response_serializer', 'unary_unary', 'unary_stream',
+            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
     pass
 
 

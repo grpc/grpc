@@ -104,6 +104,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   int was_cancelled = 2;
 
   config.init_client(f, client_args);
+  config.init_server(f, server_args);
 
   c = grpc_channel_create_call(
       f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
@@ -142,8 +143,6 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  config.init_server(f, server_args);
 
   error =
       grpc_server_request_call(f->server, &s, &call_details,

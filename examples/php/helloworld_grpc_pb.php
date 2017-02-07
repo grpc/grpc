@@ -1,3 +1,7 @@
+<?php
+// GENERATED CODE -- DO NOT EDIT!
+
+// Original file comments:
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -26,25 +30,35 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+namespace Helloworld {
 
-syntax = "proto2";
+  // The greeting service definition.
+  class GreeterClient extends \Grpc\BaseStub {
 
-option java_package = "ex.grpc";
+    /**
+     * @param string $hostname hostname
+     * @param array $opts channel options
+     * @param Grpc\Channel $channel (optional) re-use channel object
+     */
+    public function __construct($hostname, $opts, $channel = null) {
+      parent::__construct($hostname, $opts, $channel);
+    }
 
-package helloworld;
+    /**
+     * Sends a greeting
+     * @param \Helloworld\HelloRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function SayHello(\Helloworld\HelloRequest $argument,
+      $metadata = [], $options = []) {
+      return $this->_simpleRequest('/helloworld.Greeter/SayHello',
+      $argument,
+      ['\Helloworld\HelloReply', 'decode'],
+      $metadata, $options);
+    }
 
-// The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-}
+  }
 
-// The request message containing the user's name.
-message HelloRequest {
-  optional string name = 1;
-}
-
-// The response message containing the greetings
-message HelloReply {
-  optional string message = 1;
 }

@@ -76,8 +76,10 @@ struct grpc_udp_listener {
   grpc_udp_server *server;
   grpc_resolved_address addr;
   grpc_closure read_closure;
+  grpc_closure write_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
+  grpc_udp_server_write_cb write_cb;
   grpc_udp_server_orphan_cb orphan_cb;
 
   struct grpc_udp_listener *next;
@@ -304,9 +306,33 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_mu_unlock(&sp->server->mu);
 }
 
+static void on_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_udp_listener *sp = arg;
+
+  gpr_mu_lock(&(sp->server->mu));
+  if (error != GRPC_ERROR_NONE) {
+    if (0 == --sp->server->active_ports) {
+      gpr_mu_unlock(&sp->server->mu);
+      deactivated_all_ports(exec_ctx, sp->server);
+    } else {
+      gpr_mu_unlock(&sp->server->mu);
+    }
+    return;
+  }
+
+  /* Tell the registered callback that the socket is writeable. */
+  GPR_ASSERT(sp->write_cb);
+  sp->write_cb(exec_ctx, sp->emfd);
+
+  /* Re-arm the notification event so we get another chance to write. */
+  grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
+  gpr_mu_unlock(&sp->server->mu);
+}
+
 static int add_socket_to_server(grpc_udp_server *s, int fd,
                                 const grpc_resolved_address *addr,
                                 grpc_udp_server_read_cb read_cb,
+                                grpc_udp_server_write_cb write_cb,
                                 grpc_udp_server_orphan_cb orphan_cb) {
   grpc_udp_listener *sp;
   int port;
@@ -333,6 +359,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     sp->emfd = grpc_fd_create(fd, name);
     memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->read_cb = read_cb;
+    sp->write_cb = write_cb;
     sp->orphan_cb = orphan_cb;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
@@ -345,6 +372,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
 int grpc_udp_server_add_port(grpc_udp_server *s,
                              const grpc_resolved_address *addr,
                              grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_write_cb write_cb,
                              grpc_udp_server_orphan_cb orphan_cb) {
   grpc_udp_listener *sp;
   int allocated_port1 = -1;
@@ -391,7 +419,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
     // TODO(rjshade): Test and propagate the returned grpc_error*:
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP,
                                                   &dsmode, &fd));
-    allocated_port1 = add_socket_to_server(s, fd, addr, read_cb, orphan_cb);
+    allocated_port1 =
+        add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
@@ -413,7 +442,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
       grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
     addr = &addr4_copy;
   }
-  allocated_port2 = add_socket_to_server(s, fd, addr, read_cb, orphan_cb);
+  allocated_port2 =
+      add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);
@@ -450,6 +480,10 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     grpc_closure_init(&sp->read_closure, on_read, sp,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+
+    grpc_closure_init(&sp->write_closure, on_write, sp,
+                      grpc_schedule_on_exec_ctx);
+    grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
 
     s->active_ports++;
     sp = sp->next;

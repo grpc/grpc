@@ -94,6 +94,7 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['bytebuf_params'] = sizes
     else:
         r['simple_params'] = sizes
+    return r
 
 
 def _ping_pong_scenario(name, rpc_type,
