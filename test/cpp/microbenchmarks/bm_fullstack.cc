@@ -94,7 +94,37 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
-class FullstackFixture {
+#ifdef GPR_MU_COUNTERS
+extern "C" gpr_atm grpc_mu_locks;
+#endif
+
+class BaseFixture {
+ public:
+  void Finish(benchmark::State& s) {
+    std::ostringstream out;
+    this->AddToLabel(out, s);
+#ifdef GPR_MU_COUNTERS
+    out << " locks/iteration:"
+        << ((double)(gpr_atm_no_barrier_load(&grpc_mu_locks) -
+                     mu_locks_at_start_) /
+            (double)s.iterations());
+#endif
+    auto label = out.str();
+    if (label.length() && label[0] == ' ') {
+      label = label.substr(1);
+    }
+    s.SetLabel(label);
+  }
+
+  virtual void AddToLabel(std::ostream& out, benchmark::State& s) = 0;
+
+ private:
+#ifdef GPR_MU_COUNTERS
+  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&grpc_mu_locks);
+#endif
+};
+
+class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const grpc::string& address) {
     ServerBuilder b;
@@ -130,7 +160,7 @@ class TCP : public FullstackFixture {
  public:
   TCP(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) {}
 
  private:
   static grpc::string MakeAddress() {
@@ -145,7 +175,7 @@ class UDS : public FullstackFixture {
  public:
   UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {}
 
  private:
   static grpc::string MakeAddress() {
@@ -157,7 +187,7 @@ class UDS : public FullstackFixture {
   }
 };
 
-class EndpointPairFixture {
+class EndpointPairFixture : public BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
     ServerBuilder b;
@@ -233,7 +263,7 @@ class SockPair : public EndpointPairFixture {
                                          "test", initialize_stuff.rq(), 8192)) {
   }
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
@@ -241,11 +271,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service)
       : EndpointPairFixture(service, MakeEndpoints()) {}
 
-  void Finish(benchmark::State& state) {
-    std::ostringstream out;
-    out << "writes/iteration:"
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    out << " writes/iteration:"
         << ((double)stats_.num_writes / (double)state.iterations());
-    state.SetLabel(out.str());
   }
 
  private:
