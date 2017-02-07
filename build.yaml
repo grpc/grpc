@@ -1063,6 +1063,7 @@ libs:
   filegroups:
   - grpc++_base
   - grpc++_codegen_base
+  - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
