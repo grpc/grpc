@@ -165,11 +165,7 @@ def _large_unary(stub):
 
 
 def _client_streaming(stub):
-    payload_body_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    payload_body_sizes = (27182, 8, 1828, 45904,)
     payloads = (messages_pb2.Payload(body=b'\x00' * size)
                 for size in payload_body_sizes)
     requests = (messages_pb2.StreamingInputCallRequest(payload=payload)
@@ -181,19 +177,14 @@ def _client_streaming(stub):
 
 
 def _server_streaming(stub):
-    sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
+    sizes = (31415, 9, 2653, 58979,)
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
-        response_parameters=(
-            messages_pb2.ResponseParameters(size=sizes[0]),
-            messages_pb2.ResponseParameters(size=sizes[1]),
-            messages_pb2.ResponseParameters(size=sizes[2]),
-            messages_pb2.ResponseParameters(size=sizes[3]),))
+        response_parameters=(messages_pb2.ResponseParameters(size=sizes[0]),
+                             messages_pb2.ResponseParameters(size=sizes[1]),
+                             messages_pb2.ResponseParameters(size=sizes[2]),
+                             messages_pb2.ResponseParameters(size=sizes[3]),))
     response_iterator = stub.StreamingOutputCall(request)
     for index, response in enumerate(response_iterator):
         _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE,
@@ -240,16 +231,8 @@ class _Pipe(object):
 
 
 def _ping_pong(stub):
-    request_response_sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
-    request_payload_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    request_response_sizes = (31415, 9, 2653, 58979,)
+    request_payload_sizes = (27182, 8, 1828, 45904,)
 
     with _Pipe() as pipe:
         response_iterator = stub.FullDuplexCall(pipe)
@@ -277,16 +260,8 @@ def _cancel_after_begin(stub):
 
 
 def _cancel_after_first_response(stub):
-    request_response_sizes = (
-        31415,
-        9,
-        2653,
-        58979,)
-    request_payload_sizes = (
-        27182,
-        8,
-        1828,
-        45904,)
+    request_response_sizes = (31415, 9, 2653, 58979,)
+    request_payload_sizes = (27182, 8, 1828, 45904,)
     with _Pipe() as pipe:
         response_iterator = stub.FullDuplexCall(pipe)
 

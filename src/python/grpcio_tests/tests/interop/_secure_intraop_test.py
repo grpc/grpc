@@ -55,9 +55,9 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         self.stub = test_pb2.TestServiceStub(
             grpc.secure_channel('localhost:{}'.format(port),
                                 grpc.ssl_channel_credentials(
-                                    resources.test_root_certificates()), ((
-                                        'grpc.ssl_target_name_override',
-                                        _SERVER_HOST_OVERRIDE,),)))
+                                    resources.test_root_certificates()), (
+                                        ('grpc.ssl_target_name_override',
+                                         _SERVER_HOST_OVERRIDE,),)))
 
 
 if __name__ == '__main__':
