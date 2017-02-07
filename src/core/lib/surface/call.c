@@ -897,7 +897,7 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(msg);
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    } else {
+    } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
 
