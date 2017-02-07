@@ -2504,6 +2504,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: pollset_set_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/pollset_set_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
 - name: resolve_address_posix_test
   build: test
   language: c
