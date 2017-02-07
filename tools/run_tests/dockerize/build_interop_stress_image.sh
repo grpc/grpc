@@ -98,7 +98,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   $BASE_IMAGE \
   bash -l /var/local/jenkins/grpc/tools/dockerfile/stress_test/$BASE_NAME/build_interop_stress.sh \
   && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
-  && ( if [ -n "$INTEROP_IMAGE_REPOSITORY_TAG" ]; then docker tag -f $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG ; fi ) \
+  && ( if [ -n "$INTEROP_IMAGE_REPOSITORY_TAG" ]; then docker tag $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG ; fi ) \
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
 
