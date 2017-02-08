@@ -7,18 +7,19 @@ A C# implementation of gRPC.
 SUPPORTED PLATFORMS
 ------------------
 
+- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X 
 - .NET Framework 4.5+ (Windows)
-- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X (starting from version 1.0.1)
 - Mono 4+ on Linux, Windows and Mac OS X
 
 
 PREREQUISITES
 --------------
 
+When using gRPC C# under .NET Core you only need to [install .NET Core](https://www.microsoft.com/net/core).
+
 - Windows: .NET Framework 4.5+, Visual Studio 2013 or 2015
 - Linux: Mono 4+, MonoDevelop 5.9+ (with NuGet add-in installed)
 - Mac OS X: Xamarin Studio 5.9+
-
 
 HOW TO USE
 --------------
@@ -27,7 +28,7 @@ HOW TO USE
 
 - Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution.
 
-- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages).
+- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
 
 - To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
 
@@ -79,23 +80,10 @@ DOCUMENTATION
 - [Helloworld Example][]
 - [RouteGuide Tutorial][]
 
-CONTENTS
---------
+PERFORMANCE
+-----------
 
-- ext:
-  The extension library that wraps C API to be more digestible by C#.
-- Grpc.Auth:
-  gRPC OAuth2/JWT support.
-- Grpc.Core:
-  The main gRPC C# library.
-- Grpc.Examples:
-  API examples for math.proto
-- Grpc.Examples.MathClient:
-  An example client that sends requests to math server.
-- Grpc.Examples.MathServer:
-  An example server that implements a simple math service.
-- Grpc.IntegrationTesting:
-  Cross-language gRPC implementation testing (interop testing).
+For best gRPC C# performance, use [.NET Core](https://dotnet.github.io/) and the Server GC mode `"System.GC.Server": true` for your applications.
 
 THE NATIVE DEPENDENCY
 ---------------
