@@ -37,5 +37,5 @@
 #include <grpc++/grpc++.h>
 
 namespace grpc {
-grpc::string Version() { return "1.1.1"; }
+grpc::string Version() { return "1.1.2"; }
 }
