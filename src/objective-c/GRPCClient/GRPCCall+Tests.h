@@ -63,4 +63,19 @@
  * cache.
  */
 + (void)resetHostSettings;
+
+/**
+ * Enables logging of op batches. Memory consumption increases as more ops are logged.
+ */
++ (void)enableOpBatchLog:(BOOL)enabled;
+
+/**
+ * Add an op batch to log.
+ */
++ (void)addOpBatchToLog:(NSArray *)batch;
+
+/**
+ * Obtain the logged op batches. Invoking this method will clean the log.
+ */
++ (NSArray *)obtainAndCleanOpBatchLog;
 @end

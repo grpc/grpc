@@ -145,32 +145,7 @@
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-// TODO (mxyan): Do the same test for chttp2
-#ifdef GRPC_COMPILE_WITH_CRONET
-#ifdef GRPC_CRONET_WITH_PACKET_COALESCING
-
-static bool coalesced_message_and_eos;
-
-static void log_processor(gpr_log_func_args *args) {
-  unsigned long file_len = strlen(args->file);
-  const char suffix[] = "call.c";
-  const int suffix_len = sizeof(suffix) - 1;
-  const char nops[] = "nops=3";
-
-  if (file_len > suffix_len &&
-      0 == strcmp(suffix, &args->file[file_len - suffix_len]) &&
-      strstr(args->message, nops)) {
-        fprintf(stderr, "%s, %s\n", args->file, args->message);
-        coalesced_message_and_eos = true;
-      }
-}
-
 - (void)testPacketCoalescing {
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-  grpc_tracer_set_enabled("all", 1);
-  gpr_set_log_function(log_processor);
-  coalesced_message_and_eos = false;
-
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -179,6 +154,7 @@ static void log_processor(gpr_log_func_args *args) {
   request.responseSize = 10;
   request.payload.body = [NSMutableData dataWithLength:10];
 
+  [GRPCCall enableOpBatchLog:YES];
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
@@ -187,16 +163,21 @@ static void log_processor(gpr_log_func_args *args) {
     expectedResponse.payload.body = [NSMutableData dataWithLength:10];
     XCTAssertEqualObjects(response, expectedResponse);
 
-    XCTAssert(coalesced_message_and_eos);
-
-    [expectation fulfill];
+    NSArray *opBatches = [GRPCCall obtainAndCleanOpBatchLog];
+    for (NSObject *o in opBatches) {
+      if ([o isKindOfClass:[NSArray class]]) {
+        NSArray *batch = (NSArray *)o;
+        if ([batch count] == 3) {
+          [expectation fulfill];
+          break;
+        }
+      }
+    }
   }];
 
   [self waitForExpectationsWithTimeout:16 handler:nil];
+  [GRPCCall enableOpBatchLog:NO];
 }
-
-#endif
-#endif
 
 - (void)test4MBResponsesAreAccepted {
   XCTAssertNotNil(self.class.host);

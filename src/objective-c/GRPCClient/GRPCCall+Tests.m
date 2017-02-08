@@ -64,4 +64,41 @@
 + (void)resetHostSettings {
   [GRPCHost resetAllHostSettings];
 }
+
+static NSMutableArray *opBatchLog = nil;
+
++ (void)enableOpBatchLog:(BOOL)enabled {
+  @synchronized (opBatchLog) {
+    if (enabled) {
+      if (!opBatchLog) {
+        opBatchLog = [NSMutableArray array];
+      }
+    } else {
+      if (opBatchLog) {
+        opBatchLog = nil;
+      }
+    }
+  }
+}
+
++ (void)addOpBatchToLog:(NSArray *)batch {
+  @synchronized (opBatchLog) {
+    if (opBatchLog) {
+      [opBatchLog addObject:batch];
+    }
+  }
+}
+
++ (NSArray *)obtainAndCleanOpBatchLog {
+  @synchronized (opBatchLog) {
+    if (opBatchLog) {
+      NSArray *out = opBatchLog;
+      opBatchLog = [NSMutableArray array];
+      return out;
+    } else {
+      return nil;
+    }
+  }
+}
+
 @end
