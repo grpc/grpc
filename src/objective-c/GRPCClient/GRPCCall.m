@@ -164,8 +164,8 @@ static NSMutableDictionary *callFlags;
     _requestHeaders = [[GRPCRequestHeaders alloc] initWithCall:self];
 
     if ([requestWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
-      _unaryCall = true;
-      _unaryOpBatch = [[NSMutableArray alloc] init];
+      _unaryCall = YES;
+      _unaryOpBatch = [NSMutableArray arrayWithCapacity:6];
     }
   }
   return self;
@@ -267,14 +267,13 @@ static NSMutableDictionary *callFlags;
 
 - (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
+  GRPCOpSendMetadata *op = [[GRPCOpSendMetadata alloc] initWithMetadata:headers
+                                                                  flags:[GRPCCall callFlagsForHost:_host path:_path]
+                                                                handler:nil];
   if (!_unaryCall) {
-    [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
-                                                                                    flags:[GRPCCall callFlagsForHost:_host path:_path]
-                                                                                  handler:nil]]];
+    [_wrappedCall startBatchWithOperations:@[op]];
   } else {
-    [_unaryOpBatch addObject:[[GRPCOpSendMetadata alloc] initWithMetadata:headers
-                                                                    flags:[GRPCCall callFlagsForHost:_host path:_path]
-                                                                  handler:nil]];
+    [_unaryOpBatch addObject:op];
   }
 }
 
@@ -294,13 +293,14 @@ static NSMutableDictionary *callFlags;
       }
     }
   };
+
+  GRPCOpSendMessage *op = [[GRPCOpSendMessage alloc] initWithMessage:message
+                                                             handler:resumingHandler];
   if (!_unaryCall) {
-    [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMessage alloc] initWithMessage:message
-                                                                                handler:resumingHandler]]
+    [_wrappedCall startBatchWithOperations:@[op]
                               errorHandler:errorHandler];
   } else {
-    [_unaryOpBatch addObject:[[GRPCOpSendMessage alloc] initWithMessage:message
-                                                                handler:resumingHandler]];
+    [_unaryOpBatch addObject:op];
   }
 }
 
