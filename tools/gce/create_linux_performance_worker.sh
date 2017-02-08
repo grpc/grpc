@@ -41,8 +41,8 @@ cd $(dirname $0)
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
 
-INSTANCE_NAME="${1:-apolcyn-test-2core}"
-MACHINE_TYPE=n1-standard-2
+INSTANCE_NAME="${1:-grpc-performance-server1}"
+MACHINE_TYPE=n1-standard-8
 
 gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \
