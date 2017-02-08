@@ -38,7 +38,7 @@ cd $(dirname $0)/../..
 # Attempt to see performance of flow control over netpertf latency.
 # NOTE: focusing on single stream tests
 tools/run_tests/run_performance_tests.py \
-    -l go \
+    -l go c++ java \
     --netperf \
     --category sweep \
     -r .*unary.*ping_pong* \
