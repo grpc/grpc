@@ -37,5 +37,3 @@ export LANG=en_US.UTF-8
 cd $(dirname $0)/../..
 
 tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --use_docker --http2_interop -t -j 12 $@ || true
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_badserver_interop $@ || true
-tools/run_tests/run_interop_tests.py -l python --use_docker --http2_badserver_interop $@ || true
