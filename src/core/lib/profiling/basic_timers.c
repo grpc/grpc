@@ -43,6 +43,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "src/core/lib/support/env.h"
 
