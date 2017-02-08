@@ -79,7 +79,8 @@ namespace Grpc.IntegrationTesting
             ServerServiceDefinition service = null;
             if (config.ServerType == ServerType.AsyncServer)
             {
-                Logger.Warning("ServerConfig.PayloadConfig is not supported for C# ServerType.AsyncServer. Ignoring the value");
+                GrpcPreconditions.CheckArgument(config.PayloadConfig == null,
+                    "ServerConfig.PayloadConfig shouldn't be set for BenchmarkService based server.");    
                 service = BenchmarkService.BindService(new BenchmarkServiceImpl());
             }
             else if (config.ServerType == ServerType.AsyncGenericServer)
