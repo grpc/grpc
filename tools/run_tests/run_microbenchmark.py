@@ -94,7 +94,7 @@ for bm_name in sys.argv[1:]:
                         '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
                         '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
     cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
-    if len(benchmarks) >= multiprocessing.cpu_count():
+    if len(benchmarks) >= min(4, multiprocessing.cpu_count()):
       jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
                  add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
