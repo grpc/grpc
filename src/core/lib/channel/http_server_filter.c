@@ -198,10 +198,10 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                                  GRPC_ERROR_STR_KEY, ":path"));
   }
 
-  if (b->idx.named.host != NULL) {
+  if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
     add_error(
         error_name, &error,
-        grpc_metadata_batch_substitute(
+        grpc_metadata_batch_add_head(
             exec_ctx, b, b->idx.named.host,
             grpc_mdelem_from_slices(
                 exec_ctx, GRPC_MDSTR_AUTHORITY,
