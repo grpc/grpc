@@ -5214,7 +5214,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
-      "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
@@ -7531,6 +7531,7 @@
     ], 
     "headers": [
       "src/core/ext/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
@@ -7540,6 +7541,37 @@
     "src": [
       "src/core/ext/lb_policy/grpclb/grpclb.c", 
       "src/core/ext/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel.c", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_policy_grpclb_secure", 
+    "src": [
+      "src/core/ext/lb_policy/grpclb/grpclb.c", 
+      "src/core/ext/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
@@ -7655,6 +7687,7 @@
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/transport/auth_filters.h", 
+      "src/core/lib/security/transport/lb_targets_info.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_connector.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
@@ -7696,6 +7729,8 @@
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.c", 
+      "src/core/lib/security/transport/lb_targets_info.c", 
+      "src/core/lib/security/transport/lb_targets_info.h", 
       "src/core/lib/security/transport/secure_endpoint.c", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_connector.c", 

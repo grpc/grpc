@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,26 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H
+#define GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/ext/client_channel/lb_policy_factory.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 
-/* -- Fake transport security credentials. -- */
-
-/* Used to verify the target names given to the fake transport security
- * connector.
+/** Create the channel used for communicating with an LB service.
+ * Note that an LB *service* may be comprised of several LB *servers*.
  *
- * Its syntax by example:
- * For LB channels:
- *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
- * For regular channels:
- *     "backend_taget_1,backend_target_2,..."
- *
- * That is to say, LB channels have a heading list of LB targets separated from
- * the list of backend targets by a semicolon. For non-LB channels, only the
- * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
+ * \a lb_service_target_addresses is the target URI containing the addresses
+ * from resolving the LB service's name (eg, ipv4:10.0.0.1:1234,10.2.3.4:9876).
+ * \a client_channel_factory will be used for the creation of the LB channel,
+ * alongside the channel args passed in \a args. */
+grpc_channel *grpc_lb_policy_grpclb_create_lb_channel(
+    grpc_exec_ctx *exec_ctx, const char *lb_service_target_addresses,
+    grpc_client_channel_factory *client_channel_factory,
+    grpc_channel_args *args);
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+grpc_channel_args *get_lb_channel_args(grpc_exec_ctx *exec_ctx,
+                                       grpc_slice_hash_table *targets_info,
+                                       const grpc_channel_args *args);
 
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
-/* --  Metadata-only Test credentials. -- */
-
-typedef struct {
-  grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
-} grpc_md_only_test_credentials;
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
+#endif /* GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H */

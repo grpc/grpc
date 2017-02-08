@@ -154,12 +154,34 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
       grpc_uri_get_query_arg(args->uri, "lb_enabled");
   const bool lb_enabled =
       lb_enabled_qpart != NULL && strcmp("0", lb_enabled_qpart) != 0;
+
+  // Get the balancer's names.
+  const char* balancer_names =
+      grpc_uri_get_query_arg(args->uri, "balancer_names");
+  grpc_slice_buffer balancer_names_parts;
+  grpc_slice_buffer_init(&balancer_names_parts);
+  if (balancer_names != NULL) {
+    const grpc_slice balancer_names_slice =
+        grpc_slice_from_copied_string(balancer_names);
+    grpc_slice_split(balancer_names_slice, ",", &balancer_names_parts);
+    grpc_slice_unref(balancer_names_slice);
+  }
+
   // Construct addresses.
   grpc_slice path_slice =
       grpc_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
+  if (balancer_names_parts.count > 0 &&
+      path_parts.count != balancer_names_parts.count) {
+    gpr_log(GPR_ERROR,
+            "Balancer names present but mismatched with number of addresses: "
+            "%lu balancer names != %lu addresses",
+            (unsigned long)balancer_names_parts.count,
+            (unsigned long)path_parts.count);
+    return NULL;
+  }
   grpc_lb_addresses* addresses =
       grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
@@ -171,10 +193,15 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
       errors_found = true;
     }
     gpr_free(part_str);
-    addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
+    addresses->addresses[i].is_balancer = lb_enabled;
+    addresses->addresses[i].balancer_name =
+        balancer_names_parts.count > 0
+            ? grpc_dump_slice(balancer_names_parts.slices[i], GPR_DUMP_ASCII)
+            : NULL;
   }
   grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &balancer_names_parts);
   grpc_slice_unref(path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(exec_ctx, addresses);
