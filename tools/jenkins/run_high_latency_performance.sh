@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,41 +27,24 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# Creates a performance worker on GCE.
-# IMPORTANT: After creating the worker, one needs to manually add the pubkey
-# of jenkins@the-machine-where-jenkins-starts-perf-tests
-# to ~/.ssh/authorized_keys so that multi-machine scenarios can work.
-# See tools/run_tests/run_performance_tests.py for details.
-
+#
+# This script is invoked by Jenkins and runs full performance test suite.
 set -ex
 
-cd $(dirname $0)
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-CLOUD_PROJECT=grpc-testing
-ZONE=us-central1-b  # this zone allows 32core machines
+# Run performance tests on machines that are far away from each other.
+# Attempt to see performance of flow control over netpertf latency.
+# NOTE: focusing on single stream tests
+tools/run_tests/run_performance_tests.py \
+    -l go \
+    --netperf \
+    --category sweep \
+    -r .*unary.*ping_pong* \
+    --bq_result_table apolcyn_test.performance_high_latency \
+    --remote_worker_host grpc-performance-2core grpc-performance-asia-east-2core \
+    --xml_report report_high_latency_2core.xml \
+    || EXIT_CODE=1
 
-INSTANCE_NAME="${1:-apolcyn-test-2core}"
-MACHINE_TYPE=n1-standard-2
-
-gcloud compute instances create $INSTANCE_NAME \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    --machine-type $MACHINE_TYPE \
-    --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1604-lts \
-    --boot-disk-size 300 \
-    --scopes https://www.googleapis.com/auth/bigquery
-
-echo 'Created GCE instance, waiting 60 seconds for it to come online.'
-sleep 60
-
-gcloud compute copy-files \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    jenkins_master.pub linux_performance_worker_init.sh jenkins@${INSTANCE_NAME}:~
-
-gcloud compute ssh \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    jenkins@${INSTANCE_NAME} --command "./linux_performance_worker_init.sh"
+exit $EXIT_CODE
