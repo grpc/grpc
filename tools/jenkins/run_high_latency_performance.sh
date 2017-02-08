@@ -35,8 +35,7 @@ set -ex
 cd $(dirname $0)/../..
 
 # Run performance tests on machines that are far away from each other.
-# Attempt to see performance of flow control over netpertf latency.
-# NOTE: focusing on single stream tests
+# Attempt to see performance of flow control over high netperf latency.
 tools/run_tests/run_performance_tests.py \
     -l go c++ java \
     --netperf \
