@@ -55,7 +55,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -69,7 +69,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
-  grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -78,16 +78,18 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
-static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                        grpc_error *why) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_exec_ctx_sched(exec_ctx, m->on_read,
-                        GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
+    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE_REFERENCING(
+                                                 "Endpoint Shutdown", &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->mu);
   grpc_resource_user_shutdown(exec_ctx, m->resource_user);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
@@ -144,7 +146,7 @@ void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->on_read != NULL) {
     grpc_slice_buffer_add(m->on_read_out, slice);
-    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);

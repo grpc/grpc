@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """A setup module for the gRPC Python package."""
 
 import os
@@ -53,21 +52,15 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0',
-    'enum34>=1.0.4',
-    'futures>=2.2.0',
+    'coverage>=4.0', 'enum34>=1.0.4', 'futures>=2.2.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7',
-    'protobuf>=3.0.0',
-    'six>=1.10',
-)
+    'oauth2client>=1.4.7', 'protobuf>=3.0.0', 'six>=1.10',)
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
-
     'build_package_protos': grpc_tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
     'run_interop': commands.RunInterop,
@@ -94,9 +87,7 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests': [
-        'tests.json'
-    ],
+    'tests': ['tests.json'],
 }
 
 TEST_SUITE = 'tests'
@@ -107,16 +98,15 @@ TESTS_REQUIRE = INSTALL_REQUIRES
 PACKAGES = setuptools.find_packages('.')
 
 setuptools.setup(
-  name='grpcio-tests',
-  version=grpc_version.VERSION,
-  license=LICENSE,
-  packages=list(PACKAGES),
-  package_dir=PACKAGE_DIRECTORIES,
-  package_data=PACKAGE_DATA,
-  install_requires=INSTALL_REQUIRES,
-  cmdclass=COMMAND_CLASS,
-  tests_require=TESTS_REQUIRE,
-  test_suite=TEST_SUITE,
-  test_loader=TEST_LOADER,
-  test_runner=TEST_RUNNER,
-)
+    name='grpcio-tests',
+    version=grpc_version.VERSION,
+    license=LICENSE,
+    packages=list(PACKAGES),
+    package_dir=PACKAGE_DIRECTORIES,
+    package_data=PACKAGE_DATA,
+    install_requires=INSTALL_REQUIRES,
+    cmdclass=COMMAND_CLASS,
+    tests_require=TESTS_REQUIRE,
+    test_suite=TEST_SUITE,
+    test_loader=TEST_LOADER,
+    test_runner=TEST_RUNNER,)

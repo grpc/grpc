@@ -90,6 +90,7 @@ LICENSE_PREFIX = {
   'Makefile':   r'#\s*',
   'Dockerfile': r'#\s*',
   'LICENSE':    '',
+  'BUILD':      r'#\s*',
 }
 
 _EXEMPT = frozenset((

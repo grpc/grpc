@@ -31,7 +31,6 @@
  *
  */
 
-#include <grpc/grpc_posix.h>
 #include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
@@ -144,6 +143,7 @@ struct grpc_fd {
   /* Indicates that the fd is shutdown and that any pending read/write closures
      should fail */
   bool shutdown;
+  grpc_error *shutdown_error; /* reason for shutdown: set iff shutdown==true */
 
   /* The fd is either closed or we relinquished control of it. In either cases,
      this indicates that the 'fd' on this structure is no longer valid */
@@ -202,6 +202,8 @@ static void fd_global_shutdown(void);
 
 /* This is also used as grpc_workqueue (by directly casing it) */
 typedef struct polling_island {
+  grpc_closure_scheduler workqueue_scheduler;
+
   gpr_mu mu;
   /* Ref count. Use PI_ADD_REF() and PI_UNREF() macros to increment/decrement
      the refcount.
@@ -305,6 +307,8 @@ static __thread polling_island *g_current_thread_polling_island;
 
 /* Forward declaration */
 static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi);
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                              grpc_error *error);
 
 #ifdef GRPC_TSAN
 /* Currently TSAN may incorrectly flag data races between epoll_ctl and
@@ -316,6 +320,9 @@ static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi);
    this atomic */
 gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
+
+static const grpc_closure_scheduler_vtable workqueue_scheduler_vtable = {
+    workqueue_enqueue, workqueue_enqueue, "workqueue"};
 
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
@@ -529,6 +536,7 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
   *error = GRPC_ERROR_NONE;
 
   pi = gpr_malloc(sizeof(*pi));
+  pi->workqueue_scheduler.vtable = &workqueue_scheduler_vtable;
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -789,7 +797,7 @@ static polling_island *polling_island_merge(polling_island *p,
     gpr_atm_rel_store(&p->merged_to, (gpr_atm)q);
     PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
 
-    workqueue_move_items_to_parent(q);
+    workqueue_move_items_to_parent(p);
   }
   /* else if p == q, nothing needs to be done */
 
@@ -800,10 +808,10 @@ static polling_island *polling_island_merge(polling_island *p,
   return q;
 }
 
-static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
-                              grpc_workqueue *workqueue, grpc_closure *closure,
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                               grpc_error *error) {
   GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  grpc_workqueue *workqueue = (grpc_workqueue *)closure->scheduler;
   /* take a ref to the workqueue: otherwise it can happen that whatever events
    * this kicks off ends up destroying the workqueue before this function
    * completes */
@@ -818,6 +826,12 @@ static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
   workqueue_move_items_to_parent(pi);
   GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
   GPR_TIMER_END("workqueue.enqueue", 0);
+}
+
+static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
+  polling_island *pi = (polling_island *)workqueue;
+  return workqueue == NULL ? grpc_schedule_on_exec_ctx
+                           : &pi->workqueue_scheduler;
 }
 
 static grpc_error *polling_island_global_init() {
@@ -894,6 +908,7 @@ static void unref_by(grpc_fd *fd, int n) {
     fd->freelist_next = fd_freelist;
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
+    if (fd->shutdown) GRPC_ERROR_UNREF(fd->shutdown_error);
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -1030,8 +1045,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     fd->po.pi = NULL;
   }
 
-  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error),
-                      NULL);
+  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
   gpr_mu_unlock(&fd->po.mu);
   UNREF_BY(fd, 2, reason); /* Drop the reference */
@@ -1046,27 +1060,25 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
-static grpc_error *fd_shutdown_error(bool shutdown) {
-  if (!shutdown) {
+static grpc_error *fd_shutdown_error(grpc_fd *fd) {
+  if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE("FD shutdown");
+    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
   }
 }
 
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (fd->shutdown) {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_exec_ctx_sched(exec_ctx, closure, fd_shutdown_error(fd->shutdown),
-                        NULL);
+    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd));
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
     gpr_log(GPR_ERROR,
@@ -1088,7 +1100,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_exec_ctx_sched(exec_ctx, *st, fd_shutdown_error(fd->shutdown), NULL);
+    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -1113,17 +1125,20 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 }
 
 /* Might be called multiple times */
-static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
   gpr_mu_lock(&fd->po.mu);
   /* Do the actual shutdown only once */
   if (!fd->shutdown) {
     fd->shutdown = true;
+    fd->shutdown_error = why;
 
     shutdown(fd->fd, SHUT_RDWR);
     /* Flush any pending read and write closures. Since fd->shutdown is 'true'
        at this point, the closures would be called with 'success = false' */
     set_ready_locked(exec_ctx, fd, &fd->read_closure);
     set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  } else {
+    GRPC_ERROR_UNREF(why);
   }
   gpr_mu_unlock(&fd->po.mu);
 }
@@ -1359,7 +1374,7 @@ static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
 
   /* Release the ref and set pollset->po.pi to NULL */
   pollset_release_polling_island(exec_ctx, pollset, "ps_shutdown");
-  grpc_exec_ctx_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE, NULL);
+  grpc_closure_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
 }
 
 /* pollset->po.mu lock must be held by the caller before calling this */
@@ -1410,7 +1425,9 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
         workqueue_maybe_wakeup(pi);
       }
       grpc_closure *c = (grpc_closure *)n;
-      grpc_closure_run(exec_ctx, c, c->error_data.error);
+      grpc_error *error = c->error_data.error;
+      c->cb(exec_ctx, c->cb_arg, error);
+      GRPC_ERROR_UNREF(error);
       return true;
     } else if (gpr_atm_no_barrier_load(&pi->workqueue_item_count) > 0) {
       /* n == NULL might mean there's work but it's not available to be popped
@@ -1515,7 +1532,8 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
+        append_error(error,
+                     grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
         maybe_do_workqueue_work(exec_ctx, pi);
       } else if (data_ptr == &polling_island_wakeup_fd) {
@@ -1959,7 +1977,7 @@ static const grpc_event_engine_vtable vtable = {
 
     .workqueue_ref = workqueue_ref,
     .workqueue_unref = workqueue_unref,
-    .workqueue_enqueue = workqueue_enqueue,
+    .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
 };

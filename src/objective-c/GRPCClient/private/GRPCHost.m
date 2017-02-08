@@ -45,12 +45,9 @@
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
 #import "NSDictionary+GRPC.h"
+#import "version.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-// TODO(jcanizales): Generate the version in a standalone header, from templates. Like
-// templates/src/core/surface/version.c.template .
-#define GRPC_OBJC_VERSION_STRING @"1.0.2"
 
 static NSMutableDictionary *kHostCache;
 

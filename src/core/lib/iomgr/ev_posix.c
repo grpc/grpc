@@ -52,6 +52,8 @@
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
 
+grpc_wakeup_fd grpc_global_wakeup_fd;
+
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
@@ -160,8 +162,8 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
   g_event_engine->fd_orphan(exec_ctx, fd, on_done, release_fd, reason);
 }
 
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  g_event_engine->fd_shutdown(exec_ctx, fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+  g_event_engine->fd_shutdown(exec_ctx, fd, why);
 }
 
 bool grpc_fd_is_shutdown(grpc_fd *fd) {
@@ -275,9 +277,8 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 }
 #endif
 
-void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            grpc_closure *closure, grpc_error *error) {
-  g_event_engine->workqueue_enqueue(exec_ctx, workqueue, closure, error);
+grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
+  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

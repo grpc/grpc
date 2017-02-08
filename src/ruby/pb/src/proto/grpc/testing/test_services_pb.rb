@@ -54,6 +54,10 @@ module Grpc
         rpc :EmptyCall, Empty, Empty
         # One request followed by one response.
         rpc :UnaryCall, SimpleRequest, SimpleResponse
+        # One request followed by one response. Response has cache control
+        # headers set such that a caching HTTP proxy (such as GFE) can
+        # satisfy subsequent requests.
+        rpc :CacheableUnaryCall, SimpleRequest, SimpleResponse
         # One request followed by a sequence of responses (streamed download).
         # The server returns the payload with client desired type and sizes.
         rpc :StreamingOutputCall, StreamingOutputCallRequest, stream(StreamingOutputCallResponse)
@@ -69,6 +73,9 @@ module Grpc
         # stream of responses are returned to the client when the server starts with
         # first request.
         rpc :HalfDuplexCall, stream(StreamingOutputCallRequest), stream(StreamingOutputCallResponse)
+        # The test server will not implement this method. It will be used
+        # to test the behavior when clients call unimplemented methods.
+        rpc :UnimplementedCall, Empty, Empty
       end
 
       Stub = Service.rpc_stub_class

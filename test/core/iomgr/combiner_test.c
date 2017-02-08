@@ -59,9 +59,10 @@ static void test_execute_one(void) {
   grpc_combiner *lock = grpc_combiner_create(NULL);
   bool done = false;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner_execute(&exec_ctx, lock,
-                        grpc_closure_create(set_bool_to_true, &done),
-                        GRPC_ERROR_NONE, false);
+  grpc_closure_sched(&exec_ctx,
+                     grpc_closure_create(set_bool_to_true, &done,
+                                         grpc_combiner_scheduler(lock, false)),
+                     GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(done);
   grpc_combiner_destroy(&exec_ctx, lock);
@@ -94,14 +95,15 @@ static void execute_many_loop(void *a) {
       ex_args *c = gpr_malloc(sizeof(*c));
       c->ctr = &args->ctr;
       c->value = n++;
-      grpc_combiner_execute(&exec_ctx, args->lock,
-                            grpc_closure_create(check_one, c), GRPC_ERROR_NONE,
-                            false);
+      grpc_closure_sched(
+          &exec_ctx, grpc_closure_create(check_one, c, grpc_combiner_scheduler(
+                                                           args->lock, false)),
+          GRPC_ERROR_NONE);
       grpc_exec_ctx_flush(&exec_ctx);
     }
     // sleep for a little bit, to test a combiner draining and another thread
     // picking it up
-    gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -134,9 +136,10 @@ static void in_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void add_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_combiner_execute_finally(exec_ctx, arg,
-                                grpc_closure_create(in_finally, NULL),
-                                GRPC_ERROR_NONE, false);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(
+                                   in_finally, NULL,
+                                   grpc_combiner_finally_scheduler(arg, false)),
+                     GRPC_ERROR_NONE);
 }
 
 static void test_execute_finally(void) {
@@ -144,8 +147,10 @@ static void test_execute_finally(void) {
 
   grpc_combiner *lock = grpc_combiner_create(NULL);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner_execute(&exec_ctx, lock, grpc_closure_create(add_finally, lock),
-                        GRPC_ERROR_NONE, false);
+  grpc_closure_sched(&exec_ctx,
+                     grpc_closure_create(add_finally, lock,
+                                         grpc_combiner_scheduler(lock, false)),
+                     GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(got_in_finally);
   grpc_combiner_destroy(&exec_ctx, lock);

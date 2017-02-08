@@ -60,6 +60,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\metadata_map.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -82,6 +85,9 @@
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\slice.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h">
@@ -114,6 +120,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -133,6 +142,9 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h">

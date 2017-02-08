@@ -67,9 +67,7 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             channel_data *chand) {
   grpc_linked_mdelem *m;
   for (m = md->list.head; m != NULL; m = m->next) {
-    if (m->md->key == GRPC_MDSTR_PATH) {
-      gpr_log(GPR_DEBUG, "%s",
-              (const char *)GRPC_SLICE_START_PTR(m->md->value->slice));
+    if (grpc_slice_eq(GRPC_MDKEY(m->md), GRPC_MDSTR_PATH)) {
       /* Add method tag here */
     }
   }
@@ -154,7 +152,8 @@ static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(d, 0, sizeof(*d));
   d->start_ts = args->start_time;
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem);
+  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 

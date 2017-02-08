@@ -104,7 +104,8 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
   bool grpc_exp_seen = false;
   bool h2_seen = false;
   const char *inp = (const char *)in;
-  for (int i = 0; i < (int)in_len; ++i) {
+  const char *in_end = inp + in_len;
+  while (inp < in_end) {
     const size_t length = (size_t)*inp++;
     if (length == strlen("grpc-exp") && strncmp(inp, "grpc-exp", length) == 0) {
       grpc_exp_seen = true;
@@ -117,6 +118,7 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
     inp += length;
   }
 
+  GPR_ASSERT(inp == in_end);
   GPR_ASSERT(grpc_exp_seen);
   GPR_ASSERT(h2_seen);
 
@@ -272,8 +274,8 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(
-        channel, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), cq, NULL);
-    gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+        channel, state, grpc_timeout_seconds_to_deadline(3), cq, NULL);
+    gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     state =

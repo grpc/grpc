@@ -41,6 +41,8 @@
 
 #include <grpc/support/log.h>
 
+#include "test/core/util/debugger_macros.h"
+
 static bool g_pre_init_called = false;
 
 extern void authority_not_supported(grpc_end2end_test_config config);
@@ -135,10 +137,15 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
+extern void write_buffering(grpc_end2end_test_config config);
+extern void write_buffering_pre_init(void);
+extern void write_buffering_at_end(grpc_end2end_test_config config);
+extern void write_buffering_at_end_pre_init(void);
 
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
+  grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
   binary_metadata_pre_init();
@@ -185,6 +192,8 @@ void grpc_end2end_tests_pre_init(void) {
   simple_request_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
+  write_buffering_pre_init();
+  write_buffering_at_end_pre_init();
 }
 
 void grpc_end2end_tests(int argc, char **argv,
@@ -240,6 +249,8 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_request(config);
     streaming_error_response(config);
     trailing_metadata(config);
+    write_buffering(config);
+    write_buffering_at_end(config);
     return;
   }
 
@@ -426,6 +437,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
+      continue;
+    }
+    if (0 == strcmp("write_buffering", argv[i])) {
+      write_buffering(config);
+      continue;
+    }
+    if (0 == strcmp("write_buffering_at_end", argv[i])) {
+      write_buffering_at_end(config);
       continue;
     }
     gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);

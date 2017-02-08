@@ -32,6 +32,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Core.Profiling;
@@ -44,6 +45,7 @@ namespace Grpc.Core.Internal
     internal class CallSafeHandle : SafeHandleZeroIsInvalid, INativeCall
     {
         public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
+        static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
         static readonly NativeMethods Native = NativeMethods.Get();
 
         const uint GRPC_WRITE_BUFFER_HINT = 1;
@@ -138,7 +140,8 @@ namespace Grpc.Core.Internal
                 var ctx = BatchContextSafeHandle.Create();
                 var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
                 completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
-                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, status.Detail, metadataArray, sendEmptyInitialMetadata,
+                var statusDetailBytes = EncodingUTF8.GetBytes(status.Detail);
+                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, statusDetailBytes, new UIntPtr((ulong)statusDetailBytes.Length), metadataArray, sendEmptyInitialMetadata,
                     optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
             }
         }

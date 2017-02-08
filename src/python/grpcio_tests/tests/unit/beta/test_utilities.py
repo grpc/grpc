@@ -26,16 +26,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Test-appropriate entry points into the gRPC Python Beta API."""
 
 import grpc
 from grpc.beta import implementations
 
 
-def not_really_secure_channel(
-    host, port, channel_credentials, server_host_override):
-  """Creates an insecure Channel to a remote host.
+def not_really_secure_channel(host, port, channel_credentials,
+                              server_host_override):
+    """Creates an insecure Channel to a remote host.
 
   Args:
     host: The name of the remote host to which to connect.
@@ -48,8 +47,7 @@ def not_really_secure_channel(
     An implementations.Channel to the remote host through which RPCs may be
       conducted.
   """
-  target = '%s:%d' % (host, port)
-  channel = grpc.secure_channel(
-      target, channel_credentials,
-      (('grpc.ssl_target_name_override', server_host_override,),))
-  return implementations.Channel(channel)
+    target = '%s:%d' % (host, port)
+    channel = grpc.secure_channel(target, channel_credentials, (
+        ('grpc.ssl_target_name_override', server_host_override,),))
+    return implementations.Channel(channel)

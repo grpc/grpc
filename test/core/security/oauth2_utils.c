@@ -92,7 +92,8 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = 0;
 
-  grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
+  grpc_closure_init(&do_nothing_closure, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, creds, &request.pops, null_ctx, on_oauth2_response, &request);

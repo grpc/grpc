@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 static grpc_error *channel_init_func(grpc_exec_ctx *exec_ctx,
@@ -120,7 +121,7 @@ static void test_create_channel_stack(void) {
   int *channel_data;
   int *call_data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_mdstr *path = grpc_mdstr_from_string("/service/method");
+  grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -157,8 +158,8 @@ static void test_create_channel_stack(void) {
 
   GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
 
+  grpc_slice_unref_internal(&exec_ctx, path);
   grpc_exec_ctx_finish(&exec_ctx);
-  GRPC_MDSTR_UNREF(path);
 }
 
 int main(int argc, char **argv) {

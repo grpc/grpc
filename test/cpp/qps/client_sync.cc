@@ -153,7 +153,6 @@ class SynchronousStreamingClient final : public SynchronousClient {
       if (*stream) {
         (*stream)->WritesDone();
         Status s = (*stream)->Finish();
-        EXPECT_TRUE(s.ok());
         if (!s.ok()) {
           gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
                   s.error_message().c_str());
@@ -173,7 +172,11 @@ class SynchronousStreamingClient final : public SynchronousClient {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
       return true;
     }
-    return false;
+    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    context_[thread_idx].~ClientContext();
+    new (&context_[thread_idx]) ClientContext();
+    stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
+    return true;
   }
 
  private:

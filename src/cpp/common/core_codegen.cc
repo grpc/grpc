@@ -123,6 +123,17 @@ grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_tail(s, split);
 }
 
+grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_static_buffer(buffer, length);
+}
+
+grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
+                                         length);
+}
+
 void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
                                         grpc_slice slice) {
   ::grpc_slice_buffer_add(sb, slice);
@@ -152,8 +163,10 @@ gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
   return ::gpr_time_0(type);
 }
 
-void CoreCodegen::assert_fail(const char* failed_assertion) {
-  gpr_log(GPR_ERROR, "assertion failed: %s", failed_assertion);
+void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
+                              int line) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "assertion failed: %s",
+          failed_assertion);
   abort();
 }
 

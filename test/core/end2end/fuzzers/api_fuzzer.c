@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -90,7 +91,7 @@ static uint8_t next_byte(input_stream *inp) {
 
 static void end(input_stream *inp) { inp->cur = inp->end; }
 
-static char *read_string(input_stream *inp) {
+static char *read_string(input_stream *inp, bool *special) {
   char *str = NULL;
   size_t cap = 0;
   size_t sz = 0;
@@ -102,16 +103,54 @@ static char *read_string(input_stream *inp) {
     }
     c = (char)next_byte(inp);
     str[sz++] = c;
-  } while (c != 0);
+  } while (c != 0 && c != 1);
+  if (special != NULL) {
+    *special = (c == 1);
+  }
+  if (c == 1) {
+    str[sz - 1] = 0;
+  }
   return str;
 }
 
-static void read_buffer(input_stream *inp, char **buffer, size_t *length) {
+static void read_buffer(input_stream *inp, char **buffer, size_t *length,
+                        bool *special) {
   *length = next_byte(inp);
+  if (*length == 255) {
+    if (special != NULL) *special = true;
+    *length = next_byte(inp);
+  } else {
+    if (special != NULL) *special = false;
+  }
   *buffer = gpr_malloc(*length);
   for (size_t i = 0; i < *length; i++) {
     (*buffer)[i] = (char)next_byte(inp);
   }
+}
+
+static grpc_slice maybe_intern(grpc_slice s, bool intern) {
+  grpc_slice r = intern ? grpc_slice_intern(s) : grpc_slice_ref(s);
+  grpc_slice_unref(s);
+  return r;
+}
+
+static grpc_slice read_string_like_slice(input_stream *inp) {
+  bool special;
+  char *s = read_string(inp, &special);
+  grpc_slice r = maybe_intern(grpc_slice_from_copied_string(s), special);
+  gpr_free(s);
+  return r;
+}
+
+static grpc_slice read_buffer_like_slice(input_stream *inp) {
+  char *buffer;
+  size_t length;
+  bool special;
+  read_buffer(inp, &buffer, &length, &special);
+  grpc_slice r =
+      maybe_intern(grpc_slice_from_copied_buffer(buffer, length), special);
+  gpr_free(buffer);
+  return r;
 }
 
 static uint32_t read_uint22(input_stream *inp) {
@@ -170,12 +209,12 @@ static grpc_channel_args *read_args(input_stream *inp) {
     switch (next_byte(inp)) {
       case 1:
         args[i].type = GRPC_ARG_STRING;
-        args[i].key = read_string(inp);
-        args[i].value.string = read_string(inp);
+        args[i].key = read_string(inp, NULL);
+        args[i].value.string = read_string(inp, NULL);
         break;
       case 2:
         args[i].type = GRPC_ARG_INTEGER;
-        args[i].key = read_string(inp);
+        args[i].key = read_string(inp, NULL);
         args[i].value.integer = read_int(inp);
         break;
       case 3:
@@ -217,7 +256,7 @@ static const char *read_cred_artifact(cred_artifact_ctx *ctx, input_stream *inp,
                                       size_t num_builtins) {
   uint8_t b = next_byte(inp);
   if (b == 0) return NULL;
-  if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp);
+  if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp, NULL);
   if (b >= num_builtins + 1) {
     end(inp);
     return NULL;
@@ -349,11 +388,11 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
     *r->addrs = addrs;
-    grpc_exec_ctx_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_exec_ctx_sched(
+    grpc_closure_sched(
         exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
+        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -369,10 +408,11 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addresses;
-  grpc_timer_init(exec_ctx, &r->timer,
-                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(1, GPR_TIMESPAN)),
-                  finish_resolve, r, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(
+      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
+      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -398,11 +438,11 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server, g_resource_quota);
+    grpc_passthru_endpoint_create(&client, &server, g_resource_quota, NULL);
     *fc->ep = client;
 
     grpc_transport *transport =
@@ -410,7 +450,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
 
-    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE, NULL);
+    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -421,8 +461,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_exec_ctx_sched(exec_ctx, closure,
-                        GRPC_ERROR_CREATE("Connect deadline exceeded"), NULL);
+    grpc_closure_sched(exec_ctx, closure,
+                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
 
@@ -430,10 +470,11 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   fc->closure = closure;
   fc->ep = ep;
   fc->deadline = deadline;
-  grpc_timer_init(exec_ctx, &fc->timer,
-                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_millis(1, GPR_TIMESPAN)),
-                  do_connect, fc, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(
+      exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         gpr_time_from_millis(1, GPR_TIMESPAN)),
+      grpc_closure_create(do_connect, fc, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
@@ -506,8 +547,7 @@ typedef struct call_state {
   grpc_status_code status;
   grpc_metadata_array recv_initial_metadata;
   grpc_metadata_array recv_trailing_metadata;
-  char *recv_status_details;
-  size_t recv_status_details_capacity;
+  grpc_slice recv_status_details;
   int cancelled;
   int pending_ops;
   grpc_call_details call_details;
@@ -520,6 +560,11 @@ typedef struct call_state {
   size_t num_to_free;
   size_t cap_to_free;
   void **to_free;
+
+  // array of slices to unref
+  size_t num_slices_to_unref;
+  size_t cap_slices_to_unref;
+  grpc_slice **slices_to_unref;
 
   struct call_state *next;
   struct call_state *prev;
@@ -556,13 +601,18 @@ static call_state *maybe_delete_call_state(call_state *call) {
   call->next->prev = call->prev;
   grpc_metadata_array_destroy(&call->recv_initial_metadata);
   grpc_metadata_array_destroy(&call->recv_trailing_metadata);
-  gpr_free(call->recv_status_details);
+  grpc_slice_unref(call->recv_status_details);
   grpc_call_details_destroy(&call->call_details);
 
+  for (size_t i = 0; i < call->num_slices_to_unref; i++) {
+    grpc_slice_unref(*call->slices_to_unref[i]);
+    gpr_free(call->slices_to_unref[i]);
+  }
   for (size_t i = 0; i < call->num_to_free; i++) {
     gpr_free(call->to_free[i]);
   }
   gpr_free(call->to_free);
+  gpr_free(call->slices_to_unref);
 
   gpr_free(call);
 
@@ -578,6 +628,19 @@ static void add_to_free(call_state *call, void *p) {
   call->to_free[call->num_to_free++] = p;
 }
 
+static grpc_slice *add_slice_to_unref(call_state *call, grpc_slice s) {
+  if (call->num_slices_to_unref == call->cap_slices_to_unref) {
+    call->cap_slices_to_unref = GPR_MAX(8, 2 * call->cap_slices_to_unref);
+    call->slices_to_unref =
+        gpr_realloc(call->slices_to_unref,
+                    sizeof(*call->slices_to_unref) * call->cap_slices_to_unref);
+  }
+  call->slices_to_unref[call->num_slices_to_unref] =
+      gpr_malloc(sizeof(grpc_slice));
+  *call->slices_to_unref[call->num_slices_to_unref++] = s;
+  return call->slices_to_unref[call->num_slices_to_unref - 1];
+}
+
 static void read_metadata(input_stream *inp, size_t *count,
                           grpc_metadata **metadata, call_state *cs) {
   *count = next_byte(inp);
@@ -585,12 +648,11 @@ static void read_metadata(input_stream *inp, size_t *count,
     *metadata = gpr_malloc(*count * sizeof(**metadata));
     memset(*metadata, 0, *count * sizeof(**metadata));
     for (size_t i = 0; i < *count; i++) {
-      (*metadata)[i].key = read_string(inp);
-      read_buffer(inp, (char **)&(*metadata)[i].value,
-                  &(*metadata)[i].value_length);
+      (*metadata)[i].key = read_string_like_slice(inp);
+      (*metadata)[i].value = read_buffer_like_slice(inp);
       (*metadata)[i].flags = read_uint32(inp);
-      add_to_free(cs, (void *)(*metadata)[i].key);
-      add_to_free(cs, (void *)(*metadata)[i].value);
+      add_slice_to_unref(cs, (*metadata)[i].key);
+      add_slice_to_unref(cs, (*metadata)[i].value);
     }
   } else {
     *metadata = gpr_malloc(1);
@@ -654,7 +716,7 @@ static validator *make_finished_batch_validator(call_state *cs,
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
   grpc_resolve_address = my_resolve_address;
@@ -740,13 +802,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // create an insecure channel
       case 2: {
         if (g_channel == NULL) {
-          char *target = read_string(&inp);
+          char *target = read_string(&inp, NULL);
           char *target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args *args = read_args(&inp);
           g_channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
         } else {
@@ -770,7 +836,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           g_server = grpc_server_create(args, NULL);
           GPR_ASSERT(g_server != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           grpc_server_register_completion_queue(g_server, cq, NULL);
           grpc_server_start(g_server);
           server_shutdown = false;
@@ -861,8 +931,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           parent_call = g_active_call->call;
         }
         uint32_t propagation_mask = read_uint32(&inp);
-        char *method = read_string(&inp);
-        char *host = read_string(&inp);
+        grpc_slice method = read_string_like_slice(&inp);
+        grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                          gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
@@ -871,12 +941,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           call_state *cs = new_call(g_active_call, CLIENT);
           cs->call =
               grpc_channel_create_call(g_channel, parent_call, propagation_mask,
-                                       cq, method, host, deadline, NULL);
+                                       cq, method, &host, deadline, NULL);
         } else {
           end(&inp);
         }
-        gpr_free(method);
-        gpr_free(host);
+        grpc_slice_unref(method);
+        grpc_slice_unref(host);
         break;
       }
       // switch the 'current' call
@@ -923,8 +993,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                 ok = false;
               } else {
                 has_ops |= 1 << GRPC_OP_SEND_MESSAGE;
-                g_active_call->send_message = op->data.send_message =
-                    read_message(&inp);
+                g_active_call->send_message =
+                    op->data.send_message.send_message = read_message(&inp);
               }
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -941,18 +1011,19 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                   g_active_call);
               op->data.send_status_from_server.status = next_byte(&inp);
               op->data.send_status_from_server.status_details =
-                  read_string(&inp);
+                  add_slice_to_unref(g_active_call,
+                                     read_buffer_like_slice(&inp));
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
               has_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
-              op->data.recv_initial_metadata =
+              op->data.recv_initial_metadata.recv_initial_metadata =
                   &g_active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
               has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
-              op->data.recv_message = &g_active_call->recv_message;
+              op->data.recv_message.recv_message = &g_active_call->recv_message;
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -961,8 +1032,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                   &g_active_call->recv_trailing_metadata;
               op->data.recv_status_on_client.status_details =
                   &g_active_call->recv_status_details;
-              op->data.recv_status_on_client.status_details_capacity =
-                  &g_active_call->recv_status_details_capacity;
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -989,22 +1058,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (!ok && (has_ops & (1 << GRPC_OP_SEND_MESSAGE))) {
           grpc_byte_buffer_destroy(g_active_call->send_message);
           g_active_call->send_message = NULL;
-        }
-        for (i = 0; i < num_ops; i++) {
-          op = &ops[i];
-          switch (op->op) {
-            case GRPC_OP_SEND_STATUS_FROM_SERVER:
-              gpr_free((void *)op->data.send_status_from_server.status_details);
-              break;
-            case GRPC_OP_SEND_MESSAGE:
-            case GRPC_OP_SEND_INITIAL_METADATA:
-            case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-            case GRPC_OP_RECV_INITIAL_METADATA:
-            case GRPC_OP_RECV_MESSAGE:
-            case GRPC_OP_RECV_STATUS_ON_CLIENT:
-            case GRPC_OP_RECV_CLOSE_ON_SERVER:
-              break;
-          }
         }
         gpr_free(ops);
 
@@ -1050,14 +1103,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // enable a tracer
       case 17: {
-        char *tracer = read_string(&inp);
+        char *tracer = read_string(&inp, NULL);
         grpc_tracer_set_enabled(tracer, 1);
         gpr_free(tracer);
         break;
       }
       // disable a tracer
       case 18: {
-        char *tracer = read_string(&inp);
+        char *tracer = read_string(&inp, NULL);
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
         break;
@@ -1099,14 +1152,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // create a secure channel
       case 22: {
         if (g_channel == NULL) {
-          char *target = read_string(&inp);
+          char *target = read_string(&inp, NULL);
           char *target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args *args = read_args(&inp);
           grpc_channel_credentials *creds = read_channel_creds(&inp);
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
           grpc_channel_credentials_release(creds);

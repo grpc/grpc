@@ -101,8 +101,7 @@ int main(int argc, char **argv) {
   grpc_metadata_array request_metadata1;
   grpc_call_details request_details1;
   grpc_status_code status1;
-  char *details1 = NULL;
-  size_t details_capacity1 = 0;
+  grpc_slice details1;
   grpc_metadata_array_init(&trailing_metadata_recv1);
   grpc_metadata_array_init(&request_metadata1);
   grpc_call_details_init(&request_details1);
@@ -111,8 +110,7 @@ int main(int argc, char **argv) {
   grpc_metadata_array request_metadata2;
   grpc_call_details request_details2;
   grpc_status_code status2;
-  char *details2 = NULL;
-  size_t details_capacity2 = 0;
+  grpc_slice details2;
   grpc_metadata_array_init(&trailing_metadata_recv2);
   grpc_metadata_array_init(&request_metadata2);
   grpc_call_details_init(&request_details2);
@@ -137,9 +135,11 @@ int main(int argc, char **argv) {
   /* create a channel that picks first amongst the servers */
   grpc_channel *chan = grpc_insecure_channel_create("test", &client_args, NULL);
   /* and an initial call to them */
-  grpc_call *call1 = grpc_channel_create_call(
-      chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
+  grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
+  grpc_call *call1 =
+      grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/foo"), &host,
+                               grpc_timeout_seconds_to_deadline(20), NULL);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -158,7 +158,6 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -213,9 +212,10 @@ int main(int argc, char **argv) {
   cq_verify_empty(cqv);
 
   /* and a new call: should go through to server2 when we start it */
-  grpc_call *call2 = grpc_channel_create_call(
-      chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
+  grpc_call *call2 =
+      grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/foo"), &host,
+                               grpc_timeout_seconds_to_deadline(20), NULL);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -234,7 +234,6 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity2;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -300,11 +299,11 @@ int main(int argc, char **argv) {
   grpc_metadata_array_destroy(&trailing_metadata_recv1);
   grpc_metadata_array_destroy(&request_metadata1);
   grpc_call_details_destroy(&request_details1);
-  gpr_free(details1);
+  grpc_slice_unref(details1);
   grpc_metadata_array_destroy(&trailing_metadata_recv2);
   grpc_metadata_array_destroy(&request_metadata2);
   grpc_call_details_destroy(&request_details2);
-  gpr_free(details2);
+  grpc_slice_unref(details2);
 
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);

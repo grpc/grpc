@@ -38,17 +38,21 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
+static bool append_filter(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_append_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
-static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
+static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
+                                      grpc_channel_stack_builder *builder,
                                       void *unused) {
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
@@ -66,9 +70,10 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
     arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
     arg.value.string = default_authority;
     grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
+    grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
+                                                     new_args);
     gpr_free(default_authority);
-    grpc_channel_args_destroy(new_args);
+    grpc_channel_args_destroy(exec_ctx, new_args);
   }
   return true;
 }
@@ -76,16 +81,19 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
 void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
+  grpc_proxy_mapper_registry_init();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
                                    (void *)&grpc_client_channel_filter);
+  grpc_http_connect_register_handshaker_factory();
 }
 
 void grpc_client_channel_shutdown(void) {
   grpc_subchannel_index_shutdown();
   grpc_channel_init_shutdown();
+  grpc_proxy_mapper_registry_shutdown();
   grpc_resolver_registry_shutdown();
   grpc_lb_policy_registry_shutdown();
 }

@@ -63,7 +63,7 @@ grpc::string PackedStringToIp(const grpc_grpclb_ip_address& pb_ip) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, pb_ip.bytes, ip_str, 46) != NULL);
+  GPR_ASSERT(inet_ntop(af, (void*)pb_ip.bytes, ip_str, 46) != NULL);
   return ip_str;
 }
 
