@@ -90,7 +90,8 @@ static int g_writing_enabled = 1;
 static const char *output_filename() {
   if (output_filename_or_null == NULL) {
     output_filename_or_null = gpr_getenv("LATENCY_TRACE");
-    if (output_filename_or_null == NULL) {
+    if (output_filename_or_null == NULL ||
+        strlen(output_filename_or_null) == 0) {
       output_filename_or_null = "latency_trace.txt";
     }
   }
