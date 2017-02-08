@@ -31,41 +31,33 @@
  *
  */
 
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_PROPAGATION_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_PROPAGATION_H
+
 #include "src/core/ext/census/tracing.h"
 
-#include <grpc/census.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <openssl/rand.h>
-#include "src/core/ext/census/mlog.h"
+/* Encoding and decoding functions for receiving and sending trace contexts
+   over the wire.  Only RPC libraries should be calling these
+   functions.  These functions return the number of bytes encoded/decoded
+   (0 if a failure has occurred). buf_size indicates the size of the
+   input/output buffer. trace_span_context is a struct that includes the
+   trace ID, span ID, and a set of option flags (is_sampled, etc.). */
 
-void trace_start_span(const trace_span_context *span_ctxt,
-                      const trace_string name, const start_span_options *opts,
-                      trace_span_context *new_span_ctxt,
-                      bool has_remote_parent) {
-  // Noop implementation.
-}
+/* Converts a span context to a binary byte buffer. */
+size_t trace_span_context_to_binary(const trace_span_context *ctxt,
+                                    uint8_t *buf, size_t buf_size);
 
-void trace_add_span_annotation(const trace_string description,
-                               const trace_label *labels, const size_t n_labels,
-                               trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+/* Reads a binary byte buffer and populates a span context structure. */
+size_t binary_to_trace_span_context(const uint8_t *buf, size_t buf_size,
+                                    trace_span_context *ctxt);
 
-void trace_add_span_network_event_annotation(const trace_string description,
-                                             const trace_label *labels,
-                                             const size_t n_labels,
-                                             const gpr_timespec timestamp,
-                                             bool sent, uint64_t id,
-                                             trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+/* Converts a span context to an http metadata compatible string. */
+size_t trace_span_context_to_http_format(const trace_span_context *ctxt,
+                                         char *buf, size_t buf_size);
 
-void trace_add_span_labels(const trace_label *labels, const size_t n_labels,
-                           trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+/* Reads an http metadata compatible string and populates a span context
+   structure. */
+size_t http_format_to_trace_span_context(const char *buf, size_t buf_size,
+                                         trace_span_context *ctxt);
 
-void trace_end_span(const trace_status *status, trace_span_context *span_ctxt) {
-  // Noop implementation.
-}
+#endif
