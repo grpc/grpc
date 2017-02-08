@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by Jenkins and runs full performance test suite.
+# This script is invoked by Jenkins and runs high latency performance test suite.
 set -ex
 
 # Enter the gRPC repo root
