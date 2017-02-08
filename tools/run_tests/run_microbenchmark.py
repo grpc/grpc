@@ -94,7 +94,13 @@ for bm_name in sys.argv[1:]:
                         '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
                         '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
     cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
+    # periodically flush out the list of jobs: profile_analysis jobs at least
+    # consume upwards of five gigabytes of ram in some cases, and so analysing
+    # hundreds of them at once is impractical -- but we want at least some
+    # concurrency or the work takes too long
     if len(benchmarks) >= min(4, multiprocessing.cpu_count()):
+      # run up to half the cpu count: each benchmark can use up to two cores
+      # (one for the microbenchmark, one for the data flush)
       jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
                  add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
@@ -102,6 +108,7 @@ for bm_name in sys.argv[1:]:
       benchmarks = []
       profile_analysis = []
       cleanup = []
+  # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
     jobset.run(benchmarks, maxjobs=multiprocessing.cpu_count()/2,
                add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
@@ -131,4 +138,4 @@ for bm_name in sys.argv[1:]:
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:
-  w.write(index_html)
+  f.write(index_html)

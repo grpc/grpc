@@ -44,4 +44,4 @@ else
   PYTHON=python2.7
 fi
 
-$PYTHON tools/profiling/microbenchmark/bm.py bm_fullstack
+$PYTHON tools/run_tests/run_microbenchmark.py bm_fullstack
