@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,40 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#include <grpc/support/log.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/security/transport/lb_targets_info.h"
 
-/* -- Fake transport security credentials. -- */
+/* Channel arg key for the mapping of LB server addresses to their names for
+ * secure naming purposes. */
+#define GRPC_ARG_LB_SECURE_NAMING_MAP "grpc.lb_secure_naming_map"
 
-/* Used to verify the target names given to the fake transport security
- * connector.
- *
- * Its syntax by example:
- * For LB channels:
- *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
- * For regular channels:
- *     "backend_taget_1,backend_target_2,..."
- *
- * That is to say, LB channels have a heading list of LB targets separated from
- * the list of backend targets by a semicolon. For non-LB channels, only the
- * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
+static void *targets_info_copy(void *p) { return grpc_slice_hash_table_ref(p); }
+static void targets_info_destroy(grpc_exec_ctx *exec_ctx, void *p) {
+  grpc_slice_hash_table_unref(exec_ctx, p);
+}
+static int targets_info_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+static const grpc_arg_pointer_vtable server_to_balancer_names_vtable = {
+    targets_info_copy, targets_info_destroy, targets_info_cmp};
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+grpc_arg grpc_lb_targets_info_create_channel_arg(
+    grpc_slice_hash_table *targets_info) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_LB_SECURE_NAMING_MAP;
+  arg.value.pointer.p = targets_info;
+  arg.value.pointer.vtable = &server_to_balancer_names_vtable;
+  return arg;
+}
 
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
-/* --  Metadata-only Test credentials. -- */
-
-typedef struct {
-  grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
-} grpc_md_only_test_credentials;
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
+grpc_slice_hash_table *grpc_lb_targets_info_find_in_args(
+    const grpc_channel_args *args) {
+  const grpc_arg *targets_info_arg =
+      grpc_channel_args_find(args, GRPC_ARG_LB_SECURE_NAMING_MAP);
+  if (targets_info_arg != NULL) {
+    GPR_ASSERT(targets_info_arg->type == GRPC_ARG_POINTER);
+    return targets_info_arg->value.pointer.p;
+  }
+  return NULL;
+}
