@@ -31,6 +31,11 @@ filegroups:
   - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
   - src/core/ext/census/trace_context.h
+  - src/core/ext/census/trace_label.h
+  - src/core/ext/census/trace_propagation.h
+  - src/core/ext/census/trace_status.h
+  - src/core/ext/census/trace_string.h
+  - src/core/ext/census/tracing.h
   src:
   - src/core/ext/census/base_resources.c
   - src/core/ext/census/context.c
