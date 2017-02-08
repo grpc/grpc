@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include <arpa/inet.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -311,3 +316,9 @@ int main(int argc, char *argv[]) {
   GPR_ASSERT(!client_ssl_test("foo"));
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

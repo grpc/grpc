@@ -215,6 +215,19 @@ static void install_crash_handler() {
 #include <stdio.h>
 #include <string.h>
 
+#define SIGNAL_NAMES_LENGTH 32
+
+static const char * const signal_names[] = {
+  NULL,
+  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
+  "SIGABRT", "SIGBUS", "SIGFPE", "SIGKILL", "SIGUSR1",
+  "SIGSEGV", "SIGUSR2", "SIGPIPE", "SIGALRM", "SIGTERM",
+  "SIGSTKFLT", "SIGCHLD", "SIGCONT", "SIGSTOP", "SIGTSTP",
+  "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU", "SIGXFSZ",
+  "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO", "SIGPWR",
+  "SIGSYS"
+};
+
 static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
 #define MAX_FRAMES 32
@@ -240,7 +253,11 @@ static void crash_handler(int signum, siginfo_t *info, void *data) {
   int addrlen;
 
   output_string("\n\n\n*******************************\nCaught signal ");
-  output_num(signum);
+  if (signum > 0 && signum < SIGNAL_NAMES_LENGTH) {
+    output_string(signal_names[signum]);
+  } else {
+    output_num(signum);
+  }
   output_string("\n");
 
   addrlen = backtrace(addrlist, GPR_ARRAY_SIZE(addrlist));

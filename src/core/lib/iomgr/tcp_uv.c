@@ -79,8 +79,6 @@ typedef struct {
   grpc_pollset *pollset;
 } grpc_tcp;
 
-static void uv_close_callback(uv_handle_t *handle) { gpr_free(handle); }
-
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp);
@@ -118,6 +116,13 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
+
+static void uv_close_callback(uv_handle_t *handle) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_tcp *tcp = handle->data;
+  TCP_UNREF(&exec_ctx, tcp, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
+}
 
 static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size,
                          uv_buf_t *buf) {
@@ -311,7 +316,6 @@ static void uv_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   uv_close((uv_handle_t *)tcp->handle, uv_close_callback);
-  TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
 static char *uv_get_peer(grpc_endpoint *ep) {

@@ -174,7 +174,6 @@ grpc_completion_queue *GetCompletionQueue() {
 }
 
 void CompletionQueueNext() {
-  gpr_log(GPR_DEBUG, "Called CompletionQueueNext");
   CompletionQueueAsyncWorker::Next();
 }
 
