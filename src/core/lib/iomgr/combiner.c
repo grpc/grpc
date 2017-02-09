@@ -72,6 +72,7 @@ struct grpc_combiner {
   bool final_list_covered_by_poller;
   grpc_closure_list final_list;
   grpc_closure offload;
+  gpr_refcount refs;
 };
 
 static void combiner_exec_uncovered(grpc_exec_ctx *exec_ctx,
@@ -126,6 +127,7 @@ static bool is_covered_by_poller(grpc_combiner *lock) {
 
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
+  gpr_ref_init(&lock->refs, 1);
   lock->next_combiner_on_this_exec_ctx = NULL;
   lock->time_to_execute_final_list = false;
   lock->optional_workqueue = optional_workqueue;
@@ -152,7 +154,7 @@ static void really_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   gpr_free(lock);
 }
 
-void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -STATE_UNORPHANED);
   GRPC_COMBINER_TRACE(gpr_log(
       GPR_DEBUG, "C:%p really_destroy old_state=%" PRIdPTR, lock, old_state));
@@ -160,6 +162,14 @@ void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
     really_destroy(exec_ctx, lock);
   }
 }
+
+void grpc_combiner_unref(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  if (gpr_unref(&lock->refs)) {
+    start_destroy(exec_ctx, lock);
+  }
+}
+
+void grpc_combiner_ref(grpc_combiner *lock) { gpr_ref(&lock->refs); }
 
 static void push_last_on_exec_ctx(grpc_exec_ctx *exec_ctx,
                                   grpc_combiner *lock) {
