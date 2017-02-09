@@ -884,13 +884,11 @@ retry:
   if (call == CANCELLED_CALL) {
     grpc_transport_stream_op_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
-    GPR_TIMER_END("cc_start_transport_stream_op", 0);
-    return;
+    goto done;
   }
   if (call != NULL) {
     grpc_subchannel_call_process_op(exec_ctx, call, op);
-    GPR_TIMER_END("cc_start_transport_stream_op", 0);
-    return;
+    goto done;
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_error != GRPC_ERROR_NONE) {
@@ -916,8 +914,7 @@ retry:
       }
       grpc_transport_stream_op_finish_with_failure(
           exec_ctx, op, GRPC_ERROR_REF(op->cancel_error));
-      GPR_TIMER_END("cc_start_transport_stream_op", 0);
-      return;
+      goto done;
     }
   }
   /* if we don't have a subchannel, try to get one */
@@ -961,6 +958,7 @@ retry:
   }
   /* nothing to be done but wait */
   add_waiting_locked(calld, op);
+done:
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
                         "start_transport_stream_op");
   GPR_TIMER_END("cc_start_transport_stream_op", 0);
