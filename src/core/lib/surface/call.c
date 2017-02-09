@@ -1016,13 +1016,20 @@ static batch_control *allocate_batch_control(grpc_call *call,
     int op_slot = batch_slot_for_op(ops[i].op);
     slot = GPR_MIN(slot, op_slot);
   }
-  return &call->active_batches[slot];
+  batch_control *bctl = &call->active_batches[slot];
+  if (bctl->call != NULL) {
+    return NULL;
+  }
+  memset(bctl, 0, sizeof(*bctl));
+  bctl->call = call;
+  return bctl;
 }
 
 static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_cq_completion *storage) {
   batch_control *bctl = user_data;
   grpc_call *call = bctl->call;
+  bctl->call = NULL;
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
 }
 
@@ -1351,8 +1358,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   /* TODO(ctiller): this feels like it could be made lock-free */
   bctl = allocate_batch_control(call, ops, nops);
-  memset(bctl, 0, sizeof(*bctl));
-  bctl->call = call;
+  if (bctl == NULL) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
   bctl->notify_tag = notify_tag;
   bctl->is_notify_tag_closure = (uint8_t)(is_notify_tag_closure != 0);
 
