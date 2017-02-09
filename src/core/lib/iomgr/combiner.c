@@ -169,7 +169,10 @@ void grpc_combiner_unref(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-void grpc_combiner_ref(grpc_combiner *lock) { gpr_ref(&lock->refs); }
+grpc_combiner *grpc_combiner_ref(grpc_combiner *lock) {
+  gpr_ref(&lock->refs);
+  return lock;
+}
 
 static void push_last_on_exec_ctx(grpc_exec_ctx *exec_ctx,
                                   grpc_combiner *lock) {

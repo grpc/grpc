@@ -48,10 +48,11 @@ struct grpc_resolver {
 
 struct grpc_resolver_vtable {
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
-  void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
-  void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-               grpc_channel_args **result, grpc_closure *on_complete);
+  void (*shutdown_locked)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
+  void (*channel_saw_error_locked)(grpc_exec_ctx *exec_ctx,
+                                   grpc_resolver *resolver);
+  void (*next_locked)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                      grpc_channel_args **result, grpc_closure *on_complete);
 };
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
@@ -72,19 +73,27 @@ void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *policy);
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable);
 
-void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
+void grpc_resolver_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                   grpc_resolver *resolver);
 
 /** Notification that the channel has seen an error on some address.
-    Can be used as a hint that re-resolution is desirable soon. */
-void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver);
+    Can be used as a hint that re-resolution is desirable soon.
+
+    Must be called from the combiner passed as a resolver_arg at construction
+    time.*/
+void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                            grpc_resolver *resolver);
 
 /** Get the next result from the resolver.  Expected to set \a *result with
     new channel args and then schedule \a on_complete for execution.
 
     If resolution is fatally broken, set \a *result to NULL and
-    schedule \a on_complete. */
-void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_channel_args **result, grpc_closure *on_complete);
+    schedule \a on_complete.
+
+    Must be called from the combiner passed as a resolver_arg at construction
+    time.*/
+void grpc_resolver_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                               grpc_channel_args **result,
+                               grpc_closure *on_complete);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H */

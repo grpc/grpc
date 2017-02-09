@@ -66,16 +66,18 @@ void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   }
 }
 
-void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
-  resolver->vtable->shutdown(exec_ctx, resolver);
+void grpc_resolver_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                   grpc_resolver *resolver) {
+  resolver->vtable->shutdown_locked(exec_ctx, resolver);
 }
 
-void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver) {
-  resolver->vtable->channel_saw_error(exec_ctx, resolver);
+void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                            grpc_resolver *resolver) {
+  resolver->vtable->channel_saw_error_locked(exec_ctx, resolver);
 }
 
-void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_channel_args **result, grpc_closure *on_complete) {
-  resolver->vtable->next(exec_ctx, resolver, result, on_complete);
+void grpc_resolver_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                               grpc_channel_args **result,
+                               grpc_closure *on_complete) {
+  resolver->vtable->next_locked(exec_ctx, resolver, result, on_complete);
 }

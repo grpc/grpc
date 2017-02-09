@@ -44,6 +44,7 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
+static grpc_combiner *g_combiner;
 
 static grpc_error *my_resolve_address(const char *name, const char *addr,
                                       grpc_resolved_addresses **addrs) {
@@ -101,6 +102,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
+  g_combiner = grpc_combiner_create(NULL);
   grpc_blocking_resolve_address = my_resolve_address;
   grpc_channel_args *result = (grpc_channel_args *)1;
 
@@ -126,6 +128,7 @@ int main(int argc, char **argv) {
 
   grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
+  grpc_combiner_unref(&exec_ctx, g_combiner);
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();

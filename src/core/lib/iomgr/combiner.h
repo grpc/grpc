@@ -49,7 +49,7 @@
 // necessary
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 // Ref/unref the lock, for when we're sharing the lock ownership
-void grpc_combiner_ref(grpc_combiner *lock);
+grpc_combiner *grpc_combiner_ref(grpc_combiner *lock);
 void grpc_combiner_unref(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 // Fetch a scheduler to schedule closures against
 grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock,
