@@ -690,6 +690,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
   for (size_t i = 0; i < nops; i++) {
     grpc_subchannel_call_process_op(exec_ctx, call, ops[i]);
   }
+  gpr_free(ops);
 }
 
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
