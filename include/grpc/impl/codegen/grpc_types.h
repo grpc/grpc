@@ -179,6 +179,17 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Should BDP probing be performed? */
+#define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
+/** Minimum time (in milliseconds) between successive ping frames being sent */
+#define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
+  "grpc.http2.min_time_between_pings_ms"
+/** How many pings can we send before needing to send a data frame or header
+    frame?
+    (0 indicates that an infinite number of pings can be sent without sending
+     a data frame or header frame) */
+#define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
+  "grpc.http2.max_pings_without_data"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"

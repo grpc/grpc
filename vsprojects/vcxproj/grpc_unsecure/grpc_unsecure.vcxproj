@@ -381,6 +381,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.h" />
@@ -438,6 +439,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
@@ -455,6 +457,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_label.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_propagation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_status.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
@@ -671,6 +678,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
@@ -806,6 +815,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>

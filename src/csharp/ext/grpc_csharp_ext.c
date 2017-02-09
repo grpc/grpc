@@ -761,7 +761,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     ops[nops].data.send_message.send_message = ctx->send_message;
     ops[nops].flags = write_flags;
     ops[nops].reserved = NULL;
-    nops ++;
+    nops++;
   }
   if (send_empty_initial_metadata) {
     ops[nops].op = GRPC_OP_SEND_INITIAL_METADATA;

@@ -212,6 +212,14 @@ CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
 LDFLAGS_mutrace = -rdynamic
 DEFINES_mutrace = NDEBUG
 
+VALID_CONFIG_counters = 1
+CC_counters = $(DEFAULT_CC)
+CXX_counters = $(DEFAULT_CXX)
+LD_counters = $(DEFAULT_CC)
+LDXX_counters = $(DEFAULT_CXX)
+CPPFLAGS_counters = -O2 -DGPR_MU_COUNTERS
+DEFINES_counters = NDEBUG
+
 
 
 # General settings.
@@ -943,6 +951,7 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
+bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
@@ -1041,6 +1050,7 @@ no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
 percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
 percent_encoding_test: $(BINDIR)/$(CONFIG)/percent_encoding_test
+pollset_set_test: $(BINDIR)/$(CONFIG)/pollset_set_test
 resolve_address_posix_test: $(BINDIR)/$(CONFIG)/resolve_address_posix_test
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 resource_quota_test: $(BINDIR)/$(CONFIG)/resource_quota_test
@@ -1115,6 +1125,7 @@ metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
+proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_json_driver: $(BINDIR)/$(CONFIG)/qps_json_driver
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
@@ -1134,6 +1145,7 @@ streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
+writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
@@ -1304,6 +1316,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
@@ -1386,6 +1399,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
   $(BINDIR)/$(CONFIG)/percent_encoding_test \
+  $(BINDIR)/$(CONFIG)/pollset_set_test \
   $(BINDIR)/$(CONFIG)/resolve_address_posix_test \
   $(BINDIR)/$(CONFIG)/resolve_address_test \
   $(BINDIR)/$(CONFIG)/resource_quota_test \
@@ -1511,6 +1525,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
+  $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
@@ -1530,6 +1545,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
   $(BINDIR)/$(CONFIG)/boringssl_base64_test \
@@ -1613,6 +1629,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
+  $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
@@ -1632,6 +1649,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
 
 endif
 
@@ -1651,6 +1669,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bdp_estimator_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
@@ -1793,6 +1813,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing percent_encoding_test"
 	$(Q) $(BINDIR)/$(CONFIG)/percent_encoding_test || ( echo test percent_encoding_test failed ; exit 1 )
+	$(E) "[RUN]     Testing pollset_set_test"
+	$(Q) $(BINDIR)/$(CONFIG)/pollset_set_test || ( echo test pollset_set_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_posix_test || ( echo test resolve_address_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
@@ -1939,6 +1961,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
+	$(E) "[RUN]     Testing proto_utils_test"
+	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing round_robin_end2end_test"
@@ -1963,6 +1987,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing writes_per_rpc_test"
+	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -2774,6 +2800,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -2824,6 +2851,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/lb_targets_info.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
     src/core/lib/security/transport/security_handshaker.c \
@@ -2864,6 +2892,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/lb_policy/grpclb/grpclb.c \
+    src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -3085,6 +3114,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3159,6 +3189,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/lb_targets_info.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
     src/core/lib/security/transport/security_handshaker.c \
@@ -3268,6 +3299,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
@@ -3383,6 +3415,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3466,6 +3499,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
@@ -3607,6 +3641,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -3675,6 +3710,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/ext/lb_policy/grpclb/grpclb.c \
+    src/core/ext/lb_policy/grpclb/grpclb_channel.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4201,6 +4237,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
+    src/core/lib/transport/bdp_estimator.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/error_utils.c \
@@ -8091,6 +8128,38 @@ endif
 endif
 
 
+BDP_ESTIMATOR_TEST_SRC = \
+    test/core/transport/bdp_estimator_test.c \
+
+BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 BIN_DECODER_TEST_SRC = \
     test/core/transport/chttp2/bin_decoder_test.c \
 
@@ -11227,6 +11296,38 @@ endif
 endif
 
 
+POLLSET_SET_TEST_SRC = \
+    test/core/iomgr/pollset_set_test.c \
+
+POLLSET_SET_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(POLLSET_SET_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/pollset_set_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/pollset_set_test: $(POLLSET_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(POLLSET_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pollset_set_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/pollset_set_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_pollset_set_test: $(POLLSET_SET_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(POLLSET_SET_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 RESOLVE_ADDRESS_POSIX_TEST_SRC = \
     test/core/iomgr/resolve_address_posix_test.c \
 
@@ -13985,6 +14086,49 @@ endif
 endif
 
 
+PROTO_UTILS_TEST_SRC = \
+    test/cpp/codegen/proto_utils_test.cc \
+
+PROTO_UTILS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PROTO_UTILS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/proto_utils_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/proto_utils_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/proto_utils_test: $(PROTOBUF_DEP) $(PROTO_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(PROTO_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/proto_utils_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/proto_utils_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_proto_utils_test: $(PROTO_UTILS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PROTO_UTILS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 QPS_INTERARRIVAL_TEST_SRC = \
     test/cpp/qps/qps_interarrival_test.cc \
 
@@ -14847,6 +14991,49 @@ deps_thread_stress_test: $(THREAD_STRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(THREAD_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+WRITES_PER_RPC_TEST_SRC = \
+    test/cpp/performance/writes_per_rpc_test.cc \
+
+WRITES_PER_RPC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WRITES_PER_RPC_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/writes_per_rpc_test: $(PROTOBUF_DEP) $(WRITES_PER_RPC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(WRITES_PER_RPC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/performance/writes_per_rpc_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_writes_per_rpc_test: $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -17692,6 +17879,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
@@ -17713,6 +17901,7 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/lb_targets_info.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.c: $(OPENSSL_DEP)

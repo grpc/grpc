@@ -91,8 +91,7 @@ def _details(state):
 
 class _HandlerCallDetails(
         collections.namedtuple('_HandlerCallDetails', (
-            'method',
-            'invocation_metadata',)), grpc.HandlerCallDetails):
+            'method', 'invocation_metadata',)), grpc.HandlerCallDetails):
     pass
 
 
@@ -143,12 +142,11 @@ def _abort(state, call, code, details):
         effective_code = _abortion_code(state, code)
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
-            operations = (
-                cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                       _EMPTY_FLAGS),
-                cygrpc.operation_send_status_from_server(
-                    _common.cygrpc_metadata(state.trailing_metadata),
-                    effective_code, effective_details, _EMPTY_FLAGS),)
+            operations = (cygrpc.operation_send_initial_metadata(
+                _EMPTY_METADATA, _EMPTY_FLAGS),
+                          cygrpc.operation_send_status_from_server(
+                              _common.cygrpc_metadata(state.trailing_metadata),
+                              effective_code, effective_details, _EMPTY_FLAGS),)
             token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
         else:
             operations = (cygrpc.operation_send_status_from_server(
@@ -417,11 +415,10 @@ def _send_response(rpc_event, state, serialized_response):
             return False
         else:
             if state.initial_metadata_allowed:
-                operations = (
-                    cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                           _EMPTY_FLAGS),
-                    cygrpc.operation_send_message(serialized_response,
-                                                  _EMPTY_FLAGS),)
+                operations = (cygrpc.operation_send_initial_metadata(
+                    _EMPTY_METADATA, _EMPTY_FLAGS),
+                              cygrpc.operation_send_message(serialized_response,
+                                                            _EMPTY_FLAGS),)
                 state.initial_metadata_allowed = False
                 token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
             else:
@@ -559,10 +556,8 @@ def _handle_unrecognized_method(rpc_event):
             _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
             b'Method not found!', _EMPTY_FLAGS),)
     rpc_state = _RPCState()
-    rpc_event.operation_call.start_server_batch(operations,
-                                                lambda ignored_event: (
-                                                    rpc_state,
-                                                    (),))
+    rpc_event.operation_call.start_server_batch(
+        operations, lambda ignored_event: (rpc_state, (),))
     return rpc_state
 
 

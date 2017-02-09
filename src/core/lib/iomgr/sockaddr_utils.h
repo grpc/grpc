@@ -84,6 +84,10 @@ int grpc_sockaddr_set_port(const grpc_resolved_address *addr, int port);
 int grpc_sockaddr_to_string(char **out, const grpc_resolved_address *addr,
                             int normalize);
 
+/* Returns the URI string corresponding to \a addr */
 char *grpc_sockaddr_to_uri(const grpc_resolved_address *addr);
+
+/* Returns the URI scheme corresponding to \a addr */
+const char *grpc_sockaddr_get_uri_scheme(const grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */

@@ -100,6 +100,8 @@ void grpc_override_well_known_credentials_path_getter(
 
 /* --- grpc_channel_credentials. --- */
 
+#define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
+
 typedef struct {
   void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c);
 
@@ -139,6 +141,17 @@ grpc_security_status grpc_channel_credentials_create_security_connector(
 grpc_channel_credentials *
 grpc_channel_credentials_duplicate_without_call_credentials(
     grpc_channel_credentials *creds);
+
+/* Util to encapsulate the channel credentials in a channel arg. */
+grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials *credentials);
+
+/* Util to get the channel credentials from a channel arg. */
+grpc_channel_credentials *grpc_channel_credentials_from_arg(
+    const grpc_arg *arg);
+
+/* Util to find the channel credentials from channel args. */
+grpc_channel_credentials *grpc_channel_credentials_find_in_args(
+    const grpc_channel_args *args);
 
 /* --- grpc_credentials_md. --- */
 

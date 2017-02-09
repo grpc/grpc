@@ -478,6 +478,7 @@ int Server::AddListeningPort(const grpc::string& addr,
 
 bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
+  global_callbacks_->PreServerStart(this);
   started_ = true;
   grpc_server_start(server_);
 

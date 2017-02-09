@@ -206,7 +206,7 @@ static char *roots_filename;
              inDomains:NSUserDomainMask] lastObject];
   NSLog(@"Documents directory: %@", url);
   [Cronet start];
-  [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
+  [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
 }
 
 // The tearDown() function is run after all test cases finish running

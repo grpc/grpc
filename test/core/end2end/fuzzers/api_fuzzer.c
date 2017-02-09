@@ -442,7 +442,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server, g_resource_quota);
+    grpc_passthru_endpoint_create(&client, &server, g_resource_quota, NULL);
     *fc->ep = client;
 
     grpc_transport *transport =
