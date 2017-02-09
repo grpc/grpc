@@ -141,6 +141,47 @@ class WriteOptions {
   /// \sa GRPC_WRITE_BUFFER_HINT
   inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
 
+  /// corked bit: aliases set_buffer_hint currently, with the intent that
+  /// set_buffer_hint will be removed in the future
+  inline WriteOptions& set_corked() {
+    SetBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline WriteOptions& clear_corked() {
+    ClearBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline bool is_corked() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
+
+  /// last-message bit: indicates this is the last message in a stream
+  /// client-side:  makes Write the equivalent of performing Write, WritesDone
+  /// in a single step
+  /// server-side:  hold the Write until the service handler returns (sync api)
+  /// or until Finish is called (async api)
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  inline WriteOptions& set_last_message() {
+    SetBit(GRPC_WRITE_LAST_MESSAGE);
+    return *this;
+  }
+
+  /// Clears flag indicating that this is the last message in a stream,
+  /// disabling coalescing.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  inline WriteOptions& clear_last_messsage() {
+    ClearBit(GRPC_WRITE_LAST_MESSAGE);
+    return *this;
+  }
+
+  /// Get value for the flag indicating that this is the last message, and
+  /// should be coalesced with trailing metadata.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  bool is_last_message() const { return GetBit(GRPC_WRITE_LAST_MESSAGE); }
+
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
     return *this;
@@ -224,7 +265,7 @@ class CallOpSendMessage {
   /// after use.
   template <class M>
   Status SendMessage(const M& message,
-                     const WriteOptions& options) GRPC_MUST_USE_RESULT;
+                     WriteOptions options) GRPC_MUST_USE_RESULT;
 
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
@@ -252,8 +293,7 @@ class CallOpSendMessage {
 };
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message,
-                                      const WriteOptions& options) {
+Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
 }
