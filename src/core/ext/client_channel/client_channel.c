@@ -226,19 +226,19 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
   lb_policy_connectivity_watcher *w = arg;
   grpc_connectivity_state publish_state = w->state;
-  /* check if the notification is for a stale policy */
-  if (w->lb_policy != w->chand->lb_policy) return;
-
-  if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
-    publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-    grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
-    GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
-    w->chand->lb_policy = NULL;
-  }
-  set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
-                                        GRPC_ERROR_REF(error), "lb_changed");
-  if (w->state != GRPC_CHANNEL_SHUTDOWN) {
-    watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
+  /* check if the notification is for the latest policy */
+  if (w->lb_policy == w->chand->lb_policy) {
+    if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
+      publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+      grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+      GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
+      w->chand->lb_policy = NULL;
+    }
+    set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
+                                          GRPC_ERROR_REF(error), "lb_changed");
+    if (w->state != GRPC_CHANNEL_SHUTDOWN) {
+      watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
+    }
   }
 
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack, "watch_lb_policy");
