@@ -522,6 +522,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   // Initialize data members.
   chand->combiner = grpc_combiner_create(NULL);
+  gpr_mu_init(&chand->info_mu);
   chand->owning_stack = args->channel_stack;
   grpc_closure_init(&chand->on_resolver_result_changed,
                     on_resolver_result_changed_locked, chand,
@@ -582,6 +583,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
   grpc_combiner_destroy(exec_ctx, chand->combiner);
+  gpr_mu_destroy(&chand->info_mu);
 }
 
 /*************************************************************************
