@@ -75,7 +75,7 @@ def link(txt, tgt):
 
 def text(txt):
   global index_html
-  index_html += "<p><pre>%s</pre></p>" % txt
+  index_html += "<p><pre>%s</pre></p>\n" % txt
 
 def collect_latency(bm_name, args):
   """generate latency profiles"""
