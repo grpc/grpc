@@ -63,8 +63,6 @@ typedef struct {
   grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
-  grpc_closure initial_string_sent;
-  grpc_slice_buffer initial_string_buffer;
 
   grpc_endpoint *endpoint;  // Non-NULL until handshaking starts.
 
@@ -82,7 +80,6 @@ static void chttp2_connector_unref(grpc_exec_ctx *exec_ctx,
                                    grpc_connector *con) {
   chttp2_connector *c = (chttp2_connector *)con;
   if (gpr_unref(&c->refs)) {
-    /* c->initial_string_buffer does not need to be destroyed */
     gpr_mu_destroy(&c->mu);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
@@ -160,28 +157,6 @@ static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
   c->endpoint = NULL;  // Endpoint handed off to handshake manager.
 }
 
-static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           grpc_error *error) {
-  chttp2_connector *c = arg;
-  gpr_mu_lock(&c->mu);
-  if (error != GRPC_ERROR_NONE || c->shutdown) {
-    if (error == GRPC_ERROR_NONE) {
-      error = GRPC_ERROR_CREATE("connector shutdown");
-    } else {
-      error = GRPC_ERROR_REF(error);
-    }
-    memset(c->result, 0, sizeof(*c->result));
-    grpc_closure *notify = c->notify;
-    c->notify = NULL;
-    grpc_closure_sched(exec_ctx, notify, error);
-    gpr_mu_unlock(&c->mu);
-    chttp2_connector_unref(exec_ctx, arg);
-  } else {
-    start_handshake_locked(exec_ctx, c);
-    gpr_mu_unlock(&c->mu);
-  }
-}
-
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   chttp2_connector *c = arg;
   gpr_mu_lock(&c->mu);
@@ -204,17 +179,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     chttp2_connector_unref(exec_ctx, arg);
   } else {
     GPR_ASSERT(c->endpoint != NULL);
-    if (!GRPC_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
-      grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
-                        c, grpc_schedule_on_exec_ctx);
-      grpc_slice_buffer_init(&c->initial_string_buffer);
-      grpc_slice_buffer_add(&c->initial_string_buffer,
-                            c->args.initial_connect_string);
-      grpc_endpoint_write(exec_ctx, c->endpoint, &c->initial_string_buffer,
-                          &c->initial_string_sent);
-    } else {
-      start_handshake_locked(exec_ctx, c);
-    }
+    start_handshake_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   }
 }
