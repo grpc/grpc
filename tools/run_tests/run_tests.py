@@ -722,12 +722,10 @@ class CSharpLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_compiler(self.args.compiler, ['coreclr', 'default'])
       _check_arch(self.args.arch, ['default'])
-      # CoreCLR use 64bit runtime by default.
-      arch_option = 'x64' if self.args.compiler == 'coreclr' else self.args.arch
-      self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(arch_option)]
+      self._cmake_arch_option = 'x64' if self.args.compiler == 'coreclr' else 'Win32'
+      self._make_options = []
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
@@ -799,7 +797,7 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat', self._cmake_arch_option]]
     else:
       return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
@@ -830,7 +828,10 @@ class CSharpLanguage(object):
       return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    if self.platform == 'windows':
+      return 'cmake/build/%s/Makefile' % self._cmake_arch_option
+    else:
+      return 'Makefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/csharp_%s_%s' % (self._docker_distro,
@@ -1292,7 +1293,7 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
       return [jobset.JobSpec(['cmake', '--build', '.',
                               '--target', '%s' % target,
                               '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd='cmake/build',
+                             cwd=os.path.dirname(makefile),
                              timeout_seconds=None) for target in targets]
     extra_args = []
     # better do parallel compilation
