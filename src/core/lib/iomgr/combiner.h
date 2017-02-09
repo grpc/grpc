@@ -59,8 +59,8 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
   grpc_combiner_unref((exec_ctx), (combiner), __FILE__, __LINE__, (reason))
 #else
 #define GRPC_COMBINER_DEBUG_ARGS
-#define GRPC_COMBINER_REF(combiner) grpc_combiner_ref((combiner))
-#define GRPC_COMBINER_UNREF(exec_ctx, combiner) \
+#define GRPC_COMBINER_REF(combiner, reason) grpc_combiner_ref((combiner))
+#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
   grpc_combiner_unref((exec_ctx), (combiner))
 #endif
 
