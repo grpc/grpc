@@ -419,7 +419,7 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c,
                                                            grpc_error **error) {
   grpc_connectivity_state state;
   gpr_mu_lock(&c->mu);
-  state = grpc_connectivity_state_check(&c->state_tracker, error);
+  state = grpc_connectivity_state_get(&c->state_tracker, error);
   gpr_mu_unlock(&c->mu);
   return state;
 }
