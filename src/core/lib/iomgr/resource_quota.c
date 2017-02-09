@@ -599,7 +599,7 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
 void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_resource_quota *resource_quota) {
   if (gpr_unref(&resource_quota->refs)) {
-    grpc_combiner_destroy(exec_ctx, resource_quota->combiner);
+    grpc_combiner_unref(exec_ctx, resource_quota->combiner);
     gpr_free(resource_quota->name);
     gpr_free(resource_quota);
   }
