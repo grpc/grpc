@@ -1006,6 +1006,7 @@ static int batch_slot_for_op(grpc_op_type type) {
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
       return 5;
   }
+  GPR_UNREACHABLE_CODE(return 123456789);
 }
 
 static batch_control *allocate_batch_control(grpc_call *call,
