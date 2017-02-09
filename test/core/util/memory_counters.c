@@ -49,10 +49,14 @@ static void guard_free(void *vptr);
 static void *guard_malloc(size_t size) {
   size_t *ptr;
   if (!size) return NULL;
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_absolute, size);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative, size);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_absolute, 1);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_relative, 1);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_absolute,
+                               (gpr_atm)size);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative,
+                               (gpr_atm)size);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_absolute,
+                               (gpr_atm)1);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_relative,
+                               (gpr_atm)1);
   ptr = g_old_allocs.malloc_fn(size + sizeof(size));
   *ptr++ = size;
   return ptr;
@@ -68,10 +72,14 @@ static void *guard_realloc(void *vptr, size_t size) {
     return NULL;
   }
   --ptr;
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_absolute, size);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative, -*ptr);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative, size);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_absolute, 1);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_absolute,
+                               (gpr_atm)size);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative,
+                               -(gpr_atm)*ptr);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative,
+                               (gpr_atm)size);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_absolute,
+                               (gpr_atm)1);
   ptr = g_old_allocs.realloc_fn(ptr, size + sizeof(size));
   *ptr++ = size;
   return ptr;
@@ -81,8 +89,10 @@ static void guard_free(void *vptr) {
   size_t *ptr = vptr;
   if (!vptr) return;
   --ptr;
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative, -*ptr);
-  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_relative, -1);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_size_relative,
+                               -(gpr_atm)*ptr);
+  gpr_atm_no_barrier_fetch_add(&g_memory_counters.total_allocs_relative,
+                               -(gpr_atm)1);
   g_old_allocs.free_fn(ptr);
 }
 
