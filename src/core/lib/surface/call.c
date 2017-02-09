@@ -989,7 +989,24 @@ static bool are_initial_metadata_flags_valid(uint32_t flags, bool is_client) {
   return !(flags & invalid_positions);
 }
 
-static int batch_slot_for_op(grpc_op_type type) { return (int)type; }
+static int batch_slot_for_op(grpc_op_type type) {
+  switch (type) {
+    case GRPC_OP_SEND_INITIAL_METADATA:
+      return 0;
+    case GRPC_OP_SEND_MESSAGE:
+      return 1;
+    case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+    case GRPC_OP_SEND_STATUS_FROM_SERVER:
+      return 2;
+    case GRPC_OP_RECV_INITIAL_METADATA:
+      return 3;
+    case GRPC_OP_RECV_MESSAGE:
+      return 4;
+    case GRPC_OP_RECV_CLOSE_ON_SERVER:
+    case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      return 5;
+  }
+}
 
 static batch_control *allocate_batch_control(grpc_call *call,
                                              const grpc_op *ops,
