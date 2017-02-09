@@ -454,7 +454,6 @@
     endif()
   endif()
 
-
   % for src in lib.src:
   % if proto_re.match(src):
   protobuf_generate_grpc_cpp(
