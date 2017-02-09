@@ -163,13 +163,26 @@ static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-void grpc_combiner_unref(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                               \
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                             \
+          "combiner[%p] %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op), \
+          gpr_atm_no_barrier_load(&lock->refs.count),                     \
+          gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason);
+#else
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)
+#endif
+
+void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
+                         grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS) {
+  GRPC_COMBINER_DEBUG_SPAM("UNREF", -1);
   if (gpr_unref(&lock->refs)) {
     start_destroy(exec_ctx, lock);
   }
 }
 
-grpc_combiner *grpc_combiner_ref(grpc_combiner *lock) {
+grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS) {
+  GRPC_COMBINER_DEBUG_SPAM("  REF", 1);
   gpr_ref(&lock->refs);
   return lock;
 }
