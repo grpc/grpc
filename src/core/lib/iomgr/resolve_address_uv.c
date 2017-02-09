@@ -201,8 +201,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   int s;
 
   if (grpc_dns_trace) {
-    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s",
-            name, default_port);
+    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s", name,
+            default_port);
   }
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {

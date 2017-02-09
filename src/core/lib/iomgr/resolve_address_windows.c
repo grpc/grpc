@@ -182,8 +182,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   request *r = gpr_malloc(sizeof(request));
 
   if (grpc_dns_trace) {
-    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s",
-            name, default_port);
+    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s", name,
+            default_port);
   }
   grpc_closure_init(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler);
