@@ -1113,6 +1113,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
+    bctl->call = NULL;
     grpc_closure_run(exec_ctx, bctl->notify_tag, error);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
@@ -1352,6 +1353,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
       grpc_cq_end_op(exec_ctx, call->cq, notify_tag, GRPC_ERROR_NONE,
                      free_no_op_completion, NULL,
                      gpr_malloc(sizeof(grpc_cq_completion)));
+    } else {
+      grpc_closure_sched(exec_ctx, notify_tag, GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
