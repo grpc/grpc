@@ -49,7 +49,7 @@
 // necessary
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 
-#define GRPC_COMBINER_REFCOUNT_DEBUG
+//#define GRPC_COMBINER_REFCOUNT_DEBUG
 #ifdef GRPC_COMBINER_REFCOUNT_DEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
   , const char *file, int line, const char *reason
