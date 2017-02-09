@@ -168,7 +168,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_map_destroy(&t->stream_map);
   grpc_connectivity_state_destroy(exec_ctx, &t->channel_callback.state_tracker);
 
-  grpc_combiner_destroy(exec_ctx, t->combiner);
+  grpc_combiner_unref(exec_ctx, t->combiner);
 
   cancel_pings(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
 
