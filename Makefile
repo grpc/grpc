@@ -2806,6 +2806,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/lb_targets_info.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
     src/core/lib/security/transport/security_handshaker.c \
@@ -2846,6 +2847,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/lb_policy/grpclb/grpclb.c \
+    src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -3139,6 +3141,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.c \
     src/core/lib/security/credentials/ssl/ssl_credentials.c \
     src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/lb_targets_info.c \
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
     src/core/lib/security/transport/security_handshaker.c \
@@ -3656,6 +3659,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/ext/lb_policy/grpclb/grpclb.c \
+    src/core/ext/lb_policy/grpclb/grpclb_channel.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -17749,6 +17753,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
@@ -17770,6 +17775,7 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/lb_targets_info.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.c: $(OPENSSL_DEP)

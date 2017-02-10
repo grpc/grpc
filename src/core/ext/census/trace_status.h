@@ -31,41 +31,15 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/ext/census/trace_string.h"
 
-/* -- Fake transport security credentials. -- */
+/* Stores a status code and status message for a trace. */
+typedef struct trace_status {
+  int64_t errorCode;
+  trace_string errorMessage;
+} trace_status;
 
-/* Used to verify the target names given to the fake transport security
- * connector.
- *
- * Its syntax by example:
- * For LB channels:
- *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
- * For regular channels:
- *     "backend_taget_1,backend_target_2,..."
- *
- * That is to say, LB channels have a heading list of LB targets separated from
- * the list of backend targets by a semicolon. For non-LB channels, only the
- * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
-
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
-
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
-/* --  Metadata-only Test credentials. -- */
-
-typedef struct {
-  grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
-} grpc_md_only_test_credentials;
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
+#endif

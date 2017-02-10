@@ -31,41 +31,33 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_PROPAGATION_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_PROPAGATION_H
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/ext/census/tracing.h"
 
-/* -- Fake transport security credentials. -- */
+/* Encoding and decoding functions for receiving and sending trace contexts
+   over the wire.  Only RPC libraries should be calling these
+   functions.  These functions return the number of bytes encoded/decoded
+   (0 if a failure has occurred). buf_size indicates the size of the
+   input/output buffer. trace_span_context is a struct that includes the
+   trace ID, span ID, and a set of option flags (is_sampled, etc.). */
 
-/* Used to verify the target names given to the fake transport security
- * connector.
- *
- * Its syntax by example:
- * For LB channels:
- *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
- * For regular channels:
- *     "backend_taget_1,backend_target_2,..."
- *
- * That is to say, LB channels have a heading list of LB targets separated from
- * the list of backend targets by a semicolon. For non-LB channels, only the
- * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
+/* Converts a span context to a binary byte buffer. */
+size_t trace_span_context_to_binary(const trace_span_context *ctxt,
+                                    uint8_t *buf, size_t buf_size);
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+/* Reads a binary byte buffer and populates a span context structure. */
+size_t binary_to_trace_span_context(const uint8_t *buf, size_t buf_size,
+                                    trace_span_context *ctxt);
 
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
+/* Converts a span context to an http metadata compatible string. */
+size_t trace_span_context_to_http_format(const trace_span_context *ctxt,
+                                         char *buf, size_t buf_size);
 
-/* --  Metadata-only Test credentials. -- */
+/* Reads an http metadata compatible string and populates a span context
+   structure. */
+size_t http_format_to_trace_span_context(const char *buf, size_t buf_size,
+                                         trace_span_context *ctxt);
 
-typedef struct {
-  grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
-} grpc_md_only_test_credentials;
-
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
+#endif
