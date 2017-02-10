@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,43 @@
  *
  */
 
-#import <GRPCClient/internal_testing/GRPCCall+Tests.h>
+#import "GRPCOpBatchLog.h"
 
-#import "InteropTests.h"
+@implementation GRPCOpBatchLog
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+NSMutableArray *opBatchLog = nil;
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
-
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
++ (void)enableOpBatchLog:(BOOL)enabled {
+  @synchronized (opBatchLog) {
+    if (enabled) {
+      if (!opBatchLog) {
+        opBatchLog = [NSMutableArray array];
+      }
+    } else {
+      if (opBatchLog) {
+        opBatchLog = nil;
+      }
+    }
+  }
 }
 
-- (int32_t)encodingOverhead {
-  return 10; // bytes
++ (void)addOpBatchToLog:(NSArray *)batch {
+  @synchronized (opBatchLog) {
+    if (opBatchLog) {
+      [opBatchLog addObject:batch];
+    }
+  }
 }
 
-- (void)setUp {
-  [super setUp];
-
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
++ (NSArray *)obtainAndCleanOpBatchLog {
+  @synchronized (opBatchLog) {
+    if (opBatchLog) {
+      NSArray *out = opBatchLog;
+      opBatchLog = [NSMutableArray array];
+      return out;
+    } else {
+      return nil;
+    }
   }
 }
 

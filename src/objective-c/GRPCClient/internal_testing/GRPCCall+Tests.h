@@ -31,7 +31,7 @@
  *
  */
 
-#import "GRPCCall.h"
+#import "../GRPCCall.h"
 
 /**
  * Methods to let tune down the security of gRPC connections for specific hosts. These shouldn't be
@@ -66,16 +66,17 @@
 
 /**
  * Enables logging of op batches. Memory consumption increases as more ops are logged.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)enableOpBatchLog:(BOOL)enabled;
 
 /**
- * Add an op batch to log.
- */
-+ (void)addOpBatchToLog:(NSArray *)batch;
-
-/**
  * Obtain the logged op batches. Invoking this method will clean the log.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (NSArray *)obtainAndCleanOpBatchLog;
 @end

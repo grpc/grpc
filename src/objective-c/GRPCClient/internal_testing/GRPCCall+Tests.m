@@ -33,7 +33,8 @@
 
 #import "GRPCCall+Tests.h"
 
-#import "private/GRPCHost.h"
+#import "../private/GRPCHost.h"
+#import "../private/GRPCOpBatchLog.h"
 
 @implementation GRPCCall (Tests)
 
@@ -65,40 +66,25 @@
   [GRPCHost resetAllHostSettings];
 }
 
-static NSMutableArray *opBatchLog = nil;
-
 + (void)enableOpBatchLog:(BOOL)enabled {
-  @synchronized (opBatchLog) {
-    if (enabled) {
-      if (!opBatchLog) {
-        opBatchLog = [NSMutableArray array];
-      }
-    } else {
-      if (opBatchLog) {
-        opBatchLog = nil;
-      }
-    }
-  }
-}
-
-+ (void)addOpBatchToLog:(NSArray *)batch {
-  @synchronized (opBatchLog) {
-    if (opBatchLog) {
-      [opBatchLog addObject:batch];
-    }
-  }
+#ifdef GRPC_TEST_OBJC
+  [GRPCOpBatchLog enableOpBatchLog:enabled];
+#else
+  NSLog(@"This function is for internal testing of gRPC only. "
+        "It is not part of gRPC's public interface. Do not use in production. "
+        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
+#endif
 }
 
 + (NSArray *)obtainAndCleanOpBatchLog {
-  @synchronized (opBatchLog) {
-    if (opBatchLog) {
-      NSArray *out = opBatchLog;
-      opBatchLog = [NSMutableArray array];
-      return out;
-    } else {
-      return nil;
-    }
-  }
+#ifdef GRPC_TEST_OBJC
+  return [GRPCOpBatchLog obtainAndCleanOpBatchLog];
+#else
+  NSLog(@"This function is for internal testing of gRPC only. "
+        "It is not part of gRPC's public interface. Do not use in production. "
+        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
+  return nil;
+#endif
 }
 
 @end

@@ -44,7 +44,7 @@
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
 
-#import "GRPCCall+Tests.h"
+#import "GRPCOpBatchLog.h"
 
 @implementation GRPCOperation {
 @protected
@@ -276,7 +276,9 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
-  [GRPCCall addOpBatchToLog:operations];
+#ifdef GRPC_TEST_OBJC
+  [GRPCOpBatchLog addOpBatchToLog:operations];
+#endif
 
   size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));

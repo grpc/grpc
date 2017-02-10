@@ -103,10 +103,14 @@ post_install do |installer|
 
     # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
     # the test target 'InteropTestsRemoteWithCronet'
+    # Activate GRPCCall+Tests functions for the dedicated build configuration 'Test', which will
+    # be used by all test targets using it.
     if target.name == 'gRPC'
       target.build_configurations.each do |config|
         if config.name == 'Cronet'
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC'
+        elsif config.name == 'Test'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC'
         end
       end
     end
