@@ -132,6 +132,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
+  GPR_ASSERT(false);
+
   grpc_completion_queue_shutdown(cq);
   while (
       grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)

@@ -193,8 +193,8 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
         inet_ntop(AF_INET6, &addr6->sin6_addr, output, INET6_ADDRSTRLEN);
         gpr_log(GPR_DEBUG,
                 "native resolver gets a AF_INET6 result: \n"
-                "  addr: %s\n",
-                output);
+                "  addr: %s\n, sin6_scope_id: %d\n",
+                output, addr6->sin6_scope_id);
       }
       grpc_lb_addresses_set_address(
           addresses, i, &r->addresses->addrs[i].addr,
