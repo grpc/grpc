@@ -235,7 +235,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
-  grpc_combiner_unref(exec_ctx, r->combiner);
+  GRPC_COMBINER_UNREF(exec_ctx, r->combiner, "dns_destroy");
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
@@ -259,7 +259,7 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
-  r->combiner = args->combiner;
+  r->combiner = GRPC_COMBINER_REF(args->combiner, "dns_resolver");
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
