@@ -140,11 +140,11 @@ struct grpc_fd {
      Ref/Unref by two to avoid altering the orphaned bit */
   gpr_atm refst;
 
-  /* Indicates that the fd is shutdown and that any pending read/write closures
-     should fail. */
-  // TODO: sreek storing bool and grpc_error*
-  gpr_atm shutdown1;
-  gpr_atm shutdown_error1; /* reason for shutdown: set iff shutdown==true */
+  /* Internally stores data of type (grpc_error *). If the value is anything
+     other than GRPC_ERROR_NONE, it indicates that the fd is shutdown and this
+     contains the reason for shutdown. Once an fd is shutdown, any pending or
+     future read/write closures on the fd should fail */
+  gpr_atm shutdown_error1;
 
   /* The fd is either closed or we relinquished control of it. In either cases,
      this indicates that the 'fd' on this structure is no longer valid */
@@ -185,6 +185,7 @@ static void fd_global_shutdown(void);
 
 #define CLOSURE_NOT_READY ((gpr_atm)0)
 #define CLOSURE_READY ((gpr_atm)1)
+#define CLOSURE_SHUTDOWN ((gpr_atm)2)
 
 /*******************************************************************************
  * Polling island Declarations
@@ -912,11 +913,8 @@ static void unref_by(grpc_fd *fd, int n) {
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
 
-    if ((bool)gpr_atm_acq_load(&fd->shutdown1)) {
-      grpc_error *err =
-          (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error1);
-      GRPC_ERROR_UNREF(err);
-    }
+    grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error1);
+    GRPC_ERROR_UNREF(err);
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -980,7 +978,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  gpr_atm_rel_store(&new_fd->shutdown1, (gpr_atm) false);
   gpr_atm_rel_store(&new_fd->shutdown_error1, (gpr_atm)GRPC_ERROR_NONE);
   new_fd->orphaned = false;
   gpr_atm_rel_store(&new_fd->read_closure, CLOSURE_NOT_READY);
@@ -1077,15 +1074,6 @@ static grpc_error *fd_shutdown_error(grpc_fd *fd) {
   }
 
   return err;
-
-  /* TODO sreek - delete this */
-  /*
-  if (!fd->shutdown) {
-    return GRPC_ERROR_NONE;
-  } else {
-    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
-  }
-  */
 }
 
 static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
@@ -1137,8 +1125,7 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
   /* Try the fast-path first (i.e expect current value to be CLOSURE_NOT_READY
    * and then try to change it to CLOSURE_READY) */
   if (!gpr_atm_acq_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
-    /* CAS failed since the current state is not CLOSURE_NOT_READY. Find out
-       what is the current state */
+    /* Fallback to slowpath */
     gpr_atm curr = gpr_atm_acq_load(state);
     switch (curr) {
       case CLOSURE_READY: {
@@ -1151,8 +1138,9 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
            beginning of this function but now it is CLOSURE_NOT_READY. This is
            only possible if the state transitioned out of CLOSURE_NOT_READY to
            either CLOSURE_READY or <some closure> and then back to
-           CLOSURE_NOT_READY again. So there is no need to make the state
-           CLOSURE_READY now */
+           CLOSURE_NOT_READY again (i.e after we entered this function, the fd
+           became "ready" and the necessary actions were already done). So there
+           is no need to make the state CLOSURE_READY now */
         break;
       }
 
@@ -1178,14 +1166,20 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd *fd) {
-  return (bool)gpr_atm_acq_load(&fd->shutdown1);
+  grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error1);
+  return (err != GRPC_ERROR_NONE);
 }
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
-  if (gpr_atm_acq_cas(&fd->shutdown1, (gpr_atm) false, (gpr_atm) true)) {
-    gpr_atm_rel_store(&fd->shutdown_error1, (gpr_atm)why);
+  /* If 'why' is GRPC_ERROR_NONE, change it to something else so that we know
+     that the fd is shutdown just by looking at fd->shutdown_error */
+  if (why == GRPC_ERROR_NONE) {
+    why = GRPC_ERROR_INTERNAL;
+  }
 
+  if (gpr_atm_acq_cas(&fd->shutdown_error1, (gpr_atm)GRPC_ERROR_NONE,
+                      (gpr_atm)why)) {
     shutdown(fd->fd, SHUT_RDWR);
 
     /* Flush any pending read and write closures at this point. Since

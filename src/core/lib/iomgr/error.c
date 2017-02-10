@@ -164,7 +164,7 @@ static const char *error_time_name(grpc_error_times key) {
 
 bool grpc_error_is_special(grpc_error *err) {
   return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM ||
-         err == GRPC_ERROR_CANCELLED;
+         err == GRPC_ERROR_CANCELLED || err == GRPC_ERROR_INTERNAL;
 }
 
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
@@ -260,6 +260,8 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
       out =
           grpc_error_set_int(GRPC_ERROR_CREATE("cancelled"),
                              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+    else if (in == GRPC_ERROR_INTERNAL)
+      out = GRPC_ERROR_CREATE("internal");
     else
       out = GRPC_ERROR_CREATE("unknown");
   } else {
