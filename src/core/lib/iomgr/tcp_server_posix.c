@@ -191,7 +191,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_EXPAND_WILDCARD_ADDRS
                                  " must be an integer");

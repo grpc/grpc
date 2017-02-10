@@ -390,9 +390,8 @@ static void test_connect(size_t num_connects,
             result.server_fd >= 0 && result.server == s) {
           continue;
         }
-        const char *err_str = grpc_error_string(err);
-        gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str, err_str);
-        grpc_error_free_string(err_str);
+        gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
+                grpc_error_string(err));
         GPR_ASSERT(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
         GRPC_ERROR_UNREF(err);
