@@ -286,7 +286,7 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
-  grpc_combiner_destroy(exec_ctx, r->combiner);
+  GRPC_COMBINER_UNREF(exec_ctx, r->combiner, "dns_ares_destroy");
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
