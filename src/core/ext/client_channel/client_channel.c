@@ -584,7 +584,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
-  grpc_combiner_destroy(exec_ctx, chand->combiner);
+  GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
   gpr_mu_destroy(&chand->info_mu);
 }
 
