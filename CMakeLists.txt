@@ -700,6 +700,17 @@ add_library(gpr
   src/core/lib/support/wrap_memcpy.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -777,6 +788,17 @@ if (gRPC_BUILD_TESTS)
 add_library(gpr_test_util
   test/core/util/test_config.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(gpr_test_util PROPERTIES COMPILE_PDB_NAME "gpr_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr_test_util.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(gpr_test_util
@@ -1025,6 +1047,17 @@ add_library(grpc
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc
@@ -1293,6 +1326,17 @@ add_library(grpc_cronet
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_cronet PROPERTIES COMPILE_PDB_NAME "grpc_cronet"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_cronet.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1504,6 +1548,17 @@ add_library(grpc_test_util
   src/core/lib/transport/transport_op_string.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_test_util PROPERTIES COMPILE_PDB_NAME "grpc_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc_test_util
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1581,6 +1636,17 @@ add_library(grpc_test_util_unsecure
   test/core/util/port_windows.c
   test/core/util/slice_splitter.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_test_util_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_test_util_unsecure"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util_unsecure.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc_test_util_unsecure
@@ -1804,6 +1870,17 @@ add_library(grpc_unsecure
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_unsecure.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1875,6 +1952,17 @@ add_library(reconnect_server
   test/core/util/reconnect_server.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(reconnect_server PROPERTIES COMPILE_PDB_NAME "reconnect_server"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/reconnect_server.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(reconnect_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1903,6 +1991,17 @@ if (gRPC_BUILD_TESTS)
 add_library(test_tcp_server
   test/core/util/test_tcp_server.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(test_tcp_server PROPERTIES COMPILE_PDB_NAME "test_tcp_server"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/test_tcp_server.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(test_tcp_server
@@ -1966,6 +2065,17 @@ add_library(grpc++
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc++
@@ -2317,6 +2427,17 @@ add_library(grpc++_cronet
   third_party/nanopb/pb_encode.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_cronet PROPERTIES COMPILE_PDB_NAME "grpc++_cronet"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_cronet.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc++_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -2468,6 +2589,17 @@ add_library(grpc++_proto_reflection_desc_db
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_proto_reflection_desc_db PROPERTIES COMPILE_PDB_NAME "grpc++_proto_reflection_desc_db"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_proto_reflection_desc_db.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
@@ -2512,6 +2644,17 @@ add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_reflection PROPERTIES COMPILE_PDB_NAME "grpc++_reflection"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_reflection.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
@@ -2560,6 +2703,17 @@ add_library(grpc++_test
   src/cpp/test/server_context_test_spouse.cc
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_test PROPERTIES COMPILE_PDB_NAME "grpc++_test"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc++_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -2588,6 +2742,17 @@ if (gRPC_BUILD_TESTS)
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_test_config PROPERTIES COMPILE_PDB_NAME "grpc++_test_config"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_config.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc++_test_config
@@ -2634,6 +2799,17 @@ add_library(grpc++_test_util
   test/cpp/util/test_credentials_provider.cc
   src/cpp/codegen/codegen_init.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_test_util PROPERTIES COMPILE_PDB_NAME "grpc++_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_util.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/echo_messages.proto
@@ -2764,6 +2940,17 @@ add_library(grpc++_unsecure
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_unsecure"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_unsecure.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc++_unsecure
@@ -2909,6 +3096,17 @@ add_library(grpc_cli_libs
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_cli_libs PROPERTIES COMPILE_PDB_NAME "grpc_cli_libs"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_cli_libs.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
@@ -2955,6 +3153,17 @@ add_library(grpc_plugin_support
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_plugin_support PROPERTIES COMPILE_PDB_NAME "grpc_plugin_support"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_plugin_support.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(grpc_plugin_support
@@ -3012,6 +3221,17 @@ add_library(http2_client_main
   test/cpp/interop/http2_client.cc
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(http2_client_main PROPERTIES COMPILE_PDB_NAME "http2_client_main"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/http2_client_main.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/empty.proto
 )
@@ -3057,6 +3277,17 @@ add_library(interop_client_helper
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
   test/cpp/interop/client_helper.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(interop_client_helper PROPERTIES COMPILE_PDB_NAME "interop_client_helper"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/interop_client_helper.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/messages.proto
@@ -3107,6 +3338,17 @@ add_library(interop_client_main
   test/cpp/interop/interop_client.cc
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(interop_client_main PROPERTIES COMPILE_PDB_NAME "interop_client_main"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/interop_client_main.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/empty.proto
 )
@@ -3151,6 +3393,17 @@ if (gRPC_BUILD_TESTS)
 add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(interop_server_helper PROPERTIES COMPILE_PDB_NAME "interop_server_helper"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/interop_server_helper.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(interop_server_helper
@@ -3197,6 +3450,17 @@ add_library(interop_server_lib
   test/cpp/interop/interop_server.cc
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(interop_server_lib PROPERTIES COMPILE_PDB_NAME "interop_server_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/interop_server_lib.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/empty.proto
 )
@@ -3241,6 +3505,17 @@ if (gRPC_BUILD_TESTS)
 add_library(interop_server_main
   test/cpp/interop/interop_server_bootstrap.cc
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(interop_server_main PROPERTIES COMPILE_PDB_NAME "interop_server_main"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/interop_server_main.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(interop_server_main
@@ -3300,6 +3575,17 @@ add_library(qps
   test/cpp/util/benchmark_config.cc
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(qps PROPERTIES COMPILE_PDB_NAME "qps"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qps.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/messages.proto
 )
@@ -3345,6 +3631,17 @@ add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_csharp_ext PROPERTIES COMPILE_PDB_NAME "grpc_csharp_ext"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_csharp_ext.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -3379,6 +3676,17 @@ add_library(bad_client_test
   test/core/bad_client/bad_client.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(bad_client_test PROPERTIES COMPILE_PDB_NAME "bad_client_test"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bad_client_test.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -3406,6 +3714,17 @@ if (gRPC_BUILD_TESTS)
 add_library(bad_ssl_test_server
   test/core/bad_ssl/server_common.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(bad_ssl_test_server PROPERTIES COMPILE_PDB_NAME "bad_ssl_test_server"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bad_ssl_test_server.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(bad_ssl_test_server
@@ -3485,6 +3804,17 @@ add_library(end2end_tests
   test/core/end2end/tests/write_buffering_at_end.c
 )
 
+if(WIN32 AND MSVC)
+  set_target_properties(end2end_tests PROPERTIES COMPILE_PDB_NAME "end2end_tests"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/end2end_tests.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
 
 target_include_directories(end2end_tests
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -3562,6 +3892,17 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
+
+if(WIN32 AND MSVC)
+  set_target_properties(end2end_nosec_tests PROPERTIES COMPILE_PDB_NAME "end2end_nosec_tests"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/end2end_nosec_tests.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
 
 
 target_include_directories(end2end_nosec_tests
