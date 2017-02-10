@@ -442,6 +442,9 @@ add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
 add_dependencies(buildtests_c percent_encoding_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c pollset_set_test)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c resolve_address_posix_test)
 endif()
@@ -953,6 +956,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
+  src/core/lib/security/transport/lb_targets_info.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
   src/core/lib/security/transport/security_handshaker.c
@@ -993,6 +997,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   src/core/ext/lb_policy/grpclb/grpclb.c
+  src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -1272,6 +1277,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
+  src/core/lib/security/transport/lb_targets_info.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
   src/core/lib/security/transport/security_handshaker.c
@@ -1773,6 +1779,7 @@ add_library(grpc_unsecure
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
   src/core/ext/lb_policy/grpclb/grpclb.c
+  src/core/ext/lb_policy/grpclb/grpclb_channel.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -6130,6 +6137,35 @@ target_link_libraries(percent_encoding_test
   gpr
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(pollset_set_test
+  test/core/iomgr/pollset_set_test.c
+)
+
+
+target_include_directories(pollset_set_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(pollset_set_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)

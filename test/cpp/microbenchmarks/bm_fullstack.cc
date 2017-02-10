@@ -54,9 +54,11 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/util/memory_counters.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
 }
+#include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
@@ -67,6 +69,7 @@ namespace testing {
 static class InitializeStuff {
  public:
   InitializeStuff() {
+    grpc_memory_counters_init();
     init_lib_.init();
     rq_ = grpc_resource_quota_create("bm");
   }
@@ -94,7 +97,42 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
-class FullstackFixture {
+#ifdef GPR_MU_COUNTERS
+extern "C" gpr_atm grpc_mu_locks;
+#endif
+
+class BaseFixture {
+ public:
+  void Finish(benchmark::State& s) {
+    std::ostringstream out;
+    this->AddToLabel(out, s);
+#ifdef GPR_MU_COUNTERS
+    out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&grpc_mu_locks) -
+                                       mu_locks_at_start_) /
+                              (double)s.iterations());
+#endif
+    grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
+    out << " allocs/iter:"
+        << ((double)(counters_at_end.total_allocs_absolute -
+                     counters_at_start_.total_allocs_absolute) /
+            (double)s.iterations());
+    auto label = out.str();
+    if (label.length() && label[0] == ' ') {
+      label = label.substr(1);
+    }
+    s.SetLabel(label);
+  }
+
+  virtual void AddToLabel(std::ostream& out, benchmark::State& s) = 0;
+
+ private:
+#ifdef GPR_MU_COUNTERS
+  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&grpc_mu_locks);
+#endif
+  grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
+};
+
+class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const grpc::string& address) {
     ServerBuilder b;
@@ -130,7 +168,7 @@ class TCP : public FullstackFixture {
  public:
   TCP(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) {}
 
  private:
   static grpc::string MakeAddress() {
@@ -145,7 +183,7 @@ class UDS : public FullstackFixture {
  public:
   UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {}
 
  private:
   static grpc::string MakeAddress() {
@@ -157,7 +195,7 @@ class UDS : public FullstackFixture {
   }
 };
 
-class EndpointPairFixture {
+class EndpointPairFixture : public BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
     ServerBuilder b;
@@ -233,7 +271,7 @@ class SockPair : public EndpointPairFixture {
                                          "test", initialize_stuff.rq(), 8192)) {
   }
 
-  void Finish(benchmark::State& state) {}
+  void AddToLabel(std::ostream& out, benchmark::State& state) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
@@ -241,11 +279,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service)
       : EndpointPairFixture(service, MakeEndpoints()) {}
 
-  void Finish(benchmark::State& state) {
-    std::ostringstream out;
-    out << "writes/iteration:"
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    out << " writes/iter:"
         << ((double)stats_.num_writes / (double)state.iterations());
-    state.SetLabel(out.str());
   }
 
  private:
@@ -402,6 +438,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -655,6 +692,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     response_rw.Read(&recv_request, tag(0));
     while (state.KeepRunning()) {
+      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -712,6 +750,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     }
     request_rw->Read(&recv_response, tag(0));
     while (state.KeepRunning()) {
+      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));

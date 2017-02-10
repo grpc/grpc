@@ -335,7 +335,7 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem,
                                      grpc_channel_element_args *args) {
   grpc_security_connector *sc =
-      grpc_find_security_connector_in_args(args->channel_args);
+      grpc_security_connector_find_in_args(args->channel_args);
   grpc_auth_context *auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
 

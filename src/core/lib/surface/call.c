@@ -897,7 +897,7 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(msg);
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    } else {
+    } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
 
@@ -1483,6 +1483,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         bctl->send_final_op = 1;
         call->sent_final_op = 1;
+        GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
@@ -1511,6 +1512,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
                 op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
                 0)) {
+          for (int n = 0; n < call->send_extra_metadata_count; n++) {
+            GRPC_MDELEM_UNREF(exec_ctx, call->send_extra_metadata[n].md);
+          }
+          call->send_extra_metadata_count = 0;
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }

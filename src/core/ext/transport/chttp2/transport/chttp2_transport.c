@@ -168,7 +168,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_map_destroy(&t->stream_map);
   grpc_connectivity_state_destroy(exec_ctx, &t->channel_callback.state_tracker);
 
-  grpc_combiner_destroy(exec_ctx, t->combiner);
+  GRPC_COMBINER_UNREF(exec_ctx, t->combiner, "chttp2_transport");
 
   cancel_pings(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
 
@@ -292,6 +292,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   t->sent_local_settings = 0;
   t->write_buffer_size = DEFAULT_WINDOW;
+  t->enable_bdp_probe = true;
 
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
@@ -358,6 +359,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         t->write_buffer_size = (uint32_t)grpc_channel_arg_get_integer(
             &channel_args->args[i],
             (grpc_integer_options){0, 0, MAX_WRITE_BUFFER_SIZE});
+      } else if (0 ==
+                 strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_BDP_PROBE)) {
+        t->enable_bdp_probe = grpc_channel_arg_get_integer(
+            &channel_args->args[i], (grpc_integer_options){1, 0, 1});
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -1908,33 +1913,36 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
 
-    if (need_bdp_ping) {
-      GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-      grpc_bdp_estimator_schedule_ping(&t->bdp_estimator);
-      send_ping_locked(exec_ctx, t,
-                       GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-                       &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
-    }
+    if (t->enable_bdp_probe) {
+      if (need_bdp_ping) {
+        GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
+        grpc_bdp_estimator_schedule_ping(&t->bdp_estimator);
+        send_ping_locked(exec_ctx, t,
+                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
+                         &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
+      }
 
-    int64_t estimate = -1;
-    if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-      double target = 1 + log2((double)estimate);
-      double memory_pressure = grpc_resource_quota_get_memory_pressure(
-          grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
-      if (memory_pressure > 0.8) {
-        target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+      int64_t estimate = -1;
+      if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
+        double target = 1 + log2((double)estimate);
+        double memory_pressure = grpc_resource_quota_get_memory_pressure(
+            grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
+        if (memory_pressure > 0.8) {
+          target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+        }
+        double bdp_error =
+            target - grpc_pid_controller_last(&t->pid_controller);
+        gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+        gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
+        double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+        if (dt > 0.1) {
+          dt = 0.1;
+        }
+        double log2_bdp_guess =
+            grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+        update_bdp(exec_ctx, t, pow(2, log2_bdp_guess));
+        t->last_pid_update = now;
       }
-      double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
-      gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-      gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-      double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-      if (dt > 0.1) {
-        dt = 0.1;
-      }
-      double log2_bdp_guess =
-          grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-      update_bdp(exec_ctx, t, pow(2, log2_bdp_guess));
-      t->last_pid_update = now;
     }
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {

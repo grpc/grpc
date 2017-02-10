@@ -34,8 +34,6 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H
 #define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H
 
-/// Returns the name of the proxy to use, or NULL if no proxy is configured.
-/// Caller takes ownership of result.
-char* grpc_get_http_proxy_server();
+void grpc_register_http_proxy_mapper();
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_PROXY_H */
