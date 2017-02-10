@@ -438,7 +438,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
-  follow_up->cb(exec_ctx, follow_up->cb_arg, error);
+  grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
