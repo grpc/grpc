@@ -895,7 +895,6 @@ try:
     spec = server_jobspec(http2InteropServer, docker_images.get(lang))
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
-    server_addresses[lang] = ('localhost', _DEFAULT_SERVER_PORT)
 
   jobs = []
   if args.cloud_to_prod:
@@ -971,16 +970,16 @@ try:
                                           insecure=args.insecure)
         jobs.append(test_job)
 
-    if args.http2_badserver_interop:
-      for language in languages_http2_badserver_interop:
-        for test_case in _HTTP2_BADSERVER_TEST_CASES:
-          test_job = cloud_to_cloud_jobspec(language,
-                                            test_case,
-                                            server_name,
-                                            server_host,
-                                            server_port,
-                                            docker_image=docker_images.get(str(language)))
-          jobs.append(test_job)
+  if args.http2_badserver_interop:
+    for language in languages_http2_badserver_interop:
+      for test_case in _HTTP2_BADSERVER_TEST_CASES:
+        test_job = cloud_to_cloud_jobspec(language,
+                                          test_case,
+                                          str(http2InteropServer),
+                                          'localhost',
+                                          _DEFAULT_SERVER_PORT,
+                                          docker_image=docker_images.get(str(language)))
+        jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
