@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,37 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#import "GRPCCall+Tests.h"
 
-#import "InteropTests.h"
+#import "private/GRPCHost.h"
 
-static NSString * const kLocalCleartextHost = @"localhost:5050";
+@implementation GRPCCall (Tests)
 
-/** Tests in InteropTests.m, sending the RPCs to a local cleartext server. */
-@interface InteropTestsLocalCleartext : InteropTests
-@end
++ (void)useTestCertsPath:(NSString *)certsPath
+                testName:(NSString *)testName
+                 forHost:(NSString *)host {
+  if (!host || !certsPath || !testName) {
+    [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
+  }
+  NSError *error = nil;
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                                      encoding:NSUTF8StringEncoding
+                                                      error:&error];
+  if (error != nil) {
+      [NSException raise:[error localizedDescription] format:@"failed to load certs"];
+  }
 
-@implementation InteropTestsLocalCleartext
-
-+ (NSString *)host {
-  return kLocalCleartextHost;
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  [hostConfig setTLSPEMRootCerts:certs withPrivateKey:nil withCertChain:nil error:nil];
+  hostConfig.hostNameOverride = testName;
 }
 
-- (int32_t)encodingOverhead {
-  return 10; // bytes
++ (void)useInsecureConnectionsForHost:(NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.secure = NO;
 }
 
-- (void)setUp {
-  [super setUp];
-
-  // Register test server as non-SSL.
-  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
++ (void)resetHostSettings {
+  [GRPCHost resetAllHostSettings];
 }
-
 @end

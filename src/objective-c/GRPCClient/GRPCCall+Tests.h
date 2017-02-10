@@ -31,7 +31,7 @@
  *
  */
 
-#import "../GRPCCall.h"
+#import "GRPCCall.h"
 
 /**
  * Methods to let tune down the security of gRPC connections for specific hosts. These shouldn't be
@@ -45,9 +45,6 @@
  *
  * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
  * more than one invocation of the methods of this category.
- *
- * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
- * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
@@ -58,34 +55,12 @@
  *
  * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
  * more than one invocation of the methods of this category.
- *
- * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
- * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)useInsecureConnectionsForHost:(NSString *)host;
 
 /**
  * Resets all host configurations to their default values, and flushes all connections from the
  * cache.
- *
- * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
- * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)resetHostSettings;
-
-/**
- * Enables logging of op batches. Memory consumption increases as more ops are logged.
- *
- * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
- * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
- */
-+ (void)enableOpBatchLog:(BOOL)enabled;
-
-/**
- * Obtain the logged op batches. Invoking this method will clean the log.
- *
- * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
- * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
- */
-+ (NSArray *)obtainAndCleanOpBatchLog;
 @end

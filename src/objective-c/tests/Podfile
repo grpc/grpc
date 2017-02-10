@@ -103,7 +103,7 @@ post_install do |installer|
 
     # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
     # the test target 'InteropTestsRemoteWithCronet'
-    # Activate GRPCCall+Tests functions for the dedicated build configuration 'Test', which will
+    # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
     # be used by all test targets using it.
     if target.name == 'gRPC'
       target.build_configurations.each do |config|

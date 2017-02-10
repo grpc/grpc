@@ -31,7 +31,8 @@
  *
  */
 
-#import <GRPCClient/internal_testing/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Cronet.h>

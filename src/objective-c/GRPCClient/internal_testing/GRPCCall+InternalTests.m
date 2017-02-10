@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,58 +31,11 @@
  *
  */
 
-#import "GRPCCall+Tests.h"
+#import "GRPCCall+InternalTests.h"
 
-#import "../private/GRPCHost.h"
 #import "../private/GRPCOpBatchLog.h"
 
-@implementation GRPCCall (Tests)
-
-+ (void)useTestCertsPath:(NSString *)certsPath
-                testName:(NSString *)testName
-                 forHost:(NSString *)host {
-#ifdef GRPC_TEST_OBJC
-  if (!host || !certsPath || !testName) {
-    [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
-  }
-  NSError *error = nil;
-  NSString *certs = [NSString stringWithContentsOfFile:certsPath
-                                                      encoding:NSUTF8StringEncoding
-                                                      error:&error];
-  if (error != nil) {
-      [NSException raise:[error localizedDescription] format:@"failed to load certs"];
-  }
-
-  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  [hostConfig setTLSPEMRootCerts:certs withPrivateKey:nil withCertChain:nil error:nil];
-  hostConfig.hostNameOverride = testName;
-#else
-  NSLog(@"This function is for internal testing of gRPC only. "
-        "It is not part of gRPC's public interface. Do not use in production. "
-        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
-#endif
-}
-
-+ (void)useInsecureConnectionsForHost:(NSString *)host {
-#ifdef GRPC_TEST_OBJC
-  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.secure = NO;
-#else
-  NSLog(@"This function is for internal testing of gRPC only. "
-        "It is not part of gRPC's public interface. Do not use in production. "
-        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
-#endif
-}
-
-+ (void)resetHostSettings {
-#ifdef GRPC_TEST_OBJC
-  [GRPCHost resetAllHostSettings];
-#else
-  NSLog(@"This function is for internal testing of gRPC only. "
-        "It is not part of gRPC's public interface. Do not use in production. "
-        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
-#endif
-}
+@implementation GRPCCall (InternalTests)
 
 + (void)enableOpBatchLog:(BOOL)enabled {
 #ifdef GRPC_TEST_OBJC

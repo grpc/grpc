@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,27 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#import "../GRPCCall.h"
 
-#import "InteropTests.h"
+/**
+ * Methods used for gRPC internal tests. DO NOT USE.
+ */
+@interface GRPCCall (InternalTests)
 
-static NSString * const kLocalCleartextHost = @"localhost:5050";
+/**
+ * Enables logging of op batches. Memory consumption increases as more ops are logged.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
+ */
++ (void)enableOpBatchLog:(BOOL)enabled;
 
-/** Tests in InteropTests.m, sending the RPCs to a local cleartext server. */
-@interface InteropTestsLocalCleartext : InteropTests
-@end
-
-@implementation InteropTestsLocalCleartext
-
-+ (NSString *)host {
-  return kLocalCleartextHost;
-}
-
-- (int32_t)encodingOverhead {
-  return 10; // bytes
-}
-
-- (void)setUp {
-  [super setUp];
-
-  // Register test server as non-SSL.
-  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-}
+/**
+ * Obtain the logged op batches. Invoking this method will clean the log.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
+ */
++ (NSArray *)obtainAndCleanOpBatchLog;
 
 @end
