@@ -1039,7 +1039,7 @@ def _check_arch_option(arch):
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
   # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
+  if compiler == 'default' or compiler == 'vs2013':
     return 'vsprojects\\build_vs2013.bat'
   elif compiler == 'vs2015':
     return 'vsprojects\\build_vs2015.bat'
