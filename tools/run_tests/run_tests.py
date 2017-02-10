@@ -1043,8 +1043,6 @@ def _windows_build_bat(compiler):
     return 'vsprojects\\build_vs2013.bat'
   elif compiler == 'vs2015':
     return 'vsprojects\\build_vs2015.bat'
-  elif compiler == 'vs2010':
-    return 'vsprojects\\build_vs2010.bat'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -1057,8 +1055,6 @@ def _windows_toolset_option(compiler):
     return '/p:PlatformToolset=v120'
   elif compiler == 'vs2015':
     return '/p:PlatformToolset=v140'
-  elif compiler == 'vs2010':
-    return '/p:PlatformToolset=v100'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -1148,7 +1144,7 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2010', 'vs2013', 'vs2015',
+                           'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
                            'electron1.3',
