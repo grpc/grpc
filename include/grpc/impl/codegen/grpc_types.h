@@ -219,6 +219,13 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** One of "reuse_any" - allow reuse of server ports,
+           "reuse_check" - allow reuse of server ports, but first bind without
+                           SO_REUSEPORT (allows a racy check that no servers are
+                           accidentally aliasing this port),
+           "no" - dont use SO_REUSEPORT
+    Setting GRPC_ARG_ALLOW_REUSEPORT forces this to "no" */
+#define GRPC_ARG_REUSEPORT_MODE "grpc.so_reuseport_mode"
 /** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
    to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"

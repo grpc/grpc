@@ -44,6 +44,8 @@
 #include "test/core/util/test_config.h"
 
 void test_unparsable_target(void) {
+  gpr_log(GPR_INFO, "TEST: test_unparsable_target");
+
   grpc_channel_args args = {0, NULL};
   grpc_server *server = grpc_server_create(&args, NULL);
   int port = grpc_server_add_insecure_http2_port(server, "[");
@@ -51,17 +53,47 @@ void test_unparsable_target(void) {
   grpc_server_destroy(server);
 }
 
-void test_add_same_port_twice() {
+void test_add_same_port_twice(const char *reuse_port_mode,
+                              bool first_should_succeed,
+                              bool second_should_succeed) {
+  gpr_log(GPR_INFO,
+          "TEST: test_add_same_port_twice reuse_port_mode=%s "
+          "first_should_succeed=%d second_should_succeed=%d",
+          reuse_port_mode, first_should_succeed, second_should_succeed);
+
   grpc_arg a;
-  a.type = GRPC_ARG_INTEGER;
-  a.key = GRPC_ARG_ALLOW_REUSEPORT;
-  a.value.integer = 0;
+  a.type = GRPC_ARG_STRING;
+  a.key = GRPC_ARG_REUSEPORT_MODE;
+  a.value.string = (char *)reuse_port_mode;
   grpc_channel_args args = {1, &a};
 
   int port = grpc_pick_unused_port_or_die();
   char *addr = NULL;
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
-  grpc_server *server = grpc_server_create(&args, NULL);
+  grpc_server *server =
+      grpc_server_create(reuse_port_mode == NULL ? NULL : &args, NULL);
+  grpc_server_credentials *fake_creds =
+      grpc_fake_transport_security_server_credentials_create();
+  gpr_join_host_port(&addr, "localhost", port);
+  GPR_ASSERT((grpc_server_add_secure_http2_port(server, addr, fake_creds) !=
+              0) == first_should_succeed);
+  GPR_ASSERT((grpc_server_add_secure_http2_port(server, addr, fake_creds) !=
+              0) == second_should_succeed);
+
+  grpc_server_credentials_release(fake_creds);
+  gpr_free(addr);
+  grpc_server_shutdown_and_notify(server, cq, NULL);
+  grpc_completion_queue_pluck(cq, NULL, gpr_inf_future(GPR_CLOCK_REALTIME),
+                              NULL);
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
+}
+
+void test_add_same_port_twice_with_defaults() {
+  int port = grpc_pick_unused_port_or_die();
+  char *addr = NULL;
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_server *server = grpc_server_create(NULL, NULL);
   grpc_server_credentials *fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   gpr_join_host_port(&addr, "localhost", port);
@@ -81,7 +113,11 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_unparsable_target();
-  test_add_same_port_twice();
+  test_add_same_port_twice("reuse_check", true, false);
+  test_add_same_port_twice("no", true, false);
+  test_add_same_port_twice("reuse_any", true, true);
+  test_add_same_port_twice(NULL, true, false);
+  test_add_same_port_twice("garbage", false, false);
   grpc_shutdown();
   return 0;
 }
