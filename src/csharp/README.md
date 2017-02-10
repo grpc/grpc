@@ -11,7 +11,6 @@ SUPPORTED PLATFORMS
 - .NET Framework 4.5+ (Windows)
 - Mono 4+ on Linux, Windows and Mac OS X
 
-
 PREREQUISITES
 --------------
 
