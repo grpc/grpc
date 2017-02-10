@@ -156,6 +156,10 @@ static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                             grpc_error *error);
 
+static grpc_error *deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p,
+    grpc_chttp2_transport *t, grpc_chttp2_stream *s, grpc_slice_buffer *slices);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -595,6 +599,8 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
+  s->incoming_frames = NULL;
+  grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
 
   GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
 
@@ -612,7 +618,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
 static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
                                   grpc_error *error) {
-  grpc_byte_stream *bs;
   grpc_chttp2_stream *s = sp;
   grpc_chttp2_transport *t = s->t;
 
@@ -623,8 +628,12 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, s->id) == NULL);
   }
 
-  while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames))) {
-    incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+  if (s->incoming_frames != NULL) {
+    grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
+    s->incoming_frames = NULL;
+    incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base, GRPC_ERROR_NONE);
+    grpc_slice_buffer_destroy_internal(exec_ctx,
+                                       &s->unprocessed_incoming_frames_buffer);
   }
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
@@ -1316,8 +1325,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     GPR_ASSERT(s->recv_message_ready == NULL);
     s->recv_message_ready = op->recv_message_ready;
     s->recv_message = op->recv_message;
-    if (s->id != 0 &&
-        (s->incoming_frames.head == NULL || s->incoming_frames.head->is_tail)) {
+    if (s->id != 0 && (s->incoming_frames == NULL ||
+                       s->unprocessed_incoming_frames_buffer.count == 0)) {
       incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5, 0);
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
@@ -1483,13 +1492,16 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
                                                       grpc_chttp2_transport *t,
                                                       grpc_chttp2_stream *s) {
-  grpc_byte_stream *bs;
   if (s->recv_initial_metadata_ready != NULL &&
       s->published_metadata[0] != GRPC_METADATA_NOT_PUBLISHED) {
     if (s->seen_error) {
-      while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
-             NULL) {
-        incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+      if (s->incoming_frames != NULL) {
+        grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
+        s->incoming_frames = NULL;
+        incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
+                                            GRPC_ERROR_NONE);
+        grpc_slice_buffer_destroy_internal(
+            exec_ctx, &s->unprocessed_incoming_frames_buffer);
       }
     }
     grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1502,18 +1514,29 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                              grpc_chttp2_transport *t,
                                              grpc_chttp2_stream *s) {
-  grpc_byte_stream *bs;
+  grpc_error *error = GRPC_ERROR_NONE;
   if (s->recv_message_ready != NULL) {
-    while (s->final_metadata_requested && s->seen_error &&
-           (bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
-               NULL) {
-      incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+    if (s->final_metadata_requested && s->seen_error &&
+        s->incoming_frames != NULL) {
+      grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
+      s->incoming_frames = NULL;
+      incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
+                                          GRPC_ERROR_NONE);
+      grpc_slice_buffer_destroy_internal(
+          exec_ctx, &s->unprocessed_incoming_frames_buffer);
     }
-    if (s->incoming_frames.head != NULL) {
-      *s->recv_message =
-          grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames);
+    if (s->incoming_frames != NULL ||
+        (GRPC_ERROR_NONE == (error = deframe_unprocessed_incoming_frames(
+                                 exec_ctx, &s->data_parser, t, s,
+                                 &s->unprocessed_incoming_frames_buffer)) &&
+         s->incoming_frames != NULL)) {
+      *s->recv_message = &s->incoming_frames->base;
+      s->incoming_frames = NULL;
       GPR_ASSERT(*s->recv_message != NULL);
       null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
+    } else if (error != GRPC_ERROR_NONE) {
+      GPR_ASSERT(s->incoming_frames == NULL);
+      null_then_run_closure(exec_ctx, &s->recv_message_ready, error);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = NULL;
       null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
@@ -1524,14 +1547,17 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s) {
-  grpc_byte_stream *bs;
   grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   if (s->recv_trailing_metadata_finished != NULL && s->read_closed &&
       s->write_closed) {
     if (s->seen_error) {
-      while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
-             NULL) {
-        incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+      if (s->incoming_frames != NULL) {
+        grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
+        s->incoming_frames = NULL;
+        incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
+                                            GRPC_ERROR_NONE);
+        grpc_slice_buffer_destroy_internal(
+            exec_ctx, &s->unprocessed_incoming_frames_buffer);
       }
     }
     if (s->all_incoming_byte_streams_finished &&
@@ -2176,6 +2202,148 @@ static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
  * BYTE STREAM
  */
 
+static grpc_error *deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p,
+    grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices) {
+  while (slices->count > 0) {
+    uint8_t *beg = NULL;
+    uint8_t *end = NULL;
+    uint8_t *cur = NULL;
+
+    grpc_slice slice = grpc_slice_buffer_take_first(slices);
+
+    beg = GRPC_SLICE_START_PTR(slice);
+    end = GRPC_SLICE_END_PTR(slice);
+    cur = beg;
+    uint32_t message_flags;
+    char *msg;
+
+    if (cur == end) {
+      grpc_slice_unref_internal(exec_ctx, slice);
+      continue;
+    }
+
+    switch (p->state) {
+      case GRPC_CHTTP2_DATA_ERROR:
+        p->state = GRPC_CHTTP2_DATA_ERROR;
+        grpc_slice_unref_internal(exec_ctx, slice);
+        return GRPC_ERROR_REF(p->error);
+      case GRPC_CHTTP2_DATA_FH_0:
+        p->frame_type = *cur;
+        switch (p->frame_type) {
+          case 0:
+            p->is_frame_compressed = 0; /* GPR_FALSE */
+            break;
+          case 1:
+            p->is_frame_compressed = 1; /* GPR_TRUE */
+            break;
+          default:
+            gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
+            p->error = GRPC_ERROR_CREATE(msg);
+            p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
+                                          (intptr_t)s->id);
+            gpr_free(msg);
+            msg = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+            p->error =
+                grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, msg);
+            gpr_free(msg);
+            p->error =
+                grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
+            p->state = GRPC_CHTTP2_DATA_ERROR;
+            grpc_slice_unref_internal(exec_ctx, slice);
+            return GRPC_ERROR_REF(p->error);
+        }
+        if (++cur == end) {
+          p->state = GRPC_CHTTP2_DATA_FH_1;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        }
+      /* fallthrough */
+      case GRPC_CHTTP2_DATA_FH_1:
+        p->frame_size = ((uint32_t)*cur) << 24;
+        if (++cur == end) {
+          p->state = GRPC_CHTTP2_DATA_FH_2;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        }
+      /* fallthrough */
+      case GRPC_CHTTP2_DATA_FH_2:
+        p->frame_size |= ((uint32_t)*cur) << 16;
+        if (++cur == end) {
+          p->state = GRPC_CHTTP2_DATA_FH_3;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        }
+      /* fallthrough */
+      case GRPC_CHTTP2_DATA_FH_3:
+        p->frame_size |= ((uint32_t)*cur) << 8;
+        if (++cur == end) {
+          p->state = GRPC_CHTTP2_DATA_FH_4;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        }
+      /* fallthrough */
+      case GRPC_CHTTP2_DATA_FH_4:
+        p->frame_size |= ((uint32_t)*cur);
+        p->state = GRPC_CHTTP2_DATA_FRAME;
+        ++cur;
+        message_flags = 0;
+        if (p->is_frame_compressed) {
+          message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+        }
+        GPR_ASSERT(s->incoming_frames == NULL);
+        p->parsing_frame = s->incoming_frames =
+            grpc_chttp2_incoming_byte_stream_create(
+                exec_ctx, t, s, p->frame_size, message_flags, false);
+      /* fallthrough */
+      case GRPC_CHTTP2_DATA_FRAME:
+        if (cur == end) {
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        }
+        uint32_t remaining = (uint32_t)(end - cur);
+        if (remaining == p->frame_size) {
+          grpc_chttp2_incoming_byte_stream_push(
+              exec_ctx, p->parsing_frame,
+              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+          grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
+                                                    GRPC_ERROR_NONE);
+          p->parsing_frame = NULL;
+          p->state = GRPC_CHTTP2_DATA_FH_0;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          break;
+        } else if (remaining < p->frame_size) {
+          grpc_chttp2_incoming_byte_stream_push(
+              exec_ctx, p->parsing_frame,
+              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+          p->frame_size -= remaining;
+          grpc_slice_unref_internal(exec_ctx, slice);
+          continue;
+        } else {
+          GPR_ASSERT(remaining > p->frame_size);
+          grpc_chttp2_incoming_byte_stream_push(
+              exec_ctx, p->parsing_frame,
+              grpc_slice_sub(slice, (size_t)(cur - beg),
+                             (size_t)(cur + p->frame_size - beg)));
+          grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
+                                                    GRPC_ERROR_NONE);
+          p->parsing_frame = NULL;
+          p->state = GRPC_CHTTP2_DATA_FH_0;
+          cur += p->frame_size;
+          /* slice is not used up; push back to the head of buffer */
+          grpc_slice_buffer_undo_take_first(
+              &s->unprocessed_incoming_frames_buffer,
+              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+          grpc_slice_unref_internal(exec_ctx, slice);
+          break;
+        }
+    }
+  }
+
+  return GRPC_ERROR_NONE;
+}
+
 static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
@@ -2249,6 +2417,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
         exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
   }
   gpr_mu_lock(&bs->slice_mu);
+
   if (bs->slices.count > 0) {
     *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
     grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
@@ -2360,7 +2529,7 @@ void grpc_chttp2_incoming_byte_stream_finished(
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    uint32_t frame_size, uint32_t flags) {
+    uint32_t frame_size, uint32_t flags, bool trigger_recv) {
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
       gpr_malloc(sizeof(*incoming_byte_stream));
   incoming_byte_stream->base.length = frame_size;
@@ -2378,15 +2547,10 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
   incoming_byte_stream->error = GRPC_ERROR_NONE;
-  grpc_chttp2_incoming_frame_queue *q = &s->incoming_frames;
-  if (q->head == NULL) {
-    q->head = incoming_byte_stream;
-  } else {
-    q->tail->is_tail = 0;
-    q->tail->next_message = incoming_byte_stream;
+  s->incoming_frames = incoming_byte_stream;
+  if (trigger_recv) {
+    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
-  q->tail = incoming_byte_stream;
-  grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   return incoming_byte_stream;
 }
 

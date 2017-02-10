@@ -441,6 +441,7 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
 error_handler:
   if (err == GRPC_ERROR_NONE) {
     t->incoming_stream = s;
+    /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
     return GRPC_ERROR_NONE;

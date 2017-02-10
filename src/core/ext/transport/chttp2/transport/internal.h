@@ -489,7 +489,8 @@ struct grpc_chttp2_stream {
 
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
 
-  grpc_chttp2_incoming_frame_queue incoming_frames;
+  grpc_chttp2_incoming_byte_stream *incoming_frames;
+  grpc_slice_buffer unprocessed_incoming_frames_buffer;
 
   gpr_timespec deadline;
 
@@ -779,7 +780,7 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport *t);
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    uint32_t frame_size, uint32_t flags);
+    uint32_t frame_size, uint32_t flags, bool trigger_recv);
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            grpc_slice slice);
