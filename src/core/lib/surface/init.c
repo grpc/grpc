@@ -209,7 +209,6 @@ void grpc_init(void) {
     grpc_iomgr_init();
     grpc_executor_init();
     gpr_timers_global_init();
-    grpc_cq_global_init();
     grpc_handshaker_factory_registry_init();
     grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
@@ -236,7 +235,6 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown(&exec_ctx);
-    grpc_cq_global_shutdown();
     grpc_iomgr_shutdown(&exec_ctx);
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
