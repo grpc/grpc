@@ -66,5 +66,8 @@
   }, 
   {
     "config": "mutrace"
+  }, 
+  {
+    "config": "counters"
   }
 ]

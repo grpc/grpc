@@ -314,6 +314,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
@@ -346,6 +347,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
@@ -365,6 +367,11 @@
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_label.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_propagation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/tracing.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
@@ -522,6 +529,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.c" role="src" />
@@ -562,6 +570,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />

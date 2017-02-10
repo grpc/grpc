@@ -31,6 +31,11 @@ filegroups:
   - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
   - src/core/ext/census/trace_context.h
+  - src/core/ext/census/trace_label.h
+  - src/core/ext/census/trace_propagation.h
+  - src/core/ext/census/trace_status.h
+  - src/core/ext/census/trace_string.h
+  - src/core/ext/census/tracing.h
   src:
   - src/core/ext/census/base_resources.c
   - src/core/ext/census/context.c
@@ -452,10 +457,28 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/grpclb.h
+  - src/core/ext/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
   - src/core/ext/lb_policy/grpclb/grpclb.c
+  - src/core/ext/lb_policy/grpclb/grpclb_channel.c
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  plugin: grpc_lb_policy_grpclb
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - nanopb
+- name: grpc_lb_policy_grpclb_secure
+  headers:
+  - src/core/ext/lb_policy/grpclb/grpclb.h
+  - src/core/ext/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
+  - src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
@@ -518,6 +541,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/transport/auth_filters.h
+  - src/core/lib/security/transport/lb_targets_info.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_connector.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -541,6 +565,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.c
   - src/core/lib/security/credentials/ssl/ssl_credentials.c
   - src/core/lib/security/transport/client_auth_filter.c
+  - src/core/lib/security/transport/lb_targets_info.c
   - src/core/lib/security/transport/secure_endpoint.c
   - src/core/lib/security/transport/security_connector.c
   - src/core/lib/security/transport/security_handshaker.c
@@ -909,7 +934,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
-  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_native
@@ -2504,6 +2529,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: pollset_set_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/pollset_set_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
 - name: resolve_address_posix_test
   build: test
   language: c
@@ -3836,6 +3875,9 @@ configs:
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+    DEFINES: NDEBUG
+  counters:
+    CPPFLAGS: -O2 -DGPR_MU_COUNTERS
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
