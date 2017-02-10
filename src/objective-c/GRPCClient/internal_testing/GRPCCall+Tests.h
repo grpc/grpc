@@ -45,6 +45,9 @@
  *
  * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
  * more than one invocation of the methods of this category.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
@@ -55,12 +58,18 @@
  *
  * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
  * more than one invocation of the methods of this category.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)useInsecureConnectionsForHost:(NSString *)host;
 
 /**
  * Resets all host configurations to their default values, and flushes all connections from the
  * cache.
+ *
+ * This function is for internal testing of gRPC only. It is not part of gRPC's public interface.
+ * Do not use in production. To enable, set the preprocessor flag GRPC_TEST_OBJC.
  */
 + (void)resetHostSettings;
 

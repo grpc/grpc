@@ -41,6 +41,7 @@
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host {
+#ifdef GRPC_TEST_OBJC
   if (!host || !certsPath || !testName) {
     [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
   }
@@ -55,15 +56,32 @@
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   [hostConfig setTLSPEMRootCerts:certs withPrivateKey:nil withCertChain:nil error:nil];
   hostConfig.hostNameOverride = testName;
+#else
+  NSLog(@"This function is for internal testing of gRPC only. "
+        "It is not part of gRPC's public interface. Do not use in production. "
+        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
+#endif
 }
 
 + (void)useInsecureConnectionsForHost:(NSString *)host {
+#ifdef GRPC_TEST_OBJC
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   hostConfig.secure = NO;
+#else
+  NSLog(@"This function is for internal testing of gRPC only. "
+        "It is not part of gRPC's public interface. Do not use in production. "
+        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
+#endif
 }
 
 + (void)resetHostSettings {
+#ifdef GRPC_TEST_OBJC
   [GRPCHost resetAllHostSettings];
+#else
+  NSLog(@"This function is for internal testing of gRPC only. "
+        "It is not part of gRPC's public interface. Do not use in production. "
+        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
+#endif
 }
 
 + (void)enableOpBatchLog:(BOOL)enabled {
