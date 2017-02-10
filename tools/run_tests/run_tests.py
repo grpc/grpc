@@ -815,7 +815,7 @@ class CSharpLanguage(object):
         return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
     else:
       if self.platform == 'windows':
-        return [[_windows_build_bat(self.args.compiler),
+        return [['vsprojects\\build_vs2015.bat',
                  'src/csharp/Grpc.sln',
                  '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
       else:
