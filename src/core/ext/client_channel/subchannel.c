@@ -336,8 +336,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
   grpc_resolved_address *new_address = NULL;
   grpc_channel_args *new_args = NULL;
-  if (grpc_proxy_mappers_map(exec_ctx, addr, args->args, &new_address,
-                             &new_args)) {
+  if (grpc_proxy_mappers_map_address(exec_ctx, addr, args->args, &new_address,
+                                     &new_args)) {
     GPR_ASSERT(new_address != NULL);
     gpr_free(addr);
     addr = new_address;

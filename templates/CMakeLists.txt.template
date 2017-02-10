@@ -133,7 +133,7 @@
   if(WIN32)
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
-  
+
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
@@ -467,6 +467,17 @@
   % endif
   % endfor
   )
+
+  if(WIN32 AND MSVC)
+    set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
+      COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
+    )
+    if (gRPC_INSTALL)
+      install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
+        DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text> OPTIONAL
+      )
+    endif()
+  endif()
 
   % for src in lib.src:
   % if proto_re.match(src):
