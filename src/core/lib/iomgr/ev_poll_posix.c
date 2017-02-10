@@ -815,16 +815,6 @@ static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static void pollset_reset(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(!pollset_has_workers(pollset));
-  GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
-  GPR_ASSERT(pollset->fd_count == 0);
-  pollset->shutting_down = 0;
-  pollset->called_shutdown = 0;
-  pollset->kicked_without_pollers = 0;
-}
-
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
@@ -1514,7 +1504,6 @@ static const grpc_event_engine_vtable vtable = {
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
-    .pollset_reset = pollset_reset,
     .pollset_destroy = pollset_destroy,
     .pollset_work = pollset_work,
     .pollset_kick = pollset_kick,
