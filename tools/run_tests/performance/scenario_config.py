@@ -73,6 +73,7 @@ def remove_nonproto_fields(scenario):
   scenario.pop('CATEGORIES', None)
   scenario.pop('CLIENT_LANGUAGE', None)
   scenario.pop('SERVER_LANGUAGE', None)
+  scenario.pop('EXCLUDED_POLL_ENGINES', None)
   return scenario
 
 
@@ -93,6 +94,7 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['bytebuf_params'] = sizes
     else:
         r['simple_params'] = sizes
+    return r
 
 
 def _ping_pong_scenario(name, rpc_type,
@@ -109,7 +111,8 @@ def _ping_pong_scenario(name, rpc_type,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
-                        resource_quota_size=None):
+                        resource_quota_size=None,
+                        excluded_poll_engines=[]):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -140,8 +143,9 @@ def _ping_pong_scenario(name, rpc_type,
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
+    scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
-  scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -169,6 +173,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['SERVER_LANGUAGE'] = server_language
   if categories:
     scenario['CATEGORIES'] = categories
+  if len(excluded_poll_engines):
+    # The polling engines for which this scenario is excluded
+    scenario['EXCLUDED_POLL_ENGINES'] = excluded_poll_engines
   return scenario
 
 
@@ -224,7 +231,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories + [SCALABLE])
+          categories=smoketest_categories + [SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
@@ -233,7 +241,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories+[SCALABLE])
+          categories=smoketest_categories+[SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:

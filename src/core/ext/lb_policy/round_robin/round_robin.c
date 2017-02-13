@@ -739,6 +739,13 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
+    if (grpc_lb_round_robin_trace) {
+      char *address_uri =
+          grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+      gpr_log(GPR_DEBUG, "Created subchannel %p for address uri %s",
+              (void *)subchannel, address_uri);
+      gpr_free(address_uri);
+    }
     grpc_channel_args_destroy(exec_ctx, new_args);
 
     if (subchannel != NULL) {

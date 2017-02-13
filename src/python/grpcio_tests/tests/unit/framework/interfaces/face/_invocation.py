@@ -206,7 +206,5 @@ def invoker_constructors():
   Returns:
     A sequence of InvokerConstructors.
   """
-    return (
-        _GenericInvokerConstructor(),
-        _MultiCallableInvokerConstructor(),
-        _DynamicInvokerConstructor(),)
+    return (_GenericInvokerConstructor(), _MultiCallableInvokerConstructor(),
+            _DynamicInvokerConstructor(),)

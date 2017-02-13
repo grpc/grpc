@@ -442,7 +442,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server, g_resource_quota);
+    grpc_passthru_endpoint_create(&client, &server, g_resource_quota, NULL);
     *fc->ep = client;
 
     grpc_transport *transport =
@@ -564,7 +564,7 @@ typedef struct call_state {
   // array of slices to unref
   size_t num_slices_to_unref;
   size_t cap_slices_to_unref;
-  grpc_slice *slices_to_unref;
+  grpc_slice **slices_to_unref;
 
   struct call_state *next;
   struct call_state *prev;
@@ -605,7 +605,8 @@ static call_state *maybe_delete_call_state(call_state *call) {
   grpc_call_details_destroy(&call->call_details);
 
   for (size_t i = 0; i < call->num_slices_to_unref; i++) {
-    grpc_slice_unref(call->slices_to_unref[i]);
+    grpc_slice_unref(*call->slices_to_unref[i]);
+    gpr_free(call->slices_to_unref[i]);
   }
   for (size_t i = 0; i < call->num_to_free; i++) {
     gpr_free(call->to_free[i]);
@@ -634,8 +635,10 @@ static grpc_slice *add_slice_to_unref(call_state *call, grpc_slice s) {
         gpr_realloc(call->slices_to_unref,
                     sizeof(*call->slices_to_unref) * call->cap_slices_to_unref);
   }
-  call->slices_to_unref[call->num_slices_to_unref++] = s;
-  return &call->slices_to_unref[call->num_slices_to_unref - 1];
+  call->slices_to_unref[call->num_slices_to_unref] =
+      gpr_malloc(sizeof(grpc_slice));
+  *call->slices_to_unref[call->num_slices_to_unref++] = s;
+  return call->slices_to_unref[call->num_slices_to_unref - 1];
 }
 
 static void read_metadata(input_stream *inp, size_t *count,

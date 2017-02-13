@@ -46,7 +46,7 @@
 static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -62,7 +62,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -104,6 +104,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   int was_cancelled = 2;
 
   config.init_client(f, client_args);
+  config.init_server(f, server_args);
 
   c = grpc_channel_create_call(
       f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
@@ -142,8 +143,6 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  config.init_server(f, server_args);
 
   error =
       grpc_server_request_call(f->server, &s, &call_details,
