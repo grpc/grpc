@@ -85,9 +85,7 @@ class ConnectivityChannel(object):
 
     def _spawn_delivery(self, connectivity, callbacks):
         delivering_thread = threading.Thread(
-            target=self._deliver, args=(
-                connectivity,
-                callbacks,))
+            target=self._deliver, args=(connectivity, callbacks,))
         delivering_thread.start()
         self._delivering = True
 

@@ -7,7 +7,6 @@
   }, 
   {
     "config": "helgrind", 
-    "timeout_multiplier": 20, 
     "tool_prefix": [
       "valgrind", 
       "--tool=helgrind"
@@ -17,16 +16,14 @@
     "config": "asan-noleaks", 
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=0:color=always"
-    }, 
-    "timeout_multiplier": 3
+    }
   }, 
   {
     "config": "asan-trace-cmp", 
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=1:color=always", 
       "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
-    }, 
-    "timeout_multiplier": 3
+    }
   }, 
   {
     "config": "dbg"
@@ -39,7 +36,6 @@
   }, 
   {
     "config": "memcheck", 
-    "timeout_multiplier": 10, 
     "tool_prefix": [
       "valgrind", 
       "--tool=memcheck", 
@@ -51,28 +47,27 @@
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=1:color=always", 
       "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
-    }, 
-    "timeout_multiplier": 3
+    }
   }, 
   {
     "config": "tsan", 
     "environ": {
       "TSAN_OPTIONS": "suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
-    }, 
-    "timeout_multiplier": 5
+    }
   }, 
   {
     "config": "ubsan", 
     "environ": {
       "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
-    }, 
-    "timeout_multiplier": 1.5
+    }
   }, 
   {
-    "config": "msan", 
-    "timeout_multiplier": 4
+    "config": "msan"
   }, 
   {
     "config": "mutrace"
+  }, 
+  {
+    "config": "counters"
   }
 ]

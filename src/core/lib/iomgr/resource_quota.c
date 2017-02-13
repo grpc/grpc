@@ -33,6 +33,8 @@
 
 #include "src/core/lib/iomgr/resource_quota.h"
 
+#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -43,6 +45,8 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 int grpc_resource_quota_trace = 0;
+
+#define MEMORY_USAGE_ESTIMATION_MAX 65536
 
 /* Internal linked list pointers for a resource user */
 typedef struct {
@@ -126,9 +130,12 @@ struct grpc_resource_quota {
   /* refcount */
   gpr_refcount refs;
 
+  /* estimate of current memory usage
+     scaled to the range [0..RESOURCE_USAGE_ESTIMATION_MAX] */
+  gpr_atm memory_usage_estimation;
+
   /* Master combiner lock: all activity on a quota executes under this combiner
-   * (so no mutex is needed for this data structure)
-   */
+   * (so no mutex is needed for this data structure) */
   grpc_combiner *combiner;
   /* Size of the resource quota */
   int64_t size;
@@ -269,6 +276,16 @@ static void rq_step_sched(grpc_exec_ctx *exec_ctx,
                      GRPC_ERROR_NONE);
 }
 
+/* update the atomically available resource estimate - use no barriers since
+   timeliness of delivery really doesn't matter much */
+static void rq_update_estimate(grpc_resource_quota *resource_quota) {
+  gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation,
+                           (gpr_atm)((1.0 -
+                                      ((double)resource_quota->free_pool) /
+                                          ((double)resource_quota->size)) *
+                                     MEMORY_USAGE_ESTIMATION_MAX));
+}
+
 /* returns true if all allocations are completed */
 static bool rq_alloc(grpc_exec_ctx *exec_ctx,
                      grpc_resource_quota *resource_quota) {
@@ -281,6 +298,7 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
       int64_t amt = -resource_user->free_pool;
       resource_user->free_pool = 0;
       resource_quota->free_pool -= amt;
+      rq_update_estimate(resource_quota);
       if (grpc_resource_quota_trace) {
         gpr_log(GPR_DEBUG, "RQ %s %s: grant alloc %" PRId64
                            " bytes; rq_free_pool -> %" PRId64,
@@ -315,6 +333,7 @@ static bool rq_reclaim_from_per_user_free_pool(
       int64_t amt = resource_user->free_pool;
       resource_user->free_pool = 0;
       resource_quota->free_pool += amt;
+      rq_update_estimate(resource_quota);
       if (grpc_resource_quota_trace) {
         gpr_log(GPR_DEBUG, "RQ %s %s: reclaim_from_per_user_free_pool %" PRId64
                            " bytes; rq_free_pool -> %" PRId64,
@@ -531,6 +550,7 @@ static void rq_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   int64_t delta = a->size - a->resource_quota->size;
   a->resource_quota->size += delta;
   a->resource_quota->free_pool += delta;
+  rq_update_estimate(a->resource_quota);
   rq_step_sched(exec_ctx, a->resource_quota);
   grpc_resource_quota_unref_internal(exec_ctx, a->resource_quota);
   gpr_free(a);
@@ -557,6 +577,7 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
   resource_quota->size = INT64_MAX;
   resource_quota->step_scheduled = false;
   resource_quota->reclaiming = false;
+  gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation, 0);
   if (name != NULL) {
     resource_quota->name = gpr_strdup(name);
   } else {
@@ -578,7 +599,7 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
 void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_resource_quota *resource_quota) {
   if (gpr_unref(&resource_quota->refs)) {
-    grpc_combiner_destroy(exec_ctx, resource_quota->combiner);
+    GRPC_COMBINER_UNREF(exec_ctx, resource_quota->combiner, "resource_quota");
     gpr_free(resource_quota->name);
     gpr_free(resource_quota);
   }
@@ -600,6 +621,13 @@ grpc_resource_quota *grpc_resource_quota_ref_internal(
 /* Public API */
 void grpc_resource_quota_ref(grpc_resource_quota *resource_quota) {
   grpc_resource_quota_ref_internal(resource_quota);
+}
+
+double grpc_resource_quota_get_memory_pressure(
+    grpc_resource_quota *resource_quota) {
+  return ((double)(gpr_atm_no_barrier_load(
+             &resource_quota->memory_usage_estimation))) /
+         ((double)MEMORY_USAGE_ESTIMATION_MAX);
 }
 
 /* Public API */

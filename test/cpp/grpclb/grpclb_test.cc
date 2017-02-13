@@ -52,8 +52,10 @@
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
 #include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
 #include "src/core/lib/surface/channel.h"
@@ -110,6 +112,7 @@ typedef struct server_fixture {
   grpc_call *server_call;
   grpc_completion_queue *cq;
   char *servers_hostport;
+  const char *balancer_name;
   int port;
   const char *lb_token_prefix;
   gpr_thd_id tid;
@@ -170,7 +173,7 @@ static grpc_slice build_response_payload_slice(
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
                                     NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
@@ -201,10 +204,12 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
                                    &request_metadata_recv, sf->cq, sf->cq,
                                    tag(200));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "LB Server[%s] up", sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) up", sf->servers_hostport,
+          sf->balancer_name);
   CQ_EXPECT_COMPLETION(cqv, tag(200), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "LB Server[%s] after tag 200", sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 200", sf->servers_hostport,
+          sf->balancer_name);
 
   // make sure we've received the initial metadata from the grpclb request.
   GPR_ASSERT(request_metadata_recv.count > 0);
@@ -221,7 +226,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG", sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) after RECV_MSG", sf->servers_hostport,
+          sf->balancer_name);
 
   // validate initial request.
   grpc_byte_buffer_reader bbr;
@@ -250,7 +256,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(201), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "LB Server[%s] after tag 201", sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 201", sf->servers_hostport,
+          sf->balancer_name);
 
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
@@ -276,13 +283,14 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(203), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "LB Server[%s] after SEND_MESSAGE, iter %d",
-            sf->servers_hostport, i);
+    gpr_log(GPR_INFO, "LB Server[%s](%s) after SEND_MESSAGE, iter %d",
+            sf->servers_hostport, sf->balancer_name, i);
 
     grpc_byte_buffer_destroy(response_payload);
     grpc_slice_unref(response_payload_slice);
   }
-  gpr_log(GPR_INFO, "LB Server[%s] shutting down", sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) shutting down", sf->servers_hostport,
+          sf->balancer_name);
 
   op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -299,8 +307,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(204), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "LB Server[%s] after tag 204. All done. LB server out",
-          sf->servers_hostport);
+  gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 204. All done. LB server out",
+          sf->servers_hostport, sf->balancer_name);
 
   grpc_call_destroy(s);
 
@@ -336,7 +344,7 @@ static void start_backend_server(server_fixture *sf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
     ev = grpc_completion_queue_next(sf->cq,
-                                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(60), NULL);
+                                    grpc_timeout_seconds_to_deadline(60), NULL);
     if (!ev.success) {
       gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
       cq_verifier_destroy(cqv);
@@ -380,7 +388,7 @@ static void start_backend_server(server_fixture *sf) {
       error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
       GPR_ASSERT(GRPC_CALL_OK == error);
       ev = grpc_completion_queue_next(
-          sf->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL);
+          sf->cq, grpc_timeout_seconds_to_deadline(3), NULL);
       if (ev.type == GRPC_OP_COMPLETE && ev.success) {
         GPR_ASSERT(ev.tag = tag(102));
         if (request_payload_recv == NULL) {
@@ -410,7 +418,7 @@ static void start_backend_server(server_fixture *sf) {
             grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
         GPR_ASSERT(GRPC_CALL_OK == error);
         ev = grpc_completion_queue_next(
-            sf->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL);
+            sf->cq, grpc_timeout_seconds_to_deadline(3), NULL);
         if (ev.type == GRPC_OP_COMPLETE && ev.success) {
           GPR_ASSERT(ev.tag = tag(103));
         } else {
@@ -477,7 +485,7 @@ static void perform_request(client_fixture *cf) {
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, grpc_slice_from_static_string("/foo"),
-                               &host, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                               &host, grpc_timeout_seconds_to_deadline(5),
                                NULL);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
@@ -561,10 +569,38 @@ static void perform_request(client_fixture *cf) {
   gpr_free(peer);
 }
 
-static void setup_client(const char *server_hostport, client_fixture *cf) {
+#define BALANCERS_NAME "lb.name"
+static void setup_client(const server_fixture *lb_server,
+                         const server_fixture *backends, client_fixture *cf) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  char *lb_uri;
+  // The grpclb LB policy will be automatically selected by virtue of
+  // the fact that the returned addresses are balancer addresses.
+  gpr_asprintf(&lb_uri, "test:///%s?lb_enabled=1&balancer_names=%s",
+               lb_server->servers_hostport, lb_server->balancer_name);
+
+  grpc_arg expected_target_arg;
+  expected_target_arg.type = GRPC_ARG_STRING;
+  expected_target_arg.key =
+      const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+
+  char *expected_target_names = NULL;
+  const char *backends_name = lb_server->servers_hostport;
+  gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
+
+  expected_target_arg.value.string = const_cast<char *>(expected_target_names);
+  grpc_channel_args *args =
+      grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
+  gpr_free(expected_target_names);
+
   cf->cq = grpc_completion_queue_create(NULL);
-  cf->server_uri = gpr_strdup(server_hostport);
-  cf->client = grpc_insecure_channel_create(cf->server_uri, NULL, NULL);
+  cf->server_uri = lb_uri;
+  grpc_channel_credentials *fake_creds =
+      grpc_fake_transport_security_credentials_create();
+  cf->client =
+      grpc_secure_channel_create(fake_creds, cf->server_uri, args, NULL);
+  grpc_channel_credentials_unref(&exec_ctx, fake_creds);
+  grpc_channel_args_destroy(&exec_ctx, args);
 }
 
 static void teardown_client(client_fixture *cf) {
@@ -591,10 +627,14 @@ static void setup_server(const char *host, server_fixture *sf) {
     gpr_join_host_port(&sf->servers_hostport, host, sf->port);
   }
 
+  grpc_server_credentials *server_creds =
+      grpc_fake_transport_security_server_credentials_create();
+
   sf->server = grpc_server_create(NULL, NULL);
   grpc_server_register_completion_queue(sf->server, sf->cq, NULL);
-  GPR_ASSERT((assigned_port = grpc_server_add_insecure_http2_port(
-                  sf->server, sf->servers_hostport)) > 0);
+  GPR_ASSERT((assigned_port = grpc_server_add_secure_http2_port(
+                  sf->server, sf->servers_hostport, server_creds)) > 0);
+  grpc_server_credentials_release(server_creds);
   GPR_ASSERT(sf->port == assigned_port);
   grpc_server_start(sf->server);
 }
@@ -605,7 +645,7 @@ static void teardown_server(server_fixture *sf) {
   gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
   grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 sf->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 sf->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(sf->server);
   gpr_thd_join(sf->tid);
@@ -656,17 +696,10 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
+  tf.lb_server.balancer_name = BALANCERS_NAME;
   setup_server("127.0.0.1", &tf.lb_server);
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
-
-  char *server_uri;
-  // The grpclb LB policy will be automatically selected by virtue of
-  // the fact that the returned addresses are balancer addresses.
-  gpr_asprintf(&server_uri, "test:///%s?lb_enabled=1",
-               tf.lb_server.servers_hostport);
-  setup_client(server_uri, &tf.client);
-  gpr_free(server_uri);
-
+  setup_client(&tf.lb_server, tf.lb_backends, &tf.client);
   return tf;
 }
 
@@ -711,8 +744,9 @@ TEST(GrpclbTest, Updates) {
   // batch 1. All subsequent picks will come from the second half of the
   // backends, those coming in the LB update.
   tf_result = grpc::test_update(800);
-  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 1);
-  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 0);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced +
+                 tf_result.lb_backends[1].num_calls_serviced ==
+             1);
   GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced +
                  tf_result.lb_backends[3].num_calls_serviced >
              0);
@@ -728,8 +762,9 @@ TEST(GrpclbTest, Updates) {
   // update. In any case, the total number of serviced calls must again be equal
   // to four across all the backends.
   tf_result = grpc::test_update(2500);
-  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced >= 1);
-  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced +
+                 tf_result.lb_backends[1].num_calls_serviced >=
+             2);
   GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced +
                  tf_result.lb_backends[3].num_calls_serviced >
              0);
