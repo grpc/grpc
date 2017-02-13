@@ -152,7 +152,7 @@ def collect_summary(bm_name, args):
                                 '--benchmark_out=out.json',
                                 '--benchmark_out_format=json']))
   if args.bigquery_upload:
-    with open('/tmp/out.csv', 'w') as f:
+    with open('out.csv', 'w') as f:
       f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
     subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
 
