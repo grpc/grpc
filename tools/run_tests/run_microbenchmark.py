@@ -126,15 +126,15 @@ for bm_name in sys.argv[1:]:
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
-    with open('/tmp/bm.perf', 'w') as f:
+    with open('bm.perf', 'w') as f:
       f.write(subprocess.check_output(['sudo', 'perf', 'script']))
-    with open('/tmp/bm.folded', 'w') as f:
+    with open('bm.folded', 'w') as f:
       f.write(subprocess.check_output([
-          '%s/stackcollapse-perf.pl' % flamegraph_dir, '/tmp/bm.perf']))
+          '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf']))
     link(line, '%s.svg' % fnize(line))
     with open('reports/%s.svg' % fnize(line), 'w') as f:
       f.write(subprocess.check_output([
-          '%s/flamegraph.pl' % flamegraph_dir, '/tmp/bm.folded']))
+          '%s/flamegraph.pl' % flamegraph_dir, 'bm.folded']))
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:

@@ -48,6 +48,8 @@ from grpc_tools import protoc
 from tests.unit.framework.common import test_constants
 
 _MESSAGES_IMPORT = b'import "messages.proto";'
+_SPLIT_NAMESPACE = b'package grpc_protoc_plugin.invocation_testing.split;'
+_COMMON_NAMESPACE = b'package grpc_protoc_plugin.invocation_testing;'
 
 
 @contextlib.contextmanager
@@ -163,7 +165,10 @@ class SameSeparateTest(unittest.TestCase, SeparateTestMixin):
         os.makedirs(self.grpc_python_out_directory)
         same_proto_file = os.path.join(self.proto_directory,
                                        'same_separate.proto')
-        open(same_proto_file, 'wb').write(same_proto_contents)
+        open(same_proto_file, 'wb').write(
+            same_proto_contents.replace(
+                _COMMON_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.same_separate;'))
         protoc_result = protoc.main([
             '',
             '--proto_path={}'.format(self.proto_directory),
@@ -199,7 +204,11 @@ class SameCommonTest(unittest.TestCase, CommonTestMixin):
         os.makedirs(self.python_out_directory)
         same_proto_file = os.path.join(self.proto_directory,
                                        'same_common.proto')
-        open(same_proto_file, 'wb').write(same_proto_contents)
+        open(same_proto_file, 'wb').write(
+            same_proto_contents.replace(
+                _COMMON_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.same_common;'))
+
         protoc_result = protoc.main([
             '',
             '--proto_path={}'.format(self.proto_directory),
@@ -240,8 +249,14 @@ class SplitCommonTest(unittest.TestCase, CommonTestMixin):
                                            'split_common_messages.proto')
         open(services_proto_file, 'wb').write(
             services_proto_contents.replace(
-                _MESSAGES_IMPORT, b'import "split_common_messages.proto";'))
-        open(messages_proto_file, 'wb').write(messages_proto_contents)
+                _MESSAGES_IMPORT, b'import "split_common_messages.proto";')
+            .replace(
+                _SPLIT_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.split_common;'))
+        open(messages_proto_file, 'wb').write(
+            messages_proto_contents.replace(
+                _SPLIT_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.split_common;'))
         protoc_result = protoc.main([
             '',
             '--proto_path={}'.format(self.proto_directory),
@@ -285,8 +300,16 @@ class SplitSeparateTest(unittest.TestCase, SeparateTestMixin):
                                            'split_separate_messages.proto')
         open(services_proto_file, 'wb').write(
             services_proto_contents.replace(
-                _MESSAGES_IMPORT, b'import "split_separate_messages.proto";'))
-        open(messages_proto_file, 'wb').write(messages_proto_contents)
+                _MESSAGES_IMPORT, b'import "split_separate_messages.proto";')
+            .replace(
+                _SPLIT_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.split_separate;'
+            ))
+        open(messages_proto_file, 'wb').write(
+            messages_proto_contents.replace(
+                _SPLIT_NAMESPACE,
+                b'package grpc_protoc_plugin.invocation_testing.split_separate;'
+            ))
         protoc_result = protoc.main([
             '',
             '--proto_path={}'.format(self.proto_directory),
