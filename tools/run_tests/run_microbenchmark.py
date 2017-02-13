@@ -128,7 +128,8 @@ def collect_perf(bm_name, args):
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['sudo', 'perf', 'record', '-g', '-c', '1000',
+    subprocess.check_call(['sudo', 'perf', 'record', '-o', 'perf.data',
+                           '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
