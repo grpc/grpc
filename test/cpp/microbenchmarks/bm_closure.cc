@@ -324,7 +324,8 @@ class Rescheduler {
 
 static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  Rescheduler(state, grpc_schedule_on_exec_ctx).ScheduleFirst(&exec_ctx);
+  Rescheduler r(state, grpc_schedule_on_exec_ctx);
+  r.ScheduleFirst(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 BENCHMARK(BM_ClosureReschedOnExecCtx);
@@ -332,8 +333,8 @@ BENCHMARK(BM_ClosureReschedOnExecCtx);
 static void BM_ClosureReschedOnCombiner(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_combiner* combiner = grpc_combiner_create(NULL);
-  Rescheduler(state, grpc_combiner_scheduler(combiner, false))
-      .ScheduleFirst(&exec_ctx);
+  Rescheduler r(state, grpc_combiner_scheduler(combiner, false));
+  r.ScheduleFirst(&exec_ctx);
   grpc_exec_ctx_flush(&exec_ctx);
   GRPC_COMBINER_UNREF(&exec_ctx, combiner, "finished");
   grpc_exec_ctx_finish(&exec_ctx);
@@ -343,9 +344,9 @@ BENCHMARK(BM_ClosureReschedOnCombiner);
 static void BM_ClosureReschedOnCombinerFinally(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_combiner* combiner = grpc_combiner_create(NULL);
-  Rescheduler(state, grpc_combiner_finally_scheduler(combiner, false))
-      .ScheduleFirstAgainstDifferentScheduler(
-          &exec_ctx, grpc_combiner_scheduler(combiner, false));
+  Rescheduler r(state, grpc_combiner_finally_scheduler(combiner, false));
+  r.ScheduleFirstAgainstDifferentScheduler(
+      &exec_ctx, grpc_combiner_scheduler(combiner, false));
   grpc_exec_ctx_flush(&exec_ctx);
   GRPC_COMBINER_UNREF(&exec_ctx, combiner, "finished");
   grpc_exec_ctx_finish(&exec_ctx);
