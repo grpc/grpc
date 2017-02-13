@@ -1258,7 +1258,7 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
     set_shutdown(exec_ctx, fd, &fd->read_closure, why);
     set_shutdown(exec_ctx, fd, &fd->write_closure, why);
   } else {
-    // Shutdown already called
+    /* Shutdown already called */
     GRPC_ERROR_UNREF(why);
   }
 }
@@ -1461,7 +1461,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
   set_ready(exec_ctx, fd, &fd->read_closure);
 
-  // Note, it is possible that fd_become_readable might be called twice with
+  /* Note, it is possible that fd_become_readable might be called twice with
   // different 'notifier's when an fd becomes readable and it is in two epoll
   // sets (This can happen briefly during polling island merges). In such cases
   // it does not really matter which notifer is set as the read_notifier_pollset
