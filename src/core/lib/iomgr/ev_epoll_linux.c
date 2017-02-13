@@ -144,14 +144,42 @@ struct grpc_fd {
      other than GRPC_ERROR_NONE, it indicates that the fd is shutdown and this
      contains the reason for shutdown. Once an fd is shutdown, any pending or
      future read/write closures on the fd should fail */
-  gpr_atm shutdown_error1;
+  gpr_atm shutdown_error;
 
-  /* The fd is either closed or we relinquished control of it. In either cases,
-     this indicates that the 'fd' on this structure is no longer valid */
+  /* The fd is either closed or we relinquished control of it. In either
+     cases, this indicates that the 'fd' on this structure is no longer
+     valid */
   bool orphaned;
 
-  /* Closures to call when the fd is readable or writable. The actual type
-     stored in these is (grpc_closure *) */
+  /* Closures to call when the fd is readable or writable respectively. These
+     fields contain one of the following values:
+       CLOSURE_READY     : The fd has an I/O event of interest but there is no
+                           closure yet to execute
+
+       CLOSURE_NOT_READY : The fd has no I/O event of interest
+
+       closure ptr       : The closure to be executed when the fd has an I/O event
+                           of interest.
+       shutdown_error |
+        CLOSURE_SHUTDOWN : 'shutdown_error' field OR'ed with CLOSURE_SHUTDOWN.
+                            This indicates that the fd is shutdown. Since all
+                            memory allocations are word-aligned, the lower to
+                            bits of the shutdown_error pointer are always 0. So
+                            it is safe to OR these with CLOSURE_SHUTDOWN.
+
+     Valid state transitions:
+
+       <closure ptr> <-----3------ CLOSURE_NOT_READY ----1---->  CLOSURE_READY
+         |  |                         ^   |    ^                         |  |
+         |  |                         |   |    |                         |  |
+         |  +--------------4----------+   6    +---------2---------------+  |
+         |                                |                                 |
+         |                                v                                 |
+         +-----5------->  [shutdown_error | CLOSURE_SHUTDOWN] <--------7----+
+
+      For 1, 4 : See set_ready() function
+      For 2, 3 : See notify_on() function
+      For 5,6,7: See set_shutdown() function */
   gpr_atm read_closure;
   gpr_atm write_closure;
 
@@ -185,7 +213,6 @@ static void fd_global_shutdown(void);
 
 #define CLOSURE_NOT_READY ((gpr_atm)0)
 #define CLOSURE_READY ((gpr_atm)1)
-
 #define CLOSURE_SHUTDOWN ((gpr_atm)2)
 
 /*******************************************************************************
@@ -1212,7 +1239,7 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd *fd) {
-  grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error1);
+  grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error);
   return (err != GRPC_ERROR_NONE);
 }
 
@@ -1224,7 +1251,7 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
     why = GRPC_ERROR_INTERNAL;
   }
 
-  if (gpr_atm_acq_cas(&fd->shutdown_error1, (gpr_atm)GRPC_ERROR_NONE,
+  if (gpr_atm_acq_cas(&fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE,
                       (gpr_atm)why)) {
     shutdown(fd->fd, SHUT_RDWR);
 
@@ -1234,22 +1261,6 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
     // Shutdown already called
     GRPC_ERROR_UNREF(why);
   }
-
-  // gpr_mu_lock(&fd->po.mu);
-  /* Do the actual shutdown only once */
-  // if (!fd->shutdown) {
-  //  fd->shutdown = true;
-  //  fd->shutdown_error = why;
-
-  //  shutdown(fd->fd, SHUT_RDWR);
-  /* Flush any pending read and write closures. Since fd->shutdown is 'true'
-     at this point, the closures would be called with 'success = false' */
-  //  set_ready(exec_ctx, fd, &fd->read_closure);
-  //  set_ready(exec_ctx, fd, &fd->write_closure);
-  // } else {
-  //  GRPC_ERROR_UNREF(why);
-  // }
-  // gpr_mu_unlock(&fd->po.mu);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
