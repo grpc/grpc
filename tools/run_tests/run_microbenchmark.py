@@ -134,7 +134,7 @@ def collect_perf(bm_name, args):
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
     with open('bm.perf', 'w') as f:
-      f.write(subprocess.check_output(['sudo', 'perf', 'script']))
+      f.write(subprocess.check_output(['sudo', 'perf', 'script', '-i', 'perf.data']))
     with open('bm.folded', 'w') as f:
       f.write(subprocess.check_output([
           '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf']))
