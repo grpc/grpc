@@ -39,7 +39,7 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
-_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
+_USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))

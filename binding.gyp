@@ -51,7 +51,9 @@
     'conditions': [
       ['runtime=="node"', {
         'defines': [
-          'GRPC_UV'
+          # Disabling this while bugs are ironed out. Uncomment this to
+          # re-enable libuv integration in C core.
+          # 'GRPC_UV'
         ]
       }],
       ['OS!="win" and runtime=="electron"', {
