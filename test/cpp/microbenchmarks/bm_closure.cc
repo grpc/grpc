@@ -170,6 +170,20 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched3OnExecCtx);
 
+static void BM_AcquireMutex(benchmark::State& state) {
+  // for comparison with the combiner stuff below
+  gpr_mu mu;
+  gpr_mu_init(&mu);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (state.KeepRunning()) {
+    gpr_mu_lock(&mu);
+    DoNothing(&exec_ctx, NULL, GRPC_ERROR_NONE);
+    gpr_mu_unlock(&mu);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+BENCHMARK(BM_AcquireMutex);
+
 static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
   grpc_combiner* combiner = grpc_combiner_create(NULL);
   grpc_closure c;
