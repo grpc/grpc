@@ -156,7 +156,7 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
   }
 
   /* If there is already pending data, or if there is a pending
-   * incoming_byte_stream that is finished, append the data to unprcessed frame
+   * incoming_byte_stream that is finished, append the data to unprocessed frame
    * buffer. */
   if (s->unprocessed_incoming_frames_buffer.count > 0 ||
       (s->incoming_frames != NULL && p->parsing_frame == NULL)) {

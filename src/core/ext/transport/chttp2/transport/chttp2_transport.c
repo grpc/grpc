@@ -2205,7 +2205,7 @@ static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 static grpc_error *deframe_unprocessed_incoming_frames(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p,
     grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    grpc_slice_buffer *slices) {
+    grpc_slice_buffer *slices, bool partial_deframe) {
   while (slices->count > 0) {
     uint8_t *beg = NULL;
     uint8_t *end = NULL;
@@ -2298,6 +2298,20 @@ static grpc_error *deframe_unprocessed_incoming_frames(
                 exec_ctx, t, s, p->frame_size, message_flags, false);
       /* fallthrough */
       case GRPC_CHTTP2_DATA_FRAME:
+        if (partial_deframe) {
+          uint32_t remaining = (uint32_t)(end - cur);
+          if (remaining > 0) {
+            if (cur == beg) {
+              grpc_slice_buffer_undo_take_first(&s->unprocessed_incoming_frames_buffer, slice);
+            } else {
+              grpc_slice_buffer_undo_take_first(
+                                  &s->unprocessed_incoming_frames_buffer,
+                                  grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+              grpc_slice_unref_internal(exec_ctx, slice);
+            }
+          return GRPC_ERROR_NONE;
+          }
+        }
         if (cur == end) {
           grpc_slice_unref_internal(exec_ctx, slice);
           continue;
@@ -2312,7 +2326,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           grpc_slice_unref_internal(exec_ctx, slice);
-          break;
+          return GRPC_ERROR_NONE;
         } else if (remaining < p->frame_size) {
           grpc_chttp2_incoming_byte_stream_push(
               exec_ctx, p->parsing_frame,
@@ -2336,12 +2350,12 @@ static grpc_error *deframe_unprocessed_incoming_frames(
               &s->unprocessed_incoming_frames_buffer,
               grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
           grpc_slice_unref_internal(exec_ctx, slice);
-          break;
+          return GRPC_ERROR_NONE;
         }
     }
   }
 
-  return GRPC_ERROR_NONE;
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
 
 static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
