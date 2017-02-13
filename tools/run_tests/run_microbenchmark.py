@@ -32,6 +32,7 @@ import multiprocessing
 import os
 import subprocess
 import sys
+import argparse
 
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
@@ -72,12 +73,16 @@ def link(txt, tgt):
   global index_html
   index_html += "<p><a href=\"%s\">%s</a></p>\n" % (tgt, txt)
 
-benchmarks = []
-profile_analysis = []
-cleanup = []
+def text(txt):
+  global index_html
+  index_html += "<p><pre>%s</pre></p>\n" % txt
 
-for bm_name in sys.argv[1:]:
-  # generate latency profiles
+def collect_latency(bm_name, args):
+  """generate latency profiles"""
+  benchmarks = []
+  profile_analysis = []
+  cleanup = []
+
   heading('Latency Profiles: %s' % bm_name)
   subprocess.check_call(
       ['make', bm_name,
@@ -115,14 +120,16 @@ for bm_name in sys.argv[1:]:
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
-  # generate flamegraphs
+def collect_perf(bm_name, args):
+  """generate flamegraphs"""
   heading('Flamegraphs: %s' % bm_name)
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['sudo', 'perf', 'record', '-g', '-c', '1000',
+    subprocess.check_call(['sudo', 'perf', 'record', '-o', 'perf.data',
+                           '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
@@ -135,6 +142,47 @@ for bm_name in sys.argv[1:]:
     with open('reports/%s.svg' % fnize(line), 'w') as f:
       f.write(subprocess.check_output([
           '%s/flamegraph.pl' % flamegraph_dir, 'bm.folded']))
+
+def collect_summary(bm_name, args):
+  heading('Summary: %s' % bm_name)
+  subprocess.check_call(
+      ['make', bm_name,
+       'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
+  text(subprocess.check_output(['bins/counters/%s' % bm_name,
+                                '--benchmark_out=out.json',
+                                '--benchmark_out_format=json']))
+  if args.bigquery_upload:
+    with open('/tmp/out.csv', 'w') as f:
+      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
+    subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
+
+collectors = {
+  'latency': collect_latency,
+  'perf': collect_perf,
+  'summary': collect_summary,
+}
+
+argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
+argp.add_argument('-c', '--collect',
+                  choices=sorted(collectors.keys()),
+                  nargs='+',
+                  default=sorted(collectors.keys()),
+                  help='Which collectors should be run against each benchmark')
+argp.add_argument('-b', '--benchmarks',
+                  default=['bm_fullstack'],
+                  nargs='+',
+                  type=str,
+                  help='Which microbenchmarks should be run')
+argp.add_argument('--bigquery_upload',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Upload results from summary collection to bigquery')
+args = argp.parse_args()
+
+for bm_name in args.benchmarks:
+  for collect in args.collect:
+    collectors[collect](bm_name, args)
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:
