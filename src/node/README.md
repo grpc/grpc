@@ -2,9 +2,9 @@
 # Node.js gRPC Library
 
 ## PREREQUISITES
-- `node`: This requires `node` to be installed, version `0.12` or above. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
+- `node`: This requires `node` to be installed, version `1.1` or above. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
 
-- **Note:** If you installed `node` via a package manager and the version is still less than `0.12`, try directly installing it from [nodejs.org](https://nodejs.org).
+- **Note:** If you installed `node` via a package manager and the version is still less than `1.1`, try directly installing it from [nodejs.org](https://nodejs.org).
 
 ## INSTALLATION
 
