@@ -158,14 +158,15 @@ struct grpc_fd {
 
        CLOSURE_NOT_READY : The fd has no I/O event of interest
 
-       closure ptr       : The closure to be executed when the fd has an I/O event
-                           of interest.
-       shutdown_error |
-        CLOSURE_SHUTDOWN : 'shutdown_error' field OR'ed with CLOSURE_SHUTDOWN.
-                            This indicates that the fd is shutdown. Since all
-                            memory allocations are word-aligned, the lower to
-                            bits of the shutdown_error pointer are always 0. So
-                            it is safe to OR these with CLOSURE_SHUTDOWN.
+       closure ptr       : The closure to be executed when the fd has an I/O
+                           event of interest
+
+       shutdown_error | CLOSURE_SHUTDOWN_BIT :
+                          'shutdown_error' field ORed with CLOSURE_SHUTDOWN_BIT.
+                           This indicates that the fd is shutdown. Since all
+                           memory allocations are word-aligned, the lower two
+                           bits of the shutdown_error pointer are always 0. So
+                           it is safe to OR these with CLOSURE_SHUTDOWN_BIT
 
      Valid state transitions:
 
@@ -175,7 +176,7 @@ struct grpc_fd {
          |  +--------------4----------+   6    +---------2---------------+  |
          |                                |                                 |
          |                                v                                 |
-         +-----5------->  [shutdown_error | CLOSURE_SHUTDOWN] <--------7----+
+         +-----5------->  [shutdown_error | CLOSURE_SHUTDOWN_BIT] <----7----+
 
       For 1, 4 : See set_ready() function
       For 2, 3 : See notify_on() function
@@ -213,7 +214,8 @@ static void fd_global_shutdown(void);
 
 #define CLOSURE_NOT_READY ((gpr_atm)0)
 #define CLOSURE_READY ((gpr_atm)1)
-#define CLOSURE_SHUTDOWN ((gpr_atm)2)
+
+#define CLOSURE_SHUTDOWN_BIT 1
 
 /*******************************************************************************
  * Polling island Declarations
@@ -941,7 +943,7 @@ static void unref_by(grpc_fd *fd, int n) {
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
 
-    grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error1);
+    grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error);
     GRPC_ERROR_UNREF(err);
 
     gpr_mu_unlock(&fd_freelist_mu);
@@ -1006,7 +1008,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  gpr_atm_rel_store(&new_fd->shutdown_error1, (gpr_atm)GRPC_ERROR_NONE);
+  gpr_atm_rel_store(&new_fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE);
   new_fd->orphaned = false;
   gpr_atm_rel_store(&new_fd->read_closure, CLOSURE_NOT_READY);
   gpr_atm_rel_store(&new_fd->write_closure, CLOSURE_NOT_READY);
@@ -1127,9 +1129,10 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
         default: {
           /* 'curr' is either a closure or the fd is shutdown (in which case
            * 'curr' contains a pointer to the shutdown-error) */
-          if ((curr & CLOSURE_SHUTDOWN) > 0) {
+          if ((curr & CLOSURE_SHUTDOWN_BIT) > 0) {
             /* FD is shutdown. Schedule the closure with the shutdown error */
-            grpc_error *shutdown_err = (grpc_error *)(curr & ~CLOSURE_SHUTDOWN);
+            grpc_error *shutdown_err =
+                (grpc_error *)(curr & ~CLOSURE_SHUTDOWN_BIT);
             grpc_closure_sched(
                 exec_ctx, closure,
                 GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
@@ -1154,7 +1157,7 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
   /* Try the fast-path first (i.e expect the current value to be
      CLOSURE_NOT_READY */
   gpr_atm curr = CLOSURE_NOT_READY;
-  gpr_atm new_state = (gpr_atm)shutdown_err | CLOSURE_SHUTDOWN;
+  gpr_atm new_state = (gpr_atm)shutdown_err | CLOSURE_SHUTDOWN_BIT;
 
   bool is_done = false;
   while (!is_done) {
@@ -1175,7 +1178,7 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 
         default: {
           /* 'curr' is either a closure or the fd is already shutdown */
-          if ((curr & CLOSURE_SHUTDOWN) > 0) {
+          if ((curr & CLOSURE_SHUTDOWN_BIT) > 0) {
             /* fd is already shutdown. Do nothing */
           } else if (gpr_atm_rel_cas(state, curr, new_state)) {
             grpc_closure_sched(
@@ -1218,7 +1221,7 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
 
       default: {
         /* 'curr' is either a closure or the fd is shutdown */
-        if ((curr & CLOSURE_SHUTDOWN) > 0) {
+        if ((curr & CLOSURE_SHUTDOWN_BIT) > 0) {
           /* The fd is shutdown. Do nothing */
         } else if (gpr_atm_rel_cas(state, curr, CLOSURE_NOT_READY)) {
           grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
