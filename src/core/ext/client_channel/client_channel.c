@@ -898,11 +898,11 @@ static void cc_start_transport_stream_op_locked_inner(
       /* early out */
       return;
     } else {
-      // Stash a copy of cancel_error in our call data, so that we can use
-      // it for subsequent operations.  This ensures that if the call is
-      // cancelled before any ops are passed down (e.g., if the deadline
-      // is in the past when the call starts), we can return the right
-      // error to the caller when the first op does get passed down.
+      /* Stash a copy of cancel_error in our call data, so that we can use
+         it for subsequent operations.  This ensures that if the call is
+         cancelled before any ops are passed down (e.g., if the deadline
+         is in the past when the call starts), we can return the right
+         error to the caller when the first op does get passed down. */
       calld->cancel_error = GRPC_ERROR_REF(op->cancel_error);
       switch (calld->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
@@ -982,11 +982,14 @@ static void cc_start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("cc_start_transport_stream_op_locked", 0);
 }
 
-// The logic here is fairly complicated, due to (a) the fact that we
-// need to handle the case where we receive the send op before the
-// initial metadata op, and (b) the need for efficiency, especially in
-// the streaming case.
-// TODO(ctiller): Explain this more thoroughly.
+/* The logic here is fairly complicated, due to (a) the fact that we
+   need to handle the case where we receive the send op before the
+   initial metadata op, and (b) the need for efficiency, especially in
+   the streaming case.
+
+   We use double-checked locking to initially see if initialization has been
+   performed. If it has not, we acquire the combiner and perform initialization.
+   If it has, we proceed on the fast path. */
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
