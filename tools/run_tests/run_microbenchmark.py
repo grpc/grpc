@@ -133,11 +133,9 @@ def collect_perf(bm_name, args):
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
                            '--benchmark_min_time=20'])
-    with open('bm.perf', 'w') as f:
-      f.write(subprocess.check_output(['sudo', 'perf', 'script', '-i', 'perf.data']))
-    with open('bm.folded', 'w') as f:
-      f.write(subprocess.check_output([
-          '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf']))
+    subprocess.check_call(['sudo', 'perf', 'script', '-i', 'perf.data', '>', 'bm.perf'], shell=True)
+    subprocess.check_call([
+        '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf', '>', 'bm.folded'], shell=True)
     link(line, '%s.svg' % fnize(line))
     with open('reports/%s.svg' % fnize(line), 'w') as f:
       f.write(subprocess.check_output([
