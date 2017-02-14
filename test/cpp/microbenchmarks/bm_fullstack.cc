@@ -306,8 +306,8 @@ class InProcessCHTTP2 : public EndpointPairFixture {
 
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
-  TrickledCHTTP2(Service* service)
-      : EndpointPairFixture(service, MakeEndpoints()) {}
+  TrickledCHTTP2(Service* service, size_t megabits_per_second)
+      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second)) {}
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"
@@ -328,12 +328,12 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations());
   }
 
-  void Step(size_t write_size) {
+  void Step() {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    size_t client_backlog = grpc_trickle_endpoint_trickle(
-        &exec_ctx, endpoint_pair_.client, write_size);
-    size_t server_backlog = grpc_trickle_endpoint_trickle(
-        &exec_ctx, endpoint_pair_.server, write_size);
+    size_t client_backlog =
+        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.client);
+    size_t server_backlog =
+        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
     grpc_exec_ctx_finish(&exec_ctx);
 
     UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
@@ -351,12 +351,13 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   Stats client_stats_;
   Stats server_stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  grpc_endpoint_pair MakeEndpoints(size_t kilobits) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
                                   &stats_);
-    p.client = grpc_trickle_endpoint_create(p.client);
-    p.server = grpc_trickle_endpoint_create(p.server);
+    double bytes_per_second = 125 * kilobits;
+    p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
+    p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
     return p;
   }
 
@@ -854,12 +855,13 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
 
-static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
-                          size_t size) {
+static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok) {
   while (true) {
-    switch (fixture->cq()->AsyncNext(t, ok, gpr_now(GPR_CLOCK_MONOTONIC))) {
+    switch (fixture->cq()->AsyncNext(
+        t, ok, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                            gpr_time_from_micros(100, GPR_TIMESPAN)))) {
       case CompletionQueue::TIMEOUT:
-        fixture->Step(size);
+        fixture->Step();
         break;
       case CompletionQueue::SHUTDOWN:
         GPR_ASSERT(false);
@@ -872,7 +874,8 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
 
 static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(&service));
+  std::unique_ptr<TrickledCHTTP2> fixture(
+      new TrickledCHTTP2(&service, state.range(1)));
   {
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -892,7 +895,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
     void* t;
     bool ok;
     while (need_tags) {
-      TrickleCQNext(fixture.get(), &t, &ok, state.range(1));
+      TrickleCQNext(fixture.get(), &t, &ok);
       GPR_ASSERT(ok);
       int i = (int)(intptr_t)t;
       GPR_ASSERT(need_tags & (1 << i));
@@ -903,7 +906,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
-        TrickleCQNext(fixture.get(), &t, &ok, state.range(1));
+        TrickleCQNext(fixture.get(), &t, &ok);
         if (t == tag(0)) {
           request_rw->Read(&recv_response, tag(0));
         } else if (t == tag(1)) {
@@ -916,7 +919,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
     response_rw.Finish(Status::OK, tag(1));
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
-      TrickleCQNext(fixture.get(), &t, &ok, state.range(1));
+      TrickleCQNext(fixture.get(), &t, &ok);
       int i = (int)(intptr_t)t;
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
@@ -1018,7 +1021,9 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
 
 static void TrickleArgs(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
-    for (int j = 1024; j <= 8 * 1024 * 1024; j *= 8) {
+    for (int j = 1; j <= 40000; j *= 8) {
+      double expected_time = (double)(20 + i) / (125 * (double)j);
+      if (expected_time > 0.1) continue;
       b->Args({i, j});
     }
   }
