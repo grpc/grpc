@@ -873,7 +873,7 @@ static void cc_start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx,
                                                 void *arg,
                                                 grpc_error *error_ignored) {
   grpc_transport_stream_op *op = arg;
-  grpc_call_element *elem = op->transport_private.args[0];
+  grpc_call_element *elem = op->handler_private.args[0];
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_subchannel_call *call;
@@ -992,10 +992,10 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   }
   /* we failed; lock and figure out what to do */
   GRPC_CALL_STACK_REF(calld->owning_call, "start_transport_stream_op");
-  op->transport_private.args[0] = elem;
+  op->handler_private.args[0] = elem;
   grpc_closure_sched(
       exec_ctx,
-      grpc_closure_init(&op->transport_private.closure,
+      grpc_closure_init(&op->handler_private.closure,
                         cc_start_transport_stream_op_locked, op,
                         grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
