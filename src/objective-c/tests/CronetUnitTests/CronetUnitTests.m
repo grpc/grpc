@@ -71,9 +71,6 @@ static void drain_cq(grpc_completion_queue *cq) {
 + (void)setUp {
   [super setUp];
 
-  /***  FILE *roots_file;
-    size_t roots_size = strlen(test_root_cert);*/
-
   char *argv[] = {"CoreCronetEnd2EndTests"};
   grpc_test_init(1, argv);
 
