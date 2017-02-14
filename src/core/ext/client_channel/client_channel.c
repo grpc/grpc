@@ -421,8 +421,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(state_error);
 }
 
-static void cc_start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *error_ignored) {
+static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *error_ignored) {
   grpc_transport_op *op = arg;
   grpc_channel_element *elem = op->transport_private.args[0];
   channel_data *chand = elem->channel_data;
@@ -488,10 +488,9 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   op->transport_private.args[0] = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "start_transport_op");
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&op->transport_private.closure,
-                        cc_start_transport_op_locked, op,
-                        grpc_combiner_scheduler(chand->combiner, false)),
+      exec_ctx, grpc_closure_init(
+                    &op->transport_private.closure, start_transport_op_locked,
+                    op, grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
 }
 
@@ -869,9 +868,9 @@ static bool pick_subchannel_locked(
   return false;
 }
 
-static void cc_start_transport_stream_op_locked_inner(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op,
-    grpc_call_element *elem) {
+static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
+                                                   grpc_transport_stream_op *op,
+                                                   grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   grpc_subchannel_call *call;
@@ -894,7 +893,7 @@ static void cc_start_transport_stream_op_locked_inner(
     if (!gpr_atm_rel_cas(&calld->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       /* recurse to retry */
-      cc_start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+      start_transport_stream_op_locked_inner(exec_ctx, op, elem);
       /* early out */
       return;
     } else {
@@ -958,7 +957,7 @@ static void cc_start_transport_stream_op_locked_inner(
                       (gpr_atm)(uintptr_t)subchannel_call);
     retry_waiting_locked(exec_ctx, calld);
     /* recurse to retry */
-    cc_start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+    start_transport_stream_op_locked_inner(exec_ctx, op, elem);
     /* early out */
     return;
   }
@@ -975,7 +974,7 @@ static void cc_start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = op->handler_private.args[0];
   call_data *calld = elem->call_data;
 
-  cc_start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+  start_transport_stream_op_locked_inner(exec_ctx, op, elem);
 
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
                         "start_transport_stream_op");
@@ -1221,8 +1220,8 @@ static void try_to_connect_locked(grpc_exec_ctx *exec_ctx, void *arg,
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect) {
   channel_data *chand = elem->channel_data;
-  grpc_connectivity_state out;
-  out = grpc_connectivity_state_check(&chand->state_tracker);
+  grpc_connectivity_state out =
+      grpc_connectivity_state_check(&chand->state_tracker);
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "try_to_connect");
     grpc_closure_sched(
@@ -1254,9 +1253,8 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
-static void cc_watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
-                                               void *arg,
-                                               grpc_error *error_ignored) {
+static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                            grpc_error *error_ignored) {
   external_connectivity_watcher *w = arg;
   grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
                     grpc_schedule_on_exec_ctx);
@@ -1278,7 +1276,7 @@ void grpc_client_channel_watch_connectivity_state(
                          "external_connectivity_watcher");
   grpc_closure_sched(
       exec_ctx,
-      grpc_closure_init(&w->my_closure, cc_watch_connectivity_state_locked, w,
+      grpc_closure_init(&w->my_closure, watch_connectivity_state_locked, w,
                         grpc_combiner_scheduler(chand->combiner, true)),
       GRPC_ERROR_NONE);
 }
