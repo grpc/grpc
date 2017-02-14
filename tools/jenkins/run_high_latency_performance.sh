@@ -31,6 +31,9 @@
 # This script is invoked by Jenkins and runs high latency performance test suite.
 set -ex
 
+BQ_DATASET=${1:-performance_test}
+BQ_TABLE=${2:-performance_high_latency}
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
@@ -41,7 +44,7 @@ tools/run_tests/run_performance_tests.py \
     --netperf \
     --category sweep \
     -r .*unary.*ping_pong* \
-    --bq_result_table apolcyn_test.performance_high_latency \
+    --bq_result_table "${BQ_DATASET}.${BQ_TABLE}" \
     --remote_worker_host grpc-performance-2core grpc-performance-asia-east-2core \
     --xml_report report_high_latency_2core.xml \
     || EXIT_CODE=1
