@@ -312,7 +312,7 @@ class Gke:
           [container_cmd],
           [],  # Empty args list since all args are passed via env variables
           client_env,
-          False  # Client is not a headless service.
+          True  # Client is a headless service (no need for an external ip)
       )
 
       if not is_success:

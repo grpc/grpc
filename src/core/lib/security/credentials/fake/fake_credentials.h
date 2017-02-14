@@ -38,6 +38,21 @@
 
 /* -- Fake transport security credentials. -- */
 
+/* Used to verify the target names given to the fake transport security
+ * connector.
+ *
+ * Its syntax by example:
+ * For LB channels:
+ *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
+ * For regular channels:
+ *     "backend_taget_1,backend_target_2,..."
+ *
+ * That is to say, LB channels have a heading list of LB targets separated from
+ * the list of backend targets by a semicolon. For non-LB channels, only the
+ * latter is present. */
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.test_only.fake_security.expected_target"
+
 /* Creates a fake transport security credentials object for testing. */
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
 

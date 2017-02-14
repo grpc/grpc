@@ -94,6 +94,7 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['bytebuf_params'] = sizes
     else:
         r['simple_params'] = sizes
+    return r
 
 
 def _ping_pong_scenario(name, rpc_type,
@@ -142,8 +143,9 @@ def _ping_pong_scenario(name, rpc_type,
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
+    scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
-  scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
