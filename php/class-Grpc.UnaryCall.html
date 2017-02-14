@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<title>Class Grpc\UnaryCall</title>
+
+	<link rel="stylesheet" href="resources/style.css?e99947befd7bf673c6b43ff75e9e0f170c88a60e">
+
+</head>
+
+<body>
+<div id="left">
+	<div id="menu">
+		<a href="index.html" title="Overview"><span>Overview</span></a>
+
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+				<li class="active">
+					<a href="namespace-Grpc.html">
+						Grpc					</a>
+
+						</li>
+			</ul>
+		</div>
+
+		<hr>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="class-Grpc.AbstractCall.html">AbstractCall</a></li>
+				<li><a href="class-Grpc.BaseStub.html">BaseStub</a></li>
+				<li><a href="class-Grpc.BidiStreamingCall.html">BidiStreamingCall</a></li>
+				<li><a href="class-Grpc.ClientStreamingCall.html">ClientStreamingCall</a></li>
+				<li><a href="class-Grpc.ServerStreamingCall.html">ServerStreamingCall</a></li>
+				<li class="active"><a href="class-Grpc.UnaryCall.html">UnaryCall</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+<div id="rightInner">
+	<form id="search">
+		<input type="hidden" name="cx" value="">
+		<input type="hidden" name="ie" value="UTF-8">
+		<input type="text" name="q" class="text" placeholder="Search">
+	</form>
+
+	<div id="navigation">
+		<ul>
+			<li>
+				<a href="index.html" title="Overview"><span>Overview</span></a>
+			</li>
+			<li>
+				<a href="namespace-Grpc.html" title="Summary of Grpc"><span>Namespace</span></a>
+			</li>
+			<li class="active">
+<span>Class</span>			</li>
+		</ul>
+		<ul>
+		</ul>
+		<ul>
+		</ul>
+	</div>
+
+<div id="content" class="class">
+	<h1>Class UnaryCall</h1>
+
+
+	<div class="description">
+	<p>Represents an active call that sends a single message and then gets a
+single response.</p>
+	</div>
+
+	<dl class="tree">
+		<dd style="padding-left:0px">
+			<a href="class-Grpc.AbstractCall.html"><span>Grpc\AbstractCall</span></a>
+			
+			
+			
+		</dd>
+		<dd style="padding-left:30px">
+			<img src="resources/inherit.png" alt="Extended by">
+<b><span>Grpc\UnaryCall</span></b>			
+			
+			
+		</dd>
+	</dl>
+
+
+
+
+
+
+
+
+	<div class="info">
+		
+		
+		<b>Namespace:</b> <a href="namespace-Grpc.html">Grpc</a><br>
+		
+
+			<b>Located at</b> <a href="source-class-Grpc.UnaryCall.html#37-84" title="Go to source code">UnaryCall.php</a>
+		<br>
+	</div>
+
+
+
+	<table class="summary methods" id="methods">
+	<caption>Methods summary</caption>
+	<tr data-order="start" id="_start">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_start">#</a>
+		<code><a href="source-class-Grpc.UnaryCall.html#43-65" title="Go to source code">start</a>( <span>mixed <var>$data</var></span>, <span>array <var>$metadata</var> = []</span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Start the call.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Start the call.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$data</var></dt>
+					<dd>The data to send</dd>
+					<dt><var>$metadata</var></dt>
+					<dd><p>Metadata to send with the call, if applicable
+                       (optional)</p></dd>
+					<dt><var>$options</var></dt>
+					<dd><p>An array of options, possible keys:
+                       'flags' => a number (optional)</p></dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="wait" id="_wait">
+
+		<td class="attributes"><code>
+			 public 
+
+			array
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_wait">#</a>
+		<code><a href="source-class-Grpc.UnaryCall.html#67-83" title="Go to source code">wait</a>( )</code>
+
+		<div class="description short">
+			<p>Wait for the server to respond with data and a status.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Wait for the server to respond with data and a status.</p>
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					array<br>[response data, status]
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	</table>
+
+	<table class="summary inherited">
+	<caption>Methods inherited from <a href="class-Grpc.AbstractCall.html#methods">Grpc\AbstractCall</a></caption>
+	<tr>
+		<td><code>
+			<a href="class-Grpc.AbstractCall.html#___construct">__construct()</a>, 
+			<a href="class-Grpc.AbstractCall.html#__deserializeResponse">_deserializeResponse()</a>, 
+			<a href="class-Grpc.AbstractCall.html#__serializeMessage">_serializeMessage()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_cancel">cancel()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getMetadata">getMetadata()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getPeer">getPeer()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getTrailingMetadata">getTrailingMetadata()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_setCallCredentials">setCallCredentials()</a>
+		</code></td>
+	</tr>
+	</table>
+
+
+
+
+
+
+
+
+
+
+
+
+	<table class="summary inherited">
+	<caption>Properties inherited from <a href="class-Grpc.AbstractCall.html#properties">Grpc\AbstractCall</a></caption>
+	<tr>
+		<td><code>
+			<a href="class-Grpc.AbstractCall.html#$call"><var>$call</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$deserialize"><var>$deserialize</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$metadata"><var>$metadata</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$trailing_metadata"><var>$trailing_metadata</var></a>
+		</code></td>
+	</tr>
+	</table>
+
+
+
+
+
+</div>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+</div>
+<script src="resources/combined.js"></script>
+<script src="elementlist.js"></script>
+</body>
+</html>
