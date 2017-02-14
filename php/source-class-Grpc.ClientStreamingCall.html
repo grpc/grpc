@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="robots" content="noindex">
+
+	<title>File ClientStreamingCall.php</title>
+
+	<link rel="stylesheet" href="resources/style.css?e99947befd7bf673c6b43ff75e9e0f170c88a60e">
+
+</head>
+
+<body>
+<div id="left">
+	<div id="menu">
+		<a href="index.html" title="Overview"><span>Overview</span></a>
+
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+				<li>
+					<a href="namespace-Grpc.html">
+						Grpc					</a>
+
+						</li>
+			</ul>
+		</div>
+
+		<hr>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="class-Grpc.AbstractCall.html">Grpc\AbstractCall</a></li>
+				<li><a href="class-Grpc.BaseStub.html">Grpc\BaseStub</a></li>
+				<li><a href="class-Grpc.BidiStreamingCall.html">Grpc\BidiStreamingCall</a></li>
+				<li><a href="class-Grpc.ClientStreamingCall.html">Grpc\ClientStreamingCall</a></li>
+				<li><a href="class-Grpc.ServerStreamingCall.html">Grpc\ServerStreamingCall</a></li>
+				<li><a href="class-Grpc.UnaryCall.html">Grpc\UnaryCall</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+<div id="rightInner">
+	<form id="search">
+		<input type="hidden" name="cx" value="">
+		<input type="hidden" name="ie" value="UTF-8">
+		<input type="text" name="q" class="text" placeholder="Search">
+	</form>
+
+	<div id="navigation">
+		<ul>
+			<li>
+				<a href="index.html" title="Overview"><span>Overview</span></a>
+			</li>
+			<li>
+<span>Namespace</span>			</li>
+			<li>
+<span>Class</span>			</li>
+		</ul>
+		<ul>
+		</ul>
+		<ul>
+		</ul>
+	</div>
+
+<pre><code><span id="1" class="l"><a href="#1"> 1: </a><span class="xlang">&lt;?php</span>
+</span><span id="2" class="l"><a href="#2"> 2: </a><span class="php-comment">/*
+</span></span><span id="3" class="l"><a href="#3"> 3: </a><span class="php-comment"> *
+</span></span><span id="4" class="l"><a href="#4"> 4: </a><span class="php-comment"> * Copyright 2015, Google Inc.
+</span></span><span id="5" class="l"><a href="#5"> 5: </a><span class="php-comment"> * All rights reserved.
+</span></span><span id="6" class="l"><a href="#6"> 6: </a><span class="php-comment"> *
+</span></span><span id="7" class="l"><a href="#7"> 7: </a><span class="php-comment"> * Redistribution and use in source and binary forms, with or without
+</span></span><span id="8" class="l"><a href="#8"> 8: </a><span class="php-comment"> * modification, are permitted provided that the following conditions are
+</span></span><span id="9" class="l"><a href="#9"> 9: </a><span class="php-comment"> * met:
+</span></span><span id="10" class="l"><a href="#10">10: </a><span class="php-comment"> *
+</span></span><span id="11" class="l"><a href="#11">11: </a><span class="php-comment"> *     * Redistributions of source code must retain the above copyright
+</span></span><span id="12" class="l"><a href="#12">12: </a><span class="php-comment"> * notice, this list of conditions and the following disclaimer.
+</span></span><span id="13" class="l"><a href="#13">13: </a><span class="php-comment"> *     * Redistributions in binary form must reproduce the above
+</span></span><span id="14" class="l"><a href="#14">14: </a><span class="php-comment"> * copyright notice, this list of conditions and the following disclaimer
+</span></span><span id="15" class="l"><a href="#15">15: </a><span class="php-comment"> * in the documentation and/or other materials provided with the
+</span></span><span id="16" class="l"><a href="#16">16: </a><span class="php-comment"> * distribution.
+</span></span><span id="17" class="l"><a href="#17">17: </a><span class="php-comment"> *     * Neither the name of Google Inc. nor the names of its
+</span></span><span id="18" class="l"><a href="#18">18: </a><span class="php-comment"> * contributors may be used to endorse or promote products derived from
+</span></span><span id="19" class="l"><a href="#19">19: </a><span class="php-comment"> * this software without specific prior written permission.
+</span></span><span id="20" class="l"><a href="#20">20: </a><span class="php-comment"> *
+</span></span><span id="21" class="l"><a href="#21">21: </a><span class="php-comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+</span></span><span id="22" class="l"><a href="#22">22: </a><span class="php-comment"> * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+</span></span><span id="23" class="l"><a href="#23">23: </a><span class="php-comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+</span></span><span id="24" class="l"><a href="#24">24: </a><span class="php-comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+</span></span><span id="25" class="l"><a href="#25">25: </a><span class="php-comment"> * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+</span></span><span id="26" class="l"><a href="#26">26: </a><span class="php-comment"> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+</span></span><span id="27" class="l"><a href="#27">27: </a><span class="php-comment"> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+</span></span><span id="28" class="l"><a href="#28">28: </a><span class="php-comment"> * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+</span></span><span id="29" class="l"><a href="#29">29: </a><span class="php-comment"> * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+</span></span><span id="30" class="l"><a href="#30">30: </a><span class="php-comment"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+</span></span><span id="31" class="l"><a href="#31">31: </a><span class="php-comment"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</span></span><span id="32" class="l"><a href="#32">32: </a><span class="php-comment"> *
+</span></span><span id="33" class="l"><a href="#33">33: </a><span class="php-comment"> */</span>
+</span><span id="34" class="l"><a href="#34">34: </a>
+</span><span id="35" class="l"><a href="#35">35: </a><span class="php-keyword1">namespace</span> Grpc;
+</span><span id="36" class="l"><a href="#36">36: </a>
+</span><span id="37" class="l"><a href="#37">37: </a><span class="php-comment">/**
+</span></span><span id="38" class="l"><a href="#38">38: </a><span class="php-comment"> * Represents an active call that sends a stream of messages and then gets
+</span></span><span id="39" class="l"><a href="#39">39: </a><span class="php-comment"> * a single response.
+</span></span><span id="40" class="l"><a href="#40">40: </a><span class="php-comment"> */</span>
+</span><span id="41" class="l"><a href="#41">41: </a><span class="php-keyword1">class</span> ClientStreamingCall <span class="php-keyword1">extends</span> AbstractCall
+</span><span id="42" class="l"><a href="#42">42: </a>{
+</span><span id="43" class="l"><a href="#43">43: </a>    <span class="php-comment">/**
+</span></span><span id="44" class="l"><a href="#44">44: </a><span class="php-comment">     * Start the call.
+</span></span><span id="45" class="l"><a href="#45">45: </a><span class="php-comment">     *
+</span></span><span id="46" class="l"><a href="#46">46: </a><span class="php-comment">     * @param array $metadata Metadata to send with the call, if applicable
+</span></span><span id="47" class="l"><a href="#47">47: </a><span class="php-comment">     *                        (optional)
+</span></span><span id="48" class="l"><a href="#48">48: </a><span class="php-comment">     */</span>
+</span><span id="49" class="l"><a href="#49">49: </a>    <span class="php-keyword1">public</span> <span class="php-keyword1">function</span> start(<span class="php-keyword1">array</span> <span class="php-var">$metadata</span> = [])
+</span><span id="50" class="l"><a href="#50">50: </a>    {
+</span><span id="51" class="l"><a href="#51">51: </a>        <span class="php-var">$this</span>-&gt;call-&gt;startBatch([
+</span><span id="52" class="l"><a href="#52">52: </a>            OP_SEND_INITIAL_METADATA =&gt; <span class="php-var">$metadata</span>,
+</span><span id="53" class="l"><a href="#53">53: </a>        ]);
+</span><span id="54" class="l"><a href="#54">54: </a>    }
+</span><span id="55" class="l"><a href="#55">55: </a>
+</span><span id="56" class="l"><a href="#56">56: </a>    <span class="php-comment">/**
+</span></span><span id="57" class="l"><a href="#57">57: </a><span class="php-comment">     * Write a single message to the server. This cannot be called after
+</span></span><span id="58" class="l"><a href="#58">58: </a><span class="php-comment">     * wait is called.
+</span></span><span id="59" class="l"><a href="#59">59: </a><span class="php-comment">     *
+</span></span><span id="60" class="l"><a href="#60">60: </a><span class="php-comment">     * @param ByteBuffer $data    The data to write
+</span></span><span id="61" class="l"><a href="#61">61: </a><span class="php-comment">     * @param array      $options An array of options, possible keys:
+</span></span><span id="62" class="l"><a href="#62">62: </a><span class="php-comment">     *                            'flags' =&gt; a number (optional)
+</span></span><span id="63" class="l"><a href="#63">63: </a><span class="php-comment">     */</span>
+</span><span id="64" class="l"><a href="#64">64: </a>    <span class="php-keyword1">public</span> <span class="php-keyword1">function</span> write(<span class="php-var">$data</span>, <span class="php-keyword1">array</span> <span class="php-var">$options</span> = [])
+</span><span id="65" class="l"><a href="#65">65: </a>    {
+</span><span id="66" class="l"><a href="#66">66: </a>        <span class="php-var">$message_array</span> = [<span class="php-quote">'message'</span> =&gt; <span class="php-var">$this</span>-&gt;_serializeMessage(<span class="php-var">$data</span>)];
+</span><span id="67" class="l"><a href="#67">67: </a>        <span class="php-keyword1">if</span> (<span class="php-keyword2">array_key_exists</span>(<span class="php-quote">'flags'</span>, <span class="php-var">$options</span>)) {
+</span><span id="68" class="l"><a href="#68">68: </a>            <span class="php-var">$message_array</span>[<span class="php-quote">'flags'</span>] = <span class="php-var">$options</span>[<span class="php-quote">'flags'</span>];
+</span><span id="69" class="l"><a href="#69">69: </a>        }
+</span><span id="70" class="l"><a href="#70">70: </a>        <span class="php-var">$this</span>-&gt;call-&gt;startBatch([
+</span><span id="71" class="l"><a href="#71">71: </a>            OP_SEND_MESSAGE =&gt; <span class="php-var">$message_array</span>,
+</span><span id="72" class="l"><a href="#72">72: </a>        ]);
+</span><span id="73" class="l"><a href="#73">73: </a>    }
+</span><span id="74" class="l"><a href="#74">74: </a>
+</span><span id="75" class="l"><a href="#75">75: </a>    <span class="php-comment">/**
+</span></span><span id="76" class="l"><a href="#76">76: </a><span class="php-comment">     * Wait for the server to respond with data and a status.
+</span></span><span id="77" class="l"><a href="#77">77: </a><span class="php-comment">     *
+</span></span><span id="78" class="l"><a href="#78">78: </a><span class="php-comment">     * @return array [response data, status]
+</span></span><span id="79" class="l"><a href="#79">79: </a><span class="php-comment">     */</span>
+</span><span id="80" class="l"><a href="#80">80: </a>    <span class="php-keyword1">public</span> <span class="php-keyword1">function</span> wait()
+</span><span id="81" class="l"><a href="#81">81: </a>    {
+</span><span id="82" class="l"><a href="#82">82: </a>        <span class="php-var">$event</span> = <span class="php-var">$this</span>-&gt;call-&gt;startBatch([
+</span><span id="83" class="l"><a href="#83">83: </a>            OP_SEND_CLOSE_FROM_CLIENT =&gt; <span class="php-keyword1">true</span>,
+</span><span id="84" class="l"><a href="#84">84: </a>            OP_RECV_INITIAL_METADATA =&gt; <span class="php-keyword1">true</span>,
+</span><span id="85" class="l"><a href="#85">85: </a>            OP_RECV_MESSAGE =&gt; <span class="php-keyword1">true</span>,
+</span><span id="86" class="l"><a href="#86">86: </a>            OP_RECV_STATUS_ON_CLIENT =&gt; <span class="php-keyword1">true</span>,
+</span><span id="87" class="l"><a href="#87">87: </a>        ]);
+</span><span id="88" class="l"><a href="#88">88: </a>        <span class="php-var">$this</span>-&gt;metadata = <span class="php-var">$event</span>-&gt;metadata;
+</span><span id="89" class="l"><a href="#89">89: </a>
+</span><span id="90" class="l"><a href="#90">90: </a>        <span class="php-var">$status</span> = <span class="php-var">$event</span>-&gt;status;
+</span><span id="91" class="l"><a href="#91">91: </a>        <span class="php-var">$this</span>-&gt;trailing_metadata = <span class="php-var">$status</span>-&gt;metadata;
+</span><span id="92" class="l"><a href="#92">92: </a>
+</span><span id="93" class="l"><a href="#93">93: </a>        <span class="php-keyword1">return</span> [<span class="php-var">$this</span>-&gt;_deserializeResponse(<span class="php-var">$event</span>-&gt;message), <span class="php-var">$status</span>];
+</span><span id="94" class="l"><a href="#94">94: </a>    }
+</span><span id="95" class="l"><a href="#95">95: </a>}
+</span><span id="96" class="l"><a href="#96">96: </a></span></code></pre>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+</div>
+<script src="resources/combined.js?cd021bc814832c24a7cec5319ea03335bfba1caf"></script>
+<script src="elementlist.js?cf93b70b1d193f97eb89fd1473f4f7ebb98e18eb"></script>
+</body>
+</html>

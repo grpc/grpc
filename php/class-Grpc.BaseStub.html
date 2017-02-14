@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<title>Class Grpc\BaseStub</title>
+
+	<link rel="stylesheet" href="resources/style.css?e99947befd7bf673c6b43ff75e9e0f170c88a60e">
+
+</head>
+
+<body>
+<div id="left">
+	<div id="menu">
+		<a href="index.html" title="Overview"><span>Overview</span></a>
+
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+				<li class="active">
+					<a href="namespace-Grpc.html">
+						Grpc					</a>
+
+						</li>
+			</ul>
+		</div>
+
+		<hr>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="class-Grpc.AbstractCall.html">AbstractCall</a></li>
+				<li class="active"><a href="class-Grpc.BaseStub.html">BaseStub</a></li>
+				<li><a href="class-Grpc.BidiStreamingCall.html">BidiStreamingCall</a></li>
+				<li><a href="class-Grpc.ClientStreamingCall.html">ClientStreamingCall</a></li>
+				<li><a href="class-Grpc.ServerStreamingCall.html">ServerStreamingCall</a></li>
+				<li><a href="class-Grpc.UnaryCall.html">UnaryCall</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+<div id="rightInner">
+	<form id="search">
+		<input type="hidden" name="cx" value="">
+		<input type="hidden" name="ie" value="UTF-8">
+		<input type="text" name="q" class="text" placeholder="Search">
+	</form>
+
+	<div id="navigation">
+		<ul>
+			<li>
+				<a href="index.html" title="Overview"><span>Overview</span></a>
+			</li>
+			<li>
+				<a href="namespace-Grpc.html" title="Summary of Grpc"><span>Namespace</span></a>
+			</li>
+			<li class="active">
+<span>Class</span>			</li>
+		</ul>
+		<ul>
+		</ul>
+		<ul>
+		</ul>
+	</div>
+
+<div id="content" class="class">
+	<h1>Class BaseStub</h1>
+
+
+	<div class="description">
+	<p>Base class for generated client stubs. Stub methods are expected to call
+_simpleRequest or _streamRequest and return the result.</p>
+	</div>
+
+
+
+
+
+
+
+
+
+	<div class="info">
+		
+		
+		<b>Namespace:</b> <a href="namespace-Grpc.html">Grpc</a><br>
+		
+
+			<b>Located at</b> <a href="source-class-Grpc.BaseStub.html#37-363" title="Go to source code">BaseStub.php</a>
+		<br>
+	</div>
+
+
+
+	<table class="summary methods" id="methods">
+	<caption>Methods summary</caption>
+	<tr data-order="__construct" id="___construct">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#___construct">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#50-98" title="Go to source code">__construct</a>( <span>string <var>$hostname</var></span>, <span>array <var>$opts</var></span>, <span>Grpc\Channel <var>$channel</var> = <span class="php-keyword1">null</span></span> )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$hostname</var></dt>
+					<dd></dd>
+					<dt><var>$opts</var></dt>
+					<dd><ul>
+<li>'update_metadata': (optional) a callback function which takes in a
+metadata array, and returns an updated metadata array
+
+<ul>
+<li>'grpc.primary_user_agent': (optional) a user-agent string</li>
+</ul></li>
+</ul></dd>
+					<dt><var>$channel</var></dt>
+					<dd>An already created Channel object (optional)</dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getTarget" id="_getTarget">
+
+		<td class="attributes"><code>
+			 public 
+
+			string
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getTarget">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#100-106" title="Go to source code">getTarget</a>( )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					string<br>The URI of the endpoint
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getConnectivityState" id="_getConnectivityState">
+
+		<td class="attributes"><code>
+			 public 
+
+			integer
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getConnectivityState">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#108-116" title="Go to source code">getConnectivityState</a>( <span>boolean <var>$try_to_connect</var> = <span class="php-keyword1">false</span></span> )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$try_to_connect</var></dt>
+					<dd>(optional)</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					integer<br>The grpc connectivity state
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="waitForReady" id="_waitForReady">
+
+		<td class="attributes"><code>
+			 public 
+
+			boolean
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_waitForReady">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#118-146" title="Go to source code">waitForReady</a>( <span>integer <var>$timeout</var></span> )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$timeout</var></dt>
+					<dd>in microseconds</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					boolean<br>true if channel is ready
+				</div>
+
+
+				<h4>Throw</h4>
+				<div class="list">
+						Exception if channel is in FATAL_ERROR state<br>
+				</div>
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="close" id="_close">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_close">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#148-154" title="Go to source code">close</a>( )</code>
+
+		<div class="description short">
+			<p>Close the communication channel associated with this stub.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Close the communication channel associated with this stub.</p>
+
+
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_simpleRequest" id="__simpleRequest">
+
+		<td class="attributes"><code>
+			 protected 
+
+			SimpleSurfaceActiveCall
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__simpleRequest">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#225-259" title="Go to source code">_simpleRequest</a>( <span>string <var>$method</var></span>, <span>mixed <var>$argument</var></span>, <span>callable <var>$deserialize</var></span>, <span>array <var>$metadata</var> = []</span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Call a remote method that takes a single argument and has a
+single output.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Call a remote method that takes a single argument and has a
+single output.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$method</var></dt>
+					<dd>The name of the method to call</dd>
+					<dt><var>$argument</var></dt>
+					<dd>The argument to the method</dd>
+					<dt><var>$deserialize</var></dt>
+					<dd>A function that deserializes the response</dd>
+					<dt><var>$metadata</var></dt>
+					<dd><p>A metadata map to send to the server
+                             (optional)</p></dd>
+					<dt><var>$options</var></dt>
+					<dd>An array of options (optional)</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					SimpleSurfaceActiveCall<br>The active call object
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_clientStreamRequest" id="__clientStreamRequest">
+
+		<td class="attributes"><code>
+			 protected 
+
+			ClientStreamingSurfaceActiveCall
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__clientStreamRequest">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#261-293" title="Go to source code">_clientStreamRequest</a>( <span>string <var>$method</var></span>, <span>callable <var>$deserialize</var></span>, <span>array <var>$metadata</var> = []</span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Call a remote method that takes a stream of arguments and has a single
+output.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Call a remote method that takes a stream of arguments and has a single
+output.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$method</var></dt>
+					<dd>The name of the method to call</dd>
+					<dt><var>$deserialize</var></dt>
+					<dd>A function that deserializes the response</dd>
+					<dt><var>$metadata</var></dt>
+					<dd><p>A metadata map to send to the server
+                             (optional)</p></dd>
+					<dt><var>$options</var></dt>
+					<dd>An array of options (optional)</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					ClientStreamingSurfaceActiveCall<br>The active call object
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_serverStreamRequest" id="__serverStreamRequest">
+
+		<td class="attributes"><code>
+			 protected 
+
+			ServerStreamingSurfaceActiveCall
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__serverStreamRequest">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#295-329" title="Go to source code">_serverStreamRequest</a>( <span>string <var>$method</var></span>, <span>mixed <var>$argument</var></span>, <span>callable <var>$deserialize</var></span>, <span>array <var>$metadata</var> = []</span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Call a remote method that takes a single argument and returns a stream
+of responses.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Call a remote method that takes a single argument and returns a stream
+of responses.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$method</var></dt>
+					<dd>The name of the method to call</dd>
+					<dt><var>$argument</var></dt>
+					<dd>The argument to the method</dd>
+					<dt><var>$deserialize</var></dt>
+					<dd>A function that deserializes the responses</dd>
+					<dt><var>$metadata</var></dt>
+					<dd><p>A metadata map to send to the server
+                             (optional)</p></dd>
+					<dt><var>$options</var></dt>
+					<dd>An array of options (optional)</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					ServerStreamingSurfaceActiveCall<br>The active call object
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_bidiRequest" id="__bidiRequest">
+
+		<td class="attributes"><code>
+			 protected 
+
+			BidiStreamingSurfaceActiveCall
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__bidiRequest">#</a>
+		<code><a href="source-class-Grpc.BaseStub.html#331-362" title="Go to source code">_bidiRequest</a>( <span>string <var>$method</var></span>, <span>callable <var>$deserialize</var></span>, <span>array <var>$metadata</var> = []</span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Call a remote method with messages streaming in both directions.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Call a remote method with messages streaming in both directions.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$method</var></dt>
+					<dd>The name of the method to call</dd>
+					<dt><var>$deserialize</var></dt>
+					<dd>A function that deserializes the responses</dd>
+					<dt><var>$metadata</var></dt>
+					<dd><p>A metadata map to send to the server
+                             (optional)</p></dd>
+					<dt><var>$options</var></dt>
+					<dd>An array of options (optional)</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					BidiStreamingSurfaceActiveCall<br>The active call object
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+</div>
+<script src="resources/combined.js"></script>
+<script src="elementlist.js"></script>
+</body>
+</html>

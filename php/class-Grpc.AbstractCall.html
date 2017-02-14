@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<title>Class Grpc\AbstractCall</title>
+
+	<link rel="stylesheet" href="resources/style.css?e99947befd7bf673c6b43ff75e9e0f170c88a60e">
+
+</head>
+
+<body>
+<div id="left">
+	<div id="menu">
+		<a href="index.html" title="Overview"><span>Overview</span></a>
+
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+				<li class="active">
+					<a href="namespace-Grpc.html">
+						Grpc					</a>
+
+						</li>
+			</ul>
+		</div>
+
+		<hr>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li class="active"><a href="class-Grpc.AbstractCall.html">AbstractCall</a></li>
+				<li><a href="class-Grpc.BaseStub.html">BaseStub</a></li>
+				<li><a href="class-Grpc.BidiStreamingCall.html">BidiStreamingCall</a></li>
+				<li><a href="class-Grpc.ClientStreamingCall.html">ClientStreamingCall</a></li>
+				<li><a href="class-Grpc.ServerStreamingCall.html">ServerStreamingCall</a></li>
+				<li><a href="class-Grpc.UnaryCall.html">UnaryCall</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+<div id="rightInner">
+	<form id="search">
+		<input type="hidden" name="cx" value="">
+		<input type="hidden" name="ie" value="UTF-8">
+		<input type="text" name="q" class="text" placeholder="Search">
+	</form>
+
+	<div id="navigation">
+		<ul>
+			<li>
+				<a href="index.html" title="Overview"><span>Overview</span></a>
+			</li>
+			<li>
+				<a href="namespace-Grpc.html" title="Summary of Grpc"><span>Namespace</span></a>
+			</li>
+			<li class="active">
+<span>Class</span>			</li>
+		</ul>
+		<ul>
+		</ul>
+		<ul>
+		</ul>
+	</div>
+
+<div id="content" class="class">
+	<h1>Class AbstractCall</h1>
+
+
+	<div class="description">
+	<p>Class AbstractCall.</p>
+	</div>
+
+
+
+	<div>
+		<h4>Direct known subclasses</h4>
+			<a href="class-Grpc.BidiStreamingCall.html">Grpc\BidiStreamingCall</a>, 
+			<a href="class-Grpc.ClientStreamingCall.html">Grpc\ClientStreamingCall</a>, 
+			<a href="class-Grpc.ServerStreamingCall.html">Grpc\ServerStreamingCall</a>, 
+			<a href="class-Grpc.UnaryCall.html">Grpc\UnaryCall</a>
+	</div>
+
+
+
+
+
+
+	<div class="info">
+		<b>Abstract</b><br>
+		
+		<b>Namespace:</b> <a href="namespace-Grpc.html">Grpc</a><br>
+		<b>Package:</b> Grpc<br>
+
+			<b>Located at</b> <a href="source-class-Grpc.AbstractCall.html#37-175" title="Go to source code">AbstractCall.php</a>
+		<br>
+	</div>
+
+
+
+	<table class="summary methods" id="methods">
+	<caption>Methods summary</caption>
+	<tr data-order="__construct" id="___construct">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#___construct">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#51-88" title="Go to source code">__construct</a>( <span>Grpc\Channel <var>$channel</var></span>, <span>string <var>$method</var></span>, <span>callable <var>$deserialize</var></span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Create a new Call wrapper object.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Create a new Call wrapper object.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$channel</var></dt>
+					<dd>The channel to communicate on</dd>
+					<dt><var>$method</var></dt>
+					<dd><p>The method to call on the
+                             remote server</p></dd>
+					<dt><var>$deserialize</var></dt>
+					<dd><p>A callback function to deserialize
+                             the response</p></dd>
+					<dt><var>$options</var></dt>
+					<dd>Call options (optional)</dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getMetadata" id="_getMetadata">
+
+		<td class="attributes"><code>
+			 public 
+
+			mixed
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getMetadata">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#90-96" title="Go to source code">getMetadata</a>( )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					mixed<br>The metadata sent by the server
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getTrailingMetadata" id="_getTrailingMetadata">
+
+		<td class="attributes"><code>
+			 public 
+
+			mixed
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getTrailingMetadata">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#98-104" title="Go to source code">getTrailingMetadata</a>( )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					mixed<br>The trailing metadata sent by the server
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getPeer" id="_getPeer">
+
+		<td class="attributes"><code>
+			 public 
+
+			string
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getPeer">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#106-112" title="Go to source code">getPeer</a>( )</code>
+
+		<div class="description short">
+			
+		</div>
+
+		<div class="description detailed hidden">
+			
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					string<br>The URI of the endpoint
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="cancel" id="_cancel">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_cancel">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#114-120" title="Go to source code">cancel</a>( )</code>
+
+		<div class="description short">
+			<p>Cancels the call.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Cancels the call.</p>
+
+
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_serializeMessage" id="__serializeMessage">
+
+		<td class="attributes"><code>
+			 protected 
+
+			string
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__serializeMessage">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#122-138" title="Go to source code">_serializeMessage</a>( <span>mixed <var>$data</var></span> )</code>
+
+		<div class="description short">
+			<p>Serialize a message to the protobuf binary format.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Serialize a message to the protobuf binary format.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$data</var></dt>
+					<dd>The Protobuf message</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					string<br>The protobuf binary format
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="_deserializeResponse" id="__deserializeResponse">
+
+		<td class="attributes"><code>
+			 protected 
+
+			mixed
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#__deserializeResponse">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#140-164" title="Go to source code">_deserializeResponse</a>( <span>string <var>$value</var></span> )</code>
+
+		<div class="description short">
+			<p>Deserialize a response value to an object.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Deserialize a response value to an object.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$value</var></dt>
+					<dd>The binary value to deserialize</dd>
+				</dl></div>
+
+				<h4>Returns</h4>
+				<div class="list">
+					mixed<br>The deserialized value
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="setCallCredentials" id="_setCallCredentials">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_setCallCredentials">#</a>
+		<code><a href="source-class-Grpc.AbstractCall.html#166-174" title="Go to source code">setCallCredentials</a>( <span>CallCredentials <var>$call_credentials</var></span> )</code>
+
+		<div class="description short">
+			<p>Set the CallCredentials for the underlying Call.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Set the CallCredentials for the underlying Call.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$call_credentials</var></dt>
+					<dd>The CallCredentials object</dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	</table>
+
+
+
+
+
+
+
+
+
+
+
+
+	<table class="summary properties" id="properties">
+	<caption>Properties summary</caption>
+	<tr data-order="call" id="$call">
+		<td class="attributes"><code>
+			protected  
+			Call
+		</code></td>
+
+		<td class="name">
+				<a href="source-class-Grpc.AbstractCall.html#43-46" title="Go to source code"><var>$call</var></a>
+
+			<div class="description short">
+				
+			</div>
+
+			<div class="description detailed hidden">
+				
+
+			</div>
+		</td>
+		<td class="value">
+			<div>
+				<a href="#$call" class="anchor">#</a>
+				<code></code>
+			</div>
+		</td>
+	</tr>
+	<tr data-order="deserialize" id="$deserialize">
+		<td class="attributes"><code>
+			protected  
+			
+		</code></td>
+
+		<td class="name">
+				<a href="source-class-Grpc.AbstractCall.html#47" title="Go to source code"><var>$deserialize</var></a>
+
+			<div class="description short">
+				
+			</div>
+
+			<div class="description detailed hidden">
+				
+
+			</div>
+		</td>
+		<td class="value">
+			<div>
+				<a href="#$deserialize" class="anchor">#</a>
+				<code></code>
+			</div>
+		</td>
+	</tr>
+	<tr data-order="metadata" id="$metadata">
+		<td class="attributes"><code>
+			protected  
+			
+		</code></td>
+
+		<td class="name">
+				<a href="source-class-Grpc.AbstractCall.html#48" title="Go to source code"><var>$metadata</var></a>
+
+			<div class="description short">
+				
+			</div>
+
+			<div class="description detailed hidden">
+				
+
+			</div>
+		</td>
+		<td class="value">
+			<div>
+				<a href="#$metadata" class="anchor">#</a>
+				<code></code>
+			</div>
+		</td>
+	</tr>
+	<tr data-order="trailing_metadata" id="$trailing_metadata">
+		<td class="attributes"><code>
+			protected  
+			
+		</code></td>
+
+		<td class="name">
+				<a href="source-class-Grpc.AbstractCall.html#49" title="Go to source code"><var>$trailing_metadata</var></a>
+
+			<div class="description short">
+				
+			</div>
+
+			<div class="description detailed hidden">
+				
+
+			</div>
+		</td>
+		<td class="value">
+			<div>
+				<a href="#$trailing_metadata" class="anchor">#</a>
+				<code></code>
+			</div>
+		</td>
+	</tr>
+	</table>
+
+
+
+
+
+
+</div>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+</div>
+<script src="resources/combined.js"></script>
+<script src="elementlist.js"></script>
+</body>
+</html>

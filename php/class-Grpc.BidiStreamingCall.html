@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<title>Class Grpc\BidiStreamingCall</title>
+
+	<link rel="stylesheet" href="resources/style.css?e99947befd7bf673c6b43ff75e9e0f170c88a60e">
+
+</head>
+
+<body>
+<div id="left">
+	<div id="menu">
+		<a href="index.html" title="Overview"><span>Overview</span></a>
+
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+				<li class="active">
+					<a href="namespace-Grpc.html">
+						Grpc					</a>
+
+						</li>
+			</ul>
+		</div>
+
+		<hr>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="class-Grpc.AbstractCall.html">AbstractCall</a></li>
+				<li><a href="class-Grpc.BaseStub.html">BaseStub</a></li>
+				<li class="active"><a href="class-Grpc.BidiStreamingCall.html">BidiStreamingCall</a></li>
+				<li><a href="class-Grpc.ClientStreamingCall.html">ClientStreamingCall</a></li>
+				<li><a href="class-Grpc.ServerStreamingCall.html">ServerStreamingCall</a></li>
+				<li><a href="class-Grpc.UnaryCall.html">UnaryCall</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+<div id="rightInner">
+	<form id="search">
+		<input type="hidden" name="cx" value="">
+		<input type="hidden" name="ie" value="UTF-8">
+		<input type="text" name="q" class="text" placeholder="Search">
+	</form>
+
+	<div id="navigation">
+		<ul>
+			<li>
+				<a href="index.html" title="Overview"><span>Overview</span></a>
+			</li>
+			<li>
+				<a href="namespace-Grpc.html" title="Summary of Grpc"><span>Namespace</span></a>
+			</li>
+			<li class="active">
+<span>Class</span>			</li>
+		</ul>
+		<ul>
+		</ul>
+		<ul>
+		</ul>
+	</div>
+
+<div id="content" class="class">
+	<h1>Class BidiStreamingCall</h1>
+
+
+	<div class="description">
+	<p>Represents an active call that allows for sending and recieving messages
+in streams in any order.</p>
+	</div>
+
+	<dl class="tree">
+		<dd style="padding-left:0px">
+			<a href="class-Grpc.AbstractCall.html"><span>Grpc\AbstractCall</span></a>
+			
+			
+			
+		</dd>
+		<dd style="padding-left:30px">
+			<img src="resources/inherit.png" alt="Extended by">
+<b><span>Grpc\BidiStreamingCall</span></b>			
+			
+			
+		</dd>
+	</dl>
+
+
+
+
+
+
+
+
+	<div class="info">
+		
+		
+		<b>Namespace:</b> <a href="namespace-Grpc.html">Grpc</a><br>
+		
+
+			<b>Located at</b> <a href="source-class-Grpc.BidiStreamingCall.html#37-120" title="Go to source code">BidiStreamingCall.php</a>
+		<br>
+	</div>
+
+
+
+	<table class="summary methods" id="methods">
+	<caption>Methods summary</caption>
+	<tr data-order="start" id="_start">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_start">#</a>
+		<code><a href="source-class-Grpc.BidiStreamingCall.html#43-54" title="Go to source code">start</a>( <span>array <var>$metadata</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Start the call.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Start the call.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$metadata</var></dt>
+					<dd><p>Metadata to send with the call, if applicable
+                       (optional)</p></dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="read" id="_read">
+
+		<td class="attributes"><code>
+			 public 
+
+			mixed
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_read">#</a>
+		<code><a href="source-class-Grpc.BidiStreamingCall.html#56-73" title="Go to source code">read</a>( )</code>
+
+		<div class="description short">
+			<p>Reads the next value from the server.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Reads the next value from the server.</p>
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					mixed<br>The next value from the server, or null if there is none
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="write" id="_write">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_write">#</a>
+		<code><a href="source-class-Grpc.BidiStreamingCall.html#75-92" title="Go to source code">write</a>( <span>ByteBuffer <var>$data</var></span>, <span>array <var>$options</var> = []</span> )</code>
+
+		<div class="description short">
+			<p>Write a single message to the server. This cannot be called after
+writesDone is called.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Write a single message to the server. This cannot be called after
+writesDone is called.</p>
+
+
+				<h4>Parameters</h4>
+				<div class="list"><dl>
+					<dt><var>$data</var></dt>
+					<dd>The data to write</dd>
+					<dt><var>$options</var></dt>
+					<dd><p>An array of options, possible keys:
+                           'flags' => a number (optional)</p></dd>
+				</dl></div>
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="writesDone" id="_writesDone">
+
+		<td class="attributes"><code>
+			 public 
+
+			
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_writesDone">#</a>
+		<code><a href="source-class-Grpc.BidiStreamingCall.html#94-102" title="Go to source code">writesDone</a>( )</code>
+
+		<div class="description short">
+			<p>Indicate that no more writes will be sent.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Indicate that no more writes will be sent.</p>
+
+
+
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	<tr data-order="getStatus" id="_getStatus">
+
+		<td class="attributes"><code>
+			 public 
+
+			stdClass
+			
+			</code>
+		</td>
+
+		<td class="name"><div>
+		<a class="anchor" href="#_getStatus">#</a>
+		<code><a href="source-class-Grpc.BidiStreamingCall.html#104-119" title="Go to source code">getStatus</a>( )</code>
+
+		<div class="description short">
+			<p>Wait for the server to send the status, and return it.</p>
+		</div>
+
+		<div class="description detailed hidden">
+			<p>Wait for the server to send the status, and return it.</p>
+
+
+
+				<h4>Returns</h4>
+				<div class="list">
+					stdClass<br><p>The status object, with integer $code, string
+                  $details, and array $metadata members</p>
+				</div>
+
+
+
+
+		</div>
+		</div></td>
+	</tr>
+	</table>
+
+	<table class="summary inherited">
+	<caption>Methods inherited from <a href="class-Grpc.AbstractCall.html#methods">Grpc\AbstractCall</a></caption>
+	<tr>
+		<td><code>
+			<a href="class-Grpc.AbstractCall.html#___construct">__construct()</a>, 
+			<a href="class-Grpc.AbstractCall.html#__deserializeResponse">_deserializeResponse()</a>, 
+			<a href="class-Grpc.AbstractCall.html#__serializeMessage">_serializeMessage()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_cancel">cancel()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getMetadata">getMetadata()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getPeer">getPeer()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_getTrailingMetadata">getTrailingMetadata()</a>, 
+			<a href="class-Grpc.AbstractCall.html#_setCallCredentials">setCallCredentials()</a>
+		</code></td>
+	</tr>
+	</table>
+
+
+
+
+
+
+
+
+
+
+
+
+	<table class="summary inherited">
+	<caption>Properties inherited from <a href="class-Grpc.AbstractCall.html#properties">Grpc\AbstractCall</a></caption>
+	<tr>
+		<td><code>
+			<a href="class-Grpc.AbstractCall.html#$call"><var>$call</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$deserialize"><var>$deserialize</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$metadata"><var>$metadata</var></a>, 
+			<a href="class-Grpc.AbstractCall.html#$trailing_metadata"><var>$trailing_metadata</var></a>
+		</code></td>
+	</tr>
+	</table>
+
+
+
+
+
+</div>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+</div>
+<script src="resources/combined.js"></script>
+<script src="elementlist.js"></script>
+</body>
+</html>
