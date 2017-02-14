@@ -1021,9 +1021,9 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
 
 static void TrickleArgs(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
-    for (int j = 1; j <= 40000; j *= 8) {
-      double expected_time = (double)(20 + i) / (125 * (double)j);
-      if (expected_time > 0.1) continue;
+    for (int j = 1; j <= 128 * 1024 * 1024; j *= 8) {
+      double expected_time = (double)(14 + i) / (125 * (double)j);
+      if (expected_time > 0.01) continue;
       b->Args({i, j});
     }
   }
