@@ -358,6 +358,8 @@ unsigned int parse_h2_length(const char *field) {
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Coalescing"];
+
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         int sl = socket(AF_INET, SOCK_STREAM, 0);
@@ -420,6 +422,7 @@ unsigned int parse_h2_length(const char *field) {
         SSL_CTX_free(ctx);
         close(s);
         close(sl);
+        [expectation fulfill];
       });
 
   CQ_EXPECT_COMPLETION(cqv, (void *)1, 1);
@@ -442,6 +445,8 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
+  
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testPacketCoalescing {
