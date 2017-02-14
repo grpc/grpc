@@ -596,6 +596,7 @@ filegroups:
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
+  - test/core/util/trickle_endpoint.h
   src:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fake_resolver.c
@@ -613,6 +614,7 @@ filegroups:
   - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
+  - test/core/util/trickle_endpoint.c
   deps:
   - grpc
   - gpr_test_util
