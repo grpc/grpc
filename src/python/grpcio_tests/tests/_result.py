@@ -453,7 +453,9 @@ def jenkins_junit_xml(result):
     })
     for case in result.cases.values():
         if case.kind is CaseResult.Kind.SUCCESS:
-            ElementTree.SubElement(suite, 'testcase', {'name': case.name,})
+            ElementTree.SubElement(suite, 'testcase', {
+                'name': case.name,
+            })
         elif case.kind in (CaseResult.Kind.ERROR, CaseResult.Kind.FAILURE):
             case_xml = ElementTree.SubElement(suite, 'testcase', {
                 'name': case.name,

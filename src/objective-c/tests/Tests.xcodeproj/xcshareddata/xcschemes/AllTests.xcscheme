@@ -49,6 +49,16 @@
                </Test>
             </SkippedTests>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5E8A5DA31D3840B4000F8BC4"
+               BuildableName = "CoreCronetEnd2EndTests.xctest"
+               BlueprintName = "CoreCronetEnd2EndTests"
+               ReferencedContainer = "container:Tests.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference
@@ -90,15 +100,6 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63423F431B150A5F006CF63C"
-            BuildableName = "AllTests.xctest"
-            BlueprintName = "AllTests"
-            ReferencedContainer = "container:Tests.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
