@@ -92,7 +92,7 @@ def decode(b):
         try:
             return b.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on {}'.format(b))
+            logging.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
 
 
