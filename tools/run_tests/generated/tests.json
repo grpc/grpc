@@ -1709,6 +1709,28 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "parse_address_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "percent_encoding_test", 
     "platforms": [
       "linux", 
