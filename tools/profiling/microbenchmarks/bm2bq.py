@@ -61,6 +61,11 @@ columns = [
   ('allocs_per_iteration', 'float'),
   ('locks_per_iteration', 'float'),
   ('writes_per_iteration', 'float'),
+  ('bandwidth_kilobits', 'integer'),
+  ('cli_transport_stalls_per_iteration', 'float'),
+  ('cli_stream_stalls_per_iteration', 'float'),
+  ('svr_transport_stalls_per_iteration', 'float'),
+  ('svr_stream_stalls_per_iteration', 'float'),
 ]
 
 if sys.argv[1] == '--schema':
@@ -92,7 +97,11 @@ bm_specs = {
   'BM_StreamingPingPongMsgs': {
     'tpl': ['fixture', 'client_mutator', 'server_mutator'],
     'dyn': ['request_size'],
-  }
+  },
+  'BM_PumpStreamServerToClient_Trickle': {
+    'tpl': [],
+    'dyn': ['request_size', 'bandwidth_kilobits'],
+  },
 }
 
 def numericalize(s):
