@@ -142,6 +142,8 @@ int main(int argc, char **argv) {
   test_succeeds("http:?legit#twice", "http", "", "", "legit", "twice");
   test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
   test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
+  test_succeeds("ipv6:[2001:db8::1%252]:12345", "ipv6", "",
+                "[2001:db8::1%2]:12345", "", "");
 
   test_fails("xyz");
   test_fails("http:?dangling-pct-%0");

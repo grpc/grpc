@@ -42,6 +42,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/support/string.h"
 
 /** a size_t default value... maps to all 1's */
@@ -68,11 +69,16 @@ static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
   return NULL;
 }
 
-/** Returns a copy of \a src[begin, end) */
-static char *copy_component(const char *src, size_t begin, size_t end) {
-  char *out = gpr_malloc(end - begin + 1);
-  memcpy(out, src + begin, end - begin);
-  out[end - begin] = 0;
+/** Returns a copy of percent decoded \a src[begin, end) */
+static char *decode_and_copy_component(const char *src, size_t begin,
+                                       size_t end) {
+  grpc_slice component =
+      grpc_slice_from_copied_buffer(src + begin, end - begin);
+  grpc_slice decoded_component =
+      grpc_permissive_percent_decode_slice(component);
+  char *out = grpc_slice_to_c_string(decoded_component);
+  grpc_slice_unref(component);
+  grpc_slice_unref(decoded_component);
   return out;
 }
 
@@ -264,11 +270,13 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
 
   uri = gpr_malloc(sizeof(*uri));
   memset(uri, 0, sizeof(*uri));
-  uri->scheme = copy_component(uri_text, scheme_begin, scheme_end);
-  uri->authority = copy_component(uri_text, authority_begin, authority_end);
-  uri->path = copy_component(uri_text, path_begin, path_end);
-  uri->query = copy_component(uri_text, query_begin, query_end);
-  uri->fragment = copy_component(uri_text, fragment_begin, fragment_end);
+  uri->scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
+  uri->authority =
+      decode_and_copy_component(uri_text, authority_begin, authority_end);
+  uri->path = decode_and_copy_component(uri_text, path_begin, path_end);
+  uri->query = decode_and_copy_component(uri_text, query_begin, query_end);
+  uri->fragment =
+      decode_and_copy_component(uri_text, fragment_begin, fragment_end);
   parse_query_parts(uri);
 
   return uri;
