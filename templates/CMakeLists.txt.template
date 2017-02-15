@@ -229,7 +229,7 @@
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(protobuf)
+    find_package(Protobuf)
     if(Protobuf_FOUND)
       if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
