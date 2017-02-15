@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
   TEST_VECTOR("\x0f", "%0F", grpc_url_percent_encoding_unreserved_bytes);
   TEST_VECTOR("\xff", "%FF", grpc_url_percent_encoding_unreserved_bytes);
   TEST_VECTOR("\xee", "%EE", grpc_url_percent_encoding_unreserved_bytes);
+  TEST_VECTOR("%2", "%252", grpc_url_percent_encoding_unreserved_bytes);
   TEST_NONCONFORMANT_VECTOR("%", "%",
                             grpc_url_percent_encoding_unreserved_bytes);
   TEST_NONCONFORMANT_VECTOR("%A", "%A",
