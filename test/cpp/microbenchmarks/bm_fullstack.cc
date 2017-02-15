@@ -355,7 +355,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
                                   &stats_);
-    double bytes_per_second = 125 * kilobits;
+    double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
     return p;
@@ -1022,7 +1022,8 @@ BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
 static void TrickleArgs(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
     for (int j = 1; j <= 128 * 1024 * 1024; j *= 8) {
-      double expected_time = (double)(14 + i) / (125 * (double)j);
+      double expected_time =
+          static_cast<double>(14 + i) / (125.0 * static_cast<double>(j));
       if (expected_time > 0.01) continue;
       b->Args({i, j});
     }

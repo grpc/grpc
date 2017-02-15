@@ -166,7 +166,9 @@ grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
   return &te->base;
 }
 
-static double ts2dbl(gpr_timespec s) { return s.tv_sec + 1e-9 * s.tv_nsec; }
+static double ts2dbl(gpr_timespec s) {
+  return (double)s.tv_sec + 1e-9 * (double)s.tv_nsec;
+}
 
 size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
                                      grpc_endpoint *ep) {
