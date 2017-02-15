@@ -87,7 +87,7 @@ extern const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
 
 /* Create a settings frame by diffing old & new, and updating old to be new */
-grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
+grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *newval,
                                        uint32_t force_mask, size_t count);
 /* Create an ack settings frame */
 grpc_slice grpc_chttp2_settings_ack_create(void);

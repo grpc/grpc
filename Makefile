@@ -3267,6 +3267,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    test/core/util/trickle_endpoint.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3467,6 +3468,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    test/core/util/trickle_endpoint.c \
 
 PUBLIC_HEADERS_C += \
 
