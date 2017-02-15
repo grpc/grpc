@@ -115,6 +115,8 @@ def numericalize(s):
   assert 'not a number: %s' % s
 
 def parse_name(name):
+  if '<' not in name and '/' not in name and name not in bm_specs:
+    return {'name': name}
   rest = name
   out = {}
   tpl_args = []
@@ -145,7 +147,7 @@ def parse_name(name):
     rest = s[0]
     dyn_args = s[1:]
   name = rest
-  assert name in bm_specs
+  assert name in bm_specs, 'bm_specs needs to be expanded for %s' % name
   assert len(dyn_args) == len(bm_specs[name]['dyn'])
   assert len(tpl_args) == len(bm_specs[name]['tpl'])
   out['name'] = name
@@ -155,10 +157,13 @@ def parse_name(name):
 
 for bm in js['benchmarks']:
   context = js['context']
-  labels_list = [s.split(':') for s in bm.get('label', '').split(' ')]
-  for el in labels_list:
-    el[0] = el[0].replace('/iter', '_per_iteration')
-  labels = dict(labels_list)
+  if 'label' in bm:
+    labels_list = [s.split(':') for s in bm['label'].split(' ')]
+    for el in labels_list:
+      el[0] = el[0].replace('/iter', '_per_iteration')
+    labels = dict(labels_list)
+  else:
+    labels = {}
   row = {
     'jenkins_build': os.environ.get('BUILD_NUMBER', ''),
     'jenkins_job': os.environ.get('JOB_NAME', ''),
@@ -167,5 +172,6 @@ for bm in js['benchmarks']:
   row.update(bm)
   row.update(parse_name(row['name']))
   row.update(labels)
-  del row['label']
+  if 'label' in row:
+    del row['label']
   writer.writerow(row)
