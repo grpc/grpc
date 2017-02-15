@@ -149,9 +149,12 @@ def collect_summary(bm_name, args):
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
-  text(subprocess.check_output(['bins/counters/%s' % bm_name,
-                                '--benchmark_out=out.json',
-                                '--benchmark_out_format=json']))
+  cmd = ['bins/counters/%s' % bm_name,
+         '--benchmark_out=out.json',
+         '--benchmark_out_format=json']
+  if args.summary_time is not None:
+    cmd += ['--benchmark_min_time=%d' % args.summary_time]
+  text(subprocess.check_output(cmd))
   if args.bigquery_upload:
     with open('out.csv', 'w') as f:
       f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
@@ -179,6 +182,10 @@ argp.add_argument('--bigquery_upload',
                   action='store_const',
                   const=True,
                   help='Upload results from summary collection to bigquery')
+argp.add_argument('--summary_time',
+                  default=None,
+                  type=int,
+                  help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
 
 for bm_name in args.benchmarks:
