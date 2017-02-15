@@ -183,7 +183,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
-  find_package(Protobuf)
+  find_package(protobuf)
   if(Protobuf_FOUND)
     if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
       set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
@@ -286,11 +286,6 @@ endif()
 
 if(WIN32 AND MSVC)
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
-endif()
-
-find_package(Threads)
-if(Threads_FOUND)
-  set(_gRPC_BASELIB_LIBRARIES ${_gRPC_BASELIB_LIBRARIES} pthread)
 endif()
 
 include(GNUInstallDirs)
@@ -3576,6 +3571,7 @@ target_include_directories(grpc_plugin_support
 
 target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
