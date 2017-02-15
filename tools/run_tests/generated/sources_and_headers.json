@@ -5380,7 +5380,8 @@
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto"
     ], 
     "headers": [
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -8028,6 +8029,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h", 
       "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
@@ -8039,7 +8041,8 @@
       "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
-      "src/core/ext/transport/cronet/transport/cronet_transport.c"
+      "src/core/ext/transport/cronet/transport/cronet_transport.c", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

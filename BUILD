@@ -140,6 +140,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
     ],
 )
 
@@ -1075,6 +1076,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "third_party/objective_c/Cronet/bidirectional_stream_c.h",
+        "src/core/ext/transport/cronet/transport/cronet_transport.h",
     ],
     language = "c",
     public_hdrs = [
