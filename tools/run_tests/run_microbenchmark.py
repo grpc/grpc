@@ -134,7 +134,7 @@ def collect_perf(bm_name, args):
     link(line, '%s.svg' % fnize(line))
     benchmarks.append(
         jobset.JobSpec(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
-                        '-g', '-f', '997',
+                        '-g', '-F', '997',
                         'bins/mutrace/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
                         '--benchmark_min_time=10']))
