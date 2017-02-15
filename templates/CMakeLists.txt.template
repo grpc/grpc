@@ -228,18 +228,24 @@
       set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(protobuf CONFIG)
-    if(protobuf_FOUND)
+    find_package(protobuf)
+    if(Protobuf_FOUND)
       if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
+      else()
+        set(_gRPC_PROTOBUF_LIBRARIES <%text>${Protobuf_LIBRARIES}</%text>)
       endif()
       if(TARGET protobuf::libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+      else()
+        set(_gRPC_PROTOBUF_PROTOC_LIBRARIES <%text>${Protobuf_PROTOC_LIBRARIES}</%text>)
       endif()
       if(TARGET protobuf::protoc)
         set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+      else()
+        set(_gRPC_PROTOBUF_PROTOC <%text>${Protobuf_PROTOC_EXECUTABLE}</%text>)
       endif()
-      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
+      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     else()
       find_package(Protobuf MODULE)
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
@@ -378,7 +384,11 @@
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
 
+<<<<<<< HEAD
         <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"  "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+=======
+        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+>>>>>>> Make cmake protobuf detection changes in template.
     endforeach()
   endfunction()
 
