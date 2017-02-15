@@ -80,6 +80,13 @@ def platform_string():
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 
+def run_shell_command(cmd, env=None, cwd=None):
+  try:
+    subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
+  except subprocess.CalledProcessError as e:
+    print("Error while running command '%s'. Exit status %d. Output:\n%s",
+          e.cmd, e.returncode, e.output)
+    raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
@@ -1199,7 +1206,7 @@ for spec in args.update_submodules:
   cwd = 'third_party/%s' % submodule
   def git(cmd, cwd=cwd):
     print('in %s: git %s' % (cwd, cmd))
-    subprocess.check_call('git %s' % cmd, cwd=cwd, shell=True)
+    run_shell_command('git %s' % cmd, cwd=cwd)
   git('fetch')
   git('checkout %s' % branch)
   git('pull origin %s' % branch)
@@ -1207,7 +1214,7 @@ for spec in args.update_submodules:
     need_to_regenerate_projects = True
 if need_to_regenerate_projects:
   if jobset.platform_string() == 'linux':
-    subprocess.check_call('tools/buildgen/generate_projects.sh', shell=True)
+    run_shell_command('tools/buildgen/generate_projects.sh')
   else:
     print('WARNING: may need to regenerate projects, but since we are not on')
     print('         Linux this step is being skipped. Compilation MAY fail.')
@@ -1276,9 +1283,7 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
-                        shell=True,
-                        env=env)
+  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)
