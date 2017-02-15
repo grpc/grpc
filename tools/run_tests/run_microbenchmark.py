@@ -128,20 +128,21 @@ def collect_perf(bm_name, args):
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['sudo', 'perf', 'record', '-o', 'perf.data',
+    subprocess.check_call(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
                            '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
-                           '--benchmark_min_time=20'])
-    with open('bm.perf', 'w') as f:
-      f.write(subprocess.check_output(['sudo', 'perf', 'script']))
-    with open('bm.folded', 'w') as f:
-      f.write(subprocess.check_output([
-          '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf']))
-    link(line, '%s.svg' % fnize(line))
-    with open('reports/%s.svg' % fnize(line), 'w') as f:
-      f.write(subprocess.check_output([
-          '%s/flamegraph.pl' % flamegraph_dir, 'bm.folded']))
+                           '--benchmark_min_time=10'])
+    env = os.environ.copy()
+    env.update({
+      'PERF_BASE_NAME': fnize(line),
+      'OUTPUT_DIR': 'reports',
+      'OUTPUT_FILENAME': fnize(line),
+    })
+    subprocess.check_call(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
+                          env=env)
+    subprocess.check_call(['rm', '%s-perf.data' % fnize(line)])
+    subprocess.check_call(['rm', '%s-out.perf' % fnize(line)])
 
 def collect_summary(bm_name, args):
   heading('Summary: %s' % bm_name)

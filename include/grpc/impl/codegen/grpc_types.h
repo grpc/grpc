@@ -230,6 +230,10 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** If non-zero, Cronet transport will coalesce packets to fewer frames when
+ * possible. */
+#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
+  "grpc.use_cronet_packet_coalescing"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
