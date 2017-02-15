@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,18 +30,19 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+# change to root directory
+cd $(dirname $0)/../..
 
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
+DIRS=src/python/grpcio/grpc
 
-# try to use pypy for generating reports
-# each trace dumps 7-8gig of text to disk, and processing this into a report is
-# heavyweight - so any speed boost is worthwhile
-# TODO(ctiller): consider rewriting report generation in C++ for performance
-if which pypy >/dev/null; then
-  PYTHON=pypy
-else
-  PYTHON=python2.7
-fi
+VIRTUALENV=python_pylint_venv
 
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
+virtualenv $VIRTUALENV
+PYTHON=`realpath $VIRTUALENV/bin/python`
+$PYTHON -m pip install pylint==1.6.5
+
+for dir in $DIRS; do
+  $PYTHON -m pylint --rcfile=.pylintrc -rn $dir || exit $?
+done
+
+exit 0
