@@ -134,7 +134,7 @@ def collect_perf(bm_name, args):
     link(line, '%s.svg' % fnize(line))
     benchmarks.append(
         jobset.JobSpec(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
-                        '-g', '-c', '1000',
+                        '-g', '-f', '997',
                         'bins/mutrace/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
                         '--benchmark_min_time=10']))
@@ -152,7 +152,7 @@ def collect_perf(bm_name, args):
     if len(benchmarks) >= 20:
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
+      jobset.run(benchmarks, maxjobs=1),
                  add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
@@ -161,7 +161,7 @@ def collect_perf(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
+    jobset.run(benchmarks, maxjobs=1),
                add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
