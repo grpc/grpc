@@ -128,6 +128,7 @@ def collect_perf(bm_name, args):
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
+    link(line, '%s.svg' % fnize(line))
     subprocess.check_call(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
                            '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
