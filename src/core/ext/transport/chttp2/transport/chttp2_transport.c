@@ -265,7 +265,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .gain_d = 0,
                                  .initial_control_value = log2(DEFAULT_WINDOW),
                                  .min_control_value = -1,
-                                 .max_control_value = 22,
+                                 .max_control_value = 25,
                                  .integral_range = 10});
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
@@ -1809,12 +1809,12 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
     return;
   }
+  if (grpc_bdp_estimator_trace) {
+    gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
+            (int)bdp);
+  }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
 }
-
-/*******************************************************************************
- * INPUT PROCESSING - PARSING
- */
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t) {
