@@ -1474,6 +1474,7 @@
 					"$(inherited)",
 					"GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1",
 					"GRPC_COMPILE_WITH_CRONET=1",
+					"GRPC_CRONET_WITH_PACKET_COALESCING=1",
 				);
 				INFOPLIST_FILE = InteropTestsRemoteWithCronet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
