@@ -42,6 +42,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import platform
 
 import grpc
 from grpc_tools import protoc
@@ -150,6 +151,7 @@ class CommonTestMixin(object):
         self.assertEqual(expected_response, response)
 
 
+@unittest.skipIf(platform.python_implementation() == "PyPy", "Skip test if run with PyPy")
 class SameSeparateTest(unittest.TestCase, SeparateTestMixin):
 
     def setUp(self):
@@ -191,6 +193,7 @@ class SameSeparateTest(unittest.TestCase, SeparateTestMixin):
         shutil.rmtree(self.directory)
 
 
+@unittest.skipIf(platform.python_implementation() == "PyPy", "Skip test if run with PyPy")
 class SameCommonTest(unittest.TestCase, CommonTestMixin):
 
     def setUp(self):
@@ -228,6 +231,7 @@ class SameCommonTest(unittest.TestCase, CommonTestMixin):
         shutil.rmtree(self.directory)
 
 
+@unittest.skipIf(platform.python_implementation() == "PyPy", "Skip test if run with PyPy")
 class SplitCommonTest(unittest.TestCase, CommonTestMixin):
 
     def setUp(self):
@@ -277,6 +281,7 @@ class SplitCommonTest(unittest.TestCase, CommonTestMixin):
         shutil.rmtree(self.directory)
 
 
+@unittest.skipIf(platform.python_implementation() == "PyPy", "Skip test if run with PyPy")
 class SplitSeparateTest(unittest.TestCase, SeparateTestMixin):
 
     def setUp(self):
