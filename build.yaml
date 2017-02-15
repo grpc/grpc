@@ -1088,6 +1088,7 @@ libs:
   filegroups:
   - grpc++_base
   - grpc++_codegen_base
+  - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
@@ -3955,7 +3956,7 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
-    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

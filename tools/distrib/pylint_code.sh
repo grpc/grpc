@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,44 +28,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l objc
+set -ex
 
-set -ev
+# change to root directory
+cd $(dirname $0)/../..
 
-cd $(dirname $0)
+DIRS=src/python/grpcio/grpc
 
-# Run the tests server.
+VIRTUALENV=python_pylint_venv
 
-BINDIR=../../../bins/$CONFIG
+virtualenv $VIRTUALENV
+PYTHON=`realpath $VIRTUALENV/bin/python`
+$PYTHON -m pip install pylint==1.6.5
 
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script."
-    exit 1
-}
-$BINDIR/interop_server --port=5050 --max_send_message_size=8388608 &
-$BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
-# Kill them when this script exits.
-trap 'kill -9 `jobs -p`' EXIT
+for dir in $DIRS; do
+  $PYTHON -m pylint --rcfile=.pylintrc -rn $dir || exit $?
+done
 
-# xcodebuild is very verbose. We filter its output and tell Bash to fail if any
-# element of the pipe fails.
-# TODO(jcanizales): Use xctool instead? Issue #2540.
-set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme AllTests \
-    -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+exit 0

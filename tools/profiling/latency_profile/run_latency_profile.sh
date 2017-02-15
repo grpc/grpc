@@ -44,4 +44,4 @@ else
   PYTHON=python2.7
 fi
 
-$PYTHON tools/run_tests/run_microbenchmark.py bm_fullstack
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
