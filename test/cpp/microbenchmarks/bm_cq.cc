@@ -109,6 +109,7 @@ static void BM_Pass1Core(benchmark::State& state) {
     grpc_exec_ctx_finish(&exec_ctx);
     grpc_completion_queue_next(cq, deadline, NULL);
   }
+  grpc_completion_queue_destroy(cq);
 }
 BENCHMARK(BM_Pass1Core);
 
