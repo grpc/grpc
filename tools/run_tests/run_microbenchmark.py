@@ -132,7 +132,7 @@ def collect_perf(bm_name, args):
                            '-g', '-c', '1000',
                            'bins/mutrace/%s' % bm_name,
                            '--benchmark_filter=^%s$' % line,
-                           '--benchmark_min_time=20'])
+                           '--benchmark_min_time=10'])
     env = os.environ.copy()
     env.update({
       'PERF_BASE_NAME': fnize(line),
@@ -141,6 +141,8 @@ def collect_perf(bm_name, args):
     })
     subprocess.check_call(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
                           env=env)
+    subprocess.check_call(['rm', '%s-perf.data' % fnize(line)])
+    subprocess.check_call(['rm', '%s-out.perf' % fnize(line)])
 
 def collect_summary(bm_name, args):
   heading('Summary: %s' % bm_name)
