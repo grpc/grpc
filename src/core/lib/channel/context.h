@@ -50,6 +50,9 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
+  /// Load balancing costs
+  GRPC_CONTEXT_LB_COST,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 

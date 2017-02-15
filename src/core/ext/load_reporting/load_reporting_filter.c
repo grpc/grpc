@@ -42,12 +42,17 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+static void destroy_context(void *c) {}
+
+void grpc_call_set_lb_cost_context(grpc_call *call, grpc_lb_cost_context *ctx) {
+  grpc_call_context_set(call, GRPC_CONTEXT_LB_COST, ctx, destroy_context);
+}
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
-  bool have_trailing_md_string;
-  grpc_slice trailing_md_string;
   bool have_initial_md_string;
   grpc_slice initial_md_string;
   bool have_service_method;
@@ -142,9 +147,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (calld->have_initial_md_string) {
     grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
   }
-  if (calld->have_trailing_md_string) {
-    grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
-  }
   if (calld->have_service_method) {
     grpc_slice_unref_internal(exec_ctx, calld->service_method);
   }
@@ -201,15 +203,6 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     /* substitute our callback for the higher callback */
     calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
-  } else if (op->send_trailing_metadata) {
-    if (op->send_trailing_metadata->idx.named.lb_cost_bin != NULL) {
-      calld->trailing_md_string = grpc_slice_ref_internal(
-          GRPC_MDVALUE(op->send_trailing_metadata->idx.named.lb_cost_bin->md));
-      calld->have_trailing_md_string = true;
-      grpc_metadata_batch_remove(
-          exec_ctx, op->send_trailing_metadata,
-          op->send_trailing_metadata->idx.named.lb_cost_bin);
-    }
   }
   grpc_call_next_op(exec_ctx, elem, op);
 

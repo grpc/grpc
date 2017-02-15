@@ -229,6 +229,14 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
 
+typedef struct grpc_lb_cost_context {
+  grpc_slice *values;
+  size_t values_count;
+} grpc_lb_cost_context;
+
+GRPCAPI void grpc_call_set_lb_cost_context(grpc_call *call,
+                                           grpc_lb_cost_context *context);
+
 struct census_context;
 
 /* Set census context for a call; Must be called before first call to
