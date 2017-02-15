@@ -312,18 +312,18 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"
         << ((double)stats_.num_writes / (double)state.iterations())
-        << " cli-transport-stalls/iter:"
+        << " cli_transport_stalls/iter:"
         << ((double)
                 client_stats_.streams_stalled_due_to_transport_flow_control /
             (double)state.iterations())
-        << " cli-stream-stalls/iter:"
+        << " cli_stream_stalls/iter:"
         << ((double)client_stats_.streams_stalled_due_to_stream_flow_control /
             (double)state.iterations())
-        << " svr-transport-stalls/iter:"
+        << " svr_transport_stalls/iter:"
         << ((double)
                 server_stats_.streams_stalled_due_to_transport_flow_control /
             (double)state.iterations())
-        << " svr-stream-stalls/iter:"
+        << " svr_stream_stalls/iter:"
         << ((double)server_stats_.streams_stalled_due_to_stream_flow_control /
             (double)state.iterations());
   }
