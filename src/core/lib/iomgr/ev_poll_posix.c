@@ -149,7 +149,7 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
 static bool fd_is_orphaned(grpc_fd *fd);
 
 /* Reference counting for fds */
-/*#define GRPC_FD_REF_COUNT_DEBUG*/
+//#define GRPC_FD_REF_COUNT_DEBUG
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
@@ -283,8 +283,8 @@ cv_fd_table g_cvfds;
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
   gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+          (int)gpr_atm_no_barrier_load(&fd->refst),
+          (int)gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -298,8 +298,8 @@ static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
   gpr_atm old;
   gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+          (int)gpr_atm_no_barrier_load(&fd->refst),
+          (int)gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
 #else
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old;
@@ -1137,11 +1137,26 @@ static grpc_pollset_set *pollset_set_create(void) {
   return pollset_set;
 }
 
-static void pollset_set_destroy(grpc_pollset_set *pollset_set) {
+static void pollset_set_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_pollset_set *pollset_set) {
   size_t i;
   gpr_mu_destroy(&pollset_set->mu);
   for (i = 0; i < pollset_set->fd_count; i++) {
     GRPC_FD_UNREF(pollset_set->fds[i], "pollset_set");
+  }
+  for (i = 0; i < pollset_set->pollset_count; i++) {
+    grpc_pollset *pollset = pollset_set->pollsets[i];
+    gpr_mu_lock(&pollset->mu);
+    pollset->pollset_set_count--;
+    /* check shutdown */
+    if (pollset->shutting_down && !pollset->called_shutdown &&
+        !pollset_has_observers(pollset)) {
+      pollset->called_shutdown = 1;
+      gpr_mu_unlock(&pollset->mu);
+      finish_shutdown(exec_ctx, pollset);
+    } else {
+      gpr_mu_unlock(&pollset->mu);
+    }
   }
   gpr_free(pollset_set->pollsets);
   gpr_free(pollset_set->pollset_sets);
@@ -1160,9 +1175,9 @@ static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
   if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
     pollset_set->pollset_capacity =
         GPR_MAX(8, 2 * pollset_set->pollset_capacity);
-    pollset_set->pollsets = gpr_realloc(
-        pollset_set->pollsets,
-        pollset_set->pollset_capacity * sizeof(*pollset_set->pollsets));
+    pollset_set->pollsets =
+        gpr_realloc(pollset_set->pollsets, pollset_set->pollset_capacity *
+                                               sizeof(*pollset_set->pollsets));
   }
   pollset_set->pollsets[pollset_set->pollset_count++] = pollset;
   for (i = 0, j = 0; i < pollset_set->fd_count; i++) {
