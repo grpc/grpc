@@ -158,8 +158,8 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
   /* If there is already pending data, or if there is a pending
    * incoming_byte_stream that is finished, append the data to unprocessed frame
    * buffer. */
-  if (s->unprocessed_incoming_frames_buffer.count > 0 ||
-      (s->incoming_frames != NULL && p->parsing_frame == NULL)) {
+  if (s->unprocessed_incoming_frames_buffer.count > 0) {
+    s->stats.incoming.framing_bytes += GRPC_SLICE_LENGTH(slice);
     grpc_slice_ref(slice);
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
     return GRPC_ERROR_NONE;
@@ -170,6 +170,12 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       p->state = GRPC_CHTTP2_DATA_ERROR;
       return GRPC_ERROR_REF(p->error);
     case GRPC_CHTTP2_DATA_FH_0:
+      if (s->incoming_frames != NULL) {
+        s->stats.incoming.framing_bytes += (size_t)(end - cur);
+        grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer,
+                              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+        return GRPC_ERROR_NONE;
+      }
       s->stats.incoming.framing_bytes++;
       p->frame_type = *cur;
       switch (p->frame_type) {
@@ -234,7 +240,7 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       }
       GPR_ASSERT(s->incoming_frames == NULL);
       p->parsing_frame = grpc_chttp2_incoming_byte_stream_create(
-          exec_ctx, t, s, p->frame_size, message_flags, true);
+          exec_ctx, t, s, p->frame_size, message_flags);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
       if (cur == end) {
@@ -242,37 +248,11 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       }
       uint32_t remaining = (uint32_t)(end - cur);
       s->stats.incoming.data_bytes += remaining;
-      if (remaining == p->frame_size) {
-        grpc_chttp2_incoming_byte_stream_push(
-            exec_ctx, p->parsing_frame,
-            grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                  GRPC_ERROR_NONE);
-        p->parsing_frame = NULL;
-        p->state = GRPC_CHTTP2_DATA_FH_0;
-        return GRPC_ERROR_NONE;
-      } else if (remaining < p->frame_size) {
-        grpc_chttp2_incoming_byte_stream_push(
-            exec_ctx, p->parsing_frame,
-            grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        p->frame_size -= remaining;
-        return GRPC_ERROR_NONE;
-      } else {
-        GPR_ASSERT(remaining > p->frame_size);
-        grpc_chttp2_incoming_byte_stream_push(
-            exec_ctx, p->parsing_frame,
-            grpc_slice_sub(slice, (size_t)(cur - beg),
-                           (size_t)(cur + p->frame_size - beg)));
-        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                  GRPC_ERROR_NONE);
-        p->parsing_frame = NULL;
-        p->state = GRPC_CHTTP2_DATA_FH_0;
-        cur += p->frame_size;
-        grpc_slice_buffer_add(
-            &s->unprocessed_incoming_frames_buffer,
-            grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        return GRPC_ERROR_NONE;
-      }
+      grpc_slice_buffer_add(
+          &s->unprocessed_incoming_frames_buffer,
+          grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+      grpc_chttp2_incoming_byte_stream_notify(exec_ctx, p->parsing_frame);
+      return GRPC_ERROR_NONE;
   }
 
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));

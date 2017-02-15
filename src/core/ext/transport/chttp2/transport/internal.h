@@ -780,7 +780,7 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport *t);
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    uint32_t frame_size, uint32_t flags, bool trigger_recv);
+    uint32_t frame_size, uint32_t flags);
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            grpc_slice slice);

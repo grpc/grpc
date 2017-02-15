@@ -1525,11 +1525,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_destroy_internal(
           exec_ctx, &s->unprocessed_incoming_frames_buffer);
     }
-    if (s->incoming_frames != NULL ||
-        (GRPC_ERROR_NONE == (error = deframe_unprocessed_incoming_frames(
-                                 exec_ctx, &s->data_parser, t, s,
-                                 &s->unprocessed_incoming_frames_buffer)) &&
-         s->incoming_frames != NULL)) {
+    if (s->incoming_frames != NULL) {
       *s->recv_message = &s->incoming_frames->base;
       s->incoming_frames = NULL;
       GPR_ASSERT(*s->recv_message != NULL);
@@ -2206,6 +2202,11 @@ static grpc_error *deframe_unprocessed_incoming_frames(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p,
     grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     grpc_slice_buffer *slices, bool partial_deframe) {
+
+  if (p->parsing_frame == NULL && s->incoming_frames != NULL) {
+    return GRPC_ERROR_NONE;
+  }
+
   while (slices->count > 0) {
     uint8_t *beg = NULL;
     uint8_t *end = NULL;
@@ -2230,6 +2231,12 @@ static grpc_error *deframe_unprocessed_incoming_frames(
         grpc_slice_unref_internal(exec_ctx, slice);
         return GRPC_ERROR_REF(p->error);
       case GRPC_CHTTP2_DATA_FH_0:
+        if (s->incoming_frames != NULL) {
+          s->stats.incoming.framing_bytes += (size_t)(end - cur);
+          grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer,
+                                grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+          return GRPC_ERROR_NONE;
+        }
         p->frame_type = *cur;
         switch (p->frame_type) {
           case 0:
@@ -2293,30 +2300,33 @@ static grpc_error *deframe_unprocessed_incoming_frames(
           message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         }
         GPR_ASSERT(s->incoming_frames == NULL);
-        p->parsing_frame = s->incoming_frames =
+        p->parsing_frame =
             grpc_chttp2_incoming_byte_stream_create(
-                exec_ctx, t, s, p->frame_size, message_flags, false);
+                exec_ctx, t, s, p->frame_size, message_flags);
+
+        undo_take_first?
+
+
       /* fallthrough */
       case GRPC_CHTTP2_DATA_FRAME:
+        uint32_t remaining = (uint32_t)(end - cur);
         if (partial_deframe) {
-          uint32_t remaining = (uint32_t)(end - cur);
-          if (remaining > 0) {
-            if (cur == beg) {
-              grpc_slice_buffer_undo_take_first(&s->unprocessed_incoming_frames_buffer, slice);
-            } else {
-              grpc_slice_buffer_undo_take_first(
+          if (remaining > 0 && cur == beg) {
+            grpc_slice_buffer_undo_take_first(&s->unprocessed_incoming_frames_buffer, slice);
+          } else if (remaining > 0 && cur > beg) {
+            grpc_slice_buffer_undo_take_first(
                                   &s->unprocessed_incoming_frames_buffer,
                                   grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-              grpc_slice_unref_internal(exec_ctx, slice);
-            }
-          return GRPC_ERROR_NONE;
+            grpc_slice_unref_internal(exec_ctx, slice);
+          } else { /* remaining == 0 */
+            grpc_slice_unref_internal(exec_ctx, slice);
           }
+          return GRPC_ERROR_NONE;
         }
         if (cur == end) {
           grpc_slice_unref_internal(exec_ctx, slice);
           continue;
         }
-        uint32_t remaining = (uint32_t)(end - cur);
         if (remaining == p->frame_size) {
           grpc_chttp2_incoming_byte_stream_push(
               exec_ctx, p->parsing_frame,
@@ -2543,7 +2553,7 @@ void grpc_chttp2_incoming_byte_stream_finished(
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    uint32_t frame_size, uint32_t flags, bool trigger_recv) {
+    uint32_t frame_size, uint32_t flags) {
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
       gpr_malloc(sizeof(*incoming_byte_stream));
   incoming_byte_stream->base.length = frame_size;
@@ -2562,9 +2572,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->is_tail = 1;
   incoming_byte_stream->error = GRPC_ERROR_NONE;
   s->incoming_frames = incoming_byte_stream;
-  if (trigger_recv) {
-    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
-  }
+  grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   return incoming_byte_stream;
 }
 
