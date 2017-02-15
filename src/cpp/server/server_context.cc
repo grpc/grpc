@@ -33,7 +33,9 @@
 
 #include <grpc++/server_context.h>
 
+#include <algorithm>
 #include <mutex>
+#include <utility>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
@@ -133,8 +135,7 @@ ServerContext::ServerContext()
       sent_initial_metadata_(false),
       compression_level_set_(false) {}
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
-                             size_t metadata_count)
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
@@ -143,12 +144,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false) {
-  for (size_t i = 0; i < metadata_count; i++) {
-    client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(
-            StringRefFromSlice(&metadata[i].key),
-            StringRefFromSlice(&metadata[i].value)));
-  }
+  std::swap(*client_metadata_.arr(), *arr);
+  client_metadata_.FillMap();
 }
 
 ServerContext::~ServerContext() {
