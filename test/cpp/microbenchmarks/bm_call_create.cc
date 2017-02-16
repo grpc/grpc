@@ -34,6 +34,7 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
+#include <string.h>
 #include <sstream>
 
 #include <grpc++/support/channel_arguments.h>
