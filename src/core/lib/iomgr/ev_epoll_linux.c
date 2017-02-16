@@ -218,7 +218,7 @@ static void fd_global_init(void);
 static void fd_global_shutdown(void);
 
 #define CLOSURE_NOT_READY ((gpr_atm)0)
-#define CLOSURE_READY ((gpr_atm)1)
+#define CLOSURE_READY ((gpr_atm)2)
 
 #define FD_SHUTDOWN_BIT 1
 
