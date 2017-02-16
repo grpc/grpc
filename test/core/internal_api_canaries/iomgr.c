@@ -105,7 +105,6 @@ static void test_code(void) {
   grpc_pollset_size();
   grpc_pollset_init(NULL, NULL);
   grpc_pollset_shutdown(NULL, NULL, NULL);
-  grpc_pollset_reset(NULL);
   grpc_pollset_destroy(NULL);
   GRPC_ERROR_UNREF(grpc_pollset_work(NULL, NULL, NULL,
                                      gpr_now(GPR_CLOCK_REALTIME),
