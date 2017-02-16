@@ -35,21 +35,20 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
-typedef struct grpc_deadline_timer {
-  grpc_timer timer;
-  grpc_closure timer_callback;
-} grpc_deadline_timer;
+typedef enum grpc_deadline_timer_state {
+  GRPC_DEADLINE_STATE_INITIAL,
+  GRPC_DEADLINE_STATE_PENDING,
+  GRPC_DEADLINE_STATE_FINISHED
+} grpc_deadline_timer_state;
 
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
 typedef struct grpc_deadline_state {
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
-  // We allow an initial timer and one reset.. these atomics point to the
-  // grpc_deadline_timer instances
-  gpr_atm timers[2];
-  // Pre-allocated initial timer.
-  grpc_deadline_timer inlined_timer;
+  gpr_atm timer_state;
+  grpc_timer timer;
+  grpc_closure timer_callback;
   // Closure to invoke when the call is complete.
   // We use this to cancel the timer.
   grpc_closure on_complete;

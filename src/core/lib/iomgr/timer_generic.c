@@ -186,25 +186,25 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
   timer->deadline = deadline;
-  timer->triggered = 0;
 
   if (!g_initialized) {
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_closure_sched(
         exec_ctx, timer->closure,
         GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
+  gpr_mu_lock(&shard->mu);
+  timer->pending = true;
   if (gpr_time_cmp(deadline, now) <= 0) {
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    gpr_mu_unlock(&shard->mu);
+    /* early out */
     return;
   }
 
-  /* TODO(ctiller): check deadline expired */
-
-  gpr_mu_lock(&shard->mu);
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       ts_to_dbl(gpr_time_sub(deadline, now)));
   if (gpr_time_cmp(deadline, shard->queue_deadline_cap) < 0) {
@@ -249,9 +249,9 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
 
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
-  if (!timer->triggered) {
+  if (timer->pending) {
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
-    timer->triggered = 1;
+    timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
     } else {
@@ -302,7 +302,7 @@ static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {
     }
     timer = grpc_timer_heap_top(&shard->heap);
     if (gpr_time_cmp(timer->deadline, now) > 0) return NULL;
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
   }

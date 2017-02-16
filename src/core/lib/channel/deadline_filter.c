@@ -73,45 +73,48 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
     return;
   }
   grpc_deadline_state* deadline_state = elem->call_data;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(deadline_state->timers); i++) {
-    if (gpr_atm_acq_load(&deadline_state->timers[i]) == 0) {
-      grpc_deadline_timer* timer = (i == 0 ? &deadline_state->inlined_timer
-                                           : gpr_malloc(sizeof(*timer)));
-      if (gpr_atm_rel_cas(&deadline_state->timers[i], 0, (gpr_atm)timer)) {
-        grpc_timer_init(
-            exec_ctx, &timer->timer, deadline,
-            grpc_closure_init(&timer->timer_callback, timer_callback, elem,
-                              grpc_schedule_on_exec_ctx),
-            gpr_now(GPR_CLOCK_MONOTONIC));
-      } else if (i != 0) {
-        gpr_free(timer);
+  grpc_deadline_timer_state cur_state;
+  grpc_closure* closure = NULL;
+retry:
+  cur_state =
+      (grpc_deadline_timer_state)gpr_atm_acq_load(&deadline_state->timer_state);
+  switch (cur_state) {
+    case GRPC_DEADLINE_STATE_PENDING:
+      return;
+    case GRPC_DEADLINE_STATE_FINISHED:
+      if (gpr_atm_rel_cas(&deadline_state->timer_state,
+                          GRPC_DEADLINE_STATE_FINISHED,
+                          GRPC_DEADLINE_STATE_PENDING)) {
+        closure = grpc_closure_create(timer_callback, elem,
+                                      grpc_schedule_on_exec_ctx);
+      } else {
+        goto retry;
       }
-    }
+      break;
+    case GRPC_DEADLINE_STATE_INITIAL:
+      if (gpr_atm_rel_cas(&deadline_state->timer_state,
+                          GRPC_DEADLINE_STATE_INITIAL,
+                          GRPC_DEADLINE_STATE_PENDING)) {
+        closure =
+            grpc_closure_init(&deadline_state->timer_callback, timer_callback,
+                              elem, grpc_schedule_on_exec_ctx);
+      } else {
+        goto retry;
+      }
+      break;
   }
+  GPR_ASSERT(closure);
+  grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
   GPR_UNREACHABLE_CODE(return;);
 }
 
 // Cancels the deadline timer.
 static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                    grpc_deadline_state* deadline_state) {
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(deadline_state->timers); i++) {
-    gpr_atm timer_val;
-    timer_val = gpr_atm_acq_load(&deadline_state->timers[i]);
-    switch (timer_val) {
-      case 0:
-        return;
-      case TOMBSTONE_TIMER:
-        break;
-      default:
-        if (!gpr_atm_rel_cas(&deadline_state->timers[i], timer_val,
-                             TOMBSTONE_TIMER)) {
-          break;  // must have become a tombstone
-        }
-        grpc_deadline_timer* timer = (grpc_deadline_timer*)timer_val;
-        grpc_timer_cancel(exec_ctx, &timer->timer);
-        if (i != 0) gpr_free(timer);
-        break;
-    }
+  if (gpr_atm_acq_load(&deadline_state->timer_state) !=
+      GRPC_DEADLINE_STATE_INITIAL) {
+    grpc_timer_cancel(exec_ctx, &deadline_state->timer);
   }
 }
 
@@ -120,8 +123,8 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = arg;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
-  deadline_state->next_on_complete->cb(
-      exec_ctx, deadline_state->next_on_complete->cb_arg, error);
+  grpc_closure_run(exec_ctx, deadline_state->next_on_complete,
+                   GRPC_ERROR_REF(error));
 }
 
 // Inject our own on_complete callback into op.
