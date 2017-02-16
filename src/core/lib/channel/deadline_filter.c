@@ -244,7 +244,7 @@ typedef struct server_call_data {
 // Constructor for call_data.  Used for both client and server filters.
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
-                                  grpc_call_element_args* args) {
+                                  const grpc_call_element_args* args) {
   // Note: size of call data is different between client and server.
   memset(elem->call_data, 0, elem->filter->sizeof_call_data);
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
