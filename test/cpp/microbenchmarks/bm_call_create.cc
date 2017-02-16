@@ -208,7 +208,9 @@ void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_transport_stream_op *op) {}
+                     grpc_stream *stream, grpc_transport_stream_op *op) {
+  grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
+}
 
 /* implementation of grpc_transport_perform_op */
 void PerformOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
@@ -295,29 +297,109 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   state.SetLabel(label.str());
 }
 
+template <class Fixture>
+static void BM_FilterInitSendInitialMetadataThenDestroy(
+    benchmark::State &state) {
+  Fixture fixture;
+  std::ostringstream label;
+
+  std::vector<grpc_arg> args;
+  FakeClientChannelFactory fake_client_channel_factory;
+  args.push_back(grpc_client_channel_factory_create_channel_arg(
+      &fake_client_channel_factory));
+  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+
+  grpc_channel_args channel_args = {args.size(), &args[0]};
+
+  std::vector<const grpc_channel_filter *> filters;
+  if (fixture.filter != nullptr) {
+    filters.push_back(fixture.filter);
+  }
+  if (fixture.flags & CHECKS_NOT_LAST) {
+    filters.push_back(&dummy_filter::dummy_filter);
+    label << " has_dummy_filter";
+  }
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  size_t channel_size = grpc_channel_stack_size(&filters[0], filters.size());
+  grpc_channel_stack *channel_stack =
+      static_cast<grpc_channel_stack *>(gpr_malloc(channel_size));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "call_stack_init",
+      grpc_channel_stack_init(&exec_ctx, 1, FilterDestroy, channel_stack,
+                              &filters[0], filters.size(), &channel_args,
+                              fixture.flags & REQUIRES_TRANSPORT
+                                  ? &dummy_transport::dummy_transport
+                                  : nullptr,
+                              "CHANNEL", channel_stack)));
+  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_call_stack *call_stack = static_cast<grpc_call_stack *>(
+      gpr_malloc(channel_stack->call_stack_size));
+  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_slice method = grpc_slice_from_static_string("/foo/bar");
+  grpc_call_final_info final_info;
+  grpc_transport_stream_op op;
+  memset(&op, 0, sizeof(op));
+  grpc_closure closure;
+  op.on_complete = grpc_closure_init(&closure, DoNothing, nullptr,
+                                     grpc_schedule_on_exec_ctx);
+  while (state.KeepRunning()) {
+    grpc_metadata_batch batch;
+    grpc_metadata_batch_init(&batch);
+    op.send_initial_metadata = &batch;
+    GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
+                                          DoNothing, NULL, NULL, NULL, method,
+                                          start_time, deadline, call_stack));
+    auto elem = grpc_call_stack_element(call_stack, 0);
+    elem->filter->start_transport_stream_op(&exec_ctx, elem, &op);
+    grpc_call_stack_destroy(&exec_ctx, call_stack, &final_info, NULL);
+    grpc_metadata_batch_destroy(&exec_ctx, &batch);
+    grpc_exec_ctx_flush(&exec_ctx);
+  }
+  grpc_channel_stack_destroy(&exec_ctx, channel_stack);
+  grpc_exec_ctx_finish(&exec_ctx);
+
+  state.SetLabel(label.str());
+}
+
 typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, NoFilter);
 typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, DummyFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy, DummyFilter);
 typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ClientChannelFilter);
 typedef Fixture<&grpc_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, CompressFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy, CompressFilter);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
     ClientDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ClientDeadlineFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   ClientDeadlineFilter);
 typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
     ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ServerDeadlineFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   ServerDeadlineFilter);
 typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, HttpClientFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   HttpClientFilter);
 typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, HttpServerFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   HttpServerFilter);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, MessageSizeFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   MessageSizeFilter);
 typedef Fixture<&grpc_load_reporting_filter, CHECKS_NOT_LAST>
     LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, LoadReportingFilter);
+BENCHMARK_TEMPLATE(BM_FilterInitSendInitialMetadataThenDestroy,
+                   LoadReportingFilter);
 
 BENCHMARK_MAIN();
