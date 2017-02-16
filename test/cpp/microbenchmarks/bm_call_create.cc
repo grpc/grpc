@@ -34,6 +34,8 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
+#include <sstream>
+
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -241,6 +243,7 @@ static grpc_transport dummy_transport = {&dummy_transport_vtable};
 template <class Fixture>
 static void BM_FilterInitDestroy(benchmark::State &state) {
   Fixture fixture;
+  std::ostringstream label;
 
   std::vector<grpc_arg> args;
   FakeClientChannelFactory fake_client_channel_factory;
@@ -256,6 +259,7 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   }
   if (fixture.flags & CHECKS_NOT_LAST) {
     filters.push_back(&dummy_filter::dummy_filter);
+    label << " has_dummy_filter";
   }
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -286,6 +290,8 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   }
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  state.SetLabel(label.str());
 }
 
 typedef Fixture<nullptr, 0> NoFilter;
