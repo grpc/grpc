@@ -198,14 +198,17 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                                  GRPC_ERROR_STR_KEY, ":path"));
   }
 
-  if (b->idx.named.host != NULL) {
+  if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
+    grpc_linked_mdelem *el = b->idx.named.host;
+    grpc_mdelem md = GRPC_MDELEM_REF(el->md);
+    grpc_metadata_batch_remove(exec_ctx, b, el);
     add_error(
         error_name, &error,
-        grpc_metadata_batch_substitute(
-            exec_ctx, b, b->idx.named.host,
-            grpc_mdelem_from_slices(
-                exec_ctx, GRPC_MDSTR_AUTHORITY,
-                grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.host->md)))));
+        grpc_metadata_batch_add_head(
+            exec_ctx, b, el, grpc_mdelem_from_slices(
+                                 exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                 grpc_slice_ref_internal(GRPC_MDVALUE(md)))));
+    GRPC_MDELEM_UNREF(exec_ctx, md);
   }
 
   if (b->idx.named.authority == NULL) {
