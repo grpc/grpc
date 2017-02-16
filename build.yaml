@@ -596,6 +596,7 @@ filegroups:
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
+  - test/core/util/trickle_endpoint.h
   src:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fake_resolver.c
@@ -613,6 +614,7 @@ filegroups:
   - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
+  - test/core/util/trickle_endpoint.c
   deps:
   - grpc
   - gpr_test_util
@@ -724,6 +726,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
+  - src/core/ext/transport/cronet/transport/cronet_transport.h
   - third_party/objective_c/Cronet/bidirectional_stream_c.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
@@ -2984,6 +2987,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: bm_closure
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_closure.cc
+  deps:
+  - benchmark
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_fullstack
   build: test
   language: c++

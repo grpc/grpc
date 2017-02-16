@@ -1531,16 +1531,6 @@ static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->po.mu);
 }
 
-static void pollset_reset(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(!pollset_has_workers(pollset));
-  pollset->shutting_down = false;
-  pollset->finish_shutdown_called = false;
-  pollset->kicked_without_pollers = false;
-  pollset->shutdown_done = NULL;
-  GPR_ASSERT(pollset->po.pi == NULL);
-}
-
 static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
                                     polling_island *pi) {
   if (gpr_mu_trylock(&pi->workqueue_read_mu)) {
@@ -2084,7 +2074,6 @@ static const grpc_event_engine_vtable vtable = {
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
-    .pollset_reset = pollset_reset,
     .pollset_destroy = pollset_destroy,
     .pollset_work = pollset_work,
     .pollset_kick = pollset_kick,

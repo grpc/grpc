@@ -1043,6 +1043,7 @@ wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
 bm_fullstack: $(BINDIR)/$(CONFIG)/bm_fullstack
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
@@ -1449,6 +1450,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_fullstack \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
@@ -1553,6 +1555,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_fullstack \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
@@ -1870,6 +1873,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_closure"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_closure || ( echo test bm_closure failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack || ( echo test bm_fullstack failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
@@ -3262,6 +3267,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    test/core/util/trickle_endpoint.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3462,6 +3468,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    test/core/util/trickle_endpoint.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -12385,6 +12392,49 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_CLOSURE_SRC = \
+    test/cpp/microbenchmarks/bm_closure.cc \
+
+BM_CLOSURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CLOSURE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_closure: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_closure: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_closure: $(PROTOBUF_DEP) $(BM_CLOSURE_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CLOSURE_OBJS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_closure
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_closure.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_closure: $(BM_CLOSURE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_CLOSURE_OBJS:.o=.dep)
 endif
 endif
 
