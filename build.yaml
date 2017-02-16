@@ -2987,6 +2987,25 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: bm_call_create
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_call_create.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_closure
   build: test
   language: c++
@@ -2995,6 +3014,44 @@ targets:
   deps:
   - benchmark
   - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_cq
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_cq.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_error
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_error.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr

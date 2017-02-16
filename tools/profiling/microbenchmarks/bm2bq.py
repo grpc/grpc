@@ -102,6 +102,30 @@ bm_specs = {
     'tpl': [],
     'dyn': ['request_size', 'bandwidth_kilobits'],
   },
+  'BM_ErrorStringOnNewError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorStringRepeatedly': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatusCode': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorHttpError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_HasClearGrpcStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
 }
 
 def numericalize(s):
