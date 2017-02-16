@@ -1108,8 +1108,8 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
                       grpc_closure *closure) {
   while (true) {
     /* Fast-path: CLOSURE_NOT_READY -> <closure> */
-    /* Also do a release-cas here so that there is a 'happen-before' established
-       with acquire loads in set_ready() / set_shutdown() */
+    /* Also do a release-cas here so that any acqire-loads in set_ready or
+       set_shutdown see this */
     if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
       return; /* Fast-path successful. Return */
     }
@@ -1122,10 +1122,9 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
       }
 
       case CLOSURE_READY: {
-        /* Change the state to CLOSURE_NOT_READY.
-             If successful: Schedule the closure
-             If not: Most likely the state transitioned to CLOSURE_NOT_READY.
-                     Retry the fast-path again */
+        /* Change the state to CLOSURE_NOT_READY. If successful: Schedule the
+           closure. If not, most likely the state transitioned to shutdown. We
+           should retry */
         if (gpr_atm_rel_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
           grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
           return; /* Slow-path successful. Return */
