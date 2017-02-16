@@ -69,7 +69,7 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   gpr_timespec deadline) {
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) != 0) {
+  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) == 0) {
     return;
   }
   grpc_deadline_state* deadline_state = elem->call_data;
@@ -99,7 +99,7 @@ static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
     timer_val = gpr_atm_acq_load(&deadline_state->timers[i]);
     switch (timer_val) {
       case 0:
-        break;
+        return;
       case TOMBSTONE_TIMER:
         break;
       default:
