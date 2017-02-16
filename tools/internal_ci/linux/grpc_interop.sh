@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env bash
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,32 +30,13 @@
 
 set -ex
 
-# change to root directory
-cd $(dirname $0)/../..
+export LANG=en_US.UTF-8
 
-DIRS=src/python
-EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_health_checking/grpc_*.py src/python/grpcio_reflection/grpc_*.py src/python/grpcio_tests/grpc_*.py'
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-VIRTUALENV=python_format_venv
+git submodule update --init
 
-virtualenv $VIRTUALENV
-PYTHON=`realpath $VIRTUALENV/bin/python`
-$PYTHON -m pip install futures
-$PYTHON -m pip install yapf==0.16.0
-
-exclusion_args=""
-for exclusion in $EXCLUSIONS; do
-  exclusion_args="$exclusion_args --exclude $exclusion"
-done
-
-script_result=0
-for dir in $DIRS; do
-  tempdir=`mktemp -d`
-  cp -RT $dir $tempdir
-  $PYTHON -m yapf -i -r -p $exclusion_args $dir
-  if ! diff -r $dir $tempdir; then
-    script_result=1
-  fi
-  rm -rf $tempdir
-done
-exit $script_result
+tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --use_docker --http2_interop -t -j 12 $@ || FAILED="true"
+tools/run_tests/run_interop_tests.py -l java --use_docker --http2_badserver_interop $@ || FAILED="true"
+tools/run_tests/run_interop_tests.py -l python --use_docker --http2_badserver_interop $@ || FAILED="true"
