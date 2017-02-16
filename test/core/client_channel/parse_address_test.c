@@ -41,13 +41,15 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 static void test_parse_unix(const char *uri_text, const char *pathname) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
   grpc_resolved_address addr;
 
   GPR_ASSERT(1 == parse_unix(uri, &addr));
@@ -56,6 +58,7 @@ static void test_parse_unix(const char *uri_text, const char *pathname) {
   GPR_ASSERT(0 == strcmp(addr_un->sun_path, pathname));
 
   grpc_uri_destroy(uri);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
@@ -66,7 +69,8 @@ static void test_parse_unix(const char *uri_text, const char *pathname) {}
 
 static void test_parse_ipv4(const char *uri_text, const char *host,
                             unsigned short port) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET_ADDRSTRLEN];
 
@@ -79,11 +83,13 @@ static void test_parse_ipv4(const char *uri_text, const char *host,
   GPR_ASSERT(ntohs(addr_in->sin_port) == port);
 
   grpc_uri_destroy(uri);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_parse_ipv6(const char *uri_text, const char *host,
-                            unsigned short port, u_int32_t scope_id) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+                            unsigned short port, uint32_t scope_id) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET6_ADDRSTRLEN];
 
@@ -97,6 +103,7 @@ static void test_parse_ipv6(const char *uri_text, const char *host,
   GPR_ASSERT(addr_in6->sin6_scope_id == scope_id);
 
   grpc_uri_destroy(uri);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

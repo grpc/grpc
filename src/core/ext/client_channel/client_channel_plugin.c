@@ -64,7 +64,7 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
     }
   }
   char *default_authority = grpc_get_default_authority(
-      grpc_channel_stack_builder_get_target(builder));
+      exec_ctx, grpc_channel_stack_builder_get_target(builder));
   if (default_authority != NULL) {
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;

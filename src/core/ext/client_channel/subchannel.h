@@ -175,7 +175,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         const grpc_subchannel_args *args);
 
 /// Sets \a addr from \a args.
-void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
+void grpc_get_subchannel_address_arg(grpc_exec_ctx *exec_ctx,
+                                     const grpc_channel_args *args,
                                      grpc_resolved_address *addr);
 
 /// Returns the URI string for the address to connect to.

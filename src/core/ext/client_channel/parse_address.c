@@ -123,8 +123,9 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
 
   char *host_end = (char *)gpr_memrchr(host, '%', strlen(host));
   if (host_end != NULL) {
+    GPR_ASSERT(host_end >= host);
+    char host_without_scope[INET6_ADDRSTRLEN];
     size_t host_without_scope_len = (size_t)(host_end - host);
-    char host_without_scope[host_without_scope_len + 1];
     strncpy(host_without_scope, host, host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
     if (inet_pton(AF_INET6, host_without_scope, &in6->sin6_addr) == 0) {
