@@ -64,6 +64,37 @@ static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetStatus);
 
+static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    GRPC_ERROR_UNREF(grpc_error_set_str(
+                        grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
+                            GRPC_ERROR_INT_HTTP2_ERROR,
+                            (intptr_t)0),
+                        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
+  }
+}
+BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
+
+static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  int n = 0;
+  while (state.KeepRunning()) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, n++);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+BENCHMARK(BM_ErrorCreateAndSetIntLoop);
+
+static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  const char* str = "hello";
+  while (state.KeepRunning()) {
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, str);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+BENCHMARK(BM_ErrorCreateAndSetStrLoop);
+
 static void BM_ErrorRefUnref(benchmark::State& state) {
   grpc_error* error = GRPC_ERROR_CREATE("Error");
   while (state.KeepRunning()) {
