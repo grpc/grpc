@@ -213,6 +213,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
 /* Initialize transport data for a stream.
 
    Returns 0 on success, any other (transport-defined) value for failure.
+   May assume that stream contains all-zeros.
 
    Arguments:
      transport   - the transport on which to create this stream

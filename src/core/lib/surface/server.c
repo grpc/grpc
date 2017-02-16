@@ -1015,11 +1015,9 @@ void grpc_server_register_non_listening_completion_queue(
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
-  grpc_server *server = gpr_malloc(sizeof(grpc_server));
+  grpc_server *server = gpr_zalloc(sizeof(grpc_server));
 
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
-
-  memset(server, 0, sizeof(grpc_server));
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
@@ -1069,8 +1067,7 @@ void *grpc_server_register_method(
             flags);
     return NULL;
   }
-  m = gpr_malloc(sizeof(registered_method));
-  memset(m, 0, sizeof(*m));
+  m = gpr_zalloc(sizeof(registered_method));
   m->method = gpr_strdup(method);
   m->host = gpr_strdup(host);
   m->next = server->registered_methods;
@@ -1174,8 +1171,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   if (num_registered_methods > 0) {
     slots = 2 * num_registered_methods;
     alloc = sizeof(channel_registered_method) * slots;
-    chand->registered_methods = gpr_malloc(alloc);
-    memset(chand->registered_methods, 0, alloc);
+    chand->registered_methods = gpr_zalloc(alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
       grpc_slice host;
       bool has_host;

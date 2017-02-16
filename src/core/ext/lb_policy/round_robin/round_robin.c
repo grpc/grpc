@@ -213,8 +213,7 @@ static void advance_last_picked_locked(round_robin_lb_policy *p) {
  * csc to the list of ready subchannels. */
 static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
                                            subchannel_data *sd) {
-  ready_list *new_elem = gpr_malloc(sizeof(ready_list));
-  memset(new_elem, 0, sizeof(ready_list));
+  ready_list *new_elem = gpr_zalloc(sizeof(ready_list));
   new_elem->subchannel = sd->subchannel;
   new_elem->user_data = sd->user_data;
   if (p->ready_list.prev == NULL) {
@@ -717,12 +716,10 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   }
   if (num_addrs == 0) return NULL;
 
-  round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
-  memset(p, 0, sizeof(*p));
+  round_robin_lb_policy *p = gpr_zalloc(sizeof(*p));
 
   p->num_addresses = num_addrs;
-  p->subchannels = gpr_malloc(sizeof(*p->subchannels) * num_addrs);
-  memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
+  p->subchannels = gpr_zalloc(sizeof(*p->subchannels) * num_addrs);
 
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
@@ -749,8 +746,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     grpc_channel_args_destroy(exec_ctx, new_args);
 
     if (subchannel != NULL) {
-      subchannel_data *sd = gpr_malloc(sizeof(*sd));
-      memset(sd, 0, sizeof(*sd));
+      subchannel_data *sd = gpr_zalloc(sizeof(*sd));
       p->subchannels[subchannel_idx] = sd;
       sd->policy = p;
       sd->index = subchannel_idx;

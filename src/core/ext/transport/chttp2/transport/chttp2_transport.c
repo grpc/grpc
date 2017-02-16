@@ -218,8 +218,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
-  memset(t, 0, sizeof(*t));
-
   t->base.vtable = &vtable;
   t->ep = ep;
   /* one ref is for destroy */
@@ -493,8 +491,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_TIMER_BEGIN("init_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
-
-  memset(s, 0, sizeof(*s));
 
   s->t = t;
   s->refcount = refcount;
@@ -2425,7 +2421,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
     grpc_endpoint *ep, int is_client) {
-  grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
+  grpc_chttp2_transport *t = gpr_zalloc(sizeof(grpc_chttp2_transport));
   init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
   return &t->base;
 }

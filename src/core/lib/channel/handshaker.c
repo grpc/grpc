@@ -95,8 +95,7 @@ struct grpc_handshake_manager {
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
-  grpc_handshake_manager* mgr = gpr_malloc(sizeof(grpc_handshake_manager));
-  memset(mgr, 0, sizeof(*mgr));
+  grpc_handshake_manager* mgr = gpr_zalloc(sizeof(grpc_handshake_manager));
   gpr_mu_init(&mgr->mu);
   gpr_ref_init(&mgr->refs, 1);
   return mgr;

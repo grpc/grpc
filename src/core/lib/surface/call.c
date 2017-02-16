@@ -263,9 +263,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_channel_get_channel_stack(args->channel);
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
-  call = gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
+  call = gpr_zalloc(sizeof(grpc_call) + channel_stack->call_stack_size);
   *out_call = call;
-  memset(call, 0, sizeof(grpc_call));
   gpr_mu_init(&call->mu);
   call->channel = args->channel;
   call->cq = args->cq;
@@ -1335,7 +1334,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   bctl->is_notify_tag_closure = (uint8_t)(is_notify_tag_closure != 0);
 
   grpc_transport_stream_op *stream_op = &bctl->op;
-  memset(stream_op, 0, sizeof(*stream_op));
   stream_op->covered_by_poller = true;
 
   if (nops == 0) {

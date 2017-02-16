@@ -136,7 +136,6 @@ static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack) {
   grpc_deadline_state* deadline_state = elem->call_data;
-  memset(deadline_state, 0, sizeof(*deadline_state));
   deadline_state->call_stack = call_stack;
   gpr_mu_init(&deadline_state->timer_mu);
 }
@@ -245,8 +244,6 @@ typedef struct server_call_data {
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   grpc_call_element_args* args) {
-  // Note: size of call data is different between client and server.
-  memset(elem->call_data, 0, elem->filter->sizeof_call_data);
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   grpc_deadline_state_start(exec_ctx, elem, args->deadline);
   return GRPC_ERROR_NONE;

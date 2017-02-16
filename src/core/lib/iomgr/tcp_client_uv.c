@@ -136,8 +136,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  connect = gpr_malloc(sizeof(grpc_uv_tcp_connect));
-  memset(connect, 0, sizeof(grpc_uv_tcp_connect));
+  connect = gpr_zalloc(sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
   connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));

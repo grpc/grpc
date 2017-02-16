@@ -197,8 +197,7 @@ static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
   /* Instantiate resolver. */
-  sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
-  memset(r, 0, sizeof(*r));
+  sockaddr_resolver *r = gpr_zalloc(sizeof(sockaddr_resolver));
   r->addresses = addresses;
   r->channel_args = grpc_channel_args_copy(args->args);
   gpr_mu_init(&r->mu);

@@ -316,8 +316,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     return c;
   }
 
-  c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  c = gpr_zalloc(sizeof(*c));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -765,7 +764,7 @@ grpc_error *grpc_connected_subchannel_create_call(
     grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
     gpr_timespec deadline, grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
-  *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
+  *call = gpr_zalloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = con;  // Ref is added below.
   grpc_error *error =

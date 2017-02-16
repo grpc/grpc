@@ -1121,8 +1121,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pollset_set = gpr_malloc(sizeof(*pollset_set));
-  memset(pollset_set, 0, sizeof(*pollset_set));
+  grpc_pollset_set *pollset_set = gpr_zalloc(sizeof(*pollset_set));
   gpr_mu_init(&pollset_set->mu);
   return pollset_set;
 }
@@ -1147,9 +1146,9 @@ static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
   if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
     pollset_set->pollset_capacity =
         GPR_MAX(8, 2 * pollset_set->pollset_capacity);
-    pollset_set->pollsets =
-        gpr_realloc(pollset_set->pollsets, pollset_set->pollset_capacity *
-                                               sizeof(*pollset_set->pollsets));
+    pollset_set->pollsets = gpr_realloc(
+        pollset_set->pollsets,
+        pollset_set->pollset_capacity * sizeof(*pollset_set->pollsets));
   }
   pollset_set->pollsets[pollset_set->pollset_count++] = pollset;
   for (i = 0, j = 0; i < pollset_set->fd_count; i++) {

@@ -262,8 +262,7 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
   char *path = args->uri->path;
   if (path[0] == '/') ++path;
   // Create resolver.
-  dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
-  memset(r, 0, sizeof(*r));
+  dns_resolver *r = gpr_zalloc(sizeof(dns_resolver));
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name_to_resolve = gpr_strdup(path);
