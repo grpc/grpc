@@ -28,6 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import cgi
 import multiprocessing
 import os
 import subprocess
@@ -71,11 +72,12 @@ def heading(name):
 
 def link(txt, tgt):
   global index_html
-  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (tgt, txt)
+  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (
+      cgi.escape(tgt, quote=True), cgi.escape(txt))
 
 def text(txt):
   global index_html
-  index_html += "<p><pre>%s</pre></p>\n" % txt
+  index_html += "<p><pre>%s</pre></p>\n" % cgi.escape(txt)
 
 def collect_latency(bm_name, args):
   """generate latency profiles"""
