@@ -126,23 +126,45 @@ def collect_perf(bm_name, args):
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
+  benchmarks = []
+  profile_analysis = []
+  cleanup = []
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
-                           '-g', '-c', '1000',
-                           'bins/mutrace/%s' % bm_name,
-                           '--benchmark_filter=^%s$' % line,
-                           '--benchmark_min_time=10'])
-    env = os.environ.copy()
-    env.update({
-      'PERF_BASE_NAME': fnize(line),
-      'OUTPUT_DIR': 'reports',
-      'OUTPUT_FILENAME': fnize(line),
-    })
-    subprocess.check_call(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
-                          env=env)
-    subprocess.check_call(['rm', '%s-perf.data' % fnize(line)])
-    subprocess.check_call(['rm', '%s-out.perf' % fnize(line)])
+    link(line, '%s.svg' % fnize(line))
+    benchmarks.append(
+        jobset.JobSpec(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
+                        '-g', '-F', '997',
+                        'bins/mutrace/%s' % bm_name,
+                        '--benchmark_filter=^%s$' % line,
+                        '--benchmark_min_time=10']))
+    profile_analysis.append(
+        jobset.JobSpec(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
+                       environ = {
+                           'PERF_BASE_NAME': fnize(line),
+                           'OUTPUT_DIR': 'reports',
+                           'OUTPUT_FILENAME': fnize(line),
+                       }))
+    cleanup.append(jobset.JobSpec(['rm', '%s-perf.data' % fnize(line)]))
+    cleanup.append(jobset.JobSpec(['rm', '%s-out.perf' % fnize(line)]))
+    # periodically flush out the list of jobs: temporary space required for this
+    # processing is large
+    if len(benchmarks) >= 20:
+      # run up to half the cpu count: each benchmark can use up to two cores
+      # (one for the microbenchmark, one for the data flush)
+      jobset.run(benchmarks, maxjobs=1,
+                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+      jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
+      benchmarks = []
+      profile_analysis = []
+      cleanup = []
+  # run the remaining benchmarks that weren't flushed
+  if len(benchmarks):
+    jobset.run(benchmarks, maxjobs=1,
+               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+    jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
 def collect_summary(bm_name, args):
   heading('Summary: %s' % bm_name)
