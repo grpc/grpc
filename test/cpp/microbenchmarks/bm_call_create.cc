@@ -43,6 +43,7 @@
 
 extern "C" {
 #include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -315,5 +316,8 @@ typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, HttpServerFilter);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, MessageSizeFilter);
+typedef Fixture<&grpc_load_reporting_filter, CHECKS_NOT_LAST>
+    LoadReportingFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, LoadReportingFilter);
 
 BENCHMARK_MAIN();
