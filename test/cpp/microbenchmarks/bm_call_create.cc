@@ -37,10 +37,18 @@
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 extern "C" {
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/deadline_filter.h"
+#include "src/core/lib/channel/http_client_filter.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/lib/transport/transport_impl.h"
 }
 
 #include "third_party/benchmark/include/benchmark/benchmark.h"
@@ -50,10 +58,10 @@ static struct Init {
   ~Init() { grpc_shutdown(); }
 } g_init;
 
-static void BM_InsecureChannelWithDefaults(benchmark::State& state) {
-  grpc_channel* channel =
+static void BM_InsecureChannelWithDefaults(benchmark::State &state) {
+  grpc_channel *channel =
       grpc_insecure_channel_create("localhost:12345", NULL, NULL);
-  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
@@ -65,31 +73,31 @@ static void BM_InsecureChannelWithDefaults(benchmark::State& state) {
 }
 BENCHMARK(BM_InsecureChannelWithDefaults);
 
-static void FilterDestroy(grpc_exec_ctx* exec_ctx, void* arg,
-                          grpc_error* error) {
+static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
+                          grpc_error *error) {
   gpr_free(arg);
 }
 
-static void DoNothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
+static void DoNothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 class FakeClientChannelFactory : public grpc_client_channel_factory {
  public:
   FakeClientChannelFactory() { vtable = &vtable_; }
 
  private:
-  static void NoRef(grpc_client_channel_factory* factory) {}
-  static void NoUnref(grpc_exec_ctx* exec_ctx,
-                      grpc_client_channel_factory* factory) {}
-  static grpc_subchannel* CreateSubchannel(grpc_exec_ctx* exec_ctx,
-                                           grpc_client_channel_factory* factory,
-                                           const grpc_subchannel_args* args) {
+  static void NoRef(grpc_client_channel_factory *factory) {}
+  static void NoUnref(grpc_exec_ctx *exec_ctx,
+                      grpc_client_channel_factory *factory) {}
+  static grpc_subchannel *CreateSubchannel(grpc_exec_ctx *exec_ctx,
+                                           grpc_client_channel_factory *factory,
+                                           const grpc_subchannel_args *args) {
     return nullptr;
   }
-  static grpc_channel* CreateClientChannel(grpc_exec_ctx* exec_ctx,
-                                           grpc_client_channel_factory* factory,
-                                           const char* target,
+  static grpc_channel *CreateClientChannel(grpc_exec_ctx *exec_ctx,
+                                           grpc_client_channel_factory *factory,
+                                           const char *target,
                                            grpc_client_channel_type type,
-                                           const grpc_channel_args* args) {
+                                           const grpc_channel_args *args) {
     return nullptr;
   }
 
@@ -99,16 +107,141 @@ class FakeClientChannelFactory : public grpc_client_channel_factory {
 const grpc_client_channel_factory_vtable FakeClientChannelFactory::vtable_ = {
     NoRef, NoUnref, CreateSubchannel, CreateClientChannel};
 
-static grpc_arg StringArg(const char* key, const char* value) {
+static grpc_arg StringArg(const char *key, const char *value) {
   grpc_arg a;
   a.type = GRPC_ARG_STRING;
-  a.key = const_cast<char*>(key);
-  a.value.string = const_cast<char*>(value);
+  a.key = const_cast<char *>(key);
+  a.value.string = const_cast<char *>(value);
   return a;
 }
 
-template <const grpc_channel_filter* kFilter>
-static void BM_FilterInitDestroy(benchmark::State& state) {
+enum FixtureFlags : uint32_t {
+  CHECKS_NOT_LAST = 1,
+  REQUIRES_TRANSPORT = 2,
+};
+
+template <const grpc_channel_filter *kFilter, uint32_t kFlags>
+struct Fixture {
+  const grpc_channel_filter *filter = kFilter;
+  const uint32_t flags = kFlags;
+};
+
+namespace dummy_filter {
+
+static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *elem,
+                                   grpc_transport_stream_op *op) {}
+
+static void StartTransportOp(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_element *elem,
+                             grpc_transport_op *op) {}
+
+static grpc_error *InitCallElem(grpc_exec_ctx *exec_ctx,
+                                grpc_call_element *elem,
+                                grpc_call_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
+
+static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *elem,
+                                   grpc_polling_entity *pollent) {}
+
+static void DestroyCallElem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            const grpc_call_final_info *final_info,
+                            void *and_free_memory) {}
+
+grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                            grpc_channel_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
+
+void DestroyChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
+
+char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+  return gpr_strdup("peer");
+}
+
+void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                    const grpc_channel_info *channel_info) {}
+
+static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
+                                                 StartTransportOp,
+                                                 0,
+                                                 InitCallElem,
+                                                 SetPollsetOrPollsetSet,
+                                                 DestroyCallElem,
+                                                 0,
+                                                 InitChannelElem,
+                                                 DestroyChannelElem,
+                                                 GetPeer,
+                                                 GetChannelInfo,
+                                                 "dummy_filter"};
+
+}  // namespace dummy_filter
+
+namespace dummy_transport {
+
+/* Memory required for a single stream element - this is allocated by upper
+   layers and initialized by the transport */
+size_t sizeof_stream; /* = sizeof(transport stream) */
+
+/* name of this transport implementation */
+const char *name;
+
+/* implementation of grpc_transport_init_stream */
+int InitStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+               grpc_stream *stream, grpc_stream_refcount *refcount,
+               const void *server_data) {
+  return 0;
+}
+
+/* implementation of grpc_transport_set_pollset */
+void SetPollset(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                grpc_stream *stream, grpc_pollset *pollset) {}
+
+/* implementation of grpc_transport_set_pollset */
+void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                   grpc_stream *stream, grpc_pollset_set *pollset_set) {}
+
+/* implementation of grpc_transport_perform_stream_op */
+void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                     grpc_stream *stream, grpc_transport_stream_op *op) {}
+
+/* implementation of grpc_transport_perform_op */
+void PerformOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+               grpc_transport_op *op) {}
+
+/* implementation of grpc_transport_destroy_stream */
+void DestroyStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                   grpc_stream *stream, void *and_free_memory) {}
+
+/* implementation of grpc_transport_destroy */
+void Destroy(grpc_exec_ctx *exec_ctx, grpc_transport *self) {}
+
+/* implementation of grpc_transport_get_peer */
+char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
+  return gpr_strdup("transport_peer");
+}
+
+/* implementation of grpc_transport_get_endpoint */
+grpc_endpoint *GetEndpoint(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
+  return nullptr;
+}
+
+static const grpc_transport_vtable dummy_transport_vtable = {
+    0,          "dummy_http2", InitStream,
+    SetPollset, SetPollsetSet, PerformStreamOp,
+    PerformOp,  DestroyStream, Destroy,
+    GetPeer,    GetEndpoint};
+
+static grpc_transport dummy_transport = {&dummy_transport_vtable};
+
+}  // namespace dummy_transport
+
+template <class Fixture>
+static void BM_FilterInitDestroy(benchmark::State &state) {
+  Fixture fixture;
+
   std::vector<grpc_arg> args;
   FakeClientChannelFactory fake_client_channel_factory;
   args.push_back(grpc_client_channel_factory_create_channel_arg(
@@ -117,20 +250,27 @@ static void BM_FilterInitDestroy(benchmark::State& state) {
 
   grpc_channel_args channel_args = {args.size(), &args[0]};
 
-  const grpc_channel_filter* filters[] = {kFilter};
+  std::vector<const grpc_channel_filter *> filters;
+  filters.push_back(fixture.filter);
+  if (fixture.flags & CHECKS_NOT_LAST) {
+    filters.push_back(&dummy_filter::dummy_filter);
+  }
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t channel_size =
-      grpc_channel_stack_size(filters, GPR_ARRAY_SIZE(filters));
-  grpc_channel_stack* channel_stack =
-      static_cast<grpc_channel_stack*>(gpr_malloc(channel_size));
+  size_t channel_size = grpc_channel_stack_size(&filters[0], filters.size());
+  grpc_channel_stack *channel_stack =
+      static_cast<grpc_channel_stack *>(gpr_malloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "call_stack_init",
       grpc_channel_stack_init(&exec_ctx, 1, FilterDestroy, channel_stack,
-                              filters, GPR_ARRAY_SIZE(filters), &channel_args,
-                              NULL, "CHANNEL", channel_stack)));
+                              &filters[0], filters.size(), &channel_args,
+                              fixture.flags & REQUIRES_TRANSPORT
+                                  ? &dummy_transport::dummy_transport
+                                  : nullptr,
+                              "CHANNEL", channel_stack)));
   grpc_exec_ctx_flush(&exec_ctx);
-  grpc_call_stack* call_stack =
-      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
+  grpc_call_stack *call_stack = static_cast<grpc_call_stack *>(
+      gpr_malloc(channel_stack->call_stack_size));
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
@@ -142,10 +282,28 @@ static void BM_FilterInitDestroy(benchmark::State& state) {
     grpc_call_stack_destroy(&exec_ctx, call_stack, &final_info, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
+  grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-BENCHMARK_TEMPLATE(BM_FilterInitDestroy, &grpc_client_channel_filter);
+typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, DummyFilter);
+typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ClientChannelFilter);
+typedef Fixture<&grpc_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, CompressFilter);
+typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ClientDeadlineFilter);
+typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, ServerDeadlineFilter);
+typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+    HttpClientFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, HttpClientFilter);
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, HttpServerFilter);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, MessageSizeFilter);
 
 BENCHMARK_MAIN();
