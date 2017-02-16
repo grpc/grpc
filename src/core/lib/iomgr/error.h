@@ -136,7 +136,6 @@ typedef enum {
   GRPC_ERROR_TIME_CREATED,
 } grpc_error_times;
 
-
 /// The following "special" errors can be propagated without allocating memory.
 /// They are always even so that other code (particularly combiner locks,
 /// polling engines) can safely use the lower bit for themselves.
