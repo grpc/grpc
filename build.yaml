@@ -3023,6 +3023,7 @@ targets:
   - mac
   - linux
   - posix
+  timeout_seconds: 1200
 - name: channel_arguments_test
   gtest: true
   build: test
