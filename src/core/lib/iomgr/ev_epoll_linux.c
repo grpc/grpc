@@ -1108,7 +1108,9 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
                       grpc_closure *closure) {
   while (true) {
     /* Fast-path: CLOSURE_NOT_READY -> <closure> */
-    if (gpr_atm_acq_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
+    /* Also do a release-cas here so that there is a 'happen-before' established
+       with acquire loads in set_ready() / set_shutdown() */
+    if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
       return; /* Fast-path successful. Return */
     }
 
@@ -1163,7 +1165,7 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
   gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
 
   while (true) {
-    if (gpr_atm_acq_cas(state, curr, new_state)) {
+    if (gpr_atm_rel_cas(state, curr, new_state)) {
       return; /* Fast-path successful. Return */
     }
 
@@ -1206,9 +1208,9 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 }
 
 static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
-  /* Try the fast-path first (i.e expect the current value to be
-   * CLOSURE_NOT_READY */
-  if (gpr_atm_acq_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
+  /* Try an optimistic case first (i.e assume current state is
+     CLOSURE_NOT_READY) */
+  if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
     return; /* early out */
   }
 
@@ -1247,7 +1249,7 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
 
 static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
                                                   grpc_fd *fd) {
-  gpr_atm notifier = gpr_atm_no_barrier_load(&fd->read_closure);
+  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
   return (grpc_pollset *)notifier;
 }
 
@@ -1259,7 +1261,7 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
   /* Store the shutdown error ORed with FD_SHUTDOWN_BIT in fd->shutdown_error */
-  if (gpr_atm_acq_cas(&fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE,
+  if (gpr_atm_rel_cas(&fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE,
                       (gpr_atm)why | FD_SHUTDOWN_BIT)) {
     shutdown(fd->fd, SHUT_RDWR);
 
@@ -1474,7 +1476,8 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      sets (This can happen briefly during polling island merges). In such cases
      it does not really matter which notifer is set as the read_notifier_pollset
      (They would both point to the same polling island anyway) */
-  gpr_atm_no_barrier_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
+  /* Use release store to match with acquire load in fd_get_read_notifier */
+  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
