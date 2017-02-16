@@ -251,7 +251,9 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   grpc_channel_args channel_args = {args.size(), &args[0]};
 
   std::vector<const grpc_channel_filter *> filters;
-  filters.push_back(fixture.filter);
+  if (fixture.filter != nullptr) {
+    filters.push_back(fixture.filter);
+  }
   if (fixture.flags & CHECKS_NOT_LAST) {
     filters.push_back(&dummy_filter::dummy_filter);
   }
@@ -286,6 +288,8 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+typedef Fixture<nullptr, 0> NoFilter;
+BENCHMARK_TEMPLATE(BM_FilterInitDestroy, NoFilter);
 typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_FilterInitDestroy, DummyFilter);
 typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
