@@ -112,11 +112,13 @@
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/parse_address.h"
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/backoff.h"
@@ -490,9 +492,8 @@ static grpc_lb_addresses *process_serverlist_locked(
 static bool update_lb_connectivity_status_locked(
     grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
     grpc_connectivity_state new_rr_state, grpc_error *new_rr_state_error) {
-  grpc_error *curr_state_error;
-  const grpc_connectivity_state curr_glb_state = grpc_connectivity_state_check(
-      &glb_policy->state_tracker, &curr_state_error);
+  const grpc_connectivity_state curr_glb_state =
+      grpc_connectivity_state_check(&glb_policy->state_tracker);
 
   /* The new connectivity status is a function of the previous one and the new
    * input coming from the status of the RR policy.
@@ -751,6 +752,96 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_ERROR_UNREF(error);
 }
 
+static void destroy_balancer_name(grpc_exec_ctx *exec_ctx,
+                                  void *balancer_name) {
+  gpr_free(balancer_name);
+}
+
+static void *copy_balancer_name(void *balancer_name) {
+  return gpr_strdup(balancer_name);
+}
+
+static grpc_slice_hash_table_entry targets_info_entry_create(
+    const char *address, const char *balancer_name) {
+  static const grpc_slice_hash_table_vtable vtable = {destroy_balancer_name,
+                                                      copy_balancer_name};
+  grpc_slice_hash_table_entry entry;
+  entry.key = grpc_slice_from_copied_string(address);
+  entry.value = (void *)balancer_name;
+  entry.vtable = &vtable;
+  return entry;
+}
+
+/* Returns the target URI for the LB service whose addresses are in \a
+ * addresses.  Using this URI, a bidirectional streaming channel will be created
+ * for the reception of load balancing updates.
+ *
+ * The output argument \a targets_info will be updated to contain a mapping of
+ * "LB server address" to "balancer name", as reported by the naming system.
+ * This mapping will be propagated via the channel arguments of the
+ * aforementioned LB streaming channel, to be used by the security connector for
+ * secure naming checks. The user is responsible for freeing \a targets_info. */
+static char *get_lb_uri_target_addresses(grpc_exec_ctx *exec_ctx,
+                                         const grpc_lb_addresses *addresses,
+                                         grpc_slice_hash_table **targets_info) {
+  size_t num_grpclb_addrs = 0;
+  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+    if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
+  }
+  /* All input addresses come from a resolver that claims they are LB services.
+   * It's the resolver's responsibility to make sure this policy is only
+   * instantiated and used in that case. Otherwise, something has gone wrong. */
+  GPR_ASSERT(num_grpclb_addrs > 0);
+
+  grpc_slice_hash_table_entry *targets_info_entries =
+      gpr_malloc(sizeof(*targets_info_entries) * num_grpclb_addrs);
+
+  /* construct a target ipvX://ip1:port1,ip2:port2,... from the addresses in \a
+   * addresses */
+  /* TODO(dgq): support mixed ip version */
+  char **addr_strs = gpr_malloc(sizeof(char *) * num_grpclb_addrs);
+  size_t addr_index = 0;
+
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
+    if (addresses->addresses[i].user_data != NULL) {
+      gpr_log(GPR_ERROR,
+              "This LB policy doesn't support user data. It will be ignored");
+    }
+    if (addresses->addresses[i].is_balancer) {
+      char *addr_str;
+      GPR_ASSERT(grpc_sockaddr_to_string(
+                     &addr_str, &addresses->addresses[i].address, true) > 0);
+      targets_info_entries[addr_index] = targets_info_entry_create(
+          addr_str, addresses->addresses[i].balancer_name);
+      addr_strs[addr_index++] = addr_str;
+    }
+  }
+  GPR_ASSERT(addr_index == num_grpclb_addrs);
+
+  size_t uri_path_len;
+  char *uri_path = gpr_strjoin_sep((const char **)addr_strs, num_grpclb_addrs,
+                                   ",", &uri_path_len);
+  for (size_t i = 0; i < num_grpclb_addrs; i++) gpr_free(addr_strs[i]);
+  gpr_free(addr_strs);
+
+  char *target_uri_str = NULL;
+  /* TODO(dgq): Don't assume all addresses will share the scheme of the first
+   * one */
+  gpr_asprintf(&target_uri_str, "%s:%s",
+               grpc_sockaddr_get_uri_scheme(&addresses->addresses[0].address),
+               uri_path);
+  gpr_free(uri_path);
+
+  *targets_info =
+      grpc_slice_hash_table_create(num_grpclb_addrs, targets_info_entries);
+  for (size_t i = 0; i < num_grpclb_addrs; i++) {
+    grpc_slice_unref_internal(exec_ctx, targets_info_entries[i].key);
+  }
+  gpr_free(targets_info_entries);
+
+  return target_uri_str;
+}
+
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
@@ -788,85 +879,30 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   }
   grpc_uri_destroy(uri);
 
-  /* All input addresses in addresses come from a resolver that claims
-   * they are LB services. It's the resolver's responsibility to make sure
-   * this policy is only instantiated and used in that case.
-   *
-   * Create a client channel over them to communicate with a LB service */
   glb_policy->cc_factory = args->client_channel_factory;
   glb_policy->args = grpc_channel_args_copy(args->args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
-  /* construct a target from the addresses in args, given in the form
-   * ipvX://ip1:port1,ip2:port2,...
-   * TODO(dgq): support mixed ip version */
-  char **addr_strs = gpr_malloc(sizeof(char *) * num_grpclb_addrs);
-  size_t addr_index = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (addresses->addresses[i].user_data != NULL) {
-      gpr_log(GPR_ERROR,
-              "This LB policy doesn't support user data. It will be ignored");
-    }
-    if (addresses->addresses[i].is_balancer) {
-      if (addr_index == 0) {
-        addr_strs[addr_index++] =
-            grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      } else {
-        GPR_ASSERT(grpc_sockaddr_to_string(&addr_strs[addr_index++],
-                                           &addresses->addresses[i].address,
-                                           true) > 0);
-      }
-    }
-  }
-  size_t uri_path_len;
-  char *target_uri_str = gpr_strjoin_sep((const char **)addr_strs,
-                                         num_grpclb_addrs, ",", &uri_path_len);
-
-  /* Create a channel to talk to the LBs.
-   *
-   * We strip out the channel arg for the LB policy name, since we want
-   * to use the default (pick_first) in this case.
-   *
-   * We also strip out the channel arg for the resolved addresses, since
-   * that will be generated by the name resolver used in the LB channel.
-   * Note that the LB channel will use the sockaddr resolver, so this
-   * won't actually generate a query to DNS (or some other name service).
-   * However, the addresses returned by the sockaddr resolver will have
-   * is_balancer=false, whereas our own addresses have is_balancer=true.
-   * We need the LB channel to return addresses with is_balancer=false
-   * so that it does not wind up recursively using the grpclb LB policy,
-   * as per the special case logic in client_channel.c.
-   *
-   * Finally, we also strip out the channel arg for the server URI,
-   * since that will be different for the LB channel than for the parent
-   * channel.  (The client channel factory will re-add this arg with
-   * the right value.)
-   */
-  static const char *keys_to_remove[] = {
-      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI};
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
-      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
-  glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
-      exec_ctx, glb_policy->cc_factory, target_uri_str,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
-  grpc_channel_args_destroy(exec_ctx, new_args);
-
-  gpr_free(target_uri_str);
-  for (size_t i = 0; i < num_grpclb_addrs; i++) {
-    gpr_free(addr_strs[i]);
-  }
-  gpr_free(addr_strs);
-
+  grpc_slice_hash_table *targets_info = NULL;
+  /* Create a client channel over them to communicate with a LB service */
+  char *lb_service_target_addresses =
+      get_lb_uri_target_addresses(exec_ctx, addresses, &targets_info);
+  grpc_channel_args *lb_channel_args =
+      get_lb_channel_args(exec_ctx, targets_info, args->args);
+  glb_policy->lb_channel = grpc_lb_policy_grpclb_create_lb_channel(
+      exec_ctx, lb_service_target_addresses, args->client_channel_factory,
+      lb_channel_args);
+  grpc_slice_hash_table_unref(exec_ctx, targets_info);
+  grpc_channel_args_destroy(exec_ctx, lb_channel_args);
+  gpr_free(lb_service_target_addresses);
   if (glb_policy->lb_channel == NULL) {
     gpr_free(glb_policy);
     return NULL;
   }
-
   grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable);
   gpr_mu_init(&glb_policy->mu);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
-
   return &glb_policy->base;
 }
 
@@ -1061,8 +1097,8 @@ static grpc_connectivity_state glb_check_connectivity(
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   grpc_connectivity_state st;
   gpr_mu_lock(&glb_policy->mu);
-  st = grpc_connectivity_state_check(&glb_policy->state_tracker,
-                                     connectivity_error);
+  st = grpc_connectivity_state_get(&glb_policy->state_tracker,
+                                   connectivity_error);
   gpr_mu_unlock(&glb_policy->mu);
   return st;
 }

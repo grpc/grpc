@@ -86,6 +86,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     virtual void PreSynchronousRequest(ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
     virtual void PostSynchronousRequest(ServerContext* context) = 0;
+    /// Called before server is started.
+    virtual void PreServerStart(Server* server) {}
   };
   /// Set the global callback object. Can only be called once. Does not take
   /// ownership of callbacks, and expects the pointed to object to be alive

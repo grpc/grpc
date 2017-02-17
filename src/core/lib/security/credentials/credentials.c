@@ -160,6 +160,53 @@ grpc_channel_credentials_duplicate_without_call_credentials(
   }
 }
 
+static void credentials_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
+  grpc_channel_credentials_unref(exec_ctx, p);
+}
+
+static void *credentials_pointer_arg_copy(void *p) {
+  return grpc_channel_credentials_ref(p);
+}
+
+static int credentials_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
+    credentials_pointer_arg_copy, credentials_pointer_arg_destroy,
+    credentials_pointer_cmp};
+
+grpc_arg grpc_channel_credentials_to_arg(
+    grpc_channel_credentials *credentials) {
+  grpc_arg result;
+  result.type = GRPC_ARG_POINTER;
+  result.key = GRPC_ARG_CHANNEL_CREDENTIALS;
+  result.value.pointer.vtable = &credentials_pointer_vtable;
+  result.value.pointer.p = credentials;
+  return result;
+}
+
+grpc_channel_credentials *grpc_channel_credentials_from_arg(
+    const grpc_arg *arg) {
+  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return NULL;
+  if (arg->type != GRPC_ARG_POINTER) {
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
+            GRPC_ARG_CHANNEL_CREDENTIALS);
+    return NULL;
+  }
+  return arg->value.pointer.p;
+}
+
+grpc_channel_credentials *grpc_channel_credentials_find_in_args(
+    const grpc_channel_args *args) {
+  size_t i;
+  if (args == NULL) return NULL;
+  for (i = 0; i < args->num_args; i++) {
+    grpc_channel_credentials *credentials =
+        grpc_channel_credentials_from_arg(&args->args[i]);
+    if (credentials != NULL) return credentials;
+  }
+  return NULL;
+}
+
 grpc_server_credentials *grpc_server_credentials_ref(
     grpc_server_credentials *creds) {
   if (creds == NULL) return NULL;

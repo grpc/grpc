@@ -63,7 +63,7 @@ grpc_cc_library(
     deps = [
         "census",
         "grpc_base",
-        "grpc_lb_policy_grpclb",
+        "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
@@ -140,6 +140,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
     ],
 )
 
@@ -284,9 +285,15 @@ grpc_cc_library(
         "src/core/ext/census/resource.h",
         "src/core/ext/census/rpc_metric_id.h",
         "src/core/ext/census/trace_context.h",
+        "src/core/ext/census/trace_label.h",
+        "src/core/ext/census/trace_propagation.h",
+        "src/core/ext/census/trace_status.h",
+        "src/core/ext/census/trace_string.h",
+        "src/core/ext/census/tracing.h",
     ],
     external_deps = [
         "nanopb",
+        "libssl",
     ],
     language = "c",
     public_hdrs = [
@@ -520,13 +527,13 @@ grpc_cc_library(
         "src/core/lib/surface/server.c",
         "src/core/lib/surface/validate_metadata.c",
         "src/core/lib/surface/version.c",
+        "src/core/lib/transport/bdp_estimator.c",
         "src/core/lib/transport/byte_stream.c",
         "src/core/lib/transport/connectivity_state.c",
         "src/core/lib/transport/error_utils.c",
         "src/core/lib/transport/metadata.c",
         "src/core/lib/transport/metadata_batch.c",
         "src/core/lib/transport/pid_controller.c",
-        "src/core/lib/transport/bdp_estimator.c",
         "src/core/lib/transport/service_config.c",
         "src/core/lib/transport/static_metadata.c",
         "src/core/lib/transport/status_conversion.c",
@@ -624,9 +631,10 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.h",
         "src/core/lib/surface/event_string.h",
         "src/core/lib/surface/init.h",
-        "src/core/lib/surface/validate_metadata.h",
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
+        "src/core/lib/surface/validate_metadata.h",
+        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/error_utils.h",
@@ -634,7 +642,6 @@ grpc_cc_library(
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/pid_controller.h",
-        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/service_config.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
@@ -650,6 +657,7 @@ grpc_cc_library(
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/compression.h",
+        "include/grpc/load_reporting.h",
         "include/grpc/grpc.h",
         "include/grpc/grpc_posix.h",
         "include/grpc/grpc_security_constants.h",
@@ -665,7 +673,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_client_channel",
-    language = "c",
     srcs = [
         "src/core/ext/client_channel/channel_connectivity.c",
         "src/core/ext/client_channel/client_channel.c",
@@ -709,6 +716,7 @@ grpc_cc_library(
         "src/core/ext/client_channel/subchannel_index.h",
         "src/core/ext/client_channel/uri_parser.h",
     ],
+    language = "c",
     deps = [
         "grpc_base",
     ],
@@ -735,11 +743,13 @@ grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "src/core/ext/lb_policy/grpclb/grpclb.c",
+        "src/core/ext/lb_policy/grpclb/grpclb_channel.c",
         "src/core/ext/lb_policy/grpclb/load_balancer_api.c",
         "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/lb_policy/grpclb/grpclb.h",
+        "src/core/ext/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
@@ -750,6 +760,31 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_grpclb_secure",
+    srcs = [
+        "src/core/ext/lb_policy/grpclb/grpclb.c",
+        "src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c",
+        "src/core/ext/lb_policy/grpclb/load_balancer_api.c",
+        "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/lb_policy/grpclb/grpclb.h",
+        "src/core/ext/lb_policy/grpclb/grpclb_channel.h",
+        "src/core/ext/lb_policy/grpclb/load_balancer_api.h",
+        "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_secure",
     ],
 )
 
@@ -836,6 +871,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.c",
         "src/core/lib/security/credentials/ssl/ssl_credentials.c",
         "src/core/lib/security/transport/client_auth_filter.c",
+        "src/core/lib/security/transport/lb_targets_info.c",
         "src/core/lib/security/transport/secure_endpoint.c",
         "src/core/lib/security/transport/security_connector.c",
         "src/core/lib/security/transport/security_handshaker.c",
@@ -859,6 +895,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/transport/auth_filters.h",
+        "src/core/lib/security/transport/lb_targets_info.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_connector.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -943,21 +980,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-  name = "grpc_transport_chttp2_client_connector",
-  hdrs = [
-   "src/core/ext/transport/chttp2/client/chttp2_connector.h",
-  ],
-  srcs = [
-   "src/core/ext/transport/chttp2/client/chttp2_connector.c",
-  ],
-  language = "c",
-  deps = [
-   "grpc_transport_chttp2",
-   "grpc_base",
-   "grpc_client_channel",
-  ],
+    name = "grpc_transport_chttp2_client_connector",
+    srcs = [
+        "src/core/ext/transport/chttp2/client/chttp2_connector.c",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/client/chttp2_connector.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_transport_chttp2",
+    ],
 )
-
 
 grpc_cc_library(
     name = "grpc_transport_chttp2_client_insecure",
@@ -1041,6 +1077,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "third_party/objective_c/Cronet/bidirectional_stream_c.h",
+        "src/core/ext/transport/cronet/transport/cronet_transport.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1241,12 +1278,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_config_proto",
+    external_deps = [
+        "protobuf",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
-    ],
-    external_deps = [
-        "protobuf",
     ],
 )
 
