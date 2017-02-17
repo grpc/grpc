@@ -41,6 +41,10 @@
 
 struct grpc_error {
   gpr_refcount refs;
+  const char* desc;
+  const char* file;
+  intptr_t file_line;
+  gpr_timespec time_created;
   gpr_avl ints;
   gpr_avl strs;
   gpr_avl times;
