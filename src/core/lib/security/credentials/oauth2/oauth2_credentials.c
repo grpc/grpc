@@ -124,7 +124,7 @@ static void oauth2_token_fetcher_destruct(grpc_exec_ctx *exec_ctx,
       (grpc_oauth2_token_fetcher_credentials *)creds;
   grpc_credentials_md_store_unref(exec_ctx, c->access_token_md);
   gpr_mu_destroy(&c->mu);
-  grpc_httpcli_context_destroy(&c->httpcli_context);
+  grpc_httpcli_context_destroy(exec_ctx, &c->httpcli_context);
 }
 
 grpc_credentials_status

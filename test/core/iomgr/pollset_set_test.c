@@ -59,10 +59,11 @@ void init_test_pollset_sets(test_pollset_set *pollset_sets, const int num_pss) {
   }
 }
 
-void cleanup_test_pollset_sets(test_pollset_set *pollset_sets,
+void cleanup_test_pollset_sets(grpc_exec_ctx *exec_ctx,
+                               test_pollset_set *pollset_sets,
                                const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
-    grpc_pollset_set_destroy(pollset_sets[i].pss);
+    grpc_pollset_set_destroy(exec_ctx, pollset_sets[i].pss);
     pollset_sets[i].pss = NULL;
   }
 }
@@ -297,7 +298,7 @@ static void pollset_set_test_basic() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -372,7 +373,7 @@ void pollset_set_test_dup_fds() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, &pollset, num_ps);
-  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -437,7 +438,7 @@ void pollset_set_test_empty_pollset() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(&pollset_set, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, &pollset_set, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

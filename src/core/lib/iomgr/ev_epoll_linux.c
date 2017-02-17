@@ -1842,13 +1842,12 @@ static grpc_pollset_set *pollset_set_create(void) {
   return pss;
 }
 
-static void pollset_set_destroy(grpc_pollset_set *pss) {
+static void pollset_set_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_pollset_set *pss) {
   gpr_mu_destroy(&pss->po.mu);
 
   if (pss->po.pi != NULL) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    PI_UNREF(&exec_ctx, pss->po.pi, "pss_destroy");
-    grpc_exec_ctx_finish(&exec_ctx);
+    PI_UNREF(exec_ctx, pss->po.pi, "pss_destroy");
   }
 
   gpr_free(pss);

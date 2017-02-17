@@ -167,9 +167,9 @@ typedef struct grpc_transport_stream_op {
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the
-   * transport implementation */
+   * current handler of the op */
 
-  grpc_transport_private_op_data transport_private;
+  grpc_transport_private_op_data handler_private;
 } grpc_transport_stream_op;
 
 /** Transport op: a set of operations to perform on a transport as a whole */

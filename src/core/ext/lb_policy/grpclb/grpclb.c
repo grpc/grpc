@@ -488,9 +488,8 @@ static grpc_lb_addresses *process_serverlist_locked(
 static bool update_lb_connectivity_status_locked(
     grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
     grpc_connectivity_state new_rr_state, grpc_error *new_rr_state_error) {
-  grpc_error *curr_state_error;
-  const grpc_connectivity_state curr_glb_state = grpc_connectivity_state_check(
-      &glb_policy->state_tracker, &curr_state_error);
+  const grpc_connectivity_state curr_glb_state =
+      grpc_connectivity_state_check(&glb_policy->state_tracker);
 
   /* The new connectivity status is a function of the previous one and the new
    * input coming from the status of the RR policy.
@@ -1091,8 +1090,8 @@ static grpc_connectivity_state glb_check_connectivity(
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   grpc_connectivity_state st;
   gpr_mu_lock(&glb_policy->mu);
-  st = grpc_connectivity_state_check(&glb_policy->state_tracker,
-                                     connectivity_error);
+  st = grpc_connectivity_state_get(&glb_policy->state_tracker,
+                                   connectivity_error);
   gpr_mu_unlock(&glb_policy->mu);
   return st;
 }

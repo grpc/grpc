@@ -109,7 +109,8 @@ grpc_jwt_verifier *grpc_jwt_verifier_create(
     size_t num_mappings);
 
 /*The verifier must not be destroyed if there are still outstanding callbacks.*/
-void grpc_jwt_verifier_destroy(grpc_jwt_verifier *verifier);
+void grpc_jwt_verifier_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_jwt_verifier *verifier);
 
 /* User provided callback that will be called when the verification of the JWT
    is done (maybe in another thread).
