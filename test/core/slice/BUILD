@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,64 +32,23 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "hpack_parser_fuzzer",
-  srcs = ["hpack_parser_fuzzer_test.c"],
-  deps = ["//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "hpack_parser_corpus"
+  name = "percent_decode_fuzzer",
+  srcs = ["percent_decode_fuzzer.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  corpus = "response_corpus",
+  copts = ["-std=c99"],
 )
 
 cc_test(
-    name = "alpn_test",
-    srcs = ["alpn_test.c"],
+    name = "percent_encoding_test",
+    srcs = ["percent_encoding_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "bin_encoder_test",
-    srcs = ["bin_encoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_encoder_test",
-    srcs = ["hpack_encoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_parser_test",
-    srcs = ["hpack_parser_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "varint_test",
-    srcs = ["varint_test.c"],
+    name = "slice_buffer_test",
+    srcs = ["slice_string_helpers_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )

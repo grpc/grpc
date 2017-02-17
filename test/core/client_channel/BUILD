@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,64 +32,23 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "hpack_parser_fuzzer",
-  srcs = ["hpack_parser_fuzzer_test.c"],
-  deps = ["//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "hpack_parser_corpus"
+  name = "uri_fuzzer_test",
+  srcs = ["uri_fuzzer_test.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  corpus = "uri_corpus",
+  copts = ["-std=c99"],
 )
 
 cc_test(
-    name = "alpn_test",
-    srcs = ["alpn_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    name = "lb_policies_test",
+    srcs = ["lb_policies_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:cq_verifier"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "bin_encoder_test",
-    srcs = ["bin_encoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_encoder_test",
-    srcs = ["hpack_encoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_parser_test",
-    srcs = ["hpack_parser_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "varint_test",
-    srcs = ["varint_test.c"],
+    name = "set_initial_connect_string_test",
+    srcs = ["set_initial_connect_string_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
