@@ -199,9 +199,7 @@ static void connect_cb(uv_connect_t *req, int status) {
   gpr_free(req);
 }
 
-static void close_cb(uv_handle_t *handle) {
-  gpr_free(handle);
-}
+static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
                         socklen_t remote_len, on_connect_result *result) {

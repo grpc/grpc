@@ -85,9 +85,7 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   finish_connection();
 }
 
-static void close_cb(uv_handle_t *handle) {
-  gpr_free(handle);
-}
+static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 static void connection_cb(uv_stream_t *server, int status) {
   uv_tcp_t *client_handle = gpr_malloc(sizeof(uv_tcp_t));
@@ -142,7 +140,7 @@ void test_succeeds(void) {
   }
 
   // This will get cleaned up when the pollset runs again or gets shutdown
-  uv_close((uv_handle_t*)svr_handle, close_cb);
+  uv_close((uv_handle_t *)svr_handle, close_cb);
 
   gpr_mu_unlock(g_mu);
 

@@ -217,16 +217,13 @@ static void install_crash_handler() {
 
 #define SIGNAL_NAMES_LENGTH 32
 
-static const char * const signal_names[] = {
-  NULL,
-  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
-  "SIGABRT", "SIGBUS", "SIGFPE", "SIGKILL", "SIGUSR1",
-  "SIGSEGV", "SIGUSR2", "SIGPIPE", "SIGALRM", "SIGTERM",
-  "SIGSTKFLT", "SIGCHLD", "SIGCONT", "SIGSTOP", "SIGTSTP",
-  "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU", "SIGXFSZ",
-  "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO", "SIGPWR",
-  "SIGSYS"
-};
+static const char *const signal_names[] = {
+    NULL,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
+    "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
+    "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",
+    "SIGXCPU", "SIGXFSZ", "SIGVTALRM", "SIGPROF", "SIGWINCH",  "SIGIO",
+    "SIGPWR",  "SIGSYS"};
 
 static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
