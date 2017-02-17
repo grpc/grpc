@@ -84,6 +84,7 @@ cc_test(
 cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
+    deps = ["//:grpc++", ":driver_impl"]
 )
 
 cc_test(
