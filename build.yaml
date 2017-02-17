@@ -3006,23 +3006,6 @@ targets:
   - mac
   - linux
   - posix
-- name: bm_closure
-  build: test
-  language: c++
-  src:
-  - test/cpp/microbenchmarks/bm_closure.cc
-  deps:
-  - benchmark
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  args:
-  - --benchmark_min_time=0
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: bm_cq
   build: test
   language: c++
@@ -3071,6 +3054,23 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_metadata
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_metadata.cc
+  deps:
+  - benchmark
+  - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
