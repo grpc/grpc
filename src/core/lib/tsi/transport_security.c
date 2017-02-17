@@ -73,6 +73,8 @@ const char *tsi_result_to_string(tsi_result result) {
       return "TSI_HANDSHAKE_IN_PROGRESS";
     case TSI_OUT_OF_RESOURCES:
       return "TSI_OUT_OF_RESOURCES";
+    case TSI_REMOTE_PEER_CLOSED:
+      return "TSI_REMOTE_PEER_CLOSED";
     default:
       return "UNKNOWN";
   }

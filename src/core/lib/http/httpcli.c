@@ -187,6 +187,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   internal_request *req = arg;
 
   if (!ep) {
+    //req->ep freed in security_handshake_done(handshake.c), so set NULL to ep for avoiding double free
+    //(when req->next_address == req->addresses->naddrs).
+    // otherwise ep initialized again in grpc_tcp_client_connect, so no harmful to do it here.
+    req->ep = NULL;
     next_address(exec_ctx, req,
                  GRPC_ERROR_CREATE("Unexplained handshake failure"));
     return;
@@ -232,7 +236,10 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
   if (error != GRPC_ERROR_NONE) {
-    finish(exec_ctx, req, error);
+    //on_resolved called from grpc_exec_ctx_flush (via resolve_address_impl), which unrefs error.
+    //but finish also register exec_ctx queue with this error pointer, then error unrefs twice.
+    //so refer error here to run correctly.
+    finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->next_address = 0;

@@ -434,7 +434,11 @@ static tsi_result do_ssl_read(SSL *ssl, unsigned char *unprotected_bytes,
   read_from_ssl =
       SSL_read(ssl, unprotected_bytes, (int)*unprotected_bytes_size);
   if (read_from_ssl == 0) {
-    gpr_log(GPR_ERROR, "SSL_read returned 0 unexpectedly.");
+    int err = SSL_get_error(ssl, read_from_ssl);
+    gpr_log(GPR_ERROR, "SSL_read returned 0 unexpectedly. %d", err);
+    if (err == SSL_ERROR_ZERO_RETURN) {
+      return TSI_REMOTE_PEER_CLOSED;
+    }
     return TSI_INTERNAL_ERROR;
   }
   if (read_from_ssl < 0) {
@@ -828,7 +832,13 @@ static tsi_result ssl_protector_unprotect(
 
   /* First, try to read remaining data from ssl. */
   result = do_ssl_read(impl->ssl, unprotected_bytes, unprotected_bytes_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK) {
+    if (result == TSI_REMOTE_PEER_CLOSED) {
+        /* if remote peer closed, prevent caller to proceed pointer */
+        *unprotected_bytes_size = 0;
+    }
+    return result;
+  }
   if (*unprotected_bytes_size == output_bytes_size) {
     /* We have read everything we could and cannot process any more input. */
     *protected_frames_bytes_size = 0;
@@ -854,6 +864,9 @@ static tsi_result ssl_protector_unprotect(
   if (result == TSI_OK) {
     /* Don't forget to output the total number of bytes read. */
     *unprotected_bytes_size += output_bytes_offset;
+  } else if (result == TSI_REMOTE_PEER_CLOSED) {
+    /* When fails by remote peer closed, first ssl_read may read something from server */
+    *unprotected_bytes_size = output_bytes_offset;
   }
   return result;
 }
