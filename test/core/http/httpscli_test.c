@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
   test_get(port);
   test_post(port);
 
-  grpc_httpcli_context_destroy(&g_context);
+  grpc_httpcli_context_destroy(&exec_ctx, &g_context);
   grpc_closure_init(&destroyed, destroy_pops, &g_pops,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops),

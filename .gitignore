@@ -9,6 +9,7 @@ objs
 cython_debug/
 python_build/
 python_format_venv/
+python_pylint_venv/
 .coverage*
 .eggs
 htmlcov/

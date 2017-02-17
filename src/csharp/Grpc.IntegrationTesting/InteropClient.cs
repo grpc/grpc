@@ -56,7 +56,7 @@ namespace Grpc.IntegrationTesting
     {
         private class ClientOptions
         {
-            [Option("server_host", Default = "127.0.0.1")]
+            [Option("server_host", Default = "localhost")]
             public string ServerHost { get; set; }
 
             [Option("server_host_override", Default = TestCredentials.DefaultHostOverride)]

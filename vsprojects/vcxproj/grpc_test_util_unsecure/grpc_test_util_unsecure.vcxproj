@@ -161,6 +161,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
@@ -194,6 +195,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

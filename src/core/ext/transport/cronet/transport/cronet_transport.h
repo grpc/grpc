@@ -31,23 +31,13 @@
  *
  */
 
-#include <grpc++/test/server_context_test_spouse.h>
+#ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
+#define GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 
-namespace grpc {
-namespace testing {
+#include "src/core/lib/transport/transport.h"
 
-void ServerContextTestSpouse::AddClientMetadata(const grpc::string& key,
-                                                const grpc::string& value) {
-  client_metadata_storage_.insert(
-      std::pair<grpc::string, grpc::string>(key, value));
-  ctx_->client_metadata_.map()->clear();
-  for (auto iter = client_metadata_storage_.begin();
-       iter != client_metadata_storage_.end(); ++iter) {
-    ctx_->client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(iter->first.c_str(),
-                                                      iter->second.c_str()));
-  }
-}
+grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
+                                             const grpc_channel_args *args,
+                                             void *reserved);
 
-}  // namespace testing
-}  // namespace grpc
+#endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H */

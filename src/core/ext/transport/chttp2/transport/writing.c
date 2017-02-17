@@ -152,6 +152,17 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   return true;
 }
 
+uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
+  return (uint32_t)GPR_MAX(
+      (int64_t)((1u << 31) - 1),
+      t->stream_total_over_incoming_window +
+          (int64_t)GPR_MAX(
+              t->settings[GRPC_SENT_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
+                  t->stream_total_under_incoming_window,
+              0));
+}
+
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
@@ -310,13 +321,12 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
-  uint32_t target_incoming_window = GPR_MAX(
-      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      1024);
+  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
   uint32_t threshold_to_send_transport_window_update =
       t->outbuf.count > 0 ? 3 * target_incoming_window / 4
                           : target_incoming_window / 2;
-  if (t->incoming_window <= threshold_to_send_transport_window_update) {
+  if (t->incoming_window <= threshold_to_send_transport_window_update &&
+      t->incoming_window != target_incoming_window) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
     uint32_t announced = (uint32_t)GPR_CLAMP(
