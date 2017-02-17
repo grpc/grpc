@@ -1860,8 +1860,6 @@ test_c: buildtests_c
 
 
 flaky_test_c: buildtests_c
-	$(E) "[RUN]     Testing lb_policies_test"
-	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mlog_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 
