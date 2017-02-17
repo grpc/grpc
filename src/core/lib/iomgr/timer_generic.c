@@ -121,12 +121,6 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   g_initialized = false;
 }
 
-/* This is a cheap, but good enough, pointer hash for sharding the tasks: */
-static size_t shard_idx(const grpc_timer *info) {
-  size_t x = (size_t)info;
-  return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) & (NUM_SHARDS - 1);
-}
-
 static double ts_to_dbl(gpr_timespec ts) {
   return (double)ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
@@ -181,7 +175,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_closure *closure,
                      gpr_timespec now) {
   int is_first_timer = 0;
-  shard_type *shard = &g_shards[shard_idx(timer)];
+  shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   GPR_ASSERT(deadline.clock_type == g_clock_type);
   GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
@@ -247,7 +241,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     return;
   }
 
-  shard_type *shard = &g_shards[shard_idx(timer)];
+  shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   gpr_mu_lock(&shard->mu);
   if (timer->pending) {
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);

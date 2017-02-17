@@ -123,7 +123,6 @@ CONFIG = [
     ('if-unmodified-since', ''),
     ('last-modified', ''),
     ('lb-token', ''),
-    ('lb-cost-bin', ''),
     ('link', ''),
     ('location', ''),
     ('max-forwards', ''),
@@ -160,7 +159,6 @@ METADATA_BATCH_CALLOUTS = [
     'user-agent',
     'host',
     'lb-token',
-    'lb-cost-bin',
 ]
 
 COMPRESSION_ALGORITHMS = [
