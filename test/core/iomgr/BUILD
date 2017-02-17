@@ -36,6 +36,7 @@ cc_library(
     srcs = ["endpoint_tests.c"],
     hdrs = ["endpoint_tests.h"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    visibility = ["//test:__subpackages__"],
     copts = ['-std=c99']
 )
 
