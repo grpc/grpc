@@ -116,8 +116,6 @@ PHP_METHOD(Server, __construct) {
 
 /**
  * Request a call on a server. Creates a single GRPC_SERVER_RPC_NEW event.
- * @param long $tag_new The tag to associate with the new request
- * @param long $tag_cancel The tag to use if the call is cancelled
  * @return void
  */
 PHP_METHOD(Server, requestCall) {
@@ -239,12 +237,36 @@ PHP_METHOD(Server, start) {
   grpc_server_start(server->wrapped);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+  ZEND_ARG_INFO(0, args)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_requestCall, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addHttp2Port, 0, 0, 1)
+  ZEND_ARG_INFO(0, addr)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addSecureHttp2Port, 0, 0, 2)
+  ZEND_ARG_INFO(0, addr)
+  ZEND_ARG_INFO(0, server_creds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_start, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry server_methods[] = {
-  PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Server, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Server, requestCall, arginfo_requestCall,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addHttp2Port, arginfo_addHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addSecureHttp2Port, arginfo_addSecureHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, start, arginfo_start,
+         ZEND_ACC_PUBLIC)
   PHP_FE_END
 };
 
