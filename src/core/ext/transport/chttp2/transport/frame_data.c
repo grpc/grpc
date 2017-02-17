@@ -251,7 +251,6 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_add(
           &s->unprocessed_incoming_frames_buffer,
           grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-      grpc_chttp2_incoming_byte_stream_notify(exec_ctx, p->parsing_frame);
       return GRPC_ERROR_NONE;
   }
 

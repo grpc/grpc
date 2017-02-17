@@ -158,7 +158,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
 static grpc_error *deframe_unprocessed_incoming_frames(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p,
-    grpc_chttp2_transport *t, grpc_chttp2_stream *s, grpc_slice_buffer *slices);
+    grpc_chttp2_transport *t, grpc_chttp2_stream *s, grpc_slice_buffer *slices,
+    bool partial_deframe);
 
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -2303,12 +2304,8 @@ static grpc_error *deframe_unprocessed_incoming_frames(
         p->parsing_frame =
             grpc_chttp2_incoming_byte_stream_create(
                 exec_ctx, t, s, p->frame_size, message_flags);
-
-        undo_take_first?
-
-
       /* fallthrough */
-      case GRPC_CHTTP2_DATA_FRAME:
+      case GRPC_CHTTP2_DATA_FRAME: {
         uint32_t remaining = (uint32_t)(end - cur);
         if (partial_deframe) {
           if (remaining > 0 && cur == beg) {
@@ -2362,6 +2359,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
           grpc_slice_unref_internal(exec_ctx, slice);
           return GRPC_ERROR_NONE;
         }
+      }
     }
   }
 
