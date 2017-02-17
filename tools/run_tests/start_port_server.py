@@ -42,3 +42,5 @@ an error message to users.
 import python_utils.start_port_server as start_port_server
 
 start_port_server.start_port_server()
+
+print "Port server started successfully"
