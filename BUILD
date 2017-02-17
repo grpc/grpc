@@ -1280,6 +1280,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_test",
+    language = "c++",
+    public_hdrs = ["include/grpc++/test/server_context_test_spouse.h"],
+    deps = ["//:grpc++"],
+)
+
+grpc_cc_library(
     name = "thrift_util",
     language = "c++",
     public_hdrs = [

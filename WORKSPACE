@@ -33,6 +33,11 @@ bind(
     actual = "@submodule_gtest//:gtest",
 )
 
+bind(
+    name = "gflags",
+    actual = "@submodule_gflags//:gflags",
+)
+
 new_local_repository(
     name = "submodule_boringssl",
     path = "third_party/boringssl-with-bazel",
@@ -55,4 +60,9 @@ new_local_repository(
     name = "submodule_gtest",
     path = "third_party/googletest",
     build_file = "third_party/gtest.BUILD",
+)
+
+local_repository(
+    name = "submodule_gflags",
+    path = "third_party/gflags",
 )
