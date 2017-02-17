@@ -38,7 +38,10 @@ import time
 import jobset
 import socket
 
-def start_port_server(port_server_port):
+# must be synchronized with test/core/utils/port_server_client.h
+_PORT_SERVER_PORT = 32766
+
+def start_port_server():
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
   # if not running ==> start a new one
@@ -55,19 +58,22 @@ def start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
+        [sys.executable,
+         os.path.abspath('tools/run_tests/python_utils/port_server.py'),
          'dump_version']))
     print('my port server is version %d' % current_version)
     running = (version >= current_version)
     if not running:
       print('port_server version mismatch: killing the old one')
-      urllib.request.urlopen('http://localhost:%d/quitquitquit' % port_server_port).read()
+      urllib.request.urlopen('http://localhost:%d/quitquitquit' %
+                             port_server_port).read()
       time.sleep(1)
   if not running:
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print('starting port_server, with log file %s' % logfile)
-    args = [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
+    args = [sys.executable,
+            os.path.abspath('tools/run_tests/python_utils/port_server.py'),
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
@@ -127,4 +133,3 @@ def start_port_server(port_server_port):
         traceback.print_exc()
         port_server.kill()
         raise
-

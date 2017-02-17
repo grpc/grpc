@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,62 +29,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+"""
+Wrapper around port server starting code.
 
-cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "test_config.c",
-        "memory_counters.c",
-    ],
-    hdrs = [
-        "test_config.h",
-        "memory_counters.h",
-    ],
-    deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
-)
+Used by developers who wish to run individual C/C++ tests outside of the
+run_tests.py infrastructure.
 
-cc_library(
-    name = "grpc_test_util",
-    srcs = [
-        "debugger_macros.c",
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-        "grpc_profiler.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
-        "slice_splitter.h",
-        "test_tcp_server.h",
-    ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
-)
+The path to this file is called out in test/core/util/port.c, and printed as
+an error message to users.
+"""
 
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
-)
+import python_utils.start_port_server as start_port_server
 
-sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
-)
+start_port_server.start_port_server()
