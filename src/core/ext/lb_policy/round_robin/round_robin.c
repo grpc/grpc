@@ -655,7 +655,7 @@ static grpc_connectivity_state rr_check_connectivity(grpc_exec_ctx *exec_ctx,
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   grpc_connectivity_state st;
   gpr_mu_lock(&p->mu);
-  st = grpc_connectivity_state_check(&p->state_tracker, error);
+  st = grpc_connectivity_state_get(&p->state_tracker, error);
   gpr_mu_unlock(&p->mu);
   return st;
 }
