@@ -33,6 +33,7 @@
 
 /* Test various closure related operations */
 
+#include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
 extern "C" {
@@ -40,8 +41,6 @@ extern "C" {
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 }
-
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 static class InitializeStuff {
  public:

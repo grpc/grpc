@@ -35,6 +35,7 @@
 
 #include <sstream>
 
+#include <benchmark/benchmark.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/impl/grpc_library.h>
@@ -63,7 +64,6 @@ extern "C" {
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 namespace grpc {
 namespace testing {

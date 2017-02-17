@@ -32,5 +32,17 @@ licenses(["notice"])  # 3-clause BSD
 cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
-    deps = ["//:grpc++", "//external:benchmark"],
+    deps = ["//external:benchmark"],
+)
+
+cc_test(
+    name = "bm_fullstack",
+    srcs = ["bm_fullstack.cc"],
+    deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+)
+
+cc_test(
+    name = "bm_closure",
+    srcs = ["bm_closure.cc"],
+    deps = ["//:grpc", "//external:benchmark"],
 )
