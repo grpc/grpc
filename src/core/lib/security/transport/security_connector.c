@@ -611,10 +611,9 @@ static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                    grpc_closure *on_peer_checked) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
-  grpc_error *error = ssl_check_peer(sc,
-                                     c->overridden_target_name != NULL
-                                         ? c->overridden_target_name
-                                         : c->target_name,
+  grpc_error *error = ssl_check_peer(sc, c->overridden_target_name != NULL
+                                             ? c->overridden_target_name
+                                             : c->target_name,
                                      &peer, auth_context);
   grpc_closure_sched(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
