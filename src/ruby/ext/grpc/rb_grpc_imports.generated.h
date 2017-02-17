@@ -611,6 +611,9 @@ extern grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
+typedef void *(*gpr_zalloc_type)(size_t size);
+extern gpr_zalloc_type gpr_zalloc_import;
+#define gpr_zalloc gpr_zalloc_import
 typedef void(*gpr_free_type)(void *ptr);
 extern gpr_free_type gpr_free_import;
 #define gpr_free gpr_free_import
