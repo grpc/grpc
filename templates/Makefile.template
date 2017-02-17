@@ -405,7 +405,7 @@
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
   SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
   SHARED_EXT_CSHARP = dylib
@@ -414,7 +414,7 @@
   SHARED_VERSION_CPP =
   SHARED_VERSION_CSHARP =
   else
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
   SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -1721,6 +1721,11 @@
   endif
   % endif
 
+  % if tgt.get('defaults', None):
+  %  for name, value in defaults.get(tgt.defaults).iteritems():
+  $(${tgt.name.upper()}_OBJS): ${name} += ${value}
+  %  endfor
+  % endif
   % for src in tgt.src:
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
   % for dep in tgt.deps:

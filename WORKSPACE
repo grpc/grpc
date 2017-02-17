@@ -33,6 +33,11 @@ bind(
     actual = "@submodule_gtest//:gtest",
 )
 
+bind(
+    name = "benchmark",
+    actual = "@submodule_benchmark//:benchmark",
+)
+
 new_local_repository(
     name = "submodule_boringssl",
     path = "third_party/boringssl-with-bazel",
@@ -55,4 +60,10 @@ new_local_repository(
     name = "submodule_gtest",
     path = "third_party/googletest",
     build_file = "third_party/gtest.BUILD",
+)
+
+new_local_repository(
+    name = "submodule_benchmark",
+    path = "third_party/benchmark",
+    build_file = "third_party/benchmark.BUILD",
 )
