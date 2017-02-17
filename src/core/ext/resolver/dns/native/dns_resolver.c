@@ -244,7 +244,7 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
-  grpc_pollset_set_destroy(r->interested_parties);
+  grpc_pollset_set_destroy(exec_ctx, r->interested_parties);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);

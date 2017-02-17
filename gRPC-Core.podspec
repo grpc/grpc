@@ -162,6 +162,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -388,6 +389,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/transport/auth_filters.h',
+                      'src/core/lib/security/transport/lb_targets_info.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
                       'src/core/lib/security/transport/security_connector.h',
                       'src/core/lib/security/transport/security_handshaker.h',
@@ -420,6 +422,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/uri_parser.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/lb_policy/grpclb/grpclb.h',
+                      'src/core/ext/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'third_party/nanopb/pb.h',
@@ -439,6 +442,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
                       'src/core/ext/census/trace_context.h',
+                      'src/core/ext/census/trace_label.h',
+                      'src/core/ext/census/trace_propagation.h',
+                      'src/core/ext/census/trace_status.h',
+                      'src/core/ext/census/trace_string.h',
+                      'src/core/ext/census/tracing.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -596,6 +604,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.c',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.c',
                       'src/core/lib/security/transport/client_auth_filter.c',
+                      'src/core/lib/security/transport/lb_targets_info.c',
                       'src/core/lib/security/transport/secure_endpoint.c',
                       'src/core/lib/security/transport/security_connector.c',
                       'src/core/lib/security/transport/security_handshaker.c',
@@ -636,6 +645,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
                       'src/core/ext/lb_policy/grpclb/grpclb.c',
+                      'src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'third_party/nanopb/pb_common.c',
@@ -813,6 +823,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                               'src/core/lib/security/transport/auth_filters.h',
+                              'src/core/lib/security/transport/lb_targets_info.h',
                               'src/core/lib/security/transport/secure_endpoint.h',
                               'src/core/lib/security/transport/security_connector.h',
                               'src/core/lib/security/transport/security_handshaker.h',
@@ -845,6 +856,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/uri_parser.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/lb_policy/grpclb/grpclb.h',
+                              'src/core/ext/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                               'third_party/nanopb/pb.h',
@@ -863,12 +875,18 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h',
-                              'src/core/ext/census/trace_context.h'
+                              'src/core/ext/census/trace_context.h',
+                              'src/core/ext/census/trace_label.h',
+                              'src/core/ext/census/trace_propagation.h',
+                              'src/core/ext/census/trace_status.h',
+                              'src/core/ext/census/trace_string.h',
+                              'src/core/ext/census/tracing.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|

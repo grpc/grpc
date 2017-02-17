@@ -31,23 +31,31 @@
  *
  */
 
-#include <grpc++/test/server_context_test_spouse.h>
+#ifndef GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H
+#define GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H
 
-namespace grpc {
-namespace testing {
+#include "src/core/ext/census/trace_string.h"
 
-void ServerContextTestSpouse::AddClientMetadata(const grpc::string& key,
-                                                const grpc::string& value) {
-  client_metadata_storage_.insert(
-      std::pair<grpc::string, grpc::string>(key, value));
-  ctx_->client_metadata_.map()->clear();
-  for (auto iter = client_metadata_storage_.begin();
-       iter != client_metadata_storage_.end(); ++iter) {
-    ctx_->client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(iter->first.c_str(),
-                                                      iter->second.c_str()));
-  }
-}
+/* Trace label (key/value pair) stores a label name and the label value. The
+   value can be one of trace_string/int64_t/bool. */
+typedef struct trace_label {
+  trace_string key;
+  enum label_type {
+    /* Unknown value for debugging/error purposes */
+    LABEL_UNKNOWN = 0,
+    /* A string value */
+    LABEL_STRING = 1,
+    /* An integer value. */
+    LABEL_INT = 2,
+    /* A boolean value. */
+    LABEL_BOOL = 3,
+  } value_type;
 
-}  // namespace testing
-}  // namespace grpc
+  union value {
+    trace_string label_str;
+    int64_t label_int;
+    bool label_bool;
+  } value;
+} trace_label;
+
+#endif

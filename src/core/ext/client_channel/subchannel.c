@@ -217,7 +217,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
-  grpc_pollset_set_destroy(c->pollset_set);
+  grpc_pollset_set_destroy(exec_ctx, c->pollset_set);
   grpc_subchannel_key_destroy(exec_ctx, c->key);
   gpr_free(c);
 }
@@ -336,8 +336,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
   grpc_resolved_address *new_address = NULL;
   grpc_channel_args *new_args = NULL;
-  if (grpc_proxy_mappers_map(exec_ctx, addr, args->args, &new_address,
-                             &new_args)) {
+  if (grpc_proxy_mappers_map_address(exec_ctx, addr, args->args, &new_address,
+                                     &new_args)) {
     GPR_ASSERT(new_address != NULL);
     gpr_free(addr);
     addr = new_address;
@@ -419,7 +419,7 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c,
                                                            grpc_error **error) {
   grpc_connectivity_state state;
   gpr_mu_lock(&c->mu);
-  state = grpc_connectivity_state_check(&c->state_tracker, error);
+  state = grpc_connectivity_state_get(&c->state_tracker, error);
   gpr_mu_unlock(&c->mu);
   return state;
 }
@@ -788,7 +788,8 @@ grpc_call_stack *grpc_subchannel_call_get_call_stack(
   return SUBCHANNEL_CALL_TO_CALL_STACK(subchannel_call);
 }
 
-static void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
+static void grpc_uri_to_sockaddr(const char *uri_str,
+                                 grpc_resolved_address *addr) {
   grpc_uri *uri = grpc_uri_parse(uri_str, 0 /* suppress_errors */);
   GPR_ASSERT(uri != NULL);
   if (strcmp(uri->scheme, "ipv4") == 0) {
@@ -803,14 +804,19 @@ static void grpc_uri_to_sockaddr(char *uri_str, grpc_resolved_address *addr) {
 
 void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
                                      grpc_resolved_address *addr) {
+  const char *addr_uri_str = grpc_get_subchannel_address_uri_arg(args);
+  memset(addr, 0, sizeof(*addr));
+  if (*addr_uri_str != '\0') {
+    grpc_uri_to_sockaddr(addr_uri_str, addr);
+  }
+}
+
+const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
   const grpc_arg *addr_arg =
       grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
   GPR_ASSERT(addr_arg != NULL);  // Should have been set by LB policy.
   GPR_ASSERT(addr_arg->type == GRPC_ARG_STRING);
-  memset(addr, 0, sizeof(*addr));
-  if (*addr_arg->value.string != '\0') {
-    grpc_uri_to_sockaddr(addr_arg->value.string, addr);
-  }
+  return addr_arg->value.string;
 }
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {

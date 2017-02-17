@@ -481,7 +481,10 @@ void grpc_call_destroy(grpc_call *c) {
   c->destroy_called = 1;
   cancel = !c->received_final_op;
   gpr_mu_unlock(&c->mu);
-  if (cancel) grpc_call_cancel(c, NULL);
+  if (cancel) {
+    cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
+                      GRPC_ERROR_CANCELLED);
+  }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_destroy", 0);
@@ -490,8 +493,11 @@ void grpc_call_destroy(grpc_call *c) {
 grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
   GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(!reserved);
-  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
-                                      NULL);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  cancel_with_error(&exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                    GRPC_ERROR_CANCELLED);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return GRPC_CALL_OK;
 }
 
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
@@ -897,7 +903,7 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(msg);
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    } else {
+    } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
 
@@ -1483,6 +1489,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         bctl->send_final_op = 1;
         call->sent_final_op = 1;
+        GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
@@ -1511,6 +1518,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
                 op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
                 0)) {
+          for (int n = 0; n < call->send_extra_metadata_count; n++) {
+            GRPC_MDELEM_UNREF(exec_ctx, call->send_extra_metadata[n].md);
+          }
+          call->send_extra_metadata_count = 0;
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }

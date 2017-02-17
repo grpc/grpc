@@ -39,6 +39,7 @@
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/http_proxy.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
@@ -82,6 +83,7 @@ void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
   grpc_proxy_mapper_registry_init();
+  grpc_register_http_proxy_mapper();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);

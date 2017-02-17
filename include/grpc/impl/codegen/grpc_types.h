@@ -179,6 +179,8 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Should BDP probing be performed? */
+#define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
@@ -220,12 +222,18 @@ typedef struct {
 /** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
    to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
+/** If non-zero, expand wildcard addresses to a list of local addresses. */
+#define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
 /** Service config data in JSON form. Not intended for use outside of tests. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** If non-zero, Cronet transport will coalesce packets to fewer frames when
+ * possible. */
+#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
+  "grpc.use_cronet_packet_coalescing"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

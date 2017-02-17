@@ -273,6 +273,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
@@ -437,6 +438,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h" />
@@ -469,6 +471,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
@@ -488,6 +491,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_label.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_propagation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_status.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
@@ -804,6 +812,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
@@ -883,6 +893,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel_secure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>

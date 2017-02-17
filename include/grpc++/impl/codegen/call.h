@@ -618,7 +618,17 @@ class Call final {
  public:
   /* call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-      : call_hook_(call_hook), cq_(cq), call_(call) {}
+      : call_hook_(call_hook),
+        cq_(cq),
+        call_(call),
+        max_receive_message_size_(-1) {}
+
+  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+       int max_receive_message_size)
+      : call_hook_(call_hook),
+        cq_(cq),
+        call_(call),
+        max_receive_message_size_(max_receive_message_size) {}
 
   void PerformOps(CallOpSetInterface* ops) {
     call_hook_->PerformOpsOnCall(ops, this);
@@ -627,10 +637,13 @@ class Call final {
   grpc_call* call() const { return call_; }
   CompletionQueue* cq() const { return cq_; }
 
+  int max_receive_message_size() const { return max_receive_message_size_; }
+
  private:
   CallHook* call_hook_;
   CompletionQueue* cq_;
   grpc_call* call_;
+  int max_receive_message_size_;
 };
 
 }  // namespace grpc
