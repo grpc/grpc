@@ -92,7 +92,7 @@ def decode(b):
         try:
             return b.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on {}'.format(b))
+            logging.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
 
 
@@ -148,36 +148,23 @@ def fully_qualified_method(group, method):
 class CleanupThread(threading.Thread):
     """A threading.Thread subclass supporting custom behavior on join().
 
-  On Python Interpreter exit, Python will attempt to join outstanding threads
-  prior to garbage collection.  We may need to do additional cleanup, and
-  we accomplish this by overriding the join() method.
-  """
+    On Python Interpreter exit, Python will attempt to join outstanding threads
+    prior to garbage collection.  We may need to do additional cleanup, and
+    we accomplish this by overriding the join() method.
+    """
 
-    def __init__(self,
-                 behavior,
-                 group=None,
-                 target=None,
-                 name=None,
-                 args=(),
-                 kwargs={}):
+    def __init__(self, behavior, *args, **kwargs):
         """Constructor.
 
-    Args:
-      behavior (function): Function called on join() with a single
-          argument, timeout, indicating the maximum duration of
-          `behavior`, or None indicating `behavior` has no deadline.
-          `behavior` must be idempotent.
-      group (None): should be None.  Reseved for future extensions
-          when ThreadGroup is implemented.
-      target (function): The function to invoke when this thread is
-          run.  Defaults to None.
-      name (str): The name of this thread.  Defaults to None.
-        args (tuple[object]): A tuple of arguments to pass to `target`.
-      kwargs (dict[str,object]): A dictionary of keyword arguments to
-           pass to `target`.
-    """
-        super(CleanupThread, self).__init__(
-            group=group, target=target, name=name, args=args, kwargs=kwargs)
+        Args:
+            behavior (function): Function called on join() with a single
+                argument, timeout, indicating the maximum duration of
+                `behavior`, or None indicating `behavior` has no deadline.
+                `behavior` must be idempotent.
+            args: Positional arguments passed to threading.Thread constructor.
+            kwargs: Keyword arguments passed to threading.Thread constructor.
+        """
+        super(CleanupThread, self).__init__(*args, **kwargs)
         self._behavior = behavior
 
     def join(self, timeout=None):

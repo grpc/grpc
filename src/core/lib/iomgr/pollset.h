@@ -58,9 +58,6 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
  * pollset's mutex must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-/** Reset the pollset to its initial state (perhaps with some cached objects);
- *  must have been previously shutdown */
-void grpc_pollset_reset(grpc_pollset *pollset);
 void grpc_pollset_destroy(grpc_pollset *pollset);
 
 /* Do some work on a pollset.
