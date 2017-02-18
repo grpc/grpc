@@ -282,8 +282,9 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   return out;
 }
 
-static bool grpc_error_int_maybe_set_inlined(
-    grpc_error* error, grpc_error_ints which, intptr_t val) {
+static bool grpc_error_int_maybe_set_inlined(grpc_error *error,
+                                             grpc_error_ints which,
+                                             intptr_t val) {
   if (which == GRPC_ERROR_INT_FILE_LINE) {
     error->file_line = val;
     return true;
@@ -313,8 +314,9 @@ static special_error_status_map error_status_map[] = {
     {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
 };
 
-static bool grpc_error_int_maybe_get_inlined(
-    grpc_error* error, grpc_error_ints which, intptr_t *pp) {
+static bool grpc_error_int_maybe_get_inlined(grpc_error *error,
+                                             grpc_error_ints which,
+                                             intptr_t *pp) {
   if (which == GRPC_ERROR_INT_FILE_LINE) {
     *pp = error->file_line;
     return true;
@@ -353,14 +355,15 @@ bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
   return false;
 }
 
-static bool grpc_error_str_maybe_set_inlined(
-    grpc_error* error, grpc_error_strs which, const char* val) {
-  if(which == GRPC_ERROR_STR_DESCRIPTION) {
-    if (error->desc) gpr_free((void*)error->desc);
+static bool grpc_error_str_maybe_set_inlined(grpc_error *error,
+                                             grpc_error_strs which,
+                                             const char *val) {
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
+    if (error->desc) gpr_free((void *)error->desc);
     error->desc = gpr_strdup(val);
     return true;
   } else if (which == GRPC_ERROR_STR_FILE) {
-    if (error->file) gpr_free((void*)error->file);
+    if (error->file) gpr_free((void *)error->file);
     error->file = gpr_strdup(val);
     return true;
   }
@@ -373,15 +376,15 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
   grpc_error *new = copy_error_and_unref(src);
   if (!grpc_error_str_maybe_set_inlined(new, which, value)) {
     new->strs =
-      gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
+        gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
   }
   GPR_TIMER_END("grpc_error_set_str", 0);
   return new;
 }
 
-static const char* grpc_error_str_maybe_get_inlined(
-    grpc_error* error, grpc_error_strs which) {
-  if(which == GRPC_ERROR_STR_DESCRIPTION) {
+static const char *grpc_error_str_maybe_get_inlined(grpc_error *error,
+                                                    grpc_error_strs which) {
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
     return error->desc;
   } else if (which == GRPC_ERROR_STR_FILE) {
     return error->file;
@@ -400,7 +403,7 @@ const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
     }
     return NULL;
   }
-  const char* out = grpc_error_str_maybe_get_inlined(err, which);
+  const char *out = grpc_error_str_maybe_get_inlined(err, which);
   if (!out) {
     out = gpr_avl_get(err->strs, (void *)(uintptr_t)which);
   }
@@ -548,19 +551,15 @@ static char *fmt_time(void *p) {
   return out;
 }
 
-static void collect_inlined_kvs(grpc_error* err, kv_pairs *kvs) {
-  append_kv(kvs, gpr_strdup(
-      error_int_name(GRPC_ERROR_INT_FILE_LINE)), 
-      fmt_int((void*)err->file_line));
-  append_kv(
-      kvs, gpr_strdup(error_str_name(GRPC_ERROR_STR_DESCRIPTION)),
-      fmt_str((void*)err->desc));
-  append_kv(
-      kvs, gpr_strdup(error_str_name(GRPC_ERROR_STR_FILE)),
-      fmt_str((void*)err->file));
-  append_kv(
-      kvs, gpr_strdup(error_time_name(GRPC_ERROR_TIME_CREATED)),
-      fmt_time((void*)&err->time_created));
+static void collect_inlined_kvs(grpc_error *err, kv_pairs *kvs) {
+  append_kv(kvs, gpr_strdup(error_int_name(GRPC_ERROR_INT_FILE_LINE)),
+            fmt_int((void *)err->file_line));
+  append_kv(kvs, gpr_strdup(error_str_name(GRPC_ERROR_STR_DESCRIPTION)),
+            fmt_str((void *)err->desc));
+  append_kv(kvs, gpr_strdup(error_str_name(GRPC_ERROR_STR_FILE)),
+            fmt_str((void *)err->file));
+  append_kv(kvs, gpr_strdup(error_time_name(GRPC_ERROR_TIME_CREATED)),
+            fmt_time((void *)&err->time_created));
 }
 
 static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap,

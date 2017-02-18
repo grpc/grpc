@@ -67,10 +67,9 @@ BENCHMARK(BM_ErrorCreateAndSetStatus);
 static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_error_set_str(
-                        grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
-                            GRPC_ERROR_INT_HTTP2_ERROR,
-                            (intptr_t)0),
-                        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
+        grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
+                           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
+        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
   }
 }
 BENCHMARK(BM_ErrorCreateAndSetIntAndStr);

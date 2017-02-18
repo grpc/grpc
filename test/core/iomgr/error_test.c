@@ -43,12 +43,11 @@
 
 #include <string.h>
 
-static void test_set_get_int()
-{
+static void test_set_get_int() {
   grpc_error* error = GRPC_ERROR_CREATE("Test");
   intptr_t i = 0;
   GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
-  GPR_ASSERT(i); // line set will never be 0
+  GPR_ASSERT(i);  // line set will never be 0
   GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
   GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_SIZE, &i));
 
@@ -63,8 +62,7 @@ static void test_set_get_int()
   GPR_ASSERT(i == line);
 }
 
-static void test_set_get_str()
-{
+static void test_set_get_str() {
   grpc_error* error = GRPC_ERROR_CREATE("Test");
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL));
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR));
@@ -88,10 +86,10 @@ static void test_set_get_str()
   GPR_ASSERT(!strcmp(c, "new desc"));
 }
 
-static void test_copy_and_unref()
-{
+static void test_copy_and_unref() {
   grpc_error* error1 = GRPC_ERROR_CREATE("Test");
-  grpc_error* error2 = grpc_error_set_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
+  grpc_error* error2 =
+      grpc_error_set_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   const char* c = grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE);
   GPR_ASSERT(c);
   GPR_ASSERT(!strcmp(c, "message"));
@@ -101,8 +99,9 @@ static void test_copy_and_unref()
   GPR_ASSERT(error1 == error2);
 
   GRPC_ERROR_REF(error1);
-  grpc_error* error3 = grpc_error_set_str(error1, GRPC_ERROR_STR_DESCRIPTION, "reset");
-  GPR_ASSERT(error3 != error1); // should not be the same because of extra ref
+  grpc_error* error3 =
+      grpc_error_set_str(error1, GRPC_ERROR_STR_DESCRIPTION, "reset");
+  GPR_ASSERT(error3 != error1);  // should not be the same because of extra ref
   c = grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE);
   GPR_ASSERT(c);
   GPR_ASSERT(!strcmp(c, "message"));
@@ -116,18 +115,17 @@ static void test_copy_and_unref()
   GPR_ASSERT(!strcmp(c, "reset"));
 }
 
-static void print_error_strings()
-{
-  grpc_error* error = grpc_error_set_int(GRPC_ERROR_CREATE("Error"),
-                                            GRPC_ERROR_INT_GRPC_STATUS,
-                                            GRPC_STATUS_UNIMPLEMENTED);
+static void print_error_strings() {
+  grpc_error* error =
+      grpc_error_set_int(GRPC_ERROR_CREATE("Error"), GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_UNIMPLEMENTED);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, 0);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_set_get_int();

@@ -53,6 +53,6 @@ struct grpc_error {
   gpr_atm error_string;
 };
 
-bool grpc_error_is_special(grpc_error *err);
+bool grpc_error_is_special(grpc_error* err);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */
