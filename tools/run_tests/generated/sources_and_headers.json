@@ -2690,25 +2690,6 @@
     "deps": [
       "gpr", 
       "grpc", 
-      "grpc++"
-    ], 
-    "headers": [
-      "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
-      "src/proto/grpc/testing/compiler_test.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "golden_file_test", 
-    "src": [
-      "test/cpp/codegen/golden_file_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
       "grpc++", 
       "grpc++_proto_reflection_desc_db", 
       "grpc++_test_config", 

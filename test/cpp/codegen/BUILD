@@ -49,22 +49,6 @@ cc_test(
     ],
 )
 
-# TODO(dgq): blocked on gflags support
-#cc_test(
-#    name = "golden_file_test",
-#    srcs = ["golden_file_test.cc"],
-#    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h"],
-#    data = [
-#        ":compiler_test_golden",
-#    ],
-#    deps = [
-#        "//:grpc++",
-#        "//external:gtest",
-#        "//src/proto/grpc/testing:compiler_test_proto",
-#        "//test/core/util:gpr_test_util",
-#    ],
-#)
-
 cc_test(
     name = "proto_utils_test",
     srcs = ["proto_utils_test.cc"],

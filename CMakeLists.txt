@@ -592,7 +592,6 @@ add_dependencies(buildtests_cxx cxx_time_test)
 add_dependencies(buildtests_cxx end2end_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
-add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
@@ -8054,45 +8053,6 @@ target_link_libraries(generic_end2end_test
   grpc++
   grpc
   gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(golden_file_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
-  test/cpp/codegen/golden_file_test.cc
-  third_party/googletest/src/gtest-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/compiler_test.proto
-)
-
-target_include_directories(golden_file_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(golden_file_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
-  grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
