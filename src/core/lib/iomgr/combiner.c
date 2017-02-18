@@ -70,6 +70,8 @@ struct grpc_combiner {
   gpr_atm elements_covered_by_poller;
   bool time_to_execute_final_list;
   bool final_list_covered_by_poller;
+  int active_combiner_covered_count;
+  grpc_closure_list active_combiner_queue;
   grpc_closure_list final_list;
   grpc_closure offload;
   gpr_refcount refs;
@@ -115,7 +117,8 @@ static error_data unpack_error_data(uintptr_t p) {
 }
 
 static bool is_covered_by_poller(grpc_combiner *lock) {
-  return lock->final_list_covered_by_poller ||
+  return lock->active_combiner_covered_count > 0 ||
+         lock->final_list_covered_by_poller ||
          gpr_atm_acq_load(&lock->elements_covered_by_poller) > 0;
 }
 
@@ -140,6 +143,8 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   gpr_atm_no_barrier_store(&lock->elements_covered_by_poller, 0);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
+  grpc_closure_list_init(&lock->active_combiner_queue);
+  lock->active_combiner_covered_count = 0;
   grpc_closure_init(&lock->offload, offload, lock,
                     grpc_workqueue_scheduler(lock->optional_workqueue));
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
@@ -216,16 +221,25 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
       GPR_DEBUG, "C:%p grpc_combiner_execute c=%p cov=%d last=%" PRIdPTR, lock,
       cl, covered_by_poller, last));
   GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
-  cl->error_data.scratch =
-      pack_error_data((error_data){error, covered_by_poller});
-  if (covered_by_poller) {
-    gpr_atm_no_barrier_fetch_add(&lock->elements_covered_by_poller, 1);
-  }
-  gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
   if (last == 1) {
     // first element on this list: add it to the list of combiner locks
     // executing within this exec_ctx
     push_last_on_exec_ctx(exec_ctx, lock);
+    lock->active_combiner_covered_count += covered_by_poller;
+    grpc_closure_list_append(
+        &lock->active_combiner_queue, cl,
+        (grpc_error *)pack_error_data((error_data){error, covered_by_poller}));
+  } else if (exec_ctx->active_combiner == lock) {
+    lock->active_combiner_covered_count += covered_by_poller;
+    grpc_closure_list_append(
+        &lock->active_combiner_queue, cl,
+        (grpc_error *)pack_error_data((error_data){error, covered_by_poller}));
+  } else {
+    cl->error_data.scratch =
+        pack_error_data((error_data){error, covered_by_poller});
+    gpr_atm_no_barrier_fetch_add(&lock->elements_covered_by_poller,
+                                 covered_by_poller);
+    gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
   }
   GPR_TIMER_END("combiner.execute", 0);
 }
@@ -301,28 +315,41 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       // peek to see if something new has shown up, and execute that with
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
-    gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
-    GRPC_COMBINER_TRACE(
-        gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
-    if (n == NULL) {
-      // queue is in an inconsistent state: use this as a cue that we should
-      // go off and do something else for a while (and come back later)
-      GPR_TIMER_MARK("delay_busy", 0);
-      if (lock->optional_workqueue != NULL && is_covered_by_poller(lock)) {
-        queue_offload(exec_ctx, lock);
+    grpc_closure *cl = lock->active_combiner_queue.head;
+    if (cl != NULL) {
+      grpc_closure *next = cl->next_data.next;
+      lock->active_combiner_queue.head = next;
+      if (next == NULL) lock->active_combiner_queue.tail = NULL;
+      GPR_TIMER_BEGIN("combiner.exec1own", 0);
+      error_data err = unpack_error_data(cl->error_data.scratch);
+      cl->cb(exec_ctx, cl->cb_arg, err.error);
+      lock->active_combiner_covered_count -= err.covered_by_poller;
+      GRPC_ERROR_UNREF(err.error);
+      GPR_TIMER_END("combiner.exec1own", 0);
+    } else {
+      gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
+      GRPC_COMBINER_TRACE(
+          gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
+      if (n == NULL) {
+        // queue is in an inconsistent state: use this as a cue that we should
+        // go off and do something else for a while (and come back later)
+        GPR_TIMER_MARK("delay_busy", 0);
+        if (lock->optional_workqueue != NULL && is_covered_by_poller(lock)) {
+          queue_offload(exec_ctx, lock);
+        }
+        GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+        return true;
       }
-      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
-      return true;
+      GPR_TIMER_BEGIN("combiner.exec1", 0);
+      cl = (grpc_closure *)n;
+      error_data err = unpack_error_data(cl->error_data.scratch);
+      cl->cb(exec_ctx, cl->cb_arg, err.error);
+      if (err.covered_by_poller) {
+        gpr_atm_no_barrier_fetch_add(&lock->elements_covered_by_poller, -1);
+      }
+      GRPC_ERROR_UNREF(err.error);
+      GPR_TIMER_END("combiner.exec1", 0);
     }
-    GPR_TIMER_BEGIN("combiner.exec1", 0);
-    grpc_closure *cl = (grpc_closure *)n;
-    error_data err = unpack_error_data(cl->error_data.scratch);
-    cl->cb(exec_ctx, cl->cb_arg, err.error);
-    if (err.covered_by_poller) {
-      gpr_atm_no_barrier_fetch_add(&lock->elements_covered_by_poller, -1);
-    }
-    GRPC_ERROR_UNREF(err.error);
-    GPR_TIMER_END("combiner.exec1", 0);
   } else {
     grpc_closure *c = lock->final_list.head;
     GPR_ASSERT(c != NULL);
