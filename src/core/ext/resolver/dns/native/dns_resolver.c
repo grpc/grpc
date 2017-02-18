@@ -63,8 +63,6 @@ typedef struct {
   grpc_channel_args *channel_args;
   /** pollset_set to drive the name resolution process */
   grpc_pollset_set *interested_parties;
-  /** combiner (shared with client channel) */
-  grpc_combiner *combiner;
 
   /** are we currently resolving? */
   bool resolving;
@@ -194,7 +192,7 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
     grpc_closure_init(&r->on_retry, dns_on_retry_timer_locked, r,
-                      grpc_combiner_scheduler(r->combiner, false));
+                      grpc_combiner_scheduler(r->base.combiner, false));
     grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
   }
   if (r->resolved_result != NULL) {
@@ -216,7 +214,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   grpc_resolve_address(
       exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
       grpc_closure_create(dns_on_resolved_locked, r,
-                          grpc_combiner_scheduler(r->combiner, false)),
+                          grpc_combiner_scheduler(r->base.combiner, false)),
       &r->addresses);
 }
 
@@ -235,7 +233,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
-  GRPC_COMBINER_UNREF(exec_ctx, r->combiner, "dns_destroy");
+  GRPC_COMBINER_UNREF(exec_ctx, r->base.combiner, "dns_destroy");
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
@@ -259,8 +257,7 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
-  r->combiner = GRPC_COMBINER_REF(args->combiner, "dns_resolver");
-  grpc_resolver_init(&r->base, &dns_resolver_vtable);
+  grpc_resolver_init(&r->base, &dns_resolver_vtable, args->combiner);
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);

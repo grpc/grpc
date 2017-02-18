@@ -59,8 +59,6 @@ typedef struct {
   grpc_lb_addresses *addresses;
   /** channel args */
   grpc_channel_args *channel_args;
-  /** combiner guarding the rest of the state */
-  grpc_combiner *combiner;
   /** have we published? */
   bool published;
   /** pending next completion, or NULL */
@@ -127,7 +125,6 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
-  GRPC_COMBINER_UNREF(exec_ctx, r->combiner, "sockaddr_resolver");
   grpc_lb_addresses_destroy(exec_ctx, r->addresses);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
@@ -197,8 +194,7 @@ static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
   memset(r, 0, sizeof(*r));
   r->addresses = addresses;
   r->channel_args = grpc_channel_args_copy(args->args);
-  r->combiner = GRPC_COMBINER_REF(args->combiner, "sockaddr_resolver");
-  grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
+  grpc_resolver_init(&r->base, &sockaddr_resolver_vtable, args->combiner);
   return &r->base;
 }
 
