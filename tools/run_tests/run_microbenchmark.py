@@ -28,6 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import cgi
 import multiprocessing
 import os
 import subprocess
@@ -71,11 +72,12 @@ def heading(name):
 
 def link(txt, tgt):
   global index_html
-  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (tgt, txt)
+  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (
+      cgi.escape(tgt, quote=True), cgi.escape(txt))
 
 def text(txt):
   global index_html
-  index_html += "<p><pre>%s</pre></p>\n" % txt
+  index_html += "<p><pre>%s</pre></p>\n" % cgi.escape(txt)
 
 def collect_latency(bm_name, args):
   """generate latency profiles"""
@@ -91,7 +93,9 @@ def collect_latency(bm_name, args):
                                        '--benchmark_list_tests']).splitlines():
     link(line, '%s.txt' % fnize(line))
     benchmarks.append(
-        jobset.JobSpec(['bins/basicprof/%s' % bm_name, '--benchmark_filter=^%s$' % line],
+        jobset.JobSpec(['bins/basicprof/%s' % bm_name,
+                        '--benchmark_filter=^%s$' % line,
+                        '--benchmark_min_time=0.05'],
                        environ={'LATENCY_TRACE': '%s.trace' % fnize(line)}))
     profile_analysis.append(
         jobset.JobSpec([sys.executable,
@@ -103,7 +107,7 @@ def collect_latency(bm_name, args):
     # consume upwards of five gigabytes of ram in some cases, and so analysing
     # hundreds of them at once is impractical -- but we want at least some
     # concurrency or the work takes too long
-    if len(benchmarks) >= min(4, multiprocessing.cpu_count()):
+    if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
       jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
@@ -126,29 +130,57 @@ def collect_perf(bm_name, args):
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=mutrace', '-j', '%d' % multiprocessing.cpu_count()])
+  benchmarks = []
+  profile_analysis = []
+  cleanup = []
   for line in subprocess.check_output(['bins/mutrace/%s' % bm_name,
                                        '--benchmark_list_tests']).splitlines():
-    subprocess.check_call(['sudo', 'perf', 'record', '-o', 'perf.data',
-                           '-g', '-c', '1000',
-                           'bins/mutrace/%s' % bm_name,
-                           '--benchmark_filter=^%s$' % line,
-                           '--benchmark_min_time=20'])
-    subprocess.check_call(['sudo', 'perf', 'script', '-i', 'perf.data', '>', 'bm.perf'], shell=True)
-    subprocess.check_call([
-        '%s/stackcollapse-perf.pl' % flamegraph_dir, 'bm.perf', '>', 'bm.folded'], shell=True)
     link(line, '%s.svg' % fnize(line))
-    with open('reports/%s.svg' % fnize(line), 'w') as f:
-      f.write(subprocess.check_output([
-          '%s/flamegraph.pl' % flamegraph_dir, 'bm.folded']))
+    benchmarks.append(
+        jobset.JobSpec(['perf', 'record', '-o', '%s-perf.data' % fnize(line),
+                        '-g', '-F', '997',
+                        'bins/mutrace/%s' % bm_name,
+                        '--benchmark_filter=^%s$' % line,
+                        '--benchmark_min_time=10']))
+    profile_analysis.append(
+        jobset.JobSpec(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
+                       environ = {
+                           'PERF_BASE_NAME': fnize(line),
+                           'OUTPUT_DIR': 'reports',
+                           'OUTPUT_FILENAME': fnize(line),
+                       }))
+    cleanup.append(jobset.JobSpec(['rm', '%s-perf.data' % fnize(line)]))
+    cleanup.append(jobset.JobSpec(['rm', '%s-out.perf' % fnize(line)]))
+    # periodically flush out the list of jobs: temporary space required for this
+    # processing is large
+    if len(benchmarks) >= 20:
+      # run up to half the cpu count: each benchmark can use up to two cores
+      # (one for the microbenchmark, one for the data flush)
+      jobset.run(benchmarks, maxjobs=1,
+                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+      jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
+      benchmarks = []
+      profile_analysis = []
+      cleanup = []
+  # run the remaining benchmarks that weren't flushed
+  if len(benchmarks):
+    jobset.run(benchmarks, maxjobs=1,
+               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
+    jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
 def collect_summary(bm_name, args):
   heading('Summary: %s' % bm_name)
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
-  text(subprocess.check_output(['bins/counters/%s' % bm_name,
-                                '--benchmark_out=out.json',
-                                '--benchmark_out_format=json']))
+  cmd = ['bins/counters/%s' % bm_name,
+         '--benchmark_out=out.json',
+         '--benchmark_out_format=json']
+  if args.summary_time is not None:
+    cmd += ['--benchmark_min_time=%d' % args.summary_time]
+  text(subprocess.check_output(cmd))
   if args.bigquery_upload:
     with open('out.csv', 'w') as f:
       f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
@@ -167,7 +199,7 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack'],
+                  default=['bm_fullstack', 'bm_closure'],
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
@@ -176,6 +208,10 @@ argp.add_argument('--bigquery_upload',
                   action='store_const',
                   const=True,
                   help='Upload results from summary collection to bigquery')
+argp.add_argument('--summary_time',
+                  default=None,
+                  type=int,
+                  help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
 
 for bm_name in args.benchmarks:
