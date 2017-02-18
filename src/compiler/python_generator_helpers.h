@@ -44,11 +44,10 @@
 #include "src/compiler/python_private_generator.h"
 #include "src/compiler/generator_helpers.h"
 
+using std::vector;
 using grpc_generator::StringReplace;
 using grpc_generator::StripProto;
 using grpc::protobuf::Descriptor;
-using std::vector;
-
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::ServiceDescriptor;
@@ -135,7 +134,7 @@ StringVector get_all_comments(const DescriptorType* descriptor) {
 
 } // namespace
 
-}
+} // namespace grpc_python_generator
 
 
 #endif // GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_HELPERS_H

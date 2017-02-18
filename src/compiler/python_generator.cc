@@ -52,18 +52,10 @@
 #include "src/compiler/python_private_generator.h"
 #include "src/compiler/python_generator_helpers.h"
 
-using grpc_generator::StringReplace;
-using grpc_generator::StripProto;
-using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::compiler::GeneratorContext;
 using grpc::protobuf::io::CodedOutputStream;
-using grpc::protobuf::io::Printer;
-using grpc::protobuf::io::StringOutputStream;
 using grpc::protobuf::io::ZeroCopyOutputStream;
-using std::initializer_list;
 using std::make_pair;
 using std::map;
 using std::pair;
@@ -78,7 +70,6 @@ grpc::string generator_file_name;
 
 namespace {
 
-typedef vector<const Descriptor*> DescriptorVector;
 typedef map<grpc::string, grpc::string> StringMap;
 typedef vector<grpc::string> StringVector;
 typedef tuple<grpc::string, grpc::string> StringPair;
@@ -145,14 +136,14 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
-          method.get()->ClientStreaming() ? "request_iterator" : "request";
+          method->python_ClientStreaming() ? "request_iterator" : "request";
       StringMap method_dict;
-      method_dict["Method"] = method.get()->name();
+      method_dict["Method"] = method->name();
       method_dict["ArgName"] = arg_name;
       out->Print(method_dict, "def $Method$(self, $ArgName$, context):\n");
       {
         IndentScope raii_method_indent(out);
-        StringVector method_comments = method.get()->GetAllComments();
+        StringVector method_comments = method->GetAllComments();
         PrintAllComments(method_comments, out);
         out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
@@ -181,20 +172,20 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service,
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
-          method.get()->ClientStreaming() ? "request_iterator" : "request";
+          method->python_ClientStreaming() ? "request_iterator" : "request";
       StringMap method_dict;
-      method_dict["Method"] = method.get()->name();
+      method_dict["Method"] = method->name();
       method_dict["ArgName"] = arg_name;
       out->Print(method_dict,
                  "def $Method$(self, $ArgName$, timeout, metadata=None, "
                  "with_call=False, protocol_options=None):\n");
       {
         IndentScope raii_method_indent(out);
-        StringVector method_comments = method.get()->GetAllComments();
+        StringVector method_comments = method->GetAllComments();
         PrintAllComments(method_comments, out);
         out->Print("raise NotImplementedError()\n");
       }
-      if (!method.get()->ServerStreaming()) {
+      if (!method->python_ServerStreaming()) {
         out->Print(method_dict, "$Method$.future = None\n");
       }
     }
@@ -225,25 +216,25 @@ bool PrivateGenerator::PrintBetaServerFactory(
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       const grpc::string method_implementation_constructor =
-          grpc::string(method.get()->ClientStreaming() ? "stream_" : "unary_") +
-          grpc::string(method.get()->ServerStreaming() ? "stream_" : "unary_") +
+          grpc::string(method->python_ClientStreaming() ? "stream_" : "unary_") +
+          grpc::string(method->python_ServerStreaming() ? "stream_" : "unary_") +
           "inline";
       grpc::string input_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_input(&input_message_module_and_class,
-                                                           generator_file_name, generate_in_pb2_grpc)) {
+      if (!method->get_module_and_message_path_input(&input_message_module_and_class,
+                                                    generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       grpc::string output_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_output(&output_message_module_and_class,
-                                                            generator_file_name, generate_in_pb2_grpc)) {
+      if (!method->get_module_and_message_path_output(&output_message_module_and_class,
+                                                     generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       method_implementation_constructors.insert(
-          make_pair(method.get()->name(), method_implementation_constructor));
+          make_pair(method->name(), method_implementation_constructor));
       input_message_modules_and_classes.insert(
-          make_pair(method.get()->name(), input_message_module_and_class));
+          make_pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method.get()->name(), output_message_module_and_class));
+          make_pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -329,24 +320,24 @@ bool PrivateGenerator::PrintBetaStubFactory(
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       const grpc::string method_cardinality =
-          grpc::string(method.get()->ClientStreaming() ? "STREAM" : "UNARY") + "_" +
-          grpc::string(method.get()->ServerStreaming() ? "STREAM" : "UNARY");
+          grpc::string(method->python_ClientStreaming() ? "STREAM" : "UNARY") + "_" +
+          grpc::string(method->python_ServerStreaming() ? "STREAM" : "UNARY");
       grpc::string input_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_input(&input_message_module_and_class,
-                                                           generator_file_name, generate_in_pb2_grpc)) {
+      if (!method->get_module_and_message_path_input(&input_message_module_and_class,
+                                                    generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       grpc::string output_message_module_and_class;
-      if (!method.get()->get_module_and_message_path_output(&output_message_module_and_class,
-                                                            generator_file_name, generate_in_pb2_grpc)) {
+      if (!method->get_module_and_message_path_output(&output_message_module_and_class,
+                                                      generator_file_name, generate_in_pb2_grpc)) {
         return false;
       }
       method_cardinalities.insert(
-          make_pair(method.get()->name(), method_cardinality));
+          make_pair(method->name(), method_cardinality));
       input_message_modules_and_classes.insert(
-          make_pair(method.get()->name(), input_message_module_and_class));
+          make_pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method.get()->name(), output_message_module_and_class));
+          make_pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -430,20 +421,20 @@ bool PrivateGenerator::PrintStub(
       for (int i = 0; i < service->method_count(); ++i) {
         auto method = service->method(i);
         grpc::string multi_callable_constructor =
-            grpc::string(method.get()->ClientStreaming() ? "stream" : "unary") +
-            "_" + grpc::string(method.get()->ServerStreaming() ? "stream" : "unary");
+            grpc::string(method->python_ClientStreaming() ? "stream" : "unary") +
+            "_" + grpc::string(method->python_ServerStreaming() ? "stream" : "unary");
         grpc::string request_module_and_class;
-        if (!method.get()->get_module_and_message_path_input(&request_module_and_class,
-                                                             generator_file_name, generate_in_pb2_grpc)) {
+        if (!method->get_module_and_message_path_input(&request_module_and_class,
+                                                      generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         grpc::string response_module_and_class;
-        if (!method.get()->get_module_and_message_path_output(&response_module_and_class,
-                                                              generator_file_name, generate_in_pb2_grpc)) {
+        if (!method->get_module_and_message_path_output(&response_module_and_class,
+                                                        generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         StringMap method_dict;
-        method_dict["Method"] = method.get()->name();
+        method_dict["Method"] = method->name();
         method_dict["MultiCallableConstructor"] = multi_callable_constructor;
         out->Print(method_dict, "self.$Method$ = channel.$MultiCallableConstructor$(\n");
         {
@@ -478,15 +469,15 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       grpc::string arg_name =
-          method.get()->ClientStreaming() ? "request_iterator" : "request";
+          method->python_ClientStreaming() ? "request_iterator" : "request";
       StringMap method_dict;
-      method_dict["Method"] = method.get()->name();
+      method_dict["Method"] = method->name();
       method_dict["ArgName"] = arg_name;
       out->Print("\n");
       out->Print(method_dict, "def $Method$(self, $ArgName$, context):\n");
       {
         IndentScope raii_method_indent(out);
-        StringVector method_comments = method.get()->GetAllComments();
+        StringVector method_comments = method->GetAllComments();
         PrintAllComments(method_comments, out);
         out->Print("context.set_code(grpc.StatusCode.UNIMPLEMENTED)\n");
         out->Print("context.set_details('Method not implemented!')\n");
@@ -513,22 +504,22 @@ bool PrivateGenerator::PrintAddServicerToServer(
       for (int i = 0; i < service->method_count(); ++i) {
         auto method = service->method(i);
         grpc::string method_handler_constructor =
-            grpc::string(method.get()->ClientStreaming() ? "stream" : "unary") +
+            grpc::string(method->python_ClientStreaming() ? "stream" : "unary") +
             "_" +
-            grpc::string(method.get()->ServerStreaming() ? "stream" : "unary") +
+            grpc::string(method->python_ServerStreaming() ? "stream" : "unary") +
             "_rpc_method_handler";
         grpc::string request_module_and_class;
-        if (!method.get()->get_module_and_message_path_input(&request_module_and_class,
-                                                             generator_file_name, generate_in_pb2_grpc)) {
+        if (!method->get_module_and_message_path_input(&request_module_and_class,
+                                                      generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         grpc::string response_module_and_class;
-        if (!method.get()->get_module_and_message_path_output(&response_module_and_class,
-                                                              generator_file_name, generate_in_pb2_grpc)) {
+        if (!method->get_module_and_message_path_output(&response_module_and_class,
+                                                        generator_file_name, generate_in_pb2_grpc)) {
           return false;
         }
         StringMap method_dict;
-        method_dict["Method"] = method.get()->name();
+        method_dict["Method"] = method->name();
         method_dict["MethodHandlerConstructor"] = method_handler_constructor;
         method_dict["RequestModuleAndClass"] = request_module_and_class;
         method_dict["ResponseModuleAndClass"] = response_module_and_class;
