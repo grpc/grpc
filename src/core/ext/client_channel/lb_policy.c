@@ -94,7 +94,7 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_val =
       ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
   if (old_val == 1) {
-    grpc_pollset_set_destroy(policy->interested_parties);
+    grpc_pollset_set_destroy(exec_ctx, policy->interested_parties);
     policy->vtable->destroy(exec_ctx, policy);
   }
 }

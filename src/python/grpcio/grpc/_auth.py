@@ -48,11 +48,8 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
 
         # Hack to determine if these are JWT creds and we need to pass
         # additional_claims when getting a token
-        if 'additional_claims' in inspect.getargspec(
-                credentials.get_access_token).args:
-            self._is_jwt = True
-        else:
-            self._is_jwt = False
+        self._is_jwt = 'additional_claims' in inspect.getargspec(
+            credentials.get_access_token).args
 
     def __call__(self, context, callback):
         # MetadataPlugins cannot block (see grpc.beta.interfaces.py)

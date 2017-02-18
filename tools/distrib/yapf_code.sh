@@ -53,7 +53,7 @@ for dir in $DIRS; do
   tempdir=`mktemp -d`
   cp -RT $dir $tempdir
   $PYTHON -m yapf -i -r -p $exclusion_args $dir
-  if ! diff -rq $dir $tempdir; then
+  if ! diff -r $dir $tempdir; then
     script_result=1
   fi
   rm -rf $tempdir
