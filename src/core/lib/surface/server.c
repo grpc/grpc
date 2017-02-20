@@ -1198,7 +1198,9 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       crm->server_registered_method = rm;
       crm->flags = rm->flags;
       crm->has_host = has_host;
-      crm->host = host;
+      if(has_host)  {
+        crm->host = host;
+      }
       crm->method = method;
     }
     GPR_ASSERT(slots <= UINT32_MAX);
