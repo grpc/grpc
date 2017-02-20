@@ -74,6 +74,14 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
 
+static void BM_ErrorCreateAndSetInlinedInt(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    GRPC_ERROR_UNREF(grpc_error_set_int(GRPC_ERROR_CREATE("Error"),
+                                        GRPC_ERROR_INT_FILE_LINE, 0));
+  }
+}
+BENCHMARK(BM_ErrorCreateAndSetInlinedInt);
+
 static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
   grpc_error* error = GRPC_ERROR_CREATE("Error");
   int n = 0;
@@ -84,6 +92,16 @@ static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetIntLoop);
 
+static void BM_ErrorCreateAndSetInlinedIntLoop(benchmark::State& state) {
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  int n = 0;
+  while (state.KeepRunning()) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_FILE_LINE, n++);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+BENCHMARK(BM_ErrorCreateAndSetInlinedIntLoop);
+
 static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   grpc_error* error = GRPC_ERROR_CREATE("Error");
   const char* str = "hello";
@@ -93,6 +111,16 @@ static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   GRPC_ERROR_UNREF(error);
 }
 BENCHMARK(BM_ErrorCreateAndSetStrLoop);
+
+static void BM_ErrorCreateAndSetInlinedStrLoop(benchmark::State& state) {
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  const char* str = "hello";
+  while (state.KeepRunning()) {
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, str);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+BENCHMARK(BM_ErrorCreateAndSetInlinedStrLoop);
 
 static void BM_ErrorRefUnref(benchmark::State& state) {
   grpc_error* error = GRPC_ERROR_CREATE("Error");
@@ -137,6 +165,16 @@ static void BM_ErrorGetPresentInt(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_ErrorGetPresentInt);
+
+static void BM_ErrorGetPresentInlinedInt(benchmark::State& state) {
+  ErrorPtr error(grpc_error_set_int(GRPC_ERROR_CREATE("Error"),
+                                    GRPC_ERROR_INT_FILE_LINE, 1));
+  while (state.KeepRunning()) {
+    intptr_t value;
+    grpc_error_get_int(error.get(), GRPC_ERROR_INT_FILE_LINE, &value);
+  }
+}
+BENCHMARK(BM_ErrorGetPresentInlinedInt);
 
 // Fixtures for tests: generate different kinds of errors
 class ErrorNone {
