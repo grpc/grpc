@@ -248,9 +248,6 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 
 static grpc_error *copy_error_and_unref(grpc_error *in) {
   GPR_TIMER_BEGIN("copy_error_and_unref", 0);
-  if (gpr_ref_is_unique(&in->refs)) {
-    return in;
-  }
   grpc_error *out;
   if (grpc_error_is_special(in)) {
     if (in == GRPC_ERROR_NONE)
@@ -264,6 +261,8 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
                              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
     else
       out = GRPC_ERROR_CREATE("unknown");
+  } else if (gpr_ref_is_unique(&in->refs)) {
+    return in;
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
