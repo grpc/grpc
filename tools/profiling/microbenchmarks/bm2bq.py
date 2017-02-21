@@ -66,7 +66,8 @@ columns = [
   ('cli_stream_stalls_per_iteration', 'float'),
   ('svr_transport_stalls_per_iteration', 'float'),
   ('svr_stream_stalls_per_iteration', 'float'),
-  ('atm_rmw_per_iteration', 'float')
+  ('atm_cas_per_iteration', 'float')
+  ('atm_add_per_iteration', 'float')
 ]
 
 if sys.argv[1] == '--schema':
