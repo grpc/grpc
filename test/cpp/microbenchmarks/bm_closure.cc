@@ -65,9 +65,13 @@ class TrackCounters {
     out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                                        mu_locks_at_start_) /
                               (double)state_.iterations())
-        << " atm_rmw/iter:"
-        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_rmw) -
-                     rmw_at_start_) /
+        << " atm_cas/iter:"
+        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
+                     atm_cas_at_start_) /
+            (double)state_.iterations())
+        << " atm_add/iter:"
+        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
+                     atm_add_at_start_) /
             (double)state_.iterations());
 #endif
     state_.SetLabel(out.str());
@@ -77,7 +81,10 @@ class TrackCounters {
   benchmark::State& state_;
 #ifdef GPR_LOW_LEVEL_COUNTERS
   const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
-  const size_t rmw_at_start_ = gpr_atm_no_barrier_load(&gpr_counter_rmw);
+  const size_t atm_cas_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
+  const size_t atm_add_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_add);
 #endif
 };
 

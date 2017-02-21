@@ -101,7 +101,8 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 extern "C" gpr_atm gpr_mu_locks;
-extern "C" gpr_atm gpr_counter_rmw;
+extern "C" gpr_atm gpr_counter_atm_cas;
+extern "C" gpr_atm gpr_counter_atm_add;
 #endif
 
 class BaseFixture {
@@ -113,9 +114,13 @@ class BaseFixture {
     out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                                        mu_locks_at_start_) /
                               (double)s.iterations())
-        << " atm_rmw/iter:"
-        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_rmw) -
-                     rmw_at_start_) /
+        << " atm_cas/iter:"
+        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
+                     atm_cas_at_start_) /
+            (double)s.iterations())
+        << " atm_add/iter:"
+        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
+                     atm_add_at_start_) /
             (double)s.iterations());
 #endif
     grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
@@ -135,7 +140,10 @@ class BaseFixture {
  private:
 #ifdef GPR_LOW_LEVEL_COUNTERS
   const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
-  const size_t rmw_at_start_ = gpr_atm_no_barrier_load(&gpr_counter_rmw);
+  const size_t atm_cas_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
+  const size_t atm_add_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_add);
 #endif
   grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
 };
