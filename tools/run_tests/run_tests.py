@@ -422,7 +422,7 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      if config == 'dbg':
+      if self.config == 'dbg':
         config_flag = '--debug'
       else:
         config_flag = '--release'
