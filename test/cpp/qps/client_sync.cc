@@ -129,7 +129,9 @@ class SynchronousUnaryClient final : public SynchronousClient {
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
-    entry->set_value((UsageTimer::Now() - start) * 1e9);
+    if (s.ok()) {
+      entry->set_value((UsageTimer::Now() - start) * 1e9);
+    }
     entry->set_status(s.error_code());
     return true;
   }
@@ -154,7 +156,7 @@ class SynchronousStreamingClient final : public SynchronousClient {
         (*stream)->WritesDone();
         Status s = (*stream)->Finish();
         if (!s.ok()) {
-          gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
+          gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", i,
                   s.error_message().c_str());
         }
       }
@@ -170,7 +172,16 @@ class SynchronousStreamingClient final : public SynchronousClient {
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
+      // don't set the status since there isn't one yet
       return true;
+    }
+    stream_[thread_idx]->WritesDone();
+    Status s = stream_[thread_idx]->Finish();
+    // don't set the value since the stream is failed and shouldn't be timed
+    entry->set_status(s.error_code());
+    if (!s.ok()) {
+      gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", thread_idx,
+              s.error_message().c_str());
     }
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     context_[thread_idx].~ClientContext();
