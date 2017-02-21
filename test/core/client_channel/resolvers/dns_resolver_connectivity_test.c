@@ -38,7 +38,9 @@
 
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolver.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
