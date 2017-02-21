@@ -233,7 +233,6 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
-  GRPC_COMBINER_UNREF(exec_ctx, r->base.combiner, "dns_destroy");
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }

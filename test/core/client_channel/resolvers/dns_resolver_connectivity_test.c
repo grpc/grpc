@@ -36,11 +36,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/ext/client_channel/resolver.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolver.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
@@ -74,6 +74,7 @@ static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
   args.uri = uri;
+  args.combiner = g_combiner;
   grpc_resolver *resolver =
       grpc_resolver_factory_create_resolver(exec_ctx, factory, &args);
   grpc_resolver_factory_unref(factory);
@@ -99,6 +100,35 @@ static bool wait_loop(int deadline_seconds, gpr_event *ev) {
   return false;
 }
 
+typedef struct next_args {
+  grpc_resolver *resolver;
+  grpc_channel_args **result;
+  grpc_closure *on_complete;
+} next_args;
+
+static void call_resolver_next_now_lock_taken(grpc_exec_ctx *exec_ctx,
+                                              void *arg,
+                                              grpc_error *error_unused) {
+  next_args *a = arg;
+  grpc_resolver_next_locked(exec_ctx, a->resolver, a->result, a->on_complete);
+  gpr_free(a);
+}
+
+static void call_resolver_next_after_locking(grpc_exec_ctx *exec_ctx,
+                                             grpc_resolver *resolver,
+                                             grpc_channel_args **result,
+                                             grpc_closure *on_complete) {
+  next_args *a = gpr_malloc(sizeof(*a));
+  a->resolver = resolver;
+  a->result = result;
+  a->on_complete = on_complete;
+  grpc_closure_sched(
+      exec_ctx,
+      grpc_closure_create(call_resolver_next_now_lock_taken, a,
+                          grpc_combiner_scheduler(resolver->combiner, false)),
+      GRPC_ERROR_NONE);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
@@ -112,7 +142,7 @@ int main(int argc, char **argv) {
   grpc_resolver *resolver = create_resolver(&exec_ctx, "dns:test");
   gpr_event ev1;
   gpr_event_init(&ev1);
-  grpc_resolver_next(
+  call_resolver_next_after_locking(
       &exec_ctx, resolver, &result,
       grpc_closure_create(on_done, &ev1, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
@@ -121,7 +151,7 @@ int main(int argc, char **argv) {
 
   gpr_event ev2;
   gpr_event_init(&ev2);
-  grpc_resolver_next(
+  call_resolver_next_after_locking(
       &exec_ctx, resolver, &result,
       grpc_closure_create(on_done, &ev2, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
@@ -130,7 +160,7 @@ int main(int argc, char **argv) {
 
   grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
-  grpc_combiner_unref(&exec_ctx, g_combiner);
+  GRPC_COMBINER_UNREF(&exec_ctx, g_combiner, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();
