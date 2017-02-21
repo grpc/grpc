@@ -66,6 +66,7 @@ columns = [
   ('cli_stream_stalls_per_iteration', 'float'),
   ('svr_transport_stalls_per_iteration', 'float'),
   ('svr_stream_stalls_per_iteration', 'float'),
+  ('atm_rmw_per_iteration', 'float')
 ]
 
 if sys.argv[1] == '--schema':
@@ -158,7 +159,7 @@ def parse_name(name):
 for bm in js['benchmarks']:
   context = js['context']
   if 'label' in bm:
-    labels_list = [s.split(':') for s in bm['label'].split(' ')]
+    labels_list = [s.split(':') for s in bm['label'].strip().split(' ')]
     for el in labels_list:
       el[0] = el[0].replace('/iter', '_per_iteration')
     labels = dict(labels_list)
