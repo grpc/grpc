@@ -217,7 +217,7 @@ CC_counters = $(DEFAULT_CC)
 CXX_counters = $(DEFAULT_CXX)
 LD_counters = $(DEFAULT_CC)
 LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_MU_COUNTERS
+CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
 DEFINES_counters = NDEBUG
 
 
