@@ -321,44 +321,8 @@ unsigned int parse_h2_length(const char *field) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 2;
-  op->data.send_initial_metadata.metadata = meta_c;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), (void *)1, NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Coalescing"];
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"Coalescing"];
 
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -425,6 +389,46 @@ unsigned int parse_h2_length(const char *field) {
         [expectation fulfill];
       });
 
+  // Guarantees that server is listening to the port before client connects.
+  sleep(1);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 2;
+  op->data.send_initial_metadata.metadata = meta_c;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &response_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), (void *)1, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
   CQ_EXPECT_COMPLETION(cqv, (void *)1, 1);
   cq_verify(cqv);
 
@@ -445,7 +449,7 @@ unsigned int parse_h2_length(const char *field) {
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
-  
+
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
