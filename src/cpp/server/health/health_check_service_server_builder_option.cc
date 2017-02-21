@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,20 @@
  *
  */
 
-/*******************************************************************************
- * NOTE: If this test fails to compile, then the api changes are likely to cause
- *       merge failures downstream. Please pay special attention to reviewing
- *       these changes, and solicit help as appropriate when merging downstream.
- *
- * This test is NOT expected to be run directly.
- ******************************************************************************/
+#include <grpc++/ext/health_check_service_server_builder_option.h>
 
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/tmpfile.h"
+namespace grpc {
 
-static void test_code(void) {
-  /* env.h */
-  gpr_set_env("abc", gpr_getenv("xyz"));
-  /* load_file.h */
-  grpc_load_file("abc", 1, NULL);
-  /* tmpfile.h */
-  fclose(gpr_tmpfile("foo", NULL));
+HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
+    std::unique_ptr<HealthCheckServiceInterface> hc)
+    : hc_(std::move(hc)) {}
+// Hand over hc_ to the server.
+void HealthCheckServiceServerBuilderOption::UpdateArguments(
+    ChannelArguments* args) {
+  args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
 }
 
-int main(void) {
-  if (false) test_code();
-  return 0;
-}
+void HealthCheckServiceServerBuilderOption::UpdatePlugins(
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) {}
+
+}  // namespace grpc

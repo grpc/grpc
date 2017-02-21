@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{ED24E700-964E-B426-6A6A-1944E2EF7BCB}</ProjectGuid>
+    <ProjectGuid>{3EB2B3E9-8BC3-8DF7-82CB-38462FFE5919}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -53,21 +53,23 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\..\vsprojects\cpptest.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\openssl.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protobuf.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\zlib.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>internal_api_canary_transport_test</TargetName>
+    <TargetName>health_service_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>internal_api_canary_transport_test</TargetName>
+    <TargetName>health_service_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -158,12 +160,18 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\internal_api_canaries\iomgr.c">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\health_service_end2end_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
+      <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
+      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
       <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
