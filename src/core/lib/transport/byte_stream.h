@@ -52,6 +52,8 @@ struct grpc_byte_stream {
   int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
               grpc_slice *slice, size_t max_size_hint,
               grpc_closure *on_complete);
+  void (*pull)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+               grpc_slice *slice);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 

@@ -1177,10 +1177,13 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
+  grpc_byte_stream *bs = call->receiving_stream;
 
   if (error == GRPC_ERROR_NONE) {
+    grpc_slice slice;
+    bs->pull(exec_ctx, bs, &slice);
     grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                          call->receiving_slice);
+                          slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
     if (grpc_trace_operation_failures) {
