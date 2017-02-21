@@ -223,7 +223,7 @@ bool Http2Client::DoMaxStreams() {
 }  // namespace grpc
 
 DEFINE_int32(server_port, 0, "Server port.");
-DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
+DEFINE_string(server_host, "localhost", "Server host to connect to");
 DEFINE_string(test_case, "rst_after_header",
               "Configure different test cases. Valid options are:\n\n"
               "goaway\n"

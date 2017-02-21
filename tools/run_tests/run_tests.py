@@ -1099,6 +1099,18 @@ def runs_per_test_type(arg_str):
         raise argparse.ArgumentTypeError(msg)
 
 
+def percent_type(arg_str):
+  pct = float(arg_str)
+  if pct > 100 or pct < 0:
+    raise argparse.ArgumentTypeError(
+        "'%f' is not a valid percentage in the [0, 100] range" % pct)
+  return pct
+
+# This is math.isclose in python >= 3.5
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+      return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -1111,6 +1123,8 @@ argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
+argp.add_argument('-p', '--sample_percent', default=100.0, type=percent_type,
+                  help='Run a random sample with that percentage of tests')
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -1443,8 +1457,18 @@ def _build_and_run(
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.
-      massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
-      random.shuffle(massaged_one_run)  # which it modifies in-place.
+      massaged_one_run = list(one_run)  # random.sample needs an indexable seq.
+      num_jobs = len(massaged_one_run)
+      # for a random sample, get as many as indicated by the 'sample_percent'
+      # argument. By default this arg is 100, resulting in a shuffle of all
+      # jobs.
+      sample_size = int(num_jobs * args.sample_percent/100.0)
+      massaged_one_run = random.sample(massaged_one_run, sample_size)
+      if not isclose(args.sample_percent, 100.0):
+        print("Running %d tests out of %d (~%d%%)" %
+              (sample_size, num_jobs, args.sample_percent))
+      else:
+        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
     if infinite_runs:
       assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
@@ -1455,7 +1479,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)

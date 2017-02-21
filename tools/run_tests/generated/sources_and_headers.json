@@ -2894,6 +2894,25 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "health_service_end2end_test", 
+    "src": [
+      "test/cpp/end2end/health_service_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -5492,23 +5511,6 @@
     "type": "lib"
   }, 
   {
-    "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "include/grpc++/test/server_context_test_spouse.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_test", 
-    "src": [
-      "include/grpc++/test/server_context_test_spouse.h", 
-      "src/cpp/test/server_context_test_spouse.cc"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
     "deps": [], 
     "headers": [
       "test/cpp/util/test_config.h"
@@ -5534,6 +5536,8 @@
       "thrift_util"
     ], 
     "headers": [
+      "src/proto/grpc/health/v1/health.grpc.pb.h", 
+      "src/proto/grpc/health/v1/health.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
       "src/proto/grpc/testing/echo.grpc.pb.h", 
@@ -7100,6 +7104,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -7220,6 +7225,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -8121,9 +8127,11 @@
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/create_channel_posix.h", 
+      "include/grpc++/ext/health_check_service_server_builder_option.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
+      "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -8160,6 +8168,8 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/health/default_health_check_service.h", 
+      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
     ], 
@@ -8173,9 +8183,11 @@
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/create_channel_posix.h", 
+      "include/grpc++/ext/health_check_service_server_builder_option.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
+      "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -8229,6 +8241,12 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/health/default_health_check_service.cc", 
+      "src/cpp/server/health/default_health_check_service.h", 
+      "src/cpp/server/health/health.pb.c", 
+      "src/cpp/server/health/health.pb.h", 
+      "src/cpp/server/health/health_check_service.cc", 
+      "src/cpp/server/health/health_check_service_server_builder_option.cc", 
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_cc.cc", 
       "src/cpp/server/server_context.cc", 
@@ -8375,6 +8393,22 @@
     "language": "c++", 
     "name": "grpc++_reflection_proto", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpc++_test", 
+    "src": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

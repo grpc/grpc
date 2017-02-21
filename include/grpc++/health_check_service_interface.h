@@ -31,23 +31,38 @@
  *
  */
 
-#include <grpc++/test/server_context_test_spouse.h>
+#ifndef GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
+#define GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
+
+#include <grpc++/support/config.h>
 
 namespace grpc {
-namespace testing {
 
-void ServerContextTestSpouse::AddClientMetadata(const grpc::string& key,
-                                                const grpc::string& value) {
-  client_metadata_storage_.insert(
-      std::pair<grpc::string, grpc::string>(key, value));
-  ctx_->client_metadata_.map()->clear();
-  for (auto iter = client_metadata_storage_.begin();
-       iter != client_metadata_storage_.end(); ++iter) {
-    ctx_->client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(iter->first.c_str(),
-                                                      iter->second.c_str()));
-  }
-}
+const char kHealthCheckServiceInterfaceArg[] =
+    "grpc.health_check_service_interface";
 
-}  // namespace testing
+// The gRPC server uses this interface to expose the health checking service
+// without depending on protobuf.
+class HealthCheckServiceInterface {
+ public:
+  virtual ~HealthCheckServiceInterface() {}
+
+  // Set or change the serving status of the given service_name.
+  virtual void SetServingStatus(const grpc::string& service_name,
+                                bool serving) = 0;
+  // Apply to all registered service names.
+  virtual void SetServingStatus(bool serving) = 0;
+};
+
+// Enable/disable the default health checking service. This applies to all C++
+// servers created afterwards. For each server, user can override the default
+// with a HealthCheckServiceServerBuilderOption.
+// NOT thread safe.
+void EnableDefaultHealthCheckService(bool enable);
+
+// NOT thread safe.
+bool DefaultHealthCheckServiceEnabled();
+
 }  // namespace grpc
+
+#endif  // GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
