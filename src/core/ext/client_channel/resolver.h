@@ -44,6 +44,7 @@ typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
   gpr_refcount refs;
+  grpc_combiner *combiner;
 };
 
 struct grpc_resolver_vtable {
@@ -71,7 +72,8 @@ void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *policy);
 #endif
 
 void grpc_resolver_init(grpc_resolver *resolver,
-                        const grpc_resolver_vtable *vtable);
+                        const grpc_resolver_vtable *vtable,
+                        grpc_combiner *combiner);
 
 void grpc_resolver_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_resolver *resolver);

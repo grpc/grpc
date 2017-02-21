@@ -2369,6 +2369,24 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_closure", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_closure.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -5380,7 +5398,8 @@
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto"
     ], 
     "headers": [
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -5468,23 +5487,6 @@
       "src/cpp/ext/proto_server_reflection.cc", 
       "src/cpp/ext/proto_server_reflection.h", 
       "src/cpp/ext/proto_server_reflection_plugin.cc"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "include/grpc++/test/server_context_test_spouse.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_test", 
-    "src": [
-      "include/grpc++/test/server_context_test_spouse.h", 
-      "src/cpp/test/server_context_test_spouse.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7081,6 +7083,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -7201,6 +7204,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -7778,7 +7782,8 @@
       "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
-      "test/core/util/slice_splitter.h"
+      "test/core/util/slice_splitter.h", 
+      "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -7813,7 +7818,9 @@
       "test/core/util/port_uv.c", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
-      "test/core/util/slice_splitter.h"
+      "test/core/util/slice_splitter.h", 
+      "test/core/util/trickle_endpoint.c", 
+      "test/core/util/trickle_endpoint.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8028,6 +8035,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h", 
       "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
@@ -8039,7 +8047,8 @@
       "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
-      "src/core/ext/transport/cronet/transport/cronet_transport.c"
+      "src/core/ext/transport/cronet/transport/cronet_transport.c", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8351,6 +8360,22 @@
     "language": "c++", 
     "name": "grpc++_reflection_proto", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpc++_test", 
+    "src": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

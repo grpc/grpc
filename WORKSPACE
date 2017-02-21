@@ -28,6 +28,11 @@ bind(
     actual = "@submodule_protobuf//:protoc",
 )
 
+bind(
+    name = "gtest",
+    actual = "@submodule_gtest//:gtest",
+)
+
 new_local_repository(
     name = "submodule_boringssl",
     path = "third_party/boringssl-with-bazel",
@@ -44,4 +49,10 @@ new_local_repository(
     name = "submodule_protobuf",
     path = "third_party/protobuf",
     build_file = "third_party/protobuf/BUILD",
+)
+
+new_local_repository(
+    name = "submodule_gtest",
+    path = "third_party/googletest",
+    build_file = "third_party/gtest.BUILD",
 )

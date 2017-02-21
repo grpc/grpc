@@ -481,7 +481,10 @@ void grpc_call_destroy(grpc_call *c) {
   c->destroy_called = 1;
   cancel = !c->received_final_op;
   gpr_mu_unlock(&c->mu);
-  if (cancel) grpc_call_cancel(c, NULL);
+  if (cancel) {
+    cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
+                      GRPC_ERROR_CANCELLED);
+  }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_destroy", 0);
@@ -490,8 +493,11 @@ void grpc_call_destroy(grpc_call *c) {
 grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
   GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(!reserved);
-  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
-                                      NULL);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  cancel_with_error(&exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                    GRPC_ERROR_CANCELLED);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return GRPC_CALL_OK;
 }
 
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,

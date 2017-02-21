@@ -87,6 +87,12 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
     if (uri != NULL) grpc_uri_destroy(uri);
     return false;
   }
+  if (strcmp(uri->scheme, "unix") == 0) {
+    gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
+            server_uri);
+    grpc_uri_destroy(uri);
+    return false;
+  }
   grpc_arg new_arg;
   new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
   new_arg.type = GRPC_ARG_STRING;
