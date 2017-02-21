@@ -31,6 +31,7 @@
 
 from __future__ import print_function
 
+import logging
 import multiprocessing
 import os
 import platform
@@ -128,7 +129,8 @@ _TAG_COLOR = {
     'SKIPPED': 'cyan'
     }
 
-
+FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
     return
@@ -137,8 +139,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   try:
     if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
-        print(explanatory_text)
-      print('%s: %s' % (tag, msg))
+        logging.info(explanatory_text)
+      logging.info('%s: %s', tag, msg)
     else:
       sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
           _BEGINNING_OF_LINE,
