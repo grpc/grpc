@@ -42,8 +42,9 @@
 #include <time.h>
 #include "src/core/lib/profiling/timers.h"
 
-#ifdef GPR_MU_COUNTERS
-gpr_atm grpc_mu_locks = 0;
+#ifdef GPR_LOW_LEVEL_COUNTERS
+gpr_atm gpr_mu_locks = 0;
+gpr_atm gpr_counter_rmw = 0;
 #endif
 
 void gpr_mu_init(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
@@ -51,8 +52,8 @@ void gpr_mu_init(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
 void gpr_mu_destroy(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
 
 void gpr_mu_lock(gpr_mu* mu) {
-#ifdef GPR_MU_COUNTERS
-  gpr_atm_no_barrier_fetch_add(&grpc_mu_locks, 1);
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  GPR_ATM_INC_COUNTER(gpr_mu_locks);
 #endif
   GPR_TIMER_BEGIN("gpr_mu_lock", 0);
   GPR_ASSERT(pthread_mutex_lock(mu) == 0);

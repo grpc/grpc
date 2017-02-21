@@ -99,8 +99,9 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
-#ifdef GPR_MU_COUNTERS
-extern "C" gpr_atm grpc_mu_locks;
+#ifdef GPR_LOW_LEVEL_COUNTERS
+extern "C" gpr_atm gpr_mu_locks;
+extern "C" gpr_atm gpr_counter_rmw;
 #endif
 
 class BaseFixture {
@@ -108,10 +109,14 @@ class BaseFixture {
   void Finish(benchmark::State& s) {
     std::ostringstream out;
     this->AddToLabel(out, s);
-#ifdef GPR_MU_COUNTERS
-    out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&grpc_mu_locks) -
+#ifdef GPR_LOW_LEVEL_COUNTERS
+    out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                                        mu_locks_at_start_) /
-                              (double)s.iterations());
+                              (double)s.iterations())
+        << " atm_rmw/iter:"
+        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_rmw) -
+                     rmw_at_start_) /
+            (double)s.iterations());
 #endif
     grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
     out << " allocs/iter:"
@@ -128,8 +133,9 @@ class BaseFixture {
   virtual void AddToLabel(std::ostream& out, benchmark::State& s) = 0;
 
  private:
-#ifdef GPR_MU_COUNTERS
-  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&grpc_mu_locks);
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
+  const size_t rmw_at_start_ = gpr_atm_no_barrier_load(&gpr_counter_rmw);
 #endif
   grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
 };
