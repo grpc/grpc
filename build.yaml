@@ -2357,8 +2357,8 @@ targets:
   - gpr
 - name: lb_policies_test
   cpu_cost: 0.1
-  flaky: true
   build: test
+  run: false
   language: c
   src:
   - test/core/client_channel/lb_policies_test.c
