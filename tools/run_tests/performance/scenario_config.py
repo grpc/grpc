@@ -246,6 +246,18 @@ class CXXLanguage:
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
+          for size in geometric_progression(1, 1024*1024*1024+1, 8):
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_%s_ping_pong_%s_%db' % (synchronicity, rpc_type, secstr, size),
+                  rpc_type=rpc_type.upper(),
+                  req_size=size,
+                  resp_size=size,
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  async_server_threads=1,
+                  secure=secure,
+                  categories=[SWEEP])
+
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
               rpc_type=rpc_type.upper(),
