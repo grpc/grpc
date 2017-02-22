@@ -105,7 +105,6 @@ static grpc_error *process_send_initial_metadata(
 static grpc_error *process_send_initial_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_metadata_batch *initial_metadata) {
-  grpc_error *error;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   /* Parse incoming request for compression. If any, it'll be available
@@ -144,10 +143,13 @@ static grpc_error *process_send_initial_metadata(
     calld->has_compression_algorithm = 1; /* GPR_TRUE */
   }
 
+  grpc_error *error = GRPC_ERROR_NONE;
   /* hint compression algorithm */
-  error = grpc_metadata_batch_add_tail(
-      exec_ctx, initial_metadata, &calld->compression_algorithm_storage,
-      grpc_compression_encoding_mdelem(calld->compression_algorithm));
+  if (calld->compression_algorithm != GRPC_COMPRESS_NONE) {
+    error = grpc_metadata_batch_add_tail(
+        exec_ctx, initial_metadata, &calld->compression_algorithm_storage,
+        grpc_compression_encoding_mdelem(calld->compression_algorithm));
+  }
 
   if (error != GRPC_ERROR_NONE) return error;
 

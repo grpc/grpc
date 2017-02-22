@@ -41,6 +41,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/useful.h>
 
 static __thread char magic_thread_local;
 
@@ -60,18 +61,12 @@ unsigned gpr_cpu_num_cores(void) {
   return (unsigned)ncpus;
 }
 
-/* This is a cheap, but good enough, pointer hash for sharding things: */
-static size_t shard_ptr(const void *info) {
-  size_t x = (size_t)info;
-  return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) % gpr_cpu_num_cores();
-}
-
 unsigned gpr_cpu_current_cpu(void) {
   /* NOTE: there's no way I know to return the actual cpu index portably...
      most code that's using this is using it to shard across work queues though,
      so here we use thread identity instead to achieve a similar though not
      identical effect */
-  return (unsigned)shard_ptr(&magic_thread_local);
+  return (unsigned)GPR_HASH_POINTER(&magic_thread_local, gpr_cpu_num_cores());
 }
 
 #endif /* GPR_CPU_POSIX */

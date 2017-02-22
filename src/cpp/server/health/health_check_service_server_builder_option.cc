@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,55 +31,20 @@
  *
  */
 
-#include <set>
-
-#include <grpc/support/log.h>
-
-#include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/report.h"
-#include "test/cpp/util/benchmark_config.h"
-
-extern "C" {
-#include "src/core/lib/iomgr/pollset_posix.h"
-}
+#include <grpc++/ext/health_check_service_server_builder_option.h>
 
 namespace grpc {
-namespace testing {
 
-static const int WARMUP = 5;
-static const int BENCHMARK = 5;
-
-static void RunQPS() {
-  gpr_log(GPR_INFO, "Running QPS test");
-
-  ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_outstanding_rpcs_per_channel(1000);
-  client_config.set_client_channels(8);
-  client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
-  client_config.mutable_load_params()->mutable_closed_loop();
-
-  ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_async_server_threads(4);
-
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  GetReporter()->ReportQPSPerCore(*result);
-  GetReporter()->ReportLatency(*result);
+HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
+    std::unique_ptr<HealthCheckServiceInterface> hc)
+    : hc_(std::move(hc)) {}
+// Hand over hc_ to the server.
+void HealthCheckServiceServerBuilderOption::UpdateArguments(
+    ChannelArguments* args) {
+  args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
 }
 
-}  // namespace testing
+void HealthCheckServiceServerBuilderOption::UpdatePlugins(
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) {}
+
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
-
-  grpc_platform_become_multipoller = grpc_poll_become_multipoller;
-
-  grpc::testing::RunQPS();
-
-  return 0;
-}
