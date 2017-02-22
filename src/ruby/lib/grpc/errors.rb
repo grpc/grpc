@@ -65,7 +65,7 @@ module GRPC
       Struct::Status.new(code, details, @metadata)
     end
 
-    def self.new_status_exception(code, details = 'unkown cause', metadata = {})
+    def self.new_status_exception(code, details = 'unknown cause', metadata = {})
       codes = {}
       codes[OK] = Ok
       codes[CANCELLED] = Cancelled
