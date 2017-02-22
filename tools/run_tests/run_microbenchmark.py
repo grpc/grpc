@@ -199,7 +199,7 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack', 'bm_closure'],
+                  default=['bm_fullstack', 'bm_closure', 'bm_cq'],
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
