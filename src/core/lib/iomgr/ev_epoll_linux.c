@@ -282,7 +282,7 @@ static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(desc);
+    *composite = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(desc));
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -1064,14 +1064,17 @@ static grpc_error *fd_shutdown_error(grpc_fd *fd) {
   if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
+    return GRPC_ERROR_CREATE_REFERENCING(
+        grpc_slice_from_static_string("FD shutdown"), &fd->shutdown_error, 1);
   }
 }
 
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (fd->shutdown) {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"));
+    grpc_closure_sched(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("FD shutdown")));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;

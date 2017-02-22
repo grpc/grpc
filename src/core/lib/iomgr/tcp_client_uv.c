@@ -93,7 +93,8 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
     *connect->endpoint = grpc_tcp_create(
         connect->tcp_handle, connect->resource_quota, connect->addr_name);
   } else {
-    error = GRPC_ERROR_CREATE("Failed to connect to remote host");
+    error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to connect to remote host"));
     error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, -status);
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));

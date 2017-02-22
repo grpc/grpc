@@ -244,7 +244,8 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
   // The last argument to uv_tcp_bind is flags
   status = uv_tcp_bind(handle, (struct sockaddr *)addr->addr, 0);
   if (status != 0) {
-    error = GRPC_ERROR_CREATE("Failed to bind to port");
+    error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to bind to port"));
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     return error;
@@ -252,7 +253,8 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
 
   status = uv_listen((uv_stream_t *)handle, SOMAXCONN, on_connect);
   if (status != 0) {
-    error = GRPC_ERROR_CREATE("Failed to listen to port");
+    error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to listen to port"));
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     return error;
@@ -262,7 +264,8 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
   status = uv_tcp_getsockname(handle, (struct sockaddr *)&sockname_temp.addr,
                               (int *)&sockname_temp.len);
   if (status != 0) {
-    error = GRPC_ERROR_CREATE("getsockname failed");
+    error =
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("getsockname failed"));
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     return error;
@@ -346,7 +349,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   if (status == 0) {
     error = add_socket_to_server(s, handle, addr, port_index, &sp);
   } else {
-    error = GRPC_ERROR_CREATE("Failed to initialize UV tcp handle");
+    error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to initialize UV tcp handle"));
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
   }
