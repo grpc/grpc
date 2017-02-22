@@ -274,7 +274,8 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
   grpc_connector_shutdown(exec_ctx, c->connector,
-                          GRPC_ERROR_CREATE("Subchannel disconnected"));
+                          GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                              "Subchannel disconnected")));
   con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
   if (con != NULL) {
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, con, "connection");
@@ -446,7 +447,8 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_mu_lock(&c->mu);
   c->have_alarm = false;
   if (c->disconnected) {
-    error = GRPC_ERROR_CREATE_REFERENCING("Disconnected", &error, 1);
+    error = GRPC_ERROR_CREATE_REFERENCING(
+        grpc_slice_from_static_string("Disconnected"), &error, 1);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -698,7 +700,8 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
+            GRPC_ERROR_CREATE_REFERENCING(
+                grpc_slice_from_static_string("Connect Failed"), &error, 1),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         "connect_failed");
 

@@ -342,7 +342,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
     char* msg;
     gpr_asprintf(&msg, "HTTP proxy got request method %s",
                  conn->http_request.method);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
     gpr_free(msg);
     proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                             "HTTP proxy read request", error);

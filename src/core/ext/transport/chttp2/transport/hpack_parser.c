@@ -693,7 +693,8 @@ static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
   }
   if (p->on_header == NULL) {
     GRPC_MDELEM_UNREF(exec_ctx, md);
-    return GRPC_ERROR_CREATE("on_header callback not set");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("on_header callback not set"));
   }
   p->on_header(exec_ctx, p->on_header_user_data, md);
   return GRPC_ERROR_NONE;
@@ -810,7 +811,8 @@ static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (GRPC_MDISNULL(md)) {
     return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
+        grpc_error_set_int(GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Invalid HPACK index received")),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
@@ -1074,8 +1076,8 @@ static grpc_error *parse_max_tbl_size(grpc_exec_ctx *exec_ctx,
   if (p->dynamic_table_update_allowed == 0) {
     return parse_error(
         exec_ctx, p, cur, end,
-        GRPC_ERROR_CREATE(
-            "More than two max table size changes in a single frame"));
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+            "More than two max table size changes in a single frame")));
   }
   p->dynamic_table_update_allowed--;
   p->index = (*cur) & 0x1f;
@@ -1092,8 +1094,8 @@ static grpc_error *parse_max_tbl_size_x(grpc_exec_ctx *exec_ctx,
   if (p->dynamic_table_update_allowed == 0) {
     return parse_error(
         exec_ctx, p, cur, end,
-        GRPC_ERROR_CREATE(
-            "More than two max table size changes in a single frame"));
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+            "More than two max table size changes in a single frame")));
   }
   p->dynamic_table_update_allowed--;
   p->next_state = and_then;
@@ -1126,7 +1128,7 @@ static grpc_error *parse_illegal_op(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(cur != end);
   char *msg;
   gpr_asprintf(&msg, "Illegal hpack op code %d", *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1246,7 +1248,7 @@ error:
                "integer overflow in hpack integer decoding: have 0x%08x, "
                "got byte 0x%02x on byte 5",
                *p->parsing.value, *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1275,7 +1277,7 @@ static grpc_error *parse_value5up(grpc_exec_ctx *exec_ctx,
                "integer overflow in hpack integer decoding: have 0x%08x, "
                "got byte 0x%02x sometime after byte 5",
                *p->parsing.value, *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1334,7 +1336,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       ++cur;
       if (bits == 255)
         return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+                           GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Illegal base64 character")));
       else if (bits == 64)
         goto b64_byte0;
       p->base64_buffer = bits << 18;
@@ -1349,7 +1352,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       ++cur;
       if (bits == 255)
         return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+                           GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Illegal base64 character")));
       else if (bits == 64)
         goto b64_byte1;
       p->base64_buffer |= bits << 12;
@@ -1364,7 +1368,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       ++cur;
       if (bits == 255)
         return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+                           GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Illegal base64 character")));
       else if (bits == 64)
         goto b64_byte2;
       p->base64_buffer |= bits << 6;
@@ -1379,7 +1384,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       ++cur;
       if (bits == 255)
         return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+                           GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Illegal base64 character")));
       else if (bits == 64)
         goto b64_byte3;
       p->base64_buffer |= bits;
@@ -1391,7 +1397,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       goto b64_byte0;
   }
   GPR_UNREACHABLE_CODE(return parse_error(
-      exec_ctx, p, cur, end, GRPC_ERROR_CREATE("Should never reach here")));
+      exec_ctx, p, cur, end, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                                 "Should never reach here"))));
 }
 
 static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
@@ -1408,14 +1415,15 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
     case B64_BYTE1:
       return parse_error(
           exec_ctx, p, cur, end,
-          GRPC_ERROR_CREATE("illegal base64 encoding")); /* illegal encoding */
+          GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+              "illegal base64 encoding"))); /* illegal encoding */
     case B64_BYTE2:
       bits = p->base64_buffer;
       if (bits & 0xffff) {
         char *msg;
         gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%04x",
                      bits & 0xffff);
-        grpc_error *err = GRPC_ERROR_CREATE(msg);
+        grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
@@ -1428,7 +1436,7 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
         char *msg;
         gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%02x",
                      bits & 0xff);
-        grpc_error *err = GRPC_ERROR_CREATE(msg);
+        grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
@@ -1550,7 +1558,8 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
   grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (GRPC_MDISNULL(elem)) {
     return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
+        grpc_error_set_int(GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                               "Invalid HPACK index received")),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
@@ -1670,15 +1679,16 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
   if (is_last) {
     if (parser->is_boundary && parser->state != parse_begin) {
       GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
-      return GRPC_ERROR_CREATE(
-          "end of header frame not aligned with a hpack record boundary");
+      return GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+          "end of header frame not aligned with a hpack record boundary"));
     }
     /* need to check for null stream: this can occur if we receive an invalid
        stream id on a header */
     if (s != NULL) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-          return GRPC_ERROR_CREATE("Too many trailer frames");
+          return GRPC_ERROR_CREATE(
+              grpc_slice_from_static_string("Too many trailer frames"));
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

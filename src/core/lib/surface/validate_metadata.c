@@ -52,8 +52,9 @@ static grpc_error *conforms_to(grpc_slice slice, const uint8_t *legal_bits,
     if ((legal_bits[byte] & (1 << bit)) == 0) {
       char *dump = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       grpc_error *error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE(err_desc), GRPC_ERROR_INT_OFFSET,
-                             p - GRPC_SLICE_START_PTR(slice)),
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE(grpc_slice_from_static_string(err_desc)),
+              GRPC_ERROR_INT_OFFSET, p - GRPC_SLICE_START_PTR(slice)),
           GRPC_ERROR_STR_RAW_BYTES, dump);
       gpr_free(dump);
       return error;
@@ -74,10 +75,12 @@ grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice) {
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   if (GRPC_SLICE_LENGTH(slice) == 0) {
-    return GRPC_ERROR_CREATE("Metadata keys cannot be zero length");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Metadata keys cannot be zero length"));
   }
   if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
-    return GRPC_ERROR_CREATE("Metadata keys cannot start with :");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Metadata keys cannot start with :"));
   }
   return conforms_to(slice, legal_header_bits, "Illegal header key");
 }

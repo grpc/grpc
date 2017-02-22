@@ -69,7 +69,9 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"));
+    grpc_closure_sched(
+        exec_ctx, cb,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Already shutdown")));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
@@ -92,7 +94,8 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_error *error = GRPC_ERROR_NONE;
   m->parent->stats->num_writes++;
   if (m->parent->shutdown) {
-    error = GRPC_ERROR_CREATE("Endpoint already shutdown");
+    error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Endpoint already shutdown"));
   } else if (m->on_read != NULL) {
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_ref(slices->slices[i]));
@@ -121,13 +124,15 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   m->parent->shutdown = true;
   if (m->on_read) {
     grpc_closure_sched(exec_ctx, m->on_read,
-                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
+                       GRPC_ERROR_CREATE_REFERENCING(
+                           grpc_slice_from_static_string("Shutdown"), &why, 1));
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
     grpc_closure_sched(exec_ctx, m->on_read,
-                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
+                       GRPC_ERROR_CREATE_REFERENCING(
+                           grpc_slice_from_static_string("Shutdown"), &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);

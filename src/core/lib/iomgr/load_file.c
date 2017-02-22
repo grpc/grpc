@@ -79,7 +79,8 @@ end:
   if (file != NULL) fclose(file);
   if (error != GRPC_ERROR_NONE) {
     grpc_error *error_out = grpc_error_set_str(
-        GRPC_ERROR_CREATE_REFERENCING("Failed to load file", &error, 1),
+        GRPC_ERROR_CREATE_REFERENCING(
+            grpc_slice_from_static_string("Failed to load file"), &error, 1),
         GRPC_ERROR_STR_FILENAME, filename);
     GRPC_ERROR_UNREF(error);
     error = error_out;

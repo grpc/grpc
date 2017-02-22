@@ -131,13 +131,16 @@ grpc_error *grpc_chttp2_settings_parser_begin_frame(
   if (flags == GRPC_CHTTP2_FLAG_ACK) {
     parser->is_ack = 1;
     if (length != 0) {
-      return GRPC_ERROR_CREATE("non-empty settings ack frame received");
+      return GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+          "non-empty settings ack frame received"));
     }
     return GRPC_ERROR_NONE;
   } else if (flags != 0) {
-    return GRPC_ERROR_CREATE("invalid flags on settings frame");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("invalid flags on settings frame"));
   } else if (length % 6 != 0) {
-    return GRPC_ERROR_CREATE("settings frames must be a multiple of six bytes");
+    return GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+        "settings frames must be a multiple of six bytes"));
   } else {
     return GRPC_ERROR_NONE;
   }
@@ -229,7 +232,8 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
                     &t->qbuf);
                 gpr_asprintf(&msg, "invalid value %u passed for %s",
                              parser->value, sp->name);
-                grpc_error *err = GRPC_ERROR_CREATE(msg);
+                grpc_error *err =
+                    GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
                 gpr_free(msg);
                 return err;
             }

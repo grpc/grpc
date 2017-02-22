@@ -90,7 +90,8 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     fill_metadata(exec_ctx, elem, op->recv_trailing_metadata);
   }
   grpc_transport_stream_op_finish_with_failure(
-      exec_ctx, op, GRPC_ERROR_CREATE("lame client channel"));
+      exec_ctx, op,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("lame client channel")));
 }
 
 static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
@@ -112,7 +113,8 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   }
   if (op->send_ping != NULL) {
     grpc_closure_sched(exec_ctx, op->send_ping,
-                       GRPC_ERROR_CREATE("lame client channel"));
+                       GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                           "lame client channel")));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != NULL) {

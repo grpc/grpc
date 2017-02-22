@@ -233,11 +233,13 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
-    grpc_endpoint_shutdown(&exec_ctx, state.read_ep,
-                           GRPC_ERROR_CREATE("Test Shutdown"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, state.read_ep,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Test Shutdown")));
     gpr_log(GPR_DEBUG, "shutdown write");
-    grpc_endpoint_shutdown(&exec_ctx, state.write_ep,
-                           GRPC_ERROR_CREATE("Test Shutdown"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, state.write_ep,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Test Shutdown")));
   }
   grpc_exec_ctx_flush(&exec_ctx);
 
@@ -298,8 +300,9 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                      grpc_closure_create(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 0);
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
-                         GRPC_ERROR_CREATE("Test Shutdown"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("Test Shutdown")));
   wait_for_fail_count(&exec_ctx, &fail_count, 1);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
                      grpc_closure_create(inc_on_failure, &fail_count,
@@ -310,8 +313,9 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                       grpc_closure_create(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
-                         GRPC_ERROR_CREATE("Test Shutdown"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("Test Shutdown")));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
 
   grpc_slice_buffer_destroy_internal(&exec_ctx, &slice_buffer);

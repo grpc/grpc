@@ -65,14 +65,16 @@ static void test_code(void) {
   grpc_closure_create(NULL, NULL, grpc_schedule_on_exec_ctx);
 
   grpc_closure_list_move(NULL, NULL);
-  grpc_closure_list_append(NULL, NULL, GRPC_ERROR_CREATE("Foo"));
+  grpc_closure_list_append(
+      NULL, NULL, GRPC_ERROR_CREATE(grpc_slice_from_static_string("Foo")));
   grpc_closure_list_empty(closure_list);
 
   /* exec_ctx.h */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_closure_sched(&exec_ctx, &closure, GRPC_ERROR_CREATE("Foo"));
+  grpc_closure_sched(&exec_ctx, &closure,
+                     GRPC_ERROR_CREATE(grpc_slice_from_static_string("Foo")));
   grpc_closure_list_sched(&exec_ctx, &closure_list);
 
   /* endpoint.h */

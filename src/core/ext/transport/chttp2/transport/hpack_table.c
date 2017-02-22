@@ -280,7 +280,7 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
     gpr_asprintf(&msg,
                  "Attempt to make hpack table %d bytes when max is %d bytes",
                  bytes, tbl->max_bytes);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
     gpr_free(msg);
     return err;
   }
@@ -317,7 +317,7 @@ grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
         "HPACK max table size reduced to %d but not reflected by hpack "
         "stream (still at %d)",
         tbl->max_bytes, tbl->current_table_bytes);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
     gpr_free(msg);
     return err;
   }

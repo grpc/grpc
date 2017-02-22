@@ -180,7 +180,8 @@ static grpc_error *create_default_creds_from_path(
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
-    error = GRPC_ERROR_CREATE("creds_path unset");
+    error =
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("creds_path unset"));
     goto end;
   }
   error = grpc_load_file(creds_path, 0, &creds_data);
@@ -191,7 +192,8 @@ static grpc_error *create_default_creds_from_path(
       (char *)GRPC_SLICE_START_PTR(creds_data), GRPC_SLICE_LENGTH(creds_data));
   if (json == NULL) {
     char *dump = grpc_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
+    error = grpc_error_set_str(GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                                   "Failed to parse JSON")),
                                GRPC_ERROR_STR_RAW_BYTES, dump);
     gpr_free(dump);
     goto end;
@@ -204,9 +206,9 @@ static grpc_error *create_default_creds_from_path(
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             exec_ctx, key, grpc_max_auth_token_lifetime());
     if (result == NULL) {
-      error = GRPC_ERROR_CREATE(
+      error = GRPC_ERROR_CREATE(grpc_slice_from_static_string(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
-          "key failed");
+          "key failed"));
     }
     goto end;
   }
@@ -217,9 +219,9 @@ static grpc_error *create_default_creds_from_path(
     result =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
     if (result == NULL) {
-      error = GRPC_ERROR_CREATE(
+      error = GRPC_ERROR_CREATE(grpc_slice_from_static_string(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
-          "failed");
+          "failed"));
     }
     goto end;
   }
@@ -236,7 +238,8 @@ end:
 grpc_channel_credentials *grpc_google_default_credentials_create(void) {
   grpc_channel_credentials *result = NULL;
   grpc_call_credentials *call_creds = NULL;
-  grpc_error *error = GRPC_ERROR_CREATE("Failed to create Google credentials");
+  grpc_error *error = GRPC_ERROR_CREATE(
+      grpc_slice_from_static_string("Failed to create Google credentials"));
   grpc_error *err;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -274,7 +277,8 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
       call_creds = grpc_google_compute_engine_credentials_create(NULL);
       if (call_creds == NULL) {
         error = grpc_error_add_child(
-            error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
+            error, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                       "Failed to get credentials from network")));
       }
     }
   }

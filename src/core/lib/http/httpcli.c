@@ -126,7 +126,8 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
 
 static void append_error(internal_request *req, grpc_error *error) {
   if (req->overall_error == GRPC_ERROR_NONE) {
-    req->overall_error = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
+    req->overall_error = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed HTTP/1 client request"));
   }
   grpc_resolved_address *addr = &req->addresses->addrs[req->next_address - 1];
   char *addr_text = grpc_sockaddr_to_uri(addr);
@@ -190,8 +191,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   internal_request *req = arg;
 
   if (!ep) {
-    next_address(exec_ctx, req,
-                 GRPC_ERROR_CREATE("Unexplained handshake failure"));
+    next_address(exec_ctx, req, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                                    "Unexplained handshake failure")));
     return;
   }
 
@@ -220,9 +221,10 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
     append_error(req, error);
   }
   if (req->next_address == req->addresses->naddrs) {
-    finish(exec_ctx, req,
-           GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
-                                         &req->overall_error, 1));
+    finish(exec_ctx, req, GRPC_ERROR_CREATE_REFERENCING(
+                              grpc_slice_from_static_string(
+                                  "Failed HTTP requests to all targets"),
+                              &req->overall_error, 1));
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];

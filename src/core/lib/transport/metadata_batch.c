@@ -126,7 +126,9 @@ static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
     return GRPC_ERROR_NONE;
   }
   return grpc_attach_md_to_error(
-      GRPC_ERROR_CREATE("Unallowed duplicate metadata"), storage->md);
+      GRPC_ERROR_CREATE(
+          grpc_slice_from_static_string("Unallowed duplicate metadata")),
+      storage->md);
 }
 
 static void maybe_unlink_callout(grpc_metadata_batch *batch,
@@ -302,7 +304,8 @@ static void add_error(grpc_error **composite, grpc_error *error,
                       const char *composite_error_string) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(composite_error_string);
+    *composite = GRPC_ERROR_CREATE(
+        grpc_slice_from_copied_string(composite_error_string));
   }
   *composite = grpc_error_add_child(*composite, error);
 }

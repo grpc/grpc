@@ -221,7 +221,7 @@ class ChannelData {
 
   /// Initializes the call data.
   virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
-                           grpc_channel_element_args *args) {
+                           const grpc_channel_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
@@ -244,7 +244,7 @@ class CallData {
 
   /// Initializes the call data.
   virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
-                           grpc_call_element_args *args) {
+                           const grpc_call_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
@@ -308,7 +308,7 @@ class ChannelFilter final {
 
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     grpc_call_element_args *args) {
+                                     const grpc_call_element_args *args) {
     ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
     CallDataType *call_data = new (elem->call_data) CallDataType();

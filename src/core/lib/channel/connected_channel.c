@@ -90,7 +90,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data);
   return r == 0 ? GRPC_ERROR_NONE
-                : GRPC_ERROR_CREATE("transport stream initialization failed");
+                : GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                      "transport stream initialization failed"));
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,

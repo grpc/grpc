@@ -121,8 +121,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   // server will wait for more data. Explicitly fail the server by shutting down
   // the endpoint.
   if (!state.done_callback_called) {
-    grpc_endpoint_shutdown(&exec_ctx, mock_endpoint,
-                           GRPC_ERROR_CREATE("Explicit close"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, mock_endpoint,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Explicit close")));
     grpc_exec_ctx_flush(&exec_ctx);
   }
 

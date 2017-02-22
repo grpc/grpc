@@ -37,12 +37,13 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/avl.h>
 
 struct grpc_error {
   gpr_refcount refs;
-  const char* desc;
-  const char* file;
+  grpc_slice desc;
+  grpc_slice file;
   intptr_t file_line;
   gpr_timespec time_created;
   gpr_avl ints;
