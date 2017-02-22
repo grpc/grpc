@@ -37,6 +37,8 @@ import sys
 import time
 import jobset
 import socket
+import traceback
+
 
 def start_port_server(port_server_port):
   # check if a compatible port server is running
