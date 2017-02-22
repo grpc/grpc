@@ -1106,6 +1106,13 @@ def percent_type(arg_str):
         "'%f' is not a valid percentage in the [0, 100] range" % pct)
   return pct
 
+def until_type(arg_str):
+  secs = float(arg_str)
+  if secs <= 0:
+    raise argparse.ArgumentTypeError(
+        "'%f' is not a positive number of seconds" % secs)
+  return secs
+
 # This is math.isclose in python >= 3.5
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
       return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
@@ -1125,6 +1132,8 @@ argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-p', '--sample_percent', default=100.0, type=percent_type,
                   help='Run a random sample with that percentage of tests')
+argp.add_argument('-u', '--run_until_secs', default='inf', type=until_type,
+                  help='Run a random set of tests for approx. that long.')
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -1482,7 +1491,7 @@ def _build_and_run(
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
-        quiet_success=args.quiet_success)
+        quiet_success=args.quiet_success, run_until_secs=args.run_until_secs)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
