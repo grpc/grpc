@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,64 +32,73 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "hpack_parser_fuzzer",
-  srcs = ["hpack_parser_fuzzer_test.c"],
-  deps = ["//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "hpack_parser_corpus"
+  name = "ssl_server_fuzzer",
+  srcs = ["ssl_server_fuzzer.c"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  corpus = "corpus",
+  copts = ["-std=c99"],
+)
+
+cc_library(
+    name = "oauth2_utils",
+    srcs = ["oauth2_utils.c"],
+    hdrs = ["oauth2_utils.h"],
+    deps = ["//:grpc"],
+    copts = ['-std=c99']
 )
 
 cc_test(
-    name = "alpn_test",
-    srcs = ["alpn_test.c"],
+    name = "auth_context_test",
+    srcs = ["auth_context_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.c"],
+    name = "b64_test",
+    srcs = ["b64_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "bin_encoder_test",
-    srcs = ["bin_encoder_test.c"],
+    name = "credentials_test",
+    srcs = ["credentials_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "hpack_encoder_test",
-    srcs = ["hpack_encoder_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    name = "secure_endpoint_test",
+    srcs = ["secure_endpoint_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/iomgr:endpoint_tests"],
     copts = ['-std=c99']
 )
 
 cc_test(
-    name = "hpack_parser_test",
-    srcs = ["hpack_parser_test.c"],
+    name = "security_connector_test",
+    srcs = ["security_connector_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
 
-cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+cc_binary(
+    name = "create_jwt",
+    srcs = ["create_jwt.c"],
+    deps = ["//:grpc", "//:gpr"],
     copts = ['-std=c99']
 )
 
-cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+cc_binary(
+    name = "fetch_oauth2",
+    srcs = ["fetch_oauth2.c"],
+    deps = ["//:grpc", "//:gpr", ":oauth2_utils"],
     copts = ['-std=c99']
 )
 
-cc_test(
-    name = "varint_test",
-    srcs = ["varint_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+cc_binary(
+    name = "verify_jwt",
+    srcs = ["verify_jwt.c"],
+    deps = ["//:grpc", "//:gpr"],
     copts = ['-std=c99']
 )
