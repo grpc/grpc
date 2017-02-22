@@ -54,7 +54,7 @@
     "Grpc.Core": {
       "target": "project"
     },
-    "Google.Protobuf": "3.0.0",
+    "Google.Protobuf": "3.2.0",
     "CommandLineParser.Unofficial": "2.0.275",
     "Moq": "4.6.38-alpha",
     "NUnit": "3.2.0",
