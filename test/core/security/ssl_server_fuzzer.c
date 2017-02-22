@@ -47,11 +47,6 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
-
-
 static void discard_write(grpc_slice slice) {}
 
 static void dont_log(gpr_log_func_args *args) {}
