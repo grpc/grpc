@@ -93,8 +93,9 @@ void grpc_httpcli_context_init(grpc_httpcli_context *context) {
   context->pollset_set = grpc_pollset_set_create();
 }
 
-void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
-  grpc_pollset_set_destroy(context->pollset_set);
+void grpc_httpcli_context_destroy(grpc_exec_ctx *exec_ctx,
+                                  grpc_httpcli_context *context) {
+  grpc_pollset_set_destroy(exec_ctx, context->pollset_set);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
