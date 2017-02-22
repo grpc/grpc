@@ -3012,6 +3012,9 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
   platforms:
   - mac
   - linux

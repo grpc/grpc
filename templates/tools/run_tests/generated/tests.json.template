@@ -17,6 +17,9 @@
     timeout_seconds = tgt.get("timeout_seconds", None)
     if timeout_seconds:
       out['timeout_seconds'] = timeout_seconds
+    excluded_poll_engines = tgt.get("excluded_poll_engines", None)
+    if excluded_poll_engines:
+      out['excluded_poll_engines'] = excluded_poll_engines
     return out
   %>
 
