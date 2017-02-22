@@ -10,8 +10,9 @@ While some API elements need to be able to represent non-english content, some a
 for simplicity & performance reasons.
 
 ### Method name (in RPC Invocation)
-Method names are ASCII-only. Most gRPC services will use protobuf which only allows ASCII based method names anyway.
-Also, handling method names is a very hot code path.
+Method names are ASCII-only and may only contain characters allowed by HTTP/2 text header values. That should not
+be very limiting as most gRPC services will use protobuf which only allows method names from an even more restricted ASCII subset.
+Also, handling method names is a very hot code path so any additional encoding/decoding step is to be avoided.
 
 Recommended representation in language-specific APIs: string type.
 
@@ -39,6 +40,6 @@ Allowed values are defined by HTTP/2 standard (metadata values are represented a
 
 Recommended representation in language-specific APIs: string.
 
-### Channel name
+### Channel target (in channel creation)
 
 TBD
