@@ -36,7 +36,7 @@ load("//:bazel/generate_cc.bzl", "generate_cc")
 proto_library (
     name = "monitoring_proto_local_copy",
     srcs = [
-        # TODO (erikgribkoff) : remove the local copies of these protos
+        # TODO (ericgribkoff) : remove the local copies of these protos
         "monitoring.proto",
         "empty.proto",
         "any.proto",
