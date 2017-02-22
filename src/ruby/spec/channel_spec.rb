@@ -161,7 +161,7 @@ describe GRPC::Core::Channel do
         GRPC::Core::ConnectivityStates::CONNECTING,
         GRPC::Core::ConnectivityStates::READY,
         GRPC::Core::ConnectivityStates::TRANSIENT_FAILURE,
-        GRPC::Core::ConnectivityStates::FATAL_FAILURE,
+        GRPC::Core::ConnectivityStates::FATAL_FAILURE
       ]
 
       expect(valid_states).to include(ch.connectivity_state)
