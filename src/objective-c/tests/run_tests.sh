@@ -59,4 +59,4 @@ xcodebuild \
     -scheme InteropTestsRemote \
     -destination name="iPhone 6" \
     test \
-    | egrep '\.(c|h|m):[0-9]*'
+    | egrep '(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail|Executed|\.(c|h|m):[0-9]*)'
