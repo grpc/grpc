@@ -629,6 +629,20 @@ class JavaLanguage:
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 
+      for rpc_type in ['unary', 'streaming']:
+          for size in geometric_progression(1, 1024*1024*1024+1, 8):
+              yield _ping_pong_scenario(
+                  'java_protobuf_async_%s_ping_pong_%s_%db' % (rpc_type, secstr, size),
+                  rpc_type=rpc_type.upper(),
+                  req_size=size,
+                  resp_size=size,
+                  client_type='ASYNC_CLIENT' % synchronicity.upper(),
+                  server_type='ASYNC_SERVER' % synchronicity.upper(),
+                  async_server_threads=1,
+                  secure=secure,
+                  categories=[SWEEP])
+
+
       # TODO(jtattermusch): add scenarios java vs C++
 
   def __str__(self):
