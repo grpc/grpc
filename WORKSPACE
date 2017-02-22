@@ -70,8 +70,6 @@ local_repository(
 # used for tools/grpcz/grpcz_client
 git_repository(
     name   = "mongoose_repo",
-    commit = "21b9ddd490783e3afaa0fa9b45d6c1133eb922dc",
+    commit = "4120a97945b41195a6223a600dae8e3b19bed19e",
     remote = "https://github.com/makdharma/mongoose.git"
 )
-
-
