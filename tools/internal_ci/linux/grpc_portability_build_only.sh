@@ -35,4 +35,4 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-tools/jenkins/run_jenkins_matrix.sh -f portability linux --build_only || FAILED="true"
+tools/jenkins/run_jenkins_matrix.sh -f portability linux --build_only
