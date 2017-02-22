@@ -49,9 +49,10 @@
 
 int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
+  memset(un, 0, sizeof(*un));
 
   un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
+  strncpy(un->sun_path, uri->path, sizeof(un->sun_path) - 1 /* null term'd */);
   resolved_addr->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
 
   return 1;
