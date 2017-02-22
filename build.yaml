@@ -3946,6 +3946,8 @@ node_modules:
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
+  - src/node/ext/server_generic.cc
+  - src/node/ext/server_uv.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/

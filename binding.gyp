@@ -879,6 +879,8 @@
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
+        "src/node/ext/server_generic.cc",
+        "src/node/ext/server_uv.cc",
         "src/node/ext/timeval.cc",
       ],
       "dependencies": [
