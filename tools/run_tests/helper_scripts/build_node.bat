@@ -41,4 +41,4 @@ for /f "delims=v" %%v in ('node --version') do (
 
 
 @rem rebuild, because it probably failed the first time
-call npm install --build-from-source %1 %2
+call npm install --build-from-source %*
