@@ -43,8 +43,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-#define TOMBSTONE_TIMER 1
-
 //
 // grpc_deadline_state
 //
@@ -80,11 +78,15 @@ retry:
       (grpc_deadline_timer_state)gpr_atm_acq_load(&deadline_state->timer_state);
   switch (cur_state) {
     case GRPC_DEADLINE_STATE_PENDING:
+      // Note: We do not start the timer if there is already a timer
       return;
     case GRPC_DEADLINE_STATE_FINISHED:
       if (gpr_atm_rel_cas(&deadline_state->timer_state,
                           GRPC_DEADLINE_STATE_FINISHED,
                           GRPC_DEADLINE_STATE_PENDING)) {
+        // If we've already created and destroyed a timer, we always create a
+        // new closure: we have no other guarantee that the inlined closure is
+        // not in use (it may hold a pending call to timer_callback)
         closure = grpc_closure_create(timer_callback, elem,
                                       grpc_schedule_on_exec_ctx);
       } else {
@@ -104,17 +106,20 @@ retry:
       break;
   }
   GPR_ASSERT(closure);
+  GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
   grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
                   gpr_now(GPR_CLOCK_MONOTONIC));
-  GPR_UNREACHABLE_CODE(return;);
 }
 
 // Cancels the deadline timer.
 static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                    grpc_deadline_state* deadline_state) {
-  if (gpr_atm_acq_load(&deadline_state->timer_state) !=
-      GRPC_DEADLINE_STATE_INITIAL) {
+  if (gpr_atm_rel_cas(&deadline_state->timer_state, GRPC_DEADLINE_STATE_PENDING,
+                      GRPC_DEADLINE_STATE_FINISHED)) {
     grpc_timer_cancel(exec_ctx, &deadline_state->timer);
+  } else {
+    // timer was either in STATE_INITAL (nothing to cancel)
+    // OR in STATE_FINISHED (again nothing to cancel)
   }
 }
 
