@@ -163,4 +163,20 @@ void grpc_handshake_manager_do_handshake(
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
+/// Add \a mgr to the server side list of all pending handshake managers, the
+/// list starts with \a *head.
+// Not thread-safe. Caller needs to synchronize.
+void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
+                                             grpc_handshake_manager* mgr);
+
+/// Remove \a mgr from the server side list of all pending handshake managers.
+// Not thread-safe. Caller needs to synchronize.
+void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
+                                                grpc_handshake_manager* mgr);
+
+/// Shutdown all pending handshake managers on the server side.
+// Not thread-safe. Caller needs to synchronize.
+void grpc_handshake_manager_pending_list_shutdown_all(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
+
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */
