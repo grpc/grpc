@@ -55,6 +55,14 @@ static void BM_ErrorCreate(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreate);
 
+static void BM_ErrorCreateFromCopied(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    GRPC_ERROR_UNREF(GRPC_ERROR_CREATE(
+        grpc_slice_from_copied_string("Error message that is a bit longer")));
+  }
+}
+BENCHMARK(BM_ErrorCreateFromCopied);
+
 static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_error_set_int(
