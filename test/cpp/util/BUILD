@@ -37,14 +37,17 @@ cc_library(
     hdrs = [
         "test_config.h",
     ],
-    deps = ["//:gpr"],
     visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:gpr",
+        "//external:gflags",
+    ],
 )
 
 cc_library(
     name = "test_util",
     srcs = [
-#        "test/cpp/end2end/test_service_impl.cc",
+        #        "test/cpp/end2end/test_service_impl.cc",
         "byte_buffer_proto_helper.cc",
         "create_test_channel.cc",
         "string_ref_helper.cc",
@@ -58,6 +61,10 @@ cc_library(
         "subprocess.h",
         "test_credentials_provider.h",
     ],
-    deps = ["//test/core/util:gpr_test_util", "//:grpc++", "//test/core/end2end:ssl_test_data"],
     visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:grpc++",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:gpr_test_util",
+    ],
 )
