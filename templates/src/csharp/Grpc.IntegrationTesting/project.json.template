@@ -10,10 +10,10 @@
         "target": "project"
       },
       "Google.Protobuf": "3.2.0",
-      "CommandLineParser.Unofficial": "2.0.275",
-      "Moq": "4.6.38-alpha",
-      "NUnit": "3.2.0",
-      "NUnitLite": "3.2.0-*"
+      "CommandLineParser": "2.1.1-beta",
+      "Moq": "4.7.0",
+      "NUnit": "3.6.0",
+      "NUnitLite": "3.6.0"
     },
     "frameworks": {
       "net45": {
