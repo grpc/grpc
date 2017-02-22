@@ -2249,39 +2249,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: internal_api_canary_iomgr_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: internal_api_canary_support_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: internal_api_canary_transport_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: invalid_call_argument_test
   cpu_cost: 0.1
   build: test
@@ -3002,6 +2969,25 @@ targets:
   deps:
   - benchmark
   - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_cq
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_cq.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
@@ -3919,7 +3905,7 @@ configs:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
   counters:
-    CPPFLAGS: -O2 -DGPR_MU_COUNTERS
+    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
