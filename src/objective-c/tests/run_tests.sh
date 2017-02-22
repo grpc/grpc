@@ -56,16 +56,7 @@ set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme AllTests \
+    -scheme InteropTestsRemote \
     -destination name="iPhone 6" \
     test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | egrep '\.(c|h|m):[0-9]*'
