@@ -294,6 +294,7 @@ static void BM_FilterInitDestroy(benchmark::State &state) {
   }
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(channel_stack);
 
   state.SetLabel(label.str());
 }
@@ -360,6 +361,7 @@ static void BM_FilterInitSendInitialMetadataThenDestroy(
   }
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(channel_stack);
 
   state.SetLabel(label.str());
 }
