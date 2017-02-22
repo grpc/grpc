@@ -137,8 +137,10 @@
   request.responseType = RMTPayloadType_Compressable;
   request.responseSize = 314159;
   request.payload.body = [NSMutableData dataWithLength:271828];
+  NSLog(@"warning: Starting call Large");
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    NSLog(@"warning: Response received Large: %tu", response.payload.body.length);
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
     RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
@@ -159,8 +161,10 @@
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead; // 4MB - encoding overhead
   request.responseSize = kPayloadSize;
+  NSLog(@"warning: Starting call 4MB");
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    NSLog(@"warning: Response received 4MB: %tu", response.payload.body.length);
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertEqual(response.payload.body.length, kPayloadSize);
     [expectation fulfill];
@@ -231,9 +235,11 @@
 
   GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
+  NSLog(@"warning: Starting call ClientStreaming");
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,
                                                    NSError *error) {
+    NSLog(@"warning: Response received ClientStreaming");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
     RMTStreamingInputCallResponse *expectedResponse = [RMTStreamingInputCallResponse message];
@@ -258,16 +264,19 @@
     parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
+  NSLog(@"warning: Starting call ServerStreaming");
 
   __block int index = 0;
   [_service streamingOutputCallWithRequest:request
                               eventHandler:^(BOOL done,
                                              RMTStreamingOutputCallResponse *response,
                                              NSError *error){
+    NSLog(@"warning: Response received ServerStreaming");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertTrue(done || response, @"Event handler called without an event.");
 
     if (response) {
+      NSLog(@"warning: Response received 2 ServerStreaming");
       XCTAssertLessThan(index, 4, @"More than 4 responses received.");
       id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:expectedSizes[index]];
       XCTAssertEqualObjects(response, expected);
@@ -275,6 +284,7 @@
     }
 
     if (done) {
+      NSLog(@"warning: Response received 3 ServerStreaming");
       XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
       [expectation fulfill];
     }
