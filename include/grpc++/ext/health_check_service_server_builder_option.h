@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,32 @@
  *
  */
 
-/*******************************************************************************
- * NOTE: If this test fails to compile, then the api changes are likely to cause
- *       merge failures downstream. Please pay special attention to reviewing
- *       these changes, and solicit help as appropriate when merging downstream.
- *
- * This test is NOT expected to be run directly.
- ******************************************************************************/
+#ifndef GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
+#define GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
 
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/tmpfile.h"
+#include <memory>
 
-static void test_code(void) {
-  /* env.h */
-  gpr_set_env("abc", gpr_getenv("xyz"));
-  /* load_file.h */
-  grpc_load_file("abc", 1, NULL);
-  /* tmpfile.h */
-  fclose(gpr_tmpfile("foo", NULL));
-}
+#include <grpc++/health_check_service_interface.h>
+#include <grpc++/impl/server_builder_option.h>
+#include <grpc++/support/config.h>
 
-int main(void) {
-  if (false) test_code();
-  return 0;
-}
+namespace grpc {
+
+class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
+ public:
+  // The ownership of hc will be taken and transferred to the grpc server.
+  // To explicitly disable default service, pass in a nullptr.
+  explicit HealthCheckServiceServerBuilderOption(
+      std::unique_ptr<HealthCheckServiceInterface> hc);
+  ~HealthCheckServiceServerBuilderOption() override {}
+  void UpdateArguments(ChannelArguments* args) override;
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
+
+ private:
+  std::unique_ptr<HealthCheckServiceInterface> hc_;
+};
+
+}  // namespace grpc
+
+#endif  // GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H

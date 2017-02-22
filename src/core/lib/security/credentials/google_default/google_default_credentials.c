@@ -154,7 +154,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
   }
   gpr_mu_unlock(g_polling_mu);
 
-  grpc_httpcli_context_destroy(&context);
+  grpc_httpcli_context_destroy(exec_ctx, &context);
   grpc_closure_init(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +27,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+licenses(["notice"])  # 3-clause BSD
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop.sh"
-# grpc_interop tests can take 6+ hours to complete.
-timeout_mins: 480
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-  }
-}
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+
+cc_binary(
+    name = "client",
+    srcs = ["client.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
+    testonly = 1,
+    copts = ['-std=c99']
+)
+
+cc_binary(
+    name = "server",
+    srcs = ["server.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
+    testonly = 1,
+    copts = ['-std=c99']
+)
+
+cc_test(
+    name = "fling",
+    srcs = ["fling_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
+    data = [":client", ":server"]
+)
+
+cc_test(
+    name = "fling_stream",
+    srcs = ["fling_stream_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
+    data = [":client", ":server"]
+)
