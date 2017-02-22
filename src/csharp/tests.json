@@ -20,7 +20,6 @@
     "Grpc.Core.Tests.HalfcloseTest",
     "Grpc.Core.Tests.MarshallingErrorsTest",
     "Grpc.Core.Tests.MetadataTest",
-    "Grpc.Core.Tests.NUnitVersionTest",
     "Grpc.Core.Tests.PerformanceTest",
     "Grpc.Core.Tests.PInvokeTest",
     "Grpc.Core.Tests.ResponseHeadersTest",
