@@ -66,6 +66,7 @@ local_repository(
     name = "com_github_gflags_gflags",
     path = "third_party/gflags",
 )
+
 # used for tools/grpcz/grpcz_client
 git_repository(
     name   = "mongoose_repo",
