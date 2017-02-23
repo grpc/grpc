@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,35 +29,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Sample gRPC server that implements the EchoWithoutProtobuf service.
+#
+# Usage: $ path/to/echo_server.rb
 
-rm -rf ~/.rake-compiler
+this_dir = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
-CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
+require 'grpc'
+require 'echo_services_noprotobuf'
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+# EchoServer is simple server that implements the EchoWithoutProtobuf server.
+class EchoServer < EchoWithoutProtobuf::Service
+  # echo implements the EchoWithoutProtobuf 'Echo' rpc method.
+  def echo(echo_req, _unused_call)
+    echo_req
+  end
+end
 
-patch $CROSS_RUBY << EOF
---- cross-ruby.rake	2016-02-05 16:26:53.000000000 -0800
-+++ cross-ruby.rake.patched	2016-02-05 16:27:33.000000000 -0800
-@@ -133,7 +133,8 @@
-     "--host=#{MINGW_HOST}",
-     "--target=#{MINGW_TARGET}",
-     "--build=#{RUBY_BUILD}",
--    '--enable-shared',
-+    '--enable-static',
-+    '--disable-shared',
-     '--disable-install-doc',
-     '--without-tk',
-     '--without-tcl'
-EOF
+# main starts an RpcServer that receives requests to EchoWithoutProtobuf at the sample
+# server port.
+def main
+  s = GRPC::RpcServer.new
+  s.add_http2_port('0.0.0.0:50051', :this_port_is_insecure)
+  s.handle(EchoServer)
+  s.run_till_terminated
+end
 
-MAKE="make -j8"
-
-for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
-  ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
-done
-
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
-mv $CROSS_RUBY ~/.rake-compiler/config.yml
+main
