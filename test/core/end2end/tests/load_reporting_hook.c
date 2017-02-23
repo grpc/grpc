@@ -31,22 +31,23 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "test/core/end2end/cq_verifier.h"
 
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+#include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -124,7 +125,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void request_response_with_payload(
     grpc_end2end_test_config config, grpc_end2end_test_fixture f,
     const char *method_name, const char *request_msg, const char *response_msg,
-    grpc_metadata *initial_lr_metadata, grpc_metadata *trailing_lr_metadata) {
+    grpc_metadata *initial_lr_metadata,
+    grpc_load_reporting_cost_context *cost_ctx) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
   grpc_slice response_payload_slice =
       grpc_slice_from_static_string(response_msg);
@@ -237,9 +239,8 @@ static void request_response_with_payload(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  GPR_ASSERT(trailing_lr_metadata != NULL);
-  op->data.send_status_from_server.trailing_metadata_count = 1;
-  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
+  GPR_ASSERT(cost_ctx != NULL);
+  grpc_call_set_load_reporting_cost_context(s, cost_ctx);
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
@@ -293,21 +294,21 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   const char *response_msg = "... and the response from the server";
 
   grpc_metadata initial_lr_metadata;
-  grpc_metadata trailing_lr_metadata;
 
   initial_lr_metadata.key = GRPC_MDSTR_LB_TOKEN;
   initial_lr_metadata.value = grpc_slice_from_static_string("client-token");
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_MDSTR_LB_COST_BIN;
-  trailing_lr_metadata.value = grpc_slice_from_static_string("server-token");
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
+  grpc_load_reporting_cost_context *cost_ctx = gpr_malloc(sizeof(*cost_ctx));
+  memset(cost_ctx, 0, sizeof(*cost_ctx));
+  cost_ctx->values_count = 1;
+  cost_ctx->values =
+      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count);
+  cost_ctx->values[0] = grpc_slice_from_static_string("cost-token");
 
   request_response_with_payload(config, f, method_name, request_msg,
-                                response_msg, &initial_lr_metadata,
-                                &trailing_lr_metadata);
+                                response_msg, &initial_lr_metadata, cost_ctx);
   end_test(&f);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

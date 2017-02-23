@@ -264,9 +264,11 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_server_builder_option.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\generic_stub.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\health_check_service_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
@@ -349,6 +351,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
@@ -358,6 +362,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\channel_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\default_health_check_service.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h" />
   </ItemGroup>
@@ -411,6 +417,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\default_health_check_service.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health_check_service.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health_check_service_server_builder_option.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
     </ClCompile>

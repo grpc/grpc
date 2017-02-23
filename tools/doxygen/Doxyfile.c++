@@ -795,9 +795,11 @@ include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
 include/grpc++/create_channel_posix.h \
+include/grpc++/ext/health_check_service_server_builder_option.h \
 include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
+include/grpc++/health_check_service_interface.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/async_stream.h \
@@ -810,12 +812,14 @@ include/grpc++/impl/codegen/client_unary_call.h \
 include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
+include/grpc++/impl/codegen/proto_utils.h \
 include/grpc++/impl/codegen/rpc_method.h \
 include/grpc++/impl/codegen/rpc_service_method.h \
 include/grpc++/impl/codegen/security/auth_context.h \

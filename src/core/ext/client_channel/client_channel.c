@@ -423,8 +423,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(state_error);
 }
 
-static void cc_start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *error_ignored) {
+static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *error_ignored) {
   grpc_transport_op *op = arg;
   grpc_channel_element *elem = op->transport_private.args[0];
   channel_data *chand = elem->channel_data;
@@ -490,10 +490,9 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   op->transport_private.args[0] = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "start_transport_op");
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&op->transport_private.closure,
-                        cc_start_transport_op_locked, op,
-                        grpc_combiner_scheduler(chand->combiner, false)),
+      exec_ctx, grpc_closure_init(
+                    &op->transport_private.closure, start_transport_op_locked,
+                    op, grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
 }
 
@@ -595,7 +594,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
-  grpc_pollset_set_destroy(chand->interested_parties);
+  grpc_pollset_set_destroy(exec_ctx, chand->interested_parties);
   GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
   gpr_mu_destroy(&chand->info_mu);
 }
@@ -883,38 +882,40 @@ static bool pick_subchannel_locked(
   return false;
 }
 
-static void cc_start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx,
-                                                void *arg,
-                                                grpc_error *error_ignored) {
-  grpc_transport_stream_op *op = arg;
-  grpc_call_element *elem = op->transport_private.args[0];
-  call_data *calld = elem->call_data;
+static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
+                                                   grpc_transport_stream_op *op,
+                                                   grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
   grpc_subchannel_call *call;
 
-retry:
   /* need to recheck that another thread hasn't set the call */
   call = GET_CALL(calld);
   if (call == CANCELLED_CALL) {
     grpc_transport_stream_op_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
-    goto done;
+    /* early out */
+    return;
   }
   if (call != NULL) {
     grpc_subchannel_call_process_op(exec_ctx, call, op);
-    goto done;
+    /* early out */
+    return;
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!gpr_atm_rel_cas(&calld->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
-      goto retry;
+      /* recurse to retry */
+      start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+      /* early out */
+      return;
     } else {
-      // Stash a copy of cancel_error in our call data, so that we can use
-      // it for subsequent operations.  This ensures that if the call is
-      // cancelled before any ops are passed down (e.g., if the deadline
-      // is in the past when the call starts), we can return the right
-      // error to the caller when the first op does get passed down.
+      /* Stash a copy of cancel_error in our call data, so that we can use
+         it for subsequent operations.  This ensures that if the call is
+         cancelled before any ops are passed down (e.g., if the deadline
+         is in the past when the call starts), we can return the right
+         error to the caller when the first op does get passed down. */
       calld->cancel_error = GRPC_ERROR_REF(op->cancel_error);
       switch (calld->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
@@ -928,7 +929,8 @@ retry:
       }
       grpc_transport_stream_op_finish_with_failure(
           exec_ctx, op, GRPC_ERROR_REF(op->cancel_error));
-      goto done;
+      /* early out */
+      return;
     }
   }
   /* if we don't have a subchannel, try to get one */
@@ -968,21 +970,39 @@ retry:
     gpr_atm_rel_store(&calld->subchannel_call,
                       (gpr_atm)(uintptr_t)subchannel_call);
     retry_waiting_locked(exec_ctx, calld);
-    goto retry;
+    /* recurse to retry */
+    start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+    /* early out */
+    return;
   }
   /* nothing to be done but wait */
   add_waiting_locked(calld, op);
-done:
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
-                        "start_transport_stream_op");
-  GPR_TIMER_END("cc_start_transport_stream_op", 0);
 }
 
-// The logic here is fairly complicated, due to (a) the fact that we
-// need to handle the case where we receive the send op before the
-// initial metadata op, and (b) the need for efficiency, especially in
-// the streaming case.
-// TODO(ctiller): Explain this more thoroughly.
+static void cc_start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx,
+                                                void *arg,
+                                                grpc_error *error_ignored) {
+  GPR_TIMER_BEGIN("cc_start_transport_stream_op_locked", 0);
+
+  grpc_transport_stream_op *op = arg;
+  grpc_call_element *elem = op->handler_private.args[0];
+  call_data *calld = elem->call_data;
+
+  start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+
+  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
+                        "start_transport_stream_op");
+  GPR_TIMER_END("cc_start_transport_stream_op_locked", 0);
+}
+
+/* The logic here is fairly complicated, due to (a) the fact that we
+   need to handle the case where we receive the send op before the
+   initial metadata op, and (b) the need for efficiency, especially in
+   the streaming case.
+
+   We use double-checked locking to initially see if initialization has been
+   performed. If it has not, we acquire the combiner and perform initialization.
+   If it has, we proceed on the fast path. */
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
@@ -997,22 +1017,25 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     grpc_transport_stream_op_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
     GPR_TIMER_END("cc_start_transport_stream_op", 0);
+    /* early out */
     return;
   }
   if (call != NULL) {
     grpc_subchannel_call_process_op(exec_ctx, call, op);
     GPR_TIMER_END("cc_start_transport_stream_op", 0);
+    /* early out */
     return;
   }
   /* we failed; lock and figure out what to do */
   GRPC_CALL_STACK_REF(calld->owning_call, "start_transport_stream_op");
-  op->transport_private.args[0] = elem;
+  op->handler_private.args[0] = elem;
   grpc_closure_sched(
       exec_ctx,
-      grpc_closure_init(&op->transport_private.closure,
+      grpc_closure_init(&op->handler_private.closure,
                         cc_start_transport_stream_op_locked, op,
                         grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
+  GPR_TIMER_END("cc_start_transport_stream_op", 0);
 }
 
 // Gets data from the service config.  Invoked when the resolver returns
@@ -1114,7 +1137,7 @@ static void initial_read_service_config_locked(grpc_exec_ctx *exec_ctx,
 /* Constructor for call_data */
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     grpc_call_element_args *args) {
+                                     const grpc_call_element_args *args) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   // Initialize data members.
@@ -1212,8 +1235,8 @@ static void try_to_connect_locked(grpc_exec_ctx *exec_ctx, void *arg,
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect) {
   channel_data *chand = elem->channel_data;
-  grpc_connectivity_state out;
-  out = grpc_connectivity_state_check(&chand->state_tracker);
+  grpc_connectivity_state out =
+      grpc_connectivity_state_check(&chand->state_tracker);
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "try_to_connect");
     grpc_closure_sched(
@@ -1245,9 +1268,8 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
-static void cc_watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
-                                               void *arg,
-                                               grpc_error *error_ignored) {
+static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                            grpc_error *error_ignored) {
   external_connectivity_watcher *w = arg;
   grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
                     grpc_schedule_on_exec_ctx);
@@ -1269,7 +1291,7 @@ void grpc_client_channel_watch_connectivity_state(
                          "external_connectivity_watcher");
   grpc_closure_sched(
       exec_ctx,
-      grpc_closure_init(&w->my_closure, cc_watch_connectivity_state_locked, w,
+      grpc_closure_init(&w->my_closure, watch_connectivity_state_locked, w,
                         grpc_combiner_scheduler(chand->combiner, true)),
       GRPC_ERROR_NONE);
 }

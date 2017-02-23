@@ -444,10 +444,10 @@ def _start_unary_request(request, timeout, request_serializer):
         return deadline, deadline_timespec, serialized_request, None
 
 
-def _end_unary_response_blocking(state, with_call, deadline):
+def _end_unary_response_blocking(state, call, with_call, deadline):
     if state.code is grpc.StatusCode.OK:
         if with_call:
-            rendezvous = _Rendezvous(state, None, None, deadline)
+            rendezvous = _Rendezvous(state, call, None, deadline)
             return state.response, rendezvous
         else:
             return state.response
@@ -499,17 +499,17 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             _check_call_error(call_error, metadata)
             _handle_event(completion_queue.poll(), state,
                           self._response_deserializer)
-            return state, deadline
+            return state, call, deadline
 
     def __call__(self, request, timeout=None, metadata=None, credentials=None):
-        state, deadline, = self._blocking(request, timeout, metadata,
-                                          credentials)
-        return _end_unary_response_blocking(state, False, deadline)
+        state, call, deadline = self._blocking(request, timeout, metadata,
+                                               credentials)
+        return _end_unary_response_blocking(state, call, False, deadline)
 
     def with_call(self, request, timeout=None, metadata=None, credentials=None):
-        state, deadline, = self._blocking(request, timeout, metadata,
-                                          credentials)
-        return _end_unary_response_blocking(state, True, deadline)
+        state, call, deadline = self._blocking(request, timeout, metadata,
+                                               credentials)
+        return _end_unary_response_blocking(state, call, True, deadline)
 
     def future(self, request, timeout=None, metadata=None, credentials=None):
         state, operations, deadline, deadline_timespec, rendezvous = self._prepare(
@@ -619,25 +619,25 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 state.condition.notify_all()
                 if not state.due:
                     break
-        return state, deadline
+        return state, call, deadline
 
     def __call__(self,
                  request_iterator,
                  timeout=None,
                  metadata=None,
                  credentials=None):
-        state, deadline, = self._blocking(request_iterator, timeout, metadata,
-                                          credentials)
-        return _end_unary_response_blocking(state, False, deadline)
+        state, call, deadline = self._blocking(request_iterator, timeout,
+                                               metadata, credentials)
+        return _end_unary_response_blocking(state, call, False, deadline)
 
     def with_call(self,
                   request_iterator,
                   timeout=None,
                   metadata=None,
                   credentials=None):
-        state, deadline, = self._blocking(request_iterator, timeout, metadata,
-                                          credentials)
-        return _end_unary_response_blocking(state, True, deadline)
+        state, call, deadline = self._blocking(request_iterator, timeout,
+                                               metadata, credentials)
+        return _end_unary_response_blocking(state, call, True, deadline)
 
     def future(self,
                request_iterator,

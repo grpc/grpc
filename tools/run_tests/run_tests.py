@@ -38,6 +38,7 @@ import collections
 import glob
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import os.path
@@ -80,6 +81,13 @@ def platform_string():
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 
+def run_shell_command(cmd, env=None, cwd=None):
+  try:
+    subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
+  except subprocess.CalledProcessError as e:
+    logging.exception("Error while running command '%s'. Exit status %d. Output:\n%s",
+                       e.cmd, e.returncode, e.output)
+    raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
@@ -722,12 +730,10 @@ class CSharpLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_compiler(self.args.compiler, ['coreclr', 'default'])
       _check_arch(self.args.arch, ['default'])
-      # CoreCLR use 64bit runtime by default.
-      arch_option = 'x64' if self.args.compiler == 'coreclr' else self.args.arch
-      self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(arch_option)]
+      self._cmake_arch_option = 'x64' if self.args.compiler == 'coreclr' else 'Win32'
+      self._make_options = []
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
@@ -799,7 +805,7 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat', self._cmake_arch_option]]
     else:
       return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
@@ -817,7 +823,7 @@ class CSharpLanguage(object):
         return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
     else:
       if self.platform == 'windows':
-        return [[_windows_build_bat(self.args.compiler),
+        return [['vsprojects\\build_vs2015.bat',
                  'src/csharp/Grpc.sln',
                  '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
       else:
@@ -830,7 +836,10 @@ class CSharpLanguage(object):
       return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    if self.platform == 'windows':
+      return 'cmake/build/%s/Makefile' % self._cmake_arch_option
+    else:
+      return 'Makefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/csharp_%s_%s' % (self._docker_distro,
@@ -1038,12 +1047,10 @@ def _check_arch_option(arch):
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
   # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
+  if compiler == 'default' or compiler == 'vs2013':
     return 'vsprojects\\build_vs2013.bat'
   elif compiler == 'vs2015':
     return 'vsprojects\\build_vs2015.bat'
-  elif compiler == 'vs2010':
-    return 'vsprojects\\build_vs2010.bat'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -1056,8 +1063,6 @@ def _windows_toolset_option(compiler):
     return '/p:PlatformToolset=v120'
   elif compiler == 'vs2015':
     return '/p:PlatformToolset=v140'
-  elif compiler == 'vs2010':
-    return '/p:PlatformToolset=v100'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -1095,6 +1100,18 @@ def runs_per_test_type(arg_str):
         raise argparse.ArgumentTypeError(msg)
 
 
+def percent_type(arg_str):
+  pct = float(arg_str)
+  if pct > 100 or pct < 0:
+    raise argparse.ArgumentTypeError(
+        "'%f' is not a valid percentage in the [0, 100] range" % pct)
+  return pct
+
+# This is math.isclose in python >= 3.5
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+      return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -1107,6 +1124,8 @@ argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
+argp.add_argument('-p', '--sample_percent', default=100.0, type=percent_type,
+                  help='Run a random sample with that percentage of tests')
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -1147,7 +1166,7 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2010', 'vs2013', 'vs2015',
+                           'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
                            'electron1.3',
@@ -1202,7 +1221,7 @@ for spec in args.update_submodules:
   cwd = 'third_party/%s' % submodule
   def git(cmd, cwd=cwd):
     print('in %s: git %s' % (cwd, cmd))
-    subprocess.check_call('git %s' % cmd, cwd=cwd, shell=True)
+    run_shell_command('git %s' % cmd, cwd=cwd)
   git('fetch')
   git('checkout %s' % branch)
   git('pull origin %s' % branch)
@@ -1210,7 +1229,7 @@ for spec in args.update_submodules:
     need_to_regenerate_projects = True
 if need_to_regenerate_projects:
   if jobset.platform_string() == 'linux':
-    subprocess.check_call('tools/buildgen/generate_projects.sh', shell=True)
+    run_shell_command('tools/buildgen/generate_projects.sh')
   else:
     print('WARNING: may need to regenerate projects, but since we are not on')
     print('         Linux this step is being skipped. Compilation MAY fail.')
@@ -1279,9 +1298,7 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
-                        shell=True,
-                        env=env)
+  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)
@@ -1292,7 +1309,7 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
       return [jobset.JobSpec(['cmake', '--build', '.',
                               '--target', '%s' % target,
                               '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd='cmake/build',
+                             cwd=os.path.dirname(makefile),
                              timeout_seconds=None) for target in targets]
     extra_args = []
     # better do parallel compilation
@@ -1441,8 +1458,18 @@ def _build_and_run(
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.
-      massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
-      random.shuffle(massaged_one_run)  # which it modifies in-place.
+      massaged_one_run = list(one_run)  # random.sample needs an indexable seq.
+      num_jobs = len(massaged_one_run)
+      # for a random sample, get as many as indicated by the 'sample_percent'
+      # argument. By default this arg is 100, resulting in a shuffle of all
+      # jobs.
+      sample_size = int(num_jobs * args.sample_percent/100.0)
+      massaged_one_run = random.sample(massaged_one_run, sample_size)
+      if not isclose(args.sample_percent, 100.0):
+        print("Running %d tests out of %d (~%d%%)" %
+              (sample_size, num_jobs, args.sample_percent))
+      else:
+        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
     if infinite_runs:
       assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
@@ -1453,7 +1480,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)

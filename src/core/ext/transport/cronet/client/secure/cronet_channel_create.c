@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -54,16 +55,14 @@ extern grpc_transport_vtable grpc_cronet_vtable;
 GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
     void *engine, const char *target, const grpc_channel_args *args,
     void *reserved) {
-  cronet_transport *ct = gpr_malloc(sizeof(cronet_transport));
-  ct->base.vtable = &grpc_cronet_vtable;
-  ct->engine = engine;
-  ct->host = gpr_malloc(strlen(target) + 1);
-  strcpy(ct->host, target);
   gpr_log(GPR_DEBUG,
           "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
-          ct->host);
+          target);
+
+  grpc_transport *ct =
+      grpc_create_cronet_transport(engine, target, args, reserved);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
+                             GRPC_CLIENT_DIRECT_CHANNEL, ct);
 }

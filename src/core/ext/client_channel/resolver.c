@@ -32,10 +32,13 @@
  */
 
 #include "src/core/ext/client_channel/resolver.h"
+#include "src/core/lib/iomgr/combiner.h"
 
 void grpc_resolver_init(grpc_resolver *resolver,
-                        const grpc_resolver_vtable *vtable) {
+                        const grpc_resolver_vtable *vtable,
+                        grpc_combiner *combiner) {
   resolver->vtable = vtable;
+  resolver->combiner = GRPC_COMBINER_REF(combiner, "resolver");
   gpr_ref_init(&resolver->refs, 1);
 }
 
@@ -62,7 +65,9 @@ void grpc_resolver_unref(grpc_resolver *resolver,
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 #endif
   if (gpr_unref(&resolver->refs)) {
+    grpc_combiner *combiner = resolver->combiner;
     resolver->vtable->destroy(exec_ctx, resolver);
+    GRPC_COMBINER_UNREF(exec_ctx, combiner, "resolver");
   }
 }
 
