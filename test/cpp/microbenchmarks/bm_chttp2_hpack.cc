@@ -93,6 +93,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
   }
   grpc_metadata_batch_destroy(&exec_ctx, &b);
   grpc_chttp2_hpack_compressor_destroy(&exec_ctx, &c);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outbuf);
   grpc_exec_ctx_finish(&exec_ctx);
 
   std::ostringstream label;
