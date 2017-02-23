@@ -213,7 +213,7 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
   r->channel_args = grpc_channel_args_copy(args->args);
   r->addresses = addresses;
   gpr_mu_init(&r->mu);
-  grpc_resolver_init(&r->base, &fake_resolver_vtable);
+  grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
   return &r->base;
 }
 

@@ -1126,8 +1126,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             maybe_start_some_streams(exec_ctx, t);
           } else {
             grpc_chttp2_cancel_stream(
-                exec_ctx, t, s, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
-                                    "Transport closed")));
+                exec_ctx, t, s,
+                grpc_error_set_int(GRPC_ERROR_CREATE(grpc_slice_from_static_string("Transport closed")),
+                                   GRPC_ERROR_INT_GRPC_STATUS,
+                                   GRPC_STATUS_UNAVAILABLE));
           }
         } else {
           GPR_ASSERT(s->id != 0);

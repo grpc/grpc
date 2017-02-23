@@ -230,7 +230,7 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
   if (w->lb_policy == w->chand->lb_policy) {
     if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
       publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-      grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+      grpc_resolver_channel_saw_error_locked(exec_ctx, w->chand->resolver);
       GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
       w->chand->lb_policy = NULL;
     }
@@ -388,11 +388,12 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
-                       &chand->on_resolver_result_changed);
+    grpc_resolver_next_locked(exec_ctx, chand->resolver,
+                              &chand->resolver_result,
+                              &chand->on_resolver_result_changed);
   } else {
     if (chand->resolver != NULL) {
-      grpc_resolver_shutdown(exec_ctx, chand->resolver);
+      grpc_resolver_shutdown_locked(exec_ctx, chand->resolver);
       GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
       chand->resolver = NULL;
     }
@@ -455,7 +456,7 @@ static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
       set_channel_connectivity_state_locked(
           exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
           GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
-      grpc_resolver_shutdown(exec_ctx, chand->resolver);
+      grpc_resolver_shutdown_locked(exec_ctx, chand->resolver);
       GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
       chand->resolver = NULL;
       if (!chand->started_resolving) {
@@ -554,7 +555,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->resolver = grpc_resolver_create(
       exec_ctx, proxy_name != NULL ? proxy_name : arg->value.string,
       new_args != NULL ? new_args : args->channel_args,
-      chand->interested_parties);
+      chand->interested_parties, chand->combiner);
   if (proxy_name != NULL) gpr_free(proxy_name);
   if (new_args != NULL) grpc_channel_args_destroy(exec_ctx, new_args);
   if (chand->resolver == NULL) {
@@ -564,13 +565,23 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
+static void shutdown_resolver_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                     grpc_error *error) {
+  grpc_resolver *resolver = arg;
+  grpc_resolver_shutdown_locked(exec_ctx, resolver);
+  GRPC_RESOLVER_UNREF(exec_ctx, resolver, "channel");
+}
+
 /* Destructor for channel_data */
 static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   if (chand->resolver != NULL) {
-    grpc_resolver_shutdown(exec_ctx, chand->resolver);
-    GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
+    grpc_closure_sched(
+        exec_ctx,
+        grpc_closure_create(shutdown_resolver_locked, chand->resolver,
+                            grpc_combiner_scheduler(chand->combiner, false)),
+        GRPC_ERROR_NONE);
   }
   if (chand->client_channel_factory != NULL) {
     grpc_client_channel_factory_unref(exec_ctx, chand->client_channel_factory);
@@ -856,8 +867,9 @@ static bool pick_subchannel_locked(
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = true;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
-                       &chand->on_resolver_result_changed);
+    grpc_resolver_next_locked(exec_ctx, chand->resolver,
+                              &chand->resolver_result,
+                              &chand->on_resolver_result_changed);
   }
   if (chand->resolver != NULL) {
     cpa = gpr_malloc(sizeof(*cpa));
@@ -1222,8 +1234,9 @@ static void try_to_connect_locked(grpc_exec_ctx *exec_ctx, void *arg,
     if (!chand->started_resolving && chand->resolver != NULL) {
       GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
       chand->started_resolving = true;
-      grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
-                         &chand->on_resolver_result_changed);
+      grpc_resolver_next_locked(exec_ctx, chand->resolver,
+                                &chand->resolver_result,
+                                &chand->on_resolver_result_changed);
     }
   }
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "try_to_connect");

@@ -62,6 +62,23 @@ static void test_set_get_int() {
   GPR_ASSERT(i == line);
 }
 
+static void test_set_get_int_special() {
+  grpc_error* error = GRPC_ERROR_NONE;
+  intptr_t i;
+  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_SIZE, &i));
+
+  intptr_t errno = 314;
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, errno);
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  GPR_ASSERT(i == errno);
+
+  intptr_t line = 555;
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_FILE_LINE, line);
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
+  GPR_ASSERT(i == line);
+}
+
 static void test_set_get_str() {
   grpc_error* error = GRPC_ERROR_CREATE(grpc_slice_from_static_string("Test"));
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL));
@@ -129,6 +146,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_set_get_int();
+  test_set_get_int_special();
   test_set_get_str();
   test_copy_and_unref();
   print_error_strings();
