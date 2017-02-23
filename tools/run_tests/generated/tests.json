@@ -1111,13 +1111,35 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "grpc_completion_queue_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
     ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "grpc_completion_queue_test", 
+    "name": "grpc_completion_queue_threading_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -1240,7 +1262,9 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -1743,9 +1767,7 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
+    "exclude_iomgrs": [], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -2098,6 +2120,30 @@
     "ci_platforms": [
       "linux", 
       "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 0.5, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "native"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "tcp_client_uv_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ], 
     "cpu_cost": 0.2, 
@@ -2135,6 +2181,30 @@
       "linux", 
       "mac", 
       "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "native"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "tcp_server_uv_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {
