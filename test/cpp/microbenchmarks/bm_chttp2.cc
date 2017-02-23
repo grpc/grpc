@@ -279,12 +279,24 @@ class IndexedSingleStaticElem {
         {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
   }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({0xbf})};
+    return {MakeSlice({0xbe})};
+  }
+};
+
+class IndexedSingleInternedElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {MakeSlice(
+        {0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice({0xbe})};
   }
 };
 
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem);
 
 }  // namespace hpack_parser_fixtures
 
