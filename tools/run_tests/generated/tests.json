@@ -2484,7 +2484,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
-    "name": "bm_chttp2", 
+    "name": "bm_chttp2_hpack", 
     "platforms": [
       "linux", 
       "mac", 

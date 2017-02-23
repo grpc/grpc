@@ -570,7 +570,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_call_create)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_cxx bm_chttp2)
+add_dependencies(buildtests_cxx bm_chttp2_hpack)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_closure)
@@ -7407,13 +7407,13 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(bm_chttp2
-  test/cpp/microbenchmarks/bm_chttp2.cc
+add_executable(bm_chttp2_hpack
+  test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   third_party/googletest/src/gtest-all.cc
 )
 
 
-target_include_directories(bm_chttp2
+target_include_directories(bm_chttp2_hpack
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -7427,7 +7427,7 @@ target_include_directories(bm_chttp2
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(bm_chttp2
+target_link_libraries(bm_chttp2_hpack
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark

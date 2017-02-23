@@ -2345,9 +2345,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "bm_chttp2", 
+    "name": "bm_chttp2_hpack", 
     "src": [
-      "test/cpp/microbenchmarks/bm_chttp2.cc"
+      "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
     ], 
     "third_party": false, 
     "type": "target"

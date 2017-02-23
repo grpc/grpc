@@ -31,7 +31,7 @@
  *
  */
 
-/* Microbenchmarks around CHTTP2 operations */
+/* Microbenchmarks around CHTTP2 HPACK operations */
 
 #include <grpc/support/log.h>
 #include <string.h>

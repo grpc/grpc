@@ -2980,11 +2980,11 @@ targets:
   - mac
   - linux
   - posix
-- name: bm_chttp2
+- name: bm_chttp2_hpack
   build: test
   language: c++
   src:
-  - test/cpp/microbenchmarks/bm_chttp2.cc
+  - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
   - benchmark
   - grpc++_test_util
