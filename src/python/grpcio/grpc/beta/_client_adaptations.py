@@ -30,7 +30,6 @@
 
 import grpc
 from grpc import _common
-from grpc._cython import cygrpc
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
