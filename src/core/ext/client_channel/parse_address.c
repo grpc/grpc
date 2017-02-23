@@ -54,7 +54,7 @@ int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   if (path_len == maxlen) return 0;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
-  resolved_addr->len = path_len + sizeof(un->sun_family) + 1;
+  resolved_addr->len = sizeof(*un);
   return 1;
 }
 
