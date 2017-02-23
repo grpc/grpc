@@ -57,7 +57,6 @@ _CLOSED = 'closed'
 _CANCELLED = 'cancelled'
 
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = cygrpc.Metadata(())
 
 _UNEXPECTED_EXIT_SERVER_GRACE = 1.0
 
@@ -143,7 +142,7 @@ def _abort(state, call, code, details):
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (cygrpc.operation_send_initial_metadata(
-                _EMPTY_METADATA, _EMPTY_FLAGS),
+                _common.EMPTY_METADATA, _EMPTY_FLAGS),
                           cygrpc.operation_send_status_from_server(
                               _common.cygrpc_metadata(state.trailing_metadata),
                               effective_code, effective_details, _EMPTY_FLAGS),)
@@ -416,7 +415,7 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (cygrpc.operation_send_initial_metadata(
-                    _EMPTY_METADATA, _EMPTY_FLAGS),
+                    _common.EMPTY_METADATA, _EMPTY_FLAGS),
                               cygrpc.operation_send_message(serialized_response,
                                                             _EMPTY_FLAGS),)
                 state.initial_metadata_allowed = False
@@ -446,8 +445,8 @@ def _status(rpc_event, state, serialized_response):
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                           _EMPTY_FLAGS))
+                    cygrpc.operation_send_initial_metadata(
+                        _common.EMPTY_METADATA, _EMPTY_FLAGS))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.operation_send_message(serialized_response,
@@ -549,12 +548,12 @@ def _find_method_handler(rpc_event, generic_handlers):
 
 
 def _handle_unrecognized_method(rpc_event):
-    operations = (
-        cygrpc.operation_send_initial_metadata(_EMPTY_METADATA, _EMPTY_FLAGS),
-        cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
-        cygrpc.operation_send_status_from_server(
-            _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
-            b'Method not found!', _EMPTY_FLAGS),)
+    operations = (cygrpc.operation_send_initial_metadata(_common.EMPTY_METADATA,
+                                                         _EMPTY_FLAGS),
+                  cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
+                  cygrpc.operation_send_status_from_server(
+                      _common.EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
+                      b'Method not found!', _EMPTY_FLAGS),)
     rpc_state = _RPCState()
     rpc_event.operation_call.start_server_batch(
         operations, lambda ignored_event: (rpc_state, (),))
