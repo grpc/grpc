@@ -283,20 +283,159 @@ class IndexedSingleStaticElem {
   }
 };
 
-class IndexedSingleInternedElem {
+class AddIndexedSingleStaticElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() { return {}; }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice(
+        {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
+  }
+};
+
+class KeyIndexedSingleStaticElem {
  public:
   static std::vector<grpc_slice> GetInitSlices() {
     return {MakeSlice(
-        {0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
+        {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice({0x7e, 0x03, 'd', 'e', 'f'})};
+  }
+};
+
+class IndexedSingleInternedElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
   }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
     return {MakeSlice({0xbe})};
   }
 };
 
+class AddIndexedSingleInternedElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() { return {}; }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
+  }
+};
+
+class KeyIndexedSingleInternedElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice({0x7e, 0x03, 'g', 'h', 'i'})};
+  }
+};
+
+class NonIndexedElem {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() { return {}; }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    return {MakeSlice({0x00, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
+  }
+};
+
+class RepresentativeClientInitialMetadata {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {grpc_slice_from_static_string(
+        // generated with:
+        // ```
+        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
+        // < test/core/bad_client/tests/simple_request.headers
+        // ```
+        "@\x05:path\x08/foo/bar"
+        "@\x07:scheme\x04http"
+        "@\x07:method\x04POST"
+        "@\x0a:authority\x09localhost"
+        "@\x0c"
+        "content-type\x10"
+        "application/grpc"
+        "@\x14grpc-accept-encoding\x15identity,deflate,gzip"
+        "@\x02te\x08trailers"
+        "@\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)")};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // generated with:
+    // ```
+    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
+    // --hex < test/core/bad_client/tests/simple_request.headers
+    // ```
+    return {MakeSlice({0xc5, 0xc4, 0xc3, 0xc2, 0xc1, 0xc0, 0xbf, 0xbe})};
+  }
+};
+
+class RepresentativeServerInitialMetadata {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {grpc_slice_from_static_string(
+        // generated with:
+        // ```
+        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
+        // <
+        // test/cpp/microbenchmarks/representative_server_initial_metadata.headers
+        // ```
+        "@\x07:status\x03"
+        "200"
+        "@\x0c"
+        "content-type\x10"
+        "application/grpc"
+        "@\x14grpc-accept-encoding\x15identity,deflate,gzip")};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // generated with:
+    // ```
+    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
+    // --hex <
+    // test/cpp/microbenchmarks/representative_server_initial_metadata.headers
+    // ```
+    return {MakeSlice({0xc0, 0xbf, 0xbe})};
+  }
+};
+
+class RepresentativeServerTrailingMetadata {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {grpc_slice_from_static_string(
+        // generated with:
+        // ```
+        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
+        // <
+        // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
+        // ```
+        "@\x0bgrpc-status\x01"
+        "0"
+        "@\x0cgrpc-message\x00")};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // generated with:
+    // ```
+    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
+    // --hex <
+    // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
+    // ```
+    return {MakeSlice({0xbf, 0xbe})};
+  }
+};
+
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleStaticElem);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   RepresentativeClientInitialMetadata);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   RepresentativeServerInitialMetadata);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   RepresentativeServerTrailingMetadata);
 
 }  // namespace hpack_parser_fixtures
 
