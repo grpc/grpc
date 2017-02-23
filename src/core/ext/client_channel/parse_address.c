@@ -49,12 +49,12 @@
 
 int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
-
+  const size_t maxlen = sizeof(un->sun_path);
+  const size_t path_len = strnlen(uri->path, maxlen);
+  if (path_len == maxlen) return 0;
   un->sun_family = AF_UNIX;
-  strncpy(un->sun_path, uri->path, sizeof(un->sun_path) - 1 /* null term'd */);
-  un->sun_path[sizeof(un->sun_path) - 1] = '\0';
-  resolved_addr->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-
+  strcpy(un->sun_path, uri->path);
+  resolved_addr->len = path_len + sizeof(un->sun_family) + 1;
   return 1;
 }
 
