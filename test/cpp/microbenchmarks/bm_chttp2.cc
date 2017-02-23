@@ -284,6 +284,7 @@ class IndexedSingleStaticElem {
 };
 
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
 
 }  // namespace hpack_parser_fixtures
 
