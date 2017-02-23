@@ -1350,6 +1350,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   /* TODO(ctiller): this feels like it could be made lock-free */
   gpr_mu_lock(&call->mu);
   bctl = allocate_batch_control(call);
+  if (bctl == NULL) {
+    error = GRPC_CALL_ERROR_TOO_MANY_CONCURRENT_BATCHES;
+    goto done_without_call;
+  }
   memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
   bctl->notify_tag = notify_tag;
@@ -1682,6 +1686,7 @@ done_with_error:
   if (bctl->recv_final_op) {
     call->requested_final_op = 0;
   }
+done_without_call:
   gpr_mu_unlock(&call->mu);
   goto done;
 }
@@ -1768,6 +1773,8 @@ const char *grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH";
     case GRPC_CALL_ERROR_TOO_MANY_OPERATIONS:
       return "GRPC_CALL_ERROR_TOO_MANY_OPERATIONS";
+    case GRPC_CALL_ERROR_TOO_MANY_CONCURRENT_BATCHES:
+      return "GRPC_CALL_ERROR_TOO_MANY_CONCURRENT_BATCHES";
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }
