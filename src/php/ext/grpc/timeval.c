@@ -245,17 +245,65 @@ PHP_METHOD(Timeval, sleepUntil) {
   gpr_sleep_until(this->wrapped);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 1)
+  ZEND_ARG_INFO(0, microseconds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_add, 0, 0, 1)
+  ZEND_ARG_INFO(0, timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_compare, 0, 0, 2)
+  ZEND_ARG_INFO(0, a_timeval)
+  ZEND_ARG_INFO(0, b_timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_infFuture, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_infPast, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_now, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_similar, 0, 0, 3)
+  ZEND_ARG_INFO(0, a_timeval)
+  ZEND_ARG_INFO(0, b_timeval)
+  ZEND_ARG_INFO(0, threshold_timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_sleepUntil, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_subtract, 0, 0, 1)
+  ZEND_ARG_INFO(0, timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_zero, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry timeval_methods[] = {
-  PHP_ME(Timeval, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Timeval, add, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, compare, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, infFuture, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, infPast, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, now, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, similar, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, sleepUntil, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, subtract, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Timeval, add, arginfo_add,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, compare, arginfo_compare,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, infFuture, arginfo_infFuture,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, infPast, arginfo_infPast,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, now, arginfo_now,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, similar, arginfo_similar,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, sleepUntil, arginfo_sleepUntil,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, subtract, arginfo_subtract,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, zero, arginfo_zero,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
 };
 
