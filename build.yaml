@@ -2980,6 +2980,25 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_chttp2
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_chttp2.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_closure
   build: test
   language: c++
