@@ -60,7 +60,7 @@ typedef struct {
 
   /** remaining members are protected by the combiner */
 
-  /** the selected channel (a grpc_connected_subchannel) */
+  /** the selected channel */
   grpc_connected_subchannel *selected;
 
   /** have we started picking? */
@@ -200,7 +200,7 @@ static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     return 1;
   }
 
-  /* No subchannel selected yet, so acquire lock and then attempt again */
+  /* No subchannel selected yet, so try again */
   if (!p->started_picking) {
     start_picking(exec_ctx, p);
   }

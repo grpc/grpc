@@ -588,6 +588,7 @@ static grpc_lb_policy *create_rr_locked(
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
   args.client_channel_factory = glb_policy->cc_factory;
+  args.combiner = glb_policy->base.combiner;
   grpc_lb_addresses *addresses =
       process_serverlist_locked(exec_ctx, serverlist);
 

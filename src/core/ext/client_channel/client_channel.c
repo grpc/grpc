@@ -183,7 +183,7 @@ typedef struct client_channel_channel_data {
   grpc_pollset_set *interested_parties;
 
   /* the following properties are guarded by a mutex since API's require them
-     to be instantaniously available */
+     to be instantaneously available */
   gpr_mu info_mu;
   char *info_lb_policy_name;
   /** service config in JSON form */
