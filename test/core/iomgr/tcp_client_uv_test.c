@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +33,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+// This test won't work except with libuv
+#ifdef GRPC_UV
+
+#include <uv.h>
+
+#include <string.h>
 
 #include "src/core/lib/iomgr/tcp_client.h"
-
-#include <errno.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -50,12 +48,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
-static grpc_pollset_set *g_pollset_set;
 static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 static int g_connections_complete = 0;
@@ -89,11 +85,20 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   finish_connection();
 }
 
+static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
+
+static void connection_cb(uv_stream_t *server, int status) {
+  uv_tcp_t *client_handle = gpr_malloc(sizeof(uv_tcp_t));
+  GPR_ASSERT(0 == status);
+  GPR_ASSERT(0 == uv_tcp_init(uv_default_loop(), client_handle));
+  GPR_ASSERT(0 == uv_accept(server, (uv_stream_t *)client_handle));
+  uv_close((uv_handle_t *)client_handle, close_cb);
+}
+
 void test_succeeds(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
-  int svr_fd;
-  int r;
+  uv_tcp_t *svr_handle = gpr_malloc(sizeof(uv_tcp_t));
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -105,31 +110,20 @@ void test_succeeds(void) {
   addr->sin_family = AF_INET;
 
   /* create a dummy server */
-  svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(svr_fd >= 0);
-  GPR_ASSERT(
-      0 == bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len));
-  GPR_ASSERT(0 == listen(svr_fd, 1));
+  GPR_ASSERT(0 == uv_tcp_init(uv_default_loop(), svr_handle));
+  GPR_ASSERT(0 == uv_tcp_bind(svr_handle, (struct sockaddr *)addr, 0));
+  GPR_ASSERT(0 == uv_listen((uv_stream_t *)svr_handle, 1, connection_cb));
 
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
 
   /* connect to it */
-  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
-                         (socklen_t *)&resolved_addr.len) == 0);
+  GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr *)addr,
+                                (int *)&resolved_addr.len) == 0);
   grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
-
-  /* await the connection */
-  do {
-    resolved_addr.len = sizeof(addr);
-    r = accept(svr_fd, (struct sockaddr *)addr,
-               (socklen_t *)&resolved_addr.len);
-  } while (r == -1 && errno == EINTR);
-  GPR_ASSERT(r >= 0);
-  close(r);
 
   gpr_mu_lock(g_mu);
 
@@ -144,6 +138,9 @@ void test_succeeds(void) {
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
   }
+
+  // This will get cleaned up when the pollset runs again or gets shutdown
+  uv_close((uv_handle_t *)svr_handle, close_cb);
 
   gpr_mu_unlock(g_mu);
 
@@ -169,7 +166,7 @@ void test_fails(void) {
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   gpr_mu_lock(g_mu);
@@ -203,15 +200,12 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset_set = grpc_pollset_set_create();
   g_pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
-  grpc_pollset_set_add_pollset(&exec_ctx, g_pollset_set, g_pollset);
   grpc_exec_ctx_finish(&exec_ctx);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
-  grpc_pollset_set_destroy(g_pollset_set);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
@@ -221,8 +215,8 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_UV */
 
 int main(int argc, char **argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_UV */
