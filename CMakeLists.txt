@@ -420,9 +420,6 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c httpscli_test)
 endif()
 add_dependencies(buildtests_c init_test)
-add_dependencies(buildtests_c internal_api_canary_iomgr_test)
-add_dependencies(buildtests_c internal_api_canary_support_test)
-add_dependencies(buildtests_c internal_api_canary_transport_test)
 add_dependencies(buildtests_c invalid_call_argument_test)
 add_dependencies(buildtests_c json_rewrite)
 add_dependencies(buildtests_c json_rewrite_test)
@@ -570,7 +567,13 @@ add_dependencies(buildtests_cxx alarm_cpp_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_call_create)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_closure)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_cq)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_fullstack)
@@ -597,6 +600,7 @@ add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_test)
+add_dependencies(buildtests_cxx health_service_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
 endif()
@@ -2057,6 +2061,10 @@ add_library(grpc++
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health.pb.c
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -2110,9 +2118,11 @@ foreach(_hdr
   include/grpc++/completion_queue.h
   include/grpc++/create_channel.h
   include/grpc++/create_channel_posix.h
+  include/grpc++/ext/health_check_service_server_builder_option.h
   include/grpc++/generic/async_generic_service.h
   include/grpc++/generic/generic_stub.h
   include/grpc++/grpc++.h
+  include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
@@ -2237,6 +2247,10 @@ add_library(grpc++_cronet
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health.pb.c
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -2474,9 +2488,11 @@ foreach(_hdr
   include/grpc++/completion_queue.h
   include/grpc++/create_channel.h
   include/grpc++/create_channel_posix.h
+  include/grpc++/ext/health_check_service_server_builder_option.h
   include/grpc++/generic/async_generic_service.h
   include/grpc++/generic/generic_stub.h
   include/grpc++/grpc++.h
+  include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
@@ -2747,6 +2763,10 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_util
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
@@ -2779,6 +2799,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/health/v1/health.proto
+)
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/echo_messages.proto
 )
@@ -2895,6 +2918,10 @@ add_library(grpc++_unsecure
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health.pb.c
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -2948,9 +2975,11 @@ foreach(_hdr
   include/grpc++/completion_queue.h
   include/grpc++/create_channel.h
   include/grpc++/create_channel_posix.h
+  include/grpc++/ext/health_check_service_server_builder_option.h
   include/grpc++/generic/async_generic_service.h
   include/grpc++/generic/generic_stub.h
   include/grpc++/grpc++.h
+  include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
@@ -5911,87 +5940,6 @@ target_link_libraries(init_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(internal_api_canary_iomgr_test
-  test/core/internal_api_canaries/iomgr.c
-)
-
-
-target_include_directories(internal_api_canary_iomgr_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(internal_api_canary_iomgr_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(internal_api_canary_support_test
-  test/core/internal_api_canaries/iomgr.c
-)
-
-
-target_include_directories(internal_api_canary_support_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(internal_api_canary_support_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(internal_api_canary_transport_test
-  test/core/internal_api_canaries/iomgr.c
-)
-
-
-target_include_directories(internal_api_canary_transport_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(internal_api_canary_transport_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(invalid_call_argument_test
   test/core/end2end/invalid_call_argument_test.c
 )
@@ -7411,6 +7359,44 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(bm_call_create
+  test/cpp/microbenchmarks/bm_call_create.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_call_create
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_call_create
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(bm_closure
   test/cpp/microbenchmarks/bm_closure.cc
   third_party/googletest/src/gtest-all.cc
@@ -7436,6 +7422,44 @@ target_link_libraries(bm_closure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark
   grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_cq
+  test/cpp/microbenchmarks/bm_cq.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_cq
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_cq
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
   grpc
   gpr_test_util
   gpr
@@ -8489,6 +8513,41 @@ target_include_directories(grpclb_test
 )
 
 target_link_libraries(grpclb_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(health_service_end2end_test
+  test/cpp/end2end/health_service_end2end_test.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(health_service_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(health_service_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util

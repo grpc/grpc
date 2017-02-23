@@ -38,6 +38,7 @@ import collections
 import glob
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import os.path
@@ -84,8 +85,8 @@ def run_shell_command(cmd, env=None, cwd=None):
   try:
     subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
   except subprocess.CalledProcessError as e:
-    print("Error while running command '%s'. Exit status %d. Output:\n%s",
-          e.cmd, e.returncode, e.output)
+    logging.exception("Error while running command '%s'. Exit status %d. Output:\n%s",
+                       e.cmd, e.returncode, e.output)
     raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
