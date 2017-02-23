@@ -277,7 +277,7 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
     int milli_token_ratio = 0;
     for (grpc_json *sub_field = field->child; sub_field != NULL;
          sub_field = sub_field->next) {
-      if (sub_field->key == NULL) continue;
+      if (sub_field->key == NULL) return;
       if (strcmp(sub_field->key, "maxTokens") == 0) {
         if (max_milli_tokens != 0) return;  // Duplicate.
         if (sub_field->type != GRPC_JSON_NUMBER) return;
@@ -313,6 +313,7 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
           return;
         }
         milli_token_ratio = (int)((whole_value * multiplier) + decimal_value);
+        if (milli_token_ratio <= 0) return;
       }
     }
     parsing_state->retry_throttle_data =
@@ -1074,7 +1075,9 @@ static void on_complete_locked(grpc_exec_ctx *exec_ctx, void *arg,
           &chand->retry_throttle_data);
     } else {
       // TODO(roth): In a subsequent PR, check the return value here and
-      // decide whether or not to retry.
+      // decide whether or not to retry.  Note that we should only
+      // record failures whose statuses match the configured retryable
+      // or non-fatal status codes.
       grpc_server_retry_throttle_data_record_failure(
           &chand->retry_throttle_data);
     }
