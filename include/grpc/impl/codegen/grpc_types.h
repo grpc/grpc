@@ -272,7 +272,9 @@ typedef enum grpc_call_error {
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
   /** payload type requested is not the type registered */
-  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH,
+  /** reached limit on the number of concurrent batches possible */
+  GRPC_CALL_ERROR_TOO_MANY_CONCURRENT_BATCHES
 } grpc_call_error;
 
 /* Default send/receive message size limits in bytes. -1 for unlimited. */
