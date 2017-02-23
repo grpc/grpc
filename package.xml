@@ -343,6 +343,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
@@ -562,6 +563,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/retry_throttle.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.c" role="src" />

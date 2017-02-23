@@ -925,6 +925,8 @@ src/core/ext/client_channel/resolver_factory.c \
 src/core/ext/client_channel/resolver_factory.h \
 src/core/ext/client_channel/resolver_registry.c \
 src/core/ext/client_channel/resolver_registry.h \
+src/core/ext/client_channel/retry_throttle.c \
+src/core/ext/client_channel/retry_throttle.h \
 src/core/ext/client_channel/subchannel.c \
 src/core/ext/client_channel/subchannel.h \
 src/core/ext/client_channel/subchannel_index.c \
