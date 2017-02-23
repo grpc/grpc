@@ -58,7 +58,7 @@ static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
   gpr_event_init(&args->ev);
-  args->pollset = gpr_malloc(grpc_pollset_size());
+  args->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
