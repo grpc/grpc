@@ -129,8 +129,9 @@ _TAG_COLOR = {
     'SKIPPED': 'cyan'
     }
 
-FORMAT = '%(asctime)-15s %(message)s'
-logging.basicConfig(level=logging.INFO, format=FORMAT)
+_FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(level=logging.INFO, format=_FORMAT)
+
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
     return
