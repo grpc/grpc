@@ -122,15 +122,13 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.
 # For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
-if 'darwin' in sys.platform and PY3:
-  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-  if mac_target and (pkg_resources.parse_version(mac_target) <
-		     pkg_resources.parse_version('10.9.0')):
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
-    os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-        r'macosx-[0-9]+\.[0-9]+-(.+)',
-        r'macosx-10.9-\1',
-        util.get_platform())
+if 'darwin' in sys.platform:
+  os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
+  os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
+      r'macosx-[0-9]+\.[0-9]+-(.+)',
+      r'macosx-10.9-\1',
+      util.get_platform())
+
 
 def package_data():
   tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)
