@@ -38,6 +38,7 @@
 
 #include <grpc++/channel.h>
 
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 
 namespace grpc {
@@ -57,7 +58,7 @@ class InteropClientContextInspector {
 
   // Inspector methods, able to peek inside ClientContext, follow.
   grpc_compression_algorithm GetCallCompressionAlgorithm() const {
-    return grpc_call_test_only_get_compression_algorithm(context_.call_);
+    return grpc_call_get_compression_algorithm(context_.call_);
   }
 
   uint32_t GetMessageFlags() const {

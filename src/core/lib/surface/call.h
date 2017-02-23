@@ -121,6 +121,9 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 uint8_t grpc_call_is_client(grpc_call *call);
 
+/* Return the compression algorithm from \a call. */
+grpc_compression_algorithm grpc_call_get_compression_algorithm(grpc_call *call);
+
 /* Return an appropriate compression algorithm for the requested compression \a
  * level in the context of \a call. */
 grpc_compression_algorithm grpc_call_compression_for_level(

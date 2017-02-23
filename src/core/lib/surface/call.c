@@ -699,7 +699,7 @@ static void set_incoming_compression_algorithm(
   call->incoming_compression_algorithm = algo;
 }
 
-grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
+grpc_compression_algorithm grpc_call_get_compression_algorithm(
     grpc_call *call) {
   grpc_compression_algorithm algorithm;
   gpr_mu_lock(&call->mu);

@@ -43,6 +43,8 @@
 #include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
 
+#include "src/core/lib/surface/call.h"
+
 namespace grpc {
 
 class DefaultGlobalClientCallbacks final
@@ -104,6 +106,10 @@ void ClientContext::set_call(grpc_call* call,
   if (call_canceled_) {
     grpc_call_cancel(call_, nullptr);
   }
+}
+
+grpc_compression_algorithm ClientContext::GetIncomingCompressionAlgorithm() {
+  return grpc_call_get_compression_algorithm(call_);
 }
 
 void ClientContext::set_compression_algorithm(
