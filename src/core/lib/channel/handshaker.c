@@ -92,6 +92,10 @@ struct grpc_handshake_manager {
   void* user_data;
   // Handshaker args.
   grpc_handshaker_args args;
+  // Links to the previous and next managers in a list of all pending handshakes
+  // Used at server side only.
+  grpc_handshake_manager* prev;
+  grpc_handshake_manager* next;
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
@@ -99,6 +103,39 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
   gpr_mu_init(&mgr->mu);
   gpr_ref_init(&mgr->refs, 1);
   return mgr;
+}
+
+void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
+                                             grpc_handshake_manager* mgr) {
+  GPR_ASSERT(mgr->prev == NULL);
+  GPR_ASSERT(mgr->next == NULL);
+  mgr->next = *head;
+  if (*head) {
+    (*head)->prev = mgr;
+  }
+  *head = mgr;
+}
+
+void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
+                                                grpc_handshake_manager* mgr) {
+  if (mgr->next != NULL) {
+    mgr->next->prev = mgr->prev;
+  }
+  if (mgr->prev != NULL) {
+    mgr->prev->next = mgr->next;
+  } else {
+    GPR_ASSERT(*head == mgr);
+    *head = mgr->next;
+  }
+}
+
+void grpc_handshake_manager_pending_list_shutdown_all(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why) {
+  while (head != NULL) {
+    grpc_handshake_manager_shutdown(exec_ctx, head, GRPC_ERROR_REF(why));
+    head = head->next;
+  }
+  GRPC_ERROR_UNREF(why);
 }
 
 static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }

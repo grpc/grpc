@@ -132,7 +132,7 @@ typedef struct {
      Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_call_elem)(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_call_element_args *args);
+                                const grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent);

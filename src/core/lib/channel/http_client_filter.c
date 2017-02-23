@@ -386,7 +386,7 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv_initial_metadata = NULL;
   calld->on_done_recv_trailing_metadata = NULL;

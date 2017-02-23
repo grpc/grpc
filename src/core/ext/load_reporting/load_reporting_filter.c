@@ -100,7 +100,7 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->id = (intptr_t)args->call_stack;
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem,
