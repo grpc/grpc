@@ -184,9 +184,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (!g_initialized) {
     timer->pending = false;
-    grpc_closure_sched(
-        exec_ctx, timer->closure,
-        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Attempt to create timer before initialization")));
+    grpc_closure_sched(exec_ctx, timer->closure,
+                       GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                           "Attempt to create timer before initialization")));
     return;
   }
 
