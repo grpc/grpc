@@ -540,7 +540,8 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
         grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, error);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure,
+                       GRPC_ERROR_REF(error));
     return;
   }
 
