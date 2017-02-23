@@ -1108,13 +1108,15 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
                       grpc_closure *closure) {
   while (true) {
     /* Fast-path: CLOSURE_NOT_READY -> <closure> */
-    /* Also do a release-cas here so that any acqire-loads in set_ready or
-       set_shutdown see this */
+    /* The 'release' cas here matches the 'acquire' load in set_ready and
+       set_shutdown to ensure that the clousure being run happens-after the call
+       to notify_on */
     if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
       return; /* Fast-path successful. Return */
     }
 
     /* Slowpath */
+    /* The 'acquire' load matches the 'release' cas in set_ready/set_shutdown */
     gpr_atm curr = gpr_atm_acq_load(state);
     switch (curr) {
       case CLOSURE_NOT_READY: {
@@ -1164,11 +1166,14 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
   gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
 
   while (true) {
+    /* The 'release' cas here matches the 'acquire' load in notify_on and
+       set_ready */
     if (gpr_atm_rel_cas(state, curr, new_state)) {
       return; /* Fast-path successful. Return */
     }
 
     /* Fallback to slowpath */
+    /* This 'acquire' load matches the 'release' in notify_on and set_ready */
     curr = gpr_atm_acq_load(state);
     switch (curr) {
       case CLOSURE_READY: {
@@ -1209,10 +1214,13 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
   /* Try an optimistic case first (i.e assume current state is
      CLOSURE_NOT_READY) */
+  /* This 'release' cas matches the 'acquire' load in notify_on ensuring that
+     the closure being run happens-after the return from epoll_pwait */
   if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
     return; /* early out */
   }
 
+  /* The 'acquire' here matches the 'release' in notify_on / set_shutdown */
   gpr_atm curr = gpr_atm_acq_load(state);
   switch (curr) {
     case CLOSURE_READY: {
@@ -1863,7 +1871,7 @@ retry:
               (void *)pi_new, FD_FROM_PO(item)->fd, poll_obj_string(bag_type),
               (void *)bag);
           /* No need to lock 'pi_new' here since this is a new polling island
-            * and no one has a reference to it yet */
+             and no one has a reference to it yet */
           polling_island_remove_all_fds_locked(pi_new, true, &error);
 
           /* Ref and unref so that the polling island gets deleted during unref
