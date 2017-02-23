@@ -132,7 +132,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
     message = serialize(value);
   } catch (e) {
     e.code = grpc.status.INTERNAL;
-    handleError(e);
+    handleError(call, e);
     return;
   }
   message.grpcWriteFlags = flags;

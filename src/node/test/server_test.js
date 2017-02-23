@@ -37,6 +37,11 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var grpc = require('../src/grpc_extension');
+var grpc_client = require('../src/client.js');
+var grpc_util = require('..');
+
+var test_proto = grpc_util.load(__dirname + '/test_service.proto');
+var test_service = test_proto.TestService.service;
 
 describe('server', function() {
   describe('constructor', function() {
@@ -104,6 +109,28 @@ describe('server', function() {
     var server;
     before(function() {
       server = new grpc.Server();
+    });
+  });
+  describe('serving', function() {
+    it('handles serialization errors', function(done) {
+      var test_server = new grpc_util.Server();
+      test_server.addProtoService(test_service, {
+        unary: function (call, callback) {
+          call.sendMetadata(call.metadata);
+          callback(null, {valid: false});
+        }
+      });
+      var server_credentials = grpc_util.ServerCredentials.createInsecure();
+      var test_port = test_server.bind('localhost:0', server_credentials);
+      test_server.start();
+      var TestClient = grpc_client.makeProtobufClientConstructor(test_service);
+      var insecureCreds = grpc_util.credentials.createInsecure();
+      var client = new TestClient('localhost:' + test_port, insecureCreds);
+      client.unary(true, function(err) {
+        assert.equal(err.message, '.Response#valid is not a field: undefined');
+        test_server.forceShutdown();
+        done();
+      });
     });
   });
   describe('start', function() {
