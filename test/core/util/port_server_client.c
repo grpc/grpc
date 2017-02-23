@@ -121,7 +121,7 @@ void grpc_free_port_using_server(char *server, int port) {
   }
   gpr_mu_unlock(pr.mu);
 
-  grpc_httpcli_context_destroy(&context);
+  grpc_httpcli_context_destroy(&exec_ctx, &context);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
@@ -245,7 +245,7 @@ int grpc_pick_port_using_server(char *server) {
   gpr_mu_unlock(pr.mu);
 
   grpc_http_response_destroy(&pr.response);
-  grpc_httpcli_context_destroy(&context);
+  grpc_httpcli_context_destroy(&exec_ctx, &context);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
