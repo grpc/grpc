@@ -65,7 +65,7 @@ dotnet pack --configuration Release Grpc.Auth/project.json --output ../../artifa
 dotnet pack --configuration Release Grpc.HealthCheck/project.json --output ../../artifacts
 dotnet pack --configuration Release Grpc.Reflection/project.json --output ../../artifacts
 
-nuget pack Grpc.nuspec -Version "1.1.2" -OutputDirectory ../../artifacts
-nuget pack Grpc.Tools.nuspec -Version "1.1.2" -OutputDirectory ../../artifacts
+nuget pack Grpc.nuspec -Version "1.1.3" -OutputDirectory ../../artifacts
+nuget pack Grpc.Tools.nuspec -Version "1.1.3" -OutputDirectory ../../artifacts
 
 (cd ../../artifacts && zip csharp_nugets_dotnetcli.zip *.nupkg)
