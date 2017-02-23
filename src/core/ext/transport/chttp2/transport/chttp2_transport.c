@@ -1002,7 +1002,7 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       return; /* early out */
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
                                      &s->fetching_slice, UINT32_MAX,
-                                     &s->complete_fetch)) {
+                                     &s->complete_fetch_locked)) {
       add_fetched_slice_locked(exec_ctx, t, s);
     }
   }
