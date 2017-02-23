@@ -1,5 +1,11 @@
-# CocoaPods podspec for the gRPC Proto Compiler Plugin
+# This file has been automatically generated from a template file.
+# Please make modifications to
+# `templates/src/objective-c/!ProtoCompiler-gRPCPlugin.podspec.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
 
+# CocoaPods podspec for the gRPC Proto Compiler Plugin
+#
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -36,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.1.0'
+  v = '1.1.2'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC

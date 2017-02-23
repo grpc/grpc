@@ -1,3 +1,9 @@
+# This file has been automatically generated from a template file.
+# Please make modifications to
+# `templates/gRPC-RxLibrary.podspec.template` instead. This file can be
+# regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-RxLibrary'
-  version = '1.1.0'
+  version = '1.1.2'
   s.version  = version
   s.summary  = 'Reactive Extensions library for iOS/OSX.'
   s.homepage = 'http://www.grpc.io'

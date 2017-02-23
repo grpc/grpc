@@ -151,11 +151,9 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
         server_send_first_message_tag = 'server_send_first_message_tag'
         server_send_second_message_tag = 'server_send_second_message_tag'
         server_complete_rpc_tag = 'server_complete_rpc_tag'
-        server_call_due = set((
-            server_send_initial_metadata_tag,
-            server_send_first_message_tag,
-            server_send_second_message_tag,
-            server_complete_rpc_tag,))
+        server_call_due = set(
+            (server_send_initial_metadata_tag, server_send_first_message_tag,
+             server_send_second_message_tag, server_complete_rpc_tag,))
         server_call_completion_queue = cygrpc.CompletionQueue()
         server_call_driver = _QueueDriver(server_call_condition,
                                           server_call_completion_queue,

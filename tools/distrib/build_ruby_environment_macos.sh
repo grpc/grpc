@@ -34,7 +34,7 @@ rm -rf ~/.rake-compiler
 
 CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v0.9.5/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
 
 patch $CROSS_RUBY << EOF
 --- cross-ruby.rake	2016-02-05 16:26:53.000000000 -0800
@@ -53,7 +53,8 @@ EOF
 
 MAKE="make -j8"
 
-for v in 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
+for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
+  ccache -c
   rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
 done
 
