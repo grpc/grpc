@@ -55,7 +55,7 @@ atexit.register(lambda: subprocess.call(['stty', 'echo']))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
-_DEFAULT_SERVER_PORT=8080
+_DEFAULT_SERVER_PORT = 8080
 
 _SKIP_CLIENT_COMPRESSION = ['client_compressed_unary',
                             'client_compressed_streaming']
@@ -71,6 +71,9 @@ _SKIP_ADVANCED = ['status_code_and_message',
                   'unimplemented_service']
 
 _TEST_TIMEOUT = 3*60
+
+# Path of docker image in Google Container Registry
+_GCR_PATH = 'gcr.io/grpc-testing'
 
 class CXXLanguage:
 
@@ -759,6 +762,9 @@ argp.add_argument('--cloud_to_prod_auth',
                   action='store_const',
                   const=True,
                   help='Run cloud_to_prod_auth tests.')
+argp.add_argument('--gcr_tag',
+                  help='When specified, docker images will be stored in Google ' +
+                       'Container Registery under ' + _GCR_PATH)
 argp.add_argument('--prod_servers',
                   choices=prod_servers.keys(),
                   default=['default'],
@@ -980,7 +986,8 @@ try:
     sys.exit(1)
 
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
-                                       maxjobs=args.jobs)
+                                       maxjobs=args.jobs,
+                                       joblog="testcase_cmds.txt")
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
@@ -1007,5 +1014,9 @@ finally:
   dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
 
   for image in docker_images.itervalues():
+    if args.gcr_tag:
+      dockerjob.push_to_gke_registry(
+          image, _GCR_PATH, args.gcr_tag,
+          with_files=['report.xml', 'testcase_cmds.txt'])
     print('Removing docker image %s' % image)
     dockerjob.remove_image(image)

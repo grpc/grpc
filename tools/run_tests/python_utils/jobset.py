@@ -471,7 +471,8 @@ def run(cmdlines,
         stop_on_failure=False,
         add_env={},
         skip_jobs=False,
-        quiet_success=False):
+        quiet_success=False,
+        joblog=None):
   if skip_jobs:
     results = {}
     skipped_job_result = JobResult()
@@ -490,4 +491,9 @@ def run(cmdlines,
     if remaining is not None:
       js.set_remaining(remaining)
   js.finish()
+
+  # Keep a record of commands we invoked for test replay later.
+  if joblog:
+    with open(joblog, 'w') as f:
+      f.writelines([repr(job.cmdline) + '\n' for job in cmdlines])
   return js.get_num_failures(), js.resultset
