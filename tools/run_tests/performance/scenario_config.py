@@ -636,10 +636,11 @@ class JavaLanguage:
                   rpc_type=rpc_type.upper(),
                   req_size=size,
                   resp_size=size,
-                  client_type='ASYNC_CLIENT' % synchronicity.upper(),
-                  server_type='ASYNC_SERVER' % synchronicity.upper(),
+                  client_type='ASYNC_CLIENT',
+                  server_type='ASYNC_SERVER',
                   async_server_threads=1,
                   secure=secure,
+                  warmup_seconds=JAVA_WARMUP_SECONDS,
                   categories=[SWEEP])
 
 
