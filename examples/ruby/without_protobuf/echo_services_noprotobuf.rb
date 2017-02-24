@@ -1,4 +1,4 @@
-#!/bin/bash
+# Original file comments:
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,36 +27,23 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-set -ex
+require 'grpc'
 
-rm -rf ~/.rake-compiler
+module EchoWithoutProtobuf
+  # The 'echo without protobuf' service definition.
+  class Service
 
-CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
+    include GRPC::GenericService
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+    self.marshal_class_method = :try_convert
+    self.unmarshal_class_method = :try_convert
+    self.service_name = 'EchoWithoutProtobuf'
 
-patch $CROSS_RUBY << EOF
---- cross-ruby.rake	2016-02-05 16:26:53.000000000 -0800
-+++ cross-ruby.rake.patched	2016-02-05 16:27:33.000000000 -0800
-@@ -133,7 +133,8 @@
-     "--host=#{MINGW_HOST}",
-     "--target=#{MINGW_TARGET}",
-     "--build=#{RUBY_BUILD}",
--    '--enable-shared',
-+    '--enable-static',
-+    '--disable-shared',
-     '--disable-install-doc',
-     '--without-tk',
-     '--without-tcl'
-EOF
+    # Request and response are plain strings
+    rpc :Echo, String, String
+  end
 
-MAKE="make -j8"
-
-for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
-  ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
-done
-
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
-mv $CROSS_RUBY ~/.rake-compiler/config.yml
+  Stub = Service.rpc_stub_class
+end
