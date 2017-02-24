@@ -141,25 +141,68 @@ class Fixture {
 
 static void DoNothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
+class Stream {
+ public:
+  Stream(Fixture *f) : f_(f) {
+    GRPC_STREAM_REF_INIT(&refcount_, 1, DoNothing, nullptr, "test_stream");
+    stream_ = gpr_malloc(grpc_transport_stream_size(f->transport()));
+  }
+
+  ~Stream() { gpr_free(stream_); }
+
+  void Init() {
+    grpc_transport_init_stream(f_->exec_ctx(), f_->transport(),
+                               static_cast<grpc_stream *>(stream_), &refcount_,
+                               NULL);
+  }
+
+  void Destroy() {
+    grpc_transport_destroy_stream(f_->exec_ctx(), f_->transport(),
+                                  static_cast<grpc_stream *>(stream_), NULL);
+  }
+
+  void Op(grpc_transport_stream_op *op) {
+    grpc_transport_perform_stream_op(f_->exec_ctx(), f_->transport(),
+                                     static_cast<grpc_stream *>(stream_), op);
+  }
+
+ private:
+  Fixture *f_;
+  grpc_stream_refcount refcount_;
+  void *stream_;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks
 //
 
 static void BM_StreamCreateDestroy(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
-  void *stream = gpr_malloc(grpc_transport_stream_size(f.transport()));
-  grpc_stream_refcount refcount;
-  GRPC_STREAM_REF_INIT(&refcount, 1, DoNothing, nullptr, "test_stream");
+  Stream s(&f);
   while (state.KeepRunning()) {
-    grpc_transport_init_stream(f.exec_ctx(), f.transport(),
-                               static_cast<grpc_stream *>(stream), &refcount,
-                               NULL);
-    grpc_transport_destroy_stream(f.exec_ctx(), f.transport(),
-                                  static_cast<grpc_stream *>(stream), NULL);
+    s.Init();
+    s.Destroy();
     f.FlushExecCtx();
   }
-  gpr_free(stream);
 }
 BENCHMARK(BM_StreamCreateDestroy);
+
+static void BM_TransportEmptyOp(benchmark::State &state) {
+  Fixture f(grpc::ChannelArguments(), true);
+  Stream s(&f);
+  s.Init();
+  grpc_closure c;
+  while (state.KeepRunning()) {
+    grpc_transport_stream_op op;
+    memset(&op, 0, sizeof(op));
+    op.on_complete =
+        grpc_closure_init(&c, DoNothing, NULL, grpc_schedule_on_exec_ctx);
+    s.Op(&op);
+    f.FlushExecCtx();
+  }
+  s.Destroy();
+  f.FlushExecCtx();
+}
+BENCHMARK(BM_TransportEmptyOp);
 
 BENCHMARK_MAIN();
