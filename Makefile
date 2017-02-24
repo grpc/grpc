@@ -3187,6 +3187,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
+    src/core/ext/load_reporting/load_reporting.c \
+    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
