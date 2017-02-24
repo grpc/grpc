@@ -101,7 +101,8 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   p->pending_picks = NULL;
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE("Channel shutdown"), "shutdown");
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("Channel shutdown")),
+      "shutdown");
   /* cancel subscription */
   if (p->selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(
@@ -133,7 +134,8 @@ static void pf_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       *target = NULL;
       grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
+          GRPC_ERROR_CREATE_REFERENCING(
+              grpc_slice_from_static_string("Pick Cancelled"), &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -158,7 +160,8 @@ static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         initial_metadata_flags_eq) {
       grpc_closure_sched(
           exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
+          GRPC_ERROR_CREATE_REFERENCING(
+              grpc_slice_from_static_string("Pick Cancelled"), &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -323,11 +326,13 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[p->num_subchannels],
                               "pick_first");
         if (p->num_subchannels == 0) {
-          grpc_connectivity_state_set(
-              exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-              GRPC_ERROR_CREATE_REFERENCING("Pick first exhausted channels",
-                                            &error, 1),
-              "no_more_channels");
+          grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                      GRPC_CHANNEL_SHUTDOWN,
+                                      GRPC_ERROR_CREATE_REFERENCING(
+                                          grpc_slice_from_static_string(
+                                              "Pick first exhausted channels"),
+                                          &error, 1),
+                                      "no_more_channels");
           while ((pp = p->pending_picks)) {
             p->pending_picks = pp->next;
             *pp->target = NULL;
@@ -373,7 +378,9 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (p->selected) {
     grpc_connected_subchannel_ping(exec_ctx, p->selected, closure);
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("Not connected"));
+    grpc_closure_sched(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Not connected")));
   }
 }
 

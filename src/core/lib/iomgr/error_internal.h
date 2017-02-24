@@ -37,10 +37,15 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/avl.h>
 
 struct grpc_error {
   gpr_refcount refs;
+  grpc_slice desc;
+  grpc_slice file;
+  intptr_t file_line;
+  gpr_timespec time_created;
   gpr_avl ints;
   gpr_avl strs;
   gpr_avl times;
@@ -49,6 +54,6 @@ struct grpc_error {
   gpr_atm error_string;
 };
 
-bool grpc_error_is_special(grpc_error *err);
+bool grpc_error_is_special(grpc_error* err);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

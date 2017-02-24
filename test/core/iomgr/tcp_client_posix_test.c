@@ -72,8 +72,9 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_shutdown(exec_ctx, g_connecting,
-                         GRPC_ERROR_CREATE("must_succeed called"));
+  grpc_endpoint_shutdown(
+      exec_ctx, g_connecting,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("must_succeed called")));
   grpc_endpoint_destroy(exec_ctx, g_connecting);
   g_connecting = NULL;
   finish_connection();

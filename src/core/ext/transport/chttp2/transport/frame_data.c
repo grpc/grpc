@@ -54,7 +54,8 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_data_parser *parser) {
   if (parser->parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
-        exec_ctx, parser->parsing_frame, GRPC_ERROR_CREATE("Parser destroyed"));
+        exec_ctx, parser->parsing_frame,
+        GRPC_ERROR_CREATE(grpc_slice_from_static_string("Parser destroyed")));
   }
   GRPC_ERROR_UNREF(parser->error);
 }
@@ -66,7 +67,8 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
     char *msg;
     gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
     grpc_error *err = grpc_error_set_int(
-        GRPC_ERROR_CREATE(msg), GRPC_ERROR_INT_STREAM_ID, (intptr_t)stream_id);
+        GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg)),
+        GRPC_ERROR_INT_STREAM_ID, (intptr_t)stream_id);
     gpr_free(msg);
     return err;
   }
@@ -173,7 +175,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
           break;
         default:
           gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
-          p->error = GRPC_ERROR_CREATE(msg);
+          p->error = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
           p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                         (intptr_t)s->id);
           gpr_free(msg);
@@ -265,7 +267,8 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
       }
   }
 
-  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE(
+      grpc_slice_from_static_string("Should never reach here")));
 }
 
 grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,

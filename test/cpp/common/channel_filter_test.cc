@@ -44,7 +44,7 @@ class MyChannelData : public ChannelData {
   MyChannelData() {}
 
   grpc_error* Init(grpc_exec_ctx* exec_ctx,
-                   grpc_channel_element_args* args) override {
+                   const grpc_channel_element_args* args) override {
     (void)args->channel_args;  // Make sure field is available.
     return GRPC_ERROR_NONE;
   }

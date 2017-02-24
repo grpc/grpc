@@ -122,7 +122,8 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
     grpc_fd_shutdown(exec_ctx, ac->fd,
-                     GRPC_ERROR_CREATE("connect() timed out"));
+                     GRPC_ERROR_CREATE(
+                         grpc_slice_from_static_string("connect() timed out")));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);

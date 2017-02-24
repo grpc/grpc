@@ -931,7 +931,8 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
   grpc_connectivity_state_set(
       exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("Channel Shutdown")),
+      "glb_shutdown");
   /* We need a copy of the lb_call pointer because we can't cancell the call
    * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
    * the cancel, needs to acquire that same lock */
@@ -973,7 +974,8 @@ static void glb_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       *target = NULL;
       grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
+          GRPC_ERROR_CREATE_REFERENCING(
+              grpc_slice_from_static_string("Pick Cancelled"), &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -997,7 +999,8 @@ static void glb_cancel_picks_locked(grpc_exec_ctx *exec_ctx,
         initial_metadata_flags_eq) {
       grpc_closure_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1));
+          GRPC_ERROR_CREATE_REFERENCING(
+              grpc_slice_from_static_string("Pick Cancelled"), &error, 1));
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -1029,10 +1032,10 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                            grpc_closure *on_complete) {
   if (pick_args->lb_token_mdelem_storage == NULL) {
     *target = NULL;
-    grpc_closure_sched(
-        exec_ctx, on_complete,
-        GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
-                          "won't work without it. Failing"));
+    grpc_closure_sched(exec_ctx, on_complete,
+                       GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                           "No mdelem storage for the LB token. Load reporting "
+                           "won't work without it. Failing")));
     return 0;
   }
 

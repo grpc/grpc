@@ -836,6 +836,9 @@ extern gpr_refn_type gpr_refn_import;
 typedef int(*gpr_unref_type)(gpr_refcount *r);
 extern gpr_unref_type gpr_unref_import;
 #define gpr_unref gpr_unref_import
+typedef int(*gpr_ref_is_unique_type)(gpr_refcount *r);
+extern gpr_ref_is_unique_type gpr_ref_is_unique_import;
+#define gpr_ref_is_unique gpr_ref_is_unique_import
 typedef void(*gpr_stats_init_type)(gpr_stats_counter *c, intptr_t n);
 extern gpr_stats_init_type gpr_stats_init_import;
 #define gpr_stats_init gpr_stats_init_import

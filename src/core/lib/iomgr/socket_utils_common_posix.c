@@ -90,7 +90,8 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
   }
   if ((newval != 0) != (val != 0)) {
-    return GRPC_ERROR_CREATE("Failed to set SO_NOSIGPIPE");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to set SO_NOSIGPIPE"));
   }
 #endif
   return GRPC_ERROR_NONE;
@@ -164,7 +165,8 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEADDR)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set SO_REUSEADDR");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to set SO_REUSEADDR"));
   }
 
   return GRPC_ERROR_NONE;
@@ -173,7 +175,8 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
 /* set a socket to reuse old addresses */
 grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
 #ifndef SO_REUSEPORT
-  return GRPC_ERROR_CREATE("SO_REUSEPORT unavailable on compiling system");
+  return GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+      "SO_REUSEPORT unavailable on compiling system"));
 #else
   int val = (reuse != 0);
   int newval;
@@ -185,7 +188,8 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set SO_REUSEPORT");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to set SO_REUSEPORT"));
   }
 
   return GRPC_ERROR_NONE;
@@ -204,7 +208,8 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
     return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set TCP_NODELAY");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Failed to set TCP_NODELAY"));
   }
   return GRPC_ERROR_NONE;
 }
@@ -213,7 +218,8 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
 grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
-    return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
+    return GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("grpc_socket_mutator failed."));
   }
   return GRPC_ERROR_NONE;
 }

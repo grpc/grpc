@@ -392,7 +392,8 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     grpc_closure_sched(
         exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
+        GRPC_ERROR_CREATE_REFERENCING(
+            grpc_slice_from_static_string("Resolution failed"), &error, 1));
   }
 
   gpr_free(r->addr);
@@ -462,7 +463,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
     grpc_closure_sched(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
+                       GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                           "Connect deadline exceeded")));
     return;
   }
 

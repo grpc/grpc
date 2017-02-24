@@ -139,8 +139,8 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
     error = GRPC_ERROR_NONE;
   } else {
     if (error == GRPC_ERROR_NONE) {
-      error =
-          GRPC_ERROR_CREATE("Timed out waiting for connection state change");
+      error = GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+          "Timed out waiting for connection state change"));
     } else if (error == GRPC_ERROR_CANCELLED) {
       error = GRPC_ERROR_NONE;
     }

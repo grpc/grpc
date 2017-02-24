@@ -95,7 +95,8 @@ static void reset_auth_metadata_context(
 static void add_error(grpc_error **combined, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*combined == GRPC_ERROR_NONE) {
-    *combined = GRPC_ERROR_CREATE("Client auth metadata plugin error");
+    *combined = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Client auth metadata plugin error"));
   }
   *combined = grpc_error_add_child(*combined, error);
 }
@@ -115,8 +116,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   if (status != GRPC_CREDENTIALS_OK) {
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE(error_details != NULL && strlen(error_details) > 0
-                              ? error_details
-                              : "Credentials failed to get metadata."),
+                              ? grpc_slice_from_copied_string(error_details)
+                              : grpc_slice_from_static_string(
+                                    "Credentials failed to get metadata.")),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
   } else {
     GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
@@ -192,8 +194,8 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
       grpc_transport_stream_op_finish_with_failure(
           exec_ctx, op,
           grpc_error_set_int(
-              GRPC_ERROR_CREATE(
-                  "Incompatible credentials set on channel and call."),
+              GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                  "Incompatible credentials set on channel and call.")),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED));
       return;
     }
@@ -225,9 +227,10 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
                  host);
     gpr_free(host);
     grpc_call_element_signal_error(
-        exec_ctx, elem, grpc_error_set_int(GRPC_ERROR_CREATE(error_msg),
-                                           GRPC_ERROR_INT_GRPC_STATUS,
-                                           GRPC_STATUS_UNAUTHENTICATED));
+        exec_ctx, elem,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE(grpc_slice_from_copied_string(error_msg)),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED));
     gpr_free(error_msg);
   }
 }

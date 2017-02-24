@@ -166,10 +166,12 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   GPR_ASSERT(incoming.count == 1);
   GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(&exec_ctx, f.server_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("test_leftover end")));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.server_ep,
+      GRPC_ERROR_CREATE(grpc_slice_from_static_string("test_leftover end")));
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);

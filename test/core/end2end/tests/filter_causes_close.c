@@ -210,10 +210,11 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = elem->call_data;
   grpc_closure_sched(
       exec_ctx, calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
-                             "Failure that's not preventable.", &error, 1),
-                         GRPC_ERROR_INT_GRPC_STATUS,
-                         GRPC_STATUS_PERMISSION_DENIED));
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_REFERENCING(
+              grpc_slice_from_static_string("Failure that's not preventable."),
+              &error, 1),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED));
 }
 
 static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,

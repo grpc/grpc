@@ -257,7 +257,8 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
                  naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(grpc_slice_from_copied_string(msg),
+                                        errors, naddrs);
     gpr_free(msg);
     goto error;
   } else if (count != naddrs) {
@@ -265,7 +266,8 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     gpr_asprintf(&msg, "Only %" PRIuPTR
                        " addresses added out of total %" PRIuPTR " resolved",
                  count, naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(grpc_slice_from_copied_string(msg),
+                                        errors, naddrs);
     gpr_free(msg);
 
     const char *warning_message = grpc_error_string(err);

@@ -221,7 +221,7 @@ class ChannelData {
 
   /// Initializes the call data.
   virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
-                           grpc_channel_element_args *args) {
+                           const grpc_channel_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 

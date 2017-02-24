@@ -259,7 +259,8 @@ static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
 static void add_init_error(grpc_error **composite, grpc_error *new) {
   if (new == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE)
-    *composite = GRPC_ERROR_CREATE("Call creation failed");
+    *composite = GRPC_ERROR_CREATE(
+        grpc_slice_from_static_string("Call creation failed"));
   *composite = grpc_error_add_child(*composite, new);
 }
 
@@ -327,17 +328,17 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
      * call. */
     if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
       if (0 == (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
-        add_init_error(&error,
-                       GRPC_ERROR_CREATE("Census tracing propagation requested "
-                                         "without Census context propagation"));
+        add_init_error(&error, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                                   "Census tracing propagation requested "
+                                   "without Census context propagation")));
       }
       grpc_call_context_set(
           call, GRPC_CONTEXT_TRACING,
           args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
     } else if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
-      add_init_error(&error,
-                     GRPC_ERROR_CREATE("Census context propagation requested "
-                                       "without Census tracing propagation"));
+      add_init_error(&error, GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                                 "Census context propagation requested "
+                                 "without Census tracing propagation")));
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
@@ -607,8 +608,9 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
 static grpc_error *error_from_status(grpc_status_code status,
                                      const char *description) {
   return grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
+      grpc_error_set_str(
+          GRPC_ERROR_CREATE(grpc_slice_from_copied_string(description)),
+          GRPC_ERROR_STR_GRPC_MESSAGE, description),
       GRPC_ERROR_INT_GRPC_STATUS, status);
 }
 
@@ -906,9 +908,10 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
     grpc_error *error =
         status_code == GRPC_STATUS_OK
             ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE("Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 (intptr_t)status_code);
+            : grpc_error_set_int(
+                  GRPC_ERROR_CREATE(grpc_slice_from_static_string(
+                      "Error received from peer")),
+                  GRPC_ERROR_INT_GRPC_STATUS, (intptr_t)status_code);
 
     if (b->idx.named.grpc_message != NULL) {
       char *msg =
@@ -1066,8 +1069,8 @@ static grpc_error *consolidate_batch_errors(batch_control *bctl) {
     bctl->errors[0] = NULL;
     return e;
   } else {
-    grpc_error *error =
-        GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+    grpc_error *error = GRPC_ERROR_CREATE_REFERENCING(
+        grpc_slice_from_static_string("Call batch failed"), bctl->errors, n);
     for (size_t i = 0; i < n; i++) {
       GRPC_ERROR_UNREF(bctl->errors[i]);
       bctl->errors[i] = NULL;
@@ -1535,7 +1538,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         {
           grpc_error *override_error = GRPC_ERROR_NONE;
           if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
-            override_error = GRPC_ERROR_CREATE("Error from server send status");
+            override_error = GRPC_ERROR_CREATE(
+                grpc_slice_from_static_string("Error from server send status"));
           }
           if (op->data.send_status_from_server.status_details != NULL) {
             call->send_extra_metadata[1].md = grpc_mdelem_from_slices(

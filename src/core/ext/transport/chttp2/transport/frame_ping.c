@@ -71,7 +71,7 @@ grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
   if (flags & 0xfe || length != 8) {
     char *msg;
     gpr_asprintf(&msg, "invalid ping: length=%d, flags=%02x", length, flags);
-    grpc_error *error = GRPC_ERROR_CREATE(msg);
+    grpc_error *error = GRPC_ERROR_CREATE(grpc_slice_from_copied_string(msg));
     gpr_free(msg);
     return error;
   }
