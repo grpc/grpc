@@ -46,6 +46,11 @@ int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
                            on_complete);
 }
 
+grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
+                           grpc_byte_stream *byte_stream, grpc_slice *slice) {
+  return byte_stream->pull(exec_ctx, byte_stream, slice);
+}
+
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream) {
   byte_stream->destroy(exec_ctx, byte_stream);

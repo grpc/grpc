@@ -1181,11 +1181,15 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
 
   if (error == GRPC_ERROR_NONE) {
     grpc_slice slice;
-    bs->pull(exec_ctx, bs, &slice);
-    grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                          slice);
-    continue_receiving_slices(exec_ctx, bctl);
-  } else {
+    error = grpc_byte_stream_pull(exec_ctx, bs, &slice);
+    if (error == GRPC_ERROR_NONE) {
+      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                            slice);
+      continue_receiving_slices(exec_ctx, bctl);
+    }
+  }
+
+  if (error != GRPC_ERROR_NONE) {
     if (grpc_trace_operation_failures) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
