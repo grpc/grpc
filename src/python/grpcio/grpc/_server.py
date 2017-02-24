@@ -342,7 +342,7 @@ def _unary_request(rpc_event, state, request_deserializer):
             if state.client is _CANCELLED or state.statused:
                 return None
             else:
-                start_server_batch_result = rpc_event.operation_call.start_server_batch(
+                rpc_event.operation_call.start_server_batch(
                     cygrpc.Operations(
                         (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
                     _receive_message(state, rpc_event.operation_call,

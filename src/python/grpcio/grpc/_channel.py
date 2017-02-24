@@ -200,7 +200,7 @@ def _consume_request_iterator(request_iterator, state, call,
                 request = next(request_iterator)
             except StopIteration:
                 break
-            except Exception as e:
+            except Exception:
                 logging.exception("Exception iterating requests!")
                 call.cancel()
                 _abort(state, grpc.StatusCode.UNKNOWN,
