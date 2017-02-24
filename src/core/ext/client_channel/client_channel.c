@@ -1082,7 +1082,8 @@ static void on_complete_locked(grpc_exec_ctx *exec_ctx, void *arg,
           &chand->retry_throttle_data);
     }
   }
-  grpc_closure_run(exec_ctx, calld->original_on_complete, error);
+  grpc_closure_run(exec_ctx, calld->original_on_complete,
+                   GRPC_ERROR_REF(error));
 }
 
 static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
