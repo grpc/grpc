@@ -172,6 +172,20 @@ class Stream {
   void *stream_;
 };
 
+template <class F>
+grpc_closure *MakeClosure(
+    F f, grpc_closure_scheduler *sched = grpc_schedule_on_exec_ctx) {
+  struct C : public grpc_closure {
+    C(const F &f) : f_(f) {}
+    F f_;
+    static void Execute(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+      static_cast<C *>(arg)->f_(exec_ctx, error);
+    }
+  };
+  auto *c = new C{f};
+  return grpc_closure_init(c, C::Execute, c, sched);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks
 //
@@ -187,19 +201,80 @@ static void BM_StreamCreateDestroy(benchmark::State &state) {
 }
 BENCHMARK(BM_StreamCreateDestroy);
 
+class RepresentativeClientInitialMetadata {
+ public:
+  static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
+    return {
+        GRPC_MDELEM_SCHEME_HTTP, GRPC_MDELEM_METHOD_POST,
+        grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH,
+            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "foo.test.google.fr:1234"))),
+        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
+        GRPC_MDELEM_TE_TRAILERS,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+        grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_USER_AGENT,
+            grpc_slice_intern(grpc_slice_from_static_string(
+                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+  }
+};
+
+template <class Metadata>
+static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
+  Fixture f(grpc::ChannelArguments(), true);
+  Stream s(&f);
+  grpc_transport_stream_op op;
+  grpc_closure *start;
+  grpc_closure *done;
+
+  grpc_metadata_batch b;
+  grpc_metadata_batch_init(&b);
+  b.deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  std::vector<grpc_mdelem> elems = Metadata::GetElems(f.exec_ctx());
+  std::vector<grpc_linked_mdelem> storage(elems.size());
+  for (size_t i = 0; i < elems.size(); i++) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        grpc_metadata_batch_add_tail(f.exec_ctx(), &b, &storage[i], elems[i])));
+  }
+
+  f.FlushExecCtx();
+  start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    if (!state.KeepRunning()) return;
+    s.Init();
+    memset(&op, 0, sizeof(op));
+    op.on_complete = done;
+    op.send_initial_metadata = &b;
+    s.Op(&op);
+  });
+  done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    s.Destroy();
+    grpc_closure_run(exec_ctx, start, GRPC_ERROR_NONE);
+  });
+  grpc_closure_sched(f.exec_ctx(), start, GRPC_ERROR_NONE);
+  f.FlushExecCtx();
+  grpc_metadata_batch_destroy(f.exec_ctx(), &b);
+}
+BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
+                   RepresentativeClientInitialMetadata);
+
 static void BM_TransportEmptyOp(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init();
-  grpc_closure c;
-  while (state.KeepRunning()) {
-    grpc_transport_stream_op op;
-    memset(&op, 0, sizeof(op));
-    op.on_complete =
-        grpc_closure_init(&c, DoNothing, NULL, grpc_schedule_on_exec_ctx);
-    s.Op(&op);
-    f.FlushExecCtx();
-  }
+  grpc_transport_stream_op op;
+  grpc_closure *c =
+      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+        if (!state.KeepRunning()) return;
+        memset(&op, 0, sizeof(op));
+        op.on_complete = c;
+        s.Op(&op);
+      });
+  grpc_closure_sched(f.exec_ctx(), c, GRPC_ERROR_NONE);
+  f.FlushExecCtx();
   s.Destroy();
   f.FlushExecCtx();
 }
