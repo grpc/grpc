@@ -3051,10 +3051,14 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
   platforms:
   - mac
   - linux
   - posix
+  timeout_seconds: 1200
 - name: channel_arguments_test
   gtest: true
   build: test
