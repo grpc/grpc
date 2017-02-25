@@ -69,3 +69,4 @@ xcodebuild \
     test \
     | egrep "$XCODEBUILD_FILTER" \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
