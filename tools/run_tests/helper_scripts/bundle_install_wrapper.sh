@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,33 +31,16 @@
 
 set -ex
 
-rm -rf ~/.rake-compiler
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
+SYSTEM=`uname | cut -f 1 -d_`
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+if [ "$SYSTEM" == "Darwin" ] ; then
+  # Workaround for crash during bundle install
+  # See suggestion in https://github.com/bundler/bundler/issues/3692
+  BUNDLE_SPECIFIC_PLATFORM=true bundle install
+else
+  bundle install
+fi
 
-patch $CROSS_RUBY << EOF
---- cross-ruby.rake	2016-02-05 16:26:53.000000000 -0800
-+++ cross-ruby.rake.patched	2016-02-05 16:27:33.000000000 -0800
-@@ -133,7 +133,8 @@
-     "--host=#{MINGW_HOST}",
-     "--target=#{MINGW_TARGET}",
-     "--build=#{RUBY_BUILD}",
--    '--enable-shared',
-+    '--enable-static',
-+    '--disable-shared',
-     '--disable-install-doc',
-     '--without-tk',
-     '--without-tcl'
-EOF
-
-MAKE="make -j8"
-
-for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
-  ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
-done
-
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
-mv $CROSS_RUBY ~/.rake-compiler/config.yml

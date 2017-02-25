@@ -113,14 +113,15 @@ static grpc_error *try_split_host_port(const char *name,
   /* parse name, splitting it into host and port parts */
   grpc_error *error;
   gpr_split_host_port(name, host, port);
-  if (host == NULL) {
+  if (*host == NULL) {
     char *msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
     error = GRPC_ERROR_CREATE(msg);
     gpr_free(msg);
     return error;
   }
-  if (port == NULL) {
+  if (*port == NULL) {
+    // TODO(murgatroid99): add tests for this case
     if (default_port == NULL) {
       char *msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);

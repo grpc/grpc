@@ -206,7 +206,6 @@ argp.add_argument('-b', '--benchmarks',
                            'bm_error',
                            'bm_chttp2_hpack',
                            'bm_metadata'],
->>>>>>> b325a1dd4af3f3d3443da3e0ac0f007162c63772
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')

@@ -252,12 +252,11 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
     *calld->pp_recv_message = calld->payload_bin_delivered
                                   ? NULL
                                   : (grpc_byte_stream *)&calld->read_stream;
-    calld->recv_message_ready->cb(exec_ctx, calld->recv_message_ready->cb_arg,
-                                  err);
+    grpc_closure_run(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }
-  calld->on_complete->cb(exec_ctx, calld->on_complete->cb_arg, err);
+  grpc_closure_run(exec_ctx, calld->on_complete, GRPC_ERROR_REF(err));
 }
 
 static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -268,8 +267,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     /* do nothing. This is probably a GET request, and payload will be returned
     in hs_on_complete callback. */
   } else {
-    calld->recv_message_ready->cb(exec_ctx, calld->recv_message_ready->cb_arg,
-                                  err);
+    grpc_closure_run(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
   }
 }
 
