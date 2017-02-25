@@ -28,6 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import cgi
 import multiprocessing
 import os
 import subprocess
@@ -71,11 +72,12 @@ def heading(name):
 
 def link(txt, tgt):
   global index_html
-  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (tgt, txt)
+  index_html += "<p><a href=\"%s\">%s</a></p>\n" % (
+      cgi.escape(tgt, quote=True), cgi.escape(txt))
 
 def text(txt):
   global index_html
-  index_html += "<p><pre>%s</pre></p>\n" % txt
+  index_html += "<p><pre>%s</pre></p>\n" % cgi.escape(txt)
 
 def collect_latency(bm_name, args):
   """generate latency profiles"""
@@ -91,7 +93,9 @@ def collect_latency(bm_name, args):
                                        '--benchmark_list_tests']).splitlines():
     link(line, '%s.txt' % fnize(line))
     benchmarks.append(
-        jobset.JobSpec(['bins/basicprof/%s' % bm_name, '--benchmark_filter=^%s$' % line],
+        jobset.JobSpec(['bins/basicprof/%s' % bm_name,
+                        '--benchmark_filter=^%s$' % line,
+                        '--benchmark_min_time=0.05'],
                        environ={'LATENCY_TRACE': '%s.trace' % fnize(line)}))
     profile_analysis.append(
         jobset.JobSpec([sys.executable,
@@ -103,7 +107,7 @@ def collect_latency(bm_name, args):
     # consume upwards of five gigabytes of ram in some cases, and so analysing
     # hundreds of them at once is impractical -- but we want at least some
     # concurrency or the work takes too long
-    if len(benchmarks) >= min(4, multiprocessing.cpu_count()):
+    if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
       jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
@@ -195,7 +199,14 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack', 'bm_closure', 'bm_cq', 'bm_call_create', 'bm_error', 'bm_metadata'],
+                  default=['bm_fullstack',
+                           'bm_closure',
+                           'bm_cq',
+                           'bm_call_create',
+                           'bm_error',
+                           'bm_chttp2_hpack',
+                           'bm_metadata'],
+>>>>>>> b325a1dd4af3f3d3443da3e0ac0f007162c63772
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')

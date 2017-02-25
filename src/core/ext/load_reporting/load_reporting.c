@@ -34,13 +34,33 @@
 #include <limits.h>
 #include <string.h>
 
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
+
+static void destroy_lr_cost_context(void *c) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_load_reporting_cost_context *cost_ctx = c;
+  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
+    grpc_slice_unref_internal(&exec_ctx, cost_ctx->values[i]);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(cost_ctx->values);
+  gpr_free(cost_ctx);
+}
+
+void grpc_call_set_load_reporting_cost_context(
+    grpc_call *call, grpc_load_reporting_cost_context *ctx) {
+  grpc_call_context_set(call, GRPC_CONTEXT_LR_COST, ctx,
+                        destroy_lr_cost_context);
+}
 
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
   if (a == NULL) return false;
