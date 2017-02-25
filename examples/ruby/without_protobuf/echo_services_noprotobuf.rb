@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2017, Google Inc.
+# Original file comments:
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,23 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-# Config file for the internal CI (in protobuf text format)
+require 'grpc'
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop.sh"
-# grpc_interop tests can take 6+ hours to complete.
-timeout_mins: 480
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-  }
-}
+module EchoWithoutProtobuf
+  # The 'echo without protobuf' service definition.
+  class Service
+
+    include GRPC::GenericService
+
+    self.marshal_class_method = :try_convert
+    self.unmarshal_class_method = :try_convert
+    self.service_name = 'EchoWithoutProtobuf'
+
+    # Request and response are plain strings
+    rpc :Echo, String, String
+  end
+
+  Stub = Service.rpc_stub_class
+end

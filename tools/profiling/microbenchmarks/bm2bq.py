@@ -66,6 +66,8 @@ columns = [
   ('cli_stream_stalls_per_iteration', 'float'),
   ('svr_transport_stalls_per_iteration', 'float'),
   ('svr_stream_stalls_per_iteration', 'float'),
+  ('atm_cas_per_iteration', 'float'),
+  ('atm_add_per_iteration', 'float')
 ]
 
 if sys.argv[1] == '--schema':
@@ -102,6 +104,34 @@ bm_specs = {
     'tpl': [],
     'dyn': ['request_size', 'bandwidth_kilobits'],
   },
+  'BM_ErrorStringOnNewError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorStringRepeatedly': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatusCode': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorHttpError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_HasClearGrpcStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_IsolatedFilter' : {
+    'tpl': ['fixture', 'client_mutator'],
+    'dyn': [],
+  }
 }
 
 def numericalize(s):
@@ -158,7 +188,7 @@ def parse_name(name):
 for bm in js['benchmarks']:
   context = js['context']
   if 'label' in bm:
-    labels_list = [s.split(':') for s in bm['label'].split(' ')]
+    labels_list = [s.split(':') for s in bm['label'].strip().split(' ') if len(s) and s[0] != '#']
     for el in labels_list:
       el[0] = el[0].replace('/iter', '_per_iteration')
     labels = dict(labels_list)

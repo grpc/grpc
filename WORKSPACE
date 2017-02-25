@@ -34,32 +34,42 @@ bind(
 )
 
 bind(
+<<<<<<< HEAD
     name = "benchmark",
     actual = "@submodule_benchmark//:benchmark",
+=======
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags",
+>>>>>>> f2cf3d94a1a46db2ebb2c13c3476e58ecdae6006
 )
 
 new_local_repository(
     name = "submodule_boringssl",
-    path = "third_party/boringssl-with-bazel",
     build_file = "third_party/boringssl-with-bazel/BUILD",
+    path = "third_party/boringssl-with-bazel",
 )
 
 new_local_repository(
     name = "submodule_zlib",
-    path = "third_party/zlib",
     build_file = "third_party/zlib.BUILD",
+    path = "third_party/zlib",
 )
 
 new_local_repository(
     name = "submodule_protobuf",
-    path = "third_party/protobuf",
     build_file = "third_party/protobuf/BUILD",
+    path = "third_party/protobuf",
 )
 
 new_local_repository(
     name = "submodule_gtest",
-    path = "third_party/googletest",
     build_file = "third_party/gtest.BUILD",
+    path = "third_party/googletest",
+)
+
+local_repository(
+    name = "com_github_gflags_gflags",
+    path = "third_party/gflags",
 )
 
 new_local_repository(

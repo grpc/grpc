@@ -1076,8 +1076,8 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
-        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
         "src/core/ext/transport/cronet/transport/cronet_transport.h",
+        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1128,11 +1128,16 @@ grpc_cc_library(
         "src/cpp/common/channel_filter.cc",
         "src/cpp/common/completion_queue_cc.cc",
         "src/cpp/common/core_codegen.cc",
+        "src/cpp/common/resource_quota_cc.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/common/version_cc.cc",
         "src/cpp/server/async_generic_service.cc",
         "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.cc",
+        "src/cpp/server/health/default_health_check_service.cc",
+        "src/cpp/server/health/health.pb.c",
+        "src/cpp/server/health/health_check_service.cc",
+        "src/cpp/server/health/health_check_service_server_builder_option.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_cc.cc",
         "src/cpp/server/server_context.cc",
@@ -1149,6 +1154,8 @@ grpc_cc_library(
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
         "src/cpp/server/dynamic_thread_pool.h",
+        "src/cpp/server/health/default_health_check_service.h",
+        "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
     ],
@@ -1160,9 +1167,11 @@ grpc_cc_library(
         "include/grpc++/completion_queue.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/create_channel_posix.h",
+        "include/grpc++/ext/health_check_service_server_builder_option.h",
         "include/grpc++/generic/async_generic_service.h",
         "include/grpc++/generic/generic_stub.h",
         "include/grpc++/grpc++.h",
+        "include/grpc++/health_check_service_interface.h",
         "include/grpc++/impl/call.h",
         "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/codegen/core_codegen.h",
@@ -1288,5 +1297,24 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_codegen_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_reflection",
+    srcs = [
+        "src/cpp/ext/proto_server_reflection.cc",
+        "src/cpp/ext/proto_server_reflection_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/proto_server_reflection.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc++/ext/proto_server_reflection_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,9 @@ lsb_release -dc || true
 gcc --version || true
 clang --version || true
 docker --version || true
+
+# Need to increase open files limit for c tests
+ulimit -n 2000
 
 git submodule update --init
 

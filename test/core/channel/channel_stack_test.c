@@ -57,7 +57,7 @@ static grpc_error *channel_init_func(grpc_exec_ctx *exec_ctx,
 
 static grpc_error *call_init_func(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
