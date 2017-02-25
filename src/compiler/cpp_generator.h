@@ -68,28 +68,36 @@ struct Parameters {
 };
 
 // Return the prologue of the generated header file.
-grpc::string GetHeaderPrologue(grpc_generator::File *file, const Parameters &params);
+grpc::string GetHeaderPrologue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the includes needed for generated header file.
-grpc::string GetHeaderIncludes(grpc_generator::File *file, const Parameters &params);
+grpc::string GetHeaderIncludes(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the includes needed for generated source file.
-grpc::string GetSourceIncludes(grpc_generator::File *file, const Parameters &params);
+grpc::string GetSourceIncludes(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the epilogue of the generated header file.
-grpc::string GetHeaderEpilogue(grpc_generator::File *file, const Parameters &params);
+grpc::string GetHeaderEpilogue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the prologue of the generated source file.
-grpc::string GetSourcePrologue(grpc_generator::File *file, const Parameters &params);
+grpc::string GetSourcePrologue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the services for generated header file.
-grpc::string GetHeaderServices(grpc_generator::File *file, const Parameters &params);
+grpc::string GetHeaderServices(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the services for generated source file.
-grpc::string GetSourceServices(grpc_generator::File *file, const Parameters &params);
+grpc::string GetSourceServices(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the epilogue of the generated source file.
-grpc::string GetSourceEpilogue(grpc_generator::File *file, const Parameters &params);
+grpc::string GetSourceEpilogue(grpc_generator::File *file,
+                               const Parameters &params);
 
 }  // namespace grpc_cpp_generator
 
