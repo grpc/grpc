@@ -3007,7 +3007,9 @@ targets:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
   - benchmark
+  - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
@@ -3078,6 +3080,23 @@ targets:
   - linux
   - posix
   timeout_seconds: 1200
+- name: bm_metadata
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_metadata.cc
+  deps:
+  - benchmark
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: channel_arguments_test
   gtest: true
   build: test
