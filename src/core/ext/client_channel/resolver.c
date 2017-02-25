@@ -32,10 +32,13 @@
  */
 
 #include "src/core/ext/client_channel/resolver.h"
+#include "src/core/lib/iomgr/combiner.h"
 
 void grpc_resolver_init(grpc_resolver *resolver,
-                        const grpc_resolver_vtable *vtable) {
+                        const grpc_resolver_vtable *vtable,
+                        grpc_combiner *combiner) {
   resolver->vtable = vtable;
+  resolver->combiner = GRPC_COMBINER_REF(combiner, "resolver");
   gpr_ref_init(&resolver->refs, 1);
 }
 
@@ -62,20 +65,24 @@ void grpc_resolver_unref(grpc_resolver *resolver,
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 #endif
   if (gpr_unref(&resolver->refs)) {
+    grpc_combiner *combiner = resolver->combiner;
     resolver->vtable->destroy(exec_ctx, resolver);
+    GRPC_COMBINER_UNREF(exec_ctx, combiner, "resolver");
   }
 }
 
-void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
-  resolver->vtable->shutdown(exec_ctx, resolver);
+void grpc_resolver_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                   grpc_resolver *resolver) {
+  resolver->vtable->shutdown_locked(exec_ctx, resolver);
 }
 
-void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver) {
-  resolver->vtable->channel_saw_error(exec_ctx, resolver);
+void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                            grpc_resolver *resolver) {
+  resolver->vtable->channel_saw_error_locked(exec_ctx, resolver);
 }
 
-void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_channel_args **result, grpc_closure *on_complete) {
-  resolver->vtable->next(exec_ctx, resolver, result, on_complete);
+void grpc_resolver_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                               grpc_channel_args **result,
+                               grpc_closure *on_complete) {
+  resolver->vtable->next_locked(exec_ctx, resolver, result, on_complete);
 }

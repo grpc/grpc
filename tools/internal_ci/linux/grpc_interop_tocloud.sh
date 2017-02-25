@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_fuzzer_uri.sh"
-timeout_mins: 1440  # 24 hours is the maximum allowed value
-action {
-  define_artifacts {
-    regex: "git/grpc/fuzzer_output/**"
-  }
-}
+export LANG=en_US.UTF-8
+
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
+
+git submodule update --init
+
+tools/run_tests/run_interop_tests.py -l all -s all --use_docker --http2_interop -t -j 12 $@

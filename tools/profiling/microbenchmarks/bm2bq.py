@@ -104,7 +104,6 @@ bm_specs = {
     'tpl': [],
     'dyn': ['request_size', 'bandwidth_kilobits'],
   },
-<<<<<<< HEAD
   'BM_ErrorStringOnNewError': {
     'tpl': ['fixture'],
     'dyn': [],
