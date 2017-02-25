@@ -101,51 +101,6 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
   print('Failed to remove docker image %s' % image)
   return False
 
-def push_to_gke_registry(image, gcr_path, gcr_tag='latest', with_files=[]):
-  """Tags and Pushes a docker image in Google Containger Registry."""
-  tag_idx = image.find(':')
-  if tag_idx == -1:
-    print('Failed to parse docker image name %s' % image)
-    return False
-
-  saved_dir = "/tmp/test_info"
-  subprocess.check_call('rm -rf %s; mkdir -p %s' % (saved_dir, saved_dir))
-  # Stores the original image:tag which might be referenced by tests
-  # during replay.
-  subprocess.check_call(
-      'echo "%s" > %(dir)s/original_image' % (image, saved_dir))
-  # Copy all other files inside the docker image.
-  for f in with_files:
-    shutil.copyfile(f, saved_dir)
-
-  # Commit the change into the image.
-  tag_name = '%s/%s:%s' % (gcr_path, image[:tag_idx], gcr_tag)
-  cmd = (
-      'docker run -v %(src)s:%(mnt)s:ro --name=%(vm)s %(img)s ' +
-      'cp -r %(mnt)s %(dst)s && docker commit %(vm)s %(tag)s'
-  ) % {
-      'src': saved_dir,
-      'mnt': os.path.join('/mnt/', os.path.basename(saved_dir)),
-      'vm': uuid.uuid4(),
-      'img':image,
-      'tag': tag_name
-  }
-
-  # cmd = ['docker', 'tag', image, tag_name]
-  # if subprocess.call(args=cmd) != 0:
-  #   print('Error tagging docker image with command: %r' % cmd)
-  #   return False
-  if subprocess.call(args=cmd) != 0:
-    print('Error in copying files into the image %s' % tag_name)
-    return False
-
-  cmd = ['gcloud', 'docker', 'push', tag_name]
-  print('Pushing %s to the GKE registry..' % tag_name)
-  if subprocess.call(args=cmd) != 0:
-    print('Error in pushing the image %s to the GKE registry' % tag_name)
-    return False
-  return True
-
 class DockerJob:
   """Encapsulates a job"""
 

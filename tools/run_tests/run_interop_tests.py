@@ -39,6 +39,7 @@ import json
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -472,6 +473,7 @@ _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during
                      'goaway', 'ping', 'max_streams']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
+DOCKER_TEST_INFO = os.path.join(DOCKER_WORKDIR_ROOT, 'test_info')
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
@@ -725,6 +727,54 @@ def aggregate_http2_results(stdout):
     'failed_cases': ', '.join(failed_cases),
     'percent': 1.0 * passed / (passed + failed)
   }
+
+def push_to_gke_registry(image, gcr_path, gcr_tag='latest', with_files=[]):
+  """Tags and Pushes a docker image in Google Containger Registry."""
+  tag_idx = image.find(':')
+  if tag_idx == -1:
+    print('Failed to parse docker image name %s' % image)
+    return False
+
+  tmp_dir = os.path.join('/tmp', os.path.basename(DOCKER_TEST_INFO))
+  shutil.rmtree(tmp_dir, ignore_errors=True)
+  os.makedirs(tmp_dir)
+  # Stores the original image:tag which might be referenced by tests
+  # during replay.
+  with open(os.path.join(tmp_dir, 'original_image'), 'w') as f:
+    f.write(image + '\n')
+  # Copy all other files inside the docker image.
+  for f in with_files:
+    shutil.copy(f, tmp_dir)
+
+  tag_name = '%s/%s:%s' % (gcr_path, image[:tag_idx], gcr_tag)
+  tmp_container_name = str(uuid.uuid4())
+  cmd = (
+      'docker run -v %(src)s:%(mnt)s:ro --name=%(vm)s %(img)s cp -r %(mnt)s %(dst)s'
+  ) % {
+      'src': tmp_dir,
+      'mnt': os.path.join('/mnt/', os.path.basename(tmp_dir)),
+      'vm': tmp_container_name,
+      'img':image,
+      'tag': tag_name,
+      'dst': os.path.dirname(DOCKER_TEST_INFO),
+  }
+  # Store all files with the image and commit it.
+  if (subprocess.call(cmd.split()) or
+      subprocess.call(['docker', 'commit', '-m',
+                       'added ' + DOCKER_TEST_INFO, tmp_container_name, tag_name])):
+    print('Error in copying files into the image')
+    succeed = False
+  else:
+    print('Pushing %s to the GKE registry..' % tag_name)
+    if subprocess.call(['gcloud', 'docker', 'push', tag_name]):
+      print('Error in pushing the image %s to the GKE registry' % tag_name)
+      succeed = False
+    succeed = True
+
+  # Clean up
+  subprocess.call(['docker', 'rm', tmp_container_name])
+  dockerjob.remove_image(tag_name)
+  return succeed
 
 # A dictionary of prod servers to test.
 # Format: server_name: (server_host, server_host_override, errors_allowed)
@@ -1015,7 +1065,7 @@ finally:
 
   for image in docker_images.itervalues():
     if args.gcr_tag:
-      dockerjob.push_to_gke_registry(
+      push_to_gke_registry(
           image, _GCR_PATH, args.gcr_tag,
           with_files=['report.xml', 'testcase_cmds.txt'])
     print('Removing docker image %s' % image)
