@@ -40,9 +40,9 @@
 #include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 #include "src/compiler/python_generator.h"
 #include "src/compiler/python_private_generator.h"
-#include "src/compiler/generator_helpers.h"
 
 using std::vector;
 using grpc_generator::StringReplace;
@@ -87,8 +87,8 @@ grpc::string ModuleAlias(const grpc::string& filename) {
   return module_name;
 }
 
-bool GetModuleAndMessagePath(const Descriptor* type,
-                             grpc::string* out, grpc::string generator_file_name,
+bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out,
+                             grpc::string generator_file_name,
                              bool generate_in_pb2_grpc) {
   const Descriptor* path_elem_type = type;
   DescriptorVector message_path;
@@ -132,9 +132,8 @@ StringVector get_all_comments(const DescriptorType* descriptor) {
   return comments;
 }
 
-} // namespace
+}  // namespace
 
-} // namespace grpc_python_generator
+}  // namespace grpc_python_generator
 
-
-#endif // GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_HELPERS_H
+#endif  // GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_HELPERS_H

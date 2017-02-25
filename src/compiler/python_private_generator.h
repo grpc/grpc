@@ -37,8 +37,8 @@
 #include <iostream>
 #include <vector>
 
-#include "src/compiler/schema_interface.h"
 #include "src/compiler/python_generator.h"
+#include "src/compiler/schema_interface.h"
 
 namespace grpc_python_generator {
 
@@ -61,28 +61,26 @@ struct PrivateGenerator {
 
  private:
   bool PrintPreamble(grpc_generator::Printer* out);
-  bool PrintBetaPreamble(grpc_generator::Printer *out);
+  bool PrintBetaPreamble(grpc_generator::Printer* out);
   bool PrintGAServices(grpc_generator::Printer* out);
   bool PrintBetaServices(grpc_generator::Printer* out);
 
   bool PrintAddServicerToServer(
       const grpc::string& package_qualified_service_name,
-      const grpc_generator::Service* service,
-      grpc_generator::Printer* out);
+      const grpc_generator::Service* service, grpc_generator::Printer* out);
   bool PrintServicer(const grpc_generator::Service* service,
-                    grpc_generator::Printer* out);
+                     grpc_generator::Printer* out);
   bool PrintStub(const grpc::string& package_qualified_service_name,
                  const grpc_generator::Service* service,
                  grpc_generator::Printer* out);
 
   bool PrintBetaServicer(const grpc_generator::Service* service,
-                        grpc_generator::Printer* out);
+                         grpc_generator::Printer* out);
   bool PrintBetaServerFactory(
       const grpc::string& package_qualified_service_name,
-      const grpc_generator::Service* service,
-      grpc_generator::Printer* out);
+      const grpc_generator::Service* service, grpc_generator::Printer* out);
   bool PrintBetaStub(const grpc_generator::Service* service,
-                    grpc_generator::Printer* out);
+                     grpc_generator::Printer* out);
   bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
                             const grpc_generator::Service* service,
                             grpc_generator::Printer* out);
@@ -92,11 +90,10 @@ struct PrivateGenerator {
   // wrapping will not be changed.
   void PrintAllComments(std::vector<grpc::string> comments,
                         grpc_generator::Printer* out);
-
 };
 
-} // namespace
+}  // namespace
 
-} // namespace grpc_python_generator
+}  // namespace grpc_python_generator
 
-#endif // GRPC_INTERNAL_COMPILER_PYTHON_PRIVATE_GENERATOR_H
+#endif  // GRPC_INTERNAL_COMPILER_PYTHON_PRIVATE_GENERATOR_H

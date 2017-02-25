@@ -46,83 +46,83 @@
 
 namespace grpc {
 
-  typedef GRPC_CUSTOM_STRING string;
+typedef GRPC_CUSTOM_STRING string;
 
 }  // namespace grpc
 
 namespace grpc_generator {
 
-  // A common interface for objects having comments in the source.
-  // Return formatted comments to be inserted in generated code.
-  struct CommentHolder {
-    virtual ~CommentHolder() {}
-    virtual grpc::string GetLeadingComments(const grpc::string prefix) const = 0;
-    virtual grpc::string GetTrailingComments(const grpc::string prefix) const = 0;
-    virtual std::vector<grpc::string> GetAllComments() const = 0;
-  };
+// A common interface for objects having comments in the source.
+// Return formatted comments to be inserted in generated code.
+struct CommentHolder {
+  virtual ~CommentHolder() {}
+  virtual grpc::string GetLeadingComments(const grpc::string prefix) const = 0;
+  virtual grpc::string GetTrailingComments(const grpc::string prefix) const = 0;
+  virtual std::vector<grpc::string> GetAllComments() const = 0;
+};
 
-  // An abstract interface representing a method.
-  struct Method : public CommentHolder {
-    virtual ~Method() {}
+// An abstract interface representing a method.
+struct Method : public CommentHolder {
+  virtual ~Method() {}
 
-    virtual grpc::string name() const = 0;
+  virtual grpc::string name() const = 0;
 
-    virtual grpc::string input_type_name() const = 0;
-    virtual grpc::string output_type_name() const = 0;
+  virtual grpc::string input_type_name() const = 0;
+  virtual grpc::string output_type_name() const = 0;
 
-    virtual bool get_module_and_message_path_input(grpc::string *str,
-                                                  grpc::string generator_file_name,
-                                                  bool generate_in_pb2_grpc) const = 0;
-    virtual bool get_module_and_message_path_output(grpc::string *str,
-                                                    grpc::string generator_file_name, 
-                                                    bool generate_in_pb2_grpc) const = 0;
+  virtual bool get_module_and_message_path_input(
+      grpc::string *str, grpc::string generator_file_name,
+      bool generate_in_pb2_grpc) const = 0;
+  virtual bool get_module_and_message_path_output(
+      grpc::string *str, grpc::string generator_file_name,
+      bool generate_in_pb2_grpc) const = 0;
 
-    virtual grpc::string get_input_type_name() const = 0;
-    virtual grpc::string get_output_type_name() const = 0;
-    virtual bool NoStreaming() const = 0;
-    virtual bool ClientStreaming() const = 0;
-    virtual bool python_ClientStreaming() const = 0;
-    virtual bool ServerStreaming() const = 0;
-    virtual bool python_ServerStreaming() const = 0;
-    virtual bool BidiStreaming() const = 0;
-  };
+  virtual grpc::string get_input_type_name() const = 0;
+  virtual grpc::string get_output_type_name() const = 0;
+  virtual bool NoStreaming() const = 0;
+  virtual bool ClientStreaming() const = 0;
+  virtual bool python_ClientStreaming() const = 0;
+  virtual bool ServerStreaming() const = 0;
+  virtual bool python_ServerStreaming() const = 0;
+  virtual bool BidiStreaming() const = 0;
+};
 
-  // An abstract interface representing a service.
-  struct Service : public CommentHolder {
-    virtual ~Service() {}
+// An abstract interface representing a service.
+struct Service : public CommentHolder {
+  virtual ~Service() {}
 
-    virtual grpc::string name() const = 0;
+  virtual grpc::string name() const = 0;
 
-    virtual int method_count() const = 0;
-    virtual std::unique_ptr<const Method> method(int i) const = 0;
-  };
+  virtual int method_count() const = 0;
+  virtual std::unique_ptr<const Method> method(int i) const = 0;
+};
 
-  struct Printer {
-    virtual ~Printer() {}
+struct Printer {
+  virtual ~Printer() {}
 
-    virtual void Print(const std::map<grpc::string, grpc::string> &vars,
-                       const char *template_string) = 0;
-    virtual void Print(const char *string) = 0;
-    virtual void Indent() = 0;
-    virtual void Outdent() = 0;
-  };
+  virtual void Print(const std::map<grpc::string, grpc::string> &vars,
+                     const char *template_string) = 0;
+  virtual void Print(const char *string) = 0;
+  virtual void Indent() = 0;
+  virtual void Outdent() = 0;
+};
 
-  // An interface that allows the source generated to be output using various
-  // libraries/idls/serializers.
-  struct File : public CommentHolder {
-    virtual ~File() {}
+// An interface that allows the source generated to be output using various
+// libraries/idls/serializers.
+struct File : public CommentHolder {
+  virtual ~File() {}
 
-    virtual grpc::string filename() const = 0;
-    virtual grpc::string filename_without_ext() const = 0;
-    virtual grpc::string package() const = 0;
-    virtual std::vector<grpc::string> package_parts() const = 0;
-    virtual grpc::string additional_headers() const = 0;
+  virtual grpc::string filename() const = 0;
+  virtual grpc::string filename_without_ext() const = 0;
+  virtual grpc::string package() const = 0;
+  virtual std::vector<grpc::string> package_parts() const = 0;
+  virtual grpc::string additional_headers() const = 0;
 
-    virtual int service_count() const = 0;
-    virtual std::unique_ptr<const Service> service(int i) const = 0;
+  virtual int service_count() const = 0;
+  virtual std::unique_ptr<const Service> service(int i) const = 0;
 
-    virtual std::unique_ptr<Printer> CreatePrinter(grpc::string *str) const = 0;
-  };
-} // namespace grpc_generator
+  virtual std::unique_ptr<Printer> CreatePrinter(grpc::string *str) const = 0;
+};
+}  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_SCHEMA_INTERFACE_H
