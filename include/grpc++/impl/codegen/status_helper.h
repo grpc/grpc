@@ -39,7 +39,7 @@
 namespace grpc {
 
 inline StatusCode GetCanonicalCode(const Status& status) {
-  return status.error_code();
+  return StatusCode(status.error_code());
 }
 
 }  // namespace grpc
