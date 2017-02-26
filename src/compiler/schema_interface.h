@@ -81,9 +81,7 @@ struct Method : public CommentHolder {
   virtual grpc::string get_output_type_name() const = 0;
   virtual bool NoStreaming() const = 0;
   virtual bool ClientStreaming() const = 0;
-  virtual bool python_ClientStreaming() const = 0;
   virtual bool ServerStreaming() const = 0;
-  virtual bool python_ServerStreaming() const = 0;
   virtual bool BidiStreaming() const = 0;
 };
 
