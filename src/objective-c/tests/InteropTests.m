@@ -117,7 +117,9 @@
 
   GPBEmpty *request = [GPBEmpty message];
 
+  NSLog(@"warning: Starting call Empty");
   [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
+    NSLog(@"warning: Response received Empty");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
     id expectedResponse = [GPBEmpty message];
@@ -137,8 +139,10 @@
   request.responseType = RMTPayloadType_Compressable;
   request.responseSize = 314159;
   request.payload.body = [NSMutableData dataWithLength:271828];
+  NSLog(@"warning: Starting call Large");
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    NSLog(@"warning: Response received Large: %tu", response.payload.body.length);
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
     RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
@@ -159,8 +163,10 @@
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead; // 4MB - encoding overhead
   request.responseSize = kPayloadSize;
+  NSLog(@"warning: Starting call 4MB");
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    NSLog(@"warning: Response received 4MB: %tu", response.payload.body.length);
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertEqual(response.payload.body.length, kPayloadSize);
     [expectation fulfill];
@@ -179,12 +185,14 @@
   const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead + 1; // 1B over max size
   request.responseSize = kPayloadSize;
 
+  NSLog(@"warning: Starting call OverMax");
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
     // TODO(jcanizales): Catch the error and rethrow it with an actionable message:
     // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a higher limit.
     // - If you're developing the server, consider using response streaming, or let clients filter
     //   responses by setting a google.protobuf.FieldMask in the request:
     //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
+    NSLog(@"warning: Response received OverMax: %tu", response.payload.body.length);
     XCTAssertEqualObjects(error.localizedDescription, @"Received message larger than max (4194305 vs. 4194304)");
     [expectation fulfill];
   }];
@@ -204,7 +212,9 @@
 
   [GRPCCall setResponseSizeLimit:6 * 1024 * 1024 forHost:self.class.host];
 
+  NSLog(@"warning: Starting call 4MB Accept");
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    NSLog(@"warning: Response received 4MBAccept: %tu", response.payload.body.length);
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertEqual(response.payload.body.length, kPayloadSize);
     [expectation fulfill];
@@ -231,9 +241,11 @@
 
   GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
+  NSLog(@"warning: Starting call ClientStreaming");
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,
                                                    NSError *error) {
+    NSLog(@"warning: Response received ClientStreaming");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
     RMTStreamingInputCallResponse *expectedResponse = [RMTStreamingInputCallResponse message];
@@ -258,16 +270,19 @@
     parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
+  NSLog(@"warning: Starting call ServerStreaming");
 
   __block int index = 0;
   [_service streamingOutputCallWithRequest:request
                               eventHandler:^(BOOL done,
                                              RMTStreamingOutputCallResponse *response,
                                              NSError *error){
+    NSLog(@"warning: Response received ServerStreaming");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertTrue(done || response, @"Event handler called without an event.");
 
     if (response) {
+      NSLog(@"warning: Response received 2 ServerStreaming");
       XCTAssertLessThan(index, 4, @"More than 4 responses received.");
       id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:expectedSizes[index]];
       XCTAssertEqualObjects(response, expected);
@@ -275,6 +290,7 @@
     }
 
     if (done) {
+      NSLog(@"warning: Response received 3 ServerStreaming");
       XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
       [expectation fulfill];
     }
@@ -298,10 +314,12 @@
                                                requestedResponseSize:responses[index]];
   [requestsBuffer writeValue:request];
 
+  NSLog(@"warning: Starting call Pingpong");
   [_service fullDuplexCallWithRequestsWriter:requestsBuffer
                                 eventHandler:^(BOOL done,
                                                RMTStreamingOutputCallResponse *response,
                                                NSError *error) {
+    NSLog(@"warning: Response received Pingpong");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertTrue(done || response, @"Event handler called without an event.");
 
@@ -332,10 +350,12 @@
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
+  NSLog(@"warning: Starting call EmptyStream");
   [_service fullDuplexCallWithRequestsWriter:[GRXWriter emptyWriter]
                                 eventHandler:^(BOOL done,
                                                RMTStreamingOutputCallResponse *response,
                                                NSError *error) {
+    NSLog(@"warning: Response received EmptyStream");
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssert(done, @"Unexpected response: %@", response);
     [expectation fulfill];
@@ -355,11 +375,13 @@
       [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
                                                   handler:^(RMTStreamingInputCallResponse *response,
                                                             NSError *error) {
+    NSLog(@"warning: Response received CancelAfterBegin");
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
   XCTAssertEqual(call.state, GRXWriterStateNotStarted);
 
+  NSLog(@"warning: Starting call CancelAfterBegin");
   [call start];
   XCTAssertEqual(call.state, GRXWriterStateStarted);
 
@@ -388,6 +410,7 @@
                                          eventHandler:^(BOOL done,
                                                         RMTStreamingOutputCallResponse *response,
                                                         NSError *error) {
+    NSLog(@"warning: Response received AfterFirst");
     if (receivedResponse) {
       XCTAssert(done, @"Unexpected extra response %@", response);
       XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -400,6 +423,7 @@
       [call cancel];
     }
   }];
+  NSLog(@"warning: Starting call AfterFirst");
   [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
@@ -411,7 +435,9 @@
 
   GPBEmpty *request = [GPBEmpty message];
 
+  NSLog(@"warning: Starting call AfterClosingOpen");
   [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
+    NSLog(@"warning: Response received AfterClosingOpen");
     XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
 
 #pragma clang diagnostic push
