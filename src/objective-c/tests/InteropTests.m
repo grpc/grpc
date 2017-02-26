@@ -445,7 +445,9 @@
     [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
+    NSLog(@"warning: Starting call AfterClosingOpen 2");
     [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
+      NSLog(@"warning: Response received AfterClosingOpen 2");
       XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
       [expectation fulfill];
     }];

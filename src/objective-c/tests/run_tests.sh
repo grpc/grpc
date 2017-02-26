@@ -53,14 +53,16 @@ trap 'kill -9 `jobs -p`' EXIT
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+XCODEBUILD_FILTER='(^===|^\*\*|\bwarning\b|fail|WRITE|READ)'
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
     -destination name="iPhone 6" \
     test \
     | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | egrep -v "(GPBDictionary|GPBArray)" \
+    | sed 's/READ.*$/READ/g' \
+    | sed 's/WRITE.*$/WRITE/g'
 
 xcodebuild \
     -workspace Tests.xcworkspace \
