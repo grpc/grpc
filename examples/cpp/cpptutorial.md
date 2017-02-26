@@ -427,7 +427,6 @@ the method a context and response object and get back a `ClientWriter`.
     std::unique_ptr<ClientWriter<Point> > writer(
         stub_->RecordRoute(&context, &stats));
     for (int i = 0; i < kPoints; i++) {
-      const Feature& f = feature_list_[feature_distribution(generator)];
       std::cout << "Visiting point "
                 << f.location().latitude()/kCoordFactor_ << ", "
                 << f.location().longitude()/kCoordFactor_ << std::endl;
@@ -436,7 +435,6 @@ the method a context and response object and get back a `ClientWriter`.
         break;
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(
-          delay_distribution(generator)));
     }
     writer->WritesDone();
     Status status = writer->Finish();

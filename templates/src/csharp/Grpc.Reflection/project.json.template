@@ -4,7 +4,7 @@
     "version": "${settings.csharp_version}",
     "title": "gRPC C# Reflection",
     "authors": [ "Google Inc." ],
-    "copyright": "Copyright 2016, Google Inc.",
+    "copyright": "Copyright 2016, gRPC authors",
     "packOptions": {
       "summary": "Implementation of gRPC reflection service",
       "description": "Provides information about services running on a gRPC C# server.",

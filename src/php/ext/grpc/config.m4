@@ -23,7 +23,6 @@ if test "$PHP_GRPC" != "no"; then
   fi
   if test -z "$GRPC_DIR"; then
     AC_MSG_RESULT([not found])
-    AC_MSG_ERROR([Please reinstall the grpc distribution])
   fi
 
   dnl # --with-grpc -> add include path
