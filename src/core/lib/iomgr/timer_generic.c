@@ -70,7 +70,7 @@ typedef struct {
 /* Protects g_shard_queue */
 static gpr_mu g_mu;
 /* Allow only one run_some_expired_timers at once */
-static gpr_spinlock g_checker_mu = GPR_SPINLOCK_INITIALIZER;
+static gpr_spinlock g_checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER;
 static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
