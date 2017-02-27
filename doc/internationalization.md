@@ -17,7 +17,7 @@ Also, handling method names is a very hot code path so any additional encoding/d
 Recommended representation in language-specific APIs: string type.
 
 ### Host name (in RPC Invocation)
-Host names are punycode encoded. Currently, the punycode needs to be provided by the user.
+Host names are punycode encoded, but the user is responsible for providing the punycode-encoded string if she wishes to use an internationalized host name.
 
 Recommended representation in language-specific APIs: string/unicode string.
 
