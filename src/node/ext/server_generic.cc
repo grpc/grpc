@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,52 +31,43 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#ifndef GRPC_UV
+
+#include "server.h"
 
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
+#include "grpc/support/time.h"
 
 namespace grpc {
 namespace node {
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public Nan::ObjectWrap {
- public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Local<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Local<v8::Value> val);
+Server::Server(grpc_server *server) : wrapped_server(server) {
+  shutdown_queue = grpc_completion_queue_create(NULL);
+  grpc_server_register_non_listening_completion_queue(server, shutdown_queue,
+                                                      NULL);
+}
 
- private:
-  explicit Server(grpc_server *server);
-  ~Server();
+Server::~Server() {
+  this->ShutdownServer();
+  grpc_completion_queue_shutdown(this->shutdown_queue);
+  grpc_completion_queue_destroy(this->shutdown_queue);
+}
 
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
+void Server::ShutdownServer() {
+  if (this->wrapped_server != NULL) {
+    grpc_server_shutdown_and_notify(this->wrapped_server, this->shutdown_queue,
+                                    NULL);
+    grpc_server_cancel_all_calls(this->wrapped_server);
+    grpc_completion_queue_pluck(this->shutdown_queue, NULL,
+                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_server_destroy(this->wrapped_server);
+    this->wrapped_server = NULL;
+  }
+}
 
-  void ShutdownServer();
-
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(TryShutdown);
-  static NAN_METHOD(ForceShutdown);
-  static Nan::Callback *constructor;
-  static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
-
-  grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
-};
-
-}  // namespace node
 }  // namespace grpc
+}  // namespace node
 
-#endif  // NET_GRPC_NODE_SERVER_H_
+#endif /* GRPC_UV */
