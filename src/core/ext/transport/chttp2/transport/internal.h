@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -207,6 +208,12 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_closure destroy_action;
   grpc_closure finished_action;
 };
+
+typedef enum {
+  GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_PINGING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_DYING,
+} grpc_chttp2_keepalive_state;
 
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
@@ -382,6 +389,22 @@ struct grpc_chttp2_transport {
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
   grpc_closure destructive_reclaimer_locked;
+
+  /* keep-alive ping support */
+  /** timer to initiate ping events */
+  grpc_timer keepalive_ping_timer;
+  /** watchdog to kill the transport when waiting for the keepalive ping */
+  grpc_timer keepalive_watchdog_timer;
+  /** time duration in between pings */
+  gpr_timespec keepalive_time;
+  /** grace period for a ping to complete before watchdog kicks in */
+  gpr_timespec keepalive_timeout;
+  /** if keepalive pings are allowed when there's no outstanding streams */
+  bool keepalive_permit_without_calls;
+  /** keep-alive state machine state */
+  grpc_chttp2_keepalive_state keepalive_state;
+
+  uint8_t *keepalive_ping_id;
 };
 
 typedef enum {
