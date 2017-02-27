@@ -42,6 +42,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/lib/support/spinlock.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -69,7 +70,7 @@ typedef struct {
 /* Protects g_shard_queue */
 static gpr_mu g_mu;
 /* Allow only one run_some_expired_timers at once */
-static gpr_mu g_checker_mu;
+static gpr_spinlock g_checker_mu = GPR_SPINLOCK_INITIALIZER;
 static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
@@ -90,7 +91,6 @@ void grpc_timer_list_init(gpr_timespec now) {
 
   g_initialized = true;
   gpr_mu_init(&g_mu);
-  gpr_mu_init(&g_checker_mu);
   g_clock_type = now.clock_type;
 
   for (i = 0; i < NUM_SHARDS; i++) {
@@ -117,7 +117,6 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
     grpc_timer_heap_destroy(&shard->heap);
   }
   gpr_mu_destroy(&g_mu);
-  gpr_mu_destroy(&g_checker_mu);
   g_initialized = false;
 }
 
@@ -324,7 +323,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 
   /* TODO(ctiller): verify that there are any timers (atomically) here */
 
-  if (gpr_mu_trylock(&g_checker_mu)) {
+  if (gpr_spinlock_trylock(&g_checker_mu)) {
     gpr_mu_lock(&g_mu);
 
     while (gpr_time_cmp(g_shard_queue[0]->min_deadline, now) < 0) {
@@ -350,7 +349,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     }
 
     gpr_mu_unlock(&g_mu);
-    gpr_mu_unlock(&g_checker_mu);
+    gpr_spinlock_unlock(&g_checker_mu);
   } else if (next != NULL) {
     /* TODO(ctiller): this forces calling code to do an short poll, and
        then retry the timer check (because this time through the timer list was

@@ -382,6 +382,7 @@ add_dependencies(buildtests_c gpr_histogram_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_mpscq_test)
+add_dependencies(buildtests_c gpr_spinlock_test)
 add_dependencies(buildtests_c gpr_stack_lockfree_test)
 add_dependencies(buildtests_c gpr_string_test)
 add_dependencies(buildtests_c gpr_sync_test)
@@ -5096,6 +5097,31 @@ target_include_directories(gpr_mpscq_test
 )
 
 target_link_libraries(gpr_mpscq_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(gpr_spinlock_test
+  test/core/support/spinlock_test.c
+)
+
+
+target_include_directories(gpr_spinlock_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gpr_spinlock_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr

@@ -845,6 +845,28 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 10, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "gpr_spinlock_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 7, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
