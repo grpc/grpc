@@ -129,6 +129,17 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void Entry_DefaultValue()
+        {
+            var entry = default(Metadata.Entry);
+            Assert.IsNull(entry.Key);
+            Assert.IsNull(entry.Value);
+            Assert.IsNull(entry.ValueBytes);
+            Assert.IsFalse(entry.IsBinary);
+            Assert.AreEqual("[Entry: key=, value=]", entry.ToString());
+        }
+
+        [Test]
         public void IndexOf()
         {
             var metadata = CreateMetadata();

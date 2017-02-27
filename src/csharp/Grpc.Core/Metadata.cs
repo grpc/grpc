@@ -306,7 +306,7 @@ namespace Grpc.Core
                 {
                     if (valueBytes == null)
                     {
-                        return Encoding.GetBytes(value);
+                        return value != null ? Encoding.GetBytes(value) : null;
                     }
 
                     // defensive copy to guarantee immutability
@@ -324,7 +324,11 @@ namespace Grpc.Core
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value ?? Encoding.GetString(valueBytes);
+                    if (value == null)
+                    {
+                        return valueBytes != null ? Encoding.GetString(valueBytes) : null;
+                    }
+                    return value;
                 }
             }
 
@@ -335,7 +339,7 @@ namespace Grpc.Core
             {
                 get
                 {
-                    return value == null;
+                    return key != null && value == null;
                 }
             }
 
