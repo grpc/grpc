@@ -272,11 +272,16 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
+                    t, grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->start_keepalive_ping_locked,
                     start_keepalive_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->finish_keepalive_ping_locked,
                     finish_keepalive_ping_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->keepalive_watchdog_fired_locked,
+                    keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
 
   grpc_bdp_estimator_init(&t->bdp_estimator, t->peer_string);
@@ -479,9 +484,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     grpc_timer_init(
         exec_ctx, &t->keepalive_ping_timer,
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
-        grpc_closure_create(init_keepalive_ping_locked, t,
-                            grpc_combiner_scheduler(t->combiner, false)),
-        gpr_now(GPR_CLOCK_MONOTONIC));
+        &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
@@ -2089,9 +2092,7 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_timer_init(
           exec_ctx, &t->keepalive_ping_timer,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
-          grpc_closure_create(init_keepalive_ping_locked, t,
-                              grpc_combiner_scheduler(t->combiner, false)),
-          gpr_now(GPR_CLOCK_MONOTONIC));
+          &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
     }
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "init keepalive ping");
@@ -2104,9 +2105,7 @@ static void start_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_timer_init(
       exec_ctx, &t->keepalive_watchdog_timer,
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_timeout),
-      grpc_closure_create(keepalive_watchdog_fired_locked, t,
-                          grpc_combiner_scheduler(t->combiner, false)),
-      gpr_now(GPR_CLOCK_MONOTONIC));
+      &t->keepalive_watchdog_fired_locked, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -2138,7 +2137,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
                              GRPC_ERROR_CREATE("keepalive watchdog timeout"));
     }
   } else {
-    // The watchdog timer should have been cancelled.
+    // The watchdog timer should have been cancelled by
+    // finish_keepalive_ping_locked.
     if (error != GRPC_ERROR_CANCELLED) {
       gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
               t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);

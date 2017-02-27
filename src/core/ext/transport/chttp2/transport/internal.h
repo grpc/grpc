@@ -391,8 +391,10 @@ struct grpc_chttp2_transport {
   grpc_closure destructive_reclaimer_locked;
 
   /* keep-alive ping support */
+  grpc_closure init_keepalive_ping_locked;
   grpc_closure start_keepalive_ping_locked;
   grpc_closure finish_keepalive_ping_locked;
+  grpc_closure keepalive_watchdog_fired_locked;
   /** timer to initiate ping events */
   grpc_timer keepalive_ping_timer;
   /** watchdog to kill the transport when waiting for the keepalive ping */
