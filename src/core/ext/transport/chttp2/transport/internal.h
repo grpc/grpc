@@ -391,9 +391,13 @@ struct grpc_chttp2_transport {
   grpc_closure destructive_reclaimer_locked;
 
   /* keep-alive ping support */
+  /** Closure to initialize a keepalive ping */
   grpc_closure init_keepalive_ping_locked;
+  /** Closure to run when the keepalive ping is sent */
   grpc_closure start_keepalive_ping_locked;
+  /** Cousure to run when the keepalive ping ack is received */
   grpc_closure finish_keepalive_ping_locked;
+  /** Closrue to run when the keepalive ping timeouts */
   grpc_closure keepalive_watchdog_fired_locked;
   /** timer to initiate ping events */
   grpc_timer keepalive_ping_timer;
@@ -407,8 +411,6 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
-
-  uint8_t *keepalive_ping_id;
 };
 
 typedef enum {

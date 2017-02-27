@@ -424,8 +424,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
         t->keepalive_permit_without_calls =
             (uint32_t)grpc_channel_arg_get_integer(
-                &channel_args->args[i],
-                (grpc_integer_options){0, 0, MAX_WRITE_BUFFER_SIZE});
+                &channel_args->args[i], (grpc_integer_options){0, 0, 1});
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -477,7 +476,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
 
-  // Start client-side keepalive pings
+  /** Start client-side keepalive pings */
   if (t->is_client) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
@@ -2137,8 +2136,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
                              GRPC_ERROR_CREATE("keepalive watchdog timeout"));
     }
   } else {
-    // The watchdog timer should have been cancelled by
-    // finish_keepalive_ping_locked.
+    /** The watchdog timer should have been cancelled by
+        finish_keepalive_ping_locked. */
     if (error != GRPC_ERROR_CANCELLED) {
       gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
               t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
