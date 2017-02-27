@@ -103,7 +103,6 @@ $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$CFLAGS << ' -Werror '
 $CFLAGS << ' -Wno-format '
 
 output = File.join('grpc', 'grpc_c')

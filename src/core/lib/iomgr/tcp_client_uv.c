@@ -46,6 +46,8 @@
 #include "src/core/lib/iomgr/tcp_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
+extern int grpc_tcp_trace;
+
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
   grpc_timer alarm;
@@ -70,6 +72,12 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
                            grpc_error *error) {
   int done;
   grpc_uv_tcp_connect *connect = acp;
+  if (grpc_tcp_trace) {
+    const char *str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+            connect->addr_name, str);
+    grpc_error_free_string(str);
+  }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
        it was cancelled, then the handler that cancelled it also should close
@@ -145,6 +153,12 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
+
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
+            connect->addr_name);
+  }
+
   // TODO(murgatroid99): figure out what the return value here means
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
                  (const struct sockaddr *)resolved_addr->addr,

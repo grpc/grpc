@@ -941,6 +941,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_completion_queue_threading_test", 
+    "src": [
+      "test/core/surface/completion_queue_threading_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -1285,57 +1302,6 @@
     "name": "init_test", 
     "src": [
       "test/core/surface/init_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "internal_api_canary_iomgr_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "internal_api_canary_support_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "internal_api_canary_transport_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2078,6 +2044,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "tcp_client_uv_test", 
+    "src": [
+      "test/core/iomgr/tcp_client_uv_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "tcp_posix_test", 
     "src": [
       "test/core/iomgr/tcp_posix_test.c"
@@ -2098,6 +2081,23 @@
     "name": "tcp_server_posix_test", 
     "src": [
       "test/core/iomgr/tcp_server_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "tcp_server_uv_test", 
+    "src": [
+      "test/core/iomgr/tcp_server_uv_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2376,9 +2376,127 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_call_create", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_call_create.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_chttp2_hpack", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_closure", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_closure.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_cq", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_cq.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_error", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_error.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_fullstack", 
     "src": [
       "test/cpp/microbenchmarks/bm_fullstack.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_metadata", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_metadata.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2870,6 +2988,25 @@
     "name": "grpclb_test", 
     "src": [
       "test/cpp/grpclb/grpclb_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "health_service_end2end_test", 
+    "src": [
+      "test/cpp/end2end/health_service_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5241,6 +5378,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -5382,7 +5520,8 @@
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto"
     ], 
     "headers": [
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -5475,23 +5614,6 @@
     "type": "lib"
   }, 
   {
-    "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "include/grpc++/test/server_context_test_spouse.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_test", 
-    "src": [
-      "include/grpc++/test/server_context_test_spouse.h", 
-      "src/cpp/test/server_context_test_spouse.cc"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
     "deps": [], 
     "headers": [
       "test/cpp/util/test_config.h"
@@ -5517,6 +5639,8 @@
       "thrift_util"
     ], 
     "headers": [
+      "src/proto/grpc/health/v1/health.grpc.pb.h", 
+      "src/proto/grpc/health/v1/health.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
       "src/proto/grpc/testing/echo.grpc.pb.h", 
@@ -7118,6 +7242,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -7238,6 +7363,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -7838,7 +7964,8 @@
       "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
-      "test/core/util/slice_splitter.h"
+      "test/core/util/slice_splitter.h", 
+      "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -7873,7 +8000,9 @@
       "test/core/util/port_uv.c", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
-      "test/core/util/slice_splitter.h"
+      "test/core/util/slice_splitter.h", 
+      "test/core/util/trickle_endpoint.c", 
+      "test/core/util/trickle_endpoint.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8088,6 +8217,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h", 
       "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
     "is_filegroup": true, 
@@ -8099,7 +8229,8 @@
       "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
-      "src/core/ext/transport/cronet/transport/cronet_transport.c"
+      "src/core/ext/transport/cronet/transport/cronet_transport.c", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8157,9 +8288,11 @@
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/create_channel_posix.h", 
+      "include/grpc++/ext/health_check_service_server_builder_option.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
+      "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -8196,6 +8329,8 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/health/default_health_check_service.h", 
+      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
     ], 
@@ -8209,9 +8344,11 @@
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/create_channel_posix.h", 
+      "include/grpc++/ext/health_check_service_server_builder_option.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
+      "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -8265,6 +8402,12 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/health/default_health_check_service.cc", 
+      "src/cpp/server/health/default_health_check_service.h", 
+      "src/cpp/server/health/health.pb.c", 
+      "src/cpp/server/health/health.pb.h", 
+      "src/cpp/server/health/health_check_service.cc", 
+      "src/cpp/server/health/health_check_service_server_builder_option.cc", 
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_cc.cc", 
       "src/cpp/server/server_context.cc", 
@@ -8411,6 +8554,22 @@
     "language": "c++", 
     "name": "grpc++_reflection_proto", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpc++_test", 
+    "src": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

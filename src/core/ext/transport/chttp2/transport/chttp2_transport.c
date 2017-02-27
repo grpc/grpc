@@ -265,7 +265,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .gain_d = 0,
                                  .initial_control_value = log2(DEFAULT_WINDOW),
                                  .min_control_value = -1,
-                                 .max_control_value = 22,
+                                 .max_control_value = 25,
                                  .integral_range = 10});
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
@@ -568,6 +568,14 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->flow_controlled_buffer);
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);
+
+  if (s->incoming_window_delta > 0) {
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(
+        "destroy", t, s, s->incoming_window_delta);
+  } else if (s->incoming_window_delta < 0) {
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(
+        "destroy", t, s, -s->incoming_window_delta);
+  }
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -1033,8 +1041,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
   grpc_transport_stream_op *op = stream_op;
-  grpc_chttp2_transport *t = op->transport_private.args[0];
-  grpc_chttp2_stream *s = op->transport_private.args[1];
+  grpc_chttp2_transport *t = op->handler_private.args[0];
+  grpc_chttp2_stream *s = op->handler_private.args[1];
 
   if (grpc_http_trace) {
     char *str = grpc_transport_stream_op_string(op);
@@ -1106,8 +1114,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             grpc_chttp2_list_add_waiting_for_concurrency(t, s);
             maybe_start_some_streams(exec_ctx, t);
           } else {
-            grpc_chttp2_cancel_stream(exec_ctx, t, s,
-                                      GRPC_ERROR_CREATE("Transport closed"));
+            grpc_chttp2_cancel_stream(
+                exec_ctx, t, s,
+                grpc_error_set_int(GRPC_ERROR_CREATE("Transport closed"),
+                                   GRPC_ERROR_INT_GRPC_STATUS,
+                                   GRPC_STATUS_UNAVAILABLE));
           }
         } else {
           GPR_ASSERT(s->id != 0);
@@ -1255,13 +1266,13 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     gpr_free(str);
   }
 
-  op->transport_private.args[0] = gt;
-  op->transport_private.args[1] = gs;
+  op->handler_private.args[0] = gt;
+  op->handler_private.args[1] = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   grpc_closure_sched(
       exec_ctx,
       grpc_closure_init(
-          &op->transport_private.closure, perform_stream_op_locked, op,
+          &op->handler_private.closure, perform_stream_op_locked, op,
           grpc_combiner_scheduler(t->combiner, op->covered_by_poller)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("perform_stream_op", 0);
@@ -1801,12 +1812,12 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
     return;
   }
+  if (grpc_bdp_estimator_trace) {
+    gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
+            (int)bdp);
+  }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
 }
-
-/*******************************************************************************
- * INPUT PROCESSING - PARSING
- */
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t) {
@@ -2054,8 +2065,8 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (int64_t)have_already) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
     }
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
-                                   add_max_recv_bytes);
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA("op", t, s,
+                                                         add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
     if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -

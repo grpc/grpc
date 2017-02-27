@@ -297,6 +297,10 @@
 #endif
 
 #ifdef _MSC_VER
+#ifdef _PYTHON_MSVC
+// The Python 3.5 Windows runtime is missing InetNtop
+#define GPR_WIN_INET_NTOP
+#endif  // _PYTHON_MSVC
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
 typedef __int16 int16_t;

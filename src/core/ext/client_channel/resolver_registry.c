@@ -132,7 +132,8 @@ static grpc_resolver_factory *resolve_factory(const char *target,
 
 grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
                                     const grpc_channel_args *args,
-                                    grpc_pollset_set *pollset_set) {
+                                    grpc_pollset_set *pollset_set,
+                                    grpc_combiner *combiner) {
   grpc_uri *uri = NULL;
   char *canonical_target = NULL;
   grpc_resolver_factory *factory =
@@ -143,6 +144,7 @@ grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
   resolver_args.uri = uri;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
+  resolver_args.combiner = combiner;
   resolver =
       grpc_resolver_factory_create_resolver(exec_ctx, factory, &resolver_args);
   grpc_uri_destroy(uri);

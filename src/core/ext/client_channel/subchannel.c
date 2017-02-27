@@ -217,7 +217,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
-  grpc_pollset_set_destroy(c->pollset_set);
+  grpc_pollset_set_destroy(exec_ctx, c->pollset_set);
   grpc_subchannel_key_destroy(exec_ctx, c->key);
   gpr_free(c);
 }
@@ -419,7 +419,7 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c,
                                                            grpc_error **error) {
   grpc_connectivity_state state;
   gpr_mu_lock(&c->mu);
-  state = grpc_connectivity_state_check(&c->state_tracker, error);
+  state = grpc_connectivity_state_get(&c->state_tracker, error);
   gpr_mu_unlock(&c->mu);
   return state;
 }
@@ -438,7 +438,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
-  follow_up->cb(exec_ctx, follow_up->cb_arg, error);
+  grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

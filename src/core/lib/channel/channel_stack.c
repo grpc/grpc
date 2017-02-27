@@ -173,7 +173,6 @@ grpc_error *grpc_call_stack_init(
     grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
     grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
-  grpc_call_element_args args;
   size_t count = channel_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
@@ -188,13 +187,15 @@ grpc_error *grpc_call_stack_init(
 
   /* init per-filter data */
   grpc_error *first_error = GRPC_ERROR_NONE;
-  args.start_time = start_time;
+  const grpc_call_element_args args = {
+      .start_time = start_time,
+      .call_stack = call_stack,
+      .server_transport_data = transport_server_data,
+      .context = context,
+      .path = path,
+      .deadline = deadline,
+  };
   for (i = 0; i < count; i++) {
-    args.call_stack = call_stack;
-    args.server_transport_data = transport_server_data;
-    args.context = context;
-    args.path = path;
-    args.deadline = deadline;
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;

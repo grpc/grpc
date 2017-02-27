@@ -32,7 +32,7 @@ import unittest
 import weakref
 
 import grpc
-from grpc import _grpcio_metadata
+from grpc import _channel
 from grpc.framework.foundation import logging_pool
 
 from tests.unit import test_common
@@ -48,8 +48,6 @@ _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
-
-_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 _CLIENT_METADATA = (('client-md-key', 'client-md-key'),
                     ('client-md-key-bin', b'\x00\x01'))
@@ -76,7 +74,7 @@ def validate_client_metadata(test, servicer_context):
             _CLIENT_METADATA, servicer_context.invocation_metadata()))
     test.assertTrue(
         user_agent(servicer_context.invocation_metadata())
-        .startswith('primary-agent ' + _USER_AGENT))
+        .startswith('primary-agent ' + _channel._USER_AGENT))
     test.assertTrue(
         user_agent(servicer_context.invocation_metadata())
         .endswith('secondary-agent'))

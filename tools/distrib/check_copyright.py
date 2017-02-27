@@ -106,6 +106,8 @@ _EXEMPT = frozenset((
 
   'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
   'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
+  'src/cpp/server/health/health.pb.h',
+  'src/cpp/server/health/health.pb.c',
 
   # An older file originally from outside gRPC.
   'src/php/tests/bootstrap.php',

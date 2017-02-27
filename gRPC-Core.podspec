@@ -163,6 +163,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -892,7 +893,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|

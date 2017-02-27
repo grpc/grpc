@@ -107,6 +107,7 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 typedef struct grpc_lb_policy_args {
   grpc_client_channel_factory *client_channel_factory;
   grpc_channel_args *args;
+  grpc_combiner *combiner;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {

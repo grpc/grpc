@@ -540,7 +540,8 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
         grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, error);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure,
+                       GRPC_ERROR_REF(error));
     return;
   }
 
@@ -879,7 +880,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
 
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
@@ -1198,7 +1199,9 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       crm->server_registered_method = rm;
       crm->flags = rm->flags;
       crm->has_host = has_host;
-      crm->host = host;
+      if (has_host) {
+        crm->host = host;
+      }
       crm->method = method;
     }
     GPR_ASSERT(slots <= UINT32_MAX);

@@ -85,7 +85,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
   return test_job
 
 
-def _generate_jobs(languages, configs, platforms,
+def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
                   arch=None, compiler=None,
                   labels=[], extra_args=[], extra_envs={},
                   inner_jobs=_DEFAULT_INNER_JOBS):
@@ -93,7 +93,7 @@ def _generate_jobs(languages, configs, platforms,
   for language in languages:
     for platform in platforms:
       for config in configs:
-        name = '%s_%s_%s' % (language, platform, config)
+        name = '%s_%s_%s_%s' % (language, platform, config, iomgr_platform)
         runtests_args = ['-l', language,
                          '-c', config]
         if arch or compiler:
@@ -162,14 +162,6 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  # libuv tests
-  test_jobs += _generate_jobs(languages=['c'],
-                              configs=['dbg', 'opt'],
-                              platforms=['linux'],
-                              labels=['libuv'],
-                              extra_args=extra_args + ['--iomgr_platform=uv'],
                               inner_jobs=inner_jobs)
 
   return test_jobs
@@ -266,6 +258,14 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              iomgr_platform='uv',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
   test_jobs += _generate_jobs(languages=['node'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -274,6 +274,33 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              iomgr_platform='uv',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='node4',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='node6',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
   return test_jobs
 
 
