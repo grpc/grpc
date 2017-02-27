@@ -1597,7 +1597,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
   }
-  if (s->data_parser.parsing_frame != NULL) {
+  if (error != GRPC_ERROR_NONE && s->data_parser.parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
     s->data_parser.parsing_frame = NULL;
