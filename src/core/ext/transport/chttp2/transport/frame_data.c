@@ -43,6 +43,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_error *grpc_chttp2_data_parser_init(grpc_chttp2_data_parser *parser) {
   parser->state = GRPC_CHTTP2_DATA_FH_0;
@@ -177,7 +178,7 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&s->buffer_mu);
   if (s->unprocessed_incoming_frames_buffer.count > 0) {
     s->stats.incoming.framing_bytes += GRPC_SLICE_LENGTH(slice);
-    grpc_slice_ref_internal(exec_ctx, slice);
+    grpc_slice_ref_internal(slice);
     grpc_chttp2_unprocessed_frames_buffer_push(exec_ctx, p, s, slice);
     gpr_mu_unlock(&s->buffer_mu);
     return GRPC_ERROR_NONE;
