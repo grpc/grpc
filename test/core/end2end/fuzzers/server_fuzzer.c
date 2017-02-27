@@ -67,7 +67,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_server *server = grpc_server_create(NULL, NULL);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
   grpc_server_register_completion_queue(server, cq, NULL);
   // TODO(ctiller): add registered methods (one for POST, one for PUT)
   // void *registered_method =

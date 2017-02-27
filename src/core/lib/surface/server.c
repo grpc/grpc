@@ -1001,6 +1001,14 @@ void grpc_server_register_completion_queue(grpc_server *server,
   GRPC_API_TRACE(
       "grpc_server_register_completion_queue(server=%p, cq=%p, reserved=%p)", 3,
       (server, cq, reserved));
+
+  if (grpc_get_cq_completion_type(cq) != GRPC_CQ_NEXT) {
+    gpr_log(
+        GPR_ERROR,
+        "Server completion queues must have a completion type of GRPC_CQ_NEXT");
+    abort();
+  }
+
   register_completion_queue(server, cq, false, reserved);
 }
 
@@ -1423,8 +1431,9 @@ grpc_call_error grpc_server_request_call(
       "grpc_server_request_call("
       "server=%p, call=%p, details=%p, initial_metadata=%p, "
       "cq_bound_to_call=%p, cq_for_notification=%p, tag=%p)",
-      7, (server, call, details, initial_metadata, cq_bound_to_call,
-          cq_for_notification, tag));
+      7,
+      (server, call, details, initial_metadata, cq_bound_to_call,
+       cq_for_notification, tag));
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < server->cq_count; cq_idx++) {
     if (server->cqs[cq_idx] == cq_for_notification) {
@@ -1466,8 +1475,9 @@ grpc_call_error grpc_server_request_registered_call(
       "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "
       "optional_payload=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
       "tag=%p)",
-      9, (server, rmp, call, deadline, initial_metadata, optional_payload,
-          cq_bound_to_call, cq_for_notification, tag));
+      9,
+      (server, rmp, call, deadline, initial_metadata, optional_payload,
+       cq_bound_to_call, cq_for_notification, tag));
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < server->cq_count; cq_idx++) {

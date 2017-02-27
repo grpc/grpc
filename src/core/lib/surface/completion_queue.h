@@ -99,4 +99,7 @@ bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 
+grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc);
+grpc_cq_polling_type grpc_get_cq_polling_type(grpc_completion_queue *cc);
+
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

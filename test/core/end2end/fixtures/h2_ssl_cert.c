@@ -67,7 +67,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  f.shutdown_cq =
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
 
   return f;
 }
@@ -203,15 +205,17 @@ CLIENT_INIT(BAD_CERT_PAIR)
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)                         \
-  {                                                                       \
-    {TEST_NAME(request_type, cert_type, result),                          \
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                           \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                     \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                            \
-     chttp2_create_fixture_secure_fullstack, CLIENT_INIT_NAME(cert_type), \
-     SERVER_INIT_NAME(request_type), chttp2_tear_down_secure_fullstack},  \
-        result                                                            \
+#define SSL_TEST(request_type, cert_type, result)     \
+  {                                                   \
+    {TEST_NAME(request_type, cert_type, result),      \
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |       \
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | \
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,        \
+     chttp2_create_fixture_secure_fullstack,          \
+     CLIENT_INIT_NAME(cert_type),                     \
+     SERVER_INIT_NAME(request_type),                  \
+     chttp2_tear_down_secure_fullstack},              \
+        result                                        \
   }
 
 /* All test configurations */
@@ -289,9 +293,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -310,6 +315,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void simple_request_body(grpc_end2end_test_fixture f,

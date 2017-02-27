@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
     calls[k].details = grpc_empty_slice();
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();
@@ -260,8 +260,9 @@ int main(int argc, char **argv) {
 
   do {
     event = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(10000, GPR_TIMESPAN)),
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(10000, GPR_TIMESPAN)),
         NULL);
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 

@@ -127,14 +127,8 @@ typedef enum {
   NON_POLLING
 } grpc_cq_polling_type;
 
-/** Create a completion queue.
-
-    WARNING: This API is deprecated and will soon be deleted and replaced with
-    completion_queue_create_ex() */
-GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
-
 /** Create a completion queue */
-GRPCAPI grpc_completion_queue *grpc_completion_queue_create_ex(
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     void *reserved);
 

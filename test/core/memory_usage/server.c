@@ -161,6 +161,7 @@ int main(int argc, char **argv) {
   grpc_event ev;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
+  grpc_completion_queue *shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
@@ -188,7 +189,7 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
 
   struct grpc_memory_counters before_server_create =
       grpc_memory_counters_snapshot();
@@ -230,16 +231,22 @@ int main(int argc, char **argv) {
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
-                     .type == GRPC_OP_COMPLETE);
+
+      shutdown_cq =
+          grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
+      GPR_ASSERT(
+          grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                      grpc_timeout_seconds_to_deadline(5), NULL)
+              .type == GRPC_OP_COMPLETE);
+      grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         NULL);
     fling_call *s = ev.tag;
     switch (ev.type) {

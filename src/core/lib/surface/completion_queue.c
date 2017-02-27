@@ -115,7 +115,7 @@ int grpc_cq_event_timeout_trace;
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
 
-grpc_completion_queue *grpc_completion_queue_create_ex(
+grpc_completion_queue *grpc_completion_queue_create(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     void *reserved) {
   grpc_completion_queue *cc;
@@ -131,6 +131,9 @@ grpc_completion_queue *grpc_completion_queue_create_ex(
   cc->outstanding_tags = NULL;
   cc->outstanding_tag_capacity = 0;
 #endif
+
+  cc->completion_type = completion_type;
+  cc->polling_type = polling_type;
 
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
@@ -155,8 +158,12 @@ grpc_completion_queue *grpc_completion_queue_create_ex(
   return cc;
 }
 
-grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
-  return grpc_completion_queue_create_ex(0, DEFAULT_POLLING, reserved);
+grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
+  return cc->completion_type;
+}
+
+grpc_cq_polling_type grpc_get_cq_polling_type(grpc_completion_queue *cc) {
+  return cc->polling_type;
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
@@ -359,6 +366,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   grpc_pollset_worker *worker = NULL;
   gpr_timespec now;
 
+  if (cc->completion_type != GRPC_CQ_NEXT) {
+    gpr_log(GPR_ERROR,
+            "grpc_completion_queue_next() cannot be called on this completion "
+            "queue since its completion type is not GRPC_CQ_NEXT");
+    abort();
+  }
+
   GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
 
   GRPC_API_TRACE(
@@ -528,6 +542,13 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   gpr_timespec now;
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
+
+  if (cc->completion_type != GRPC_CQ_PLUCK) {
+    gpr_log(GPR_ERROR,
+            "grpc_completion_queue_pluck() cannot be called on this completion "
+            "queue since its completion type is not GRPC_CQ_PLUCK");
+    abort();
+  }
 
   if (grpc_cq_pluck_trace) {
     GRPC_API_TRACE(

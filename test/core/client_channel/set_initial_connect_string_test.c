@@ -130,7 +130,7 @@ static gpr_timespec n_sec_deadline(int seconds) {
 }
 
 static void start_rpc(int use_creds, int target_port) {
-  state.cq = grpc_completion_queue_create(NULL);
+  state.cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
   if (use_creds) {
     state.creds = grpc_fake_transport_security_credentials_create();
   } else {
