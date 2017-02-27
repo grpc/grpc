@@ -52,3 +52,10 @@ cc_test(
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )
+
+cc_test(
+    name = "parse_address_test",
+    srcs = ["parse_address_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
