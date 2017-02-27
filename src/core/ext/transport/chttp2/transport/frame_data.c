@@ -141,10 +141,9 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
   stats->data_bytes += write_bytes;
 }
 
-static void grpc_chttp2_unprocessed_frames_buffer_push(grpc_exec_ctx *exec_ctx,
-                                                       grpc_chttp2_data_parser *p,
-                                                       grpc_chttp2_stream *s,
-                                                       grpc_slice slice) {
+static void grpc_chttp2_unprocessed_frames_buffer_push(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice slice) {
   grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
   if (p->parsing_frame) {
     grpc_chttp2_incoming_byte_stream *bs = p->parsing_frame;
@@ -179,10 +178,7 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
   if (s->unprocessed_incoming_frames_buffer.count > 0) {
     s->stats.incoming.framing_bytes += GRPC_SLICE_LENGTH(slice);
     grpc_slice_ref(slice);
-    grpc_chttp2_unprocessed_frames_buffer_push(exec_ctx,
-                                               p,
-                                               s,
-                                               slice);
+    grpc_chttp2_unprocessed_frames_buffer_push(exec_ctx, p, s, slice);
     gpr_mu_unlock(&s->buffer_mu);
     return GRPC_ERROR_NONE;
   }
