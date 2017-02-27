@@ -70,7 +70,10 @@ static struct test *test_new(int threads, int64_t iterations, int incr_step) {
 }
 
 /* Return pointer to a new struct test. */
-static void test_destroy(struct test *m) { gpr_free(m); }
+static void test_destroy(struct test *m) {
+  gpr_free(m->threads);
+  gpr_free(m);
+}
 
 /* Create m->threads threads, each running (*body)(m) */
 static void test_create_threads(struct test *m, void (*body)(void *arg)) {
