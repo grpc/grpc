@@ -81,6 +81,16 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   }
 }
 
+ChannelArguments::~ChannelArguments() {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    if (it->type == GRPC_ARG_POINTER) {
+      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
+    }
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 void ChannelArguments::Swap(ChannelArguments& other) {
   args_.swap(other.args_);
   strings_.swap(other.strings_);
