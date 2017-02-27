@@ -222,7 +222,7 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
                                      grpc_closure *notify) {
   chttp2_connector *c = (chttp2_connector *)con;
   grpc_resolved_address addr;
-  grpc_get_subchannel_address_arg(args->channel_args, &addr);
+  grpc_get_subchannel_address_arg(exec_ctx, args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == NULL);
   c->notify = notify;

@@ -280,9 +280,9 @@ static void http_connect_handshaker_do_handshake(
   const grpc_arg* arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  char* canonical_uri =
-      grpc_resolver_factory_add_default_prefix_if_needed(arg->value.string);
-  grpc_uri* uri = grpc_uri_parse(canonical_uri, 1);
+  char* canonical_uri = grpc_resolver_factory_add_default_prefix_if_needed(
+      exec_ctx, arg->value.string);
+  grpc_uri* uri = grpc_uri_parse(exec_ctx, canonical_uri, 1);
   char* server_name = uri->path;
   if (server_name[0] == '/') ++server_name;
   // Save state in the handshaker object.
@@ -344,10 +344,11 @@ grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
   return &handshaker->base;
 }
 
-char* grpc_get_http_proxy_server() {
+char* grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx) {
   char* uri_str = gpr_getenv("http_proxy");
   if (uri_str == NULL) return NULL;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  grpc_uri* uri =
+      grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
   char* proxy_name = NULL;
   if (uri == NULL || uri->authority == NULL) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
@@ -375,7 +376,7 @@ done:
 static void handshaker_factory_add_handshakers(
     grpc_exec_ctx* exec_ctx, grpc_handshaker_factory* factory,
     const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
-  char* proxy_name = grpc_get_http_proxy_server();
+  char* proxy_name = grpc_get_http_proxy_server(exec_ctx);
   if (proxy_name != NULL) {
     grpc_handshake_manager_add(
         handshake_mgr,

@@ -44,6 +44,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/support/string.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -119,9 +120,30 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   memset(in6, 0, sizeof(*in6));
   resolved_addr->len = sizeof(*in6);
   in6->sin6_family = AF_INET6;
-  if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
-    gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
-    goto done;
+
+  /* Handle the RFC6874 syntax for IPv6 zone identifiers. */
+  char *host_end = (char *)gpr_memrchr(host, '%', strlen(host));
+  if (host_end != NULL) {
+    GPR_ASSERT(host_end >= host);
+    char host_without_scope[INET6_ADDRSTRLEN];
+    size_t host_without_scope_len = (size_t)(host_end - host);
+    strncpy(host_without_scope, host, host_without_scope_len);
+    host_without_scope[host_without_scope_len] = '\0';
+    if (inet_pton(AF_INET6, host_without_scope, &in6->sin6_addr) == 0) {
+      gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host_without_scope);
+      goto done;
+    }
+    if (gpr_parse_bytes_to_uint32(host_end + 1,
+                                  strlen(host) - host_without_scope_len - 1,
+                                  &in6->sin6_scope_id) == 0) {
+      gpr_log(GPR_ERROR, "invalid ipv6 scope id: '%s'", host_end + 1);
+      goto done;
+    }
+  } else {
+    if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
+      gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
+      goto done;
+    }
   }
 
   if (port != NULL) {
