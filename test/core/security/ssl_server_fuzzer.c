@@ -38,9 +38,9 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 
 bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
