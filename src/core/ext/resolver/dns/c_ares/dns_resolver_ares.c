@@ -290,7 +290,7 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
-  grpc_pollset_set_destroy(r->interested_parties);
+  grpc_pollset_set_destroy(exec_ctx, r->interested_parties);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
@@ -310,8 +310,8 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
   // Create resolver.
   ares_dns_resolver *r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
-  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
   r->combiner = grpc_combiner_create(NULL);
+  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, r->combiner);
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
