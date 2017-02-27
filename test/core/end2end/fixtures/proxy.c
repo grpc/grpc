@@ -75,8 +75,10 @@ typedef struct {
   grpc_metadata_array c2p_initial_metadata;
   grpc_metadata_array p2s_initial_metadata;
 
-  grpc_byte_buffer *c2p_msg;
-  grpc_byte_buffer *p2s_msg;
+  uint32_t c2p_recv_length;
+  uint32_t p2s_recv_length;
+  grpc_byte_buffer *c2p_recv_buffer;
+  grpc_byte_buffer *p2s_recv_buffer;
 
   grpc_metadata_array p2s_trailing_metadata;
   grpc_status_code p2s_status;
@@ -198,12 +200,12 @@ static void on_p2s_sent_message(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  grpc_byte_buffer_destroy(pc->c2p_msg);
   if (!pc->proxy->shutdown && success) {
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_MESSAGE_INCREMENTAL_START;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message.recv_message = &pc->c2p_msg;
+    op.data.recv_message_incremental_start.message_length =
+        &pc->c2p_recv_length;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
@@ -218,21 +220,65 @@ static void on_p2s_sent_close(void *arg, int success) {
   unrefpc(pc, "on_p2s_sent_close");
 }
 
+static void on_c2p_recv_bytes(void *arg, int success);
+
+static void on_p2s_sent_bytes(void *arg, int success) {
+  proxy_call *pc = arg;
+  grpc_call_error err;
+
+  grpc_byte_buffer_destroy(pc->c2p_recv_buffer);
+  pc->c2p_recv_buffer = NULL;
+  if (success && pc->c2p_recv_length > 0) {
+    pc->c2p_recv_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+    refpc(pc, "on_c2p_recv_bytes");
+    err = grpc_call_incremental_message_reader_pull(
+        pc->c2p, pc->c2p_recv_buffer, new_closure(on_c2p_recv_bytes, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  }
+  unrefpc(pc, "on_p2s_sent_bytes");
+}
+
+static void on_c2p_recv_bytes(void *arg, int success) {
+  proxy_call *pc = arg;
+  grpc_call_error err;
+
+  if (success) {
+    pc->c2p_recv_length -=
+        (uint32_t)grpc_byte_buffer_length(pc->c2p_recv_buffer);
+    refpc(pc, "on_p2s_sent_bytes");
+    err = grpc_call_incremental_message_writer_push(
+        pc->p2s, pc->c2p_recv_buffer, new_closure(on_p2s_sent_bytes, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  } else {
+    grpc_byte_buffer_destroy(pc->c2p_recv_buffer);
+    pc->c2p_recv_buffer = NULL;
+  }
+  unrefpc(pc, "on_c2p_recv_bytes");
+}
+
 static void on_c2p_recv_msg(void *arg, int success) {
   proxy_call *pc = arg;
   grpc_op op;
   grpc_call_error err;
 
-  if (!pc->proxy->shutdown && success) {
-    if (pc->c2p_msg != NULL) {
-      op.op = GRPC_OP_SEND_MESSAGE;
+  if (!pc->proxy->shutdown) {
+    if (success) {
+      op.op = GRPC_OP_SEND_MESSAGE_INCREMENTAL_START;
       op.flags = 0;
       op.reserved = NULL;
-      op.data.send_message.send_message = pc->c2p_msg;
+      op.data.send_message_incremental_start.message_length =
+          pc->c2p_recv_length;
       refpc(pc, "on_p2s_sent_message");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
                                   new_closure(on_p2s_sent_message, pc), NULL);
       GPR_ASSERT(err == GRPC_CALL_OK);
+      if (pc->c2p_recv_length > 0) {
+        refpc(pc, "on_c2p_recv_bytes");
+        pc->c2p_recv_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+        err = grpc_call_incremental_message_reader_pull(
+            pc->c2p, pc->c2p_recv_buffer, new_closure(on_c2p_recv_bytes, pc));
+        GPR_ASSERT(err == GRPC_CALL_OK);
+      }
     } else {
       op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
       op.flags = 0;
@@ -254,12 +300,12 @@ static void on_c2p_sent_message(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  grpc_byte_buffer_destroy(pc->p2s_msg);
   if (!pc->proxy->shutdown && success) {
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_MESSAGE_INCREMENTAL_START;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message.recv_message = &pc->p2s_msg;
+    op.data.recv_message_incremental_start.message_length =
+        &pc->p2s_recv_length;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);
@@ -269,22 +315,63 @@ static void on_c2p_sent_message(void *arg, int success) {
   unrefpc(pc, "on_c2p_sent_message");
 }
 
+static void on_p2s_recv_bytes(void *arg, int success);
+
+static void on_c2p_sent_bytes(void *arg, int success) {
+  proxy_call *pc = arg;
+  grpc_call_error err;
+
+  grpc_byte_buffer_destroy(pc->p2s_recv_buffer);
+  pc->p2s_recv_buffer = NULL;
+  if (success && pc->p2s_recv_length > 0) {
+    pc->p2s_recv_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+    refpc(pc, "on_c2p_sent_bytes");
+    err = grpc_call_incremental_message_reader_pull(
+        pc->p2s, pc->p2s_recv_buffer, new_closure(on_p2s_recv_bytes, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  }
+  unrefpc(pc, "on_c2p_sent_bytes");
+}
+
+static void on_p2s_recv_bytes(void *arg, int success) {
+  proxy_call *pc = arg;
+  grpc_call_error err;
+
+  if (!pc->proxy->shutdown && success) {
+    pc->p2s_recv_length -=
+        (uint32_t)grpc_byte_buffer_length(pc->p2s_recv_buffer);
+    refpc(pc, "on_c2p_sent_bytes");
+    err = grpc_call_incremental_message_writer_push(
+        pc->c2p, pc->p2s_recv_buffer, new_closure(on_c2p_sent_bytes, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  } else {
+    grpc_byte_buffer_destroy(pc->p2s_recv_buffer);
+    pc->p2s_recv_buffer = NULL;
+  }
+  unrefpc(pc, "on_p2s_recv_bytes");
+}
+
 static void on_p2s_recv_msg(void *arg, int success) {
   proxy_call *pc = arg;
   grpc_op op;
   grpc_call_error err;
 
-  if (!pc->proxy->shutdown && success && pc->p2s_msg) {
-    op.op = GRPC_OP_SEND_MESSAGE;
+  if (!pc->proxy->shutdown && success) {
+    op.op = GRPC_OP_SEND_MESSAGE_INCREMENTAL_START;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.send_message.send_message = pc->p2s_msg;
+    op.data.send_message_incremental_start.message_length = pc->p2s_recv_length;
     refpc(pc, "on_c2p_sent_message");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
-  } else {
-    grpc_byte_buffer_destroy(pc->p2s_msg);
+    if (pc->p2s_recv_length > 0) {
+      pc->p2s_recv_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+      refpc(pc, "on_p2s_recv_bytes");
+      err = grpc_call_incremental_message_reader_pull(
+          pc->p2s, pc->p2s_recv_buffer, new_closure(on_p2s_recv_bytes, pc));
+      GPR_ASSERT(err == GRPC_CALL_OK);
+    }
   }
   unrefpc(pc, "on_p2s_recv_msg");
 }
@@ -363,17 +450,19 @@ static void on_new_call(void *arg, int success) {
         pc->p2s, &op, 1, new_closure(on_p2s_sent_initial_metadata, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_MESSAGE_INCREMENTAL_START;
     op.flags = 0;
-    op.data.recv_message.recv_message = &pc->c2p_msg;
+    op.data.recv_message_incremental_start.message_length =
+        &pc->c2p_recv_length;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_MESSAGE_INCREMENTAL_START;
     op.flags = 0;
-    op.data.recv_message.recv_message = &pc->p2s_msg;
+    op.data.recv_message_incremental_start.message_length =
+        &pc->p2s_recv_length;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);

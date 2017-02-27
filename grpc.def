@@ -68,6 +68,8 @@ EXPORTS
     grpc_channel_register_call
     grpc_channel_create_registered_call
     grpc_call_start_batch
+    grpc_call_incremental_message_writer_push
+    grpc_call_incremental_message_reader_pull
     grpc_call_get_peer
     grpc_call_set_load_reporting_cost_context
     grpc_census_call_set_context

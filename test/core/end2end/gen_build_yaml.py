@@ -118,6 +118,8 @@ END2END_TESTS = {
                                                 traceable=False),
     'high_initial_seqno': default_test_options,
     'idempotent_request': default_test_options,
+    'incremental_message': default_test_options,
+    'incremental_direct_message': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),

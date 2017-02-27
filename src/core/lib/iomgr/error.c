@@ -164,7 +164,7 @@ static const char *error_time_name(grpc_error_times key) {
 
 bool grpc_error_is_special(grpc_error *err) {
   return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM ||
-         err == GRPC_ERROR_CANCELLED;
+         err == GRPC_ERROR_CANCELLED || err == GRPC_ERROR_END_OF_STREAM;
 }
 
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
@@ -260,6 +260,8 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
       out =
           grpc_error_set_int(GRPC_ERROR_CREATE("cancelled"),
                              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+    else if (in == GRPC_ERROR_END_OF_STREAM)
+      out = GRPC_ERROR_CREATE("end of stream");
     else
       out = GRPC_ERROR_CREATE("unknown");
   } else {
@@ -360,6 +362,7 @@ grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
 static const char *no_error_string = "\"No Error\"";
 static const char *oom_error_string = "\"Out of memory\"";
 static const char *cancelled_error_string = "\"Cancelled\"";
+static const char *end_of_stream_error_string = "\"End of stream\"";
 
 typedef struct {
   char *key;
@@ -545,6 +548,7 @@ const char *grpc_error_string(grpc_error *err) {
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
+  if (err == GRPC_ERROR_END_OF_STREAM) return end_of_stream_error_string;
 
   void *p = (void *)gpr_atm_acq_load(&err->error_string);
   if (p != NULL) {

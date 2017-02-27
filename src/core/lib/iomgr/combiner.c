@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -107,6 +108,7 @@ typedef struct {
 } error_data;
 
 static uintptr_t pack_error_data(error_data d) {
+  assert(0 == (1 & (uintptr_t)d.error));
   return ((uintptr_t)d.error) | (d.covered_by_poller ? 1 : 0);
 }
 

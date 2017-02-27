@@ -143,6 +143,7 @@ typedef enum {
 #define GRPC_ERROR_NONE ((grpc_error *)NULL)
 #define GRPC_ERROR_OOM ((grpc_error *)2)
 #define GRPC_ERROR_CANCELLED ((grpc_error *)4)
+#define GRPC_ERROR_END_OF_STREAM ((grpc_error *)6)
 
 const char *grpc_error_string(grpc_error *error);
 

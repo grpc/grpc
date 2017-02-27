@@ -106,6 +106,8 @@ grpc_channel_ping_type grpc_channel_ping_import;
 grpc_channel_register_call_type grpc_channel_register_call_import;
 grpc_channel_create_registered_call_type grpc_channel_create_registered_call_import;
 grpc_call_start_batch_type grpc_call_start_batch_import;
+grpc_call_incremental_message_writer_push_type grpc_call_incremental_message_writer_push_import;
+grpc_call_incremental_message_reader_pull_type grpc_call_incremental_message_reader_pull_import;
 grpc_call_get_peer_type grpc_call_get_peer_import;
 grpc_call_set_load_reporting_cost_context_type grpc_call_set_load_reporting_cost_context_import;
 grpc_census_call_set_context_type grpc_census_call_set_context_import;
@@ -398,6 +400,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_register_call_import = (grpc_channel_register_call_type) GetProcAddress(library, "grpc_channel_register_call");
   grpc_channel_create_registered_call_import = (grpc_channel_create_registered_call_type) GetProcAddress(library, "grpc_channel_create_registered_call");
   grpc_call_start_batch_import = (grpc_call_start_batch_type) GetProcAddress(library, "grpc_call_start_batch");
+  grpc_call_incremental_message_writer_push_import = (grpc_call_incremental_message_writer_push_type) GetProcAddress(library, "grpc_call_incremental_message_writer_push");
+  grpc_call_incremental_message_reader_pull_import = (grpc_call_incremental_message_reader_pull_type) GetProcAddress(library, "grpc_call_incremental_message_reader_pull");
   grpc_call_get_peer_import = (grpc_call_get_peer_type) GetProcAddress(library, "grpc_call_get_peer");
   grpc_call_set_load_reporting_cost_context_import = (grpc_call_set_load_reporting_cost_context_type) GetProcAddress(library, "grpc_call_set_load_reporting_cost_context");
   grpc_census_call_set_context_import = (grpc_census_call_set_context_type) GetProcAddress(library, "grpc_census_call_set_context");

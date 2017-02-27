@@ -37,6 +37,8 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#define GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT (~(size_t)0)
+
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message */
 #define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
@@ -49,29 +51,35 @@ typedef struct grpc_byte_stream grpc_byte_stream;
 struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
-  int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-              grpc_slice *slice, size_t max_size_hint,
-              grpc_closure *on_complete);
+  bool (*next_slice)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+                     grpc_slice *slice, size_t max_size_hint,
+                     grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 
-/* returns 1 if the bytes are available immediately (in which case
- * on_complete will not be called), 0 if the bytes will be available
+/* returns true if the bytes are available immediately (in which case
+ * on_complete will not be called), false if the bytes will be available
  * asynchronously.
  *
  * max_size_hint can be set as a hint as to the maximum number
  * of bytes that would be acceptable to read.
  *
  * once a slice is returned into *slice, it is owned by the caller.
+ *
+ * SPECIAL CASE: if max_size_hint is GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT,
+ * then the expectation is that *slice represents a slice that should be filled
+ * in with exactly how many bytes are asked for.
  */
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, grpc_slice *slice,
-                          size_t max_size_hint, grpc_closure *on_complete);
+bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                 grpc_byte_stream *byte_stream,
+                                 grpc_slice *slice, size_t max_size_hint,
+                                 grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream);
 
-/* grpc_byte_stream that wraps a slice buffer */
+/* grpc_byte_stream that wraps a slice buffer: it MAY mutate the backing buffer
+ */
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
   grpc_slice_buffer *backing_buffer;

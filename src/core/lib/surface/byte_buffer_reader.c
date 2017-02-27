@@ -44,15 +44,17 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-static int is_compressed(grpc_byte_buffer *buffer) {
+static bool is_compressed(grpc_byte_buffer *buffer) {
   switch (buffer->type) {
     case GRPC_BB_RAW:
       if (buffer->data.raw.compression == GRPC_COMPRESS_NONE) {
-        return 0 /* GPR_FALSE */;
+        return false;
       }
       break;
+    case GRPC_BB_IOVEC:
+      return false;
   }
-  return 1 /* GPR_TRUE */;
+  return true;
 }
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
@@ -86,6 +88,10 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
       }
       reader->current.index = 0;
       break;
+    case GRPC_BB_IOVEC:
+      reader->buffer_in = buffer;
+      reader->current.index = 0;
+      break;
   }
   grpc_exec_ctx_finish(&exec_ctx);
   return 1;
@@ -98,6 +104,8 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
       if (is_compressed(reader->buffer_in)) {
         grpc_byte_buffer_destroy(reader->buffer_out);
       }
+      break;
+    case GRPC_BB_IOVEC:
       break;
   }
 }
@@ -116,6 +124,14 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
       }
       break;
     }
+    case GRPC_BB_IOVEC:
+      if (reader->current.index < reader->buffer_in->data.iovec.elem_count) {
+        *slice = grpc_slice_from_copied_buffer(
+            reader->buffer_in->data.iovec.elems[reader->current.index].base,
+            reader->buffer_in->data.iovec.elems[reader->current.index].len);
+        reader->current.index += 1;
+        return 1;
+      }
   }
   return 0;
 }

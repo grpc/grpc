@@ -89,6 +89,10 @@ extern void hpack_size(grpc_end2end_test_config config);
 extern void hpack_size_pre_init(void);
 extern void idempotent_request(grpc_end2end_test_config config);
 extern void idempotent_request_pre_init(void);
+extern void incremental_direct_message(grpc_end2end_test_config config);
+extern void incremental_direct_message_pre_init(void);
+extern void incremental_message(grpc_end2end_test_config config);
+extern void incremental_message_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
@@ -170,6 +174,8 @@ void grpc_end2end_tests_pre_init(void) {
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
   idempotent_request_pre_init();
+  incremental_direct_message_pre_init();
+  incremental_message_pre_init();
   invoke_large_request_pre_init();
   large_metadata_pre_init();
   load_reporting_hook_pre_init();
@@ -228,6 +234,8 @@ void grpc_end2end_tests(int argc, char **argv,
     high_initial_seqno(config);
     hpack_size(config);
     idempotent_request(config);
+    incremental_direct_message(config);
+    incremental_message(config);
     invoke_large_request(config);
     large_metadata(config);
     load_reporting_hook(config);
@@ -345,6 +353,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("idempotent_request", argv[i])) {
       idempotent_request(config);
+      continue;
+    }
+    if (0 == strcmp("incremental_direct_message", argv[i])) {
+      incremental_direct_message(config);
+      continue;
+    }
+    if (0 == strcmp("incremental_message", argv[i])) {
+      incremental_message(config);
       continue;
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {

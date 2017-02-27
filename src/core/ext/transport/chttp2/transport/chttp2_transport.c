@@ -509,8 +509,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s,
-                    grpc_schedule_on_exec_ctx);
 
   GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
 
@@ -1000,10 +998,12 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       }
       s->fetching_send_message = NULL;
       return; /* early out */
-    } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
-                                     &s->fetching_slice, UINT32_MAX,
-                                     &s->complete_fetch)) {
+    } else if (grpc_byte_stream_next_slice(exec_ctx, s->fetching_send_message,
+                                           &s->fetching_slice, UINT32_MAX,
+                                           &s->complete_fetch_locked)) {
       add_fetched_slice_locked(exec_ctx, t, s);
+    } else {
+      break;
     }
   }
 }
@@ -1164,7 +1164,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       s->next_message_end_offset = s->flow_controlled_bytes_written +
                                    (int64_t)s->flow_controlled_buffer.length +
                                    (int64_t)len;
-      s->complete_fetch_covered_by_poller = op->covered_by_poller;
+      grpc_closure_init(
+          &s->complete_fetch_locked, complete_fetch_locked, s,
+          grpc_combiner_scheduler(t->combiner, op->covered_by_poller));
       if (flags & GRPC_WRITE_BUFFER_HINT) {
         s->next_message_end_offset -= t->write_buffer_size;
         s->write_buffering = true;
@@ -2086,32 +2088,60 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = bs->transport;
   grpc_chttp2_stream *s = bs->stream;
 
-  if (bs->is_tail) {
+  if (bs->next_action.max_size_hint == GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT) {
+    if (bs->is_tail) {
+      gpr_mu_lock(&bs->slice_mu);
+      size_t cur_length = bs->slices.length;
+      gpr_mu_unlock(&bs->slice_mu);
+      incoming_byte_stream_update_flow_control(
+          exec_ctx, t, s, GRPC_SLICE_LENGTH(*bs->next_action.slice),
+          cur_length);
+    }
     gpr_mu_lock(&bs->slice_mu);
-    size_t cur_length = bs->slices.length;
+    if (bs->slices.length >= GRPC_SLICE_LENGTH(*bs->next_action.slice)) {
+      grpc_slice_buffer_move_first_into_buffer(
+          exec_ctx, &bs->slices, GRPC_SLICE_LENGTH(*bs->next_action.slice),
+          GRPC_SLICE_START_PTR(*bs->next_action.slice));
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    } else if (bs->error != GRPC_ERROR_NONE) {
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete,
+                       GRPC_ERROR_REF(bs->error));
+    } else {
+      bs->on_next = bs->next_action.on_complete;
+      bs->next = bs->next_action.slice;
+      bs->next_is_direct_placement = true;
+    }
     gpr_mu_unlock(&bs->slice_mu);
-    incoming_byte_stream_update_flow_control(
-        exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
-  }
-  gpr_mu_lock(&bs->slice_mu);
-  if (bs->slices.count > 0) {
-    *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
-    grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
-  } else if (bs->error != GRPC_ERROR_NONE) {
-    grpc_closure_run(exec_ctx, bs->next_action.on_complete,
-                     GRPC_ERROR_REF(bs->error));
   } else {
-    bs->on_next = bs->next_action.on_complete;
-    bs->next = bs->next_action.slice;
+    if (bs->is_tail) {
+      gpr_mu_lock(&bs->slice_mu);
+      size_t cur_length = bs->slices.length;
+      gpr_mu_unlock(&bs->slice_mu);
+      incoming_byte_stream_update_flow_control(
+          exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
+    }
+    gpr_mu_lock(&bs->slice_mu);
+    if (bs->slices.count > 0) {
+      *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    } else if (bs->error != GRPC_ERROR_NONE) {
+      grpc_closure_run(exec_ctx, bs->next_action.on_complete,
+                       GRPC_ERROR_REF(bs->error));
+    } else {
+      bs->on_next = bs->next_action.on_complete;
+      bs->next = bs->next_action.slice;
+      bs->next_is_direct_placement = false;
+    }
+    gpr_mu_unlock(&bs->slice_mu);
+    incoming_byte_stream_unref(exec_ctx, bs);
   }
-  gpr_mu_unlock(&bs->slice_mu);
-  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
-static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                                     grpc_byte_stream *byte_stream,
-                                     grpc_slice *slice, size_t max_size_hint,
-                                     grpc_closure *on_complete) {
+static bool incoming_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                            grpc_byte_stream *byte_stream,
+                                            grpc_slice *slice,
+                                            size_t max_size_hint,
+                                            grpc_closure *on_complete) {
   GPR_TIMER_BEGIN("incoming_byte_stream_next", 0);
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
@@ -2126,7 +2156,7 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
           grpc_combiner_scheduler(bs->transport->combiner, false)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("incoming_byte_stream_next", 0);
-  return 0;
+  return false;
 }
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -2177,9 +2207,20 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
   } else {
     bs->remaining_bytes -= (uint32_t)GRPC_SLICE_LENGTH(slice);
     if (bs->on_next != NULL) {
-      *bs->next = slice;
-      grpc_closure_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE);
-      bs->on_next = NULL;
+      if (bs->next_is_direct_placement) {
+        grpc_slice_buffer_add(&bs->slices, slice);
+        if (bs->slices.length >= GRPC_SLICE_LENGTH(*bs->next)) {
+          grpc_slice_buffer_move_first_into_buffer(
+              exec_ctx, &bs->slices, GRPC_SLICE_LENGTH(*bs->next),
+              GRPC_SLICE_START_PTR(*bs->next));
+          grpc_closure_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE);
+          bs->on_next = NULL;
+        }
+      } else {
+        *bs->next = slice;
+        grpc_closure_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE);
+        bs->on_next = NULL;
+      }
     } else {
       grpc_slice_buffer_add(&bs->slices, slice);
     }
@@ -2211,7 +2252,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->base.length = frame_size;
   incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
-  incoming_byte_stream->base.next = incoming_byte_stream_next;
+  incoming_byte_stream->base.next_slice = incoming_byte_stream_next_slice;
   incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;
   gpr_mu_init(&incoming_byte_stream->slice_mu);
   gpr_ref_init(&incoming_byte_stream->refs, 2);

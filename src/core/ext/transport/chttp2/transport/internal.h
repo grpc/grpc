@@ -196,6 +196,7 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_slice_buffer slices;
   grpc_closure *on_next;
   grpc_slice *next;
+  bool next_is_direct_placement;
   uint32_t remaining_bytes;
 
   struct {
@@ -419,8 +420,6 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
-  bool complete_fetch_covered_by_poller;
-  grpc_closure complete_fetch;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 

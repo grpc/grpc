@@ -48,9 +48,17 @@ extern "C" {
 #endif
 
 typedef enum {
-  GRPC_BB_RAW
+  /* A set of slices */
+  GRPC_BB_RAW,
+  /* A set of pointers to application owned memory: "like an iovec" */
+  GRPC_BB_IOVEC
   /* Future types may include GRPC_BB_PROTOBUF, etc. */
 } grpc_byte_buffer_type;
+
+typedef struct grpc_bb_iovec_elem {
+  void *base;
+  size_t len;
+} grpc_bb_iovec_elem;
 
 typedef struct grpc_byte_buffer {
   void *reserved;
@@ -63,6 +71,10 @@ typedef struct grpc_byte_buffer {
       grpc_compression_algorithm compression;
       grpc_slice_buffer slice_buffer;
     } raw;
+    struct {
+      grpc_bb_iovec_elem *elems;
+      size_t elem_count;
+    } iovec;
   } data;
 } grpc_byte_buffer;
 
@@ -272,7 +284,9 @@ typedef enum grpc_call_error {
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
   /** payload type requested is not the type registered */
-  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH,
+  /** not currently in an incremental operation */
+  GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL
 } grpc_call_error;
 
 /* Default send/receive message size limits in bytes. -1 for unlimited. */
@@ -406,7 +420,13 @@ typedef enum {
       This op completes after the close has been received by the server.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. */
-  GRPC_OP_RECV_CLOSE_ON_SERVER
+  GRPC_OP_RECV_CLOSE_ON_SERVER,
+  /** Begin sending a message: when this op completes, an instance of a
+      grpc_incremental_message_writer is created */
+  GRPC_OP_SEND_MESSAGE_INCREMENTAL_START,
+  /** Begin receiving a message: when this op completes, an instance of a
+      grpc_incremental_message_reader is created */
+  GRPC_OP_RECV_MESSAGE_INCREMENTAL_START
 } grpc_op_type;
 
 struct grpc_byte_buffer;
@@ -439,6 +459,9 @@ typedef struct grpc_op {
       struct grpc_byte_buffer *send_message;
     } send_message;
     struct {
+      uint32_t message_length;
+    } send_message_incremental_start;
+    struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
@@ -461,6 +484,9 @@ typedef struct grpc_op {
     struct {
       struct grpc_byte_buffer **recv_message;
     } recv_message;
+    struct {
+      uint32_t *message_length;
+    } recv_message_incremental_start;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

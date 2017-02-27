@@ -72,6 +72,11 @@ char *grpc_op_string(const grpc_op *op) {
                    op->data.send_message.send_message);
       gpr_strvec_add(&b, tmp);
       break;
+    case GRPC_OP_SEND_MESSAGE_INCREMENTAL_START:
+      gpr_asprintf(&tmp, "SEND_MESSAGE_INCREMENTAL_START len=%d",
+                   op->data.send_message_incremental_start.message_length);
+      gpr_strvec_add(&b, tmp);
+      break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
       gpr_strvec_add(&b, gpr_strdup("SEND_CLOSE_FROM_CLIENT"));
       break;
@@ -97,6 +102,11 @@ char *grpc_op_string(const grpc_op *op) {
     case GRPC_OP_RECV_MESSAGE:
       gpr_asprintf(&tmp, "RECV_MESSAGE ptr=%p",
                    op->data.recv_message.recv_message);
+      gpr_strvec_add(&b, tmp);
+      break;
+    case GRPC_OP_RECV_MESSAGE_INCREMENTAL_START:
+      gpr_asprintf(&tmp, "RECV_MESSAGE_INCREMENTAL_START ptr=%p",
+                   op->data.recv_message_incremental_start.message_length);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
