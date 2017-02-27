@@ -35,6 +35,8 @@ some configuration as environment variables that can be set.
   A comma separated list of tracers that provide additional insight into how
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
+  - bdp_estimator - traces behavior of bdp estimation logic
+  - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - combiner - traces combiner lock state
   - compression - traces compression operations
@@ -55,10 +57,12 @@ some configuration as environment variables that can be set.
   - secure_endpoint - traces bytes flowing through encrypted channels
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
+
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
+
   Example:
-   export GRPC_TRACE=all,-pending_tags
+  export GRPC_TRACE=all,-pending_tags
 
 * GRPC_VERBOSITY
   Default gRPC logging verbosity - one of:

@@ -37,6 +37,7 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
@@ -51,6 +52,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
@@ -186,9 +188,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_, server->max_receive_message_size_),
-          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
-               mrd->request_metadata_.count),
+          call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
+          ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
@@ -208,8 +209,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_, call_.max_receive_message_size()));
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
@@ -342,6 +343,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::unique_ptr<RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -358,7 +360,8 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)) {
+      server_initializer_(new ServerInitializer(this)),
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -373,6 +376,19 @@ Server::Server(
 
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
+
+  for (size_t i = 0; i < channel_args.num_args; i++) {
+    if (0 ==
+        strcmp(channel_args.args[i].key, kHealthCheckServiceInterfaceArg)) {
+      if (channel_args.args[i].value.pointer.p == nullptr) {
+        health_check_service_disabled_ = true;
+      } else {
+        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
+            channel_args.args[i].value.pointer.p));
+      }
+      break;
+    }
+  }
 
   server_ = grpc_server_create(&channel_args, nullptr);
 }
@@ -478,7 +494,23 @@ int Server::AddListeningPort(const grpc::string& addr,
 
 bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
+  global_callbacks_->PreServerStart(this);
   started_ = true;
+
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
+      DefaultHealthCheckServiceEnabled()) {
+    if (sync_server_cqs_->empty()) {
+      gpr_log(GPR_ERROR,
+              "Default health check service disabled at async-only server.");
+    } else {
+      auto* default_hc_service = new DefaultHealthCheckService;
+      health_check_service_.reset(default_hc_service);
+      RegisterService(nullptr, default_hc_service->GetHealthCheckService());
+    }
+  }
+
   grpc_server_start(server_);
 
   if (!has_generic_service_) {
@@ -576,7 +608,6 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
   call_cq_->RegisterAvalanching();  // This op will trigger more ops
-  memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
 ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
@@ -586,16 +617,8 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (*status) {
-    for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(
-          std::pair<grpc::string_ref, grpc::string_ref>(
-              initial_metadata_array_.metadata[i].key,
-              grpc::string_ref(
-                  initial_metadata_array_.metadata[i].value,
-                  initial_metadata_array_.metadata[i].value_length)));
-    }
+    context_->client_metadata_.FillMap();
   }
-  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_receive_message_size());
@@ -621,8 +644,8 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     ServerCompletionQueue* notification_cq) {
   grpc_server_request_registered_call(
       server_->server(), registered_method, &call_, &context_->deadline_,
-      &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
-      this);
+      context_->client_metadata_.arr(), payload, call_cq_->cq(),
+      notification_cq->cq(), this);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -635,7 +658,7 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
   grpc_server_request_call(server->server(), &call_, &call_details_,
-                           &initial_metadata_array_, call_cq->cq(),
+                           context->client_metadata_.arr(), call_cq->cq(),
                            notification_cq->cq(), this);
 }
 
@@ -644,11 +667,12 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
-        call_details_.method;
-    static_cast<GenericServerContext*>(context_)->host_ = call_details_.host;
+        StringFromCopiedSlice(call_details_.method);
+    static_cast<GenericServerContext*>(context_)->host_ =
+        StringFromCopiedSlice(call_details_.host);
   }
-  gpr_free(call_details_.method);
-  gpr_free(call_details_.host);
+  grpc_slice_unref(call_details_.method);
+  grpc_slice_unref(call_details_.host);
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 

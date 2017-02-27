@@ -100,13 +100,16 @@ void grpc_override_well_known_credentials_path_getter(
 
 /* --- grpc_channel_credentials. --- */
 
+#define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
+
 typedef struct {
-  void (*destruct)(grpc_channel_credentials *c);
+  void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c);
 
   grpc_security_status (*create_security_connector)(
-      grpc_channel_credentials *c, grpc_call_credentials *call_creds,
-      const char *target, const grpc_channel_args *args,
-      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+      grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c,
+      grpc_call_credentials *call_creds, const char *target,
+      const grpc_channel_args *args, grpc_channel_security_connector **sc,
+      grpc_channel_args **new_args);
 
   grpc_channel_credentials *(*duplicate_without_call_credentials)(
       grpc_channel_credentials *c);
@@ -120,16 +123,17 @@ struct grpc_channel_credentials {
 
 grpc_channel_credentials *grpc_channel_credentials_ref(
     grpc_channel_credentials *creds);
-void grpc_channel_credentials_unref(grpc_channel_credentials *creds);
+void grpc_channel_credentials_unref(grpc_exec_ctx *exec_ctx,
+                                    grpc_channel_credentials *creds);
 
 /* Creates a security connector for the channel. May also create new channel
    args for the channel to be used in place of the passed in const args if
    returned non NULL. In that case the caller is responsible for destroying
    new_args after channel creation. */
 grpc_security_status grpc_channel_credentials_create_security_connector(
-    grpc_channel_credentials *creds, const char *target,
-    const grpc_channel_args *args, grpc_channel_security_connector **sc,
-    grpc_channel_args **new_args);
+    grpc_exec_ctx *exec_ctx, grpc_channel_credentials *creds,
+    const char *target, const grpc_channel_args *args,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 
 /* Creates a version of the channel credentials without any attached call
    credentials. This can be used in order to open a channel to a non-trusted
@@ -137,6 +141,17 @@ grpc_security_status grpc_channel_credentials_create_security_connector(
 grpc_channel_credentials *
 grpc_channel_credentials_duplicate_without_call_credentials(
     grpc_channel_credentials *creds);
+
+/* Util to encapsulate the channel credentials in a channel arg. */
+grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials *credentials);
+
+/* Util to get the channel credentials from a channel arg. */
+grpc_channel_credentials *grpc_channel_credentials_from_arg(
+    const grpc_arg *arg);
+
+/* Util to find the channel credentials from channel args. */
+grpc_channel_credentials *grpc_channel_credentials_find_in_args(
+    const grpc_channel_args *args);
 
 /* --- grpc_credentials_md. --- */
 
@@ -162,7 +177,8 @@ void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
                                             const char *key, const char *value);
 grpc_credentials_md_store *grpc_credentials_md_store_ref(
     grpc_credentials_md_store *store);
-void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
+void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_credentials_md_store *store);
 
 /* --- grpc_call_credentials. --- */
 
@@ -172,7 +188,7 @@ typedef void (*grpc_credentials_metadata_cb)(
     size_t num_md, grpc_credentials_status status, const char *error_details);
 
 typedef struct {
-  void (*destruct)(grpc_call_credentials *c);
+  void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_call_credentials *c);
   void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c,
                                grpc_polling_entity *pollent,
@@ -188,7 +204,8 @@ struct grpc_call_credentials {
 };
 
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
-void grpc_call_credentials_unref(grpc_call_credentials *creds);
+void grpc_call_credentials_unref(grpc_exec_ctx *exec_ctx,
+                                 grpc_call_credentials *creds);
 void grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
@@ -202,9 +219,10 @@ grpc_call_credentials *grpc_md_only_test_credentials_create(
 /* --- grpc_server_credentials. --- */
 
 typedef struct {
-  void (*destruct)(grpc_server_credentials *c);
+  void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_server_credentials *c);
   grpc_security_status (*create_security_connector)(
-      grpc_server_credentials *c, grpc_server_security_connector **sc);
+      grpc_exec_ctx *exec_ctx, grpc_server_credentials *c,
+      grpc_server_security_connector **sc);
 } grpc_server_credentials_vtable;
 
 struct grpc_server_credentials {
@@ -215,12 +233,14 @@ struct grpc_server_credentials {
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials *creds, grpc_server_security_connector **sc);
+    grpc_exec_ctx *exec_ctx, grpc_server_credentials *creds,
+    grpc_server_security_connector **sc);
 
 grpc_server_credentials *grpc_server_credentials_ref(
     grpc_server_credentials *creds);
 
-void grpc_server_credentials_unref(grpc_server_credentials *creds);
+void grpc_server_credentials_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_server_credentials *creds);
 
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
@@ -243,6 +263,6 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
     void *user_data);
 
 void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request *r);
+    grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *r);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

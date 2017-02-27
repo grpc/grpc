@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Test of gRPC Python's application-layer API."""
 
 import unittest
@@ -40,73 +39,47 @@ from tests.unit import _from_grpc_import_star
 
 class AllTest(unittest.TestCase):
 
-  def testAll(self):
-    expected_grpc_code_elements = (
-        'FutureTimeoutError',
-        'FutureCancelledError',
-        'Future',
-        'ChannelConnectivity',
-        'StatusCode',
-        'RpcError',
-        'RpcContext',
-        'Call',
-        'ChannelCredentials',
-        'CallCredentials',
-        'AuthMetadataContext',
-        'AuthMetadataPluginCallback',
-        'AuthMetadataPlugin',
-        'ServerCredentials',
-        'UnaryUnaryMultiCallable',
-        'UnaryStreamMultiCallable',
-        'StreamUnaryMultiCallable',
-        'StreamStreamMultiCallable',
-        'Channel',
-        'ServicerContext',
-        'RpcMethodHandler',
-        'HandlerCallDetails',
-        'GenericRpcHandler',
-        'ServiceRpcHandler',
-        'Server',
-        'unary_unary_rpc_method_handler',
-        'unary_stream_rpc_method_handler',
-        'stream_unary_rpc_method_handler',
-        'stream_stream_rpc_method_handler',
-        'method_handlers_generic_handler',
-        'ssl_channel_credentials',
-        'metadata_call_credentials',
-        'access_token_call_credentials',
-        'composite_call_credentials',
-        'composite_channel_credentials',
-        'ssl_server_credentials',
-        'channel_ready_future',
-        'insecure_channel',
-        'secure_channel',
-        'server',
-    )
+    def testAll(self):
+        expected_grpc_code_elements = (
+            'FutureTimeoutError', 'FutureCancelledError', 'Future',
+            'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
+            'Call', 'ChannelCredentials', 'CallCredentials',
+            'AuthMetadataContext', 'AuthMetadataPluginCallback',
+            'AuthMetadataPlugin', 'ServerCredentials',
+            'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
+            'StreamUnaryMultiCallable', 'StreamStreamMultiCallable', 'Channel',
+            'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
+            'GenericRpcHandler', 'ServiceRpcHandler', 'Server',
+            'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+            'stream_unary_rpc_method_handler',
+            'stream_stream_rpc_method_handler',
+            'method_handlers_generic_handler', 'ssl_channel_credentials',
+            'metadata_call_credentials', 'access_token_call_credentials',
+            'composite_call_credentials', 'composite_channel_credentials',
+            'ssl_server_credentials', 'channel_ready_future',
+            'insecure_channel', 'secure_channel', 'server',)
 
-    six.assertCountEqual(
-        self, expected_grpc_code_elements,
-        _from_grpc_import_star.GRPC_ELEMENTS)
+        six.assertCountEqual(self, expected_grpc_code_elements,
+                             _from_grpc_import_star.GRPC_ELEMENTS)
 
 
 class ChannelConnectivityTest(unittest.TestCase):
 
-  def testChannelConnectivity(self):
-    self.assertSequenceEqual(
-        (grpc.ChannelConnectivity.IDLE,
-         grpc.ChannelConnectivity.CONNECTING,
-         grpc.ChannelConnectivity.READY,
-         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-         grpc.ChannelConnectivity.SHUTDOWN,),
-        tuple(grpc.ChannelConnectivity))
+    def testChannelConnectivity(self):
+        self.assertSequenceEqual(
+            (grpc.ChannelConnectivity.IDLE, grpc.ChannelConnectivity.CONNECTING,
+             grpc.ChannelConnectivity.READY,
+             grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+             grpc.ChannelConnectivity.SHUTDOWN,),
+            tuple(grpc.ChannelConnectivity))
 
 
 class ChannelTest(unittest.TestCase):
 
-  def test_secure_channel(self):
-    channel_credentials = grpc.ssl_channel_credentials()
-    channel = grpc.secure_channel('google.com:443', channel_credentials)
+    def test_secure_channel(self):
+        channel_credentials = grpc.ssl_channel_credentials()
+        channel = grpc.secure_channel('google.com:443', channel_credentials)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

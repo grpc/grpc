@@ -39,18 +39,66 @@
   # Some of this file is built with the help of
   # https://n8.io/converting-a-c-library-to-gyp/
   {
+    'variables': {
+      'runtime%': 'node',
+      # UV integration in C core is disabled by default while bugs are ironed
+      # out. It can be re-enabled for one build by setting the npm config
+      # variable grpc_uv to true, and it can be re-enabled permanently by
+      # setting it to true here.
+      'grpc_uv%': 'false'
+    },
     'target_defaults': {
       'include_dirs': [
         '.',
         'include'
       ],
       'defines': [
-        'GRPC_UV'
+        'GPR_BACKWARDS_COMPATIBILITY_MODE'
       ],
       'conditions': [
+        ['runtime=="node" and grpc_uv=="true"', {
+          'defines': [
+            # Disabling this while bugs are ironed out. Uncomment this to
+            # re-enable libuv integration in C core.
+            'GRPC_UV'
+          ]
+        }],
+        ['OS!="win" and runtime=="electron"', {
+          "defines": [
+            'OPENSSL_NO_THREADS'
+          ]
+        }],
+        # This is the condition for using boringssl
+        ['OS=="win" or runtime=="electron"', {
+          "include_dirs": [
+            "third_party/boringssl/include"
+          ],
+          "defines": [
+            'OPENSSL_NO_ASM'
+          ]
+        }, {
+          # As of the beginning of 2017, we only support versions of Node with
+          # embedded versions of OpenSSL that support ALPN
+          'defines': [
+            'TSI_OPENSSL_ALPN_SUPPORT=1'
+          ],
+          'include_dirs': [
+            '<(node_root_dir)/deps/openssl/openssl/include',
+          ],
+          'conditions': [
+           ["target_arch=='ia32'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+           }],
+           ["target_arch=='x64'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+           }],
+           ["target_arch=='arm'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+           }]
+          ]
+        }],
         ['OS == "win"', {
           "include_dirs": [
-            "third_party/boringssl/include",
             "third_party/zlib"
           ],
           "defines": [
@@ -60,8 +108,6 @@
             'UNICODE',
             '_UNICODE',
             'NOMINMAX',
-            'OPENSSL_NO_ASM',
-            'GPR_BACKWARDS_COMPATIBILITY_MODE'
           ],
           "msvs_settings": {
             'VCCLCompilerTool': {
@@ -74,21 +120,8 @@
         }, { # OS != "win"
           'variables': {
             'config': '<!(echo $CONFIG)',
-            # The output of "node --version" is "v[version]". We use cut to
-            # remove the first character.
-            'target%': '<!(node --version | cut -c2-)'
           },
-            # Empirically, Node only exports ALPN symbols if its major version is >0.
-            # io.js always reports versions >0 and always exports ALPN symbols.
-            # Therefore, Node's major version will be truthy if and only if it
-            # supports ALPN. The target is "[major].[minor].[patch]". We split by
-            # periods and take the first field to get the major version.
-          'defines': [
-            'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
-            'GPR_BACKWARDS_COMPATIBILITY_MODE'
-          ],
           'include_dirs': [
-            '<(node_root_dir)/deps/openssl/openssl/include',
             '<(node_root_dir)/deps/zlib'
           ],
           'conditions': [
@@ -103,21 +136,42 @@
                 '-fprofile-arcs'
               ]
             }
-           ],
-           ["target_arch=='ia32'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-           }],
-           ["target_arch=='x64'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-           }],
-           ["target_arch=='arm'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-           }]
+           ]
           ]
         }]
       ]
     },
     'conditions': [
+      ['OS=="win" or runtime=="electron"', {
+        'targets': [
+          % for module in node_modules:
+          % for lib in libs:
+          % if lib.name in module.transitive_deps and lib.name == 'boringssl':
+          {
+            'cflags': [
+              '-std=c99',
+              '-Wall',
+              '-Werror'
+            ],
+            'target_name': '${lib.name}',
+            'product_prefix': 'lib',
+            'type': 'static_library',
+            'dependencies': [
+              % for dep in getattr(lib, 'deps', []):
+              '${dep}',
+              % endfor
+            ],
+            'sources': [
+              % for source in lib.src:
+              '${source}',
+              % endfor
+            ]
+          },
+          % endif
+          % endfor
+          % endfor
+        ]
+      }],
       ['OS == "win"', {
         'targets': [
           {
@@ -143,10 +197,10 @@
               }
             ]
           },
-          # Only want to compile BoringSSL and zlib under Windows
+          # Only want to compile zlib under Windows
           % for module in node_modules:
           % for lib in libs:
-          % if lib.name in module.transitive_deps and lib.name in ('boringssl', 'z'):
+          % if lib.name in module.transitive_deps and lib.name == 'z':
           {
             'cflags': [
               '-std=c99',
@@ -223,6 +277,15 @@
           '-g'
         ],
         "conditions": [
+          ['OS=="win" or runtime=="electron"', {
+            'dependencies': [
+              % for dep in getattr(module, 'deps', []):
+              % if dep == 'boringssl':
+              "${dep}",
+              % endif
+              % endfor
+            ]
+          }],
           ['OS=="mac"', {
             'xcode_settings': {
               'MACOSX_DEPLOYMENT_TARGET': '10.9',
@@ -235,7 +298,7 @@
           ['OS=="win"', {
             'dependencies': [
               % for dep in getattr(module, 'deps', []):
-              % if dep in ('boringssl', 'z'):
+              % if dep == 'z':
               "${dep}",
               % endif
               % endfor

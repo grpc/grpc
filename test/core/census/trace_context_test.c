@@ -59,7 +59,6 @@ bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
                                     uint8_t *buffer, size_t buf_size) {
   google_trace_TraceContext ctxt2 = google_trace_TraceContext_init_zero;
   size_t msg_length;
-  GPR_ASSERT(ctxt1->has_trace_id && ctxt1->has_span_id);
 
   msg_length = encode_trace_context(ctxt1, buffer, buf_size);
   if (msg_length == 0) {
@@ -70,16 +69,17 @@ bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
     return false;
   }
 
-  if (!ctxt2.has_trace_id || !ctxt2.has_span_id) {
+  if (!ctxt2.has_trace_id_hi || !ctxt2.has_trace_id_lo || !ctxt2.has_span_id) {
     return false;
   }
 
-  GPR_ASSERT(
-      ctxt1->trace_id.hi == ctxt2.trace_id.hi &&
-      ctxt1->trace_id.lo == ctxt2.trace_id.lo &&
-      ctxt1->span_id == ctxt2.span_id &&
-      ctxt1->has_is_sampled == ctxt2.has_is_sampled &&
-      (ctxt1->has_is_sampled ? ctxt1->is_sampled == ctxt2.is_sampled : true));
+  GPR_ASSERT(ctxt1->trace_id_hi == ctxt2.trace_id_hi &&
+             ctxt1->trace_id_lo == ctxt2.trace_id_lo &&
+             ctxt1->span_id == ctxt2.span_id &&
+             ctxt1->has_span_options == ctxt2.has_span_options &&
+             (ctxt1->has_span_options
+                  ? ctxt1->span_options == ctxt2.span_options
+                  : true));
 
   return true;
 }
@@ -94,7 +94,7 @@ bool validate_decode_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
     return false;
   }
 
-  if (!ctxt->has_trace_id || !ctxt->has_span_id) {
+  if (!ctxt->has_trace_id_hi || !ctxt->has_trace_id_lo || !ctxt->has_span_id) {
     return false;
   }
 
@@ -144,49 +144,48 @@ static void test_span_only() {
       &ctxt, "test/core/census/data/context_span_only.pb", false);
 }
 
-// Test proto-buffer without is_sampled value.
-static void test_no_sample() {
+// Test proto-buffer without span_options value.
+static void test_no_span_options() {
   google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
   read_and_validate_context_from_file(
-      &ctxt, "test/core/census/data/context_no_sample.pb", true);
-  GPR_ASSERT(ctxt.has_is_sampled == false && ctxt.is_sampled == false);
+      &ctxt, "test/core/census/data/context_no_span_options.pb", true);
+  GPR_ASSERT(ctxt.has_span_options == false && ctxt.span_options == 0);
 }
 
 static void test_encode_decode() {
   uint8_t buffer[BUF_SIZE] = {0};
 
   google_trace_TraceContext ctxt1 = google_trace_TraceContext_init_zero;
-  ctxt1.has_trace_id = true;
-  ctxt1.trace_id.has_hi = true;
-  ctxt1.trace_id.has_lo = true;
-  ctxt1.trace_id.lo = 1;
-  ctxt1.trace_id.hi = 2;
+  ctxt1.has_trace_id_hi = true;
+  ctxt1.has_trace_id_lo = true;
+  ctxt1.trace_id_lo = 1;
+  ctxt1.trace_id_hi = 2;
   ctxt1.has_span_id = true;
   ctxt1.span_id = 3;
   validate_encode_decode_context(&ctxt1, buffer, sizeof(buffer));
 
+  // Missing trace_id. This should fail.
   google_trace_TraceContext ctxt2 = google_trace_TraceContext_init_zero;
-  ctxt2.has_trace_id = true;
-  ctxt2.trace_id.has_hi = false;
-  ctxt2.trace_id.has_lo = false;
+  ctxt2.has_trace_id_hi = false;
+  ctxt2.has_trace_id_lo = false;
   ctxt2.has_span_id = true;
   validate_encode_decode_context(&ctxt2, buffer, sizeof(buffer));
 }
 
-// Test a corrupted proto-buffer.
+// Test a corrupted proto-buffer. This should fail.
 static void test_corrupt() {
   uint8_t buffer[BUF_SIZE] = {0};
   google_trace_TraceContext ctxt1 = google_trace_TraceContext_init_zero;
   size_t msg_length;
 
-  ctxt1.has_trace_id = true;
-  ctxt1.trace_id.has_hi = true;
-  ctxt1.trace_id.has_lo = true;
-  ctxt1.trace_id.lo = 1;
-  ctxt1.trace_id.hi = 2;
+  ctxt1.has_trace_id_hi = true;
+  ctxt1.has_trace_id_lo = true;
+  ctxt1.trace_id_lo = 1;
+  ctxt1.trace_id_hi = 2;
   ctxt1.has_span_id = true;
   ctxt1.span_id = 3;
-  ctxt1.is_sampled = true;
+  ctxt1.has_span_options = true;
+  ctxt1.span_options = SPAN_OPTIONS_IS_SAMPLED;
   msg_length = encode_trace_context(&ctxt1, buffer, sizeof(buffer));
 
   /* Corrupt some bytes.  255 (0xFF) should be illegal for the first byte of the
@@ -198,19 +197,19 @@ static void test_corrupt() {
 }
 
 static void test_buffer_size() {
-  // This buffer is too small, so the encode should fail.
+  // This buffer is too small. This should fail.
   uint8_t buffer[16] = {0};
   google_trace_TraceContext ctxt1 = google_trace_TraceContext_init_zero;
   size_t msg_length;
 
-  ctxt1.has_trace_id = true;
-  ctxt1.trace_id.has_hi = true;
-  ctxt1.trace_id.has_lo = true;
-  ctxt1.trace_id.lo = 1;
-  ctxt1.trace_id.hi = 2;
+  ctxt1.has_trace_id_hi = true;
+  ctxt1.has_trace_id_lo = true;
+  ctxt1.trace_id_lo = 1;
+  ctxt1.trace_id_hi = 2;
   ctxt1.has_span_id = true;
   ctxt1.span_id = 3;
-  ctxt1.is_sampled = true;
+  ctxt1.has_span_options = true;
+  ctxt1.span_options = SPAN_OPTIONS_IS_SAMPLED;
   msg_length = encode_trace_context(&ctxt1, buffer, sizeof(buffer));
 
   GPR_ASSERT(msg_length == 0);
@@ -224,7 +223,7 @@ int main(int argc, char **argv) {
   test_span_only();
   test_encode_decode();
   test_corrupt();
-  test_no_sample();
+  test_no_span_options();
   test_buffer_size();
 
   return 0;

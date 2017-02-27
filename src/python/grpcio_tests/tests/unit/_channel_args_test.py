@@ -26,35 +26,31 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Tests of Channel Args on client/server side."""
 
 import unittest
 
 import grpc
 
+
 class TestPointerWrapper(object):
 
-  def __int__(self):
-    return 123456
+    def __int__(self):
+        return 123456
 
 
-TEST_CHANNEL_ARGS = (
-    ('arg1', b'bytes_val'),
-    ('arg2', 'str_val'),
-    ('arg3', 1),
-    (b'arg4', 'str_val'),
-    ('arg6', TestPointerWrapper()),
-)
+TEST_CHANNEL_ARGS = (('arg1', b'bytes_val'), ('arg2', 'str_val'), ('arg3', 1),
+                     (b'arg4', 'str_val'), ('arg6', TestPointerWrapper()),)
 
 
 class ChannelArgsTest(unittest.TestCase):
 
-  def test_client(self):
-    grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
+    def test_client(self):
+        grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
 
-  def test_server(self):
-    grpc.server(None, options=TEST_CHANNEL_ARGS)
+    def test_server(self):
+        grpc.server(None, options=TEST_CHANNEL_ARGS)
+
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

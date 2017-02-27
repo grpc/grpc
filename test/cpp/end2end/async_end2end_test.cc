@@ -42,6 +42,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
@@ -228,12 +229,7 @@ class TestScenario {
       : disable_blocking(non_block),
         credentials_type(creds_type),
         message_content(content) {}
-  void Log() const {
-    gpr_log(
-        GPR_INFO,
-        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
-        disable_blocking, credentials_type.c_str(), message_content.size());
-  }
+  void Log() const;
   bool disable_blocking;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
@@ -241,6 +237,20 @@ class TestScenario {
   grpc::string credentials_type;
   grpc::string message_content;
 };
+
+static std::ostream& operator<<(std::ostream& out,
+                                const TestScenario& scenario) {
+  return out << "TestScenario{disable_blocking="
+             << (scenario.disable_blocking ? "true" : "false")
+             << ", credentials='" << scenario.credentials_type
+             << "', message_size=" << scenario.message_content.size() << "}";
+}
+
+void TestScenario::Log() const {
+  std::ostringstream out;
+  out << *this;
+  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
+}
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
@@ -254,7 +264,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
     // Setup server
     ServerBuilder builder;
-    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
+        GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
@@ -283,8 +294,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds =
-        GetChannelCredentials(GetParam().credentials_type, &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+        GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
         CreateCustomChannel(server_address_.str(), channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
@@ -892,8 +903,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  auto channel_creds =
-      GetChannelCredentials(GetParam().credentials_type, &args);
+  auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+      GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       CreateCustomChannel(server_address_.str(), channel_creds, args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
@@ -1404,11 +1415,15 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
 
-  credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetSecureCredentialsTypeList();
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
+                                                      nullptr) != nullptr) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
+  GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
   for (int sz = 1; sz < test_big_limit; sz *= 2) {

@@ -50,6 +50,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -173,7 +175,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   size_t written_bytes;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -184,7 +186,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_resource_quota *resource_quota = grpc_resource_quota_create("read_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), resource_quota,
                        slice_size, "test");
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -212,7 +214,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy(&state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -224,7 +226,7 @@ static void large_read_test(size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -235,7 +237,7 @@ static void large_read_test(size_t slice_size) {
       grpc_resource_quota_create("large_read_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), resource_quota,
                        slice_size, "test");
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
@@ -263,7 +265,7 @@ static void large_read_test(size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy(&state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -328,7 +330,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC),
-                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10))));
+                          grpc_timeout_milliseconds_to_deadline(10))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     do {
@@ -361,7 +363,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   uint8_t current_data = 0;
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO,
@@ -374,7 +376,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
       grpc_resource_quota_create("write_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"), resource_quota,
                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, "test");
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   state.ep = ep;
@@ -405,7 +407,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   }
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy(&outgoing);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
   grpc_endpoint_destroy(&exec_ctx, ep);
   gpr_free(slices);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -426,7 +428,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   int fd;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
@@ -444,7 +446,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), resource_quota,
                        slice_size, "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -474,7 +476,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy(&state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
   grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(g_mu);
@@ -536,7 +538,7 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
                                 resource_quota, slice_size, "test");
   f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"),
                                 resource_quota, slice_size, "test");
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, f.server_ep, g_pollset);
 

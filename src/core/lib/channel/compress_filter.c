@@ -44,6 +44,8 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -79,38 +81,6 @@ typedef struct channel_data {
   uint32_t supported_compression_algorithms;
 } channel_data;
 
-/** For each \a md element from the incoming metadata, filter out the entry for
- * "grpc-encoding", using its value to populate the call data's
- * compression_algorithm field. */
-static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
-
-  if (md->key == GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST) {
-    const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
-                                          &calld->compression_algorithm)) {
-      gpr_log(GPR_ERROR,
-              "Invalid compression algorithm: '%s' (unknown). Ignoring.",
-              md_c_str);
-      calld->compression_algorithm = GRPC_COMPRESS_NONE;
-    }
-    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
-                    calld->compression_algorithm)) {
-      gpr_log(GPR_ERROR,
-              "Invalid compression algorithm: '%s' (previously disabled). "
-              "Ignoring.",
-              md_c_str);
-      calld->compression_algorithm = GRPC_COMPRESS_NONE;
-    }
-    calld->has_compression_algorithm = 1;
-    return NULL;
-  }
-
-  return md;
-}
-
 static int skip_compression(grpc_call_element *elem, uint32_t flags) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -129,30 +99,67 @@ static int skip_compression(grpc_call_element *elem, uint32_t flags) {
 }
 
 /** Filter initial metadata */
-static void process_send_initial_metadata(
-    grpc_call_element *elem, grpc_metadata_batch *initial_metadata) {
+static grpc_error *process_send_initial_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_metadata_batch *initial_metadata) GRPC_MUST_USE_RESULT;
+static grpc_error *process_send_initial_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_metadata_batch *initial_metadata) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   /* Parse incoming request for compression. If any, it'll be available
    * at calld->compression_algorithm */
-  grpc_metadata_batch_filter(initial_metadata, compression_md_filter, elem);
-  if (!calld->has_compression_algorithm) {
+  if (initial_metadata->idx.named.grpc_internal_encoding_request != NULL) {
+    grpc_mdelem md =
+        initial_metadata->idx.named.grpc_internal_encoding_request->md;
+    if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
+                                          &calld->compression_algorithm)) {
+      char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+      gpr_log(GPR_ERROR,
+              "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
+      gpr_free(val);
+      calld->compression_algorithm = GRPC_COMPRESS_NONE;
+    }
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                    calld->compression_algorithm)) {
+      char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+      gpr_log(GPR_ERROR,
+              "Invalid compression algorithm: '%s' (previously disabled). "
+              "Ignoring.",
+              val);
+      gpr_free(val);
+      calld->compression_algorithm = GRPC_COMPRESS_NONE;
+    }
+    calld->has_compression_algorithm = 1;
+
+    grpc_metadata_batch_remove(
+        exec_ctx, initial_metadata,
+        initial_metadata->idx.named.grpc_internal_encoding_request);
+  } else {
     /* If no algorithm was found in the metadata and we aren't
      * exceptionally skipping compression, fall back to the channel
      * default */
     calld->compression_algorithm = channeld->default_compression_algorithm;
     calld->has_compression_algorithm = 1; /* GPR_TRUE */
   }
+
+  grpc_error *error = GRPC_ERROR_NONE;
   /* hint compression algorithm */
-  grpc_metadata_batch_add_tail(
-      initial_metadata, &calld->compression_algorithm_storage,
-      grpc_compression_encoding_mdelem(calld->compression_algorithm));
+  if (calld->compression_algorithm != GRPC_COMPRESS_NONE) {
+    error = grpc_metadata_batch_add_tail(
+        exec_ctx, initial_metadata, &calld->compression_algorithm_storage,
+        grpc_compression_encoding_mdelem(calld->compression_algorithm));
+  }
+
+  if (error != GRPC_ERROR_NONE) return error;
 
   /* convey supported compression algorithms */
-  grpc_metadata_batch_add_tail(initial_metadata,
-                               &calld->accept_encoding_storage,
-                               GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
-                                   channeld->supported_compression_algorithms));
+  error = grpc_metadata_batch_add_tail(
+      exec_ctx, initial_metadata, &calld->accept_encoding_storage,
+      GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
+          channeld->supported_compression_algorithms));
+
+  return error;
 }
 
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
@@ -161,7 +168,7 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_reset_and_unref(&calld->slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &calld->slices);
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
@@ -171,8 +178,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   int did_compress;
   grpc_slice_buffer tmp;
   grpc_slice_buffer_init(&tmp);
-  did_compress =
-      grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
+  did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
+                                   &calld->slices, &tmp);
   if (did_compress) {
     if (grpc_compression_trace) {
       char *algo_name;
@@ -199,7 +206,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  grpc_slice_buffer_destroy(&tmp);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &tmp);
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
@@ -243,7 +250,12 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("compress_start_transport_stream_op", 0);
 
   if (op->send_initial_metadata) {
-    process_send_initial_metadata(elem, op->send_initial_metadata);
+    grpc_error *error = process_send_initial_metadata(
+        exec_ctx, elem, op->send_initial_metadata);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      return;
+    }
   }
   if (op->send_message != NULL &&
       !skip_compression(elem, op->send_message->flags)) {
@@ -262,7 +274,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
@@ -283,7 +295,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_destroy(&calld->slices);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &calld->slices);
 }
 
 /* Constructor for channel_data */

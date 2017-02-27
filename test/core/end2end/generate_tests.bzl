@@ -106,6 +106,7 @@ END2END_TESTS = {
     'high_initial_seqno': test_options(),
     'idempotent_request': test_options(),
     'invoke_large_request': test_options(),
+    'keepalive_timeout': test_options(proxyable=False),
     'large_metadata': test_options(),
     'max_concurrent_streams': test_options(proxyable=False),
     'max_message_length': test_options(),
@@ -131,6 +132,8 @@ END2END_TESTS = {
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'write_buffering': test_options(),
+    'write_buffering_at_end': test_options(),
 }
 
 

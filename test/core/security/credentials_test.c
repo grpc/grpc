@@ -166,24 +166,29 @@ static grpc_httpcli_response http_response(int status, const char *body) {
 /* -- Tests. -- */
 
 static void test_empty_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   GPR_ASSERT(store->num_entries == 0);
   GPR_ASSERT(store->allocated == 0);
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_ref_unref_empty_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   grpc_credentials_md_store_ref(store);
   grpc_credentials_md_store_ref(store);
   GPR_ASSERT(store->num_entries == 0);
   GPR_ASSERT(store->allocated == 0);
-  grpc_credentials_md_store_unref(store);
-  grpc_credentials_md_store_unref(store);
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_add_to_empty_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   const char *key_str = "hello";
   const char *value_str = "there blah blah blah blah blah blah blah";
@@ -191,14 +196,16 @@ static void test_add_to_empty_md_store(void) {
   grpc_slice value = grpc_slice_from_copied_string(value_str);
   grpc_credentials_md_store_add(store, key, value);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(grpc_slice_cmp(key, store->entries[0].key) == 0);
-  GPR_ASSERT(grpc_slice_cmp(value, store->entries[0].value) == 0);
+  GPR_ASSERT(grpc_slice_eq(key, store->entries[0].key));
+  GPR_ASSERT(grpc_slice_eq(value, store->entries[0].value));
   grpc_slice_unref(key);
   grpc_slice_unref(value);
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_add_cstrings_to_empty_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   const char *key_str = "hello";
   const char *value_str = "there blah blah blah blah blah blah blah";
@@ -206,18 +213,22 @@ static void test_add_cstrings_to_empty_md_store(void) {
   GPR_ASSERT(store->num_entries == 1);
   GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].key, key_str) == 0);
   GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].value, value_str) == 0);
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_empty_preallocated_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(4);
   GPR_ASSERT(store->num_entries == 0);
   GPR_ASSERT(store->allocated == 4);
   GPR_ASSERT(store->entries != NULL);
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_add_abunch_to_md_store(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(4);
   size_t num_entries = 1000;
   const char *key_str = "hello";
@@ -230,16 +241,19 @@ static void test_add_abunch_to_md_store(void) {
     GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].key, key_str) == 0);
     GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].value, value_str) == 0);
   }
-  grpc_credentials_md_store_unref(store);
+  grpc_credentials_md_store_unref(&exec_ctx, store);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) == GRPC_CREDENTIALS_OK);
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
+             GRPC_CREDENTIALS_OK);
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
   GPR_ASSERT(token_md->num_entries == 1);
@@ -248,32 +262,38 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].value,
                                 "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
-  grpc_credentials_md_store_unref(token_md);
+  grpc_credentials_md_store_unref(&exec_ctx, token_md);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response =
       http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response =
@@ -282,12 +302,14 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
                     " \"expires_in\":3599, "
                     " \"token_type\":\"Bearer\"");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response = http_response(200,
@@ -295,12 +317,14 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
                                                  " \"expires_in\":3599, "
                                                  " \"token_type\":\"Bearer\"}");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response =
@@ -309,13 +333,15 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
                     " \"expires_in\":3599, "
                     "}");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
   gpr_timespec token_lifetime;
   grpc_httpcli_response response =
@@ -323,9 +349,10 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
                     " \"token_type\":\"Bearer\"}");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
+                 &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void check_metadata(expected_md *expected, grpc_credentials_md *md_elems,
@@ -361,7 +388,7 @@ static void check_google_iam_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 2);
   check_metadata(emd, md_elems, num_md);
-  grpc_call_credentials_unref(c);
+  grpc_call_credentials_unref(exec_ctx, c);
 }
 
 static void test_google_iam_creds(void) {
@@ -385,7 +412,7 @@ static void check_access_token_metadata(
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 1);
   check_metadata(emd, md_elems, num_md);
-  grpc_call_credentials_unref(c);
+  grpc_call_credentials_unref(exec_ctx, c);
 }
 
 static void test_access_token_creds(void) {
@@ -401,9 +428,10 @@ static void test_access_token_creds(void) {
 }
 
 static grpc_security_status check_channel_oauth2_create_security_connector(
-    grpc_channel_credentials *c, grpc_call_credentials *call_creds,
-    const char *target, const grpc_channel_args *args,
-    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c,
+    grpc_call_credentials *call_creds, const char *target,
+    const grpc_channel_args *args, grpc_channel_security_connector **sc,
+    grpc_channel_args **new_args) {
   GPR_ASSERT(strcmp(c->type, "mock") == 0);
   GPR_ASSERT(call_creds != NULL);
   GPR_ASSERT(strcmp(call_creds->type, GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
@@ -411,6 +439,7 @@ static grpc_security_status check_channel_oauth2_create_security_connector(
 }
 
 static void test_channel_oauth2_composite_creds(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
       NULL, check_channel_oauth2_create_security_connector, NULL};
@@ -424,9 +453,10 @@ static void test_channel_oauth2_composite_creds(void) {
   grpc_channel_credentials_release(channel_creds);
   grpc_call_credentials_release(oauth2_creds);
   GPR_ASSERT(grpc_channel_credentials_create_security_connector(
-                 channel_oauth2_creds, NULL, NULL, NULL, &new_args) ==
-             GRPC_SECURITY_OK);
+                 &exec_ctx, channel_oauth2_creds, NULL, NULL, NULL,
+                 &new_args) == GRPC_SECURITY_OK);
   grpc_channel_credentials_release(channel_oauth2_creds);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void check_oauth2_google_iam_composite_metadata(
@@ -443,7 +473,7 @@ static void check_oauth2_google_iam_composite_metadata(
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 3);
   check_metadata(emd, md_elems, num_md);
-  grpc_call_credentials_unref(c);
+  grpc_call_credentials_unref(exec_ctx, c);
 }
 
 static void test_oauth2_google_iam_composite_creds(void) {
@@ -459,8 +489,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
   grpc_call_credentials *composite_creds =
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              NULL);
-  grpc_call_credentials_unref(oauth2_creds);
-  grpc_call_credentials_unref(google_iam_creds);
+  grpc_call_credentials_unref(&exec_ctx, oauth2_creds);
+  grpc_call_credentials_unref(&exec_ctx, google_iam_creds);
   GPR_ASSERT(
       strcmp(composite_creds->type, GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
   creds_array =
@@ -478,9 +508,10 @@ static void test_oauth2_google_iam_composite_creds(void) {
 
 static grpc_security_status
 check_channel_oauth2_google_iam_create_security_connector(
-    grpc_channel_credentials *c, grpc_call_credentials *call_creds,
-    const char *target, const grpc_channel_args *args,
-    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c,
+    grpc_call_credentials *call_creds, const char *target,
+    const grpc_channel_args *args, grpc_channel_security_connector **sc,
+    grpc_channel_args **new_args) {
   const grpc_call_credentials_array *creds_array;
   GPR_ASSERT(strcmp(c->type, "mock") == 0);
   GPR_ASSERT(call_creds != NULL);
@@ -495,6 +526,7 @@ check_channel_oauth2_google_iam_create_security_connector(
 }
 
 static void test_channel_oauth2_google_iam_composite_creds(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
       NULL, check_channel_oauth2_google_iam_create_security_connector, NULL};
@@ -517,10 +549,11 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_call_credentials_release(google_iam_creds);
 
   GPR_ASSERT(grpc_channel_credentials_create_security_connector(
-                 channel_oauth2_iam_creds, NULL, NULL, NULL, &new_args) ==
-             GRPC_SECURITY_OK);
+                 &exec_ctx, channel_oauth2_iam_creds, NULL, NULL, NULL,
+                 &new_args) == GRPC_SECURITY_OK);
 
   grpc_channel_credentials_release(channel_oauth2_iam_creds);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void on_oauth2_creds_get_metadata_success(
@@ -619,7 +652,7 @@ static void test_compute_engine_creds_success(void) {
       on_oauth2_creds_get_metadata_success, (void *)test_user_data);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  grpc_call_credentials_unref(compute_engine_creds);
+  grpc_call_credentials_unref(&exec_ctx, compute_engine_creds);
   grpc_httpcli_set_override(NULL, NULL);
 }
 
@@ -634,7 +667,7 @@ static void test_compute_engine_creds_failure(void) {
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, compute_engine_creds, NULL, auth_md_ctx,
       on_oauth2_creds_get_metadata_failure, (void *)test_user_data);
-  grpc_call_credentials_unref(compute_engine_creds);
+  grpc_call_credentials_unref(&exec_ctx, compute_engine_creds);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -706,7 +739,7 @@ static void test_refresh_token_creds_success(void) {
       on_oauth2_creds_get_metadata_success, (void *)test_user_data);
   grpc_exec_ctx_flush(&exec_ctx);
 
-  grpc_call_credentials_unref(refresh_token_creds);
+  grpc_call_credentials_unref(&exec_ctx, refresh_token_creds);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -723,7 +756,7 @@ static void test_refresh_token_creds_failure(void) {
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, refresh_token_creds, NULL, auth_md_ctx,
       on_oauth2_creds_get_metadata_failure, (void *)test_user_data);
-  grpc_call_credentials_unref(refresh_token_creds);
+  grpc_call_credentials_unref(&exec_ctx, refresh_token_creds);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -832,7 +865,7 @@ static void test_jwt_creds_success(void) {
   grpc_exec_ctx_flush(&exec_ctx);
 
   gpr_free(json_key_string);
-  grpc_call_credentials_unref(jwt_creds);
+  grpc_call_credentials_unref(&exec_ctx, jwt_creds);
   grpc_jwt_encode_and_sign_set_override(NULL);
 }
 
@@ -851,7 +884,7 @@ static void test_jwt_creds_signing_failure(void) {
       on_jwt_creds_get_metadata_failure, (void *)test_user_data);
 
   gpr_free(json_key_string);
-  grpc_call_credentials_unref(jwt_creds);
+  grpc_call_credentials_unref(&exec_ctx, jwt_creds);
   grpc_jwt_encode_and_sign_set_override(NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -870,6 +903,7 @@ static void set_google_default_creds_env_var_with_file_contents(
 }
 
 static void test_google_default_creds_auth_key(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_service_account_jwt_access_credentials *jwt;
   grpc_composite_channel_credentials *creds;
   char *json_key = test_json_key_str();
@@ -885,11 +919,13 @@ static void test_google_default_creds_auth_key(void) {
       strcmp(jwt->key.client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
       0);
-  grpc_channel_credentials_unref(&creds->base);
+  grpc_channel_credentials_unref(&exec_ctx, &creds->base);
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_google_default_creds_refresh_token(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_google_refresh_token_credentials *refresh;
   grpc_composite_channel_credentials *creds;
   grpc_flush_cached_google_default_credentials();
@@ -901,8 +937,9 @@ static void test_google_default_creds_refresh_token(void) {
   refresh = (grpc_google_refresh_token_credentials *)creds->call_creds;
   GPR_ASSERT(strcmp(refresh->refresh_token.client_id,
                     "32555999999.apps.googleusercontent.com") == 0);
-  grpc_channel_credentials_unref(&creds->base);
+  grpc_channel_credentials_unref(&exec_ctx, &creds->base);
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int default_creds_gce_detection_httpcli_get_success_override(
@@ -1028,9 +1065,8 @@ static void plugin_get_metadata_success(void *state,
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
     memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = plugin_md[i].key;
-    md[i].value = plugin_md[i].value;
-    md[i].value_length = strlen(plugin_md[i].value);
+    md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
+    md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
   }
   cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
 }
@@ -1142,6 +1178,8 @@ static void test_get_well_known_google_credentials_file_path(void) {
 }
 
 static void test_channel_creds_duplicate_without_call_creds(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   grpc_channel_credentials *channel_creds =
       grpc_fake_transport_security_credentials_create();
 
@@ -1149,21 +1187,23 @@ static void test_channel_creds_duplicate_without_call_creds(void) {
       grpc_channel_credentials_duplicate_without_call_credentials(
           channel_creds);
   GPR_ASSERT(dup == channel_creds);
-  grpc_channel_credentials_unref(dup);
+  grpc_channel_credentials_unref(&exec_ctx, dup);
 
   grpc_call_credentials *call_creds =
       grpc_access_token_credentials_create("blah", NULL);
   grpc_channel_credentials *composite_creds =
       grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                 NULL);
-  grpc_call_credentials_unref(call_creds);
+  grpc_call_credentials_unref(&exec_ctx, call_creds);
   dup = grpc_channel_credentials_duplicate_without_call_credentials(
       composite_creds);
   GPR_ASSERT(dup == channel_creds);
-  grpc_channel_credentials_unref(dup);
+  grpc_channel_credentials_unref(&exec_ctx, dup);
 
-  grpc_channel_credentials_unref(channel_creds);
-  grpc_channel_credentials_unref(composite_creds);
+  grpc_channel_credentials_unref(&exec_ctx, channel_creds);
+  grpc_channel_credentials_unref(&exec_ctx, composite_creds);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

@@ -57,10 +57,10 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
 typedef struct grpc_security_connector grpc_security_connector;
 
-#define GRPC_SECURITY_CONNECTOR_ARG "grpc.security_connector"
+#define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
 
 typedef struct {
-  void (*destroy)(grpc_security_connector *sc);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc);
   void (*check_peer)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc,
                      tsi_peer peer, grpc_auth_context **auth_context,
                      grpc_closure *on_peer_checked);
@@ -81,20 +81,23 @@ struct grpc_security_connector {
 #ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
 #define GRPC_SECURITY_CONNECTOR_REF(p, r) \
   grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) \
-  grpc_security_connector_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, r) \
+  grpc_security_connector_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
 grpc_security_connector *grpc_security_connector_ref(
     grpc_security_connector *policy, const char *file, int line,
     const char *reason);
-void grpc_security_connector_unref(grpc_security_connector *policy,
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *policy,
                                    const char *file, int line,
                                    const char *reason);
 #else
 #define GRPC_SECURITY_CONNECTOR_REF(p, r) grpc_security_connector_ref((p))
-#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) grpc_security_connector_unref((p))
+#define GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, r) \
+  grpc_security_connector_unref((exec_ctx), (p))
 grpc_security_connector *grpc_security_connector_ref(
     grpc_security_connector *policy);
-void grpc_security_connector_unref(grpc_security_connector *policy);
+void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *policy);
 #endif
 
 /* Check the peer. Callee takes ownership of the peer object.
@@ -112,7 +115,7 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc);
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg);
 
 /* Util to find the connector from channel args. */
-grpc_security_connector *grpc_find_security_connector_in_args(
+grpc_security_connector *grpc_security_connector_find_in_args(
     const grpc_channel_args *args);
 
 /* --- channel_security_connector object. ---
@@ -172,7 +175,8 @@ void grpc_server_security_connector_add_handshakers(
 /* For TESTING ONLY!
    Creates a fake connector that emulates real channel security.  */
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds);
+    grpc_call_credentials *request_metadata_creds, const char *target,
+    const grpc_channel_args *args);
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real server security.  */
@@ -203,7 +207,7 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds,
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *request_metadata_creds,
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc);
 
@@ -232,7 +236,8 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
-    const grpc_ssl_server_config *config, grpc_server_security_connector **sc);
+    grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_server_security_connector **sc);
 
 /* Util. */
 const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,

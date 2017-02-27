@@ -78,6 +78,14 @@ message SecurityParams {
   string server_host_override = 2;
 }
 
+message ChannelArg {
+  string name = 1;
+  oneof value {
+    string str_value = 2;
+    int32 int_value = 3;
+  }
+}
+
 message ClientConfig {
   // List of targets to connect to. At least one target needs to be specified.
   repeated string server_targets = 1;
@@ -103,6 +111,8 @@ message ClientConfig {
 
   // If we use an OTHER_CLIENT client_type, this string gives more detail
   string other_client_api = 15;
+
+  repeated ChannelArg channel_args = 16;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -129,7 +139,10 @@ message ServerConfig {
   int32 async_server_threads = 7;
   // Specify the number of cores to limit server to, if desired
   int32 core_limit = 8;
-  // payload config, used in generic server
+  // payload config, used in generic server.
+  // Note this must NOT be used in proto (non-generic) servers. For proto servers,
+  // 'response sizes' must be configured from the 'response_size' field of the
+  // 'SimpleRequest' objects in RPC requests.
   PayloadConfig payload_config = 9;
 
   // Specify the cores we should run the server on, if desired

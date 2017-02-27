@@ -22,6 +22,10 @@ The script is also capable of running interop tests for grpc-java and grpc-go, u
 ######Example
 `tools/run_tests/run_interop_tests.py -l csharp -s c++ --use_docker` (run interop tests with C# client and C++ server)
 
+Note: if you see an error like `no space left on device` when running the
+interop tests using Docker, make sure that Docker is building the image files in
+a location with sufficient disk space.
+
 #Performance benchmarks (run_performance_tests.py)
 
 Runs predefined benchmark scenarios for given languages. Besides the simple configuration of running all the scenarios locally,

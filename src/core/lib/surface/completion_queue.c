@@ -96,9 +96,6 @@ struct grpc_completion_queue {
 #define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
 #define CQ_FROM_POLLSET(ps) (((grpc_completion_queue *)ps) - 1)
 
-static gpr_mu g_freelist_mu;
-static grpc_completion_queue *g_freelist;
-
 int grpc_cq_pluck_trace;
 int grpc_cq_event_timeout_trace;
 
@@ -113,21 +110,6 @@ int grpc_cq_event_timeout_trace;
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
 
-void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
-
-void grpc_cq_global_shutdown(void) {
-  gpr_mu_destroy(&g_freelist_mu);
-  while (g_freelist) {
-    grpc_completion_queue *next = g_freelist->next_free;
-    grpc_pollset_destroy(POLLSET_FROM_CQ(g_freelist));
-#ifndef NDEBUG
-    gpr_free(g_freelist->outstanding_tags);
-#endif
-    gpr_free(g_freelist);
-    g_freelist = next;
-  }
-}
-
 grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_completion_queue *cc;
   GPR_ASSERT(!reserved);
@@ -136,22 +118,12 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 
   GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
 
-  gpr_mu_lock(&g_freelist_mu);
-  if (g_freelist == NULL) {
-    gpr_mu_unlock(&g_freelist_mu);
-
-    cc = gpr_malloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
-    grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
+  cc = gpr_malloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
+  grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
 #ifndef NDEBUG
-    cc->outstanding_tags = NULL;
-    cc->outstanding_tag_capacity = 0;
+  cc->outstanding_tags = NULL;
+  cc->outstanding_tag_capacity = 0;
 #endif
-  } else {
-    cc = g_freelist;
-    g_freelist = g_freelist->next_free;
-    gpr_mu_unlock(&g_freelist_mu);
-    /* pollset already initialized */
-  }
 
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
@@ -203,11 +175,11 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
-    grpc_pollset_reset(POLLSET_FROM_CQ(cc));
-    gpr_mu_lock(&g_freelist_mu);
-    cc->next_free = g_freelist;
-    g_freelist = cc;
-    gpr_mu_unlock(&g_freelist_mu);
+    grpc_pollset_destroy(POLLSET_FROM_CQ(cc));
+#ifndef NDEBUG
+    gpr_free(cc->outstanding_tags);
+#endif
+    gpr_free(cc);
   }
 }
 
@@ -253,7 +225,6 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (grpc_trace_operation_failures && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
-    grpc_error_free_string(errmsg);
   }
 
   storage->tag = tag;
@@ -294,7 +265,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     if (kick_error != GRPC_ERROR_NONE) {
       const char *msg = grpc_error_string(kick_error);
       gpr_log(GPR_ERROR, "Kick failed: %s", msg);
-      grpc_error_free_string(msg);
+
       GRPC_ERROR_UNREF(kick_error);
     }
   } else {
@@ -403,8 +374,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       .stolen_completion = NULL,
       .tag = NULL,
       .first_loop = true};
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
-      cq_is_next_finished, &is_finished_arg);
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cc->mu);
@@ -461,7 +432,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        grpc_error_free_string(msg);
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
@@ -572,8 +543,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       .stolen_completion = NULL,
       .tag = tag,
       .first_loop = true};
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
-      cq_is_pluck_finished, &is_finished_arg);
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, cq_is_pluck_finished, &is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cc->mu);
@@ -647,7 +618,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
         gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
-        grpc_error_free_string(msg);
+
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;

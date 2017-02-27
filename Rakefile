@@ -5,6 +5,8 @@ require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
 require 'fileutils'
 
+require_relative 'build_config.rb'
+
 load 'tools/distrib/docker_for_windows.rb'
 
 # Add rubocop style checking tasks
@@ -83,7 +85,7 @@ task 'dlls' do
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
-  out = '/tmp/libs/opt/grpc-1.dll'
+  out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
@@ -91,7 +93,7 @@ task 'dlls' do
   [ w64, w32 ].each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "LD=#{opt[:cross]}-gcc "
-    docker_for_windows "#{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
+    docker_for_windows "gem update --system && #{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
   end
 
 end
@@ -105,10 +107,10 @@ task 'gem:native' do
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
     FileUtils.touch 'grpc_c.64.ruby'
-    system "rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.5:2.0.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "rake cross native gem RUBY_CC_VERSION=2.4.0:2.3.0:2.2.2:2.1.5:2.0.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     Rake::Task['dlls'].execute
-    docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.5:2.0.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    docker_for_windows "gem update --system && bundle && rake cross native gem RUBY_CC_VERSION=2.4.0:2.3.0:2.2.2:2.1.5:2.0.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   end
 end
 

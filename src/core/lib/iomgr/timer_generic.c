@@ -121,12 +121,6 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   g_initialized = false;
 }
 
-/* This is a cheap, but good enough, pointer hash for sharding the tasks: */
-static size_t shard_idx(const grpc_timer *info) {
-  size_t x = (size_t)info;
-  return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) & (NUM_SHARDS - 1);
-}
-
 static double ts_to_dbl(gpr_timespec ts) {
   return (double)ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
@@ -178,34 +172,33 @@ static void note_deadline_change(shard_type *shard) {
 }
 
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now) {
+                     gpr_timespec deadline, grpc_closure *closure,
+                     gpr_timespec now) {
   int is_first_timer = 0;
-  shard_type *shard = &g_shards[shard_idx(timer)];
+  shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   GPR_ASSERT(deadline.clock_type == g_clock_type);
   GPR_ASSERT(now.clock_type == g_clock_type);
-  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg,
-                    grpc_schedule_on_exec_ctx);
+  timer->closure = closure;
   timer->deadline = deadline;
-  timer->triggered = 0;
 
   if (!g_initialized) {
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_closure_sched(
-        exec_ctx, &timer->closure,
+        exec_ctx, timer->closure,
         GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
+  gpr_mu_lock(&shard->mu);
+  timer->pending = true;
   if (gpr_time_cmp(deadline, now) <= 0) {
-    timer->triggered = 1;
-    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE);
+    timer->pending = false;
+    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    gpr_mu_unlock(&shard->mu);
+    /* early out */
     return;
   }
 
-  /* TODO(ctiller): check deadline expired */
-
-  gpr_mu_lock(&shard->mu);
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       ts_to_dbl(gpr_time_sub(deadline, now)));
   if (gpr_time_cmp(deadline, shard->queue_deadline_cap) < 0) {
@@ -248,11 +241,11 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     return;
   }
 
-  shard_type *shard = &g_shards[shard_idx(timer)];
+  shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   gpr_mu_lock(&shard->mu);
-  if (!timer->triggered) {
-    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED);
-    timer->triggered = 1;
+  if (timer->pending) {
+    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
+    timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
     } else {
@@ -303,7 +296,7 @@ static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {
     }
     timer = grpc_timer_heap_top(&shard->heap);
     if (gpr_time_cmp(timer->deadline, now) > 0) return NULL;
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
   }
@@ -317,7 +310,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_REF(error));
+    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

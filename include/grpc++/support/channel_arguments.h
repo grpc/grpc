@@ -88,6 +88,10 @@ class ChannelArguments {
   /// The given buffer pool will be attached to the constructed channel
   void SetResourceQuota(const ResourceQuota& resource_quota);
 
+  /// Sets the max receive and send message sizes.
+  void SetMaxReceiveMessageSize(int size);
+  void SetMaxSendMessageSize(int size);
+
   /// Set LB policy name.
   /// Note that if the name resolver returns only balancer addresses, the
   /// grpclb LB policy will be used, regardless of what is specified here.
@@ -127,7 +131,7 @@ class ChannelArguments {
   /// Default pointer argument operations.
   struct PointerVtableMembers {
     static void* Copy(void* in) { return in; }
-    static void Destroy(void* in) {}
+    static void Destroy(grpc_exec_ctx* exec_ctx, void* in) {}
     static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;

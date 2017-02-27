@@ -64,7 +64,7 @@ typedef struct grpc_lb_address {
 
 typedef struct grpc_lb_user_data_vtable {
   void *(*copy)(void *);
-  void (*destroy)(void *);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *);
   int (*cmp)(void *, void *);
 } grpc_lb_user_data_vtable;
 
@@ -96,7 +96,8 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
                           const grpc_lb_addresses *addresses2);
 
 /** Destroys \a addresses. */
-void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
+void grpc_lb_addresses_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_lb_addresses *addresses);
 
 /** Returns a channel arg containing \a addresses. */
 grpc_arg grpc_lb_addresses_create_channel_arg(
@@ -106,6 +107,7 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 typedef struct grpc_lb_policy_args {
   grpc_client_channel_factory *client_channel_factory;
   grpc_channel_args *args;
+  grpc_combiner *combiner;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {

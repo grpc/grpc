@@ -46,46 +46,24 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
-
-void grpc_chttp2_server_handshaker_factory_add_handshakers(
-    grpc_exec_ctx *exec_ctx,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory,
-    grpc_handshake_manager *handshake_mgr) {
-  if (handshaker_factory != NULL) {
-    handshaker_factory->vtable->add_handshakers(exec_ctx, handshaker_factory,
-                                                handshake_mgr);
-  }
-}
-
-void grpc_chttp2_server_handshaker_factory_destroy(
-    grpc_exec_ctx *exec_ctx,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory) {
-  if (handshaker_factory != NULL) {
-    handshaker_factory->vtable->destroy(exec_ctx, handshaker_factory);
-  }
-}
-
-typedef struct pending_handshake_manager_node {
-  grpc_handshake_manager *handshake_mgr;
-  struct pending_handshake_manager_node *next;
-} pending_handshake_manager_node;
 
 typedef struct {
   grpc_server *server;
   grpc_tcp_server *tcp_server;
   grpc_channel_args *args;
-  grpc_chttp2_server_handshaker_factory *handshaker_factory;
   gpr_mu mu;
   bool shutdown;
   grpc_closure tcp_server_shutdown_complete;
   grpc_closure *server_destroy_listener_done;
-  pending_handshake_manager_node *pending_handshake_mgrs;
+  grpc_handshake_manager *pending_handshake_mgrs;
 } server_state;
 
 typedef struct {
@@ -95,41 +73,6 @@ typedef struct {
   grpc_handshake_manager *handshake_mgr;
 } server_connection_state;
 
-static void pending_handshake_manager_add_locked(
-    server_state *state, grpc_handshake_manager *handshake_mgr) {
-  pending_handshake_manager_node *node = gpr_malloc(sizeof(*node));
-  node->handshake_mgr = handshake_mgr;
-  node->next = state->pending_handshake_mgrs;
-  state->pending_handshake_mgrs = node;
-}
-
-static void pending_handshake_manager_remove_locked(
-    server_state *state, grpc_handshake_manager *handshake_mgr) {
-  pending_handshake_manager_node **prev_node = &state->pending_handshake_mgrs;
-  for (pending_handshake_manager_node *node = state->pending_handshake_mgrs;
-       node != NULL; node = node->next) {
-    if (node->handshake_mgr == handshake_mgr) {
-      *prev_node = node->next;
-      gpr_free(node);
-      break;
-    }
-    prev_node = &node->next;
-  }
-}
-
-static void pending_handshake_manager_shutdown_locked(grpc_exec_ctx *exec_ctx,
-                                                      server_state *state) {
-  pending_handshake_manager_node *prev_node = NULL;
-  for (pending_handshake_manager_node *node = state->pending_handshake_mgrs;
-       node != NULL; node = node->next) {
-    grpc_handshake_manager_shutdown(exec_ctx, node->handshake_mgr);
-    gpr_free(prev_node);
-    prev_node = node;
-  }
-  gpr_free(prev_node);
-  state->pending_handshake_mgrs = NULL;
-}
-
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
@@ -138,7 +81,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
-    grpc_error_free_string(error_str);
+
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
@@ -146,10 +89,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       // before destroying them, even if we know that there are no
       // pending read/write callbacks.  This should be fixed, at which
       // point this can be removed.
-      grpc_endpoint_shutdown(exec_ctx, args->endpoint);
+      grpc_endpoint_shutdown(exec_ctx, args->endpoint, GRPC_ERROR_NONE);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
-      grpc_channel_args_destroy(args->args);
-      grpc_slice_buffer_destroy(args->read_buffer);
+      grpc_channel_args_destroy(exec_ctx, args->args);
+      grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
       gpr_free(args->read_buffer);
     }
   } else {
@@ -164,11 +107,12 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
           connection_state->accepting_pollset, args->args);
       grpc_chttp2_transport_start_reading(exec_ctx, transport,
                                           args->read_buffer);
-      grpc_channel_args_destroy(args->args);
+      grpc_channel_args_destroy(exec_ctx, args->args);
     }
   }
-  pending_handshake_manager_remove_locked(connection_state->server_state,
-                                          connection_state->handshake_mgr);
+  grpc_handshake_manager_pending_list_remove(
+      &connection_state->server_state->pending_handshake_mgrs,
+      connection_state->handshake_mgr);
   gpr_mu_unlock(&connection_state->server_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp_server);
@@ -188,7 +132,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
     return;
   }
   grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
-  pending_handshake_manager_add_locked(state, handshake_mgr);
+  grpc_handshake_manager_pending_list_add(&state->pending_handshake_mgrs,
+                                          handshake_mgr);
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
   server_connection_state *connection_state =
@@ -197,8 +142,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
-  grpc_chttp2_server_handshaker_factory_add_handshakers(
-      exec_ctx, state->handshaker_factory, connection_state->handshake_mgr);
+  grpc_handshakers_add(exec_ctx, HANDSHAKER_SERVER, state->args,
+                       connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
   const gpr_timespec deadline = gpr_time_add(
@@ -227,18 +172,17 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&state->mu);
   grpc_closure *destroy_done = state->server_destroy_listener_done;
   GPR_ASSERT(state->shutdown);
-  pending_handshake_manager_shutdown_locked(exec_ctx, state);
+  grpc_handshake_manager_pending_list_shutdown_all(
+      exec_ctx, state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
   grpc_exec_ctx_flush(exec_ctx);
-  grpc_chttp2_server_handshaker_factory_destroy(exec_ctx,
-                                                state->handshaker_factory);
   if (destroy_done != NULL) {
     destroy_done->cb(exec_ctx, destroy_done->cb_arg, GRPC_ERROR_REF(error));
     grpc_exec_ctx_flush(exec_ctx);
   }
-  grpc_channel_args_destroy(state->args);
+  grpc_channel_args_destroy(exec_ctx, state->args);
   gpr_mu_destroy(&state->mu);
   gpr_free(state);
 }
@@ -258,10 +202,10 @@ static void server_destroy_listener(grpc_exec_ctx *exec_ctx,
   grpc_tcp_server_unref(exec_ctx, tcp_server);
 }
 
-grpc_error *grpc_chttp2_server_add_port(
-    grpc_exec_ctx *exec_ctx, grpc_server *server, const char *addr,
-    grpc_channel_args *args,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory, int *port_num) {
+grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
+                                        grpc_server *server, const char *addr,
+                                        grpc_channel_args *args,
+                                        int *port_num) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp_server = NULL;
   size_t i;
@@ -292,7 +236,6 @@ grpc_error *grpc_chttp2_server_add_port(
   state->server = server;
   state->tcp_server = tcp_server;
   state->args = args;
-  state->handshaker_factory = handshaker_factory;
   state->shutdown = true;
   gpr_mu_init(&state->mu);
 
@@ -327,7 +270,7 @@ grpc_error *grpc_chttp2_server_add_port(
 
     const char *warning_message = grpc_error_string(err);
     gpr_log(GPR_INFO, "WARNING: %s", warning_message);
-    grpc_error_free_string(warning_message);
+
     /* we managed to bind some addresses: continue */
   }
   grpc_resolved_addresses_destroy(resolved);
@@ -346,8 +289,7 @@ error:
   if (tcp_server) {
     grpc_tcp_server_unref(exec_ctx, tcp_server);
   } else {
-    grpc_channel_args_destroy(args);
-    grpc_chttp2_server_handshaker_factory_destroy(exec_ctx, handshaker_factory);
+    grpc_channel_args_destroy(exec_ctx, args);
     gpr_free(state);
   }
   *port_num = 0;

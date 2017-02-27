@@ -113,14 +113,18 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, &pem_key_cert_pair, 1,
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-  zval *creds_object;
-  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
-  creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createSsl, 0, 0, 3)
+  ZEND_ARG_INFO(0, pem_root_certs)
+  ZEND_ARG_INFO(0, pem_private_key)
+  ZEND_ARG_INFO(0, pem_cert_chain)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry server_credentials_methods[] = {
-  PHP_ME(ServerCredentials, createSsl, NULL,
+  PHP_ME(ServerCredentials, createSsl, arginfo_createSsl,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
  };

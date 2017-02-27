@@ -33,15 +33,18 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <stdio.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <stdio.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -117,7 +120,7 @@ void grpc_run_bad_client_test(
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("bad_client_test");
   sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
@@ -157,16 +160,17 @@ void grpc_run_bad_client_test(
 
   /* Await completion */
   GPR_ASSERT(
-      gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+      gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client);
+    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
+                           GRPC_ERROR_CREATE("Forced Disconnect"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
     sfd.client = NULL;
   }
 
-  GPR_ASSERT(gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+  GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(5)));
 
   if (sfd.client != NULL) {
     // Validate client stream, if requested.
@@ -182,21 +186,22 @@ void grpc_run_bad_client_test(
                          &read_done_closure);
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(
-          gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
-      grpc_slice_buffer_destroy(&args.incoming);
+          gpr_event_wait(&args.read_done, grpc_timeout_seconds_to_deadline(5)));
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
     }
     // Shutdown.
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client);
+    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
+                           GRPC_ERROR_CREATE("Test Shutdown"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)
+                 a.cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
-  grpc_slice_buffer_destroy(&outgoing);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

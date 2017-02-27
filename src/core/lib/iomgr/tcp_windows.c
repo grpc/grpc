@@ -53,6 +53,7 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 /* Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -115,6 +116,7 @@ typedef struct grpc_tcp {
      to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
   int shutting_down;
+  grpc_error *shutdown_error;
 
   char *peer_string;
 } grpc_tcp;
@@ -124,6 +126,7 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   gpr_mu_destroy(&tcp->mu);
   gpr_free(tcp->peer_string);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
+  if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   gpr_free(tcp);
 }
 
@@ -174,14 +177,17 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
       char *utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE(utf8_message);
       gpr_free(utf8_message);
-      grpc_slice_unref(tcp->read_slice);
+      grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
     } else {
       if (info->bytes_transfered != 0 && !tcp->shutting_down) {
         sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
         grpc_slice_buffer_add(tcp->read_slices, sub);
       } else {
-        grpc_slice_unref(tcp->read_slice);
-        error = GRPC_ERROR_CREATE("End of TCP stream");
+        grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
+        error = tcp->shutting_down
+                    ? GRPC_ERROR_CREATE_REFERENCING("TCP stream shutting down",
+                                                    &tcp->shutdown_error, 1)
+                    : GRPC_ERROR_CREATE("End of TCP stream");
       }
     }
   }
@@ -202,14 +208,15 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb,
-                       GRPC_ERROR_CREATE("TCP socket is shutting down"));
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_REFERENCING(
+                                         "TCP socket is shutting down",
+                                         &tcp->shutdown_error, 1));
     return;
   }
 
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
 
   tcp->read_slice = grpc_slice_malloc(8192);
 
@@ -290,8 +297,9 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb,
-                       GRPC_ERROR_CREATE("TCP socket is shutting down"));
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_REFERENCING(
+                                         "TCP socket is shutting down",
+                                         &tcp->shutdown_error, 1));
     return;
   }
 
@@ -372,12 +380,18 @@ static void win_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
    we're not going to protect against these. However the IO Completion Port
    callback will happen from another thread, so we need to protect against
    concurrent access of the data structure in that regard. */
-static void win_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void win_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                         grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   gpr_mu_lock(&tcp->mu);
   /* At that point, what may happen is that we're already inside the IOCP
      callback. See the comments in on_read and on_write. */
-  tcp->shutting_down = 1;
+  if (!tcp->shutting_down) {
+    tcp->shutting_down = 1;
+    tcp->shutdown_error = why;
+  } else {
+    GRPC_ERROR_UNREF(why);
+  }
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);
   grpc_resource_user_shutdown(exec_ctx, tcp->resource_user);

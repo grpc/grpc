@@ -35,20 +35,24 @@
 
 #include <string.h>
 
-#include "src/core/lib/surface/api_trace.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/validate_metadata.h"
+
 typedef struct {
   void *user_data;
   grpc_credentials_metadata_cb cb;
 } grpc_metadata_plugin_request;
 
-static void plugin_destruct(grpc_call_credentials *creds) {
+static void plugin_destruct(grpc_exec_ctx *exec_ctx,
+                            grpc_call_credentials *creds) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
   if (c->plugin.state != NULL && c->plugin.destroy != NULL) {
     c->plugin.destroy(c->plugin.state);
@@ -61,7 +65,9 @@ static void plugin_md_request_metadata_ready(void *request,
                                              grpc_status_code status,
                                              const char *error_details) {
   /* called from application code */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INITIALIZER(
+      GRPC_EXEC_CTX_FLAG_IS_FINISHED | GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP,
+      NULL, NULL);
   grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *)request;
   if (status != GRPC_STATUS_OK) {
     if (error_details != NULL) {
@@ -75,13 +81,14 @@ static void plugin_md_request_metadata_ready(void *request,
     bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
-      if (!grpc_header_key_is_legal(md[i].key, strlen(md[i].key))) {
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", md[i].key);
+      if (!GRPC_LOG_IF_ERROR("validate_metadata_from_plugin",
+                             grpc_validate_header_key_is_legal(md[i].key))) {
         seen_illegal_header = true;
         break;
-      } else if (!grpc_is_binary_header(md[i].key, strlen(md[i].key)) &&
-                 !grpc_header_nonbin_value_is_legal(md[i].value,
-                                                    md[i].value_length)) {
+      } else if (!grpc_is_binary_header(md[i].key) &&
+                 !GRPC_LOG_IF_ERROR(
+                     "validate_metadata_from_plugin",
+                     grpc_validate_header_nonbin_value_is_legal(md[i].value))) {
         gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
         seen_illegal_header = true;
         break;
@@ -93,15 +100,14 @@ static void plugin_md_request_metadata_ready(void *request,
     } else if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
-        md_array[i].key = grpc_slice_from_copied_string(md[i].key);
-        md_array[i].value =
-            grpc_slice_from_copied_buffer(md[i].value, md[i].value_length);
+        md_array[i].key = grpc_slice_ref_internal(md[i].key);
+        md_array[i].value = grpc_slice_ref_internal(md[i].value);
       }
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);
       for (i = 0; i < num_md; i++) {
-        grpc_slice_unref(md_array[i].key);
-        grpc_slice_unref(md_array[i].value);
+        grpc_slice_unref_internal(&exec_ctx, md_array[i].key);
+        grpc_slice_unref_internal(&exec_ctx, md_array[i].value);
       }
       gpr_free(md_array);
     } else if (num_md == 0) {

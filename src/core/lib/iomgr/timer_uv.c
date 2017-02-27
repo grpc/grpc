@@ -53,26 +53,25 @@ static void stop_uv_timer(uv_timer_t *handle) {
 void run_expired_timer(uv_timer_t *handle) {
   grpc_timer *timer = (grpc_timer *)handle->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(!timer->triggered);
-  timer->triggered = 1;
-  grpc_closure_sched(&exec_ctx, &timer->closure, GRPC_ERROR_NONE);
+  GPR_ASSERT(timer->pending);
+  timer->pending = 0;
+  grpc_closure_sched(&exec_ctx, timer->closure, GRPC_ERROR_NONE);
   stop_uv_timer(handle);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now) {
+                     gpr_timespec deadline, grpc_closure *closure,
+                     gpr_timespec now) {
   uint64_t timeout;
   uv_timer_t *uv_timer;
-  grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg,
-                    grpc_schedule_on_exec_ctx);
+  timer->closure = closure;
   if (gpr_time_cmp(deadline, now) <= 0) {
-    timer->triggered = 1;
-    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE);
+    timer->pending = 0;
+    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
     return;
   }
-  timer->triggered = 0;
+  timer->pending = 1;
   timeout = (uint64_t)gpr_time_to_millis(gpr_time_sub(deadline, now));
   uv_timer = gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
@@ -82,9 +81,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
-  if (!timer->triggered) {
-    timer->triggered = 1;
-    grpc_closure_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED);
+  if (timer->pending) {
+    timer->pending = 0;
+    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     stop_uv_timer((uv_timer_t *)timer->uv_timer);
   }
 }

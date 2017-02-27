@@ -34,10 +34,10 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
-
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
@@ -96,7 +96,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void *(*copy)(void *p);
-  void (*destroy)(void *p);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, void *p);
   int (*cmp)(void *p, void *q);
 } grpc_arg_pointer_vtable;
 
@@ -179,6 +179,30 @@ typedef struct {
     Larger values give lower CPU usage for large messages, but more head of line
     blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Should BDP probing be performed? */
+#define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
+/** Minimum time (in milliseconds) between successive ping frames being sent */
+#define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
+  "grpc.http2.min_time_between_pings_ms"
+/** How many pings can we send before needing to send a data frame or header
+    frame?
+    (0 indicates that an infinite number of pings can be sent without sending
+     a data frame or header frame) */
+#define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
+  "grpc.http2.max_pings_without_data"
+/** How much data are we willing to queue up per stream if
+    GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
+#define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
+/** After a duration of this time the client pings the server to see if the
+    transport is still alive. Int valued, seconds. */
+#define GRPC_ARG_HTTP2_KEEPALIVE_TIME "grpc.http2.keepalive_time"
+/** After waiting for a duration of this time, if the client does not receive
+    the ping ack, it will close the transport. Int valued, seconds. */
+#define GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT "grpc.http2.keepalive_timeout"
+/** Is it permissible to send keepalive pings without any outstanding streams.
+    Int valued, 0(false)/1(true). */
+#define GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS \
+  "grpc.http2.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -208,12 +232,18 @@ typedef struct {
 /** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
    to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
+/** If non-zero, expand wildcard addresses to a list of local addresses. */
+#define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
 /** Service config data in JSON form. Not intended for use outside of tests. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** If non-zero, Cronet transport will coalesce packets to fewer frames when
+ * possible. */
+#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
+  "grpc.use_cronet_packet_coalescing"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -291,9 +321,11 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
+  /* the key, value values are expected to line up with grpc_mdelem: if changing
+     them, update metadata.h at the same time. */
+  grpc_slice key;
+  grpc_slice value;
+
   uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
@@ -335,10 +367,8 @@ typedef struct {
 } grpc_metadata_array;
 
 typedef struct {
-  char *method;
-  size_t method_capacity;
-  char *host;
-  size_t host_capacity;
+  grpc_slice method;
+  grpc_slice host;
   gpr_timespec deadline;
   uint32_t flags;
   void *reserved;
@@ -415,23 +445,32 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    struct grpc_byte_buffer *send_message;
+    struct {
+      struct grpc_byte_buffer *send_message;
+    } send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
-      const char *status_details;
+      /* optional: set to NULL if no details need sending, non-NULL if they do
+       * pointer will not be retained past the start_batch call
+       */
+      grpc_slice *status_details;
     } send_status_from_server;
     /** ownership of the array is with the caller, but ownership of the elements
         stays with the call object (ie key, value members are owned by the call
         object, recv_initial_metadata->array is owned by the caller).
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
-    grpc_metadata_array *recv_initial_metadata;
+    struct {
+      grpc_metadata_array *recv_initial_metadata;
+    } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    struct grpc_byte_buffer **recv_message;
+    struct {
+      struct grpc_byte_buffer **recv_message;
+    } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned
@@ -441,28 +480,7 @@ typedef struct grpc_op {
           value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
-      /** status_details is a buffer owned by the application before the op
-          completes and after the op has completed. During the operation
-          status_details may be reallocated to a size larger than
-          *status_details_capacity, in which case *status_details_capacity will
-          be updated with the new array capacity.
-
-          Pre-allocating space:
-          size_t my_capacity = 8;
-          char *my_details = gpr_malloc(my_capacity);
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          Not pre-allocating space:
-          size_t my_capacity = 0;
-          char *my_details = NULL;
-          x.status_details = &my_details;
-          x.status_details_capacity = &my_capacity;
-
-          After the call:
-          gpr_free(my_details); */
-      char **status_details;
-      size_t *status_details_capacity;
+      grpc_slice *status_details;
     } recv_status_on_client;
     struct {
       /** out argument, set to 1 if the call failed in any way (seen as a

@@ -72,6 +72,7 @@ struct grpc_combiner {
   bool final_list_covered_by_poller;
   grpc_closure_list final_list;
   grpc_closure offload;
+  gpr_refcount refs;
 };
 
 static void combiner_exec_uncovered(grpc_exec_ctx *exec_ctx,
@@ -86,13 +87,17 @@ static void combiner_finally_exec_covered(grpc_exec_ctx *exec_ctx,
                                           grpc_error *error);
 
 static const grpc_closure_scheduler_vtable scheduler_uncovered = {
-    combiner_exec_uncovered, combiner_exec_uncovered};
+    combiner_exec_uncovered, combiner_exec_uncovered,
+    "combiner:immediately:uncovered"};
 static const grpc_closure_scheduler_vtable scheduler_covered = {
-    combiner_exec_covered, combiner_exec_covered};
+    combiner_exec_covered, combiner_exec_covered,
+    "combiner:immediately:covered"};
 static const grpc_closure_scheduler_vtable finally_scheduler_uncovered = {
-    combiner_finally_exec_uncovered, combiner_finally_exec_uncovered};
+    combiner_finally_exec_uncovered, combiner_finally_exec_uncovered,
+    "combiner:finally:uncovered"};
 static const grpc_closure_scheduler_vtable finally_scheduler_covered = {
-    combiner_finally_exec_covered, combiner_finally_exec_covered};
+    combiner_finally_exec_covered, combiner_finally_exec_covered,
+    "combiner:finally:covered"};
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
@@ -122,6 +127,7 @@ static bool is_covered_by_poller(grpc_combiner *lock) {
 
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
+  gpr_ref_init(&lock->refs, 1);
   lock->next_combiner_on_this_exec_ctx = NULL;
   lock->time_to_execute_final_list = false;
   lock->optional_workqueue = optional_workqueue;
@@ -148,13 +154,37 @@ static void really_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   gpr_free(lock);
 }
 
-void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -STATE_UNORPHANED);
   GRPC_COMBINER_TRACE(gpr_log(
       GPR_DEBUG, "C:%p really_destroy old_state=%" PRIdPTR, lock, old_state));
   if (old_state == 1) {
     really_destroy(exec_ctx, lock);
   }
+}
+
+#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                               \
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                             \
+          "combiner[%p] %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op), \
+          gpr_atm_no_barrier_load(&lock->refs.count),                     \
+          gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason);
+#else
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)
+#endif
+
+void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
+                         grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS) {
+  GRPC_COMBINER_DEBUG_SPAM("UNREF", -1);
+  if (gpr_unref(&lock->refs)) {
+    start_destroy(exec_ctx, lock);
+  }
+}
+
+grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS) {
+  GRPC_COMBINER_DEBUG_SPAM("  REF", 1);
+  gpr_ref(&lock->refs);
+  return lock;
 }
 
 static void push_last_on_exec_ctx(grpc_exec_ctx *exec_ctx,

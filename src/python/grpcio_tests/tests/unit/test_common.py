@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Common code used throughout tests of gRPC."""
 
 import collections
@@ -41,7 +40,7 @@ DETAILS = 'test details'
 
 
 def metadata_transmitted(original_metadata, transmitted_metadata):
-  """Judges whether or not metadata was acceptably transmitted.
+    """Judges whether or not metadata was acceptably transmitted.
 
   gRPC is allowed to insert key-value pairs into the metadata values given by
   applications and to reorder key-value pairs with different keys but it is not
@@ -59,31 +58,30 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
      A boolean indicating whether transmitted_metadata accurately reflects
       original_metadata after having been transmitted via gRPC.
   """
-  original = collections.defaultdict(list)
-  for key, value in original_metadata:
-    original[key].append(value)
-  transmitted = collections.defaultdict(list)
-  for key, value in transmitted_metadata:
-    transmitted[key].append(value)
+    original = collections.defaultdict(list)
+    for key, value in original_metadata:
+        original[key].append(value)
+    transmitted = collections.defaultdict(list)
+    for key, value in transmitted_metadata:
+        transmitted[key].append(value)
 
-  for key, values in six.iteritems(original):
-    transmitted_values = transmitted[key]
-    transmitted_iterator = iter(transmitted_values)
-    try:
-      for value in values:
-        while True:
-          transmitted_value = next(transmitted_iterator)
-          if value == transmitted_value:
-            break
-    except StopIteration:
-      return False
-  else:
-    return True
+    for key, values in six.iteritems(original):
+        transmitted_values = transmitted[key]
+        transmitted_iterator = iter(transmitted_values)
+        try:
+            for value in values:
+                while True:
+                    transmitted_value = next(transmitted_iterator)
+                    if value == transmitted_value:
+                        break
+        except StopIteration:
+            return False
+    else:
+        return True
 
 
-def test_secure_channel(
-    target, channel_credentials, server_host_override):
-  """Creates an insecure Channel to a remote host.
+def test_secure_channel(target, channel_credentials, server_host_override):
+    """Creates an insecure Channel to a remote host.
 
   Args:
     host: The name of the remote host to which to connect.
@@ -96,7 +94,6 @@ def test_secure_channel(
     An implementations.Channel to the remote host through which RPCs may be
       conducted.
   """
-  channel = grpc.secure_channel(
-      target, channel_credentials,
-      (('grpc.ssl_target_name_override', server_host_override,),))
-  return channel
+    channel = grpc.secure_channel(target, channel_credentials, (
+        ('grpc.ssl_target_name_override', server_host_override,),))
+    return channel

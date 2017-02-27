@@ -297,6 +297,10 @@
 #endif
 
 #ifdef _MSC_VER
+#ifdef _PYTHON_MSVC
+// The Python 3.5 Windows runtime is missing InetNtop
+#define GPR_WIN_INET_NTOP
+#endif  // _PYTHON_MSVC
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
 typedef __int16 int16_t;
@@ -361,7 +365,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_MUST_USE_RESULT
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define GRPC_MUST_USE_RESULT

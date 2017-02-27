@@ -48,6 +48,7 @@
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -77,8 +78,6 @@ typedef struct {
   char *peer_string;
   grpc_pollset *pollset;
 } grpc_tcp;
-
-static void uv_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
@@ -118,6 +117,13 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
+static void uv_close_callback(uv_handle_t *handle) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_tcp *tcp = handle->data;
+  TCP_UNREF(&exec_ctx, tcp, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size,
                          uv_buf_t *buf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -156,7 +162,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
       size_t i;
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "read: error=%s", str);
-      grpc_error_free_string(str);
+
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -181,7 +187,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
   TCP_REF(tcp, "read");
   // TODO(murgatroid99): figure out what the return value here means
   status =
@@ -297,20 +303,21 @@ static void uv_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 static void shutdown_callback(uv_shutdown_t *req, int status) {}
 
-static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                                 grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   if (!tcp->shutting_down) {
     tcp->shutting_down = true;
     uv_shutdown_t *req = &tcp->shutdown_req;
     uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);
   }
+  GRPC_ERROR_UNREF(why);
 }
 
 static void uv_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   uv_close((uv_handle_t *)tcp->handle, uv_close_callback);
-  TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
 static char *uv_get_peer(grpc_endpoint *ep) {

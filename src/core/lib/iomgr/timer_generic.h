@@ -40,10 +40,10 @@
 struct grpc_timer {
   gpr_timespec deadline;
   uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
-  int triggered;
+  bool pending;
   struct grpc_timer *next;
   struct grpc_timer *prev;
-  grpc_closure closure;
+  grpc_closure *closure;
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H */

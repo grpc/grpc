@@ -39,6 +39,7 @@
 #include <grpc/support/thd.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -90,7 +91,7 @@ static void run_test(const test_fixture *fixture) {
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     channels[i] = fixture->create_channel(addr);
 
-    gpr_timespec connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30);
+    gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
     grpc_connectivity_state state;
     while ((state = grpc_channel_check_connectivity_state(channels[i], 1)) !=
            GRPC_CHANNEL_READY) {
@@ -162,7 +163,11 @@ static grpc_channel *secure_test_create_channel(const char *addr) {
       grpc_channel_args_copy_and_add(NULL, &ssl_name_override, 1);
   grpc_channel *channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_channel_credentials_release(ssl_creds);
   return channel;
 }

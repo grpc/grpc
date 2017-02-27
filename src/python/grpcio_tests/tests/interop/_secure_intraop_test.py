@@ -26,7 +26,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Secure client-server interoperability as a unit test."""
 
 from concurrent import futures
@@ -42,24 +41,24 @@ from tests.interop import resources
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
-class SecureIntraopTest(
-    _intraop_test_case.IntraopTestCase,
-    unittest.TestCase):
+class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 
-  def setUp(self):
-    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2.add_TestServiceServicer_to_server(
-        methods.TestService(), self.server)
-    port = self.server.add_secure_port(
-        '[::]:0', grpc.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]))
-    self.server.start()
-    self.stub = test_pb2.TestServiceStub(
-        grpc.secure_channel(
-            'localhost:{}'.format(port),
-            grpc.ssl_channel_credentials(resources.test_root_certificates()),
-            (('grpc.ssl_target_name_override', _SERVER_HOST_OVERRIDE,),)))
+    def setUp(self):
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        test_pb2.add_TestServiceServicer_to_server(methods.TestService(),
+                                                   self.server)
+        port = self.server.add_secure_port(
+            '[::]:0',
+            grpc.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())]))
+        self.server.start()
+        self.stub = test_pb2.TestServiceStub(
+            grpc.secure_channel('localhost:{}'.format(port),
+                                grpc.ssl_channel_credentials(
+                                    resources.test_root_certificates()), (
+                                        ('grpc.ssl_target_name_override',
+                                         _SERVER_HOST_OVERRIDE,),)))
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

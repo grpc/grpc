@@ -176,7 +176,7 @@ extern census_resource_id_type census_resource_id_import;
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
-typedef int(*grpc_compression_algorithm_parse_type)(const char *name, size_t name_length, grpc_compression_algorithm *algorithm);
+typedef int(*grpc_compression_algorithm_parse_type)(grpc_slice value, grpc_compression_algorithm *algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
@@ -254,7 +254,7 @@ extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivit
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
-typedef grpc_call *(*grpc_channel_create_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, const char *method, const char *host, gpr_timespec deadline, void *reserved);
+typedef grpc_call *(*grpc_channel_create_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, grpc_slice method, const grpc_slice *host, gpr_timespec deadline, void *reserved);
 extern grpc_channel_create_call_type grpc_channel_create_call_import;
 #define grpc_channel_create_call grpc_channel_create_call_import
 typedef void(*grpc_channel_ping_type)(grpc_channel *channel, grpc_completion_queue *cq, void *tag, void *reserved);
@@ -272,6 +272,9 @@ extern grpc_call_start_batch_type grpc_call_start_batch_import;
 typedef char *(*grpc_call_get_peer_type)(grpc_call *call);
 extern grpc_call_get_peer_type grpc_call_get_peer_import;
 #define grpc_call_get_peer grpc_call_get_peer_import
+typedef void(*grpc_call_set_load_reporting_cost_context_type)(grpc_call *call, struct grpc_load_reporting_cost_context *context);
+extern grpc_call_set_load_reporting_cost_context_type grpc_call_set_load_reporting_cost_context_import;
+#define grpc_call_set_load_reporting_cost_context grpc_call_set_load_reporting_cost_context_import
 typedef void(*grpc_census_call_set_context_type)(grpc_call *call, struct census_context *context);
 extern grpc_census_call_set_context_type grpc_census_call_set_context_import;
 #define grpc_census_call_set_context grpc_census_call_set_context_import
@@ -338,13 +341,13 @@ extern grpc_server_destroy_type grpc_server_destroy_import;
 typedef int(*grpc_tracer_set_enabled_type)(const char *name, int enabled);
 extern grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 #define grpc_tracer_set_enabled grpc_tracer_set_enabled_import
-typedef int(*grpc_header_key_is_legal_type)(const char *key, size_t length);
+typedef int(*grpc_header_key_is_legal_type)(grpc_slice slice);
 extern grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 #define grpc_header_key_is_legal grpc_header_key_is_legal_import
-typedef int(*grpc_header_nonbin_value_is_legal_type)(const char *value, size_t length);
+typedef int(*grpc_header_nonbin_value_is_legal_type)(grpc_slice slice);
 extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 #define grpc_header_nonbin_value_is_legal grpc_header_nonbin_value_is_legal_import
-typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
+typedef int(*grpc_is_binary_header_type)(grpc_slice slice);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
@@ -488,6 +491,9 @@ extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
 extern grpc_slice_malloc_type grpc_slice_malloc_import;
 #define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
+extern grpc_slice_intern_type grpc_slice_intern_import;
+#define grpc_slice_intern grpc_slice_intern_import
 typedef grpc_slice(*grpc_slice_from_copied_string_type)(const char *source);
 extern grpc_slice_from_copied_string_type grpc_slice_from_copied_string_import;
 #define grpc_slice_from_copied_string grpc_slice_from_copied_string_import
@@ -497,6 +503,9 @@ extern grpc_slice_from_copied_buffer_type grpc_slice_from_copied_buffer_import;
 typedef grpc_slice(*grpc_slice_from_static_string_type)(const char *source);
 extern grpc_slice_from_static_string_type grpc_slice_from_static_string_import;
 #define grpc_slice_from_static_string grpc_slice_from_static_string_import
+typedef grpc_slice(*grpc_slice_from_static_buffer_type)(const void *source, size_t len);
+extern grpc_slice_from_static_buffer_type grpc_slice_from_static_buffer_import;
+#define grpc_slice_from_static_buffer grpc_slice_from_static_buffer_import
 typedef grpc_slice(*grpc_slice_sub_type)(grpc_slice s, size_t begin, size_t end);
 extern grpc_slice_sub_type grpc_slice_sub_import;
 #define grpc_slice_sub grpc_slice_sub_import
@@ -509,18 +518,51 @@ extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_head_type grpc_slice_split_head_import;
 #define grpc_slice_split_head grpc_slice_split_head_import
-typedef grpc_slice(*gpr_empty_slice_type)(void);
-extern gpr_empty_slice_type gpr_empty_slice_import;
-#define gpr_empty_slice gpr_empty_slice_import
+typedef grpc_slice(*grpc_empty_slice_type)(void);
+extern grpc_empty_slice_type grpc_empty_slice_import;
+#define grpc_empty_slice grpc_empty_slice_import
+typedef uint32_t(*grpc_slice_default_hash_impl_type)(grpc_slice s);
+extern grpc_slice_default_hash_impl_type grpc_slice_default_hash_impl_import;
+#define grpc_slice_default_hash_impl grpc_slice_default_hash_impl_import
+typedef int(*grpc_slice_default_eq_impl_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_default_eq_impl_type grpc_slice_default_eq_impl_import;
+#define grpc_slice_default_eq_impl grpc_slice_default_eq_impl_import
+typedef int(*grpc_slice_eq_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_eq_type grpc_slice_eq_import;
+#define grpc_slice_eq grpc_slice_eq_import
 typedef int(*grpc_slice_cmp_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_cmp_type grpc_slice_cmp_import;
 #define grpc_slice_cmp grpc_slice_cmp_import
 typedef int(*grpc_slice_str_cmp_type)(grpc_slice a, const char *b);
 extern grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
 #define grpc_slice_str_cmp grpc_slice_str_cmp_import
+typedef int(*grpc_slice_buf_cmp_type)(grpc_slice a, const void *b, size_t blen);
+extern grpc_slice_buf_cmp_type grpc_slice_buf_cmp_import;
+#define grpc_slice_buf_cmp grpc_slice_buf_cmp_import
+typedef int(*grpc_slice_buf_start_eq_type)(grpc_slice a, const void *b, size_t blen);
+extern grpc_slice_buf_start_eq_type grpc_slice_buf_start_eq_import;
+#define grpc_slice_buf_start_eq grpc_slice_buf_start_eq_import
+typedef int(*grpc_slice_rchr_type)(grpc_slice s, char c);
+extern grpc_slice_rchr_type grpc_slice_rchr_import;
+#define grpc_slice_rchr grpc_slice_rchr_import
+typedef int(*grpc_slice_chr_type)(grpc_slice s, char c);
+extern grpc_slice_chr_type grpc_slice_chr_import;
+#define grpc_slice_chr grpc_slice_chr_import
+typedef int(*grpc_slice_slice_type)(grpc_slice haystack, grpc_slice needle);
+extern grpc_slice_slice_type grpc_slice_slice_import;
+#define grpc_slice_slice grpc_slice_slice_import
+typedef uint32_t(*grpc_slice_hash_type)(grpc_slice s);
+extern grpc_slice_hash_type grpc_slice_hash_import;
+#define grpc_slice_hash grpc_slice_hash_import
 typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
 #define grpc_slice_is_equivalent grpc_slice_is_equivalent_import
+typedef grpc_slice(*grpc_slice_dup_type)(grpc_slice a);
+extern grpc_slice_dup_type grpc_slice_dup_import;
+#define grpc_slice_dup grpc_slice_dup_import
+typedef char *(*grpc_slice_to_c_string_type)(grpc_slice s);
+extern grpc_slice_to_c_string_type grpc_slice_to_c_string_import;
+#define grpc_slice_to_c_string grpc_slice_to_c_string_import
 typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
 extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 #define grpc_slice_buffer_init grpc_slice_buffer_init_import
@@ -557,9 +599,15 @@ extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
 typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
 extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 #define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *src, size_t n, void *dst);
+extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
+#define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
 typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer *src);
 extern grpc_slice_buffer_take_first_type grpc_slice_buffer_take_first_import;
 #define grpc_slice_buffer_take_first grpc_slice_buffer_take_first_import
+typedef void(*grpc_slice_buffer_undo_take_first_type)(grpc_slice_buffer *src, grpc_slice slice);
+extern grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_import;
+#define grpc_slice_buffer_undo_take_first grpc_slice_buffer_undo_take_first_import
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import

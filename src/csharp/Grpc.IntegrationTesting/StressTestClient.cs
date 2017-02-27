@@ -92,6 +92,7 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
+            GrpcEnvironment.SetLogger(new ConsoleLogger());
             var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
                 .WithNotParsed((x) => Environment.Exit(1))
                 .WithParsed(options => {

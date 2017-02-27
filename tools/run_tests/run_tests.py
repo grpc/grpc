@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -38,6 +38,7 @@ import collections
 import glob
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import os.path
@@ -57,6 +58,7 @@ import uuid
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.watch_dirs as watch_dirs
+import python_utils.start_port_server as start_port_server
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -79,6 +81,13 @@ def platform_string():
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 
+def run_shell_command(cmd, env=None, cwd=None):
+  try:
+    subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
+  except subprocess.CalledProcessError as e:
+    logging.exception("Error while running command '%s'. Exit status %d. Output:\n%s",
+                       e.cmd, e.returncode, e.output)
+    raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
@@ -197,10 +206,17 @@ class CLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    if self.platform == 'windows':
+    if self.args.compiler == 'cmake':
+      _check_arch(self.args.arch, ['default'])
+      self._use_cmake = True
+      self._docker_distro = 'jessie'
+      self._make_options = []
+    elif self.platform == 'windows':
+      self._use_cmake = False
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
+      self._use_cmake = False
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
     if args.iomgr_platform == "uv":
@@ -220,6 +236,9 @@ class CLanguage(object):
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
     for target in binaries:
+      if self._use_cmake and target.get('boringssl', False):
+        # cmake doesn't build boringssl tests
+        continue
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['all'])
@@ -234,17 +253,37 @@ class CLanguage(object):
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
           timeout_scaling *= 5
+
+        if polling_strategy in target.get('excluded_poll_engines', []):
+          continue
+
+        # Scale overall test timeout if running under various sanitizers.
+        config = self.args.config
+        if ('asan' in config
+            or config == 'msan'
+            or config == 'tsan'
+            or config == 'ubsan'
+            or config == 'helgrind'
+            or config == 'memcheck'):
+          timeout_scaling *= 20
+
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
-          binary = 'vsprojects/%s%s/%s.exe' % (
-              'x64/' if self.args.arch == 'x64' else '',
-              _MSBUILD_CONFIG[self.config.build_config],
-              target['name'])
+          if self._use_cmake:
+            binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
+          else:
+            binary = 'vsprojects/%s%s/%s.exe' % (
+                'x64/' if self.args.arch == 'x64' else '',
+                _MSBUILD_CONFIG[self.config.build_config],
+                target['name'])
         else:
-          binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+          if self._use_cmake:
+            binary = 'cmake/build/%s' % target['name']
+          else:
+            binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
         cpu_cost = target['cpu_cost']
         if cpu_cost == 'capacity':
           cpu_cost = multiprocessing.cpu_count()
@@ -299,10 +338,16 @@ class CLanguage(object):
     return self._make_options;
 
   def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
+    if self._use_cmake:
+      if self.platform == 'windows':
+        return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat']]
+      else:
+        return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
-      return []
+      if self.platform == 'windows':
+        return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
+      else:
+        return []
 
   def build_steps(self):
     return []
@@ -314,7 +359,10 @@ class CLanguage(object):
       return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    if self._use_cmake:
+      return 'cmake/build/Makefile'
+    else:
+      return 'Makefile'
 
   def _clang_make_options(self, version_suffix=''):
     return ['CC=clang%s' % version_suffix,
@@ -371,27 +419,48 @@ class NodeLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
+    # Note: electron ABI only depends on major and minor version, so that's all
+    # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7'])
-    if self.args.compiler == 'default':
-      self.node_version = '4'
+                                         'node7', 'electron1.3'])
+    if args.iomgr_platform == "uv":
+      self.use_uv = True
     else:
-      # Take off the word "node"
-      self.node_version = self.args.compiler[4:]
+      self.use_uv = False
+    if self.args.compiler == 'default':
+      self.runtime = 'node'
+      self.node_version = '7'
+    else:
+      if self.args.compiler.startswith('electron'):
+        self.runtime = 'electron'
+        self.node_version = self.args.compiler[8:]
+      else:
+        self.runtime = 'node'
+        # Take off the word "node"
+        self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
       return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
     else:
-      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_node.sh', self.node_version],
+      run_script = 'run_node'
+      if self.runtime == 'electron':
+        run_script += '_electron'
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/{}.sh'.format(run_script),
+                                    self.node_version],
+                                   None,
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
       return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
     else:
-      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
+      build_script = 'pre_build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version]]
 
   def make_targets(self):
     return []
@@ -401,9 +470,22 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
+      if self.config == 'dbg':
+        config_flag = '--debug'
+      else:
+        config_flag = '--release'
+      return [['tools\\run_tests\\helper_scripts\\build_node.bat',
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
+               config_flag]]
     else:
-      return [['tools/run_tests/helper_scripts/build_node.sh', self.node_version]]
+      build_script = 'build_node'
+      if self.runtime == 'electron':
+        build_script += '_electron'
+        # building for electron requires a patch version
+        self.node_version += '.0'
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version,
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
 
   def post_tests_steps(self):
     return []
@@ -610,11 +692,18 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
+    #TODO(apolcyn) turn mac ruby tests back on once ruby 2.4 issues done
+    if platform_string() == 'mac':
+      print('skipping ruby test_specs on mac until running on 2.4')
+      return []
     return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
+    if platform_string() == 'mac':
+      print('skipping ruby pre_build_steps on mac until running on 2.4')
+      return []
     return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
   def make_targets(self):
@@ -624,9 +713,15 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
+    if platform_string() == 'mac':
+      print('skipping ruby build_steps on mac until running on 2.4')
+      return []
     return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
   def post_tests_steps(self):
+    if platform_string() == 'mac':
+      print('skipping ruby post_test_steps on mac until running on 2.4')
+      return []
     return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
   def makefile_name(self):
@@ -648,12 +743,10 @@ class CSharpLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_compiler(self.args.compiler, ['coreclr', 'default'])
       _check_arch(self.args.arch, ['default'])
-      # CoreCLR use 64bit runtime by default.
-      arch_option = 'x64' if self.args.compiler == 'coreclr' else self.args.arch
-      self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(arch_option)]
+      self._cmake_arch_option = 'x64' if self.args.compiler == 'coreclr' else 'Win32'
+      self._make_options = []
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
@@ -725,7 +818,7 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat', self._cmake_arch_option]]
     else:
       return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
@@ -743,7 +836,7 @@ class CSharpLanguage(object):
         return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
     else:
       if self.platform == 'windows':
-        return [[_windows_build_bat(self.args.compiler),
+        return [['vsprojects\\build_vs2015.bat',
                  'src/csharp/Grpc.sln',
                  '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
       else:
@@ -756,7 +849,10 @@ class CSharpLanguage(object):
       return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    if self.platform == 'windows':
+      return 'cmake/build/%s/Makefile' % self._cmake_arch_option
+    else:
+      return 'Makefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/csharp_%s_%s' % (self._docker_distro,
@@ -964,12 +1060,10 @@ def _check_arch_option(arch):
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
   # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
+  if compiler == 'default' or compiler == 'vs2013':
     return 'vsprojects\\build_vs2013.bat'
   elif compiler == 'vs2015':
     return 'vsprojects\\build_vs2015.bat'
-  elif compiler == 'vs2010':
-    return 'vsprojects\\build_vs2010.bat'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -982,8 +1076,6 @@ def _windows_toolset_option(compiler):
     return '/p:PlatformToolset=v120'
   elif compiler == 'vs2015':
     return '/p:PlatformToolset=v140'
-  elif compiler == 'vs2010':
-    return '/p:PlatformToolset=v100'
   else:
     print('Compiler %s not supported.' % compiler)
     sys.exit(1)
@@ -1021,6 +1113,18 @@ def runs_per_test_type(arg_str):
         raise argparse.ArgumentTypeError(msg)
 
 
+def percent_type(arg_str):
+  pct = float(arg_str)
+  if pct > 100 or pct < 0:
+    raise argparse.ArgumentTypeError(
+        "'%f' is not a valid percentage in the [0, 100] range" % pct)
+  return pct
+
+# This is math.isclose in python >= 3.5
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+      return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -1033,6 +1137,8 @@ argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
+argp.add_argument('-p', '--sample_percent', default=100.0, type=percent_type,
+                  help='Run a random sample with that percentage of tests')
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -1073,10 +1179,12 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2010', 'vs2013', 'vs2015',
+                           'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
-                           'coreclr'],
+                           'electron1.3',
+                           'coreclr',
+                           'cmake'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
@@ -1126,7 +1234,7 @@ for spec in args.update_submodules:
   cwd = 'third_party/%s' % submodule
   def git(cmd, cwd=cwd):
     print('in %s: git %s' % (cwd, cmd))
-    subprocess.check_call('git %s' % cmd, cwd=cwd, shell=True)
+    run_shell_command('git %s' % cmd, cwd=cwd)
   git('fetch')
   git('checkout %s' % branch)
   git('pull origin %s' % branch)
@@ -1134,7 +1242,7 @@ for spec in args.update_submodules:
     need_to_regenerate_projects = True
 if need_to_regenerate_projects:
   if jobset.platform_string() == 'linux':
-    subprocess.check_call('tools/buildgen/generate_projects.sh', shell=True)
+    run_shell_command('tools/buildgen/generate_projects.sh')
   else:
     print('WARNING: may need to regenerate projects, but since we are not on')
     print('         Linux this step is being skipped. Compilation MAY fail.')
@@ -1203,15 +1311,19 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
-                        shell=True,
-                        env=env)
+  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
+    if makefile.startswith('cmake/build/'):
+      return [jobset.JobSpec(['cmake', '--build', '.',
+                              '--target', '%s' % target,
+                              '--config', _MSBUILD_CONFIG[cfg]],
+                             cwd=os.path.dirname(makefile),
+                             timeout_seconds=None) for target in targets]
     extra_args = []
     # better do parallel compilation
     # empirically /m:2 gives the best performance/price and should prevent
@@ -1228,6 +1340,13 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
                       shell=True, timeout_seconds=None)
       for target in targets]
   else:
+    if targets and makefile.startswith('cmake/build/'):
+      # With cmake, we've passed all the build configuration in the pre-build step already
+      return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                              '-j', '%d' % args.jobs] +
+                             targets,
+                             cwd='cmake/build',
+                             timeout_seconds=None)]
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
@@ -1286,97 +1405,6 @@ def _shut_down_legacy_server(legacy_server_port):
         'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 
-def _start_port_server(port_server_port):
-  # check if a compatible port server is running
-  # if incompatible (version mismatch) ==> start a new one
-  # if not running ==> start a new one
-  # otherwise, leave it up
-  try:
-    version = int(urllib.request.urlopen(
-        'http://localhost:%d/version_number' % port_server_port,
-        timeout=10).read())
-    print('detected port server running version %d' % version)
-    running = True
-  except Exception as e:
-    print('failed to detect port server: %s' % sys.exc_info()[0])
-    print(e.strerror)
-    running = False
-  if running:
-    current_version = int(subprocess.check_output(
-        [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
-         'dump_version']))
-    print('my port server is version %d' % current_version)
-    running = (version >= current_version)
-    if not running:
-      print('port_server version mismatch: killing the old one')
-      urllib.request.urlopen('http://localhost:%d/quitquitquit' % port_server_port).read()
-      time.sleep(1)
-  if not running:
-    fd, logfile = tempfile.mkstemp()
-    os.close(fd)
-    print('starting port_server, with log file %s' % logfile)
-    args = [sys.executable, os.path.abspath('tools/run_tests/python_utils/port_server.py'),
-            '-p', '%d' % port_server_port, '-l', logfile]
-    env = dict(os.environ)
-    env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform_string() == 'windows':
-      # Working directory of port server needs to be outside of Jenkins
-      # workspace to prevent file lock issues.
-      tempdir = tempfile.mkdtemp()
-      port_server = subprocess.Popen(
-          args,
-          env=env,
-          cwd=tempdir,
-          creationflags = 0x00000008, # detached process
-          close_fds=True)
-    else:
-      port_server = subprocess.Popen(
-          args,
-          env=env,
-          preexec_fn=os.setsid,
-          close_fds=True)
-    time.sleep(1)
-    # ensure port server is up
-    waits = 0
-    while True:
-      if waits > 10:
-        print('killing port server due to excessive start up waits')
-        port_server.kill()
-      if port_server.poll() is not None:
-        print('port_server failed to start')
-        # try one final time: maybe another build managed to start one
-        time.sleep(1)
-        try:
-          urllib.request.urlopen('http://localhost:%d/get' % port_server_port,
-                          timeout=1).read()
-          print('last ditch attempt to contact port server succeeded')
-          break
-        except:
-          traceback.print_exc()
-          port_log = open(logfile, 'r').read()
-          print(port_log)
-          sys.exit(1)
-      try:
-        urllib.request.urlopen('http://localhost:%d/get' % port_server_port,
-                        timeout=1).read()
-        print('port server is up and ready')
-        break
-      except socket.timeout:
-        print('waiting for port_server: timeout')
-        traceback.print_exc();
-        time.sleep(1)
-        waits += 1
-      except urllib.error.URLError:
-        print('waiting for port_server: urlerror')
-        traceback.print_exc();
-        time.sleep(1)
-        waits += 1
-      except:
-        traceback.print_exc()
-        port_server.kill()
-        raise
-
-
 def _calculate_num_runs_failures(list_of_results):
   """Caculate number of runs and failures for a particular test.
 
@@ -1424,7 +1452,7 @@ def _build_and_run(
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
   port_server_port = 32766
-  _start_port_server(port_server_port)
+  start_port_server.start_port_server(port_server_port)
   resultset = None
   num_test_failures = 0
   try:
@@ -1443,8 +1471,18 @@ def _build_and_run(
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.
-      massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
-      random.shuffle(massaged_one_run)  # which it modifies in-place.
+      massaged_one_run = list(one_run)  # random.sample needs an indexable seq.
+      num_jobs = len(massaged_one_run)
+      # for a random sample, get as many as indicated by the 'sample_percent'
+      # argument. By default this arg is 100, resulting in a shuffle of all
+      # jobs.
+      sample_size = int(num_jobs * args.sample_percent/100.0)
+      massaged_one_run = random.sample(massaged_one_run, sample_size)
+      if not isclose(args.sample_percent, 100.0):
+        print("Running %d tests out of %d (~%d%%)" %
+              (sample_size, num_jobs, args.sample_percent))
+      else:
+        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
     if infinite_runs:
       assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
@@ -1455,7 +1493,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)

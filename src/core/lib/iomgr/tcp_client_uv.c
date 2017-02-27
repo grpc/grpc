@@ -46,9 +46,12 @@
 #include "src/core/lib/iomgr/tcp_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
+extern int grpc_tcp_trace;
+
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
   grpc_timer alarm;
+  grpc_closure on_alarm;
   uv_tcp_t *tcp_handle;
   grpc_closure *closure;
   grpc_endpoint **endpoint;
@@ -59,7 +62,7 @@ typedef struct grpc_uv_tcp_connect {
 
 static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
                                    grpc_uv_tcp_connect *connect) {
-  grpc_resource_quota_internal_unref(exec_ctx, connect->resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, connect->resource_quota);
   gpr_free(connect);
 }
 
@@ -69,6 +72,12 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
                            grpc_error *error) {
   int done;
   grpc_uv_tcp_connect *connect = acp;
+  if (grpc_tcp_trace) {
+    const char *str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+            connect->addr_name, str);
+    grpc_error_free_string(str);
+  }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
        it was cancelled, then the handler that cancelled it also should close
@@ -128,8 +137,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_internal_ref(
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
             channel_args->args[i].value.pointer.p);
       }
     }
@@ -144,13 +153,21 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
+
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
+            connect->addr_name);
+  }
+
   // TODO(murgatroid99): figure out what the return value here means
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
                  (const struct sockaddr *)resolved_addr->addr,
                  uv_tc_on_connect);
+  grpc_closure_init(&connect->on_alarm, uv_tc_on_alarm, connect,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &connect->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  uv_tc_on_alarm, connect, gpr_now(GPR_CLOCK_MONOTONIC));
+                  &connect->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // overridden by api_fuzzer.c

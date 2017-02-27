@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
@@ -76,8 +77,8 @@ typedef struct {
 static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_channel_args_destroy(r->channel_args);
-  grpc_lb_addresses_destroy(r->addresses);
+  grpc_channel_args_destroy(exec_ctx, r->channel_args);
+  grpc_lb_addresses_destroy(exec_ctx, r->addresses);
   gpr_free(r);
 }
 
@@ -153,30 +154,57 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
       grpc_uri_get_query_arg(args->uri, "lb_enabled");
   const bool lb_enabled =
       lb_enabled_qpart != NULL && strcmp("0", lb_enabled_qpart) != 0;
+
+  // Get the balancer's names.
+  const char* balancer_names =
+      grpc_uri_get_query_arg(args->uri, "balancer_names");
+  grpc_slice_buffer balancer_names_parts;
+  grpc_slice_buffer_init(&balancer_names_parts);
+  if (balancer_names != NULL) {
+    const grpc_slice balancer_names_slice =
+        grpc_slice_from_copied_string(balancer_names);
+    grpc_slice_split(balancer_names_slice, ",", &balancer_names_parts);
+    grpc_slice_unref(balancer_names_slice);
+  }
+
   // Construct addresses.
   grpc_slice path_slice =
       grpc_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
+  if (balancer_names_parts.count > 0 &&
+      path_parts.count != balancer_names_parts.count) {
+    gpr_log(GPR_ERROR,
+            "Balancer names present but mismatched with number of addresses: "
+            "%lu balancer names != %lu addresses",
+            (unsigned long)balancer_names_parts.count,
+            (unsigned long)path_parts.count);
+    return NULL;
+  }
   grpc_lb_addresses* addresses =
       grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
-    char* part_str = grpc_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
+    char* part_str = grpc_slice_to_c_string(path_parts.slices[i]);
     ith_uri.path = part_str;
     if (!parse_ipv4(&ith_uri, &addresses->addresses[i].address)) {
       errors_found = true;
     }
     gpr_free(part_str);
-    addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
+    addresses->addresses[i].is_balancer = lb_enabled;
+    addresses->addresses[i].balancer_name =
+        balancer_names_parts.count > 0
+            ? grpc_dump_slice(balancer_names_parts.slices[i], GPR_DUMP_ASCII)
+            : NULL;
   }
-  grpc_slice_buffer_destroy(&path_parts);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &balancer_names_parts);
   grpc_slice_unref(path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(addresses);
+    grpc_lb_addresses_destroy(exec_ctx, addresses);
     return NULL;
   }
   // Instantiate resolver.
@@ -185,7 +213,7 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
   r->channel_args = grpc_channel_args_copy(args->args);
   r->addresses = addresses;
   gpr_mu_init(&r->mu);
-  grpc_resolver_init(&r->base, &fake_resolver_vtable);
+  grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
   return &r->base;
 }
 
