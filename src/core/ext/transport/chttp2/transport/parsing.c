@@ -435,8 +435,10 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
     return init_skip_frame_parser(exec_ctx, t, 0);
   }
   if (err == GRPC_ERROR_NONE) {
+    gpr_mu_lock(&s->buffer_mu);
     err = grpc_chttp2_data_parser_begin_frame(&s->data_parser,
                                               t->incoming_frame_flags, s->id);
+    gpr_mu_unlock(&s->buffer_mu);
   }
 error_handler:
   if (err == GRPC_ERROR_NONE) {

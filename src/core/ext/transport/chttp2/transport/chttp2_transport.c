@@ -595,7 +595,9 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1]);
+  gpr_mu_lock(&s->buffer_mu);
   grpc_chttp2_data_parser_init(&s->data_parser);
+  gpr_mu_unlock(&s->buffer_mu);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s,
@@ -657,7 +659,9 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GPR_ASSERT(s->recv_initial_metadata_ready == NULL);
   GPR_ASSERT(s->recv_message_ready == NULL);
   GPR_ASSERT(s->recv_trailing_metadata_finished == NULL);
+  gpr_mu_lock(&s->buffer_mu);
   grpc_chttp2_data_parser_destroy(exec_ctx, &s->data_parser);
+  gpr_mu_unlock(&s->buffer_mu);
   grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
                                                &s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
@@ -1597,11 +1601,14 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
   }
+  gpr_mu_lock(&s->buffer_mu);
   if (error != GRPC_ERROR_NONE && s->data_parser.parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
+
     s->data_parser.parsing_frame = NULL;
   }
+  gpr_mu_unlock(&s->buffer_mu);
 
   if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     post_benign_reclaimer(exec_ctx, t);
@@ -2324,6 +2331,10 @@ static grpc_error *deframe_unprocessed_incoming_frames(
           grpc_slice_unref_internal(exec_ctx, slice);
           return GRPC_ERROR_NONE;
         }
+        if (p->parsing_frame == NULL) {
+
+          return GRPC_ERROR_NONE;
+        }
         uint32_t remaining = (uint32_t)(end - cur);
         if (cur == end) {
           grpc_slice_unref_internal(exec_ctx, slice);
@@ -2470,6 +2481,9 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = bs->stream;
   grpc_chttp2_transport *t = bs->transport;
 
+  if (bs->error) {
+    return bs->error;
+  }
   gpr_mu_lock(&s->buffer_mu);
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
     grpc_error *error = deframe_unprocessed_incoming_frames(
