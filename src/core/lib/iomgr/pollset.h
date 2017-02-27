@@ -53,6 +53,7 @@ typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker grpc_pollset_worker;
 
 size_t grpc_pollset_size(void);
+/* Initialize a pollset: assumes *pollset contains all zeros */
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
 /* Begin shutting down the pollset, and call closure when done.
  * pollset's mutex must be held */

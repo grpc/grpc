@@ -220,6 +220,7 @@ grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_
 grpc_slice_buffer_take_first_type grpc_slice_buffer_take_first_import;
 grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_import;
 gpr_malloc_type gpr_malloc_import;
+gpr_zalloc_type gpr_zalloc_import;
 gpr_free_type gpr_free_import;
 gpr_realloc_type gpr_realloc_import;
 gpr_malloc_aligned_type gpr_malloc_aligned_import;
@@ -512,6 +513,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_slice_buffer_take_first_import = (grpc_slice_buffer_take_first_type) GetProcAddress(library, "grpc_slice_buffer_take_first");
   grpc_slice_buffer_undo_take_first_import = (grpc_slice_buffer_undo_take_first_type) GetProcAddress(library, "grpc_slice_buffer_undo_take_first");
   gpr_malloc_import = (gpr_malloc_type) GetProcAddress(library, "gpr_malloc");
+  gpr_zalloc_import = (gpr_zalloc_type) GetProcAddress(library, "gpr_zalloc");
   gpr_free_import = (gpr_free_type) GetProcAddress(library, "gpr_free");
   gpr_realloc_import = (gpr_realloc_type) GetProcAddress(library, "gpr_realloc");
   gpr_malloc_aligned_import = (gpr_malloc_aligned_type) GetProcAddress(library, "gpr_malloc_aligned");
