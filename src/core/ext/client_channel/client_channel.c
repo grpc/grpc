@@ -82,7 +82,7 @@ typedef struct {
   wait_for_ready_value wait_for_ready;
 } method_parameters;
 
-static method_parameters* method_parameters_ref(
+static method_parameters *method_parameters_ref(
     method_parameters *method_params) {
   gpr_ref(&method_params->refs);
   return method_params;
@@ -115,7 +115,7 @@ static bool parse_wait_for_ready(grpc_json *field,
   return true;
 }
 
-static bool parse_timeout(grpc_json *field, gpr_timespec* timeout) {
+static bool parse_timeout(grpc_json *field, gpr_timespec *timeout) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
   if (field->value[len - 1] != 's') return false;
@@ -1002,7 +1002,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
 }
 
 static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                                grpc_error *error_ignored) {
+                                             grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("start_transport_stream_op_locked", 0);
 
   grpc_transport_stream_op *op = arg;
@@ -1074,8 +1074,8 @@ static bool set_call_method_params_from_service_config_locked(
       method_parameters_ref(calld->method_params);
       if (gpr_time_cmp(calld->method_params->timeout,
                        gpr_time_0(GPR_TIMESPAN)) != 0) {
-        *per_method_deadline = gpr_time_add(
-            calld->call_start_time, calld->method_params->timeout);
+        *per_method_deadline =
+            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
         return true;
       }
     }
