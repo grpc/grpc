@@ -127,7 +127,6 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
-        "include/grpc++/impl/codegen/core_codegen.h",
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
