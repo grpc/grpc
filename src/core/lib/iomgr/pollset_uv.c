@@ -65,7 +65,7 @@ uv_timer_t dummy_uv_handle;
 
 size_t grpc_pollset_size() { return sizeof(grpc_pollset); }
 
-void dummy_timer_cb(uv_timer_t* handle) {}
+void dummy_timer_cb(uv_timer_t *handle) {}
 
 void grpc_pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
