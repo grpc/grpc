@@ -1602,11 +1602,12 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
   }
   gpr_mu_lock(&s->buffer_mu);
-  if (error != GRPC_ERROR_NONE && s->data_parser.parsing_frame != NULL) {
-    grpc_chttp2_incoming_byte_stream_finished(
-        exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
-
-    s->data_parser.parsing_frame = NULL;
+  if (s->data_parser.parsing_frame != NULL &&
+      (error != GRPC_ERROR_NONE ||
+       s->unprocessed_incoming_frames_buffer.length == 0)) {
+      grpc_chttp2_incoming_byte_stream_finished(
+           exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
+      s->data_parser.parsing_frame = NULL;
   }
   gpr_mu_unlock(&s->buffer_mu);
 
