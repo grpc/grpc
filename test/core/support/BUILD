@@ -119,6 +119,13 @@ cc_test(
 )
 
 cc_test(
+    name = "spinlock_test",
+    srcs = ["spinlock_test.c"],
+    deps = ["//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
     name = "sync_test",
     srcs = ["sync_test.c"],
     deps = ["//:gpr", "//test/core/util:gpr_test_util"],
