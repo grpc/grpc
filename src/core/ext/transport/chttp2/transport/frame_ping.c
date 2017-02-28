@@ -103,6 +103,23 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     if (p->is_ack) {
       grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
+      if (!t->is_client) {
+        gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+        gpr_timespec elapsed =
+            gpr_time_sub(now, t->ping_recv_state.last_ping_recv_time);
+        if (t->keepalive_permit_without_calls == 0 &&
+            grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+          if (gpr_time_cmp(elapsed, gpr_time_from_seconds(7200, GPR_TIMESPAN)) <
+              0) {
+            grpc_chttp2_ping_strike(exec_ctx, t);
+          }
+        } else {
+          if (gpr_time_cmp(elapsed, t->ping_policy.min_time_between_pings) <
+              0) {
+            grpc_chttp2_ping_strike(exec_ctx, t);
+          }
+        }
+      }
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);

@@ -153,6 +153,7 @@ static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 #define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
+#define DEFAULT_MAX_PING_STRIKES 2
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -351,6 +352,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
       .min_time_between_pings =
           gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
+      .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
   };
 
   /* client-side keepalive setting */
@@ -394,6 +396,11 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
         t->ping_policy.max_pings_without_data = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
+        t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
             &channel_args->args[i],
             (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
       } else if (0 == strcmp(channel_args->args[i].key,
@@ -487,6 +494,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
   t->ping_state.is_delayed_ping_timer_set = false;
+
+  t->ping_recv_state.last_ping_recv_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  t->ping_recv_state.ping_strikes = 0;
 
   /* Start client-side keepalive pings */
   if (t->is_client) {
@@ -1448,6 +1458,19 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
+void grpc_chttp2_ping_strike(grpc_exec_ctx *exec_ctx,
+                             grpc_chttp2_transport *t) {
+  if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
+      t->ping_policy.max_ping_strikes != 0) {
+    send_goaway(exec_ctx, t,
+                grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
+                                   GRPC_ERROR_INT_HTTP2_ERROR,
+                                   GRPC_HTTP2_ENHANCE_YOUR_CALM));
+    /*The transport will be closed after the write is done */
+    close_transport_locked(exec_ctx, t, GRPC_ERROR_CREATE("Too many pings"));
+  }
+}
+
 static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
                                         void *stream_op,
                                         grpc_error *error_ignored) {
@@ -2163,7 +2186,8 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_chttp2_transport *t = arg;
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
   if (error == GRPC_ERROR_NONE && !(t->destroying || t->closed)) {
-    if (t->keepalive_permit_without_calls || t->stream_map.count > 0) {
+    if (t->keepalive_permit_without_calls ||
+        grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
       send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE,

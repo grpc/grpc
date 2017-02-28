@@ -97,6 +97,7 @@ typedef struct {
 typedef struct {
   gpr_timespec min_time_between_pings;
   int max_pings_without_data;
+  int max_ping_strikes;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
@@ -105,6 +106,11 @@ typedef struct {
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
+
+typedef struct {
+  gpr_timespec last_ping_recv_time;
+  int ping_strikes;
+} grpc_chttp2_server_ping_recv_state;
 
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
@@ -316,6 +322,7 @@ struct grpc_chttp2_transport {
   size_t ping_ack_count;
   size_t ping_ack_capacity;
   uint64_t *ping_acks;
+  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
@@ -791,6 +798,8 @@ void grpc_chttp2_incoming_byte_stream_finished(
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id);
+
+void grpc_chttp2_ping_strike(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 
 typedef enum {
   /* don't initiate a transport write, but piggyback on the next one */

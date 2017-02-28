@@ -202,6 +202,11 @@ typedef struct {
      a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
+/** How many misbehaving pings the server can bear before sending goaway and
+    closing the transport?
+    (0 indicates that the server can bear an infinite number of misbehaving
+     pings) */
+#define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
