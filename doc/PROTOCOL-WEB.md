@@ -39,7 +39,7 @@ Content-Type
   * e.g. application/grpc-web+[proto, json, thrift]
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
-  * e.g. application/grpc-web+[proto, thrift]
+  * e.g. application/grpc-web-text+[proto, thrift]
 
 ---
 
