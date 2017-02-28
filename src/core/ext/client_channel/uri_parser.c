@@ -262,8 +262,7 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
     fragment_end = i;
   }
 
-  uri = gpr_malloc(sizeof(*uri));
-  memset(uri, 0, sizeof(*uri));
+  uri = gpr_zalloc(sizeof(*uri));
   uri->scheme = copy_component(uri_text, scheme_begin, scheme_end);
   uri->authority = copy_component(uri_text, authority_begin, authority_end);
   uri->path = copy_component(uri_text, path_begin, path_end);

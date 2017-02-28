@@ -91,10 +91,7 @@ void grpc_auth_context_release(grpc_auth_context *context) {
 /* --- grpc_client_security_context --- */
 
 grpc_client_security_context *grpc_client_security_context_create(void) {
-  grpc_client_security_context *ctx =
-      gpr_malloc(sizeof(grpc_client_security_context));
-  memset(ctx, 0, sizeof(grpc_client_security_context));
-  return ctx;
+  return gpr_zalloc(sizeof(grpc_client_security_context));
 }
 
 void grpc_client_security_context_destroy(void *ctx) {
@@ -112,10 +109,7 @@ void grpc_client_security_context_destroy(void *ctx) {
 /* --- grpc_server_security_context --- */
 
 grpc_server_security_context *grpc_server_security_context_create(void) {
-  grpc_server_security_context *ctx =
-      gpr_malloc(sizeof(grpc_server_security_context));
-  memset(ctx, 0, sizeof(grpc_server_security_context));
-  return ctx;
+  return gpr_zalloc(sizeof(grpc_server_security_context));
 }
 
 void grpc_server_security_context_destroy(void *ctx) {
@@ -132,8 +126,7 @@ void grpc_server_security_context_destroy(void *ctx) {
 static grpc_auth_property_iterator empty_iterator = {NULL, 0, NULL};
 
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained) {
-  grpc_auth_context *ctx = gpr_malloc(sizeof(grpc_auth_context));
-  memset(ctx, 0, sizeof(grpc_auth_context));
+  grpc_auth_context *ctx = gpr_zalloc(sizeof(grpc_auth_context));
   gpr_ref_init(&ctx->refcount, 1);
   if (chained != NULL) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");

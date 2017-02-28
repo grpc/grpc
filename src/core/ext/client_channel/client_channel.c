@@ -520,7 +520,6 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_element *elem,
                                         grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
-  memset(chand, 0, sizeof(*chand));
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   // Initialize data members.

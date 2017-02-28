@@ -2014,6 +2014,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_completion_queue_threading_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/completion_queue_threading_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
   exclude_iomgrs:
   - uv
 - name: grpc_create_jwt
@@ -2116,6 +2126,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
   secure: true
@@ -2546,8 +2558,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  exclude_iomgrs:
-  - uv
 - name: resource_quota_test
   cpu_cost: 30
   build: test
@@ -2747,6 +2757,19 @@ targets:
   - mac
   - linux
   - posix
+- name: tcp_client_uv_test
+  cpu_cost: 0.5
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/tcp_client_uv_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - native
 - name: tcp_posix_test
   cpu_cost: 0.2
   build: test
@@ -2780,6 +2803,18 @@ targets:
   - mac
   - linux
   - posix
+- name: tcp_server_uv_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/tcp_server_uv_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - native
 - name: time_averaged_stats_test
   build: test
   language: c
@@ -2982,6 +3017,25 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_chttp2_hpack
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_closure
   build: test
   language: c++
@@ -2989,7 +3043,9 @@ targets:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
   - benchmark
+  - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
@@ -3064,6 +3120,23 @@ targets:
   - linux
   - posix
   timeout_seconds: 1200
+- name: bm_metadata
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_metadata.cc
+  deps:
+  - benchmark
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -4074,6 +4147,8 @@ node_modules:
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
+  - src/node/ext/server_generic.cc
+  - src/node/ext/server_uv.cc
   - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:

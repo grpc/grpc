@@ -36,9 +36,19 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
+#include <string.h>
 #include "src/core/lib/profiling/timers.h"
 
-static gpr_allocation_functions g_alloc_functions = {malloc, realloc, free};
+static void *zalloc_with_calloc(size_t sz) { return calloc(sz, 1); }
+
+static void *zalloc_with_gpr_malloc(size_t sz) {
+  void *p = gpr_malloc(sz);
+  memset(p, 0, sz);
+  return p;
+}
+
+static gpr_allocation_functions g_alloc_functions = {malloc, zalloc_with_calloc,
+                                                     realloc, free};
 
 gpr_allocation_functions gpr_get_allocation_functions() {
   return g_alloc_functions;
@@ -48,6 +58,9 @@ void gpr_set_allocation_functions(gpr_allocation_functions functions) {
   GPR_ASSERT(functions.malloc_fn != NULL);
   GPR_ASSERT(functions.realloc_fn != NULL);
   GPR_ASSERT(functions.free_fn != NULL);
+  if (functions.zalloc_fn == NULL) {
+    functions.zalloc_fn = zalloc_with_gpr_malloc;
+  }
   g_alloc_functions = functions;
 }
 
@@ -60,6 +73,18 @@ void *gpr_malloc(size_t size) {
     abort();
   }
   GPR_TIMER_END("gpr_malloc", 0);
+  return p;
+}
+
+void *gpr_zalloc(size_t size) {
+  void *p;
+  if (size == 0) return NULL;
+  GPR_TIMER_BEGIN("gpr_zalloc", 0);
+  p = g_alloc_functions.zalloc_fn(size);
+  if (!p) {
+    abort();
+  }
+  GPR_TIMER_END("gpr_zalloc", 0);
   return p;
 }
 

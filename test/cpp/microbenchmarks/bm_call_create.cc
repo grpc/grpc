@@ -311,7 +311,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t channel_size = grpc_channel_stack_size(&filters[0], filters.size());
   grpc_channel_stack *channel_stack =
-      static_cast<grpc_channel_stack *>(gpr_malloc(channel_size));
+      static_cast<grpc_channel_stack *>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "call_stack_init",
       grpc_channel_stack_init(&exec_ctx, 1, FilterDestroy, channel_stack,
@@ -322,7 +322,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
                               "CHANNEL", channel_stack)));
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_call_stack *call_stack = static_cast<grpc_call_stack *>(
-      gpr_malloc(channel_stack->call_stack_size));
+      gpr_zalloc(channel_stack->call_stack_size));
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");

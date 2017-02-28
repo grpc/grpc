@@ -248,8 +248,7 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector *grpc_chttp2_connector_create() {
-  chttp2_connector *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  chttp2_connector *c = gpr_zalloc(sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);

@@ -45,6 +45,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Protobuf;
 using Grpc.Auth;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using Grpc.Testing;
 using Newtonsoft.Json.Linq;
@@ -95,6 +96,7 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
+            GrpcEnvironment.SetLogger(new ConsoleLogger());
             var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
                 .WithNotParsed(errors => Environment.Exit(1))
                 .WithParsed(options =>

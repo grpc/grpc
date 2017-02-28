@@ -454,7 +454,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port == proxy_port);
   // Start server.
-  proxy->pollset = gpr_malloc(grpc_pollset_size());
+  proxy->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(proxy->pollset, &proxy->mu);
   grpc_tcp_server_start(&exec_ctx, proxy->server, &proxy->pollset, 1, on_accept,
                         proxy);
