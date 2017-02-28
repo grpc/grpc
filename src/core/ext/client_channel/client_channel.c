@@ -632,7 +632,6 @@ typedef struct client_channel_call_data {
   gpr_timespec call_start_time;
   gpr_timespec deadline;
   wait_for_ready_value wait_for_ready_from_service_config;
-  grpc_closure read_service_config;
 
   grpc_error *cancel_error;
 
@@ -705,6 +704,45 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
   gpr_free(ops);
 }
 
+static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
+                                             grpc_call_element *elem) {
+  /* apply service-config level configuration to the call (now that we're
+   * certain it exists) */
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  /* Get the method config table from channel data. */
+  grpc_slice_hash_table *method_params_table = NULL;
+  if (chand->method_params_table != NULL) {
+    method_params_table = grpc_slice_hash_table_ref(chand->method_params_table);
+  }
+  /* If the method config table was present, use it. */
+  if (method_params_table != NULL) {
+    const method_parameters *method_params = grpc_method_config_table_get(
+        exec_ctx, method_params_table, calld->path);
+    if (method_params != NULL) {
+      const bool have_method_timeout =
+          gpr_time_cmp(method_params->timeout, gpr_time_0(GPR_TIMESPAN)) != 0;
+      if (have_method_timeout ||
+          method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
+        if (have_method_timeout) {
+          const gpr_timespec per_method_deadline =
+              gpr_time_add(calld->call_start_time, method_params->timeout);
+          if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+            calld->deadline = per_method_deadline;
+          }
+        }
+        if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
+          calld->wait_for_ready_from_service_config =
+              method_params->wait_for_ready;
+        }
+      }
+    }
+    grpc_slice_hash_table_unref(exec_ctx, method_params_table);
+  }
+  /* Start deadline timer. */
+  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
+}
+
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   grpc_call_element *elem = arg;
@@ -733,6 +771,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
+    apply_final_configuration_locked(exec_ctx, elem);
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
         calld->call_start_time, calld->deadline, &subchannel_call);
@@ -960,6 +999,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
+    apply_final_configuration_locked(exec_ctx, elem);
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
         calld->call_start_time, calld->deadline, &subchannel_call);
@@ -1039,65 +1079,17 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("cc_start_transport_stream_op", 0);
 }
 
-// Gets data from the service config.  Invoked when the resolver returns
-// its initial result.
-static void read_service_config_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                       grpc_error *error) {
-  grpc_call_element *elem = arg;
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  // If this is an error, there's no point in looking at the service config.
-  if (error == GRPC_ERROR_NONE) {
-    // Get the method config table from channel data.
-    grpc_slice_hash_table *method_params_table = NULL;
-    if (chand->method_params_table != NULL) {
-      method_params_table =
-          grpc_slice_hash_table_ref(chand->method_params_table);
-    }
-    // If the method config table was present, use it.
-    if (method_params_table != NULL) {
-      const method_parameters *method_params = grpc_method_config_table_get(
-          exec_ctx, method_params_table, calld->path);
-      if (method_params != NULL) {
-        const bool have_method_timeout =
-            gpr_time_cmp(method_params->timeout, gpr_time_0(GPR_TIMESPAN)) != 0;
-        if (have_method_timeout ||
-            method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
-          if (have_method_timeout) {
-            const gpr_timespec per_method_deadline =
-                gpr_time_add(calld->call_start_time, method_params->timeout);
-            if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
-              calld->deadline = per_method_deadline;
-              // Start deadline timer.
-              grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
-            }
-          }
-          if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
-            calld->wait_for_ready_from_service_config =
-                method_params->wait_for_ready;
-          }
-        }
-      }
-      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
-    }
-  }
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
-}
-
 /* Constructor for call_data */
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
   // Initialize data members.
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->owning_call = args->call_stack;
-  grpc_closure_init(&calld->read_service_config, read_service_config_locked,
-                    elem, grpc_combiner_scheduler(chand->combiner, false));
   return GRPC_ERROR_NONE;
 }
 

@@ -175,7 +175,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
 
 void negative_deadline(grpc_end2end_test_config config) {
   size_t i;
-  for (i = 1; i <= 4; i++) {
+  for (i = 2; i <= 4; i++) {
     test_invoke_simple_request(config, i);
   }
 }
