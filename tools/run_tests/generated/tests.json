@@ -3005,7 +3005,9 @@
     ]
   }, 
   {
-    "args": [], 
+    "args": [
+      "--generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h"
+    ], 
     "ci_platforms": [
       "linux", 
       "mac", 
