@@ -915,7 +915,7 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.c',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port_posix.c',
+                      'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
 end
