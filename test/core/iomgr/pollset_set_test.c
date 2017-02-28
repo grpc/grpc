@@ -79,7 +79,7 @@ typedef struct test_pollset {
 
 static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
   for (int i = 0; i < num_pollsets; i++) {
-    pollsets[i].ps = gpr_malloc(grpc_pollset_size());
+    pollsets[i].ps = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].ps, &pollsets[i].mu);
   }
 }

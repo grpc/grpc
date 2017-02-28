@@ -68,7 +68,6 @@ void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
 
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &grpc_polling_mu;
-  memset(pollset, 0, sizeof(grpc_pollset));
   uv_timer_init(uv_default_loop(), &pollset->timer);
   pollset->shutting_down = 0;
 }

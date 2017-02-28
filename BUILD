@@ -359,6 +359,7 @@ grpc_cc_library(
         "src/core/lib/support/env.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
+        "src/core/lib/support/spinlock.h",
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
@@ -1076,8 +1077,8 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
-        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
         "src/core/ext/transport/cronet/transport/cronet_transport.h",
+        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
     public_hdrs = [
@@ -1128,6 +1129,7 @@ grpc_cc_library(
         "src/cpp/common/channel_filter.cc",
         "src/cpp/common/completion_queue_cc.cc",
         "src/cpp/common/core_codegen.cc",
+        "src/cpp/common/resource_quota_cc.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/common/version_cc.cc",
         "src/cpp/server/async_generic_service.cc",
@@ -1296,5 +1298,24 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_codegen_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_reflection",
+    srcs = [
+        "src/cpp/ext/proto_server_reflection.cc",
+        "src/cpp/ext/proto_server_reflection_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/proto_server_reflection.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc++/ext/proto_server_reflection_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )

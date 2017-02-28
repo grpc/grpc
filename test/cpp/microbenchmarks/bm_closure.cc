@@ -39,6 +39,7 @@ extern "C" {
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/support/spinlock.h"
 }
 
 #include "third_party/benchmark/include/benchmark/benchmark.h"
@@ -233,6 +234,55 @@ static void BM_AcquireMutex(benchmark::State& state) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 BENCHMARK(BM_AcquireMutex);
+
+static void BM_TryAcquireMutex(benchmark::State& state) {
+  TrackCounters track_counters(state);
+  // for comparison with the combiner stuff below
+  gpr_mu mu;
+  gpr_mu_init(&mu);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (state.KeepRunning()) {
+    if (gpr_mu_trylock(&mu)) {
+      DoNothing(&exec_ctx, NULL, GRPC_ERROR_NONE);
+      gpr_mu_unlock(&mu);
+    } else {
+      abort();
+    }
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+BENCHMARK(BM_TryAcquireMutex);
+
+static void BM_AcquireSpinlock(benchmark::State& state) {
+  TrackCounters track_counters(state);
+  // for comparison with the combiner stuff below
+  gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (state.KeepRunning()) {
+    gpr_spinlock_lock(&mu);
+    DoNothing(&exec_ctx, NULL, GRPC_ERROR_NONE);
+    gpr_spinlock_unlock(&mu);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+BENCHMARK(BM_AcquireSpinlock);
+
+static void BM_TryAcquireSpinlock(benchmark::State& state) {
+  TrackCounters track_counters(state);
+  // for comparison with the combiner stuff below
+  gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (state.KeepRunning()) {
+    if (gpr_spinlock_trylock(&mu)) {
+      DoNothing(&exec_ctx, NULL, GRPC_ERROR_NONE);
+      gpr_spinlock_unlock(&mu);
+    } else {
+      abort();
+    }
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+BENCHMARK(BM_TryAcquireSpinlock);
 
 static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
   TrackCounters track_counters(state);

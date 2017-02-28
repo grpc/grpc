@@ -128,10 +128,11 @@ typedef struct {
      server_transport_data is an opaque pointer. If it is NULL, this call is
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
-     argument. */
+     argument.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_call_elem)(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_call_element_args *args);
+                                const grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent);
@@ -152,7 +153,8 @@ typedef struct {
      is what needs initializing.
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
-     The filter does not need to do any chaining */
+     The filter does not need to do any chaining.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_channel_elem)(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
                                    grpc_channel_element_args *args);

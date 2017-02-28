@@ -168,6 +168,7 @@ class JavaLanguage:
   def __init__(self):
     self.client_cwd = '../grpc-java'
     self.server_cwd = '../grpc-java'
+    self.http2_cwd = '../grpc-java'
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -201,10 +202,14 @@ class GoLanguage:
     # TODO: this relies on running inside docker
     self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
+    self.http2_cwd = '/go/src/google.golang.org/grpc/interop/http2'
     self.safename = str(self)
 
   def client_cmd(self, args):
     return ['go', 'run', 'client.go'] + args
+
+  def client_cmd_http2interop(self, args):
+    return ['go', 'run', 'negative_http2_client.go'] + args
 
   def cloud_to_prod_env(self):
     return {}
@@ -397,6 +402,7 @@ class PythonLanguage:
   def __init__(self):
     self.client_cwd = None
     self.server_cwd = None
+    self.http2_cwd = None
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -471,6 +477,9 @@ _HTTP2_TEST_CASES = ['tls', 'framing']
 
 _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
                      'goaway', 'ping', 'max_streams']
+
+# TODO: Add python once the tests are fixed.
+_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 DOCKER_TEST_INFO = os.path.join(DOCKER_WORKDIR_ROOT, 'test_info')
@@ -607,11 +616,12 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
     client_options = common_options + ['--server_port=%s' %
                                        (int(server_port)+offset)]
     cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
+    cwd = language.http2_cwd
   else:
     client_options = interop_only_options + common_options + ['--server_port=%s' % server_port]
     cmdline = bash_cmdline(language.client_cmd(client_options))
+    cwd = language.client_cwd
 
-  cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
     container_name = dockerjob.random_name('interop_client_%s' % language.safename)
@@ -895,8 +905,13 @@ if not args.use_docker and servers:
 
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+                    _LANGUAGES.iterkeys() if x == 'all' else [x]
+                    for x in args.language))
+
+languages_http2_badserver_interop = set()
+if args.http2_badserver_interop:
+  languages_http2_badserver_interop = set(
+      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS)
 
 http2Interop = Http2Client() if args.http2_interop else None
 http2InteropServer = Http2Server() if args.http2_badserver_interop else None
@@ -904,8 +919,10 @@ http2InteropServer = Http2Server() if args.http2_badserver_interop else None
 docker_images={}
 if args.use_docker:
   # languages for which to build docker images
-  languages_to_build = set(_LANGUAGES[k] for k in set([str(l) for l in languages] +
-                                                    [s for s in servers]))
+  languages_to_build = set(
+      _LANGUAGES[k] for k in set([str(l) for l in languages] + [s for s in servers]))
+  languages_to_build = languages_to_build | languages_http2_badserver_interop
+
   if args.http2_interop:
     languages_to_build.add(http2Interop)
 
@@ -950,7 +967,6 @@ try:
     spec = server_jobspec(http2InteropServer, docker_images.get(lang))
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
-    server_addresses[lang] = ('localhost', _DEFAULT_SERVER_PORT)
 
   jobs = []
   if args.cloud_to_prod:
@@ -999,19 +1015,18 @@ try:
     skip_server = []  # test cases unimplemented by server
     if server_language:
       skip_server = server_language.unimplemented_test_cases_server()
-    if not args.http2_badserver_interop:
-      for language in languages:
-        for test_case in _TEST_CASES:
-          if not test_case in language.unimplemented_test_cases():
-            if not test_case in skip_server:
-              test_job = cloud_to_cloud_jobspec(language,
-                                                test_case,
-                                                server_name,
-                                                server_host,
-                                                server_port,
-                                                docker_image=docker_images.get(str(language)),
-                                                insecure=args.insecure)
-              jobs.append(test_job)
+    for language in languages:
+      for test_case in _TEST_CASES:
+        if not test_case in language.unimplemented_test_cases():
+          if not test_case in skip_server:
+            test_job = cloud_to_cloud_jobspec(language,
+                                              test_case,
+                                              server_name,
+                                              server_host,
+                                              server_port,
+                                              docker_image=docker_images.get(str(language)),
+                                              insecure=args.insecure)
+            jobs.append(test_job)
 
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
@@ -1027,16 +1042,16 @@ try:
                                           insecure=args.insecure)
         jobs.append(test_job)
 
-    if args.http2_badserver_interop:
-      for language in languages:
-        for test_case in _HTTP2_BADSERVER_TEST_CASES:
-          test_job = cloud_to_cloud_jobspec(language,
-                                            test_case,
-                                            server_name,
-                                            server_host,
-                                            server_port,
-                                            docker_image=docker_images.get(str(language)))
-          jobs.append(test_job)
+  if args.http2_badserver_interop:
+    for language in languages_http2_badserver_interop:
+      for test_case in _HTTP2_BADSERVER_TEST_CASES:
+        test_job = cloud_to_cloud_jobspec(language,
+                                          test_case,
+                                          str(http2InteropServer),
+                                          'localhost',
+                                          _DEFAULT_SERVER_PORT,
+                                          docker_image=docker_images.get(str(language)))
+        jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
@@ -1058,9 +1073,13 @@ try:
     if "http2" in name:
       job[0].http2results = aggregate_http2_results(job[0].message)
 
+  http2_badserver_test_cases = (
+      _HTTP2_BADSERVER_TEST_CASES if args.http2_badserver_interop else [])
+
   report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
-      _HTTP2_TEST_CASES, resultset, num_failures,
+      _HTTP2_TEST_CASES, http2_badserver_test_cases,
+      _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
 

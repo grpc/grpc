@@ -42,6 +42,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/lib/support/spinlock.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -69,7 +70,7 @@ typedef struct {
 /* Protects g_shard_queue */
 static gpr_mu g_mu;
 /* Allow only one run_some_expired_timers at once */
-static gpr_mu g_checker_mu;
+static gpr_spinlock g_checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER;
 static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
@@ -90,7 +91,6 @@ void grpc_timer_list_init(gpr_timespec now) {
 
   g_initialized = true;
   gpr_mu_init(&g_mu);
-  gpr_mu_init(&g_checker_mu);
   g_clock_type = now.clock_type;
 
   for (i = 0; i < NUM_SHARDS; i++) {
@@ -117,7 +117,6 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
     grpc_timer_heap_destroy(&shard->heap);
   }
   gpr_mu_destroy(&g_mu);
-  gpr_mu_destroy(&g_checker_mu);
   g_initialized = false;
 }
 
@@ -180,25 +179,25 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
   timer->deadline = deadline;
-  timer->triggered = 0;
 
   if (!g_initialized) {
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_closure_sched(
         exec_ctx, timer->closure,
         GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
+  gpr_mu_lock(&shard->mu);
+  timer->pending = true;
   if (gpr_time_cmp(deadline, now) <= 0) {
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    gpr_mu_unlock(&shard->mu);
+    /* early out */
     return;
   }
 
-  /* TODO(ctiller): check deadline expired */
-
-  gpr_mu_lock(&shard->mu);
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       ts_to_dbl(gpr_time_sub(deadline, now)));
   if (gpr_time_cmp(deadline, shard->queue_deadline_cap) < 0) {
@@ -243,9 +242,9 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
 
   shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   gpr_mu_lock(&shard->mu);
-  if (!timer->triggered) {
+  if (timer->pending) {
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
-    timer->triggered = 1;
+    timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
     } else {
@@ -296,7 +295,7 @@ static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {
     }
     timer = grpc_timer_heap_top(&shard->heap);
     if (gpr_time_cmp(timer->deadline, now) > 0) return NULL;
-    timer->triggered = 1;
+    timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
   }
@@ -324,7 +323,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 
   /* TODO(ctiller): verify that there are any timers (atomically) here */
 
-  if (gpr_mu_trylock(&g_checker_mu)) {
+  if (gpr_spinlock_trylock(&g_checker_mu)) {
     gpr_mu_lock(&g_mu);
 
     while (gpr_time_cmp(g_shard_queue[0]->min_deadline, now) < 0) {
@@ -350,7 +349,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     }
 
     gpr_mu_unlock(&g_mu);
-    gpr_mu_unlock(&g_checker_mu);
+    gpr_spinlock_unlock(&g_checker_mu);
   } else if (next != NULL) {
     /* TODO(ctiller): this forces calling code to do an short poll, and
        then retry the timer check (because this time through the timer list was

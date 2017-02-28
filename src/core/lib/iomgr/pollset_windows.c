@@ -98,7 +98,6 @@ size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
 
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &grpc_polling_mu;
-  memset(pollset, 0, sizeof(*pollset));
   pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
       pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
           &pollset->root_worker;
