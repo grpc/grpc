@@ -49,4 +49,4 @@ typedef struct { gpr_atm atm; } gpr_spinlock;
   do {                          \
   } while (!gpr_spinlock_trylock((lock)))
 
-#endif  // GRPC_CORE_LIB_SUPPORT_SPINLOCK_H
+#endif /* GRPC_CORE_LIB_SUPPORT_SPINLOCK_H */
