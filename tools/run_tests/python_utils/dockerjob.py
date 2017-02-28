@@ -101,6 +101,7 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
   print('Failed to remove docker image %s' % image)
   return False
 
+
 class DockerJob:
   """Encapsulates a job"""
 

@@ -492,7 +492,7 @@ def run(cmdlines,
       js.set_remaining(remaining)
   js.finish()
 
-  # Keep a record of commands we invoked for test replay later.
+  # Keep records of commands we have invoked for replaying later.
   if joblog:
     with open(joblog, 'w') as f:
       f.writelines([repr(job.cmdline) + '\n' for job in cmdlines])

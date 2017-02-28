@@ -729,23 +729,33 @@ def aggregate_http2_results(stdout):
   }
 
 def push_to_gke_registry(image, gcr_path, gcr_tag='latest', with_files=[]):
-  """Tags and Pushes a docker image in Google Containger Registry."""
+  """Tags and Pushes a docker image in Google Containger Registry.
+
+  image: docker image name grpc_interop_java:26328ad8
+  gcr_path: the name path for docker image on Google Container Registry (GCR).
+  gcr_tag: tag for uploading docker image to GCR.
+  with_files: additional files to copied into the docker image.
+  """
   tag_idx = image.find(':')
   if tag_idx == -1:
     print('Failed to parse docker image name %s' % image)
     return False
 
+  # Create an empty tmp directory.
   tmp_dir = os.path.join('/tmp', os.path.basename(DOCKER_TEST_INFO))
   shutil.rmtree(tmp_dir, ignore_errors=True)
   os.makedirs(tmp_dir)
-  # Stores the original image:tag which might be referenced by tests
+
+  # Stores the original image:tag which will be referenced by tests
   # during replay.
   with open(os.path.join(tmp_dir, 'original_image'), 'w') as f:
     f.write(image + '\n')
-  # Copy all other files inside the docker image.
+
+  # Copy with_files inside the tmp directory.
   for f in with_files:
     shutil.copy(f, tmp_dir)
 
+  # Store all files with the image and commit it.
   tag_name = '%s/%s:%s' % (gcr_path, image[:tag_idx], gcr_tag)
   tmp_container_name = str(uuid.uuid4())
   cmd = (
@@ -758,7 +768,6 @@ def push_to_gke_registry(image, gcr_path, gcr_tag='latest', with_files=[]):
       'tag': tag_name,
       'dst': os.path.dirname(DOCKER_TEST_INFO),
   }
-  # Store all files with the image and commit it.
   if (subprocess.call(cmd.split()) or
       subprocess.call(['docker', 'commit', '-m',
                        'added ' + DOCKER_TEST_INFO, tmp_container_name, tag_name])):
