@@ -488,7 +488,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       t->ping_policy.max_pings_without_data;
   t->ping_state.is_delayed_ping_timer_set = false;
 
-  /** Start client-side keepalive pings */
+  /* Start client-side keepalive pings */
   if (t->is_client) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
@@ -2114,6 +2114,10 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (grpc_http_trace) {
     gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
   }
+  /* Reset the keepalive ping timer */
+  if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
+    grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+  }
   grpc_bdp_estimator_start_ping(&t->bdp_estimator);
 }
 
@@ -2172,6 +2176,13 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
           &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
     }
+  } else if (error == GRPC_ERROR_CANCELLED && !(t->destroying || t->closed)) {
+    /* The keepalive ping timer may be cancelled by bdp */
+    GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+    grpc_timer_init(
+        exec_ctx, &t->keepalive_ping_timer,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
+        &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "init keepalive ping");
 }
@@ -2213,8 +2224,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                               "keepalive watchdog timeout"));
     }
   } else {
-    /** The watchdog timer should have been cancelled by
-        finish_keepalive_ping_locked. */
+    /* The watchdog timer should have been cancelled by
+     * finish_keepalive_ping_locked. */
     if (error != GRPC_ERROR_CANCELLED) {
       gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
               t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
