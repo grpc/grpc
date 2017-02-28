@@ -207,6 +207,10 @@ typedef struct {
     (0 indicates that the server can bear an infinite number of misbehaving
      pings) */
 #define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
+/** Minimum allowed time between two pings without sending any data frame. Int
+    valued, seconds */
+#define GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_S \
+  "grpc.http2.min_ping_interval_without_data"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"

@@ -154,6 +154,7 @@ static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 #define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
 #define DEFAULT_MAX_PING_STRIKES 2
+#define DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_S 300
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -353,6 +354,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       .min_time_between_pings =
           gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
       .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
+      .min_ping_interval_without_data = gpr_time_from_seconds(
+          DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_S, GPR_TIMESPAN),
   };
 
   /* client-side keepalive setting */
@@ -402,7 +405,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
         t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
+            (grpc_integer_options){DEFAULT_MAX_PING_STRIKES, 0, INT_MAX});
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS)) {
         t->ping_policy.min_time_between_pings = gpr_time_from_millis(
@@ -410,6 +413,14 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                 &channel_args->args[i],
                 (grpc_integer_options){DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, 0,
                                        INT_MAX}),
+            GPR_TIMESPAN);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_S)) {
+        t->ping_policy.min_ping_interval_without_data = gpr_time_from_seconds(
+            grpc_channel_arg_get_integer(
+                &channel_args->args[i],
+                (grpc_integer_options){DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_S,
+                                       0, INT_MAX}),
             GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {

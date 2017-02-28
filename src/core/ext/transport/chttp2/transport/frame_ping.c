@@ -105,19 +105,22 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     } else {
       if (!t->is_client) {
         gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-        gpr_timespec elapsed =
-            gpr_time_sub(now, t->ping_recv_state.last_ping_recv_time);
+        gpr_timespec next_allowed_ping =
+            gpr_time_add(t->ping_recv_state.last_ping_recv_time,
+                         t->ping_policy.min_ping_interval_without_data);
+
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-          if (gpr_time_cmp(elapsed, gpr_time_from_seconds(7200, GPR_TIMESPAN)) <
-              0) {
-            grpc_chttp2_ping_strike(exec_ctx, t);
-          }
-        } else {
-          if (gpr_time_cmp(elapsed, t->ping_policy.min_time_between_pings) <
-              0) {
-            grpc_chttp2_ping_strike(exec_ctx, t);
-          }
+          /* The “2 hours” restricts the number of PINGS to an implementation
+             equivalent to TCP Keep-Alive, whose interval is specified to
+             default to no less than two hours in RFC1122. */
+          next_allowed_ping =
+              gpr_time_add(t->ping_recv_state.last_ping_recv_time,
+                           gpr_time_from_seconds(7200, GPR_TIMESPAN));
+        }
+
+        if (gpr_time_cmp(next_allowed_ping, now) > 0) {
+          grpc_chttp2_ping_strike(exec_ctx, t);
         }
       }
       if (!g_disable_ping_ack) {
