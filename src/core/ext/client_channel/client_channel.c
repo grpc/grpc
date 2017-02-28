@@ -740,7 +740,7 @@ static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
     grpc_slice_hash_table_unref(exec_ctx, method_params_table);
   }
   /* Start deadline timer. */
-  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
+  grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
 }
 
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -1090,6 +1090,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->owning_call = args->call_stack;
+  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
   return GRPC_ERROR_NONE;
 }
 

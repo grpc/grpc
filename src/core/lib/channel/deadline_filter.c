@@ -78,9 +78,21 @@ retry:
       (grpc_deadline_timer_state)gpr_atm_acq_load(&deadline_state->timer_state);
   switch (cur_state) {
     case GRPC_DEADLINE_STATE_PENDING:
-    case GRPC_DEADLINE_STATE_FINISHED:
       // Note: We do not start the timer if there is already a timer
       return;
+    case GRPC_DEADLINE_STATE_FINISHED:
+      if (gpr_atm_rel_cas(&deadline_state->timer_state,
+                          GRPC_DEADLINE_STATE_FINISHED,
+                          GRPC_DEADLINE_STATE_PENDING)) {
+        // If we've already created and destroyed a timer, we always create a
+        // new closure: we have no other guarantee that the inlined closure is
+        // not in use (it may hold a pending call to timer_callback)
+        closure = grpc_closure_create(timer_callback, elem,
+                                      grpc_schedule_on_exec_ctx);
+      } else {
+        goto retry;
+      }
+      break;
     case GRPC_DEADLINE_STATE_INITIAL:
       if (gpr_atm_rel_cas(&deadline_state->timer_state,
                           GRPC_DEADLINE_STATE_INITIAL,
@@ -175,6 +187,13 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                       grpc_schedule_on_exec_ctx);
     grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
+}
+
+void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                               gpr_timespec new_deadline) {
+  grpc_deadline_state* deadline_state = elem->call_data;
+  cancel_timer_if_needed(exec_ctx, deadline_state);
+  start_timer_if_needed(exec_ctx, elem, new_deadline);
 }
 
 void grpc_deadline_state_client_start_transport_stream_op(
