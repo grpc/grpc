@@ -595,9 +595,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1]);
-  gpr_mu_lock(&s->buffer_mu);
   grpc_chttp2_data_parser_init(&s->data_parser);
-  gpr_mu_unlock(&s->buffer_mu);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s,
@@ -1602,12 +1600,16 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
   }
   gpr_mu_lock(&s->buffer_mu);
-  if (s->data_parser.parsing_frame != NULL &&
-      (error != GRPC_ERROR_NONE ||
-       s->unprocessed_incoming_frames_buffer.length == 0)) {
+  if (s->data_parser.parsing_frame != NULL) {
+    gpr_mu_lock(&s->data_parser.parsing_frame->slice_mu);
+    if (error != GRPC_ERROR_NONE ||
+        s->data_parser.parsing_frame->on_next) {
+      gpr_mu_unlock(&s->data_parser.parsing_frame->slice_mu);
       grpc_chttp2_incoming_byte_stream_finished(
            exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
+      gpr_mu_unlock(&s->data_parser.parsing_frame->slice_mu);
       s->data_parser.parsing_frame = NULL;
+    }
   }
   gpr_mu_unlock(&s->buffer_mu);
 
@@ -2570,6 +2572,17 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
     bs->remaining_bytes -= (uint32_t)GRPC_SLICE_LENGTH(slice);
     *slice_out = slice;
   }
+}
+
+void grpc_chttp2_incoming_byte_stream_notify(grpc_exec_ctx *exec_ctx,
+                                             grpc_chttp2_incoming_byte_stream *bs,
+                                             grpc_error *error) {
+  gpr_mu_lock(&bs->slice_mu);
+  if (bs->on_next) {
+    grpc_closure_sched(exec_ctx, bs->next_action.on_complete, error);
+    bs->on_next = NULL;
+  }
+  gpr_mu_unlock(&bs->slice_mu);
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
