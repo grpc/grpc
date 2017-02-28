@@ -73,16 +73,6 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                                gpr_timespec deadline);
 
-// Cancels the existing timer and starts a new one with new_deadline.
-//
-// Note: It is generally safe to call this with an earlier deadline
-// value than the current one, but not the reverse.  No checks are done
-// to ensure that the timer callback is not invoked while it is in the
-// process of being reset, which means that attempting to increase the
-// deadline may result in the timer being called twice.
-void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec new_deadline);
-
 // To be called from the client-side filter's start_transport_stream_op()
 // method.  Ensures that the deadline timer is cancelled when the call
 // is completed.

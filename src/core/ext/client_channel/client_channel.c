@@ -71,7 +71,8 @@
  */
 
 typedef enum {
-  WAIT_FOR_READY_UNSET,
+  /* zero so it can be default initialized */
+  WAIT_FOR_READY_UNSET = 0,
   WAIT_FOR_READY_FALSE,
   WAIT_FOR_READY_TRUE
 } wait_for_ready_value;
@@ -608,7 +609,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 #define CANCELLED_CALL ((grpc_subchannel_call *)1)
 
 typedef enum {
-  GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING,
+  /* zero so that it can be default-initialized */
+  GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING = 0,
   GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL
 } subchannel_creation_phase;
 
@@ -1066,8 +1068,8 @@ static void read_service_config_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 gpr_time_add(calld->call_start_time, method_params->timeout);
             if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
               calld->deadline = per_method_deadline;
-              // Reset deadline timer.
-              grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
+              // Start deadline timer.
+              grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
             }
           }
           if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
@@ -1082,85 +1084,20 @@ static void read_service_config_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
 }
 
-static void initial_read_service_config_locked(grpc_exec_ctx *exec_ctx,
-                                               void *arg,
-                                               grpc_error *error_ignored) {
-  grpc_call_element *elem = arg;
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  // If the resolver has already returned results, then we can access
-  // the service config parameters immediately.  Otherwise, we need to
-  // defer that work until the resolver returns an initial result.
-  // TODO(roth): This code is almost but not quite identical to the code
-  // in read_service_config() above.  It would be nice to find a way to
-  // combine them, to avoid having to maintain it twice.
-  if (chand->lb_policy != NULL) {
-    // We already have a resolver result, so check for service config.
-    if (chand->method_params_table != NULL) {
-      grpc_slice_hash_table *method_params_table =
-          grpc_slice_hash_table_ref(chand->method_params_table);
-      method_parameters *method_params = grpc_method_config_table_get(
-          exec_ctx, method_params_table, calld->path);
-      if (method_params != NULL) {
-        if (gpr_time_cmp(method_params->timeout,
-                         gpr_time_0(GPR_CLOCK_MONOTONIC)) != 0) {
-          gpr_timespec per_method_deadline =
-              gpr_time_add(calld->call_start_time, method_params->timeout);
-          calld->deadline = gpr_time_min(calld->deadline, per_method_deadline);
-        }
-        if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
-          calld->wait_for_ready_from_service_config =
-              method_params->wait_for_ready;
-        }
-      }
-      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
-    }
-  } else {
-    // We don't yet have a resolver result, so register a callback to
-    // get the service config data once the resolver returns.
-    // Take a reference to the call stack to be owned by the callback.
-    GRPC_CALL_STACK_REF(calld->owning_call, "read_service_config");
-    grpc_closure_init(&calld->read_service_config, read_service_config_locked,
-                      elem, grpc_combiner_scheduler(chand->combiner, false));
-    grpc_closure_list_append(&chand->waiting_for_config_closures,
-                             &calld->read_service_config, GRPC_ERROR_NONE);
-  }
-  // Start the deadline timer with the current deadline value.  If we
-  // do not yet have service config data, then the timer may be reset
-  // later.
-  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
-                        "initial_read_service_config");
-}
-
 /* Constructor for call_data */
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   // Initialize data members.
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
-  calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
-  calld->cancel_error = GRPC_ERROR_NONE;
-  gpr_atm_rel_store(&calld->subchannel_call, 0);
-  calld->connected_subchannel = NULL;
-  calld->waiting_ops = NULL;
-  calld->waiting_ops_count = 0;
-  calld->waiting_ops_capacity = 0;
-  calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   calld->owning_call = args->call_stack;
-  calld->pollent = NULL;
-  GRPC_CALL_STACK_REF(calld->owning_call, "initial_read_service_config");
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&calld->read_service_config,
-                        initial_read_service_config_locked, elem,
-                        grpc_combiner_scheduler(chand->combiner, false)),
-      GRPC_ERROR_NONE);
+  grpc_closure_init(&calld->read_service_config, read_service_config_locked,
+                    elem, grpc_combiner_scheduler(chand->combiner, false));
   return GRPC_ERROR_NONE;
 }
 
