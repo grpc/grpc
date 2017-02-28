@@ -89,7 +89,7 @@ void grpc_free_port_using_server(int port) {
   memset(&req, 0, sizeof(req));
   memset(&rsp, 0, sizeof(rsp));
 
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
   shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,
@@ -209,7 +209,7 @@ int grpc_pick_port_using_server(void) {
 
   memset(&pr, 0, sizeof(pr));
   memset(&req, 0, sizeof(req));
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
   shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,

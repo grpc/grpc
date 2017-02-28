@@ -45,6 +45,21 @@ cc_library(
 )
 
 cc_library(
+    name = "grpc++_proto_reflection_desc_db",
+    srcs = [
+        "proto_reflection_descriptor_database.cc",
+    ],
+    hdrs = [
+        "proto_reflection_descriptor_database.h",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:grpc++_config_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)
+
+cc_library(
     name = "test_util",
     srcs = [
         #        "test/cpp/end2end/test_service_impl.cc",

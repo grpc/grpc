@@ -67,7 +67,10 @@ columns = [
   ('svr_transport_stalls_per_iteration', 'float'),
   ('svr_stream_stalls_per_iteration', 'float'),
   ('atm_cas_per_iteration', 'float'),
-  ('atm_add_per_iteration', 'float')
+  ('atm_add_per_iteration', 'float'),
+  ('end_of_stream', 'boolean'),
+  ('header_bytes_per_iteration', 'float'),
+  ('framing_bytes_per_iteration', 'float'),
 ]
 
 if sys.argv[1] == '--schema':
@@ -104,10 +107,42 @@ bm_specs = {
     'tpl': [],
     'dyn': ['request_size', 'bandwidth_kilobits'],
   },
+  'BM_ErrorStringOnNewError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorStringRepeatedly': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatusCode': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorHttpError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_HasClearGrpcStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
   'BM_IsolatedFilter' : {
     'tpl': ['fixture', 'client_mutator'],
     'dyn': [],
-  }
+  },
+  'BM_HpackEncoderEncodeHeader' : {
+    'tpl': ['fixture'],
+    'dyn': ['end_of_stream', 'request_size'],
+  },
+  'BM_HpackParserParseHeader' : {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
 }
 
 def numericalize(s):

@@ -113,6 +113,32 @@ static void BM_Pass1Core(benchmark::State& state) {
 }
 BENCHMARK(BM_Pass1Core);
 
+static void BM_Pluck1Core(benchmark::State& state) {
+  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  while (state.KeepRunning()) {
+    grpc_cq_completion completion;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_cq_begin_op(cq, NULL);
+    grpc_cq_end_op(&exec_ctx, cq, NULL, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, NULL, &completion);
+    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_completion_queue_pluck(cq, NULL, deadline, NULL);
+  }
+  grpc_completion_queue_destroy(cq);
+}
+BENCHMARK(BM_Pluck1Core);
+
+static void BM_EmptyCore(benchmark::State& state) {
+  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  while (state.KeepRunning()) {
+    grpc_completion_queue_next(cq, deadline, NULL);
+  }
+  grpc_completion_queue_destroy(cq);
+}
+BENCHMARK(BM_EmptyCore);
+
 }  // namespace testing
 }  // namespace grpc
 

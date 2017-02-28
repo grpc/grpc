@@ -412,8 +412,7 @@ static grpc_security_connector_vtable fake_server_vtable = {
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
     grpc_call_credentials *request_metadata_creds, const char *target,
     const grpc_channel_args *args) {
-  grpc_fake_channel_security_connector *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  grpc_fake_channel_security_connector *c = gpr_zalloc(sizeof(*c));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
@@ -435,8 +434,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
 grpc_server_security_connector *grpc_fake_server_security_connector_create(
     void) {
   grpc_server_security_connector *c =
-      gpr_malloc(sizeof(grpc_server_security_connector));
-  memset(c, 0, sizeof(*c));
+      gpr_zalloc(sizeof(grpc_server_security_connector));
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
@@ -815,8 +813,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     pem_root_certs_size = config->pem_root_certs_size;
   }
 
-  c = gpr_malloc(sizeof(grpc_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
@@ -877,8 +874,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
     goto error;
   }
-  c = gpr_malloc(sizeof(grpc_ssl_server_security_connector));
-  memset(c, 0, sizeof(grpc_ssl_server_security_connector));
+  c = gpr_zalloc(sizeof(grpc_ssl_server_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
