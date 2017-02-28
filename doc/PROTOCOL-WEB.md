@@ -61,7 +61,7 @@ HTTP/2 related behavior (specified in [gRPC over HTTP2](http://www.grpc.io/docs/
 Message framing (vs. [http2-transport-mapping](http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
-  * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline).
+  * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline), per https://tools.ietf.org/html/rfc7230#section-3.2
   ```
     key1: foo\r\n
     key2: bar\r\n
