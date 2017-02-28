@@ -359,6 +359,7 @@ grpc_cc_library(
         "src/core/lib/support/env.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
+        "src/core/lib/support/spinlock.h",
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
