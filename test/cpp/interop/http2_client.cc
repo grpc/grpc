@@ -88,7 +88,7 @@ bool Http2Client::DoRstAfterHeader() {
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::UNKNOWN);
+  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
   GPR_ASSERT(!response.has_payload());  // no data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after header");
@@ -106,7 +106,7 @@ bool Http2Client::DoRstAfterData() {
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::UNKNOWN);
+  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
   GPR_ASSERT(response.has_payload());  // data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after data");
@@ -124,7 +124,7 @@ bool Http2Client::DoRstDuringData() {
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::UNKNOWN);
+  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
   GPR_ASSERT(!response.has_payload());  // no data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream during data");
@@ -134,20 +134,29 @@ bool Http2Client::DoRstDuringData() {
 bool Http2Client::DoGoaway() {
   gpr_log(GPR_DEBUG, "Sending two RPCs and expecting goaway");
 
-  int numCalls = 2;
-  for (int i = 0; i < numCalls; i++) {
-    ClientContext context;
-    SimpleRequest request;
-    SimpleResponse response;
-    request.set_response_size(kLargeResponseSize);
-    grpc::string payload(kLargeRequestSize, '\0');
-    request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+  SimpleRequest request;
+  request.set_response_size(kLargeResponseSize);
+  grpc::string payload(kLargeRequestSize, '\0');
+  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
-    Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-    AssertStatusCode(s, grpc::StatusCode::OK);
-    GPR_ASSERT(response.payload().body() ==
-               grpc::string(kLargeResponseSize, '\0'));
-  }
+  ClientContext context1;
+  SimpleResponse response1;
+  Status s = serviceStub_.Get()->UnaryCall(&context1, request, &response1);
+  AssertStatusCode(s, grpc::StatusCode::OK);
+  GPR_ASSERT(response1.payload().body() ==
+             grpc::string(kLargeResponseSize, '\0'));
+
+  // Sleep for one second to give time for client to receive goaway frame.
+  gpr_timespec sleep_time = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(1000, GPR_TIMESPAN));
+  gpr_sleep_until(sleep_time);
+
+  ClientContext context2;
+  SimpleResponse response2;
+  s = serviceStub_.Get()->UnaryCall(&context2, request, &response2);
+  AssertStatusCode(s, grpc::StatusCode::OK);
+  GPR_ASSERT(response2.payload().body() ==
+             grpc::string(kLargeResponseSize, '\0'));
 
   gpr_log(GPR_DEBUG, "Done testing goaway");
   return true;
@@ -240,7 +249,11 @@ int main(int argc, char** argv) {
   char host_port[host_port_buf_size];
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
-  grpc::testing::Http2Client client(grpc::CreateTestChannel(host_port, false));
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateTestChannel(host_port, false);
+  GPR_ASSERT(channel->WaitForConnected(gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(300, GPR_TIMESPAN))));
+  grpc::testing::Http2Client client(channel);
   gpr_log(GPR_INFO, "Testing case: %s", FLAGS_test_case.c_str());
   int ret = 0;
   if (FLAGS_test_case == "rst_after_header") {
