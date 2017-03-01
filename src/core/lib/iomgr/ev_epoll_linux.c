@@ -1503,7 +1503,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
     if (ep_rv < 0) {
       if (errno != EINTR) {
         gpr_asprintf(&err_msg,
-                     "epoll_wait() epoll fd: %d failed with error: %d (%s)",
+                     "epoll_pwait() epoll fd: %d failed with error: %d (%s)",
                      epoll_fd, errno, strerror(errno));
         append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
       } else {
@@ -1513,6 +1513,13 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
             "pollset_work: pollset: %p, worker: %p received kick",
             (void *)pollset, (void *)worker);
         ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
+        /* We shouldn't be able to be interrupted this time. */
+        if (ep_rv < 0) {
+          gpr_asprintf(&err_msg,
+                       "epoll_wait() epoll fd: %d failed with error: %d (%s)",
+                       epoll_fd, errno, strerror(errno));
+          append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+        }
       }
     }
 
@@ -1977,14 +1984,35 @@ static const grpc_event_engine_vtable vtable = {
 };
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
- * Create a dummy epoll_fd to make sure epoll support is available */
+ * Create a dummy epoll_fd to make sure epoll support is available,
+ * and wait on it at least once with both epoll_wait and epoll_pwait. */
 static bool is_epoll_available() {
   int fd = epoll_create1(EPOLL_CLOEXEC);
+  struct epoll_event ep_ev;
+  int ep_rv;
+  sigset_t sigmask;
   if (fd < 0) {
     gpr_log(
         GPR_ERROR,
         "epoll_create1 failed with error: %d. Not using epoll polling engine",
         fd);
+    return false;
+  }
+  ep_rv = epoll_wait(fd, &ep_ev, 1, 0);
+  if (ep_rv < 0) {
+    gpr_log(
+        GPR_ERROR,
+        "epoll_wait failed with error: %d. Not using epoll polling engine",
+        ep_rv);
+    return false;
+  }
+  sigemptyset(&sigmask);
+  ep_rv = epoll_pwait(fd, &ep_ev, 1, 0, &sigmask);
+  if (ep_rv < 0) {
+    gpr_log(
+        GPR_ERROR,
+        "epoll_pwait failed with error: %d. Not using epoll polling engine",
+        ep_rv);
     return false;
   }
   close(fd);
