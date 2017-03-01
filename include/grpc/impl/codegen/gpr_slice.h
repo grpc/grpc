@@ -79,6 +79,8 @@
 #define gpr_slice_buffer_move_first grpc_slice_buffer_move_first
 #define gpr_slice_buffer_take_first grpc_slice_buffer_take_first
 
+#define gpr_empty_slice grpc_empty_slice
+
 #endif /* GRPC_ALLOW_GPR_SLICE_FUNCTIONS */
 
 #endif /* GRPC_IMPL_CODEGEN_GPR_SLICE_H */
