@@ -56,10 +56,8 @@
         'GPR_BACKWARDS_COMPATIBILITY_MODE'
       ],
       'conditions': [
-        ['runtime=="node" and grpc_uv=="true"', {
+        ['grpc_uv=="true"', {
           'defines': [
-            # Disabling this while bugs are ironed out. Uncomment this to
-            # re-enable libuv integration in C core.
             'GRPC_UV'
           ]
         }],
