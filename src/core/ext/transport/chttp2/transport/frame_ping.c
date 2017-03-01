@@ -122,6 +122,8 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
         if (gpr_time_cmp(next_allowed_ping, now) > 0) {
           grpc_chttp2_ping_strike(exec_ctx, t);
         }
+
+        t->ping_recv_state.last_ping_recv_time = now;
       }
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
