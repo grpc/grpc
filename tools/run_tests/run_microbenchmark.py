@@ -209,6 +209,10 @@ argp.add_argument('-b', '--benchmarks',
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
+argp.add_argument('--diff_perf',
+                  default=None,
+                  type=str,
+                  help='Diff microbenchmarks against this git revision')
 argp.add_argument('--bigquery_upload',
                   default=False,
                   action='store_const',
@@ -223,6 +227,9 @@ args = argp.parse_args()
 for bm_name in args.benchmarks:
   for collect in args.collect:
     collectors[collect](bm_name, args)
+if args.diff_perf:
+  pass
+
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:
