@@ -92,7 +92,8 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CPPFLAGS_opt = -O2
+CPPFLAGS_opt = -O3 -flto
+LDFLAGS_opt = -O3 -flto
 DEFINES_opt = NDEBUG
 
 VALID_CONFIG_basicprof = 1
@@ -208,8 +209,8 @@ CC_mutrace = $(DEFAULT_CC)
 CXX_mutrace = $(DEFAULT_CXX)
 LD_mutrace = $(DEFAULT_CC)
 LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
-LDFLAGS_mutrace = -rdynamic
+CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer -flto
+LDFLAGS_mutrace = -rdynamic -O3 -flto
 DEFINES_mutrace = NDEBUG
 
 VALID_CONFIG_counters = 1
@@ -217,7 +218,8 @@ CC_counters = $(DEFAULT_CC)
 CXX_counters = $(DEFAULT_CXX)
 LD_counters = $(DEFAULT_CC)
 LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
+CPPFLAGS_counters = -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
+LDFLAGS_counters = -O3 -flto
 DEFINES_counters = NDEBUG
 
 
