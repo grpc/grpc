@@ -103,6 +103,7 @@ typedef struct {
   gpr_timespec last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
+  bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
 
 /* deframer state for the overall http2 stream of bytes */

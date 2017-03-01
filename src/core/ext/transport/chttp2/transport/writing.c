@@ -101,12 +101,14 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
               "Ping delayed [%p]: not enough time elapsed since last ping",
               t->peer_string);
     }
-
-    grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
-                    gpr_time_add(t->ping_state.last_ping_sent_time,
-                                 t->ping_policy.min_time_between_pings),
-                    &t->retry_initiate_ping_locked,
-                    gpr_now(GPR_CLOCK_MONOTONIC));
+    if (!t->ping_state.is_delayed_ping_timer_set) {
+      t->ping_state.is_delayed_ping_timer_set = true;
+      grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
+                      gpr_time_add(t->ping_state.last_ping_sent_time,
+                                   t->ping_policy.min_time_between_pings),
+                      &t->retry_initiate_ping_locked,
+                      gpr_now(GPR_CLOCK_MONOTONIC));
+    }
     return;
   }
   /* coalesce equivalent pings into this one */

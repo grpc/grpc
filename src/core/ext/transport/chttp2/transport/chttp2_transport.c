@@ -477,6 +477,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
+  t->ping_state.is_delayed_ping_timer_set = false;
 
   /** Start client-side keepalive pings */
   if (t->is_client) {
@@ -1395,6 +1396,7 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error) {
   grpc_chttp2_transport *t = tp;
+  t->ping_state.is_delayed_ping_timer_set = false;
   grpc_chttp2_initiate_write(exec_ctx, t, false, "retry_send_ping");
 }
 
