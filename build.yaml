@@ -3343,6 +3343,8 @@ targets:
   - grpc++
   - grpc
   - gpr
+  args:
+  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
 - name: grpc_cli
   build: test
   run: false

@@ -779,6 +779,7 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
