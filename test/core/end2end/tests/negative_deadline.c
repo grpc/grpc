@@ -124,11 +124,6 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -138,6 +133,11 @@ static void simple_request_body(grpc_end2end_test_config config,
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -175,7 +175,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
 
 void negative_deadline(grpc_end2end_test_config config) {
   size_t i;
-  for (i = 2; i <= 4; i++) {
+  for (i = 1; i <= 4; i++) {
     test_invoke_simple_request(config, i);
   }
 }
