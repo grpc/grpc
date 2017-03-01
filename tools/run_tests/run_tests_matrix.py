@@ -70,7 +70,8 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
   test_job = jobset.JobSpec(
-          cmdline=['tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
+          cmdline=['bash',
+                   'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
                    '-x', '../report_%s.xml' % name,
