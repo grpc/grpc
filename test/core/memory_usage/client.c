@@ -310,6 +310,26 @@ int main(int argc, char **argv) {
           server_calls_end.total_size_relative -
               after_server_create.total_size_relative);
 
+  const char *csv_file = "memory_usage.csv";
+  FILE *csv = fopen(csv_file, "w");
+  if (csv) {
+    fprintf(csv, "%f,%zi,%zi,%f,%zi\n",
+            (double)(client_calls_inflight.total_size_relative -
+                     client_benchmark_calls_start.total_size_relative) /
+                benchmark_iterations,
+            client_channel_end.total_size_relative -
+                client_channel_start.total_size_relative,
+            after_server_create.total_size_relative -
+                before_server_create.total_size_relative,
+            (double)(server_calls_inflight.total_size_relative -
+                     server_benchmark_calls_start.total_size_relative) /
+                benchmark_iterations,
+            server_calls_end.total_size_relative -
+                after_server_create.total_size_relative);
+    fclose(csv);
+    gpr_log(GPR_INFO, "Summary written to %s", csv_file);
+  }
+
   grpc_memory_counters_destroy();
   return 0;
 }
