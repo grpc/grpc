@@ -102,6 +102,7 @@ typedef struct {
 typedef struct {
   gpr_timespec last_ping_sent_time;
   int pings_before_data_required;
+  grpc_timer delayed_ping_timer;
 } grpc_chttp2_repeated_ping_state;
 
 /* deframer state for the overall http2 stream of bytes */
@@ -308,6 +309,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
+  grpc_closure retry_initiate_ping_locked;
 
   /** ping acks */
   size_t ping_ack_count;
