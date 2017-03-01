@@ -44,6 +44,7 @@ extern "C" {
 
 typedef struct gpr_allocation_functions {
   void *(*malloc_fn)(size_t size);
+  void *(*zalloc_fn)(size_t size); /* if NULL, uses malloc_fn then memset */
   void *(*realloc_fn)(void *ptr, size_t size);
   void (*free_fn)(void *ptr);
 } gpr_allocation_functions;
@@ -54,6 +55,8 @@ typedef struct gpr_allocation_functions {
  * contain.
  */
 GPRAPI void *gpr_malloc(size_t size);
+/* like malloc, but zero all bytes before returning them */
+GPRAPI void *gpr_zalloc(size_t size);
 /* free */
 GPRAPI void gpr_free(void *ptr);
 /* realloc, never returns NULL */

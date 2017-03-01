@@ -189,8 +189,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
-          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
-               mrd->request_metadata_.count),
+          ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {

@@ -62,6 +62,7 @@ typedef struct grpc_deadline_state {
 // elem->call_data is a grpc_deadline_state.
 //
 
+// assumes elem->call_data is zero'd
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,

@@ -39,11 +39,10 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
-_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
+_USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
-_EMPTY_METADATA = cygrpc.Metadata(())
 
 _UNARY_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
                             cygrpc.OperationType.send_message,
@@ -138,8 +137,8 @@ def _abort(state, code, details):
         state.code = code
         state.details = details
         if state.initial_metadata is None:
-            state.initial_metadata = _EMPTY_METADATA
-        state.trailing_metadata = _EMPTY_METADATA
+            state.initial_metadata = _common.EMPTY_METADATA
+        state.trailing_metadata = _common.EMPTY_METADATA
 
 
 def _handle_event(event, state, response_deserializer):
@@ -435,7 +434,7 @@ def _start_unary_request(request, timeout, request_serializer):
     deadline, deadline_timespec = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
-        state = _RPCState((), _EMPTY_METADATA, _EMPTY_METADATA,
+        state = _RPCState((), _common.EMPTY_METADATA, _common.EMPTY_METADATA,
                           grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
         rendezvous = _Rendezvous(state, None, None, deadline)

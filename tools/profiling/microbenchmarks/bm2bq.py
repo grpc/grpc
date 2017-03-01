@@ -67,7 +67,10 @@ columns = [
   ('svr_transport_stalls_per_iteration', 'float'),
   ('svr_stream_stalls_per_iteration', 'float'),
   ('atm_cas_per_iteration', 'float'),
-  ('atm_add_per_iteration', 'float')
+  ('atm_add_per_iteration', 'float'),
+  ('end_of_stream', 'boolean'),
+  ('header_bytes_per_iteration', 'float'),
+  ('framing_bytes_per_iteration', 'float'),
 ]
 
 if sys.argv[1] == '--schema':
@@ -76,6 +79,12 @@ if sys.argv[1] == '--schema':
 
 with open(sys.argv[1]) as f:
   js = json.loads(f.read())
+
+if len(sys.argv) > 2:
+  with open(sys.argv[2]) as f:
+    js2 = json.loads(f.read())
+else:
+  js2 = None
 
 writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
 
@@ -104,10 +113,42 @@ bm_specs = {
     'tpl': [],
     'dyn': ['request_size', 'bandwidth_kilobits'],
   },
+  'BM_ErrorStringOnNewError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorStringRepeatedly': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorGetStatusCode': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_ErrorHttpError': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_HasClearGrpcStatus': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
   'BM_IsolatedFilter' : {
     'tpl': ['fixture', 'client_mutator'],
     'dyn': [],
-  }
+  },
+  'BM_HpackEncoderEncodeHeader' : {
+    'tpl': ['fixture'],
+    'dyn': ['end_of_stream', 'request_size'],
+  },
+  'BM_HpackParserParseHeader' : {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
 }
 
 def numericalize(s):
@@ -180,4 +221,10 @@ for bm in js['benchmarks']:
   row.update(labels)
   if 'label' in row:
     del row['label']
+  if js2:
+    for bm2 in js2['benchmarks']:
+      if bm['name'] == bm2['name']:
+        row['cpu_time'] = bm2['cpu_time']
+        row['real_time'] = bm2['real_time']
+        row['iterations'] = bm2['iterations']
   writer.writerow(row)

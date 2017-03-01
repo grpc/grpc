@@ -38,7 +38,12 @@
 # https://n8.io/converting-a-c-library-to-gyp/
 {
   'variables': {
-    'runtime%': 'node'
+    'runtime%': 'node',
+    # UV integration in C core is disabled by default while bugs are ironed
+    # out. It can be re-enabled for one build by setting the npm config
+    # variable grpc_uv to true, and it can be re-enabled permanently by
+    # setting it to true here.
+    'grpc_uv%': 'false'
   },
   'target_defaults': {
     'include_dirs': [
@@ -49,7 +54,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE'
     ],
     'conditions': [
-      ['runtime=="node"', {
+      ['grpc_uv=="true"', {
         'defines': [
           'GRPC_UV'
         ]
@@ -68,19 +73,10 @@
           'OPENSSL_NO_ASM'
         ]
       }, {
-        # Based on logic above, we know that this must be a non-Windows system
-        'variables': {
-          # The output of "node --version" is "v[version]". We use cut to
-          # remove the first character.
-          'target%': '<!(node --version | cut -c2-)'
-        },
-        # Empirically, Node only exports ALPN symbols if its major version is >0.
-        # io.js always reports versions >0 and always exports ALPN symbols.
-        # Therefore, Node's major version will be truthy if and only if it
-        # supports ALPN. The target is "[major].[minor].[patch]". We split by
-        # periods and take the first field to get the major version.
+        # As of the beginning of 2017, we only support versions of Node with
+        # embedded versions of OpenSSL that support ALPN
         'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+          'TSI_OPENSSL_ALPN_SUPPORT=1'
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
@@ -890,6 +886,8 @@
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
+        "src/node/ext/server_generic.cc",
+        "src/node/ext/server_uv.cc",
         "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
