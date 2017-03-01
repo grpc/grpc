@@ -250,7 +250,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
         jobset.JobSpec(
             cmdline=['tools/run_tests/performance/remote_host_build.sh'] + languages,
             shortname='remote_host_build.%s' % host,
-            environ = {'USER_AT_HOST': user_at_host, 'CONFIG': 'opt'},
+            environ = {'USER_AT_HOST': user_at_host, 'CONFIG': 'lto'},
             timeout_seconds=build_timeout))
   if build_local:
     # Build locally as well
@@ -258,7 +258,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
         jobset.JobSpec(
             cmdline=['tools/run_tests/performance/build_performance.sh'] + languages,
             shortname='local_build',
-            environ = {'CONFIG': 'opt'},
+            environ = {'CONFIG': 'lto'},
             timeout_seconds=build_timeout))
   jobset.message('START', 'Building.', do_newline=True)
   num_failures, _ = jobset.run(

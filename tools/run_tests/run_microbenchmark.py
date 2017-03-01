@@ -183,7 +183,7 @@ def run_summary(cfg):
 
 def collect_summary(bm_name, args):
   heading('Summary: %s [no counters]' % bm_name)
-  text(run_summary('opt'))
+  text(run_summary('lto'))
   heading('Summary: %s [with counters]' % bm_name)
   text(run_summary('counters'))
   if args.bigquery_upload:
