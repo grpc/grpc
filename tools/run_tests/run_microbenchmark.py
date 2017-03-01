@@ -170,12 +170,12 @@ def collect_perf(bm_name, args):
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
-def run_summary(cfg):
+def run_summary(bm_name, cfg, base_json_name):
   subprocess.check_call(
       ['make', bm_name,
        'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
   cmd = ['bins/%s/%s' % (cfg, bm_name),
-         '--benchmark_out=out.%s.json' % cfg,
+         '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
          '--benchmark_out_format=json']
   if args.summary_time is not None:
     cmd += ['--benchmark_min_time=%d' % args.summary_time]
@@ -183,9 +183,9 @@ def run_summary(cfg):
 
 def collect_summary(bm_name, args):
   heading('Summary: %s [no counters]' % bm_name)
-  text(run_summary('opt'))
+  text(run_summary(bm_name, 'opt', 'out'))
   heading('Summary: %s [with counters]' % bm_name)
-  text(run_summary('counters'))
+  text(run_summary(bm_name, 'counters', 'out'))
   if args.bigquery_upload:
     with open('out.csv', 'w') as f:
       f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.counters.json', 'out.opt.json']))
@@ -233,8 +233,24 @@ for bm_name in args.benchmarks:
   for collect in args.collect:
     collectors[collect](bm_name, args)
 if args.diff_perf:
-  pass
-
+  for bm_name in args.benchmarks:
+    run_summary(bm_name, 'opt', '%s.new' % bm_name)
+  where_am_i = submodule.check_call(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+  submodule.check_call(['git', 'checkout', args.diff_perf])
+  comparables = []
+  try:
+    for bm_name in args.benchmarks:
+      try:
+        run_summary(bm_name, 'opt', '%s.old' % bm_name)
+        comparables.append(bm_name)
+      except subprocess.CalledProcessError, e:
+        pass
+  finally:
+    submodule.check_call(['git', 'checkout', where_am_i])
+  for bm_name in comparables:
+    submodule.check_call(['third_party/benchmark/tools/compare_bench.py',
+                          '%s.new.opt.json' % bm_name,
+                          '%s.old.opt.json' % bm_name])
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:
