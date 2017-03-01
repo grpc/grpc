@@ -80,6 +80,12 @@ if sys.argv[1] == '--schema':
 with open(sys.argv[1]) as f:
   js = json.loads(f.read())
 
+if len(sys.argv) > 2:
+  with open(sys.argv[2]) as f:
+    js2 = json.loads(f.read())
+else:
+  js2 = None
+
 writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
 
 bm_specs = {
@@ -219,4 +225,10 @@ for bm in js['benchmarks']:
   row.update(labels)
   if 'label' in row:
     del row['label']
+  if js2:
+    for bm2 in js2['benchmarks']:
+      if bm['name'] == bm2['name']:
+        row['cpu_time'] = bm2['cpu_time']
+        row['real_time'] = bm2['real_time']
+        row['iterations'] = bm2['iterations']
   writer.writerow(row)
