@@ -65,7 +65,9 @@ Http2Client::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel)
 TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
 
 Http2Client::Http2Client(std::shared_ptr<Channel> channel)
-    : serviceStub_(channel), channel_(channel) {}
+    : serviceStub_(channel),
+      channel_(channel),
+      defaultRequest_(BuildDefaultRequest()) {}
 
 bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
   if (s.error_code() == expected_code) {
@@ -77,18 +79,24 @@ bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
   abort();
 }
 
-bool Http2Client::DoRstAfterHeader() {
-  gpr_log(GPR_DEBUG, "Sending RPC and expecting reset stream after header");
-
+Status Http2Client::SendUnaryCall(SimpleResponse* response) {
   ClientContext context;
+  return serviceStub_.Get()->UnaryCall(&context, defaultRequest_, response);
+}
+
+SimpleRequest Http2Client::BuildDefaultRequest() {
   SimpleRequest request;
-  SimpleResponse response;
   request.set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+  return request;
+}
 
-  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
+bool Http2Client::DoRstAfterHeader() {
+  gpr_log(GPR_DEBUG, "Sending RPC and expecting reset stream after header");
+
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
   GPR_ASSERT(!response.has_payload());  // no data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after header");
@@ -98,15 +106,8 @@ bool Http2Client::DoRstAfterHeader() {
 bool Http2Client::DoRstAfterData() {
   gpr_log(GPR_DEBUG, "Sending RPC and expecting reset stream after data");
 
-  ClientContext context;
-  SimpleRequest request;
   SimpleResponse response;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
   GPR_ASSERT(response.has_payload());  // data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after data");
@@ -116,15 +117,8 @@ bool Http2Client::DoRstAfterData() {
 bool Http2Client::DoRstDuringData() {
   gpr_log(GPR_DEBUG, "Sending RPC and expecting reset stream during data");
 
-  ClientContext context;
-  SimpleRequest request;
   SimpleResponse response;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::INTERNAL);
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
   GPR_ASSERT(!response.has_payload());  // no data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream during data");
@@ -133,65 +127,37 @@ bool Http2Client::DoRstDuringData() {
 
 bool Http2Client::DoGoaway() {
   gpr_log(GPR_DEBUG, "Sending two RPCs and expecting goaway");
-
-  SimpleRequest request;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  ClientContext context1;
-  SimpleResponse response1;
-  Status s = serviceStub_.Get()->UnaryCall(&context1, request, &response1);
-  AssertStatusCode(s, grpc::StatusCode::OK);
-  GPR_ASSERT(response1.payload().body() ==
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
 
   // Sleep for one second to give time for client to receive goaway frame.
   gpr_timespec sleep_time = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(1000, GPR_TIMESPAN));
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1, GPR_TIMESPAN));
   gpr_sleep_until(sleep_time);
 
-  ClientContext context2;
-  SimpleResponse response2;
-  s = serviceStub_.Get()->UnaryCall(&context2, request, &response2);
-  AssertStatusCode(s, grpc::StatusCode::OK);
-  GPR_ASSERT(response2.payload().body() ==
+  response.Clear();
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
-
   gpr_log(GPR_DEBUG, "Done testing goaway");
   return true;
 }
 
 bool Http2Client::DoPing() {
   gpr_log(GPR_DEBUG, "Sending RPC and expecting ping");
-
-  ClientContext context;
-  SimpleRequest request;
   SimpleResponse response;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::OK);
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
-
   gpr_log(GPR_DEBUG, "Done testing ping");
   return true;
 }
 
 void Http2Client::MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel) {
-  ClientContext context;
-  SimpleRequest request;
   SimpleResponse response;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  Status s =
-      TestService::NewStub(channel)->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::OK);
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
 }
@@ -201,15 +167,8 @@ bool Http2Client::DoMaxStreams() {
 
   // Make an initial call on the channel to ensure the server's max streams
   // setting is received
-  ClientContext context;
-  SimpleRequest request;
   SimpleResponse response;
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-  Status s =
-      TestService::NewStub(channel_)->UnaryCall(&context, request, &response);
-  AssertStatusCode(s, grpc::StatusCode::OK);
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
 
