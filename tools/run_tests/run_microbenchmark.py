@@ -200,7 +200,7 @@ collectors = {
 argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
 argp.add_argument('-c', '--collect',
                   choices=sorted(collectors.keys()),
-                  nargs='+',
+                  nargs='*',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
@@ -235,8 +235,8 @@ for bm_name in args.benchmarks:
 if args.diff_perf:
   for bm_name in args.benchmarks:
     run_summary(bm_name, 'opt', '%s.new' % bm_name)
-  where_am_i = submodule.check_call(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-  submodule.check_call(['git', 'checkout', args.diff_perf])
+  where_am_i = subprocess.check_call(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+  subprocess.check_call(['git', 'checkout', args.diff_perf])
   comparables = []
   try:
     for bm_name in args.benchmarks:
@@ -246,9 +246,9 @@ if args.diff_perf:
       except subprocess.CalledProcessError, e:
         pass
   finally:
-    submodule.check_call(['git', 'checkout', where_am_i])
+    subprocess.check_call(['git', 'checkout', where_am_i])
   for bm_name in comparables:
-    submodule.check_call(['third_party/benchmark/tools/compare_bench.py',
+    subprocess.check_call(['third_party/benchmark/tools/compare_bench.py',
                           '%s.new.opt.json' % bm_name,
                           '%s.old.opt.json' % bm_name])
 
