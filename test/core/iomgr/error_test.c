@@ -61,11 +61,14 @@ static void test_set_get_int()
   error = grpc_error_set_int(error, GRPC_ERROR_INT_FILE_LINE, line);
   GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
   GPR_ASSERT(i == line);
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static void test_set_get_str()
 {
   grpc_error* error = GRPC_ERROR_CREATE("Test");
+
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL));
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR));
 
@@ -86,10 +89,13 @@ static void test_set_get_str()
   c = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
   GPR_ASSERT(c);
   GPR_ASSERT(!strcmp(c, "new desc"));
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static void test_copy_and_unref()
 {
+  // error1 has one ref
   grpc_error* error1 = GRPC_ERROR_CREATE("Test");
   grpc_error* error2 = grpc_error_set_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   const char* c = grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE);
@@ -100,7 +106,9 @@ static void test_copy_and_unref()
   GPR_ASSERT(!strcmp(c, "message"));
   GPR_ASSERT(error1 == error2);
 
+  // error 1 has two refs
   GRPC_ERROR_REF(error1);
+  // this gives error3 a ref to the new error, and decrements error1 to one ref
   grpc_error* error3 = grpc_error_set_str(error1, GRPC_ERROR_STR_DESCRIPTION, "reset");
   GPR_ASSERT(error3 != error1); // should not be the same because of extra ref
   c = grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE);
@@ -114,6 +122,9 @@ static void test_copy_and_unref()
   c = grpc_error_get_str(error3, GRPC_ERROR_STR_DESCRIPTION);
   GPR_ASSERT(c);
   GPR_ASSERT(!strcmp(c, "reset"));
+
+  GRPC_ERROR_UNREF(error1);
+  GRPC_ERROR_UNREF(error3);
 }
 
 static void print_error_strings()
@@ -125,6 +136,7 @@ static void print_error_strings()
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+  GRPC_ERROR_UNREF(error);
 }
 
 int main(int argc, char **argv) {
