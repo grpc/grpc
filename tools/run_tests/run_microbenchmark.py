@@ -238,6 +238,7 @@ if args.diff_perf:
   where_am_i = subprocess.check_call(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
   subprocess.check_call(['git', 'checkout', args.diff_perf])
   comparables = []
+  subprocess.check_call(['make', 'clean'])
   try:
     for bm_name in args.benchmarks:
       try:
