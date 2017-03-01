@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +27,51 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+licenses(["notice"])  # 3-clause BSD
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop.sh"
-# grpc_interop tests can take 6+ hours to complete.
-timeout_mins: 480
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-  }
-}
+cc_test(
+    name = "codegen_test_full",
+    srcs = ["codegen_test_full.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+cc_test(
+    name = "codegen_test_minimal",
+    srcs = ["codegen_test_minimal.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+cc_test(
+    name = "proto_utils_test",
+    srcs = ["proto_utils_test.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+cc_test(
+    name = "golden_file_test",
+    srcs = ["golden_file_test.cc"],
+    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h"],
+    data = [
+        ":compiler_test_golden",
+        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
+    ],
+    deps = [
+        "//:grpc++",
+        "//external:gflags",
+        "//external:gtest",
+        "//src/proto/grpc/testing:compiler_test_proto",
+        "//test/core/util:gpr_test_util",
+    ],
+)

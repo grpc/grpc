@@ -37,6 +37,5 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --use_docker --http2_interop -t -j 12 $@ || FAILED="true"
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_badserver_interop $@ || FAILED="true"
-tools/run_tests/run_interop_tests.py -l python --use_docker --http2_badserver_interop $@ || FAILED="true"
+tools/run_tests/run_interop_tests.py -l java --use_docker --http2_badserver_interop $@
+

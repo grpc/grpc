@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);

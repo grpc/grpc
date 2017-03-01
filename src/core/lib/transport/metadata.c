@@ -130,8 +130,7 @@ void grpc_mdctx_global_init(void) {
     shard->count = 0;
     gpr_atm_no_barrier_store(&shard->free_estimate, 0);
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->elems = gpr_malloc(sizeof(*shard->elems) * shard->capacity);
-    memset(shard->elems, 0, sizeof(*shard->elems) * shard->capacity);
+    shard->elems = gpr_zalloc(sizeof(*shard->elems) * shard->capacity);
   }
 }
 
@@ -216,8 +215,7 @@ static void grow_mdtab(mdtab_shard *shard) {
 
   GPR_TIMER_BEGIN("grow_mdtab", 0);
 
-  mdtab = gpr_malloc(sizeof(interned_metadata *) * capacity);
-  memset(mdtab, 0, sizeof(interned_metadata *) * capacity);
+  mdtab = gpr_zalloc(sizeof(interned_metadata *) * capacity);
 
   for (i = 0; i < shard->capacity; i++) {
     for (md = shard->elems[i]; md; md = next) {

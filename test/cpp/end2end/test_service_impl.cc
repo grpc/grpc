@@ -88,6 +88,10 @@ void CheckServerAuthContext(
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  if (request->has_param() && request->param().server_die()) {
+    gpr_log(GPR_ERROR, "The request should not reach application handler.");
+    GPR_ASSERT(0);
+  }
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel > DO_NOT_CANCEL) {

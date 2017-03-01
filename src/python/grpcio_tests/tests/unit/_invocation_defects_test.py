@@ -249,3 +249,7 @@ class InvocationDefectsTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             for _ in range(test_constants.STREAM_LENGTH // 2 + 1):
                 next(response_iterator)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

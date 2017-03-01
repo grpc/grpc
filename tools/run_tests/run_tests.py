@@ -38,6 +38,7 @@ import collections
 import glob
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import os.path
@@ -84,8 +85,8 @@ def run_shell_command(cmd, env=None, cwd=None):
   try:
     subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
   except subprocess.CalledProcessError as e:
-    print("Error while running command '%s'. Exit status %d. Output:\n%s",
-          e.cmd, e.returncode, e.output)
+    logging.exception("Error while running command '%s'. Exit status %d. Output:\n%s",
+                       e.cmd, e.returncode, e.output)
     raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -306,9 +307,9 @@ class CLanguage(object):
                 assert base is not None
                 assert line[1] == ' '
                 test = base + line.strip()
-                cmdline = [binary] + ['--gtest_filter=%s' % test]
+                cmdline = [binary, '--gtest_filter=%s' % test] + target['args']
                 out.append(self.config.job_spec(cmdline,
-                                                shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
+                                                shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
                                                 timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
@@ -423,9 +424,13 @@ class NodeLanguage(object):
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3'])
+    if args.iomgr_platform == "uv":
+      self.use_uv = True
+    else:
+      self.use_uv = False
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '4'
+      self.node_version = '7'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -454,7 +459,8 @@ class NodeLanguage(object):
       build_script = 'pre_build_node'
       if self.runtime == 'electron':
         build_script += '_electron'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version]]
 
   def make_targets(self):
     return []
@@ -464,14 +470,22 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
+      if self.config == 'dbg':
+        config_flag = '--debug'
+      else:
+        config_flag = '--release'
+      return [['tools\\run_tests\\helper_scripts\\build_node.bat',
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
+               config_flag]]
     else:
       build_script = 'build_node'
       if self.runtime == 'electron':
         build_script += '_electron'
         # building for electron requires a patch version
         self.node_version += '.0'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version,
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
 
   def post_tests_steps(self):
     return []

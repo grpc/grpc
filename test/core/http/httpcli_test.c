@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_httpcli_context_init(&g_context);
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_mu);
   g_pops = grpc_polling_entity_create_from_pollset(pollset);
 

@@ -170,20 +170,25 @@ def collect_perf(bm_name, args):
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
-def collect_summary(bm_name, args):
-  heading('Summary: %s' % bm_name)
+def run_summary(cfg):
   subprocess.check_call(
       ['make', bm_name,
-       'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
-  cmd = ['bins/counters/%s' % bm_name,
-         '--benchmark_out=out.json',
+       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  cmd = ['bins/%s/%s' % (cfg, bm_name),
+         '--benchmark_out=out.%s.json' % cfg,
          '--benchmark_out_format=json']
   if args.summary_time is not None:
     cmd += ['--benchmark_min_time=%d' % args.summary_time]
-  text(subprocess.check_output(cmd))
+  return subprocess.check_output(cmd)
+
+def collect_summary(bm_name, args):
+  heading('Summary: %s [no counters]' % bm_name)
+  text(run_summary('opt'))
+  heading('Summary: %s [with counters]' % bm_name)
+  text(run_summary('counters'))
   if args.bigquery_upload:
     with open('out.csv', 'w') as f:
-      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
+      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.counters.json', 'out.opt.json']))
     subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
 
 collectors = {
@@ -204,7 +209,8 @@ argp.add_argument('-b', '--benchmarks',
                            'bm_cq',
                            'bm_call_create',
                            'bm_error',
-                           'bm_chttp2_hpack'],
+                           'bm_chttp2_hpack',
+                           'bm_metadata'],
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
