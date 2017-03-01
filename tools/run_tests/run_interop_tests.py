@@ -474,8 +474,7 @@ _HTTP2_TEST_CASES = ['tls', 'framing']
 _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
                      'goaway', 'ping', 'max_streams']
 
-# TODO: Add python once the tests are fixed.
-_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go']
+_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
