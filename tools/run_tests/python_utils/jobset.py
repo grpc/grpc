@@ -474,7 +474,8 @@ def run(cmdlines,
         stop_on_failure=False,
         add_env={},
         skip_jobs=False,
-        quiet_success=False):
+        quiet_success=False,
+        until_secs=float('inf')):
   if skip_jobs:
     results = {}
     skipped_job_result = JobResult()
@@ -487,8 +488,11 @@ def run(cmdlines,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
               quiet_success)
+  start_time = time.time()
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
+      break
+    if time.time() - start_time > until_secs:
       break
     if remaining is not None:
       js.set_remaining(remaining)
