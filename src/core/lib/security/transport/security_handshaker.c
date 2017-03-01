@@ -387,8 +387,7 @@ static const grpc_handshaker_vtable security_handshaker_vtable = {
 static grpc_handshaker *security_handshaker_create(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector) {
-  security_handshaker *h = gpr_malloc(sizeof(security_handshaker));
-  memset(h, 0, sizeof(security_handshaker));
+  security_handshaker *h = gpr_zalloc(sizeof(security_handshaker));
   grpc_handshaker_init(&security_handshaker_vtable, &h->base);
   h->handshaker = handshaker;
   h->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "handshake");

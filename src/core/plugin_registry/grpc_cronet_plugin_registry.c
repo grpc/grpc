@@ -37,10 +37,14 @@ extern void grpc_chttp2_plugin_init(void);
 extern void grpc_chttp2_plugin_shutdown(void);
 extern void grpc_client_channel_init(void);
 extern void grpc_client_channel_shutdown(void);
+extern void grpc_load_reporting_plugin_init(void);
+extern void grpc_load_reporting_plugin_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init,
                        grpc_chttp2_plugin_shutdown);
   grpc_register_plugin(grpc_client_channel_init,
                        grpc_client_channel_shutdown);
+  grpc_register_plugin(grpc_load_reporting_plugin_init,
+                       grpc_load_reporting_plugin_shutdown);
 }

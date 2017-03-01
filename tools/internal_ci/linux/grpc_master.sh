@@ -40,6 +40,9 @@ gcc --version || true
 clang --version || true
 docker --version || true
 
+# Need to increase open files limit for c tests
+ulimit -n 2000
+
 git submodule update --init
 
 tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"

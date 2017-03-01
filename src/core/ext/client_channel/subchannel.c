@@ -316,8 +316,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     return c;
   }
 
-  c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  c = gpr_zalloc(sizeof(*c));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -438,7 +437,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
-  follow_up->cb(exec_ctx, follow_up->cb_arg, error);
+  grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -765,7 +764,7 @@ grpc_error *grpc_connected_subchannel_create_call(
     grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
     gpr_timespec deadline, grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
-  *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
+  *call = gpr_zalloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = con;  // Ref is added below.
   grpc_error *error =

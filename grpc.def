@@ -182,6 +182,7 @@ EXPORTS
     grpc_slice_buffer_take_first
     grpc_slice_buffer_undo_take_first
     gpr_malloc
+    gpr_zalloc
     gpr_free
     gpr_realloc
     gpr_malloc_aligned
