@@ -4,7 +4,7 @@
     "version": "${settings.csharp_version}",
     "title": "gRPC C# Core",
     "authors": [ "Google Inc." ],
-    "copyright": "Copyright 2015, Google Inc.",
+    "copyright": "Copyright 2015, gRPC authors",
     "packOptions": {
       "summary": "Core C# implementation of gRPC - an RPC library and framework",
       "description": "Core C# implementation of gRPC - an RPC library and framework. See project site for more info.",

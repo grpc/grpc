@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016, gRPC authors
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 /* Automatically generated nanopb constant definitions */
@@ -129,7 +114,6 @@ const pb_field_t google_census_Aggregation_fields[7] = {
     PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Aggregation, name, name, 0),
     PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_Aggregation, description, name, 0),
     PB_ONEOF_FIELD(data,   3, UINT64  , ONEOF, STATIC  , OTHER, google_census_Aggregation, count, description, 0),
-    PB_ONEOF_FIELD(data,   4, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, distribution, description, &google_census_Distribution_fields),
     PB_ONEOF_FIELD(data,   5, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, interval_stats, description, &google_census_IntervalStats_fields),
     PB_FIELD(  6, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Aggregation, tag, data.interval_stats, &google_census_Tag_fields),
     PB_LAST_FIELD
@@ -153,7 +137,6 @@ const pb_field_t google_census_Metric_fields[5] = {
  * numbers or field sizes that are larger than what can fit in 8 or 16 bit
  * field descriptors.
  */
-PB_STATIC_ASSERT((pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Aggregation, tag) < 65536 && pb_membersize(google_census_Metric, aggregation) < 65536 && pb_membersize(google_census_Metric, start) < 65536 && pb_membersize(google_census_Metric, end) < 65536), YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Resource_google_census_Resource_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_Metric)
 #endif
 
 #if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT)
@@ -164,7 +147,6 @@ PB_STATIC_ASSERT((pb_membersize(google_census_Resource, unit) < 65536 && pb_memb
  * numbers or field sizes that are larger than what can fit in the default
  * 8 bit descriptors.
  */
-PB_STATIC_ASSERT((pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Aggregation, tag) < 256 && pb_membersize(google_census_Metric, aggregation) < 256 && pb_membersize(google_census_Metric, start) < 256 && pb_membersize(google_census_Metric, end) < 256), YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Resource_google_census_Resource_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_Metric)
 #endif
 
 

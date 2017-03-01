@@ -146,7 +146,6 @@ namespace Grpc.Testing {
 
   #region Messages
   /// <summary>
-  ///  Parameters of poisson process distribution, which is a good representation
   ///  of activity coming in from independent identical stationary sources.
   /// </summary>
   public sealed partial class PoissonParams : pb::IMessage<PoissonParams> {
@@ -185,7 +184,6 @@ namespace Grpc.Testing {
     public const int OfferedLoadFieldNumber = 1;
     private double offeredLoad_;
     /// <summary>
-    ///  The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double OfferedLoad {

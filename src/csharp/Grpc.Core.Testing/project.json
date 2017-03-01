@@ -2,7 +2,7 @@
   "version": "1.2.0-dev",
   "title": "gRPC C# Core Testing",
   "authors": [ "Google Inc." ],
-  "copyright": "Copyright 2017, Google Inc.",
+  "copyright": "Copyright 2017, gRPC authors",
   "packOptions": {
     "summary": "Testing support for gRPC C#",
     "description": "Useful when testing code that uses gRPC.",

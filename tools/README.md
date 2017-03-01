@@ -1,6 +1,5 @@
 buildgen: Template renderer for our build system.
 
-distrib: Scripts to distribute language-specific packages and other distribution-related helper scripts.
 
 dockerfile: Docker files to test gRPC.
 

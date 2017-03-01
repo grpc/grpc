@@ -39,7 +39,6 @@ to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
 You might also need to install Cython to handle installation via the source
-distribution if gRPC Python's system coverage with wheels does not happen to
 include your system.
 
 From Source
@@ -98,7 +97,6 @@ Help, I ...
 
     sudo pip install --ignore-installed six
 
-* **... see compiler errors on some platforms when either installing from source or from the source distribution**
 
   If you see
 
@@ -169,7 +167,6 @@ installed). One way to work around this can be found in our
     # ...
     def run(self):
       from grpc.tools import command
-      command.build_package_protos(self.distribution.package_dir[''])
 
 Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the
 command on-setup as desired.
