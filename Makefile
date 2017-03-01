@@ -3319,10 +3319,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
-    test/core/util/port_posix.c \
+    test/core/util/port.c \
     test/core/util/port_server_client.c \
-    test/core/util/port_uv.c \
-    test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
     src/core/lib/channel/channel_args.c \
@@ -3521,10 +3519,8 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
-    test/core/util/port_posix.c \
+    test/core/util/port.c \
     test/core/util/port_server_client.c \
-    test/core/util/port_uv.c \
-    test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
 

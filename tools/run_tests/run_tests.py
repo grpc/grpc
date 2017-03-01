@@ -1451,8 +1451,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 32766
-  start_port_server.start_port_server(port_server_port)
+  start_port_server.start_port_server()
   resultset = None
   num_test_failures = 0
   try:
@@ -1495,7 +1494,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)
     if resultset:
       for k, v in sorted(resultset.items()):

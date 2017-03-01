@@ -34,16 +34,10 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
