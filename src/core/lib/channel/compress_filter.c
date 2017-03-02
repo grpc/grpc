@@ -231,9 +231,9 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  while (grpc_byte_stream_next(exec_ctx, calld->send_op->send_message,
-                               &calld->incoming_slice, ~(size_t)0,
-                               &calld->got_slice)) {
+  while (grpc_byte_stream_next(
+      exec_ctx, calld->send_op->payload->send_message.send_message,
+      &calld->incoming_slice, ~(size_t)0, &calld->got_slice)) {
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
       finish_send_message(exec_ctx, elem);
@@ -251,17 +251,18 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 
   if (op->send_initial_metadata) {
     grpc_error *error = process_send_initial_metadata(
-        exec_ctx, elem, op->send_initial_metadata);
+        exec_ctx, elem,
+        op->payload->send_initial_metadata.send_initial_metadata);
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
       return;
     }
   }
-  if (op->send_message != NULL &&
-      !skip_compression(elem, op->send_message->flags)) {
+  if (op->send_message &&
+      !skip_compression(elem, op->payload->send_message.send_message->flags)) {
     calld->send_op = op;
-    calld->send_length = op->send_message->length;
-    calld->send_flags = op->send_message->flags;
+    calld->send_length = op->payload->send_message.send_message->length;
+    calld->send_flags = op->payload->send_message.send_message->flags;
     continue_send_message(exec_ctx, elem);
   } else {
     /* pass control down the stack */
