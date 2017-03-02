@@ -61,6 +61,7 @@ HAS_GCC = $(shell which gcc > /dev/null 2> /dev/null && echo true || echo false)
 HAS_CC = $(shell which cc > /dev/null 2> /dev/null && echo true || echo false)
 HAS_CLANG = $(shell which clang > /dev/null 2> /dev/null && echo true || echo false)
 
+DEFAULT_AR = ar rcs
 ifeq ($(HAS_CC),true)
 DEFAULT_CC = cc
 DEFAULT_CXX = c++
@@ -92,6 +93,7 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
+AR_opt = $(DEFAULT_AR)
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
@@ -101,6 +103,7 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang
 LDXX_asan-trace-cmp = clang++
+AR_asan-trace-cmp = $(DEFAULT_AR)
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
@@ -109,6 +112,7 @@ CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
+AR_dbg = $(DEFAULT_AR)
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -118,6 +122,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
+AR_asan = $(DEFAULT_AR)
 CPPFLAGS_asan = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan = -fsanitize=address
 
@@ -127,6 +132,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang
 LDXX_msan = clang++
+AR_msan = $(DEFAULT_AR)
 CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
@@ -136,6 +142,7 @@ CC_basicprof = $(DEFAULT_CC)
 CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
+AR_basicprof = $(DEFAULT_AR)
 CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
 DEFINES_basicprof = NDEBUG
 
@@ -144,6 +151,7 @@ CC_helgrind = $(DEFAULT_CC)
 CXX_helgrind = $(DEFAULT_CXX)
 LD_helgrind = $(DEFAULT_CC)
 LDXX_helgrind = $(DEFAULT_CXX)
+AR_helgrind = $(DEFAULT_AR)
 CPPFLAGS_helgrind = -O0
 LDFLAGS_helgrind = -rdynamic
 DEFINES_helgrind = _DEBUG DEBUG
@@ -154,6 +162,7 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang
 LDXX_asan-noleaks = clang++
+AR_asan-noleaks = $(DEFAULT_AR)
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
@@ -163,6 +172,7 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
+AR_ubsan = $(DEFAULT_AR)
 CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
 LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG
@@ -173,6 +183,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
+AR_tsan = $(DEFAULT_AR)
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
@@ -182,6 +193,7 @@ CC_stapprof = $(DEFAULT_CC)
 CXX_stapprof = $(DEFAULT_CXX)
 LD_stapprof = $(DEFAULT_CC)
 LDXX_stapprof = $(DEFAULT_CXX)
+AR_stapprof = $(DEFAULT_AR)
 CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
 DEFINES_stapprof = NDEBUG
 
@@ -190,6 +202,7 @@ CC_gcov = gcc
 CXX_gcov = g++
 LD_gcov = gcc
 LDXX_gcov = g++
+AR_gcov = $(DEFAULT_AR)
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
 DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
@@ -199,6 +212,7 @@ CC_memcheck = $(DEFAULT_CC)
 CXX_memcheck = $(DEFAULT_CXX)
 LD_memcheck = $(DEFAULT_CC)
 LDXX_memcheck = $(DEFAULT_CXX)
+AR_memcheck = $(DEFAULT_AR)
 CPPFLAGS_memcheck = -O0
 LDFLAGS_memcheck = -rdynamic
 DEFINES_memcheck = _DEBUG DEBUG
@@ -208,6 +222,7 @@ CC_lto = $(DEFAULT_CC)
 CXX_lto = $(DEFAULT_CXX)
 LD_lto = $(DEFAULT_CC)
 LDXX_lto = $(DEFAULT_CXX)
+AR_lto = gcc-ar rcs
 CPPFLAGS_lto = -O3 -flto
 LDFLAGS_lto = -O3 -flto
 DEFINES_lto = NDEBUG
@@ -217,6 +232,7 @@ CC_mutrace = $(DEFAULT_CC)
 CXX_mutrace = $(DEFAULT_CXX)
 LD_mutrace = $(DEFAULT_CC)
 LDXX_mutrace = $(DEFAULT_CXX)
+AR_mutrace = $(DEFAULT_AR)
 CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer -flto
 LDFLAGS_mutrace = -rdynamic -O3 -flto
 DEFINES_mutrace = NDEBUG
@@ -226,6 +242,7 @@ CC_counters = $(DEFAULT_CC)
 CXX_counters = $(DEFAULT_CXX)
 LD_counters = $(DEFAULT_CC)
 LDXX_counters = $(DEFAULT_CXX)
+AR_counters = gcc-ar rcs
 CPPFLAGS_counters = -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
 LDFLAGS_counters = -O3 -flto
 DEFINES_counters = NDEBUG
@@ -262,7 +279,7 @@ endif
 LDXX ?= $(LDXX_$(CONFIG))
 ifeq ($(SYSTEM),Linux)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = $(AR_$(CONFIG))
 endif
 STRIP ?= strip --strip-unneeded
 else

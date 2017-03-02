@@ -96,6 +96,7 @@
   HAS_CC = $(shell which cc > /dev/null 2> /dev/null && echo true || echo false)
   HAS_CLANG = $(shell which clang > /dev/null 2> /dev/null && echo true || echo false)
 
+  DEFAULT_AR = ar rcs
   ifeq ($(HAS_CC),true)
   DEFAULT_CC = cc
   DEFAULT_CXX = c++
@@ -127,7 +128,7 @@
   %  if args.get('compile_the_world', False):
   REQUIRE_CUSTOM_LIBRARIES_${name} = 1
   %  endif
-  %  for tool, default in [('CC', 'CC'), ('CXX', 'CXX'), ('LD', 'CC'), ('LDXX', 'CXX')]:
+  %  for tool, default in [('CC', 'CC'), ('CXX', 'CXX'), ('LD', 'CC'), ('LDXX', 'CXX'), ('AR', 'AR')]:
   ${tool}_${name} = ${args.get(tool, '$(DEFAULT_%s)' % default)}
   %  endfor
   %  for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
@@ -169,7 +170,7 @@
   LDXX ?= $(LDXX_$(CONFIG))
   ifeq ($(SYSTEM),Linux)
   ifeq ($(origin AR), default)
-  AR = ar rcs
+  AR = $(AR_$(CONFIG))
   endif
   STRIP ?= strip --strip-unneeded
   else

@@ -4031,6 +4031,7 @@ configs:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
   counters:
+    AR: gcc-ar rcs
     CPPFLAGS: -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
     LDFLAGS: -O3 -flto
@@ -4051,6 +4052,7 @@ configs:
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
   lto:
+    AR: gcc-ar rcs
     CPPFLAGS: -O3 -flto
     DEFINES: NDEBUG
     LDFLAGS: -O3 -flto
