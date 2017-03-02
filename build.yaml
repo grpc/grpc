@@ -4031,9 +4031,8 @@ configs:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
   counters:
-    CPPFLAGS: -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
+    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
-    LDFLAGS: -O3 -flto
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -4050,10 +4049,6 @@ configs:
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
-  lto:
-    CPPFLAGS: -O3 -flto
-    DEFINES: NDEBUG
-    LDFLAGS: -O3 -flto
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -4072,9 +4067,9 @@ configs:
     LDXX: clang++
     compile_the_world: true
   mutrace:
-    CPPFLAGS: -O3 -fno-omit-frame-pointer -flto
+    CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
-    LDFLAGS: -rdynamic -O3 -flto
+    LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2
     DEFINES: NDEBUG
