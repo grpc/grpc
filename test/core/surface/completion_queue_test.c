@@ -106,16 +106,19 @@ static void test_pollset_conversion(void) {
 }
 
 static void test_wait_empty(void) {
-  grpc_cq_polling_type polling_types[] = {DEFAULT_POLLING, NON_LISTENING};
+  grpc_cq_polling_type polling_types[] = {DEFAULT_POLLING, NON_LISTENING,
+                                          NON_POLLING};
   grpc_completion_queue *cc;
   grpc_event event;
 
   LOG_TEST("test_wait_empty");
 
-  cc = grpc_completion_queue_create(NULL);
-  event = grpc_completion_queue_next(cc, gpr_now(GPR_CLOCK_REALTIME), NULL);
-  GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-  shutdown_and_destroy(cc);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
+    cc = grpc_completion_queue_create(GRPC_CQ_NEXT, polling_types[i], NULL);
+    event = grpc_completion_queue_next(cc, gpr_now(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
+    shutdown_and_destroy(cc);
+  }
 }
 
 static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
@@ -262,12 +265,6 @@ struct thread_state {
   grpc_completion_queue *cc;
   void *tag;
 };
-
-static void pluck_one(void *arg) {
-  struct thread_state *state = arg;
-  grpc_completion_queue_pluck(state->cc, state->tag,
-                              gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-}
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

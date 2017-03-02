@@ -84,7 +84,7 @@ static void test_too_many_plucks(void) {
 
   LOG_TEST("test_too_many_plucks");
 
-  cc = grpc_completion_queue_create(NULL);
+  cc = grpc_completion_queue_create(GRPC_CQ_PLUCK, DEFAULT_POLLING, NULL);
   gpr_thd_options_set_joinable(&thread_options);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -210,7 +210,8 @@ static void test_threading(size_t producers, size_t consumers) {
       gpr_malloc((producers + consumers) * sizeof(test_thread_options));
   gpr_event phase1 = GPR_EVENT_INIT;
   gpr_event phase2 = GPR_EVENT_INIT;
-  grpc_completion_queue *cc = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cc =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
   size_t i;
   size_t total_consumed = 0;
   static int optid = 101;
