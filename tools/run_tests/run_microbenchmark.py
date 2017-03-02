@@ -178,7 +178,7 @@ def run_summary(bm_name, cfg, base_json_name):
 
 def collect_summary(bm_name, args):
   heading('Summary: %s [no counters]' % bm_name)
-  text(run_summary(bm_name, 'opt', 'out'))
+  text(run_summary(bm_name, 'lto', 'out'))
   heading('Summary: %s [with counters]' % bm_name)
   text(run_summary(bm_name, 'counters', 'out'))
   if args.bigquery_upload:
@@ -229,7 +229,7 @@ for bm_name in args.benchmarks:
     collectors[collect](bm_name, args)
 if args.diff_perf:
   for bm_name in args.benchmarks:
-    run_summary(bm_name, 'opt', '%s.new' % bm_name)
+    run_summary(bm_name, 'lto', '%s.new' % bm_name)
   where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
   subprocess.check_call(['git', 'checkout', args.diff_perf])
   comparables = []
@@ -237,7 +237,7 @@ if args.diff_perf:
   try:
     for bm_name in args.benchmarks:
       try:
-        run_summary(bm_name, 'opt', '%s.old' % bm_name)
+        run_summary(bm_name, 'lto', '%s.old' % bm_name)
         comparables.append(bm_name)
       except subprocess.CalledProcessError, e:
         pass
