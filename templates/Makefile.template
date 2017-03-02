@@ -96,7 +96,9 @@
   HAS_CC = $(shell which cc > /dev/null 2> /dev/null && echo true || echo false)
   HAS_CLANG = $(shell which clang > /dev/null 2> /dev/null && echo true || echo false)
 
-  DEFAULT_AR = ar rcs
+  DEFAULT_AR = ar
+  DEFAULT_AROPTS = rcs
+  DEFAULT_RANLIB = ranlib
   ifeq ($(HAS_CC),true)
   DEFAULT_CC = cc
   DEFAULT_CXX = c++
@@ -128,7 +130,7 @@
   %  if args.get('compile_the_world', False):
   REQUIRE_CUSTOM_LIBRARIES_${name} = 1
   %  endif
-  %  for tool, default in [('CC', 'CC'), ('CXX', 'CXX'), ('LD', 'CC'), ('LDXX', 'CXX'), ('AR', 'AR')]:
+  %  for tool, default in [('CC', 'CC'), ('CXX', 'CXX'), ('LD', 'CC'), ('LDXX', 'CXX'), ('AR', 'AR'), ('AROPTS', 'AROPTS'), ('RANLIB', 'RANLIB')]:
   ${tool}_${name} = ${args.get(tool, '$(DEFAULT_%s)' % default)}
   %  endfor
   %  for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
@@ -168,10 +170,12 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
-  ifeq ($(SYSTEM),Linux)
   ifeq ($(origin AR), default)
   AR = $(AR_$(CONFIG))
   endif
+  AROPTS ?= $(AROPTS_$(CONFIG))
+  RANLIB ?= $(RANLIB_$(CONFIG))
+  ifeq ($(SYSTEM),Linux)
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
@@ -308,7 +312,7 @@
   #
   ifeq ($(GRPC_CROSS_COMPILE),true)
   LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-  AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+  AROPTS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
   USE_BUILT_PROTOC = false
   endif
 
@@ -872,7 +876,7 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" AR="$(AR)" RANLIB="$(RANLIB)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -1480,7 +1484,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%

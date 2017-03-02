@@ -61,7 +61,9 @@ HAS_GCC = $(shell which gcc > /dev/null 2> /dev/null && echo true || echo false)
 HAS_CC = $(shell which cc > /dev/null 2> /dev/null && echo true || echo false)
 HAS_CLANG = $(shell which clang > /dev/null 2> /dev/null && echo true || echo false)
 
-DEFAULT_AR = ar rcs
+DEFAULT_AR = ar
+DEFAULT_AROPTS = rcs
+DEFAULT_RANLIB = ranlib
 ifeq ($(HAS_CC),true)
 DEFAULT_CC = cc
 DEFAULT_CXX = c++
@@ -94,6 +96,8 @@ CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
 AR_opt = $(DEFAULT_AR)
+AROPTS_opt = $(DEFAULT_AROPTS)
+RANLIB_opt = $(DEFAULT_RANLIB)
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
@@ -104,6 +108,8 @@ CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang
 LDXX_asan-trace-cmp = clang++
 AR_asan-trace-cmp = $(DEFAULT_AR)
+AROPTS_asan-trace-cmp = $(DEFAULT_AROPTS)
+RANLIB_asan-trace-cmp = $(DEFAULT_RANLIB)
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
@@ -113,6 +119,8 @@ CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
 AR_dbg = $(DEFAULT_AR)
+AROPTS_dbg = $(DEFAULT_AROPTS)
+RANLIB_dbg = $(DEFAULT_RANLIB)
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -123,6 +131,8 @@ CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
 AR_asan = $(DEFAULT_AR)
+AROPTS_asan = $(DEFAULT_AROPTS)
+RANLIB_asan = $(DEFAULT_RANLIB)
 CPPFLAGS_asan = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan = -fsanitize=address
 
@@ -133,6 +143,8 @@ CXX_msan = clang++
 LD_msan = clang
 LDXX_msan = clang++
 AR_msan = $(DEFAULT_AR)
+AROPTS_msan = $(DEFAULT_AROPTS)
+RANLIB_msan = $(DEFAULT_RANLIB)
 CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
@@ -143,6 +155,8 @@ CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
 AR_basicprof = $(DEFAULT_AR)
+AROPTS_basicprof = $(DEFAULT_AROPTS)
+RANLIB_basicprof = $(DEFAULT_RANLIB)
 CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
 DEFINES_basicprof = NDEBUG
 
@@ -152,6 +166,8 @@ CXX_helgrind = $(DEFAULT_CXX)
 LD_helgrind = $(DEFAULT_CC)
 LDXX_helgrind = $(DEFAULT_CXX)
 AR_helgrind = $(DEFAULT_AR)
+AROPTS_helgrind = $(DEFAULT_AROPTS)
+RANLIB_helgrind = $(DEFAULT_RANLIB)
 CPPFLAGS_helgrind = -O0
 LDFLAGS_helgrind = -rdynamic
 DEFINES_helgrind = _DEBUG DEBUG
@@ -163,6 +179,8 @@ CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang
 LDXX_asan-noleaks = clang++
 AR_asan-noleaks = $(DEFAULT_AR)
+AROPTS_asan-noleaks = $(DEFAULT_AROPTS)
+RANLIB_asan-noleaks = $(DEFAULT_RANLIB)
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
@@ -173,6 +191,8 @@ CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
 AR_ubsan = $(DEFAULT_AR)
+AROPTS_ubsan = $(DEFAULT_AROPTS)
+RANLIB_ubsan = $(DEFAULT_RANLIB)
 CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
 LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG
@@ -184,6 +204,8 @@ CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
 AR_tsan = $(DEFAULT_AR)
+AROPTS_tsan = $(DEFAULT_AROPTS)
+RANLIB_tsan = $(DEFAULT_RANLIB)
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
@@ -194,6 +216,8 @@ CXX_stapprof = $(DEFAULT_CXX)
 LD_stapprof = $(DEFAULT_CC)
 LDXX_stapprof = $(DEFAULT_CXX)
 AR_stapprof = $(DEFAULT_AR)
+AROPTS_stapprof = $(DEFAULT_AROPTS)
+RANLIB_stapprof = $(DEFAULT_RANLIB)
 CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
 DEFINES_stapprof = NDEBUG
 
@@ -203,6 +227,8 @@ CXX_gcov = g++
 LD_gcov = gcc
 LDXX_gcov = g++
 AR_gcov = $(DEFAULT_AR)
+AROPTS_gcov = $(DEFAULT_AROPTS)
+RANLIB_gcov = $(DEFAULT_RANLIB)
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
 DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
@@ -213,6 +239,8 @@ CXX_memcheck = $(DEFAULT_CXX)
 LD_memcheck = $(DEFAULT_CC)
 LDXX_memcheck = $(DEFAULT_CXX)
 AR_memcheck = $(DEFAULT_AR)
+AROPTS_memcheck = $(DEFAULT_AROPTS)
+RANLIB_memcheck = $(DEFAULT_RANLIB)
 CPPFLAGS_memcheck = -O0
 LDFLAGS_memcheck = -rdynamic
 DEFINES_memcheck = _DEBUG DEBUG
@@ -222,7 +250,9 @@ CC_lto = $(DEFAULT_CC)
 CXX_lto = $(DEFAULT_CXX)
 LD_lto = $(DEFAULT_CC)
 LDXX_lto = $(DEFAULT_CXX)
-AR_lto = gcc-ar rcs
+AR_lto = gcc-ar
+AROPTS_lto = rcs
+RANLIB_lto = gcc-ranlib
 CPPFLAGS_lto = -O3 -flto
 LDFLAGS_lto = -O3 -flto
 DEFINES_lto = NDEBUG
@@ -233,6 +263,8 @@ CXX_mutrace = $(DEFAULT_CXX)
 LD_mutrace = $(DEFAULT_CC)
 LDXX_mutrace = $(DEFAULT_CXX)
 AR_mutrace = $(DEFAULT_AR)
+AROPTS_mutrace = $(DEFAULT_AROPTS)
+RANLIB_mutrace = $(DEFAULT_RANLIB)
 CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer -flto
 LDFLAGS_mutrace = -rdynamic -O3 -flto
 DEFINES_mutrace = NDEBUG
@@ -242,7 +274,9 @@ CC_counters = $(DEFAULT_CC)
 CXX_counters = $(DEFAULT_CXX)
 LD_counters = $(DEFAULT_CC)
 LDXX_counters = $(DEFAULT_CXX)
-AR_counters = gcc-ar rcs
+AR_counters = gcc-ar
+AROPTS_counters = $(DEFAULT_AROPTS)
+RANLIB_counters = gcc-ranlib
 CPPFLAGS_counters = -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
 LDFLAGS_counters = -O3 -flto
 DEFINES_counters = NDEBUG
@@ -277,10 +311,12 @@ ifeq ($(origin LD), default)
 LD = $(LD_$(CONFIG))
 endif
 LDXX ?= $(LDXX_$(CONFIG))
-ifeq ($(SYSTEM),Linux)
 ifeq ($(origin AR), default)
 AR = $(AR_$(CONFIG))
 endif
+AROPTS ?= $(AROPTS_$(CONFIG))
+RANLIB ?= $(RANLIB_$(CONFIG))
+ifeq ($(SYSTEM),Linux)
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
@@ -424,7 +460,7 @@ endif
 #
 ifeq ($(GRPC_CROSS_COMPILE),true)
 LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+AROPTS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
@@ -1255,7 +1291,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" AR="$(AR)" RANLIB="$(RANLIB)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -2680,7 +2716,7 @@ $(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP)  $(LIBGPR_OBJS)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr.a
 endif
 
 
@@ -2722,7 +2758,7 @@ $(LIBDIR)/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP)  $(LIBGPR_TEST_UTIL_OBJS)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBGPR_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr_test_util.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr_test_util.a
 endif
 
 
@@ -3013,7 +3049,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)  $(LIB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
 
 
@@ -3297,7 +3333,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_CRONE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
 endif
 
 
@@ -3519,7 +3555,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_TE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
 endif
 
 
@@ -3562,7 +3598,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP)  $(LIBGRPC_TEST_UT
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
 endif
 
 
@@ -3812,7 +3848,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
 
 
@@ -3864,7 +3900,7 @@ $(LIBDIR)/$(CONFIG)/libreconnect_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBRECON
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libreconnect_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBRECONNECT_SERVER_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libreconnect_server.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libreconnect_server.a
 endif
 
 
@@ -3903,7 +3939,7 @@ $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBTEST_T
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBTEST_TCP_SERVER_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
 endif
 
 
@@ -4087,7 +4123,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LI
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++.a
 endif
 
 
@@ -4478,7 +4514,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a $(LIBGRPC++_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a
 endif
 
 
@@ -4546,7 +4582,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a: $(ZLIB_DEP) $(OPENSSL_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a
 endif
 
 
@@ -4601,7 +4637,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBU
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 endif
 
 
@@ -4669,7 +4705,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 endif
 
 
@@ -4781,7 +4817,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
 endif
 
 
@@ -4957,7 +4993,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
 
 
@@ -5025,7 +5061,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBGRPC_CLI_LIBS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a
 endif
 
 
@@ -5077,7 +5113,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 endif
 
 
@@ -5125,7 +5161,7 @@ $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBU
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBHTTP2_CLIENT_MAIN_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
 endif
 
 
@@ -5176,7 +5212,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PRO
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBINTEROP_CLIENT_HELPER_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a
 endif
 
 
@@ -5230,7 +5266,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTO
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBINTEROP_CLIENT_MAIN_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_client_main.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_client_main.a
 endif
 
 
@@ -5281,7 +5317,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PRO
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBINTEROP_SERVER_HELPER_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a
 endif
 
 
@@ -5333,7 +5369,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBINTEROP_SERVER_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a
 endif
 
 
@@ -5383,7 +5419,7 @@ $(LIBDIR)/$(CONFIG)/libinterop_server_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTO
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBINTEROP_SERVER_MAIN_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_main.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libinterop_server_main.a
 endif
 
 
@@ -5446,7 +5482,7 @@ $(LIBDIR)/$(CONFIG)/libqps.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBQP
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libqps.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBQPS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libqps.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libqps.a
 endif
 
 
@@ -5498,7 +5534,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_C
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 endif
 
 
@@ -5849,7 +5885,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP)  $(LIBBORINGSSL_OBJS)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl.a
 endif
 
 
@@ -5887,7 +5923,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
 endif
 
 
@@ -5925,7 +5961,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
 endif
 
 
@@ -5963,7 +5999,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
 endif
 
 
@@ -6001,7 +6037,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
 endif
 
 
@@ -6039,7 +6075,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBBORINGSSL_BIO_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
 endif
 
 
@@ -6077,7 +6113,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(L
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
 endif
 
 
@@ -6115,7 +6151,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
 endif
 
 
@@ -6153,7 +6189,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a
 endif
 
 
@@ -6191,7 +6227,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
 endif
 
 
@@ -6229,7 +6265,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
 endif
 
 
@@ -6267,7 +6303,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
 endif
 
 
@@ -6296,7 +6332,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a: $(ZLIB_DEP)  $(LIBBOR
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
 endif
 
 
@@ -6332,7 +6368,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
 endif
 
 
@@ -6370,7 +6406,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a
 endif
 
 
@@ -6408,7 +6444,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBBORINGSSL_X25519_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
 endif
 
 
@@ -6446,7 +6482,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(L
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBBORINGSSL_DH_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
 endif
 
 
@@ -6484,7 +6520,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
 endif
 
 
@@ -6513,7 +6549,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_DSA
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBBORINGSSL_DSA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
 endif
 
 
@@ -6549,7 +6585,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(L
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBBORINGSSL_EC_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
 endif
 
 
@@ -6578,7 +6614,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
 endif
 
 
@@ -6614,7 +6650,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBBORINGSSL_ECDH_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a
 endif
 
 
@@ -6652,7 +6688,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
 endif
 
 
@@ -6690,7 +6726,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) 
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
 endif
 
 
@@ -6728,7 +6764,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a: $(ZLIB_DEP)  $(PROTOBU
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
 endif
 
 
@@ -6766,7 +6802,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBBORINGSSL_ERR_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
 endif
 
 
@@ -6804,7 +6840,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_D
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
 endif
 
 
@@ -6842,7 +6878,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBBORINGSSL_EVP_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
 endif
 
 
@@ -6880,7 +6916,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) 
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
 endif
 
 
@@ -6909,7 +6945,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_HK
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
 endif
 
 
@@ -6945,7 +6981,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
 endif
 
 
@@ -6974,7 +7010,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_L
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
 endif
 
 
@@ -7010,7 +7046,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
 endif
 
 
@@ -7048,7 +7084,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_newhope_statistical_test_lib.a: $(ZLIB_DEP)  $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_newhope_statistical_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_newhope_statistical_test_lib.a $(LIBBORINGSSL_NEWHOPE_STATISTICAL_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_statistical_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_statistical_test_lib.a
 endif
 
 
@@ -7086,7 +7122,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_newhope_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_newhope_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_newhope_test_lib.a $(LIBBORINGSSL_NEWHOPE_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_test_lib.a
 endif
 
 
@@ -7124,7 +7160,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_newhope_vectors_test_lib.a: $(ZLIB_DEP)  $(PROT
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_newhope_vectors_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_newhope_vectors_test_lib.a $(LIBBORINGSSL_NEWHOPE_VECTORS_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_vectors_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_newhope_vectors_test_lib.a
 endif
 
 
@@ -7162,7 +7198,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBBORINGSSL_OBJ_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a
 endif
 
 
@@ -7200,7 +7236,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
 endif
 
 
@@ -7238,7 +7274,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) 
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
 endif
 
 
@@ -7276,7 +7312,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
 endif
 
 
@@ -7305,7 +7341,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSS
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
 endif
 
 
@@ -7341,7 +7377,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBBORINGSSL_RSA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
 endif
 
 
@@ -7370,7 +7406,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
 endif
 
 
@@ -7397,7 +7433,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_P
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
 endif
 
 
@@ -7433,7 +7469,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBBORINGSSL_X509_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
 endif
 
 
@@ -7462,7 +7498,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_TAB
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
 endif
 
 
@@ -7489,7 +7525,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
 endif
 
 
@@ -7525,7 +7561,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBBORINGSSL_SSL_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
 endif
 
 
@@ -7574,7 +7610,7 @@ $(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
 
 
@@ -7616,7 +7652,7 @@ $(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libz.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libz.a
 endif
 
 
@@ -7651,7 +7687,7 @@ $(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_CL
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBBAD_CLIENT_TEST_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbad_client_test.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbad_client_test.a
 endif
 
 
@@ -7690,7 +7726,7 @@ $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBA
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
 endif
 
 
@@ -7780,7 +7816,7 @@ $(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_tests.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_tests.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_tests.a
 endif
 
 
@@ -7859,7 +7895,7 @@ $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP)  $(LIBEND2END_NOSEC_TE
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 endif
 
 
