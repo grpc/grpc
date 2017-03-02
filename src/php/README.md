@@ -158,7 +158,7 @@ $ composer install
 ### Protobuf compiler
 
 Again if you don't have it already, you need to install the protobuf compiler
-`protoc`, version 3.2.0+.
+`protoc`, version 3.1.0+ (the newer the better).
 
 If `protoc` hasn't been installed, you can download the `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).

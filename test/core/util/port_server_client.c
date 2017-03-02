@@ -74,7 +74,7 @@ static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(pr->mu);
 }
 
-void grpc_free_port_using_server(char *server, int port) {
+void grpc_free_port_using_server(int port) {
   grpc_httpcli_context context;
   grpc_httpcli_request req;
   grpc_httpcli_response rsp;
@@ -95,7 +95,7 @@ void grpc_free_port_using_server(char *server, int port) {
   shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
 
-  req.host = server;
+  req.host = GRPC_PORT_SERVER_ADDRESS;
   gpr_asprintf(&path, "/drop/%d", port);
   req.http.path = path;
 
@@ -198,7 +198,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(pr->mu);
 }
 
-int grpc_pick_port_using_server(char *server) {
+int grpc_pick_port_using_server(void) {
   grpc_httpcli_context context;
   grpc_httpcli_request req;
   portreq pr;
@@ -215,10 +215,10 @@ int grpc_pick_port_using_server(char *server) {
   shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
   pr.port = -1;
-  pr.server = server;
+  pr.server = GRPC_PORT_SERVER_ADDRESS;
   pr.ctx = &context;
 
-  req.host = server;
+  req.host = GRPC_PORT_SERVER_ADDRESS;
   req.http.path = "/get";
 
   grpc_httpcli_context_init(&context);
