@@ -217,7 +217,7 @@ def dynamic_stub(channel, service, cardinalities, options=None):
   Returns:
     A face.DynamicStub with which RPCs can be invoked.
   """
-    effective_options = StubOptions() if options is None else options
+    effective_options = _EMPTY_STUB_OPTIONS if options is None else options
     return _client_adaptations.dynamic_stub(
         channel._channel,  # pylint: disable=protected-access
         service,
