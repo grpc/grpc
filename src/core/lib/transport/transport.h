@@ -102,9 +102,12 @@ void grpc_transport_move_stats(grpc_transport_stream_stats *from,
                                grpc_transport_stream_stats *to);
 
 typedef struct {
+  void *extra_arg;
   grpc_closure closure;
-  void *args[2];
 } grpc_transport_private_op_data;
+
+typedef struct grpc_transport_stream_op_payload
+    grpc_transport_stream_op_payload;
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
@@ -114,43 +117,83 @@ typedef struct grpc_transport_stream_op {
       have been completed. */
   grpc_closure *on_complete;
 
+  /** Values for the stream op (fields set are determined by flags above) */
+  grpc_transport_stream_op_payload *payload;
+
   /** Is the completion of this op covered by a poller (if false: the op should
       complete independently of some pollset being polled) */
-  bool covered_by_poller;
+  bool covered_by_poller : 1;
 
-  /** Send initial metadata to the peer, from the provided metadata batch.
-      idempotent_request MUST be set if this is non-null */
-  grpc_metadata_batch *send_initial_metadata;
-  /** Iff send_initial_metadata != NULL, flags associated with
-      send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
-  uint32_t send_initial_metadata_flags;
+  /** Send initial metadata to the peer, from the provided metadata batch. */
+  bool send_initial_metadata : 1;
 
   /** Send trailing metadata to the peer, from the provided metadata batch. */
-  grpc_metadata_batch *send_trailing_metadata;
+  bool send_trailing_metadata : 1;
 
   /** Send message data to the peer, from the provided byte stream. */
-  grpc_byte_stream *send_message;
+  bool send_message : 1;
 
   /** Receive initial metadata from the stream, into provided metadata batch. */
-  grpc_metadata_batch *recv_initial_metadata;
-  bool *recv_idempotent_request;
-  bool *recv_cacheable_request;
-  /** Should be enqueued when initial metadata is ready to be processed. */
-  grpc_closure *recv_initial_metadata_ready;
+  bool recv_initial_metadata : 1;
 
   /** Receive message data from the stream, into provided byte stream. */
-  grpc_byte_stream **recv_message;
-  /** Should be enqueued when one message is ready to be processed. */
-  grpc_closure *recv_message_ready;
+  bool recv_message : 1;
 
   /** Receive trailing metadata from the stream, into provided metadata batch.
    */
-  grpc_metadata_batch *recv_trailing_metadata;
+  bool recv_trailing_metadata : 1;
 
   /** Collect any stats into provided buffer, zero internal stat counters */
-  grpc_transport_stream_stats *collect_stats;
+  bool collect_stats : 1;
 
-  /** If != GRPC_ERROR_NONE, forcefully close this stream.
+  /** Cancel this stream with the provided error */
+  bool cancel_stream : 1;
+
+  /***************************************************************************
+   * remaining fields are initialized and used at the discretion of the
+   * current handler of the op */
+
+  grpc_transport_private_op_data handler_private;
+} grpc_transport_stream_op;
+
+struct grpc_transport_stream_op_payload {
+  struct {
+    grpc_metadata_batch *send_initial_metadata;
+    /** Iff send_initial_metadata != NULL, flags associated with
+        send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
+    uint32_t send_initial_metadata_flags;
+  } send_initial_metadata;
+
+  struct {
+    grpc_metadata_batch *send_trailing_metadata;
+  } send_trailing_metadata;
+
+  struct {
+    grpc_byte_stream *send_message;
+  } send_message;
+
+  struct {
+    grpc_metadata_batch *recv_initial_metadata;
+    uint32_t *recv_flags;
+    /** Should be enqueued when initial metadata is ready to be processed. */
+    grpc_closure *recv_initial_metadata_ready;
+  } recv_initial_metadata;
+
+  struct {
+    grpc_byte_stream **recv_message;
+    /** Should be enqueued when one message is ready to be processed. */
+    grpc_closure *recv_message_ready;
+  } recv_message;
+
+  struct {
+    grpc_metadata_batch *recv_trailing_metadata;
+  } recv_trailing_metadata;
+
+  struct {
+    grpc_transport_stream_stats *collect_stats;
+  } collect_stats;
+
+  /** Forcefully close this stream.
       The HTTP2 semantics should be:
       - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
         trailing metadata has not been sent, send trailing metadata with status
@@ -160,17 +203,13 @@ typedef struct grpc_transport_stream_op {
         convert to a HTTP2 error code using
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
         error. */
-  grpc_error *cancel_error;
+  struct {
+    grpc_error *cancel_error;
+  } cancel_stream;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
-
-  /***************************************************************************
-   * remaining fields are initialized and used at the discretion of the
-   * current handler of the op */
-
-  grpc_transport_private_op_data handler_private;
-} grpc_transport_stream_op;
+};
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
