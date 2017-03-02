@@ -43,7 +43,6 @@ cc_binary(
     name = "json_rewrite",
     srcs = ["json_rewrite.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    testonly = 1,
     copts = ['-std=c99']
 )
 
