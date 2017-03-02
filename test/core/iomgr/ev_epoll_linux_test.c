@@ -144,10 +144,10 @@ static void test_pollset_queue_merge_items() {
   const int num_fds = 2;
   const int num_pollsets = 2;
   const int num_closures = 4;
-  test_fd tfds[num_fds];
-  int fds[num_fds];
-  test_pollset pollsets[num_pollsets];
-  grpc_closure closures[num_closures];
+  test_fd tfds[2 /* num_fds */];
+  int fds[2 /* num_fds */];
+  test_pollset pollsets[2 /* num_pollsets */];
+  grpc_closure closures[4 /* num_closures */];
   int i;
   int result = 0;
 
@@ -217,9 +217,9 @@ static void test_add_fd_to_pollset() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   const int num_fds = 8;
   const int num_pollsets = 4;
-  test_fd tfds[num_fds];
-  int fds[num_fds];
-  test_pollset pollsets[num_pollsets];
+  test_fd tfds[8 /* num_fds */];
+  int fds[8 /* num_fds */];
+  test_pollset pollsets[4 /* num_pollsets */];
   void *expected_pi = NULL;
   int i;
 
