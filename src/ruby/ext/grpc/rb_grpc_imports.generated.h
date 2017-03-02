@@ -224,7 +224,7 @@ extern grpc_version_string_type grpc_version_string_import;
 typedef const char *(*grpc_g_stands_for_type)(void);
 extern grpc_g_stands_for_type grpc_g_stands_for_import;
 #define grpc_g_stands_for grpc_g_stands_for_import
-typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(void *reserved);
+typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type, void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
 typedef grpc_event(*grpc_completion_queue_next_type)(grpc_completion_queue *cq, gpr_timespec deadline, void *reserved);
