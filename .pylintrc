@@ -23,7 +23,9 @@ notes=FIXME,XXX
 #TODO: Enable no-name-in-module
 #TODO: Enable unused-argument
 #TODO: Enable wrong-import-order
-#TODO: Enable cyclic-import
+# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
+# enable cyclic-import after a 1.7-or-later pylint release that recognizes our
+# disable=cyclic-import suppressions.
 #TODO: Enable redefined-outer-name
 #TODO: Enable too-many-instance-attributes
 #TODO: Enable too-many-locals
