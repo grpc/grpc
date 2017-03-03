@@ -3164,6 +3164,30 @@ targets:
   - linux
   - posix
   timeout_seconds: 1200
+- name: bm_fullstack_trickle
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_trickle.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
 - name: bm_fullstack_unary_ping_pong
   build: test
   language: c++
