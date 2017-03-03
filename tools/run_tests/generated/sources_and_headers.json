@@ -2497,9 +2497,30 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "bm_fullstack", 
+    "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_streaming_pump", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
     ], 
     "third_party": false, 
     "type": "target"
