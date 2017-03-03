@@ -175,19 +175,23 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
 
 /*
   call-seq:
-    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
-    creds = ...
-    secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
+    ch.connectivity_state       -> state
+    ch.connectivity_state(true) -> state
 
-  Creates channel instances. */
+  Indicates the current state of the channel, whose value is one of the
+  constants defined in GRPC::Core::ConnectivityStates.
+
+  It also tries to connect if the chennel is idle in the second form. */
 static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
                                                     VALUE self) {
-  VALUE try_to_connect = Qfalse;
+  VALUE try_to_connect_param = Qfalse;
+  int grpc_try_to_connect = 0;
   grpc_rb_channel *wrapper = NULL;
   grpc_channel *ch = NULL;
 
   /* "01" == 0 mandatory args, 1 (try_to_connect) is optional */
-  rb_scan_args(argc, argv, "01", try_to_connect);
+  rb_scan_args(argc, argv, "01", &try_to_connect_param);
+  grpc_try_to_connect = try_to_connect_param == Qtrue? 1 : 0;
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
@@ -195,8 +199,8 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
   }
-  return NUM2LONG(
-      grpc_channel_check_connectivity_state(ch, (int)try_to_connect));
+  return LONG2NUM(
+      grpc_channel_check_connectivity_state(ch, grpc_try_to_connect));
 }
 
 /* Watch for a change in connectivity state.
