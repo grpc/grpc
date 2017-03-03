@@ -1024,6 +1024,7 @@ sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
 status_conversion_test: $(BINDIR)/$(CONFIG)/status_conversion_test
+stream_owned_slice_test: $(BINDIR)/$(CONFIG)/stream_owned_slice_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_client_uv_test: $(BINDIR)/$(CONFIG)/tcp_client_uv_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
@@ -1378,6 +1379,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
   $(BINDIR)/$(CONFIG)/status_conversion_test \
+  $(BINDIR)/$(CONFIG)/stream_owned_slice_test \
   $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_client_uv_test \
   $(BINDIR)/$(CONFIG)/tcp_posix_test \
@@ -1829,6 +1831,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_conversion_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_conversion_test || ( echo test status_conversion_test failed ; exit 1 )
+	$(E) "[RUN]     Testing stream_owned_slice_test"
+	$(Q) $(BINDIR)/$(CONFIG)/stream_owned_slice_test || ( echo test stream_owned_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_uv_test"
@@ -11779,6 +11783,38 @@ deps_status_conversion_test: $(STATUS_CONVERSION_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(STATUS_CONVERSION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+STREAM_OWNED_SLICE_TEST_SRC = \
+    test/core/transport/stream_owned_slice_test.c \
+
+STREAM_OWNED_SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STREAM_OWNED_SLICE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/stream_owned_slice_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/stream_owned_slice_test: $(STREAM_OWNED_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(STREAM_OWNED_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/stream_owned_slice_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/stream_owned_slice_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_stream_owned_slice_test: $(STREAM_OWNED_SLICE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STREAM_OWNED_SLICE_TEST_OBJS:.o=.dep)
 endif
 endif
 
