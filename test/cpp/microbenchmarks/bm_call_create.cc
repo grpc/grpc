@@ -62,22 +62,49 @@ static struct Init {
   ~Init() { grpc_shutdown(); }
 } g_init;
 
-static void BM_InsecureChannelWithDefaults(benchmark::State &state) {
-  grpc_channel *channel =
-      grpc_insecure_channel_create("localhost:12345", NULL, NULL);
+class BaseChannelFixture {
+ public:
+  BaseChannelFixture(grpc_channel *channel) : channel_(channel) {}
+  ~BaseChannelFixture() { grpc_channel_destroy(channel_); }
+
+  grpc_channel *channel() const { return channel_; }
+
+ private:
+  grpc_channel *const channel_;
+};
+
+class InsecureChannel : public BaseChannelFixture {
+ public:
+  InsecureChannel()
+      : BaseChannelFixture(
+            grpc_insecure_channel_create("localhost:1234", NULL, NULL)) {}
+};
+
+class LameChannel : public BaseChannelFixture {
+ public:
+  LameChannel()
+      : BaseChannelFixture(grpc_lame_client_channel_create(
+            "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah")) {}
+};
+
+template <class Fixture>
+static void BM_CallCreateDestroy(benchmark::State &state) {
+  Fixture fixture;
   grpc_completion_queue *cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, DEFAULT_POLLING, NULL);
-  grpc_slice method = grpc_slice_from_static_string("/foo/bar");
+      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  void *method_hdl =
+      grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
-    grpc_call_destroy(grpc_channel_create_call(channel, NULL,
-                                               GRPC_PROPAGATE_DEFAULTS, cq,
-                                               method, NULL, deadline, NULL));
+    grpc_call_destroy(grpc_channel_create_registered_call(
+        fixture.channel(), NULL, GRPC_PROPAGATE_DEFAULTS, cq, method_hdl,
+        deadline, NULL));
   }
-  grpc_channel_destroy(channel);
   grpc_completion_queue_destroy(cq);
 }
-BENCHMARK(BM_InsecureChannelWithDefaults);
+
+BENCHMARK_TEMPLATE(BM_CallCreateDestroy, InsecureChannel);
+BENCHMARK_TEMPLATE(BM_CallCreateDestroy, LameChannel);
 
 static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
