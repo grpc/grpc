@@ -244,7 +244,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) {
+  void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
       options.set_buffer_hint();
@@ -341,7 +341,7 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) {
+  void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
       options.set_buffer_hint();

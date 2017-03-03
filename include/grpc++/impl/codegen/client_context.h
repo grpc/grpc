@@ -288,7 +288,9 @@ class ClientContext {
   ///
   /// \param corked The flag indicating whether the initial metadata is to be
   /// corked or not.
-  void sent_initial_metadata_corked(bool corked);
+  void set_initial_metadata_corked(bool corked) {
+    initial_metadata_corked_ = corked;
+  }
 
   /// Return the peer uri in a string.
   ///

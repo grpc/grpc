@@ -262,7 +262,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     if (context_->initial_metadata_corked_) {
       ops.SendInitialMetadata(context_->send_initial_metadata_,
                               context_->initial_metadata_flags());
-      context_->sent_initial_metadata_corked(false);
+      context_->set_initial_metadata_corked(false);
     }
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
@@ -372,7 +372,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     if (context_->initial_metadata_corked_) {
       ops.SendInitialMetadata(context_->send_initial_metadata_,
                               context_->initial_metadata_flags());
-      context_->sent_initial_metadata_corked(false);
+      context_->set_initial_metadata_corked(false);
     }
     if (!ops.SendMessage(msg, options).ok()) {
       return false;

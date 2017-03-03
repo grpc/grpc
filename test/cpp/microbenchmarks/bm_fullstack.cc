@@ -758,7 +758,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 // Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
 // messages in each call) in a loop on a single channel. Different from
 // BM_StreamingPingPong we are using stream coalescing api, e.g. WriteLast,
-// WriteAndFinish, sent_initial_metadata_corked. These apis aim at saving
+// WriteAndFinish, set_initial_metadata_corked. These apis aim at saving
 // sendmsg syscalls for streaming by coalescing 1. initial metadata with first
 // message; 2. final streaming message with trailing metadata.
 //
@@ -803,7 +803,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
-      cli_ctx.sent_initial_metadata_corked(true);
+      cli_ctx.set_initial_metadata_corked(true);
       // tag:1 here will never comes up, since we are not performing any op due
       // to initial metadata coalescing.
       auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));

@@ -708,7 +708,7 @@ TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
   EchoResponse response;
   ClientContext context;
 
-  context.sent_initial_metadata_corked(true);
+  context.set_initial_metadata_corked(true);
   auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   stream->WriteLast(request, WriteOptions());
@@ -739,7 +739,7 @@ TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
   EchoResponse response;
   ClientContext context;
 
-  context.sent_initial_metadata_corked(true);
+  context.set_initial_metadata_corked(true);
   auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
@@ -828,7 +828,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
   EchoResponse response;
   ClientContext context;
   context.AddMetadata(kServerFinishAfterNReads, "3");
-  context.sent_initial_metadata_corked(true);
+  context.set_initial_metadata_corked(true);
   grpc::string msg("hello");
 
   auto stream = stub_->BidiStream(&context);

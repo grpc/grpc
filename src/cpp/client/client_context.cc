@@ -119,10 +119,6 @@ void ClientContext::set_compression_algorithm(
   AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
-void ClientContext::sent_initial_metadata_corked(bool corked) {
-  initial_metadata_corked_ = corked;
-}
-
 void ClientContext::TryCancel() {
   std::unique_lock<std::mutex> lock(mu_);
   if (call_) {

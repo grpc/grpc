@@ -498,7 +498,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  cli_ctx.sent_initial_metadata_corked(true);
+  cli_ctx.set_initial_metadata_corked(true);
   // tag:1 never comes up since no op is performed
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
@@ -794,7 +794,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  cli_ctx.sent_initial_metadata_corked(true);
+  cli_ctx.set_initial_metadata_corked(true);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
@@ -862,7 +862,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  cli_ctx.sent_initial_metadata_corked(true);
+  cli_ctx.set_initial_metadata_corked(true);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
