@@ -62,10 +62,7 @@
   },
   "frameworks": {
     "net45": {
-      "frameworkAssemblies": {
-        "System.Runtime": "",
-        "System.IO": ""
-      }
+      "frameworkAssemblies": {}
     },
     "netcoreapp1.0": {
       "imports": [
