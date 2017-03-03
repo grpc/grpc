@@ -173,6 +173,10 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
                                              &unprotected_buffer_size_written);
       gpr_mu_unlock(&ep->protector_mu);
       if (result != TSI_OK) {
+        if (result == TSI_SHUTTING_DOWN) {
+          /* Graceful shutdown initiated, don't log any errors. */
+          break;
+        }
         gpr_log(GPR_ERROR, "Decryption error: %s",
                 tsi_result_to_string(result));
         break;
