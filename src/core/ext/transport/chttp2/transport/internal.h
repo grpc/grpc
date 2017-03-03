@@ -188,6 +188,7 @@ struct grpc_chttp2_incoming_byte_stream {
   gpr_refcount refs;
   struct grpc_chttp2_incoming_byte_stream *next_message;
   grpc_error *error;
+  bool push_closed;
 
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;

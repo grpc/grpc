@@ -1601,13 +1601,17 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   gpr_mu_lock(&s->buffer_mu);
   if (s->data_parser.parsing_frame != NULL) {
-    gpr_mu_lock(&s->data_parser.parsing_frame->slice_mu);
-    grpc_closure *next = s->data_parser.parsing_frame->on_next;
-    gpr_mu_unlock(&s->data_parser.parsing_frame->slice_mu);
-    if (error != GRPC_ERROR_NONE || next != NULL) {
+    grpc_chttp2_incoming_byte_stream *bs = s->data_parser.parsing_frame;
+    gpr_mu_lock(&bs->slice_mu);
+    bs->push_closed = true;
+    if (bs->on_next != NULL) {
+      gpr_mu_unlock(&bs->slice_mu);
       grpc_chttp2_incoming_byte_stream_finished(
-           exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
+          exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
       s->data_parser.parsing_frame = NULL;
+    } else {
+      bs->error = GRPC_ERROR_REF(error);
+      gpr_mu_unlock(&bs->slice_mu);
     }
   }
   gpr_mu_unlock(&s->buffer_mu);
@@ -2465,6 +2469,15 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   } else if (bs->error != GRPC_ERROR_NONE) {
     grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
                        GRPC_ERROR_REF(bs->error));
+  } else if (bs->push_closed) {
+    if (bs->remaining_bytes != 0) {
+      grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
+                         GRPC_ERROR_CREATE("Truncated message"));
+    } else {
+      /* Should never reach here. */
+      GPR_ASSERT(false);
+      grpc_closure_sched(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    }
   } else {
     bs->on_next = bs->next_action.on_complete;
     bs->next = bs->next_action.slice;
@@ -2621,6 +2634,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
   incoming_byte_stream->error = GRPC_ERROR_NONE;
+  incoming_byte_stream->push_closed = false;
   s->incoming_frames = incoming_byte_stream;
   grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   return incoming_byte_stream;
