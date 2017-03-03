@@ -1,3 +1,8 @@
+[VARIABLES]
+# TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
+# not include "unused_" and "ignored_" by default?
+dummy-variables-rgx=^ignored_|^unused_
+
 [MESSAGES CONTROL]
 
 #TODO: Enable missing-docstring
@@ -15,9 +20,7 @@
 #TODO: Enable wrong-import-order
 #TODO: Enable no-value-for-parameter
 #TODO: Enable cyclic-import
-#TODO: Enable unused-variable
 #TODO: Enable redefined-outer-name
-#TODO: Enable unused-import
 #TODO: Enable too-many-instance-attributes
 #TODO: Enable broad-except
 #TODO: Enable too-many-locals
@@ -29,6 +32,5 @@
 #TODO: Enable too-many-return-statements
 #TODO: Enable too-many-nested-blocks
 #TODO: Enable super-init-not-called
-#TODO: Enable no-self-use
 
-disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,suppressed-message,locally-disabled,protected-access,no-name-in-module,unused-argument,fixme,wrong-import-order,no-value-for-parameter,cyclic-import,unused-variable,redefined-outer-name,unused-import,too-many-instance-attributes,broad-except,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called,no-self-use
+disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,suppressed-message,locally-disabled,protected-access,no-name-in-module,unused-argument,fixme,wrong-import-order,no-value-for-parameter,cyclic-import,redefined-outer-name,too-many-instance-attributes,broad-except,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called
