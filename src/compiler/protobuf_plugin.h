@@ -88,17 +88,9 @@ class ProtoBufMethod : public grpc_generator::Method {
     return !method_->client_streaming() && !method_->server_streaming();
   }
 
-  bool ClientStreaming() const {
-    return method_->client_streaming() && !method_->server_streaming();
-  }
+  bool ClientStreaming() const { return method_->client_streaming(); }
 
-  bool python_ClientStreaming() const { return method_->client_streaming(); }
-
-  bool ServerStreaming() const {
-    return !method_->client_streaming() && method_->server_streaming();
-  }
-
-  bool python_ServerStreaming() const { return method_->server_streaming(); }
+  bool ServerStreaming() const { return method_->server_streaming(); }
 
   bool BidiStreaming() const {
     return method_->client_streaming() && method_->server_streaming();
