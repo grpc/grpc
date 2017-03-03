@@ -3096,6 +3096,48 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+add_library(grpc_benchmark
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_benchmark PROPERTIES COMPILE_PDB_NAME "grpc_benchmark"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_benchmark.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(grpc_benchmark
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_benchmark
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  benchmark
+  grpc++
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_library(grpc_cli_libs
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
@@ -7505,6 +7547,7 @@ target_include_directories(bm_call_create
 target_link_libraries(bm_call_create
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7543,6 +7586,7 @@ target_include_directories(bm_chttp2_hpack
 target_link_libraries(bm_chttp2_hpack
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7581,6 +7625,7 @@ target_include_directories(bm_closure
 target_link_libraries(bm_closure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7619,6 +7664,7 @@ target_include_directories(bm_cq
 target_link_libraries(bm_cq
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7657,6 +7703,7 @@ target_include_directories(bm_error
 target_link_libraries(bm_error
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7695,6 +7742,7 @@ target_include_directories(bm_fullstack
 target_link_libraries(bm_fullstack
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7733,6 +7781,7 @@ target_include_directories(bm_metadata
 target_link_libraries(bm_metadata
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc_test_util
   grpc

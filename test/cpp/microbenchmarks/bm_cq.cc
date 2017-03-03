@@ -38,6 +38,7 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
 
+#include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
 extern "C" {
@@ -47,27 +48,21 @@ extern "C" {
 namespace grpc {
 namespace testing {
 
-static class InitializeStuff {
- public:
-  InitializeStuff() { init_lib_.init(); }
-  ~InitializeStuff() { init_lib_.shutdown(); }
-
- private:
-  internal::GrpcLibrary init_lib_;
-  internal::GrpcLibraryInitializer init_;
-} initialize_stuff;
-
 static void BM_CreateDestroyCpp(benchmark::State& state) {
+  TrackCounters track_counters;
   while (state.KeepRunning()) {
     CompletionQueue cq;
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_CreateDestroyCpp);
 
 static void BM_CreateDestroyCore(benchmark::State& state) {
+  TrackCounters track_counters;
   while (state.KeepRunning()) {
     grpc_completion_queue_destroy(grpc_completion_queue_create(NULL));
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_CreateDestroyCore);
 
@@ -80,6 +75,7 @@ class DummyTag final : public CompletionQueueTag {
 };
 
 static void BM_Pass1Cpp(benchmark::State& state) {
+  TrackCounters track_counters;
   CompletionQueue cq;
   grpc_completion_queue* c_cq = cq.cq();
   while (state.KeepRunning()) {
@@ -94,10 +90,12 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     bool ok;
     cq.Next(&tag, &ok);
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
@@ -110,10 +108,12 @@ static void BM_Pass1Core(benchmark::State& state) {
     grpc_completion_queue_next(cq, deadline, NULL);
   }
   grpc_completion_queue_destroy(cq);
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
@@ -126,16 +126,19 @@ static void BM_Pluck1Core(benchmark::State& state) {
     grpc_completion_queue_pluck(cq, NULL, deadline, NULL);
   }
   grpc_completion_queue_destroy(cq);
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_completion_queue_next(cq, deadline, NULL);
   }
   grpc_completion_queue_destroy(cq);
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_EmptyCore);
 

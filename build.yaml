@@ -1214,6 +1214,15 @@ libs:
   - grpc++_codegen_base_src
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc_benchmark
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/helpers.h
+  deps:
+  - benchmark
+  - grpc++
+  - grpc
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -3011,6 +3020,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_call_create.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3030,6 +3040,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3049,6 +3060,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3068,6 +3080,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_cq.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3087,6 +3100,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_error.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3106,6 +3120,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_fullstack.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3129,6 +3144,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_metadata.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc_test_util
   - grpc

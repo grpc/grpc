@@ -2386,6 +2386,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2406,6 +2407,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2426,6 +2428,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2446,6 +2449,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2466,6 +2470,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2486,6 +2491,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2504,6 +2510,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -5703,6 +5710,24 @@
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/insecure_create_auth_context.cc", 
       "src/cpp/server/insecure_server_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/helpers.h"
     ], 
     "third_party": false, 
     "type": "lib"
