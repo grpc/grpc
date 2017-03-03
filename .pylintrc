@@ -17,7 +17,6 @@ notes=FIXME,XXX
 #TODO: Enable no-init
 #TODO: Enable duplicate-code
 #TODO: Enable invalid-name
-#TODO: Enable suppressed-message
 #TODO: Enable locally-disabled
 #TODO: Enable protected-access
 #TODO: Enable no-name-in-module
@@ -37,4 +36,4 @@ notes=FIXME,XXX
 #TODO: Enable too-many-nested-blocks
 #TODO: Enable super-init-not-called
 
-disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,suppressed-message,locally-disabled,protected-access,no-name-in-module,unused-argument,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called
+disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,unused-argument,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called
