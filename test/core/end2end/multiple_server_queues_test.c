@@ -42,9 +42,10 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  cq1 = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
-  cq2 = grpc_completion_queue_create(GRPC_CQ_NEXT, NON_LISTENING, NULL);
-  cq3 = grpc_completion_queue_create(GRPC_CQ_NEXT, NON_POLLING, NULL);
+  cq1 =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
+  cq2 = grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_NON_LISTENING, NULL);
+  cq3 = grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING, NULL);
 
   server = grpc_server_create(NULL, NULL);
   grpc_server_register_completion_queue(server, cq1, NULL);

@@ -108,7 +108,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
              grpc_channel_check_connectivity_state(chan, 0));
 
-  cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
 
   grpc_slice host = grpc_slice_from_static_string("anywhere");
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,

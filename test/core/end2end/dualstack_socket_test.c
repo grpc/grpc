@@ -108,7 +108,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   server = grpc_server_create(NULL, NULL);
   grpc_server_register_completion_queue(server, cq, NULL);
   GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
@@ -260,7 +261,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_channel_destroy(client);
 
   /* Destroy server. */
-  shutdown_cq = grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+  shutdown_cq =
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
   grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),

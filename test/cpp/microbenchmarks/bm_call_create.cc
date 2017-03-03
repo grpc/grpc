@@ -91,7 +91,7 @@ template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
   Fixture fixture;
   grpc_completion_queue *cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);

@@ -717,12 +717,12 @@ grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
 void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc) {
   /* TODO: sreek - use cc->polling_type field here and add a validation check
      (i.e grpc_cq_mark_non_listening_server_cq can only be called on a cc whose
-     polling_type is set to NON_LISTENING */
+     polling_type is set to GRPC_CQ_NON_LISTENING */
   cc->is_non_listening_server_cq = 1;
 }
 
 bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc) {
-  /* TODO (sreek) - return (cc->polling_type == NON_LISTENING) */
+  /* TODO (sreek) - return (cc->polling_type == GRPC_CQ_NON_LISTENING) */
   return (cc->is_non_listening_server_cq == 1);
 }
 

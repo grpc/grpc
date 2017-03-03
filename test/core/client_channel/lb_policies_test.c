@@ -67,7 +67,7 @@ typedef struct servers_fixture {
 typedef struct request_sequences {
   size_t n;         /* number of iterations */
   int *connections; /* indexed by the interation number, value is the index of
-                               the server it connected to or -1 if none */
+                       the server it connected to or -1 if none */
   int *connectivity_states; /* indexed by the interation number, value is the
                                client connectivity state */
 } request_sequences;
@@ -197,9 +197,10 @@ static servers_fixture *setup_servers(const char *server_host,
   /* Create servers. */
   f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
   f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
-  f->cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  f->cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   f->shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
   for (i = 0; i < num_servers; i++) {
     grpc_metadata_array_init(&f->request_metadata_recv[i]);
     gpr_join_host_port(&f->servers_hostports[i], server_host,

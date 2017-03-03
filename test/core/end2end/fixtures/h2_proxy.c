@@ -79,9 +79,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   ffd->proxy = grpc_end2end_proxy_create(&proxy_def, client_args, server_args);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  f.cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   f.shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
 
   return f;
 }

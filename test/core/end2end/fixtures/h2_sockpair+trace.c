@@ -94,9 +94,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   f.fixture_data = sfd;
-  f.cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  f.cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   f.shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
 
   grpc_resource_quota *resource_quota = grpc_resource_quota_create("fixture");
   *sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);

@@ -189,7 +189,8 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
 
   struct grpc_memory_counters before_server_create =
       grpc_memory_counters_snapshot();
@@ -232,8 +233,8 @@ int main(int argc, char **argv) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
 
-      shutdown_cq =
-          grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      shutdown_cq = grpc_completion_queue_create(GRPC_CQ_PLUCK,
+                                                 GRPC_CQ_NON_POLLING, NULL);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
       GPR_ASSERT(
           grpc_completion_queue_pluck(shutdown_cq, tag(1000),
@@ -244,8 +245,9 @@ int main(int argc, char **argv) {
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         NULL);
     fling_call *s = ev.tag;
     switch (ev.type) {

@@ -66,7 +66,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   grpc_completion_queue *cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   grpc_transport *transport =
       grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 1);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);

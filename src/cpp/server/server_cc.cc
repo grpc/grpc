@@ -154,8 +154,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
   }
 
   void SetupRequest() {
-    // TODO: sreek - Double check if this should be GRPC_CQ_PLUCK
-    cq_ = grpc_completion_queue_create(GRPC_CQ_PLUCK, DEFAULT_POLLING, nullptr);
+    cq_ = grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+                                       nullptr);
   }
 
   void TeardownRequest() {

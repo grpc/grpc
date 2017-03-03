@@ -354,8 +354,9 @@ static void start_backend_server(server_fixture *sf) {
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     const string expected_token =
-        strlen(sf->lb_token_prefix) == 0 ? "" : sf->lb_token_prefix +
-                                                    std::to_string(sf->port);
+        strlen(sf->lb_token_prefix) == 0
+            ? ""
+            : sf->lb_token_prefix + std::to_string(sf->port);
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
@@ -593,7 +594,8 @@ static void setup_client(const server_fixture *lb_server,
       grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
   gpr_free(expected_target_names);
 
-  cf->cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  cf->cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   cf->server_uri = lb_uri;
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
@@ -616,7 +618,8 @@ static void teardown_client(client_fixture *cf) {
 static void setup_server(const char *host, server_fixture *sf) {
   int assigned_port;
 
-  sf->cq = grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+  sf->cq =
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
   const char *colon_idx = strchr(host, ':');
   if (colon_idx) {
     const char *port_str = colon_idx + 1;
@@ -645,7 +648,7 @@ static void teardown_server(server_fixture *sf) {
   gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
 
   grpc_completion_queue *shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, NON_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
   grpc_server_shutdown_and_notify(sf->server, shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),

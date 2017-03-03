@@ -290,7 +290,7 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   int retries = 10;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_completion_queue *cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
 
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(

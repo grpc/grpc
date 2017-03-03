@@ -138,7 +138,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
       : context_(context),
-        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        cq_(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING),
         call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpClientSendClose>
@@ -212,7 +212,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
       : context_(context),
-        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        cq_(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING),
         call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
@@ -297,7 +297,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
       : context_(context),
-        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        cq_(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING),
         call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_,

@@ -105,7 +105,7 @@ static void server_thread(void *arg) {
   free(addr);
 
   grpc_completion_queue *cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, DEFAULT_POLLING, NULL);
+      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
 
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
