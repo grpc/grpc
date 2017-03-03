@@ -354,9 +354,8 @@ static void start_backend_server(server_fixture *sf) {
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     const string expected_token =
-        strlen(sf->lb_token_prefix) == 0
-            ? ""
-            : sf->lb_token_prefix + std::to_string(sf->port);
+        strlen(sf->lb_token_prefix) == 0 ? "" : sf->lb_token_prefix +
+                                                    std::to_string(sf->port);
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 

@@ -260,9 +260,8 @@ int main(int argc, char **argv) {
 
   do {
     event = grpc_completion_queue_next(
-        cq,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                     gpr_time_from_micros(10000, GPR_TIMESPAN)),
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(10000, GPR_TIMESPAN)),
         NULL);
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 

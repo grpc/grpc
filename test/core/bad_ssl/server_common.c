@@ -97,9 +97,8 @@ void bad_ssl_run(grpc_server *server) {
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                     gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         NULL);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
