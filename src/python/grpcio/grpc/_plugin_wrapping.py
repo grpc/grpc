@@ -66,7 +66,7 @@ class _WrappedCygrpcCallback(object):
 
     def _invoke_success(self, metadata):
         try:
-            cygrpc_metadata = _common.cygrpc_metadata(metadata)
+            cygrpc_metadata = _common.to_cygrpc_metadata(metadata)
         except Exception as exception:  # pylint: disable=broad-except
             self._invoke_failure(exception)
             return
