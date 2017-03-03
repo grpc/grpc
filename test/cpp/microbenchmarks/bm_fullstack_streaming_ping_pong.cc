@@ -38,8 +38,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/cpp/microbenchmarks/fullstack_fixtures.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
+#include "test/cpp/microbenchmarks/fullstack_fixtures.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
 namespace grpc {

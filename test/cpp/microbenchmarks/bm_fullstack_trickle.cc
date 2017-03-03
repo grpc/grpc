@@ -33,7 +33,94 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
-namespace grpc { namespace testing{
+#include "src/core/lib/profiling/timers.h"
+#include "src/cpp/client/create_channel_internal.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
+#include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
+extern "C" {
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "test/core/util/trickle_endpoint.h"
+}
+
+namespace grpc {
+namespace testing {
+
+static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+
+class TrickledCHTTP2 : public EndpointPairFixture {
+ public:
+  TrickledCHTTP2(Service* service, size_t megabits_per_second)
+      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second)) {}
+
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    out << " writes/iter:"
+        << ((double)stats_.num_writes / (double)state.iterations())
+        << " cli_transport_stalls/iter:"
+        << ((double)
+                client_stats_.streams_stalled_due_to_transport_flow_control /
+            (double)state.iterations())
+        << " cli_stream_stalls/iter:"
+        << ((double)client_stats_.streams_stalled_due_to_stream_flow_control /
+            (double)state.iterations())
+        << " svr_transport_stalls/iter:"
+        << ((double)
+                server_stats_.streams_stalled_due_to_transport_flow_control /
+            (double)state.iterations())
+        << " svr_stream_stalls/iter:"
+        << ((double)server_stats_.streams_stalled_due_to_stream_flow_control /
+            (double)state.iterations());
+  }
+
+  void Step() {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    size_t client_backlog =
+        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.client);
+    size_t server_backlog =
+        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
+    grpc_exec_ctx_finish(&exec_ctx);
+
+    UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
+                client_backlog);
+    UpdateStats((grpc_chttp2_transport*)server_transport_, &server_stats_,
+                server_backlog);
+  }
+
+ private:
+  grpc_passthru_endpoint_stats stats_;
+  struct Stats {
+    int streams_stalled_due_to_stream_flow_control = 0;
+    int streams_stalled_due_to_transport_flow_control = 0;
+  };
+  Stats client_stats_;
+  Stats server_stats_;
+
+  grpc_endpoint_pair MakeEndpoints(size_t kilobits) {
+    grpc_endpoint_pair p;
+    grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
+                                  &stats_);
+    double bytes_per_second = 125.0 * kilobits;
+    p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
+    p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
+    return p;
+  }
+
+  void UpdateStats(grpc_chttp2_transport* t, Stats* s, size_t backlog) {
+    if (backlog == 0) {
+      if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != NULL) {
+        s->streams_stalled_due_to_stream_flow_control++;
+      }
+      if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != NULL) {
+        s->streams_stalled_due_to_transport_flow_control++;
+      }
+    }
+  }
+};
+
+// force library initialization
+auto& force_library_initialization = Library::get();
 
 static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok) {
   while (true) {
@@ -126,5 +213,7 @@ static void TrickleArgs(benchmark::internal::Benchmark* b) {
 }
 
 BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(TrickleArgs);
+}
+}
 
 BENCHMARK_MAIN();
