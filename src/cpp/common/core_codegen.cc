@@ -55,8 +55,10 @@ struct grpc_byte_buffer;
 namespace grpc {
 
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
+    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     void* reserved) {
-  return ::grpc_completion_queue_create(reserved);
+  return ::grpc_completion_queue_create(completion_type, polling_type,
+                                        reserved);
 }
 
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {

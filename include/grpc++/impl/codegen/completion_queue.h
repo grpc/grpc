@@ -52,6 +52,7 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/atm.h>
 
 struct grpc_completion_queue;
@@ -102,10 +103,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
-    InitialAvalanching();  // reserve this for the future shutdown
-  }
+  CompletionQueue() : CompletionQueue(GRPC_CQ_NEXT, DEFAULT_POLLING) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -149,8 +147,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \return true if read a regular event, false if the queue is shutting down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok, g_core_codegen_interface->gpr_inf_future(
-                                           GPR_CLOCK_REALTIME)) != SHUTDOWN);
+    return (AsyncNextInternal(tag, ok,
+                              g_core_codegen_interface->gpr_inf_future(
+                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
   /// Request the shutdown of the queue.
@@ -217,6 +216,14 @@ class CompletionQueue : private GrpcLibraryCodegen {
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
+
+  /// Private constructor of CompletionQueue only visible to friend classes
+  CompletionQueue(grpc_cq_completion_type completion_type,
+                  grpc_cq_polling_type polling_type) {
+    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
+        completion_type, polling_type, nullptr);
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 

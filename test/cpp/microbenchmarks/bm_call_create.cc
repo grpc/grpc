@@ -65,7 +65,8 @@ static struct Init {
 static void BM_InsecureChannelWithDefaults(benchmark::State &state) {
   grpc_channel *channel =
       grpc_insecure_channel_create("localhost:12345", NULL, NULL);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq =
+      grpc_completion_queue_create(GRPC_CQ_PLUCK, DEFAULT_POLLING, NULL);
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {

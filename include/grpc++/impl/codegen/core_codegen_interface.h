@@ -36,6 +36,7 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/status.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
@@ -60,7 +61,8 @@ class CoreCodegenInterface {
                            int line) = 0;
 
   virtual grpc_completion_queue* grpc_completion_queue_create(
-      void* reserved) = 0;
+      grpc_cq_completion_type completion_type,
+      grpc_cq_polling_type polling_type, void* reserved) = 0;
   virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
   virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
                                                  void* tag,

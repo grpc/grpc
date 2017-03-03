@@ -137,7 +137,9 @@ class ClientReader final : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpClientSendClose>
         ops;
@@ -209,7 +211,9 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
 
@@ -292,7 +296,9 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// Blocking create a stream.
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(GRPC_CQ_PLUCK, DEFAULT_POLLING),
+        call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_,
                             context->initial_metadata_flags());

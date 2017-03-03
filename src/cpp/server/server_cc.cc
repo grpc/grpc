@@ -124,6 +124,14 @@ class ShutdownTag : public CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
+class DummyTag : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    *status = true;
+    return true;
+  }
+};
+
 class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -145,7 +153,10 @@ class Server::SyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
+  void SetupRequest() {
+    // TODO: sreek - Double check if this should be GRPC_CQ_PLUCK
+    cq_ = grpc_completion_queue_create(GRPC_CQ_PLUCK, DEFAULT_POLLING, nullptr);
+  }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -213,10 +224,10 @@ class Server::SyncRequest final : public CompletionQueueTag {
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
-      void* ignored_tag;
-      bool ignored_ok;
+      DummyTag ignored_tag;
       cq_.Shutdown();
-      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+      /* Ensure the cq_ is shutdown (else this will hang indefinitely) */
+      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
 
    private:
