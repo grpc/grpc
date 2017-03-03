@@ -35,7 +35,7 @@ from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 
-# pylint: disable=too-many-arguments,too-many-locals
+# pylint: disable=too-many-arguments,too-many-locals,unused-argument
 
 _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
     grpc.StatusCode.CANCELLED: (face.Abortion.Kind.CANCELLED,
