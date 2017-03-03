@@ -48,6 +48,8 @@ extern "C" {
 namespace grpc {
 namespace testing {
 
+auto& force_library_initialization = Library::get();
+
 static void BM_CreateDestroyCpp(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {

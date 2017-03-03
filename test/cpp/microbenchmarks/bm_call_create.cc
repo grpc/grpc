@@ -58,6 +58,8 @@ extern "C" {
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
+auto &force_library_initialization = Library::get();
+
 class BaseChannelFixture {
  public:
   BaseChannelFixture(grpc_channel *channel) : channel_(channel) {}

@@ -45,9 +45,7 @@ extern "C" {
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-extern "C" gpr_atm gpr_mu_locks;
-#endif
+auto& force_library_initialization = Library::get();
 
 static void BM_NoOpExecCtx(benchmark::State& state) {
   TrackCounters track_counters;

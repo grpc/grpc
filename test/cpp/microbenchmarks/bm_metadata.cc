@@ -43,6 +43,8 @@ extern "C" {
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
+auto& force_library_initialization = Library::get();
+
 static void BM_SliceFromStatic(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {

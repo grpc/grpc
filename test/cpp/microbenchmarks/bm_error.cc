@@ -43,6 +43,8 @@ extern "C" {
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
+auto& force_library_initialization = Library::get();
+
 class ErrorDeleter {
  public:
   void operator()(grpc_error* error) { GRPC_ERROR_UNREF(error); }
