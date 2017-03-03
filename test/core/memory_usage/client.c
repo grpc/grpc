@@ -43,6 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/test_config.h"
@@ -313,7 +314,9 @@ int main(int argc, char **argv) {
   const char *csv_file = "memory_usage.csv";
   FILE *csv = fopen(csv_file, "w");
   if (csv) {
-    fprintf(csv, "%f,%zi,%zi,%f,%zi\n",
+    char *env_build = gpr_getenv("BUILD_NUMBER");
+    char *env_job = gpr_getenv("JOB_NAME");
+    fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
             (double)(client_calls_inflight.total_size_relative -
                      client_benchmark_calls_start.total_size_relative) /
                 benchmark_iterations,
@@ -325,7 +328,8 @@ int main(int argc, char **argv) {
                      server_benchmark_calls_start.total_size_relative) /
                 benchmark_iterations,
             server_calls_end.total_size_relative -
-                after_server_create.total_size_relative);
+                after_server_create.total_size_relative,
+            env_build == NULL ? "" : env_build, env_job == NULL ? "" : env_job);
     fclose(csv);
     gpr_log(GPR_INFO, "Summary written to %s", csv_file);
   }
