@@ -160,6 +160,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\fullstack_context_mutators.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\fullstack_fixtures.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\helpers.h" />
   </ItemGroup>
   <ItemGroup>

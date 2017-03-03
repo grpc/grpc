@@ -1218,6 +1218,8 @@ libs:
   build: test
   language: c++
   headers:
+  - test/cpp/microbenchmarks/fullstack_context_mutators.h
+  - test/cpp/microbenchmarks/fullstack_fixtures.h
   - test/cpp/microbenchmarks/helpers.h
   deps:
   - benchmark
