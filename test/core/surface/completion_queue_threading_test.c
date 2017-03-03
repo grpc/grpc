@@ -52,7 +52,24 @@ static void *create_test_tag(void) {
 static void shutdown_and_destroy(grpc_completion_queue *cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
-  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+
+  switch (grpc_get_cq_completion_type(cc)) {
+    case GRPC_CQ_NEXT: {
+      ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                      NULL);
+      break;
+    }
+    case GRPC_CQ_PLUCK: {
+      ev = grpc_completion_queue_pluck(cc, create_test_tag(),
+                                       gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+      break;
+    }
+    default: {
+      gpr_log(GPR_ERROR, "Unknown completion type");
+      break;
+    }
+  }
+
   GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
