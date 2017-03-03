@@ -41,6 +41,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import stream
 from grpc.framework.interfaces.face import face
 
+# pylint: disable=too-many-return-statements
+
 _DEFAULT_POOL_SIZE = 8
 
 
