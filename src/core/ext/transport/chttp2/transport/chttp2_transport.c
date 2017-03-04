@@ -1544,7 +1544,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           exec_ctx, &s->unprocessed_incoming_frames_buffer);
       gpr_mu_unlock(&s->buffer_mu);
     }
-    gpr_mu_lock(&s->buffer_mu);
     if (s->incoming_frames != NULL) {
       *s->recv_message = &s->incoming_frames->base;
       s->incoming_frames = NULL;
@@ -1560,7 +1559,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       grpc_closure_sched(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
       s->recv_message_ready = NULL;
     }
-    gpr_mu_unlock(&s->buffer_mu);
   }
 }
 
