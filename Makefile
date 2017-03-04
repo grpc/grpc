@@ -4981,6 +4981,7 @@ endif
 
 
 LIBGRPC_BENCHMARK_SRC = \
+    test/cpp/microbenchmarks/helpers.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -18428,6 +18429,7 @@ test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_server.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_server_bootstrap.cc: $(OPENSSL_DEP)
 test/cpp/interop/server_helper.cc: $(OPENSSL_DEP)
+test/cpp/microbenchmarks/helpers.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_sync.cc: $(OPENSSL_DEP)
 test/cpp/qps/driver.cc: $(OPENSSL_DEP)

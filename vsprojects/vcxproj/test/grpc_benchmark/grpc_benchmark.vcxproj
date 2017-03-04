@@ -165,7 +165,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\helpers.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\vsprojects\dummy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\microbenchmarks\helpers.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
