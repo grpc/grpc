@@ -1003,10 +1003,11 @@ void grpc_server_register_completion_queue(grpc_server *server,
       (server, cq, reserved));
 
   if (grpc_get_cq_completion_type(cq) != GRPC_CQ_NEXT) {
-    gpr_log(
-        GPR_ERROR,
-        "Server completion queues must have a completion type of GRPC_CQ_NEXT");
-    abort();
+    gpr_log(GPR_INFO,
+            "Completion queue which is not of type GRPC_CQ_NEXT is being "
+            "registered as a server-completion-queue");
+    /* Ideally we should log an error and abort but ruby-wrapped-language API
+       calls grpc_completion_queue_pluck() on server completion queues */
   }
 
   register_completion_queue(server, cq, false, reserved);
