@@ -3106,6 +3106,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_benchmark
+  test/cpp/microbenchmarks/helpers.cc
 )
 
 if(WIN32 AND MSVC)

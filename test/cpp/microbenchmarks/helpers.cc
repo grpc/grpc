@@ -31,61 +31,35 @@
  *
  */
 
-#ifndef TEST_CPP_MICROBENCHMARKS_COUNTERS_H
-#define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
+#include "test/cpp/microbenchmarks/helpers.h"
 
-#include <sstream>
-
-extern "C" {
-#include <grpc/support/port_platform.h>
-#include "test/core/util/memory_counters.h"
+void TrackCounters::Finish(benchmark::State &state) {
+  std::ostringstream out;
+  AddToLabel(out, state);
+  auto label = out.str();
+  if (label.length() && label[0] == ' ') {
+    label = label.substr(1);
+  }
+  state.SetLabel(label);
 }
 
-#include <grpc++/impl/grpc_library.h>
-#include "third_party/benchmark/include/benchmark/benchmark.h"
-
-class Library {
- public:
-  static Library& get() {
-    static Library lib;
-    return lib;
-  }
-
-  grpc_resource_quota* rq() { return rq_; }
-
- private:
-  Library() {
-    grpc_memory_counters_init();
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~Library() { init_lib_.shutdown(); }
-
-  grpc::internal::GrpcLibrary init_lib_;
-  grpc_resource_quota* rq_;
-};
-
+void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
-extern "C" gpr_atm gpr_mu_locks;
-extern "C" gpr_atm gpr_counter_atm_cas;
-extern "C" gpr_atm gpr_counter_atm_add;
+  out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
+                                     mu_locks_at_start_) /
+                            (double)state.iterations())
+      << " atm_cas/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
+                   atm_cas_at_start_) /
+          (double)state.iterations())
+      << " atm_add/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
+                   atm_add_at_start_) /
+          (double)state.iterations());
 #endif
-
-class TrackCounters {
- public:
-  virtual void Finish(benchmark::State& state);
-  virtual void AddToLabel(std::ostream& out, benchmark::State& state);
-
- private:
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
-  const size_t atm_cas_at_start_ =
-      gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
-  const size_t atm_add_at_start_ =
-      gpr_atm_no_barrier_load(&gpr_counter_atm_add);
-#endif
-  grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
-};
-
-#endif
+  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
+  out << " allocs/iter:"
+      << ((double)(counters_at_end.total_allocs_absolute -
+                   counters_at_start_.total_allocs_absolute) /
+          (double)state.iterations());
+}
