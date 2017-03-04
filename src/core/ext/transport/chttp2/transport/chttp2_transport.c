@@ -1339,6 +1339,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     } else {
       gpr_mu_unlock(&s->buffer_mu);
     }
+    gpr_mu_lock(&s->buffer_mu);
+    if (s->incoming_frames == NULL && s->unprocessed_incoming_frames_buffer.count > 0) {
+        deframe_unprocessed_incoming_frames(exec_ctx, &s->data_parser, t, s, &s->unprocessed_incoming_frames_buffer, NULL, true);
+    }
+    gpr_mu_unlock(&s->buffer_mu);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
 
@@ -1539,18 +1544,23 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           exec_ctx, &s->unprocessed_incoming_frames_buffer);
       gpr_mu_unlock(&s->buffer_mu);
     }
+    gpr_mu_lock(&s->buffer_mu);
     if (s->incoming_frames != NULL) {
       *s->recv_message = &s->incoming_frames->base;
       s->incoming_frames = NULL;
       GPR_ASSERT(*s->recv_message != NULL);
-      null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
+      grpc_closure_sched(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
+      s->recv_message_ready = NULL;
     } else if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(s->incoming_frames == NULL);
-      null_then_run_closure(exec_ctx, &s->recv_message_ready, error);
+      grpc_closure_sched(exec_ctx, s->recv_message_ready, error);
+      s->recv_message_ready = NULL;
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = NULL;
-      null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
+      grpc_closure_sched(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
+      s->recv_message_ready = NULL;
     }
+    gpr_mu_unlock(&s->buffer_mu);
   }
 }
 
@@ -2330,15 +2340,20 @@ static grpc_error *deframe_unprocessed_incoming_frames(
             exec_ctx, t, s, p->frame_size, message_flags);
       /* fallthrough */
       case GRPC_CHTTP2_DATA_FRAME: {
+        GPR_ASSERT(p->parsing_frame != NULL);
+        if (partial_deframe) {
+          if (cur != end) {
+            grpc_slice_buffer_undo_take_first(&s->unprocessed_incoming_frames_buffer,
+                                              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+          }
+          grpc_slice_unref_internal(exec_ctx, slice);
+          return GRPC_ERROR_NONE;
+        }
         if (slice_set) {
           grpc_slice_buffer_undo_take_first(
               &s->unprocessed_incoming_frames_buffer,
               grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
           grpc_slice_unref_internal(exec_ctx, slice);
-          return GRPC_ERROR_NONE;
-        }
-        if (p->parsing_frame == NULL) {
-
           return GRPC_ERROR_NONE;
         }
         uint32_t remaining = (uint32_t)(end - cur);
