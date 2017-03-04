@@ -791,9 +791,9 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error);
-void grpc_chttp2_incoming_byte_stream_notify(grpc_exec_ctx *exec_ctx,
-                                             grpc_chttp2_incoming_byte_stream *bs,
-                                             grpc_error *error);
+void grpc_chttp2_incoming_byte_stream_notify(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_error *error);
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id);

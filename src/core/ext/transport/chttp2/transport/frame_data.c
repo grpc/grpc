@@ -189,6 +189,7 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       p->state = GRPC_CHTTP2_DATA_ERROR;
       gpr_mu_unlock(&s->buffer_mu);
       return GRPC_ERROR_REF(p->error);
+    fh_0:
     case GRPC_CHTTP2_DATA_FH_0:
       if (s->incoming_frames != NULL) {
         s->stats.incoming.framing_bytes += (size_t)(end - cur);
@@ -270,6 +271,15 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
           exec_ctx, t, s, p->frame_size, message_flags);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
+      if (p->parsing_frame->remaining_bytes == 0) {
+        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
+                                                  GRPC_ERROR_NONE);
+        p->parsing_frame = NULL;
+        p->state = GRPC_CHTTP2_DATA_FH_0;
+        if (cur != end) {
+          goto fh_0;
+        }
+      }
       if (cur == end) {
         gpr_mu_unlock(&s->buffer_mu);
         return GRPC_ERROR_NONE;
