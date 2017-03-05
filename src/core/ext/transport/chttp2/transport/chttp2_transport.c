@@ -1340,8 +1340,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       gpr_mu_unlock(&s->buffer_mu);
     }
     gpr_mu_lock(&s->buffer_mu);
-    if (s->incoming_frames == NULL && s->unprocessed_incoming_frames_buffer.count > 0) {
-        deframe_unprocessed_incoming_frames(exec_ctx, &s->data_parser, t, s, &s->unprocessed_incoming_frames_buffer, NULL, true);
+    if (s->incoming_frames == NULL &&
+        s->unprocessed_incoming_frames_buffer.count > 0) {
+      deframe_unprocessed_incoming_frames(
+          exec_ctx, &s->data_parser, t, s,
+          &s->unprocessed_incoming_frames_buffer, NULL, true);
     }
     gpr_mu_unlock(&s->buffer_mu);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
@@ -2340,8 +2343,10 @@ static grpc_error *deframe_unprocessed_incoming_frames(
         GPR_ASSERT(p->parsing_frame != NULL);
         if (partial_deframe && p->frame_size > 0) {
           if (cur != end) {
-            grpc_slice_buffer_undo_take_first(&s->unprocessed_incoming_frames_buffer,
-                                              grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+            grpc_slice_buffer_undo_take_first(
+                &s->unprocessed_incoming_frames_buffer,
+                grpc_slice_sub(slice, (size_t)(cur - beg),
+                               (size_t)(end - beg)));
           }
           grpc_slice_unref_internal(exec_ctx, slice);
           return GRPC_ERROR_NONE;
@@ -2490,7 +2495,8 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     } else {
       /* Should never reach here. */
       GPR_ASSERT(false);
-      grpc_closure_sched(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+      grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
+                         GRPC_ERROR_NONE);
     }
   } else {
     bs->on_next = bs->next_action.on_complete;
@@ -2602,9 +2608,9 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_chttp2_incoming_byte_stream_notify(grpc_exec_ctx *exec_ctx,
-                                             grpc_chttp2_incoming_byte_stream *bs,
-                                             grpc_error *error) {
+void grpc_chttp2_incoming_byte_stream_notify(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_error *error) {
   gpr_mu_lock(&bs->slice_mu);
   if (bs->on_next) {
     grpc_closure_sched(exec_ctx, bs->next_action.on_complete, error);
