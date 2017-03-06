@@ -1519,7 +1519,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
         gpr_mu_lock(&s->buffer_mu);
-        grpc_slice_buffer_destroy_internal(
+        grpc_slice_buffer_reset_and_unref_internal(
             exec_ctx, &s->unprocessed_incoming_frames_buffer);
         gpr_mu_unlock(&s->buffer_mu);
       }
@@ -1543,7 +1543,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                           GRPC_ERROR_NONE);
       gpr_mu_lock(&s->buffer_mu);
-      grpc_slice_buffer_destroy_internal(
+      grpc_slice_buffer_reset_and_unref_internal(
           exec_ctx, &s->unprocessed_incoming_frames_buffer);
       gpr_mu_unlock(&s->buffer_mu);
     }
@@ -1578,7 +1578,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
         gpr_mu_lock(&s->buffer_mu);
-        grpc_slice_buffer_destroy_internal(
+        grpc_slice_buffer_reset_and_unref_internal(
             exec_ctx, &s->unprocessed_incoming_frames_buffer);
         gpr_mu_unlock(&s->buffer_mu);
       }
