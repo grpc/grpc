@@ -203,6 +203,10 @@ def extension_modules():
 setuptools.setup(
   name='grpcio-tools',
   version=grpc_version.VERSION,
+  description='Protobuf code generator for gRPC',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='http://www.grpc.io',
   license='3-clause BSD',
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
