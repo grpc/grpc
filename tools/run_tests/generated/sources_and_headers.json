@@ -2403,6 +2403,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2423,6 +2424,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2443,6 +2445,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2463,6 +2466,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2483,6 +2487,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2503,14 +2508,15 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "bm_fullstack", 
+    "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2521,6 +2527,70 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_streaming_pump", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_trickle", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_trickle.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -5720,6 +5790,28 @@
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/insecure_create_auth_context.cc", 
       "src/cpp/server/insecure_server_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.h"
     ], 
     "third_party": false, 
     "type": "lib"
