@@ -36,6 +36,7 @@ cd $(dirname $0)/../../../
 if [ "bazel version" ]
 then
   cd third_party/protobuf
+  git clean -xfd
   bazel query 'deps('$1')'
 else
   docker build -t bazel `realpath ./tools/dockerfile/bazel/`
