@@ -5795,6 +5795,7 @@
     "src": [
       "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
       "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.cc", 
       "test/cpp/microbenchmarks/helpers.h"
     ], 
     "third_party": false, 
