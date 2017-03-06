@@ -630,15 +630,15 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, s->id) == NULL);
   }
 
+  gpr_mu_lock(&s->buffer_mu);
+  grpc_slice_buffer_destroy_internal(exec_ctx,
+                                     &s->unprocessed_incoming_frames_buffer);
   if (s->incoming_frames != NULL) {
     grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
     s->incoming_frames = NULL;
     incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base, GRPC_ERROR_NONE);
-    gpr_mu_lock(&s->buffer_mu);
-    grpc_slice_buffer_destroy_internal(exec_ctx,
-                                       &s->unprocessed_incoming_frames_buffer);
-    gpr_mu_unlock(&s->buffer_mu);
   }
+  gpr_mu_unlock(&s->buffer_mu);
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
   grpc_chttp2_list_remove_stalled_by_stream(t, s);
