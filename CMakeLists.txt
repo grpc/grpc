@@ -1447,7 +1447,7 @@ add_library(grpc_test_util
   test/core/security/oauth2_utils.c
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -1654,7 +1654,7 @@ if (gRPC_BUILD_TESTS)
 add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -3139,6 +3139,7 @@ target_link_libraries(grpc_benchmark
   ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark
   grpc++
+  grpc_test_util
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
