@@ -25,12 +25,7 @@
     "Google.Protobuf": "3.0.0"
   },
   "frameworks": {
-    "net45": {
-      "frameworkAssemblies": {
-        "System.Runtime": "",
-        "System.IO": ""
-      }
-    },
+    "net45": {},
     "netstandard1.5": {
       "dependencies": {
         "NETStandard.Library": "1.6.0"
