@@ -35,7 +35,7 @@
 #define TEST_QPS_HISTOGRAM_H
 
 #include <grpc/support/histogram.h>
-#include "src/proto/grpc/testing/stats.grpc.pb.h"
+#include "src/proto/grpc/testing/stats.pb.h"
 
 namespace grpc {
 namespace testing {
