@@ -2,7 +2,7 @@
 
 load("//:bazel/generate_cc.bzl", "generate_cc")
 
-def cc_grpc_library(name, srcs, deps, proto_only, use_external, **kwargs):
+def cc_grpc_library(name, srcs, deps, proto_only, use_external = False, **kwargs):
   """Generates C++ grpc classes from a .proto file.
 
   Assumes the generated classes will be used in cc_api_version = 2.
