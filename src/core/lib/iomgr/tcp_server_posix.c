@@ -163,7 +163,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server **server) {
   gpr_once_init(&check_init, init);
 
-  grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
+  grpc_tcp_server *s = gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
   s->resource_quota = grpc_resource_quota_create(NULL);
   s->expand_wildcard_addrs = false;
