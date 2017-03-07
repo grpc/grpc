@@ -169,12 +169,13 @@ def extension_modules():
   #      the JavaScript code generator, supposedly),
   #      but we need to be cautious about it.
   cc_files_clone = list(CC_FILES)
-  JS_EMBED_PROCESSOR_SOURCE_FILE = 'google/protobuf/compiler/js/embed.cc'
-  JS_WELL_KNOWN_TYPES_FILE = 'google/protobuf/compiler/js/well_known_types_embed.cc'
-  if JS_EMBED_PROCESSOR_SOURCE_FILE in cc_files_clone:
-    cc_files_clone.remove(JS_EMBED_PROCESSOR_SOURCE_FILE)
-  if JS_WELL_KNOWN_TYPES_FILE in cc_files_clone:
-    cc_files_clone.remove(JS_WELL_KNOWN_TYPES_FILE)
+  embed_cc_file = os.path.normpath('google/protobuf/compiler/js/embed.cc')
+  well_known_types_file = os.path.normpath(
+      'google/protobuf/compiler/js/well_known_types_embed.cc')
+  if embed_cc_file in cc_files_clone:
+    cc_files_clone.remove(embed_cc_file)
+  if well_known_types_file in cc_files_clone:
+    cc_files_clone.remove(well_known_types_file)
     plugin_sources += [os.path.join('grpc_tools', 'protobuf_generated_well_known_types_embed.cc')]
   plugin_sources += [os.path.join(CC_INCLUDE, cc_file) for cc_file in cc_files_clone]
 
