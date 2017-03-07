@@ -268,7 +268,8 @@ static void maybe_flush_read(stream_obj *s) {
       s->state.rs.read_buffer = gpr_malloc(GRPC_FLUSH_READ_SIZE);
       if (!s->state.pending_read_from_cronet) {
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
-        bidirectional_stream_read(s->cbs, s->state.rs.read_buffer, GRPC_FLUSH_READ_SIZE);
+        bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                                  GRPC_FLUSH_READ_SIZE);
         s->state.pending_read_from_cronet = true;
       }
     }
@@ -532,7 +533,8 @@ static void on_read_completed(bidirectional_stream *stream, char *data,
   s->state.state_callback_received[OP_RECV_MESSAGE] = true;
   if (count > 0 && s->state.flush_read) {
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
-    bidirectional_stream_read(s->cbs, s->state.rs.read_buffer, GRPC_FLUSH_READ_SIZE);
+    bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                              GRPC_FLUSH_READ_SIZE);
     s->state.pending_read_from_cronet = true;
     gpr_mu_unlock(&s->mu);
   } else if (count > 0) {
@@ -1244,10 +1246,12 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     /* Cronet does not support :authority header field. We cancel the call when
      this field is present in metadata */
     if (op->recv_initial_metadata_ready) {
-      grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready, GRPC_ERROR_CANCELLED);
+      grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
+                         GRPC_ERROR_CANCELLED);
     }
     if (op->recv_message_ready) {
-      grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_CANCELLED);
+      grpc_closure_sched(exec_ctx, op->recv_message_ready,
+                         GRPC_ERROR_CANCELLED);
     }
     grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_CANCELLED);
     return;
