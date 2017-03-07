@@ -1239,32 +1239,22 @@ static void set_pollset_set_do_nothing(grpc_exec_ctx *exec_ctx,
 static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                               grpc_stream *gs, grpc_transport_stream_op *op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
-  stream_obj *s = (stream_obj *)gs;
-  add_to_storage(s, op);
   if (op->send_initial_metadata &&
       header_has_authority(op->send_initial_metadata->list.head)) {
     /* Cronet does not support :authority header field. We cancel the call when
-       this field is present in metadata */
-    bidirectional_stream_header_array header_array;
-    bidirectional_stream_header *header;
-    bidirectional_stream cbs;
-    CRONET_LOG(GPR_DEBUG,
-               ":authority header is provided but not supported;"
-               " cancel operations");
-    /* Notify application that operation is cancelled by forging trailers */
-    header_array.count = 1;
-    header_array.capacity = 1;
-    header_array.headers = gpr_malloc(sizeof(bidirectional_stream_header));
-    header = (bidirectional_stream_header *)header_array.headers;
-    header->key = "grpc-status";
-    header->value = "1"; /* Return status GRPC_STATUS_CANCELLED */
-    cbs.annotation = (void *)s;
-    s->state.state_op_done[OP_CANCEL_ERROR] = true;
-    on_response_trailers_received(&cbs, &header_array);
-    gpr_free(header_array.headers);
-  } else {
-    execute_from_storage(s);
+     this field is present in metadata */
+    if (op->recv_initial_metadata_ready) {
+      grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready, GRPC_ERROR_CANCELLED);
+    }
+    if (op->recv_message_ready) {
+      grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_CANCELLED);
+    }
+    grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_CANCELLED);
+    return;
   }
+  stream_obj *s = (stream_obj *)gs;
+  add_to_storage(s, op);
+  execute_from_storage(s);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
