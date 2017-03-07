@@ -1197,6 +1197,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = NULL;
+    call->receiving_message = 0;
     finish_batch_step(exec_ctx, bctl);
   }
 }
