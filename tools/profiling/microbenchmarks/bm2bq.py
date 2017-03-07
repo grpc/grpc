@@ -80,9 +80,15 @@ if sys.argv[1] == '--schema':
 with open(sys.argv[1]) as f:
   js = json.loads(f.read())
 
+if len(sys.argv) > 2:
+  with open(sys.argv[2]) as f:
+    js2 = json.loads(f.read())
+else:
+  js2 = None
+
 writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
 
-for row in bm_json.expand_json(js):
+for row in bm_json.expand_json(js, js2):
   if 'label' in row:
     del row['label']
   del row['cpp_name']

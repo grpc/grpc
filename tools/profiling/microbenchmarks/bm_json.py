@@ -145,7 +145,7 @@ def parse_name(name):
   out.update(dict(zip(_BM_SPECS[name]['tpl'], tpl_args)))
   return out
 
-def expand_json(js):
+def expand_json(js, js2 = None):
   for bm in js['benchmarks']:
     context = js['context']
     if 'label' in bm:
@@ -163,5 +163,11 @@ def expand_json(js):
     row.update(bm)
     row.update(parse_name(row['name']))
     row.update(labels)
+    if js2:
+      for bm2 in js2['benchmarks']:
+        if bm['name'] == bm2['name']:
+          row['cpu_time'] = bm2['cpu_time']
+          row['real_time'] = bm2['real_time']
+          row['iterations'] = bm2['iterations']
     yield row
 
