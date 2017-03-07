@@ -485,11 +485,7 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
 
-    /* Registered for both read and write callbacks: increment active_ports
-     * twice to account for this, and delay free-ing of memory until both
-     * on_read and on_write have fired. */
-    s->active_ports += 2;
-
+    s->active_ports++;
     sp = sp->next;
   }
 
