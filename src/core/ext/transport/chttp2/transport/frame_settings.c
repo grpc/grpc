@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 #define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
@@ -93,11 +94,23 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
     n += (new[i] != old[i] || (force_mask & (1u << i)) != 0);
   }
 
+  gpr_strvec v;
+  if (1 || grpc_http_trace) {
+    gpr_strvec_init(&v);
+    gpr_strvec_add(&v, gpr_strdup("SEND SETTINGS {"));
+  }
+
   output = grpc_slice_malloc(9 + 6 * n);
   p = fill_header(GRPC_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
     if (new[i] != old[i] || (force_mask & (1u << i)) != 0) {
+      if (1 || grpc_http_trace) {
+        char *s;
+        gpr_asprintf(&s, "%s = %d", grpc_chttp2_settings_parameters[i].name,
+                     new[i]);
+        gpr_strvec_add(&v, s);
+      }
       GPR_ASSERT(i);
       *p++ = (uint8_t)(i >> 8);
       *p++ = (uint8_t)(i);
@@ -110,6 +123,13 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
   }
 
   GPR_ASSERT(p == GRPC_SLICE_END_PTR(output));
+
+  if (1 || grpc_http_trace) {
+    gpr_strvec_add(&v, gpr_strdup("}"));
+    char *out = gpr_strvec_flatten(&v, NULL);
+    gpr_log(GPR_DEBUG, "%s", out);
+    gpr_strvec_destroy(&v);
+  }
 
   return output;
 }
@@ -129,6 +149,7 @@ grpc_error *grpc_chttp2_settings_parser_begin_frame(
   parser->is_ack = 0;
   parser->state = GRPC_CHTTP2_SPS_ID0;
   if (flags == GRPC_CHTTP2_FLAG_ACK) {
+    gpr_log(GPR_DEBUG, "RECV SETTINGS ACK");
     parser->is_ack = 1;
     if (length != 0) {
       return GRPC_ERROR_CREATE("non-empty settings ack frame received");
