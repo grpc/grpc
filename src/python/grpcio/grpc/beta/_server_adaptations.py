@@ -78,7 +78,7 @@ class _FaceServicerContext(face.ServicerContext):
         return _ServerProtocolContext(self._servicer_context)
 
     def invocation_metadata(self):
-        return _common.cygrpc_metadata(
+        return _common.to_cygrpc_metadata(
             self._servicer_context.invocation_metadata())
 
     def initial_metadata(self, initial_metadata):
@@ -351,27 +351,27 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
 
 class _Server(interfaces.Server):
 
-    def __init__(self, server):
-        self._server = server
+    def __init__(self, grpc_server):
+        self._grpc_server = grpc_server
 
     def add_insecure_port(self, address):
-        return self._server.add_insecure_port(address)
+        return self._grpc_server.add_insecure_port(address)
 
     def add_secure_port(self, address, server_credentials):
-        return self._server.add_secure_port(address, server_credentials)
+        return self._grpc_server.add_secure_port(address, server_credentials)
 
     def start(self):
-        self._server.start()
+        self._grpc_server.start()
 
     def stop(self, grace):
-        return self._server.stop(grace)
+        return self._grpc_server.stop(grace)
 
     def __enter__(self):
-        self._server.start()
+        self._grpc_server.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._server.stop(None)
+        self._grpc_server.stop(None)
         return False
 
 

@@ -157,11 +157,28 @@ def extension_modules():
     plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.pyx')]
   else:
     plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.cpp')]
+
   plugin_sources += [
     os.path.join('grpc_tools', 'main.cc'),
-    os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
-    os.path.join(CC_INCLUDE, cc_file)
-    for cc_file in CC_FILES]
+    os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')]
+
+  #HACK: Substitute the embed.cc, which is a JS to C++
+  #      preprocessor with the generated code.
+  #      The generated code should not be material
+  #      to the parts of protoc we use (it affects
+  #      the JavaScript code generator, supposedly),
+  #      but we need to be cautious about it.
+  cc_files_clone = list(CC_FILES)
+  embed_cc_file = os.path.normpath('google/protobuf/compiler/js/embed.cc')
+  well_known_types_file = os.path.normpath(
+      'google/protobuf/compiler/js/well_known_types_embed.cc')
+  if embed_cc_file in cc_files_clone:
+    cc_files_clone.remove(embed_cc_file)
+  if well_known_types_file in cc_files_clone:
+    cc_files_clone.remove(well_known_types_file)
+    plugin_sources += [os.path.join('grpc_tools', 'protobuf_generated_well_known_types_embed.cc')]
+  plugin_sources += [os.path.join(CC_INCLUDE, cc_file) for cc_file in cc_files_clone]
+
   plugin_ext = extension.Extension(
       name='grpc_tools._protoc_compiler',
       sources=plugin_sources,
