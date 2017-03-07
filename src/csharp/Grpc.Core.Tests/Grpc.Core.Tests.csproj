@@ -81,6 +81,8 @@
     <Compile Include="ShutdownHookPendingCallTest.cs" />
     <Compile Include="ShutdownHookClientTest.cs" />
     <Compile Include="AppDomainUnloadTest.cs" />
+    <Compile Include="AuthContextTest.cs" />
+    <Compile Include="AuthPropertyTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
