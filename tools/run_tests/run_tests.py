@@ -692,18 +692,11 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    #TODO(apolcyn) turn mac ruby tests back on once ruby 2.4 issues done
-    if platform_string() == 'mac':
-      print('skipping ruby test_specs on mac until running on 2.4')
-      return []
     return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby pre_build_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
   def make_targets(self):
@@ -713,15 +706,9 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby build_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
   def post_tests_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby post_test_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
   def makefile_name(self):
@@ -1451,8 +1438,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 32766
-  start_port_server.start_port_server(port_server_port)
+  start_port_server.start_port_server()
   resultset = None
   num_test_failures = 0
   try:
@@ -1495,7 +1481,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)
     if resultset:
       for k, v in sorted(resultset.items()):

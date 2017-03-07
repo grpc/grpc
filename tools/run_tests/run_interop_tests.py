@@ -77,10 +77,14 @@ class CXXLanguage:
   def __init__(self):
     self.client_cwd = None
     self.server_cwd = None
+    self.http2_cwd = None
     self.safename = 'cxx'
 
   def client_cmd(self, args):
     return ['bins/opt/interop_client'] + args
+
+  def client_cmd_http2interop(self, args):
+    return ['bins/opt/http2_client'] + args
 
   def cloud_to_prod_env(self):
     return {}
@@ -474,7 +478,7 @@ _HTTP2_TEST_CASES = ['tls', 'framing']
 _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
                      'goaway', 'ping', 'max_streams']
 
-_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python']
+_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python', 'c++']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 

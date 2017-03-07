@@ -90,6 +90,10 @@ _BM_SPECS = {
     'tpl': ['fixture'],
     'dyn': [],
   },
+  'BM_CallCreateDestroy' : {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
 }
 
 def numericalize(s):
@@ -170,4 +174,3 @@ def expand_json(js, js2 = None):
           row['real_time'] = bm2['real_time']
           row['iterations'] = bm2['iterations']
     yield row
-
