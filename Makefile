@@ -327,12 +327,12 @@ STRIP ?= strip -x
 else
 ifeq ($(SYSTEM),MINGW32)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip
 endif
