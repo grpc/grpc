@@ -6,7 +6,7 @@
       "Grpc.Core": {
         "target": "project"
       },
-      "Google.Protobuf": "3.0.0"
+      "Google.Protobuf": "3.2.0"
     },
     "frameworks": {
       "net45": {
