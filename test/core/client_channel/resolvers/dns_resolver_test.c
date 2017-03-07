@@ -43,7 +43,7 @@ static grpc_combiner *g_combiner;
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
@@ -61,7 +61,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
 
 static void test_fails(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
