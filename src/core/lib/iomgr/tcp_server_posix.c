@@ -119,6 +119,8 @@ struct grpc_tcp_server {
   /* expand wildcard addresses to a list of all local addresses */
   bool expand_wildcard_addrs;
 
+  /* has all listeners been deactived */
+  bool all_ports_deactived;
   /* linked list of server ports */
   grpc_tcp_listener *head;
   grpc_tcp_listener *tail;
@@ -208,6 +210,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   s->shutdown_complete = shutdown_complete;
   s->on_accept_cb = NULL;
   s->on_accept_cb_arg = NULL;
+  s->all_ports_deactived = false;
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
@@ -258,11 +261,12 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
-  if (!s->shutdown) {
+  if (!s->shutdown || s->all_ports_deactived) {
     gpr_mu_unlock(&s->mu);
     return;
   }
 
+  s->all_ports_deactived = true;
   if (s->head) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
