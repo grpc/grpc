@@ -249,7 +249,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
     for language in languages:
       build_jobs.append(
           jobset.JobSpec(
-              cmdline=['tools/run_tests/performance/remote_host_build.sh'] + language,
+              cmdline=['tools/run_tests/performance/remote_host_build.sh'] + [language],
               shortname='remote_host_build.%s' % host,
               environ = {'USER_AT_HOST': user_at_host, 'CONFIG': 'lto' if language == 'c++' else 'opt'},
               timeout_seconds=build_timeout))
@@ -258,7 +258,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
     for language in languages:
       build_jobs.append(
           jobset.JobSpec(
-              cmdline=['tools/run_tests/performance/build_performance.sh'] + language,
+              cmdline=['tools/run_tests/performance/build_performance.sh'] + [language],
               shortname='local_build',
               environ = {'CONFIG': 'lto' if language == 'c++' else 'opt'},
               timeout_seconds=build_timeout))
