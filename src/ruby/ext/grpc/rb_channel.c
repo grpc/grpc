@@ -33,20 +33,20 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
-#include "rb_channel.h"
 #include "rb_byte_buffer.h"
+#include "rb_channel.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
+#include "rb_grpc.h"
 #include "rb_server.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
@@ -104,13 +104,15 @@ static void grpc_rb_channel_mark(void *p) {
   }
 }
 
-static rb_data_type_t grpc_channel_data_type = {
-    "grpc_channel",
-    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
-    NULL, NULL,
+static rb_data_type_t grpc_channel_data_type = {"grpc_channel",
+                                                {grpc_rb_channel_mark,
+                                                 grpc_rb_channel_free,
+                                                 GRPC_RB_MEMSIZE_UNAVAILABLE,
+                                                 {NULL, NULL}},
+                                                NULL,
+                                                NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    RUBY_TYPED_FREE_IMMEDIATELY
+                                                RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -169,7 +171,8 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   }
   rb_ivar_set(self, id_target, target);
   wrapper->wrapped = ch;
-  wrapper->queue = grpc_completion_queue_create(NULL);
+  wrapper->queue = grpc_completion_queue_create(GRPC_CQ_PLUCK,
+                                                GRPC_CQ_DEFAULT_POLLING, NULL);
   return self;
 }
 
@@ -225,14 +228,11 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
     return Qnil;
   }
   grpc_channel_watch_connectivity_state(
-      ch,
-      (grpc_connectivity_state)NUM2LONG(last_state),
-      grpc_rb_time_timeval(deadline, /* absolute time */ 0),
-      cq,
-      tag);
+      ch, (grpc_connectivity_state)NUM2LONG(last_state),
+      grpc_rb_time_timeval(deadline, /* absolute time */ 0), cq, tag);
 
-  event = rb_completion_queue_pluck(cq, tag,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  event = rb_completion_queue_pluck(cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    NULL);
 
   if (event.success) {
     return Qtrue;
@@ -243,9 +243,9 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
 
 /* Create a call given a grpc_channel, in order to call method. The request
    is not sent until grpc_call_invoke is called. */
-static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
-                                         VALUE mask, VALUE method,
-                                         VALUE host, VALUE deadline) {
+static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
+                                         VALUE method, VALUE host,
+                                         VALUE deadline) {
   VALUE res = Qnil;
   grpc_rb_channel *wrapper = NULL;
   grpc_call *call = NULL;
@@ -256,10 +256,11 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
   grpc_slice method_slice;
   grpc_slice host_slice;
   grpc_slice *host_slice_ptr = NULL;
-  char* tmp_str = NULL;
+  char *tmp_str = NULL;
 
   if (host != Qnil) {
-    host_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(host), RSTRING_LEN(host));
+    host_slice =
+        grpc_slice_from_copied_buffer(RSTRING_PTR(host), RSTRING_LEN(host));
     host_slice_ptr = &host_slice;
   }
   if (mask != Qnil) {
@@ -269,7 +270,8 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
     parent_call = grpc_rb_get_wrapped_call(parent);
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+                                    NULL);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {
@@ -277,17 +279,18 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
     return Qnil;
   }
 
-  method_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(method), RSTRING_LEN(method));
+  method_slice =
+      grpc_slice_from_copied_buffer(RSTRING_PTR(method), RSTRING_LEN(method));
 
   call = grpc_channel_create_call(ch, parent_call, flags, cq, method_slice,
-                                  host_slice_ptr, grpc_rb_time_timeval(
-                                      deadline,
-                                      /* absolute time */ 0), NULL);
+                                  host_slice_ptr,
+                                  grpc_rb_time_timeval(deadline,
+                                                       /* absolute time */ 0),
+                                  NULL);
 
   if (call == NULL) {
     tmp_str = grpc_slice_to_c_string(method_slice);
-    rb_raise(rb_eRuntimeError, "cannot create call with method %s",
-             tmp_str);
+    rb_raise(rb_eRuntimeError, "cannot create call with method %s", tmp_str);
     return Qnil;
   }
 
@@ -304,7 +307,6 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent,
   return res;
 }
 
-
 /* Closes the channel, calling it's destroy method */
 static VALUE grpc_rb_channel_destroy(VALUE self) {
   grpc_rb_channel *wrapper = NULL;
@@ -320,12 +322,11 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   return Qnil;
 }
 
-
 /* Called to obtain the target that this channel accesses. */
 static VALUE grpc_rb_channel_get_target(VALUE self) {
   grpc_rb_channel *wrapper = NULL;
   VALUE res = Qnil;
-  char* target = NULL;
+  char *target = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target = grpc_channel_get_target(wrapper->wrapped);
@@ -337,8 +338,8 @@ static VALUE grpc_rb_channel_get_target(VALUE self) {
 
 static void Init_grpc_propagate_masks() {
   /* Constants representing call propagation masks in grpc.h */
-  VALUE grpc_rb_mPropagateMasks = rb_define_module_under(
-      grpc_rb_mGrpcCore, "PropagateMasks");
+  VALUE grpc_rb_mPropagateMasks =
+      rb_define_module_under(grpc_rb_mGrpcCore, "PropagateMasks");
   rb_define_const(grpc_rb_mPropagateMasks, "DEADLINE",
                   UINT2NUM(GRPC_PROPAGATE_DEADLINE));
   rb_define_const(grpc_rb_mPropagateMasks, "CENSUS_STATS_CONTEXT",
@@ -353,8 +354,8 @@ static void Init_grpc_propagate_masks() {
 
 static void Init_grpc_connectivity_states() {
   /* Constants representing call propagation masks in grpc.h */
-  VALUE grpc_rb_mConnectivityStates = rb_define_module_under(
-      grpc_rb_mGrpcCore, "ConnectivityStates");
+  VALUE grpc_rb_mConnectivityStates =
+      rb_define_module_under(grpc_rb_mGrpcCore, "ConnectivityStates");
   rb_define_const(grpc_rb_mConnectivityStates, "IDLE",
                   LONG2NUM(GRPC_CHANNEL_IDLE));
   rb_define_const(grpc_rb_mConnectivityStates, "CONNECTING",
@@ -382,12 +383,11 @@ void Init_grpc_channel() {
 
   /* Add ruby analogues of the Channel methods. */
   rb_define_method(grpc_rb_cChannel, "connectivity_state",
-                   grpc_rb_channel_get_connectivity_state,
-                   -1);
+                   grpc_rb_channel_get_connectivity_state, -1);
   rb_define_method(grpc_rb_cChannel, "watch_connectivity_state",
                    grpc_rb_channel_watch_connectivity_state, 4);
-  rb_define_method(grpc_rb_cChannel, "create_call",
-                   grpc_rb_channel_create_call, 5);
+  rb_define_method(grpc_rb_cChannel, "create_call", grpc_rb_channel_create_call,
+                   5);
   rb_define_method(grpc_rb_cChannel, "target", grpc_rb_channel_get_target, 0);
   rb_define_method(grpc_rb_cChannel, "destroy", grpc_rb_channel_destroy, 0);
   rb_define_alias(grpc_rb_cChannel, "close", "destroy");

@@ -309,7 +309,20 @@ cdef extern from "grpc/grpc.h":
   void grpc_init() nogil
   void grpc_shutdown() nogil
 
-  grpc_completion_queue *grpc_completion_queue_create(void *reserved) nogil
+  ctypedef enum grpc_cq_completion_type:
+    GRPC_CQ_NEXT = 1
+    GRPC_CQ_PLUCK = 2
+
+  ctypedef enum grpc_cq_polling_type:
+    GRPC_CQ_DEFAULT_POLLING
+    GRPC_CQ_NON_LISTENING
+    GRPC_CQ_NON_POLLING
+
+  grpc_completion_queue *grpc_completion_queue_create(
+        grpc_cq_completion_type completion_type,
+        grpc_cq_polling_type polling_type,
+        void *reserved) nogil
+
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil
