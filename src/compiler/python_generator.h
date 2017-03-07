@@ -46,6 +46,8 @@ struct GeneratorConfiguration {
   GeneratorConfiguration();
   grpc::string grpc_package_root;
   grpc::string beta_package_root;
+  grpc::string
+      generated_module_prefix;  // Should have trailing '.' if specified.
 };
 
 class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
