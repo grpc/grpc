@@ -114,6 +114,8 @@ struct grpc_tcp_server {
 
   /* is this server shutting down? */
   bool shutdown;
+  /* have listeners been shutdown? */
+  bool shutdown_listeners;
   /* use SO_REUSEPORT */
   bool so_reuseport;
   /* expand wildcard addresses to a list of all local addresses */
@@ -422,7 +424,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
           grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
           return;
         default:
-          gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
+          if (!sp->server->shutdown_listeners) {
+            gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
+          } else {
+            /* if we have shutdown listeners, accept4 could fail, and we
+               needn't notify users */
+          }
           goto error;
       }
     }
@@ -437,11 +444,6 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     }
 
     grpc_fd *fdobj = grpc_fd_create(fd, name);
-
-    if (read_notifier_pollset == NULL) {
-      gpr_log(GPR_ERROR, "Read notifier pollset is not set on the fd");
-      goto error;
-    }
 
     grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
 
@@ -941,6 +943,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
                                         grpc_tcp_server *s) {
   gpr_mu_lock(&s->mu);
+  s->shutdown_listeners = true;
   /* shutdown all fd's */
   if (s->active_ports) {
     grpc_tcp_listener *sp;
