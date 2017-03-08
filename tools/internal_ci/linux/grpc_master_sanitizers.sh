@@ -33,21 +33,11 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# TODO(jtattermusch): get rid of the system inspection eventually
-nproc || true
-lsb_release -dc || true
-gcc --version || true
-clang --version || true
-docker --version || true
-
-# Need to increase open files limit for c tests
-ulimit -n 2000
-
 git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
+tools/jenkins/run_jenkins_matrix.sh -f sanitizers linux
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
