@@ -476,13 +476,13 @@ def run(cmdlines,
         skip_jobs=False,
         quiet_success=False):
   if skip_jobs:
-    results = {}
+    resultset = {}
     skipped_job_result = JobResult()
     skipped_job_result.state = 'SKIPPED'
     for job in cmdlines:
       message('SKIPPED', job.shortname, do_newline=True)
-      results[job.shortname] = [skipped_job_result]
-    return results
+      resultset[job.shortname] = [skipped_job_result]
+    return 0, resultset
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
