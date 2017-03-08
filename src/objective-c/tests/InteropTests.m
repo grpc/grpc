@@ -164,11 +164,15 @@
     expectedResponse.payload.body = [NSMutableData dataWithLength:10];
     XCTAssertEqualObjects(response, expectedResponse);
 
+    // The test is a success if there is a batch of exactly 3 ops (SEND_INITIAL_METADATA,
+    // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT). Without packet coalescing each batch of ops contains
+    // only one op.
     NSArray *opBatches = [GRPCCall obtainAndCleanOpBatchLog];
+    const NSInteger kExpectedOpBatchSize = 3;
     for (NSObject *o in opBatches) {
       if ([o isKindOfClass:[NSArray class]]) {
         NSArray *batch = (NSArray *)o;
-        if ([batch count] == 3) {
+        if ([batch count] == kExpectedOpBatchSize) {
           [expectation fulfill];
           break;
         }
