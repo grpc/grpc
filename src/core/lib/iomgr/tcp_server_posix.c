@@ -424,12 +424,14 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
           grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
           return;
         default:
+          gpr_mu_lock(&sp->server->mu);
           if (!sp->server->shutdown_listeners) {
             gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
           } else {
             /* if we have shutdown listeners, accept4 could fail, and we
                needn't notify users */
           }
+          gpr_mu_unlock(&sp->server->mu);
           goto error;
       }
     }
