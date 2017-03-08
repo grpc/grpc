@@ -255,10 +255,10 @@ try:
       subprocess.check_call(['git', 'checkout', where_am_i])
     for bm_name in comparables:
       diff = subprocess.check_output(['tools/profiling/microbenchmarks/bm_diff.py',
-                                      '%s.opt.json' % bm_name,
                                       '%s.counters.json' % bm_name,
-                                      '%s.old.opt.json' % bm_name,
-                                      '%s.old.counters.json' % bm_name]).strip()
+                                      '%s.opt.json' % bm_name,
+                                      '%s.old.counters.json' % bm_name,
+                                      '%s.old.opt.json' % bm_name]).strip()
       if diff:
         heading('Performance diff: %s' % bm_name)
         text(diff)

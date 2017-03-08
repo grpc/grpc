@@ -25,8 +25,13 @@ def min_change(pct):
   return lambda n, o: abs((n-o)/o - 1) > pct/100
 
 _INTERESTING = (
-  ('cpu_time', min_change(5)),
-  ('real_time', min_change(5)),
+  ('cpu_time', min_change(10)),
+  ('real_time', min_change(10)),
+  ('locks_per_iteration', min_change(5)),
+  ('allocs_per_iteration', min_change(5)),
+  ('writes_per_iteration', min_change(5)),
+  ('atm_cas_per_iteration', min_change(1)),
+  ('atm_add_per_iteration', min_change(5)),
 )
 
 for bm in sorted(new.keys()):
@@ -44,4 +49,3 @@ for bm in sorted(new.keys()):
         hdr = True
       print '   %s changed %r --> %r' % (fld, o[fld], n[fld])
   sys.exit(0)
-
