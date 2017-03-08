@@ -276,6 +276,8 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
+  // Keep logs of op batches when we are running tests. Disabled when in production for improved
+  // performance.
 #ifdef GRPC_TEST_OBJC
   [GRPCOpBatchLog addOpBatchToLog:operations];
 #endif
