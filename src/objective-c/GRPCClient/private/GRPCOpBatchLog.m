@@ -53,9 +53,7 @@ NSMutableArray *opBatchLog = nil;
 
 + (void)addOpBatchToLog:(NSArray *)batch {
   @synchronized (opBatchLog) {
-    if (opBatchLog) {
-      [opBatchLog addObject:batch];
-    }
+    [opBatchLog addObject:batch];
   }
 }
 
