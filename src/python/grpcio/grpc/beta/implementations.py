@@ -41,6 +41,8 @@ from grpc.beta import interfaces  # pylint: disable=unused-import
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
 
+# pylint: disable=too-many-arguments
+
 ChannelCredentials = grpc.ChannelCredentials
 ssl_channel_credentials = grpc.ssl_channel_credentials
 CallCredentials = grpc.CallCredentials
