@@ -92,19 +92,19 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
       for config in configs:
         name = '%s_%s_%s_%s' % (language, platform, config, iomgr_platform)
         runtests_args = ['-l', language,
-                         '-c', config]
+                         '-c', config,
+                         '--iomgr_platform', iomgr_platform]
         if arch or compiler:
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
-
         runtests_args += extra_args
         if platform == 'linux':
           job = _docker_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
         else:
           job = _workspace_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
 
-        job.labels = [platform, config, language] + labels
+        job.labels = [platform, config, language, iomgr_platform] + labels
         result.append(job)
   return result
 
