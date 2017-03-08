@@ -1465,10 +1465,9 @@ def _build_and_run(
       sample_size = int(num_jobs * args.sample_percent/100.0)
       massaged_one_run = random.sample(massaged_one_run, sample_size)
       if not isclose(args.sample_percent, 100.0):
+        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
         print("Running %d tests out of %d (~%d%%)" %
               (sample_size, num_jobs, args.sample_percent))
-      else:
-        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
     if infinite_runs:
       assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
