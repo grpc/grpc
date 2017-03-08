@@ -169,8 +169,6 @@
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-#ifndef GRPC_COMPILE_WITH_CRONET
-// TODO (mxyan): Fix this test
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ResponseOverMaxSize"];
@@ -191,7 +189,6 @@
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
-#endif
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
   XCTAssertNotNil(self.class.host);
@@ -327,8 +324,6 @@
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-#ifndef GRPC_COMPILE_WITH_CRONET
-// TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -342,7 +337,6 @@
   }];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
-#endif
 
 - (void)testCancelAfterBeginRPC {
   XCTAssertNotNil(self.class.host);
