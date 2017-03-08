@@ -46,6 +46,11 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 
+// At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
+// SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
+// and RECV_STATUS_ON_CLIENT.
+NSInteger kMaxClientBatch = 6;
+
 NSString * const kGRPCHeadersKey = @"io.grpc.HeadersKey";
 NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 static NSMutableDictionary *callFlags;
@@ -165,7 +170,7 @@ static NSMutableDictionary *callFlags;
 
     if ([requestWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
       _unaryCall = YES;
-      _unaryOpBatch = [NSMutableArray arrayWithCapacity:6];
+      _unaryOpBatch = [NSMutableArray arrayWithCapacity:kMaxClientBatch];
     }
   }
   return self;
