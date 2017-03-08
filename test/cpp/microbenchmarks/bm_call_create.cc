@@ -55,12 +55,10 @@ extern "C" {
 #include "src/core/lib/transport/transport_impl.h"
 }
 
+#include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
-static struct Init {
-  Init() { grpc_init(); }
-  ~Init() { grpc_shutdown(); }
-} g_init;
+auto &force_library_initialization = Library::get();
 
 class BaseChannelFixture {
  public:
@@ -89,6 +87,7 @@ class LameChannel : public BaseChannelFixture {
 
 template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture fixture;
   grpc_completion_queue *cq =
       grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
@@ -101,6 +100,7 @@ static void BM_CallCreateDestroy(benchmark::State &state) {
         deadline, NULL));
   }
   grpc_completion_queue_destroy(cq);
+  track_counters.Finish(state);
 }
 
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, InsecureChannel);
@@ -317,6 +317,7 @@ class SendEmptyMetadata {
 // perform on said filter.
 template <class Fixture, class TestOp>
 static void BM_IsolatedFilter(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture fixture;
   std::ostringstream label;
 
@@ -372,6 +373,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   gpr_free(call_stack);
 
   state.SetLabel(label.str());
+  track_counters.Finish(state);
 }
 
 typedef Fixture<nullptr, 0> NoFilter;
