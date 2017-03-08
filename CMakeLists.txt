@@ -588,7 +588,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_error)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_cxx bm_fullstack)
+add_dependencies(buildtests_cxx bm_fullstack_streaming_ping_pong)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_fullstack_streaming_pump)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_fullstack_trickle)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_fullstack_unary_ping_pong)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_metadata)
@@ -1440,7 +1449,7 @@ add_library(grpc_test_util
   test/core/security/oauth2_utils.c
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -1647,7 +1656,7 @@ if (gRPC_BUILD_TESTS)
 add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -3096,6 +3105,50 @@ if (gRPC_INSTALL)
   )
 endif()
 
+if (gRPC_BUILD_TESTS)
+
+add_library(grpc_benchmark
+  test/cpp/microbenchmarks/helpers.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_benchmark PROPERTIES COMPILE_PDB_NAME "grpc_benchmark"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_benchmark.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(grpc_benchmark
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_benchmark
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  benchmark
+  grpc++
+  grpc_test_util
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_cli_libs
@@ -7561,6 +7614,7 @@ target_include_directories(bm_call_create
 target_link_libraries(bm_call_create
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7599,6 +7653,7 @@ target_include_directories(bm_chttp2_hpack
 target_link_libraries(bm_chttp2_hpack
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7637,6 +7692,7 @@ target_include_directories(bm_closure
 target_link_libraries(bm_closure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7675,6 +7731,7 @@ target_include_directories(bm_cq
 target_link_libraries(bm_cq
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7713,6 +7770,7 @@ target_include_directories(bm_error
 target_link_libraries(bm_error
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7728,13 +7786,13 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(bm_fullstack
-  test/cpp/microbenchmarks/bm_fullstack.cc
+add_executable(bm_fullstack_streaming_ping_pong
+  test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   third_party/googletest/src/gtest-all.cc
 )
 
 
-target_include_directories(bm_fullstack
+target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -7748,9 +7806,127 @@ target_include_directories(bm_fullstack
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(bm_fullstack
+target_link_libraries(bm_fullstack_streaming_ping_pong
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_fullstack_streaming_pump
+  test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_fullstack_streaming_pump
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_fullstack_streaming_pump
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_fullstack_trickle
+  test/cpp/microbenchmarks/bm_fullstack_trickle.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_fullstack_trickle
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_fullstack_trickle
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_fullstack_unary_ping_pong
+  test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_fullstack_unary_ping_pong
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_fullstack_unary_ping_pong
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util
@@ -7789,6 +7965,7 @@ target_include_directories(bm_metadata
 target_link_libraries(bm_metadata
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc_test_util
   grpc
