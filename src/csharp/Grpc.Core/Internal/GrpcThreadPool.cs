@@ -197,7 +197,7 @@ namespace Grpc.Core.Internal
             for (int i = 0; i < completionQueueCount; i++)
             {
                 var completionRegistry = new CompletionRegistry(environment);
-                list.Add(CompletionQueueSafeHandle.Create(completionRegistry));
+                list.Add(CompletionQueueSafeHandle.CreateAsync(completionRegistry));
             }
             return list.AsReadOnly();
         }
