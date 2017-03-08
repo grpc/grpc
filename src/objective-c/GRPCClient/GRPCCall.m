@@ -274,7 +274,7 @@ static NSMutableDictionary *callFlags;
   // TODO(jcanizales): Add error handlers for async failures
   GRPCOpSendMetadata *op = [[GRPCOpSendMetadata alloc] initWithMetadata:headers
                                                                   flags:[GRPCCall callFlagsForHost:_host path:_path]
-                                                                handler:nil];
+                                                                handler:nil];  // No clean-up needed after SEND_INITIAL_METADATA
   if (!_unaryCall) {
     [_wrappedCall startBatchWithOperations:@[op]];
   } else {
@@ -331,7 +331,7 @@ static NSMutableDictionary *callFlags;
 // Only called from the call queue. The error handler will be called from the
 // network queue if the requests stream couldn't be closed successfully.
 - (void)finishRequestWithErrorHandler:(void (^)())errorHandler {
-  if (!_unaryOpBatch) {
+  if (!_unaryCall) {
     [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] init]]
                               errorHandler:errorHandler];
   } else {
