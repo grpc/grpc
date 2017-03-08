@@ -61,9 +61,11 @@ do
   "csharp")
     if [ "$CONFIG" == "lto" ]
     then
-      CONFIG="opt"
+      CS_CONFIG="opt"
+    else
+      CS_CONFIG=$CONFIG
     fi
-    python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
+    python tools/run_tests/run_tests.py -l $language -c $CS_CONFIG --build_only -j 8 --compiler coreclr
     ;;
   *)
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
