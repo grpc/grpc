@@ -1667,6 +1667,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "parse_address_test", 
+    "src": [
+      "test/core/client_channel/parse_address_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
       "test/core/slice/percent_decode_fuzzer.c"
@@ -5798,7 +5815,8 @@
     "deps": [
       "benchmark", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc_test_util"
     ], 
     "headers": [
       "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
@@ -5811,6 +5829,7 @@
     "src": [
       "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
       "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.cc", 
       "test/cpp/microbenchmarks/helpers.h"
     ], 
     "third_party": false, 
@@ -8021,7 +8040,7 @@
     "headers": [
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -8043,8 +8062,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.c", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.c", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.c", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.c", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 

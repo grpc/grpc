@@ -74,36 +74,8 @@ extern "C" gpr_atm gpr_counter_atm_add;
 
 class TrackCounters {
  public:
-  virtual void Finish(benchmark::State& state) {
-    std::ostringstream out;
-    AddToLabel(out, state);
-    auto label = out.str();
-    if (label.length() && label[0] == ' ') {
-      label = label.substr(1);
-    }
-    state.SetLabel(label);
-  }
-
-  virtual void AddToLabel(std::ostream& out, benchmark::State& state) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-    out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
-                                       mu_locks_at_start_) /
-                              (double)state.iterations())
-        << " atm_cas/iter:"
-        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
-                     atm_cas_at_start_) /
-            (double)state.iterations())
-        << " atm_add/iter:"
-        << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
-                     atm_add_at_start_) /
-            (double)state.iterations());
-#endif
-    grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
-    out << " allocs/iter:"
-        << ((double)(counters_at_end.total_allocs_absolute -
-                     counters_at_start_.total_allocs_absolute) /
-            (double)state.iterations());
-  }
+  virtual void Finish(benchmark::State& state);
+  virtual void AddToLabel(std::ostream& out, benchmark::State& state);
 
  private:
 #ifdef GPR_LOW_LEVEL_COUNTERS

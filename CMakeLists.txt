@@ -440,6 +440,7 @@ add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
+add_dependencies(buildtests_c parse_address_test)
 add_dependencies(buildtests_c percent_encoding_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c pollset_set_test)
@@ -1448,7 +1449,7 @@ add_library(grpc_test_util
   test/core/security/oauth2_utils.c
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -1655,7 +1656,7 @@ if (gRPC_BUILD_TESTS)
 add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fake_resolver.c
-  test/core/end2end/fixtures/http_proxy.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
   test/core/util/debugger_macros.c
@@ -3107,6 +3108,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_benchmark
+  test/cpp/microbenchmarks/helpers.cc
 )
 
 if(WIN32 AND MSVC)
@@ -3140,6 +3142,7 @@ target_link_libraries(grpc_benchmark
   ${_gRPC_ALLTARGETS_LIBRARIES}
   benchmark
   grpc++
+  grpc_test_util
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -6481,6 +6484,33 @@ target_include_directories(no_server_test
 )
 
 target_link_libraries(no_server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(parse_address_test
+  test/core/client_channel/parse_address_test.c
+)
+
+
+target_include_directories(parse_address_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(parse_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
