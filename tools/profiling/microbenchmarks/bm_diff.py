@@ -3,6 +3,7 @@
 import sys
 import json
 import bm_json
+import tabulate
 
 with open(sys.argv[1]) as f:
   js_new_ctr = json.loads(f.read())
@@ -21,8 +22,11 @@ for row in bm_json.expand_json(js_new_ctr, js_new_opt):
 for row in bm_json.expand_json(js_old_ctr, js_old_opt):
   old[row['cpp_name']] = row
 
+def changed_ratio(n, o):
+  return float(n-o)/float(o)
+
 def min_change(pct):
-  return lambda n, o: abs((n-o)/o - 1) > pct/100
+  return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
 _INTERESTING = (
   ('cpu_time', min_change(10)),
@@ -34,18 +38,36 @@ _INTERESTING = (
   ('atm_add_per_iteration', min_change(5)),
 )
 
+changed = []
+for fld, chk in _INTERESTING:
+  for bm in new.keys():
+    if bm not in old: continue
+    n = new[bm]
+    o = old[bm]
+    if fld not in n or fld not in o: continue
+    if chk(n[fld], o[fld]):
+      changed.append((fld, chk))
+      break
+
+headers = ['Benchmark'] + [c[0] for c in changed] + ['Details']
+rows = []
 for bm in sorted(new.keys()):
   if bm not in old: continue
-  hdr = False
+  row = [bm]
+  any_changed = False
   n = new[bm]
   o = old[bm]
-  print n
-  print o
+  details = ''
   for fld, chk in _INTERESTING:
     if fld not in n or fld not in o: continue
     if chk(n[fld], o[fld]):
-      if not hdr:
-        print '%s shows changes:' % bm
-        hdr = True
-      print '   %s changed %r --> %r' % (fld, o[fld], n[fld])
-  sys.exit(0)
+      row.append(changed_ratio(n[fld], o[fld]))
+      if details: details += ', '
+      details += '%s:%r-->%r' % (fld, o[fld], n[fld])
+      any_changed = True
+    else:
+      row.append('')
+  if any_changed:
+    row.append(details)
+    rows.append(row)
+print tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
