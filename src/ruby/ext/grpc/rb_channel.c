@@ -198,7 +198,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
     return Qnil;
   }
   return LONG2NUM(
-      grpc_channel_check_connectivity_state(ch, (int)try_to_connect));
+      grpc_channel_check_connectivity_state(ch, RTEST(try_to_connect)));
 }
 
 /* Watch for a change in connectivity state.

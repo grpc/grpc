@@ -166,6 +166,11 @@ describe GRPC::Core::Channel do
 
       expect(valid_states).to include(ch.connectivity_state)
     end
+
+    it 'takes an optional parameter' do
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
+      ch.connectivity_state(true)
+    end
   end
 
   describe '::SSL_TARGET' do
