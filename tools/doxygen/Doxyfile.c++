@@ -786,6 +786,7 @@ doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/server_side_auth.md \
 doc/service_config.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \

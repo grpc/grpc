@@ -49,6 +49,9 @@ _RUNTESTS_TIMEOUT = 4*60*60
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
+# report suffix is important for reports to get picked up by internal CI
+_REPORT_SUFFIX = 'sponge_log.xml'
+
 
 def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a docker container"""
@@ -57,7 +60,7 @@ def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                    '--use_docker',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', 'report_%s.xml' % name,
+                   '-x', 'report_%s_%s' % (name, _REPORT_SUFFIX),
                    '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -70,10 +73,11 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
   test_job = jobset.JobSpec(
-          cmdline=['tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
+          cmdline=['bash',
+                   'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', '../report_%s.xml' % name,
+                   '-x', '../report_%s_%s' % (name, _REPORT_SUFFIX),
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
@@ -414,7 +418,7 @@ if __name__ == "__main__":
     skipped_results = jobset.run(skipped_jobs,
                                  skip_jobs=True)
     resultset.update(skipped_results)
-  report_utils.render_junit_xml_report(resultset, 'report.xml',
+  report_utils.render_junit_xml_report(resultset, 'report_%s' % _REPORT_SUFFIX,
                                        suite_name='aggregate_tests')
 
   if num_failures == 0:

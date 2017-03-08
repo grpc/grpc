@@ -32,46 +32,51 @@
 #endregion
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    /// <summary>
-    /// Tests if the version of nunit-console used is sufficient to run async tests.
-    /// </summary>
-    public class NUnitVersionTest
+    public class AuthPropertyTest
     {
-        private int testRunCount = 0;
-
-        [TestFixtureTearDown]
-        public void Cleanup()
+        [Test]
+        public void Create_NameIsNotNull()
         {
-            if (testRunCount != 2)
-            {
-                Console.Error.WriteLine("You are using and old version of NUnit that doesn't support async tests and skips them instead. " +
-                "This test has failed to indicate that.");
-                Console.Error.Flush();
-                throw new Exception("NUnitVersionTest has failed.");
-            }
+            Assert.Throws(typeof(ArgumentNullException), () => AuthProperty.Create(null, new byte[0]));
+            Assert.Throws(typeof(ArgumentNullException), () => AuthProperty.CreateUnsafe(null, new byte[0]));
         }
 
         [Test]
-        public void NUnitVersionTest1()
+        public void Create_ValueIsNotNull()
         {
-            testRunCount++;
+            Assert.Throws(typeof(ArgumentNullException), () => AuthProperty.Create("abc", null));
+            Assert.Throws(typeof(ArgumentNullException), () => AuthProperty.CreateUnsafe("abc", null));
         }
 
-        // Old version of NUnit will skip this test
         [Test]
-        public async Task NUnitVersionTest2()
+        public void Create()
         {
-            testRunCount++;
-            await Task.Delay(10);
+            var valueBytes = new byte[] { 68, 69, 70 };
+            var authProperty = AuthProperty.Create("abc", valueBytes);
+
+            Assert.AreEqual("abc", authProperty.Name);
+            Assert.AreNotSame(valueBytes, authProperty.ValueBytesUnsafe);
+            CollectionAssert.AreEqual(valueBytes, authProperty.ValueBytes);
+            CollectionAssert.AreEqual(valueBytes, authProperty.ValueBytesUnsafe);
+            Assert.AreEqual("DEF", authProperty.Value);
+        }
+
+        [Test]
+        public void CreateUnsafe()
+        {
+            var valueBytes = new byte[] { 68, 69, 70 };
+            var authProperty = AuthProperty.CreateUnsafe("abc", valueBytes);
+
+            Assert.AreEqual("abc", authProperty.Name);
+            Assert.AreSame(valueBytes, authProperty.ValueBytesUnsafe);
+            Assert.AreNotSame(valueBytes, authProperty.ValueBytes);
+            CollectionAssert.AreEqual(valueBytes, authProperty.ValueBytes);
+            CollectionAssert.AreEqual(valueBytes, authProperty.ValueBytesUnsafe);
+            Assert.AreEqual("DEF", authProperty.Value);
         }
     }
 }

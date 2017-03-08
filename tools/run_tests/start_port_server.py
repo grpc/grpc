@@ -1,4 +1,6 @@
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python
+
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:wily
-RUN apt-get update
-RUN apt-get -y install software-properties-common python-software-properties
-RUN add-apt-repository ppa:webupd8team/java
-RUN apt-get update
-RUN apt-get -y install \
-	vim            \
-	wget           \
-	openjdk-8-jdk  \
-	pkg-config     \
-	zip            \
-	g++            \
-	zlib1g-dev     \
-	unzip          \
-	git
+"""
+Wrapper around port server starting code.
 
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel
-RUN cd /bazel && ./compile.sh
+Used by developers who wish to run individual C/C++ tests outside of the
+run_tests.py infrastructure.
 
-RUN ln -s /bazel/output/bazel /bin/
+The path to this file is called out in test/core/util/port.c, and printed as
+an error message to users.
+"""
 
-# ensure the installation has been extracted
-RUN bazel
+import python_utils.start_port_server as start_port_server
+
+start_port_server.start_port_server()
+
+print "Port server started successfully"

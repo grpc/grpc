@@ -149,6 +149,10 @@ bm_specs = {
     'tpl': ['fixture'],
     'dyn': [],
   },
+  'BM_CallCreateDestroy' : {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
 }
 
 def numericalize(s):

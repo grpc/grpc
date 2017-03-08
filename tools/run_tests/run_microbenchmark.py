@@ -44,8 +44,7 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 if not os.path.exists('reports'):
   os.makedirs('reports')
 
-port_server_port = 32766
-start_port_server.start_port_server(port_server_port)
+start_port_server.start_port_server()
 
 def fnize(s):
   out = ''
@@ -110,8 +109,7 @@ def collect_latency(bm_name, args):
     if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -119,8 +117,7 @@ def collect_latency(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
@@ -156,8 +153,7 @@ def collect_perf(bm_name, args):
     if len(benchmarks) >= 20:
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=1,
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=1)
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -165,8 +161,7 @@ def collect_perf(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=1,
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=1)
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
@@ -204,13 +199,17 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack',
+                  default=['bm_fullstack_unary_ping_pong',
+                           'bm_fullstack_streaming_ping_pong',
+                           'bm_fullstack_streaming_pump',
                            'bm_closure',
                            'bm_cq',
                            'bm_call_create',
                            'bm_error',
                            'bm_chttp2_hpack',
-                           'bm_metadata'],
+                           'bm_metadata',
+                           'bm_fullstack_trickle',
+                           ],
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
