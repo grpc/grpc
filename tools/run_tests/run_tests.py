@@ -1298,7 +1298,9 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
+  subprocess.check_call('tools/run_tests/dockerize/build_docker_and_run_tests.sh',
+                        shell=True,
+                        env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)
