@@ -47,14 +47,6 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
 @implementation InteropTestsRemoteWithCronet
 
-+ (void)setUp {
-  // Cronet setup
-  [Cronet setHttp2Enabled:YES];
-  [Cronet start];
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-  [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
-}
-
 + (NSString *)host {
   return kRemoteSSLHost;
 }
