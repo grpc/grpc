@@ -47,4 +47,8 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
   return kRemoteSSLHost;
 }
 
+- (int32_t)encodingOverhead {
+  return 12; // bytes
+}
+
 @end
