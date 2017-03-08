@@ -34,5 +34,5 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-tools/run_tests/run_microbenchmark.py -c --diff_perf origin/$ghprbTargetBranch
+tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch
 
