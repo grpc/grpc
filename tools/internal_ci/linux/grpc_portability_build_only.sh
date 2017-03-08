@@ -37,5 +37,4 @@ git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-
 tools/jenkins/run_jenkins_matrix.sh -f portability linux --build_only
