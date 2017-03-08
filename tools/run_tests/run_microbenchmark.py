@@ -228,8 +228,10 @@ for bm_name in args.benchmarks:
   for collect in args.collect:
     collectors[collect](bm_name, args)
 if args.diff_perf:
-  for bm_name in args.benchmarks:
-    run_summary(bm_name, 'opt', '%s.new' % bm_name)
+  if 'summary' not in args.collect:
+    for bm_name in args.benchmarks:
+      run_summary(bm_name, 'opt', bm_name)
+      run_summary(bm_name, 'counters', bm_name)
   where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
   subprocess.check_call(['git', 'checkout', args.diff_perf])
   comparables = []
@@ -238,15 +240,21 @@ if args.diff_perf:
     for bm_name in args.benchmarks:
       try:
         run_summary(bm_name, 'opt', '%s.old' % bm_name)
+        run_summary(bm_name, 'counters', '%s.old' % bm_name)
         comparables.append(bm_name)
       except subprocess.CalledProcessError, e:
         pass
   finally:
     subprocess.check_call(['git', 'checkout', where_am_i])
   for bm_name in comparables:
-    subprocess.check_call(['third_party/benchmark/tools/compare_bench.py',
-                          '%s.new.opt.json' % bm_name,
-                          '%s.old.opt.json' % bm_name])
+    diff = subprocess.check_output(['tools/profiling/microbenchmarks/bm_diff.py',
+                                    '%s.opt.json' % bm_name,
+                                    '%s.counters.json' % bm_name,
+                                    '%s.old.opt.json' % bm_name,
+                                    '%s.old.counters.json' % bm_name]).strip()
+    if diff:
+      heading('Performance diff: %s' % bm_name)
+      text(diff)
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:
