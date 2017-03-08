@@ -131,6 +131,10 @@
     <Compile Include="Internal\RequestCallContextSafeHandle.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
     <Compile Include="Internal\CallFlags.cs" />
+    <Compile Include="AuthContext.cs" />
+    <Compile Include="Internal\AuthContextSafeHandle.cs" />
+    <Compile Include="Internal\MarshalUtils.cs" />
+    <Compile Include="AuthProperty.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.project.json" />

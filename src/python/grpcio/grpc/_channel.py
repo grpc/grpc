@@ -237,7 +237,7 @@ def _consume_request_iterator(request_iterator, state, call,
                     cygrpc.Operations(operations), event_handler)
                 state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    def stop_consumption_thread(timeout):
+    def stop_consumption_thread(timeout):  # pylint: disable=unused-argument
         with state.condition:
             if state.code is None:
                 call.cancel()
@@ -736,7 +736,7 @@ def _run_channel_spin_thread(state):
                         state.managed_calls = None
                         return
 
-    def stop_channel_spin(timeout):
+    def stop_channel_spin(timeout):  # pylint: disable=unused-argument
         with state.lock:
             if state.managed_calls is not None:
                 for call in state.managed_calls:
@@ -877,12 +877,8 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-
-            def cancel_all_subscriptions(timeout):
-                _moot(state)
-
             polling_thread = _common.CleanupThread(
-                cancel_all_subscriptions,
+                lambda timeout: _moot(state),
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
             polling_thread.start()

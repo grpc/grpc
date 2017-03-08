@@ -2420,6 +2420,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2440,6 +2441,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2460,6 +2462,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2480,6 +2483,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2500,6 +2504,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2520,14 +2525,15 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "bm_fullstack", 
+    "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2538,6 +2544,70 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_streaming_pump", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_trickle", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_trickle.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -5743,6 +5813,30 @@
   }, 
   {
     "deps": [
+      "benchmark", 
+      "grpc", 
+      "grpc++", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.cc", 
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
@@ -7946,7 +8040,7 @@
     "headers": [
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -7968,8 +8062,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.c", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.c", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.c", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.c", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
