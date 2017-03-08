@@ -286,6 +286,8 @@ static NSMutableDictionary *callFlags;
 
 // Only called from the call queue. The error handler will be called from the
 // network queue if the write didn't succeed.
+// If the call is a unary call, parameter \a errorHandler will be ignored and
+// the error handler of GRPCOpSendClose will be executed in case of error.
 - (void)writeMessage:(NSData *)message withErrorHandler:(void (^)())errorHandler {
 
   __weak GRPCCall *weakSelf = self;
