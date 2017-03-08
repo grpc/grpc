@@ -59,6 +59,10 @@ do
     tools/run_tests/performance/build_performance_go.sh
     ;;
   "csharp")
+    if [ "$CONFIG" == "lto" ]
+    then
+      CONFIG="opt"
+    fi
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
     ;;
   *)
