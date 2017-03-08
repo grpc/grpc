@@ -440,6 +440,7 @@ add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
+add_dependencies(buildtests_c parse_address_test)
 add_dependencies(buildtests_c percent_encoding_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c pollset_set_test)
@@ -464,6 +465,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
+add_dependencies(buildtests_c stream_owned_slice_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c tcp_client_posix_test)
 endif()
@@ -1447,10 +1449,8 @@ add_library(grpc_test_util
   test/core/util/mock_endpoint.c
   test/core/util/parse_hexstring.c
   test/core/util/passthru_endpoint.c
-  test/core/util/port_posix.c
+  test/core/util/port.c
   test/core/util/port_server_client.c
-  test/core/util/port_uv.c
-  test/core/util/port_windows.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
   src/core/lib/channel/channel_args.c
@@ -1656,10 +1656,8 @@ add_library(grpc_test_util_unsecure
   test/core/util/mock_endpoint.c
   test/core/util/parse_hexstring.c
   test/core/util/passthru_endpoint.c
-  test/core/util/port_posix.c
+  test/core/util/port.c
   test/core/util/port_server_client.c
-  test/core/util/port_uv.c
-  test/core/util/port_windows.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
 )
@@ -6449,6 +6447,33 @@ target_link_libraries(no_server_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(parse_address_test
+  test/core/client_channel/parse_address_test.c
+)
+
+
+target_include_directories(parse_address_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(parse_address_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(percent_encoding_test
   test/core/slice/percent_encoding_test.c
 )
@@ -6932,6 +6957,33 @@ target_include_directories(status_conversion_test
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(stream_owned_slice_test
+  test/core/transport/stream_owned_slice_test.c
+)
+
+
+target_include_directories(stream_owned_slice_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(stream_owned_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

@@ -74,10 +74,11 @@ grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name);
 
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */
-char *grpc_get_default_authority(const char *target);
+char *grpc_get_default_authority(grpc_exec_ctx *exec_ctx, const char *target);
 
 /** Returns a newly allocated string containing \a target, adding the
     default prefix if needed. */
-char *grpc_resolver_factory_add_default_prefix_if_needed(const char *target);
+char *grpc_resolver_factory_add_default_prefix_if_needed(
+    grpc_exec_ctx *exec_ctx, const char *target);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_REGISTRY_H */

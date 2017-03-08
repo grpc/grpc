@@ -611,10 +611,8 @@ filegroups:
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/passthru_endpoint.c
-  - test/core/util/port_posix.c
+  - test/core/util/port.c
   - test/core/util/port_server_client.c
-  - test/core/util/port_uv.c
-  - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   - test/core/util/trickle_endpoint.c
   deps:
@@ -2496,6 +2494,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: parse_address_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/parse_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -2747,6 +2755,16 @@ targets:
   language: c
   src:
   - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stream_owned_slice_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/stream_owned_slice_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3345,6 +3363,8 @@ targets:
   - grpc++
   - grpc
   - gpr
+  args:
+  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
 - name: grpc_cli
   build: test
   run: false

@@ -1667,6 +1667,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "parse_address_test", 
+    "src": [
+      "test/core/client_channel/parse_address_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
       "test/core/slice/percent_decode_fuzzer.c"
@@ -2028,6 +2045,23 @@
     "name": "status_conversion_test", 
     "src": [
       "test/core/transport/status_conversion_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "stream_owned_slice_test", 
+    "src": [
+      "test/core/transport/stream_owned_slice_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7976,12 +8010,10 @@
       "test/core/util/parse_hexstring.h", 
       "test/core/util/passthru_endpoint.c", 
       "test/core/util/passthru_endpoint.h", 
+      "test/core/util/port.c", 
       "test/core/util/port.h", 
-      "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 
       "test/core/util/port_server_client.h", 
-      "test/core/util/port_uv.c", 
-      "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h", 
       "test/core/util/trickle_endpoint.c", 

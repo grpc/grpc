@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +27,51 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:wily
-RUN apt-get update
-RUN apt-get -y install software-properties-common python-software-properties
-RUN add-apt-repository ppa:webupd8team/java
-RUN apt-get update
-RUN apt-get -y install \
-	vim            \
-	wget           \
-	openjdk-8-jdk  \
-	pkg-config     \
-	zip            \
-	g++            \
-	zlib1g-dev     \
-	unzip          \
-	git
+licenses(["notice"])  # 3-clause BSD
 
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel
-RUN cd /bazel && ./compile.sh
+cc_test(
+    name = "codegen_test_full",
+    srcs = ["codegen_test_full.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
 
-RUN ln -s /bazel/output/bazel /bin/
+cc_test(
+    name = "codegen_test_minimal",
+    srcs = ["codegen_test_minimal.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
 
-# ensure the installation has been extracted
-RUN bazel
+cc_test(
+    name = "proto_utils_test",
+    srcs = ["proto_utils_test.cc"],
+    deps = [
+        "//:grpc++",
+        "//external:gtest",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+cc_test(
+    name = "golden_file_test",
+    srcs = ["golden_file_test.cc"],
+    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h"],
+    data = [
+        ":compiler_test_golden",
+        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
+    ],
+    deps = [
+        "//:grpc++",
+        "//external:gflags",
+        "//external:gtest",
+        "//src/proto/grpc/testing:compiler_test_proto",
+        "//test/core/util:gpr_test_util",
+    ],
+)

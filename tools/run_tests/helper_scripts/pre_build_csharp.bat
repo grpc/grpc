@@ -89,18 +89,6 @@ if exist %NUGET% (
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd Grpc.IntegrationTesting.Client || goto :error
-  %NUGET% restore -PackagesDirectory ../packages || goto :error
-  cd ..
-
-  cd Grpc.IntegrationTesting.QpsWorker || goto :error
-  %NUGET% restore -PackagesDirectory ../packages || goto :error
-  cd ..
-
-  cd Grpc.IntegrationTesting.StressClient || goto :error
-  %NUGET% restore -PackagesDirectory ../packages || goto :error
-  cd ..
-
   cd Grpc.IntegrationTesting || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
 

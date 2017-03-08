@@ -35,8 +35,8 @@ import unittest
 from grpc import _common
 
 _SHORT_TIME = 0.5
-_LONG_TIME = 2.0
-_EPSILON = 0.1
+_LONG_TIME = 5.0
+_EPSILON = 0.5
 
 
 def cleanup(timeout):
