@@ -59,13 +59,9 @@ NSMutableArray *opBatchLog = nil;
 
 + (NSArray *)obtainAndCleanOpBatchLog {
   @synchronized (opBatchLog) {
-    if (opBatchLog) {
-      NSArray *out = opBatchLog;
-      opBatchLog = [NSMutableArray array];
-      return out;
-    } else {
-      return nil;
-    }
+    NSArray *out = opBatchLog;
+    opBatchLog = [NSMutableArray array];
+    return out;
   }
 }
 
