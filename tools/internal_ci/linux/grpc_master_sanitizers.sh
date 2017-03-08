@@ -37,12 +37,4 @@ git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/jenkins/run_jenkins_matrix.sh -f sanitizers linux
-
-# kill port_server.py to prevent the build from hanging
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+tools/run_tests/run_tests_matrix.sh -f sanitizers linux
