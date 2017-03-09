@@ -39,6 +39,19 @@ def _sign_request(callback, token, error):
     callback(metadata, error)
 
 
+def _create_get_token_callback(callback):
+
+    def get_token_callback(future):
+        try:
+            access_token = future.result().access_token
+        except Exception as exception:  # pylint: disable=broad-except
+            _sign_request(callback, None, exception)
+        else:
+            _sign_request(callback, access_token, None)
+
+    return get_token_callback
+
+
 class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     """Metadata wrapper for GoogleCredentials from the oauth2client library."""
 
@@ -59,16 +72,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
                 additional_claims={'aud': context.service_url})
         else:
             future = self._pool.submit(self._credentials.get_access_token)
-        future.add_done_callback(
-            lambda x: self._get_token_callback(callback, x))
-
-    def _get_token_callback(self, callback, future):
-        try:
-            access_token = future.result().access_token
-        except Exception as e:
-            _sign_request(callback, None, e)
-        else:
-            _sign_request(callback, access_token, None)
+        future.add_done_callback(_create_get_token_callback(callback))
 
     def __del__(self):
         self._pool.shutdown(wait=False)

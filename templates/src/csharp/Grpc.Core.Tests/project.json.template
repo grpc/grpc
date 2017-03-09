@@ -6,10 +6,10 @@
       "Grpc.Core": {
         "target": "project"
       },
-      "Newtonsoft.Json": "8.0.3",
-      "NUnit": "3.2.0",
-      "NUnitLite": "3.2.0-*",
-      "NUnit.ConsoleRunner": "3.2.0",
+      "Newtonsoft.Json": "9.0.1",
+      "NUnit": "3.6.0",
+      "NUnitLite": "3.6.0",
+      "NUnit.ConsoleRunner": "3.6.0",
       "OpenCover": "4.6.519",
       "ReportGenerator": "2.4.4.0"
     },

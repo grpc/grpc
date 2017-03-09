@@ -63,7 +63,9 @@ Status DefaultHealthCheckService::HealthCheckServiceImpl::Check(
     ServerContext* context, const ByteBuffer* request, ByteBuffer* response) {
   // Decode request.
   std::vector<Slice> slices;
-  request->Dump(&slices);
+  if (!request->Dump(&slices).ok()) {
+    return Status(StatusCode::INVALID_ARGUMENT, "");
+  }
   uint8_t* request_bytes = nullptr;
   bool request_bytes_owned = false;
   size_t request_size = 0;
