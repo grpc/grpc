@@ -60,7 +60,7 @@ extern "C" {
 
 auto &force_library_initialization = Library::get();
 
-void BM_Zalloc(benchmark::State& state) {
+void BM_Zalloc(benchmark::State &state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
   size_t sz = state.range(0);
@@ -68,7 +68,19 @@ void BM_Zalloc(benchmark::State& state) {
     gpr_free(gpr_zalloc(sz));
   }
 }
-BENCHMARK(BM_Zalloc)->Arg(64)->Arg(128)->Arg(256)->Arg(512)->Arg(1024)->Arg(1536)->Arg(2048)->Arg(3072)->Arg(4096)->Arg(5120)->Arg(6144)->Arg(7168);
+BENCHMARK(BM_Zalloc)
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512)
+    ->Arg(1024)
+    ->Arg(1536)
+    ->Arg(2048)
+    ->Arg(3072)
+    ->Arg(4096)
+    ->Arg(5120)
+    ->Arg(6144)
+    ->Arg(7168);
 
 class BaseChannelFixture {
  public:
