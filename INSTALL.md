@@ -19,7 +19,7 @@ refer to these documents
 ##Linux
 
 ```sh
- $ [sudo] apt-get install build-essential autoconf libtool
+ $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
 ##Mac OSX
