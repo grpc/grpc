@@ -7967,7 +7967,9 @@ target_link_libraries(bm_metadata
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
   benchmark
+  grpc++_test_util
   grpc_test_util
+  grpc++
   grpc
   gpr_test_util
   gpr
