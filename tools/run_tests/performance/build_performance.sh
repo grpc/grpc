@@ -62,6 +62,7 @@ do
     if [ "$CONFIG" == "lto" ]
     then
       CS_CONFIG="opt"
+      make CONFIG=${CS_CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
     else
       CS_CONFIG=$CONFIG
     fi
