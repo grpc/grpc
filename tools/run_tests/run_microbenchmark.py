@@ -229,6 +229,8 @@ argp.add_argument('--summary_time',
                   type=int,
                   help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
+if args.diff_perf:
+  git_comment = ''
 
 try:
   for collect in args.collect:
@@ -262,7 +264,14 @@ try:
       if diff:
         heading('Performance diff: %s' % bm_name)
         text(diff)
+        git_comment += '```\\nPerformance diff: %s\\n%s\\n```\\n' % (bm_name, diff.replace('\n', '\\n'))
 finally:
+  if args.diff_perf:
+    subprocess.call(['tools/jenkins/comment_on_pr.sh "%s"' % git_comment.replace('`', '\`')],
+                    stdout=subprocess.PIPE,
+                    shell=True)
+  if not os.path.exists('reports'):
+    os.makedirs('reports')
   index_html += "</body>\n</html>\n"
   with open('reports/index.html', 'w') as f:
     f.write(index_html)

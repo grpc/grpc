@@ -33,7 +33,7 @@
 
 set -e
 
-if [ -z $1 ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
+if [ -z "$1" ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
   echo "Insufficient arguments or environment variables provided."
   exit 1
 fi
