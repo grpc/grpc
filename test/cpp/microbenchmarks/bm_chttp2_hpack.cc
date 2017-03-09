@@ -42,17 +42,18 @@ extern "C" {
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 }
-#include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
-auto &force_library_initialization = Library::get();
+static struct Init {
+  Init() { grpc_init(); }
+  ~Init() { grpc_shutdown(); }
+} g_init;
 
 ////////////////////////////////////////////////////////////////////////////////
 // HPACK encoder
 //
 
 static void BM_HpackEncoderInitDestroy(benchmark::State &state) {
-  TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_chttp2_hpack_compressor c;
   while (state.KeepRunning()) {
@@ -61,13 +62,11 @@ static void BM_HpackEncoderInitDestroy(benchmark::State &state) {
     grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
-  TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_metadata_batch b;
@@ -103,7 +102,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
         << " header_bytes/iter:" << (static_cast<double>(stats.header_bytes) /
                                      static_cast<double>(state.iterations()));
   state.SetLabel(label.str());
-  track_counters.Finish(state);
 }
 
 namespace hpack_encoder_fixtures {
@@ -218,7 +216,6 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 //
 
 static void BM_HpackParserInitDestroy(benchmark::State &state) {
-  TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_chttp2_hpack_parser p;
   while (state.KeepRunning()) {
@@ -227,7 +224,6 @@ static void BM_HpackParserInitDestroy(benchmark::State &state) {
     grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
@@ -238,7 +234,6 @@ static void UnrefHeader(grpc_exec_ctx *exec_ctx, void *user_data,
 
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State &state) {
-  TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
@@ -257,7 +252,6 @@ static void BM_HpackParserParseHeader(benchmark::State &state) {
   }
   grpc_chttp2_hpack_parser_destroy(&exec_ctx, &p);
   grpc_exec_ctx_finish(&exec_ctx);
-  track_counters.Finish(state);
 }
 
 namespace hpack_parser_fixtures {

@@ -63,8 +63,8 @@ cc_library(
 
 cc_library(
   name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy_fixture.h'],
-  srcs = ['fixtures/http_proxy_fixture.c'],
+  hdrs = ['fixtures/http_proxy.h'],
+  srcs = ['fixtures/http_proxy.c'],
   copts = ['-std=c99'],
   deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
 )
