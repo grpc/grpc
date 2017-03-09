@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0-dev",
+  "version": "1.2.0-pre1",
   "title": "gRPC C# Core Testing",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2017, Google Inc.",
@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "Grpc.Core": "1.2.0-dev"
+    "Grpc.Core": "1.2.0-pre1"
   },
   "frameworks": {
     "net45": {
