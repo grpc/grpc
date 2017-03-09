@@ -12624,12 +12624,8 @@ endif
 
 endif
 
-<<<<<<< HEAD
 $(BM_CALL_CREATE_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_call_create.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-=======
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_call_create.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
 
 deps_bm_call_create: $(BM_CALL_CREATE_OBJS:.o=.dep)
 
@@ -12715,12 +12711,8 @@ endif
 
 endif
 
-<<<<<<< HEAD
 $(BM_CLOSURE_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_closure.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-=======
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_closure.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
 
 deps_bm_closure: $(BM_CLOSURE_OBJS:.o=.dep)
 
@@ -12763,12 +12755,8 @@ endif
 
 endif
 
-<<<<<<< HEAD
 $(BM_CQ_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_cq.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-=======
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_cq.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
 
 deps_bm_cq: $(BM_CQ_OBJS:.o=.dep)
 
@@ -12811,12 +12799,7 @@ endif
 
 endif
 
-<<<<<<< HEAD
-$(BM_ERROR_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_error.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-=======
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_error.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
 
 deps_bm_error: $(BM_ERROR_OBJS:.o=.dep)
 
@@ -12988,12 +12971,8 @@ endif
 
 endif
 
-<<<<<<< HEAD
-$(BM_FULLSTACK_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack.o:  $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-=======
+$(BM_FULLSTACK_UNARY_PING_PONG_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
 
 deps_bm_fullstack_unary_ping_pong: $(BM_FULLSTACK_UNARY_PING_PONG_OBJS:.o=.dep)
 

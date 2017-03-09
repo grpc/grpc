@@ -3158,13 +3158,9 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
-<<<<<<< HEAD
-  defaults: benchmark
-=======
   excluded_poll_engines:
   - poll
   - poll-cv
->>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
   platforms:
   - mac
   - linux
