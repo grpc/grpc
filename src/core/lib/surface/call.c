@@ -315,7 +315,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(!args->parent_call->is_client);
 
     gpr_mu_lock(&args->parent_call->child_list_mu);
-    gpr_atm_no_barrier_store(&args->parent_call->has_children, 1);
+    gpr_atm_rel_store(&args->parent_call->has_children, 1);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = gpr_time_min(
@@ -1095,7 +1095,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 
     call->received_final_op = true;
     /* propagate cancellation to any interested children */
-    if (gpr_atm_no_barrier_load(&call->has_children)) {
+    if (gpr_atm_acq_load(&call->has_children)) {
       gpr_mu_lock(&call->child_list_mu);
       child_call = call->first_child;
       if (child_call != NULL) {
