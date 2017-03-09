@@ -169,6 +169,8 @@ RUN bash -c " \
 
 USER root
 
+RUN echo "HERE IS VERSION OF LINUX KERNEL USED: $(uname -r)"
+
 # Fix paths in rake-compiler/config.yml and add rvm and mingw-tools to the global bashrc
 RUN sed -i -- "s:/root/.rake-compiler:/usr/local/rake-compiler:g" /usr/local/rake-compiler/config.yml && \
     echo "source /etc/profile.d/rvm.sh" >> /etc/bash.bashrc && \
