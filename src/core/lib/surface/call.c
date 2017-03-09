@@ -161,9 +161,9 @@ struct grpc_call {
   bool received_initial_metadata;
   bool receiving_message;
   bool requested_final_op;
-  bool received_final_op;
-  gpr_atm num_ops_sent;
-
+  gpr_atm any_ops_sent_atm;
+  gpr_atm received_final_op_atm;
+  
   /* have we received initial metadata */
   bool has_initial_md_been_received;
 
@@ -458,7 +458,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
 
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     GRPC_ERROR_UNREF(
-        unpack_received_status(gpr_atm_no_barrier_load(&c->status[i])).error);
+        unpack_received_status(gpr_atm_acq_load(&c->status[i])).error);
   }
 
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info, c);
@@ -490,7 +490,7 @@ void grpc_call_destroy(grpc_call *c) {
 
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  cancel = gpr_atm_no_barrier_load(&c->num_ops_sent) && !c->received_final_op;
+  cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) && !gpr_atm_acq_load(&c->received_final_op_atm);
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);
@@ -1048,7 +1048,7 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static grpc_error *consolidate_batch_errors(batch_control *bctl) {
-  size_t n = (size_t)gpr_atm_no_barrier_load(&bctl->num_errors);
+  size_t n = (size_t)gpr_atm_acq_load(&bctl->num_errors);
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
@@ -1093,7 +1093,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
         &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
     recv_trailing_filter(exec_ctx, call, md);
 
-    call->received_final_op = true;
+    gpr_atm_rel_store(&call->received_final_op_atm, 1);
     /* propagate cancellation to any interested children */
     if (gpr_atm_acq_load(&call->has_children)) {
       gpr_mu_lock(&call->child_list_mu);
@@ -1286,7 +1286,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error, bool has_cancelled) {
   if (error == GRPC_ERROR_NONE) return;
-  int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
+  int idx = (int)gpr_atm_full_fetch_add(&bctl->num_errors, 1);
   if (idx == 0 && !has_cancelled) {
     cancel_with_error(exec_ctx, bctl->call, STATUS_FROM_CORE,
                       GRPC_ERROR_REF(error));
@@ -1664,7 +1664,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
                     grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
-  gpr_atm_no_barrier_fetch_add(&call->num_ops_sent, 1);
+  gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
 
   execute_op(exec_ctx, call, stream_op);
 
