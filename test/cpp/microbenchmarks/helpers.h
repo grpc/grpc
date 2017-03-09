@@ -84,8 +84,8 @@ class TrackCounters {
       gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
   const size_t atm_add_at_start_ =
       gpr_atm_no_barrier_load(&gpr_counter_atm_add);
-#endif
   grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
+#endif
 };
 
 #endif
