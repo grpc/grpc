@@ -35,14 +35,57 @@ cc_test(
     deps = ["//external:benchmark"],
 )
 
-cc_test(
-    name = "bm_fullstack",
-    srcs = ["bm_fullstack.cc"],
+cc_library(
+    name = "helpers",
+    srcs = ["helpers.cc"],
+    hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
     deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
 )
 
 cc_test(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
-    deps = ["//:grpc", "//external:benchmark"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_cq",
+    srcs = ["bm_cq.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_error",
+    srcs = ["bm_error.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_streaming_ping_pong",
+    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    deps = [":helpers"],
+
+    )
+cc_test(
+    name = "bm_fullstack_streaming_pump",
+    srcs = ["bm_fullstack_streaming_pump.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_trickle",
+    srcs = ["bm_fullstack_trickle.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_unary_ping_pong",
+    srcs = ["bm_fullstack_unary_ping_pong.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
 )

@@ -127,7 +127,6 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
-        "include/grpc++/impl/codegen/core_codegen.h",
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
@@ -359,6 +358,7 @@ grpc_cc_library(
         "src/core/lib/support/env.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
+        "src/core/lib/support/spinlock.h",
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",

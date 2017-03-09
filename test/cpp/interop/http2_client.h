@@ -70,8 +70,11 @@ class Http2Client {
 
   void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
   bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  Status SendUnaryCall(SimpleResponse* response);
+  SimpleRequest BuildDefaultRequest();
   ServiceStub serviceStub_;
   std::shared_ptr<Channel> channel_;
+  SimpleRequest defaultRequest_;
 };
 
 }  // namespace testing

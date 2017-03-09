@@ -44,8 +44,7 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 if not os.path.exists('reports'):
   os.makedirs('reports')
 
-port_server_port = 32766
-start_port_server.start_port_server(port_server_port)
+start_port_server.start_port_server()
 
 def fnize(s):
   out = ''
@@ -110,8 +109,7 @@ def collect_latency(bm_name, args):
     if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -119,8 +117,7 @@ def collect_latency(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
@@ -156,8 +153,7 @@ def collect_perf(bm_name, args):
     if len(benchmarks) >= 20:
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=1,
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=1)
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -165,25 +161,29 @@ def collect_perf(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=1,
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=1)
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
-def collect_summary(bm_name, args):
-  heading('Summary: %s' % bm_name)
+def run_summary(bm_name, cfg, base_json_name):
   subprocess.check_call(
       ['make', bm_name,
-       'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
-  cmd = ['bins/counters/%s' % bm_name,
-         '--benchmark_out=out.json',
+       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  cmd = ['bins/%s/%s' % (cfg, bm_name),
+         '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
          '--benchmark_out_format=json']
   if args.summary_time is not None:
     cmd += ['--benchmark_min_time=%d' % args.summary_time]
-  text(subprocess.check_output(cmd))
+  return subprocess.check_output(cmd)
+
+def collect_summary(bm_name, args):
+  heading('Summary: %s [no counters]' % bm_name)
+  text(run_summary(bm_name, 'opt', 'out'))
+  heading('Summary: %s [with counters]' % bm_name)
+  text(run_summary(bm_name, 'counters', 'out'))
   if args.bigquery_upload:
     with open('out.csv', 'w') as f:
-      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
+      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.counters.json', 'out.opt.json']))
     subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
 
 collectors = {
@@ -195,20 +195,28 @@ collectors = {
 argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
 argp.add_argument('-c', '--collect',
                   choices=sorted(collectors.keys()),
-                  nargs='+',
+                  nargs='*',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack',
+                  default=['bm_fullstack_unary_ping_pong',
+                           'bm_fullstack_streaming_ping_pong',
+                           'bm_fullstack_streaming_pump',
                            'bm_closure',
                            'bm_cq',
                            'bm_call_create',
                            'bm_error',
                            'bm_chttp2_hpack',
-                           'bm_metadata'],
+                           'bm_metadata',
+                           'bm_fullstack_trickle',
+                           ],
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
+argp.add_argument('--diff_perf',
+                  default=None,
+                  type=str,
+                  help='Diff microbenchmarks against this git revision')
 argp.add_argument('--bigquery_upload',
                   default=False,
                   action='store_const',
@@ -223,6 +231,26 @@ args = argp.parse_args()
 for bm_name in args.benchmarks:
   for collect in args.collect:
     collectors[collect](bm_name, args)
+if args.diff_perf:
+  for bm_name in args.benchmarks:
+    run_summary(bm_name, 'opt', '%s.new' % bm_name)
+  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+  subprocess.check_call(['git', 'checkout', args.diff_perf])
+  comparables = []
+  subprocess.check_call(['make', 'clean'])
+  try:
+    for bm_name in args.benchmarks:
+      try:
+        run_summary(bm_name, 'opt', '%s.old' % bm_name)
+        comparables.append(bm_name)
+      except subprocess.CalledProcessError, e:
+        pass
+  finally:
+    subprocess.check_call(['git', 'checkout', where_am_i])
+  for bm_name in comparables:
+    subprocess.check_call(['third_party/benchmark/tools/compare_bench.py',
+                          '%s.new.opt.json' % bm_name,
+                          '%s.old.opt.json' % bm_name])
 
 index_html += "</body>\n</html>\n"
 with open('reports/index.html', 'w') as f:

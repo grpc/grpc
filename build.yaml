@@ -90,6 +90,7 @@ filegroups:
   - src/core/lib/support/env.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
+  - src/core/lib/support/spinlock.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
@@ -585,7 +586,7 @@ filegroups:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fake_resolver.h
-  - test/core/end2end/fixtures/http_proxy.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
@@ -601,7 +602,7 @@ filegroups:
   src:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fake_resolver.c
-  - test/core/end2end/fixtures/http_proxy.c
+  - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/debugger_macros.c
@@ -610,10 +611,8 @@ filegroups:
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/passthru_endpoint.c
-  - test/core/util/port_posix.c
+  - test/core/util/port.c
   - test/core/util/port_server_client.c
-  - test/core/util/port_uv.c
-  - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   - test/core/util/trickle_endpoint.c
   deps:
@@ -1215,6 +1214,20 @@ libs:
   - grpc++_codegen_base_src
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc_benchmark
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_context_mutators.h
+  - test/cpp/microbenchmarks/fullstack_fixtures.h
+  - test/cpp/microbenchmarks/helpers.h
+  src:
+  - test/cpp/microbenchmarks/helpers.cc
+  deps:
+  - benchmark
+  - grpc++
+  - grpc_test_util
+  - grpc
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -1895,6 +1908,15 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: gpr_spinlock_test
+  cpu_cost: 10
+  build: test
+  language: c
+  src:
+  - test/core/support/spinlock_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_stack_lockfree_test
   cpu_cost: 7
   build: test
@@ -2484,6 +2506,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: parse_address_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/parse_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -2735,6 +2767,16 @@ targets:
   language: c
   src:
   - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stream_owned_slice_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/stream_owned_slice_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3003,6 +3045,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_call_create.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3023,6 +3066,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3042,6 +3086,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3062,6 +3107,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_cq.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3082,6 +3128,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_error.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3091,17 +3138,93 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
-  defaults: benchmark
   platforms:
   - mac
   - linux
   - posix
-- name: bm_fullstack
+- name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
   src:
-  - test/cpp/microbenchmarks/bm_fullstack.cc
+  - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+<<<<<<< HEAD
+  defaults: benchmark
+=======
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+>>>>>>> eb064ec7b81b60c5e1eb47d6124d0c05056b3097
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_streaming_pump
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_trickle
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_trickle.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_unary_ping_pong
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
+  deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3126,8 +3249,11 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_metadata.cc
   deps:
+  - grpc_benchmark
   - benchmark
+  - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
@@ -3338,6 +3464,8 @@ targets:
   - grpc++
   - grpc
   - gpr
+  args:
+  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
 - name: grpc_cli
   build: test
   run: false

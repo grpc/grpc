@@ -77,10 +77,14 @@ class CXXLanguage:
   def __init__(self):
     self.client_cwd = None
     self.server_cwd = None
+    self.http2_cwd = None
     self.safename = 'cxx'
 
   def client_cmd(self, args):
     return ['bins/opt/interop_client'] + args
+
+  def client_cmd_http2interop(self, args):
+    return ['bins/opt/http2_client'] + args
 
   def cloud_to_prod_env(self):
     return {}
@@ -164,6 +168,7 @@ class JavaLanguage:
   def __init__(self):
     self.client_cwd = '../grpc-java'
     self.server_cwd = '../grpc-java'
+    self.http2_cwd = '../grpc-java'
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -197,10 +202,14 @@ class GoLanguage:
     # TODO: this relies on running inside docker
     self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
+    self.http2_cwd = '/go/src/google.golang.org/grpc/interop/http2'
     self.safename = str(self)
 
   def client_cmd(self, args):
     return ['go', 'run', 'client.go'] + args
+
+  def client_cmd_http2interop(self, args):
+    return ['go', 'run', 'negative_http2_client.go'] + args
 
   def cloud_to_prod_env(self):
     return {}
@@ -393,6 +402,7 @@ class PythonLanguage:
   def __init__(self):
     self.client_cwd = None
     self.server_cwd = None
+    self.http2_cwd = None
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -468,8 +478,7 @@ _HTTP2_TEST_CASES = ['tls', 'framing']
 _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
                      'goaway', 'ping', 'max_streams']
 
-# TODO: Add python once the tests are fixed.
-_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java']
+_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python', 'c++']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
@@ -605,11 +614,12 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
     client_options = common_options + ['--server_port=%s' %
                                        (int(server_port)+offset)]
     cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
+    cwd = language.http2_cwd
   else:
     client_options = interop_only_options + common_options + ['--server_port=%s' % server_port]
     cmdline = bash_cmdline(language.client_cmd(client_options))
+    cwd = language.client_cwd
 
-  cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
     container_name = dockerjob.random_name('interop_client_%s' % language.safename)

@@ -40,7 +40,10 @@ import tempfile
 import time
 
 
-def start_port_server(port_server_port):
+# must be synchronized with test/core/utils/port_server_client.h
+_PORT_SERVER_PORT = 32766
+
+def start_port_server():
     # check if a compatible port server is running
     # if incompatible (version mismatch) ==> start a new one
     # if not running ==> start a new one
@@ -48,7 +51,7 @@ def start_port_server(port_server_port):
     try:
         version = int(
             urllib.request.urlopen(
-                'http://localhost:%d/version_number' % port_server_port,
+                'http://localhost:%d/version_number' % _PORT_SERVER_PORT,
                 timeout=10).read())
         logging.info('detected port server running version %d', version)
         running = True
@@ -67,7 +70,7 @@ def start_port_server(port_server_port):
         if not running:
             logging.info('port_server version mismatch: killing the old one')
             urllib.request.urlopen('http://localhost:%d/quitquitquit' %
-                                   port_server_port).read()
+                                   _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
         fd, logfile = tempfile.mkstemp()
@@ -76,7 +79,7 @@ def start_port_server(port_server_port):
         args = [
             sys.executable,
             os.path.abspath('tools/run_tests/python_utils/port_server.py'),
-            '-p', '%d' % port_server_port, '-l', logfile
+            '-p', '%d' % _PORT_SERVER_PORT, '-l', logfile
         ]
         env = dict(os.environ)
         env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
@@ -107,7 +110,7 @@ def start_port_server(port_server_port):
                 time.sleep(1)
                 try:
                     urllib.request.urlopen(
-                        'http://localhost:%d/get' % port_server_port,
+                        'http://localhost:%d/get' % _PORT_SERVER_PORT,
                         timeout=1).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
@@ -119,7 +122,7 @@ def start_port_server(port_server_port):
                     print(port_log)
                     sys.exit(1)
             try:
-                port_server_url = 'http://localhost:%d/get' % port_server_port
+                port_server_url = 'http://localhost:%d/get' % _PORT_SERVER_PORT
                 urllib.request.urlopen(port_server_url, timeout=1).read()
                 logging.info('port server is up and ready')
                 break

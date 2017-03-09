@@ -201,6 +201,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/env.h',
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/spinlock.h',
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
@@ -679,6 +680,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/env.h',
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
+                              'src/core/lib/support/spinlock.h',
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
@@ -915,7 +917,7 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.c',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port_posix.c',
+                      'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
 end

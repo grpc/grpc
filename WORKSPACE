@@ -34,13 +34,13 @@ bind(
 )
 
 bind(
-<<<<<<< HEAD
     name = "benchmark",
     actual = "@submodule_benchmark//:benchmark",
-=======
+)
+
+bind(
     name = "gflags",
     actual = "@com_github_gflags_gflags//:gflags",
->>>>>>> f2cf3d94a1a46db2ebb2c13c3476e58ecdae6006
 )
 
 new_local_repository(
