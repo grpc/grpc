@@ -210,7 +210,7 @@ static uint8_t get_placement(grpc_error **err, size_t size) {
   uint8_t slots = (uint8_t)(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
     (*err)->arena_capacity = (uint8_t)(3 * (*err)->arena_capacity / 2);
-    *err = realloc(
+    *err = gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
   }
   uint8_t placement = (*err)->arena_size;

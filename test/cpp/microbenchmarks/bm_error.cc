@@ -72,12 +72,14 @@ static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
 BENCHMARK(BM_ErrorCreateAndSetStatus);
 
 static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
+  TrackCounters track_counters;
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_error_set_str(
         grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
                            GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
         GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
 
