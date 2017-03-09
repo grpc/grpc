@@ -4098,6 +4098,8 @@ configs:
     LDXX: clang++
     compile_the_world: true
   mutrace:
+    AR: gcc-ar
+    AROPTS: rcs
     CPPFLAGS: -O3 -fno-omit-frame-pointer -flto
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic -O3 -flto
