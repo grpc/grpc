@@ -7,7 +7,7 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
@@ -54,7 +54,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
