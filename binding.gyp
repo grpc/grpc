@@ -43,7 +43,11 @@
     # out. It can be re-enabled for one build by setting the npm config
     # variable grpc_uv to true, and it can be re-enabled permanently by
     # setting it to true here.
-    'grpc_uv%': 'false'
+    'grpc_uv%': 'false',
+    # Some Node installations use the system installation of OpenSSL, and on
+    # some systems, the system OpenSSL still does not have ALPN support. This
+    # will let users recompile gRPC to work without ALPN.
+    'grpc_alpn%': 'true'
   },
   'target_defaults': {
     'include_dirs': [
@@ -73,10 +77,16 @@
           'OPENSSL_NO_ASM'
         ]
       }, {
-        # As of the beginning of 2017, we only support versions of Node with
-        # embedded versions of OpenSSL that support ALPN
-        'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=1'
+        'conditions': [
+          ['grpc_alpn=="true"', {
+            'defines': [
+              'TSI_OPENSSL_ALPN_SUPPORT=1'
+            ],
+          }, {
+            'defines': [
+              'TSI_OPENSSL_ALPN_SUPPORT=0'
+            ],
+          }]
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',

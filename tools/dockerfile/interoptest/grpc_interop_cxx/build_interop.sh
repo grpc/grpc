@@ -47,3 +47,6 @@ make install-certs
 
 # build C++ interop client & server
 make interop_client interop_server
+
+# build C++ http2 client
+make http2_client
