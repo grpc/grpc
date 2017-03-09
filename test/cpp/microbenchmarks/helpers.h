@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,45 +31,61 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_SYNC_H
-#define GRPC_IMPL_CODEGEN_SYNC_H
-/* Synchronization primitives for GPR.
+#ifndef TEST_CPP_MICROBENCHMARKS_COUNTERS_H
+#define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
 
-   The type  gpr_mu              provides a non-reentrant mutex (lock).
+#include <sstream>
 
-   The type  gpr_cv              provides a condition variable.
-
-   The type  gpr_once            provides for one-time initialization.
-
-   The type gpr_event            provides one-time-setting, reading, and
-                                 waiting of a void*, with memory barriers.
-
-   The type gpr_refcount         provides an object reference counter,
-                                 with memory barriers suitable to control
-                                 object lifetimes.
-
-   The type gpr_stats_counter    provides an atomic statistics counter. It
-                                 provides no memory barriers.
- */
-
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-/* Platform-specific type declarations of gpr_mu and gpr_cv.   */
-#include <grpc/impl/codegen/port_platform.h>
-#include <grpc/impl/codegen/sync_generic.h>
-
-#if defined(GPR_POSIX_SYNC)
-#include <grpc/impl/codegen/sync_posix.h>
-#elif defined(GPR_WINDOWS)
-#include <grpc/impl/codegen/sync_windows.h>
-#elif !defined(GPR_CUSTOM_SYNC)
-#error Unable to determine platform for sync
-#endif
-
-#ifdef __cplusplus
+#include <grpc/support/port_platform.h>
+#include "test/core/util/memory_counters.h"
 }
+
+#include <grpc++/impl/grpc_library.h>
+#include "third_party/benchmark/include/benchmark/benchmark.h"
+
+class Library {
+ public:
+  static Library& get() {
+    static Library lib;
+    return lib;
+  }
+
+  grpc_resource_quota* rq() { return rq_; }
+
+ private:
+  Library() {
+    grpc_memory_counters_init();
+    init_lib_.init();
+    rq_ = grpc_resource_quota_create("bm");
+  }
+
+  ~Library() { init_lib_.shutdown(); }
+
+  grpc::internal::GrpcLibrary init_lib_;
+  grpc_resource_quota* rq_;
+};
+
+#ifdef GPR_LOW_LEVEL_COUNTERS
+extern "C" gpr_atm gpr_mu_locks;
+extern "C" gpr_atm gpr_counter_atm_cas;
+extern "C" gpr_atm gpr_counter_atm_add;
 #endif
 
-#endif /* GRPC_IMPL_CODEGEN_SYNC_H */
+class TrackCounters {
+ public:
+  virtual void Finish(benchmark::State& state);
+  virtual void AddToLabel(std::ostream& out, benchmark::State& state);
+
+ private:
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
+  const size_t atm_cas_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
+  const size_t atm_add_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_counter_atm_add);
+#endif
+  grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
+};
+
+#endif
