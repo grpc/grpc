@@ -55,7 +55,7 @@ You need to add this to your project's `composer.json` file.
 
 ```
   "require": {
-    "grpc/grpc": "v1.0.0"
+    "grpc/grpc": "v1.1.0"
   }
 ```
 
@@ -138,10 +138,15 @@ $ composer install
 ### Protobuf compiler
 
 Again if you don't have it already, you need to install the protobuf compiler
-`protoc`, version 3.1.0+.
+`protoc`, version 3.2.0+.
 
 If `protoc` hasn't been installed, you can download the `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
+
+Note: protobuf version 3.1.0 is the first version which supports PHP messages
+classes code generation. Version 3.2.0 has a major change to comply with PSR-4
+so classes are generated into a different location. The tests in the `tests`
+directory assume version 3.2.0+ has been installed.
 
 If you really must compile `protoc` from source, you can run the following
 commands, but this is risky because there is no easy way to uninstall /
@@ -196,8 +201,9 @@ $ node src/node/test/math/math_server.js
 Run the generated code tests
 
 ```sh
-$ cd grpc/src/php
-$ ./bin/run_gen_code_test.sh
+$ cd grpc/src/php/tests
+$ composer install
+$ ../bin/run_gen_code_test.sh
 ```
 
 ## Use the gRPC PHP extension with Apache

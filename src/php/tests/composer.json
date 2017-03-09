@@ -1,0 +1,19 @@
+{
+  "name": "grpc/grpc-testing",
+  "require": {
+    "php": ">=5.5.0",
+    "google/protobuf": "v3.1.0-alpha-1"
+  },
+  "require-dev": {
+    "google/auth": "v0.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "Grpc\\": "../lib/Grpc/",
+      "Grpc\\Testing\\": "interop/Grpc/Testing/",
+      "GPBMetadata\\Src\\Proto\\Grpc\\Testing\\": "interop/GPBMetadata/Src/Proto/Grpc/Testing/",
+      "Math\\": "generated_code/Math/",
+      "GPBMetadata\\": "generated_code/GPBMetadata/"
+    }
+  }
+}
