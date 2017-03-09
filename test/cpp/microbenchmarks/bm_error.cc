@@ -40,10 +40,7 @@ extern "C" {
 #include "src/core/lib/transport/error_utils.h"
 }
 
-#include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
-
-auto& force_library_initialization = Library::get();
 
 class ErrorDeleter {
  public:
@@ -52,38 +49,31 @@ class ErrorDeleter {
 typedef std::unique_ptr<grpc_error, ErrorDeleter> ErrorPtr;
 
 static void BM_ErrorCreate(benchmark::State& state) {
-  TrackCounters track_counters;
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(GRPC_ERROR_CREATE("Error"));
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorCreate);
 
 static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
-  TrackCounters track_counters;
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_error_set_int(GRPC_ERROR_CREATE("Error"),
                                         GRPC_ERROR_INT_GRPC_STATUS,
                                         GRPC_STATUS_ABORTED));
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorCreateAndSetStatus);
 
 static void BM_ErrorRefUnref(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_error* error = GRPC_ERROR_CREATE("Error");
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorRefUnref);
 
 static void BM_ErrorUnrefNone(benchmark::State& state) {
-  TrackCounters track_counters;
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(GRPC_ERROR_NONE);
   }
@@ -91,36 +81,30 @@ static void BM_ErrorUnrefNone(benchmark::State& state) {
 BENCHMARK(BM_ErrorUnrefNone);
 
 static void BM_ErrorGetIntFromNoError(benchmark::State& state) {
-  TrackCounters track_counters;
   while (state.KeepRunning()) {
     intptr_t value;
     grpc_error_get_int(GRPC_ERROR_NONE, GRPC_ERROR_INT_GRPC_STATUS, &value);
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorGetIntFromNoError);
 
 static void BM_ErrorGetMissingInt(benchmark::State& state) {
-  TrackCounters track_counters;
   ErrorPtr error(
       grpc_error_set_int(GRPC_ERROR_CREATE("Error"), GRPC_ERROR_INT_INDEX, 1));
   while (state.KeepRunning()) {
     intptr_t value;
     grpc_error_get_int(error.get(), GRPC_ERROR_INT_OFFSET, &value);
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorGetMissingInt);
 
 static void BM_ErrorGetPresentInt(benchmark::State& state) {
-  TrackCounters track_counters;
   ErrorPtr error(
       grpc_error_set_int(GRPC_ERROR_CREATE("Error"), GRPC_ERROR_INT_OFFSET, 1));
   while (state.KeepRunning()) {
     intptr_t value;
     grpc_error_get_int(error.get(), GRPC_ERROR_INT_OFFSET, &value);
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_ErrorGetPresentInt);
 
@@ -193,27 +177,22 @@ class ErrorWithNestedGrpcStatus {
 
 template <class Fixture>
 static void BM_ErrorStringOnNewError(benchmark::State& state) {
-  TrackCounters track_counters;
   while (state.KeepRunning()) {
     Fixture fixture;
     grpc_error_string(fixture.error());
   }
-  track_counters.Finish(state);
 }
 
 template <class Fixture>
 static void BM_ErrorStringRepeatedly(benchmark::State& state) {
-  TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_error_string(fixture.error());
   }
-  track_counters.Finish(state);
 }
 
 template <class Fixture>
 static void BM_ErrorGetStatus(benchmark::State& state) {
-  TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_status_code status;
@@ -221,41 +200,34 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &msg,
                           NULL);
   }
-  track_counters.Finish(state);
 }
 
 template <class Fixture>
 static void BM_ErrorGetStatusCode(benchmark::State& state) {
-  TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, NULL,
                           NULL);
   }
-  track_counters.Finish(state);
 }
 
 template <class Fixture>
 static void BM_ErrorHttpError(benchmark::State& state) {
-  TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
     grpc_error_get_status(fixture.error(), fixture.deadline(), NULL, NULL,
                           &error);
   }
-  track_counters.Finish(state);
 }
 
 template <class Fixture>
 static void BM_HasClearGrpcStatus(benchmark::State& state) {
-  TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_error_has_clear_grpc_status(fixture.error());
   }
-  track_counters.Finish(state);
 }
 
 #define BENCHMARK_SUITE(fixture)                         \

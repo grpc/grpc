@@ -31,7 +31,7 @@
  *
  */
 
-#include "test/core/end2end/fixtures/http_proxy_fixture.h"
+#include "test/core/end2end/fixtures/http_proxy.h"
 
 #include "src/core/lib/iomgr/sockaddr.h"
 

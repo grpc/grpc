@@ -49,7 +49,7 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/end2end/fixtures/http_proxy_fixture.h"
+#include "test/core/end2end/fixtures/http_proxy.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
