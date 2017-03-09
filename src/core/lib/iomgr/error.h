@@ -184,8 +184,6 @@ void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
-grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
-                                gpr_timespec value) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) GRPC_MUST_USE_RESULT;
 /// Returns NULL if the specified string is not set.
