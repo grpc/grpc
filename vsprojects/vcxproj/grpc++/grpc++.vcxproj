@@ -270,6 +270,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\health_check_service_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\channel_argument_option.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h" />
@@ -413,6 +414,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\version_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\channel_argument_option.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
