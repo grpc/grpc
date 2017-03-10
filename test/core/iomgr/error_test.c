@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,14 +118,86 @@ static void test_copy_and_unref() {
   GRPC_ERROR_UNREF(error3);
 }
 
-static void print_error_strings() {
+static void test_create_referencing() {
+  grpc_error* child = grpc_error_set_str(
+      GRPC_ERROR_CREATE("Child"), GRPC_ERROR_STR_GRPC_MESSAGE, "message");
+  grpc_error* parent = GRPC_ERROR_CREATE_REFERENCING("Parent", &child, 1);
+  GPR_ASSERT(parent);
+
+  GRPC_ERROR_UNREF(child);
+  GRPC_ERROR_UNREF(parent);
+}
+
+static void test_create_referencing_many() {
+  grpc_error* children[3];
+  children[0] = grpc_error_set_str(GRPC_ERROR_CREATE("Child1"),
+                                   GRPC_ERROR_STR_GRPC_MESSAGE, "message");
+  children[1] = grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
+                                   GRPC_ERROR_INT_HTTP2_ERROR, 5);
+  children[2] = grpc_error_set_str(GRPC_ERROR_CREATE("Child3"),
+                                   GRPC_ERROR_STR_GRPC_MESSAGE, "message 3");
+
+  grpc_error* parent = GRPC_ERROR_CREATE_REFERENCING("Parent", children, 3);
+  GPR_ASSERT(parent);
+
+  for (size_t i = 0; i < 3; ++i) {
+    GRPC_ERROR_UNREF(children[i]);
+  }
+  GRPC_ERROR_UNREF(parent);
+}
+
+static void print_error_string() {
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE("Error"), GRPC_ERROR_INT_GRPC_STATUS,
                          GRPC_STATUS_UNIMPLEMENTED);
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, 0);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
-  gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+  // gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+  GRPC_ERROR_UNREF(error);
+}
+
+static void print_error_string_reference() {
+  grpc_error* children[2];
+  children[0] = grpc_error_set_str(
+      grpc_error_set_int(GRPC_ERROR_CREATE("1"), GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_UNIMPLEMENTED),
+      GRPC_ERROR_STR_GRPC_MESSAGE, "message for child 1");
+  children[1] = grpc_error_set_str(
+      grpc_error_set_int(GRPC_ERROR_CREATE("2sd"), GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_INTERNAL),
+      GRPC_ERROR_STR_GRPC_MESSAGE, "message for child 2");
+
+  grpc_error* parent = GRPC_ERROR_CREATE_REFERENCING("Parent", children, 2);
+
+  gpr_log(GPR_DEBUG, "%s", grpc_error_string(parent));
+
+  for (size_t i = 0; i < 2; ++i) {
+    GRPC_ERROR_UNREF(children[i]);
+  }
+  GRPC_ERROR_UNREF(parent);
+}
+
+static void test_os_error() {
+  int fake_errno = 5;
+  const char* syscall = "syscall name";
+  grpc_error* error = GRPC_OS_ERROR(fake_errno, syscall);
+
+  intptr_t i = 0;
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  GPR_ASSERT(i == fake_errno);
+
+  const char* c = grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL);
+  GPR_ASSERT(c);
+  GPR_ASSERT(!strcmp(c, syscall));
+  GRPC_ERROR_UNREF(error);
+}
+
+static void test_special() {
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = grpc_error_add_child(error, GRPC_ERROR_CREATE("test child"));
+  intptr_t i;
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
+  GPR_ASSERT(i == GRPC_STATUS_OK);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -135,7 +207,12 @@ int main(int argc, char** argv) {
   test_set_get_int();
   test_set_get_str();
   test_copy_and_unref();
-  print_error_strings();
+  print_error_string();
+  print_error_string_reference();
+  test_os_error();
+  test_create_referencing();
+  test_create_referencing_many();
+  test_special();
   grpc_shutdown();
 
   return 0;
