@@ -1429,7 +1429,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
                                         void *stream_op,
                                         grpc_error *error_ignored) {
   grpc_transport_op *op = stream_op;
-  grpc_chttp2_transport *t = op->transport_private.extra_arg;
+  grpc_chttp2_transport *t = op->handler_private.extra_arg;
   grpc_error *close_transport = op->disconnect_with_error;
 
   if (op->on_connectivity_state_change != NULL) {
@@ -1475,10 +1475,10 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   char *msg = grpc_transport_op_string(op);
   gpr_free(msg);
-  op->transport_private.extra_arg = gt;
+  op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_closure_sched(
-      exec_ctx, grpc_closure_init(&op->transport_private.closure,
+      exec_ctx, grpc_closure_init(&op->handler_private.closure,
                                   perform_transport_op_locked, op,
                                   grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);

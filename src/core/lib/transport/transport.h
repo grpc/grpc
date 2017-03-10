@@ -110,7 +110,7 @@ void grpc_transport_move_stats(grpc_transport_stream_stats *from,
 typedef struct {
   void *extra_arg;
   grpc_closure closure;
-} grpc_transport_private_op_data;
+} grpc_handler_private_op_data;
 
 typedef struct grpc_transport_stream_op_payload
     grpc_transport_stream_op_payload;
@@ -159,7 +159,7 @@ typedef struct grpc_transport_stream_op {
    * remaining fields are initialized and used at the discretion of the
    * current handler of the op */
 
-  grpc_transport_private_op_data handler_private;
+  grpc_handler_private_op_data handler_private;
 } grpc_transport_stream_op;
 
 struct grpc_transport_stream_op_payload {
@@ -248,7 +248,7 @@ typedef struct grpc_transport_op {
    * remaining fields are initialized and used at the discretion of the
    * transport implementation */
 
-  grpc_transport_private_op_data transport_private;
+  grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
 /* Returns the amount of memory required to store a grpc_stream for this
