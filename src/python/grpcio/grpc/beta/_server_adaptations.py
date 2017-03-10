@@ -41,6 +41,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import stream
 from grpc.framework.interfaces.face import face
 
+# pylint: disable=too-many-return-statements
+
 _DEFAULT_POOL_SIZE = 8
 
 
@@ -179,7 +181,7 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
                 return
         request_consumer.terminate()
 
-    def stop_request_pipe(timeout):
+    def stop_request_pipe(timeout):  # pylint: disable=unused-argument
         thread_joined.set()
 
     request_pipe_thread = _common.CleanupThread(
