@@ -98,7 +98,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Client sends a request with payload, server reads then returns status. */
-static void test(grpc_end2end_test_config config, bool request_status_early, bool large_payload) {
+static void test(grpc_end2end_test_config config, bool request_status_early,
+                 bool large_payload) {
   const size_t large_payload_length = 16 * 1024;
   grpc_call *c;
   grpc_call *s;
