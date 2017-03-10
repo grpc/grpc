@@ -511,6 +511,10 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_error *error) {
   if (!t->closed) {
+    if (!grpc_error_has_clear_grpc_status(error)) {
+      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_UNAVAILABLE);
+    }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
       if (t->close_transport_on_writes_finished == NULL) {
         t->close_transport_on_writes_finished =
@@ -519,10 +523,6 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
       t->close_transport_on_writes_finished =
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
-    }
-    if (!grpc_error_has_clear_grpc_status(error)) {
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE);
     }
     t->closed = 1;
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,

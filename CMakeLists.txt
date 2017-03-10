@@ -42,7 +42,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.2.0-dev")
+set(PACKAGE_VERSION   "1.2.0-pre1")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -7967,7 +7967,9 @@ target_link_libraries(bm_metadata
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
   benchmark
+  grpc++_test_util
   grpc_test_util
+  grpc++
   grpc
   gpr_test_util
   gpr
