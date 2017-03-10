@@ -32,14 +32,45 @@ import sys
 import json
 import bm_json
 import tabulate
+import argparse
 
-with open(sys.argv[1]) as f:
+def changed_ratio(n, o):
+  if float(o) <= .0001: o = 0
+  if float(n) <= .0001: n = 0
+  if o == 0 and n == 0: return 0
+  if o == 0: return 100
+  return (float(n)-float(o))/float(o)
+
+def min_change(pct):
+  return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
+
+_INTERESTING = {
+  'cpu_time': min_change(10),
+  'real_time': min_change(10),
+  'locks_per_iteration': min_change(5),
+  'allocs_per_iteration': min_change(5),
+  'writes_per_iteration': min_change(5),
+  'atm_cas_per_iteration': min_change(1),
+  'atm_add_per_iteration': min_change(5),
+}
+
+argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
+argp.add_argument('-t', '--track',
+                  choices=sorted(_INTERESTING.keys()),
+                  nargs='+',
+                  default=sorted(_INTERESTING.keys()),
+                  help='Which metrics to track')
+argp.add_argument('files', metavar='bm_file.json', type=str, nargs=4,
+                    help='files to diff. ')
+args = argp.parse_args()
+
+with open(args.files[0]) as f:
   js_new_ctr = json.loads(f.read())
-with open(sys.argv[2]) as f:
+with open(args.files[1]) as f:
   js_new_opt = json.loads(f.read())
-with open(sys.argv[3]) as f:
+with open(args.files[2]) as f:
   js_old_ctr = json.loads(f.read())
-with open(sys.argv[4]) as f:
+with open(args.files[3]) as f:
   js_old_opt = json.loads(f.read())
 
 new = {}
@@ -50,24 +81,9 @@ for row in bm_json.expand_json(js_new_ctr, js_new_opt):
 for row in bm_json.expand_json(js_old_ctr, js_old_opt):
   old[row['cpp_name']] = row
 
-def changed_ratio(n, o):
-  return float(n-o)/float(o)
-
-def min_change(pct):
-  return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
-
-_INTERESTING = (
-  ('cpu_time', min_change(10)),
-  ('real_time', min_change(10)),
-  ('locks_per_iteration', min_change(5)),
-  ('allocs_per_iteration', min_change(5)),
-  ('writes_per_iteration', min_change(5)),
-  ('atm_cas_per_iteration', min_change(1)),
-  ('atm_add_per_iteration', min_change(5)),
-)
-
 changed = []
-for fld, chk in _INTERESTING:
+for fld in args.track:
+  chk = _INTERESTING[fld]
   for bm in new.keys():
     if bm not in old: continue
     n = new[bm]
@@ -86,12 +102,13 @@ for bm in sorted(new.keys()):
   n = new[bm]
   o = old[bm]
   details = ''
-  for fld, chk in _INTERESTING:
+  for fld in args.track:
+    chk = _INTERESTING[fld]
     if fld not in n or fld not in o: continue
     if chk(n[fld], o[fld]):
       row.append(changed_ratio(n[fld], o[fld]))
       if details: details += ', '
-      details += '%s:%r-->%r' % (fld, o[fld], n[fld])
+      details += '%s:%r-->%r' % (fld, float(o[fld]), float(n[fld]))
       any_changed = True
     else:
       row.append('')
