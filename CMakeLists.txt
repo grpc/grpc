@@ -353,6 +353,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c dualstack_socket_test)
 endif()
 add_dependencies(buildtests_c endpoint_pair_test)
+add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c ev_epoll_linux_test)
 endif()
@@ -4615,6 +4616,33 @@ target_link_libraries(endpoint_pair_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+
+add_executable(error_test
+  test/core/iomgr/error_test.c
+)
+
+
+target_include_directories(error_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(error_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(ev_epoll_linux_test
@@ -7967,7 +7995,9 @@ target_link_libraries(bm_metadata
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
   benchmark
+  grpc++_test_util
   grpc_test_util
+  grpc++
   grpc
   gpr_test_util
   gpr

@@ -1700,6 +1700,17 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: error_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/error_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -3243,7 +3254,9 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
+  - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
