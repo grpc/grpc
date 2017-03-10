@@ -54,6 +54,8 @@ _TEST_CASE_MAPPING = {
   'max_streams': test_max_streams.TestcaseSettingsMaxStreams,
 }
 
+_exit_code = 0
+
 class H2Factory(twisted.internet.protocol.Factory):
   def __init__(self, testcase):
     logging.info('Creating H2Factory for new connection (%s)', testcase)
@@ -84,14 +86,12 @@ def parse_arguments():
     )
   return parser.parse_args()
 
-exit_code = 0
-
 def listen(endpoint, test_case):
   deferred = endpoint.listen(H2Factory(test_case))
   def listen_error(reason):
     # If listening fails, we stop the reactor and exit the program
     # with exit_code = 1.
-    global exit_code
+    global _exit_code
     exit_code = 1
     logging.error('Listening failed: %s' % reason.value)
     twisted.internet.reactor.stop()
@@ -118,4 +118,4 @@ if __name__ == '__main__':
   args = parse_arguments()
   start_test_servers(args.base_port)
   twisted.internet.reactor.run()
-  sys.exit(exit_code)
+  sys.exit(_exit_code)
