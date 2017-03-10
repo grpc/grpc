@@ -163,7 +163,7 @@ struct grpc_call {
   bool requested_final_op;
   gpr_atm any_ops_sent_atm;
   gpr_atm received_final_op_atm;
-  
+
   /* have we received initial metadata */
   bool has_initial_md_been_received;
 
@@ -343,6 +343,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
+      if (gpr_atm_acq_load(&args->parent_call->received_final_op_atm)) {
+        cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                          GRPC_ERROR_CANCELLED);
+      }
     }
 
     if (args->parent_call->first_child == NULL) {
@@ -490,7 +494,8 @@ void grpc_call_destroy(grpc_call *c) {
 
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) && !gpr_atm_acq_load(&c->received_final_op_atm);
+  cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) &&
+           !gpr_atm_acq_load(&c->received_final_op_atm);
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);
@@ -1103,7 +1108,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
           next_child_call = child_call->sibling_next;
           if (child_call->cancellation_is_inherited) {
             GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
-            grpc_call_cancel(child_call, NULL);
+            cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                              GRPC_ERROR_CANCELLED);
             GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
           }
           child_call = next_child_call;
