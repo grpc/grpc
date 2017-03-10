@@ -307,6 +307,8 @@ static NSMutableDictionary *callFlags;
     [_wrappedCall startBatchWithOperations:@[op]
                               errorHandler:errorHandler];
   } else {
+    // Ignored errorHandler since it is the same as the one for GRPCOpSendClose.
+    // TODO (mxyan): unify the error handlers of all Ops into a single closure.
     [_unaryOpBatch addObject:op];
   }
 }
