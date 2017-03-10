@@ -78,21 +78,25 @@ _BM_SPECS = {
     'tpl': ['fixture'],
     'dyn': [],
   },
-  'BM_IsolatedFilter' : {
+  'BM_IsolatedFilter': {
     'tpl': ['fixture', 'client_mutator'],
     'dyn': [],
   },
-  'BM_HpackEncoderEncodeHeader' : {
+  'BM_HpackEncoderEncodeHeader': {
     'tpl': ['fixture'],
     'dyn': ['end_of_stream', 'request_size'],
   },
-  'BM_HpackParserParseHeader' : {
+  'BM_HpackParserParseHeader': {
     'tpl': ['fixture'],
     'dyn': [],
   },
-  'BM_CallCreateDestroy' : {
+  'BM_CallCreateDestroy': {
     'tpl': ['fixture'],
     'dyn': [],
+  },
+  'BM_Zalloc': {
+    'tpl': [],
+    'dyn': ['request_size'],
   },
 }
 
