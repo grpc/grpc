@@ -263,7 +263,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     else
       out = GRPC_ERROR_CREATE("unknown");
   } else if (gpr_ref_is_unique(&in->refs)) {
-    return in;
+    out = in;
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
