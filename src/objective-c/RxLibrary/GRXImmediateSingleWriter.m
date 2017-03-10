@@ -75,7 +75,11 @@
   return;
 }
 
+// Overrides [requestWriter(Transformations):map:] for Protocol Buffers
+// encoding.
 - (GRXWriter *)map:(id (^)(id))map {
+  // Since _value is available when creating the object, we can simply
+  // apply the map and store the output.
   _value = map(_value);
   return self;
 }
