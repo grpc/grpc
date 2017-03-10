@@ -51,7 +51,7 @@ for row in bm_json.expand_json(js_old_ctr, js_old_opt):
   old[row['cpp_name']] = row
 
 def changed_ratio(n, o):
-  return float(n-o)/float(o)
+  return (float(n)-float(o))/float(o)
 
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
