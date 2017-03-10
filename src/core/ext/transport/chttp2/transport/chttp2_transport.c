@@ -1603,8 +1603,8 @@ static void clean_unprocessed_frames_buffer(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
   gpr_mu_lock(&s->buffer_mu);
-  grpc_slice_buffer_destroy_internal(exec_ctx,
-                                     &s->unprocessed_incoming_frames_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                             &s->unprocessed_incoming_frames_buffer);
   // TODO (mxyan): add get ref count in sync.c?
   gpr_atm active_streams = gpr_atm_no_barrier_fetch_add(&s->active_streams.count, 0);
   if ((s->all_incoming_byte_streams_finished =
