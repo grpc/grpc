@@ -472,8 +472,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
   % endif
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -538,8 +538,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
   % endif
   % if tgt.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>

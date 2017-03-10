@@ -2664,8 +2664,8 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -2775,8 +2775,8 @@ target_include_directories(grpc++_test_config
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -2848,8 +2848,8 @@ target_include_directories(grpc++_test_util
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3133,8 +3133,8 @@ target_include_directories(grpc_benchmark
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3188,8 +3188,8 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3319,8 +3319,8 @@ target_include_directories(http2_client_main
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3370,8 +3370,8 @@ target_include_directories(interop_client_helper
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3436,8 +3436,8 @@ target_include_directories(interop_client_main
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3483,8 +3483,8 @@ target_include_directories(interop_server_helper
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3548,8 +3548,8 @@ target_include_directories(interop_server_lib
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3595,8 +3595,8 @@ target_include_directories(interop_server_main
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3679,8 +3679,8 @@ target_include_directories(qps
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7528,8 +7528,8 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7563,8 +7563,8 @@ target_include_directories(async_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7598,8 +7598,8 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7634,8 +7634,8 @@ target_include_directories(bm_call_create
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7673,8 +7673,8 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7712,8 +7712,8 @@ target_include_directories(bm_closure
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7751,8 +7751,8 @@ target_include_directories(bm_cq
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7790,8 +7790,8 @@ target_include_directories(bm_error
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7829,8 +7829,8 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7868,8 +7868,8 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7907,8 +7907,8 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7946,8 +7946,8 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -7985,8 +7985,8 @@ target_include_directories(bm_metadata
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8023,8 +8023,8 @@ target_include_directories(channel_arguments_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8055,8 +8055,8 @@ target_include_directories(channel_filter_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8087,8 +8087,8 @@ target_include_directories(cli_call_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8124,8 +8124,8 @@ target_include_directories(client_crash_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8160,8 +8160,8 @@ target_include_directories(client_crash_test_server
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8230,8 +8230,8 @@ target_include_directories(codegen_test_full
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8298,8 +8298,8 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8327,8 +8327,8 @@ target_include_directories(credentials_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8359,8 +8359,8 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8393,8 +8393,8 @@ target_include_directories(cxx_slice_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8427,8 +8427,8 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8457,8 +8457,8 @@ target_include_directories(cxx_time_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8491,8 +8491,8 @@ target_include_directories(end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8526,8 +8526,8 @@ target_include_directories(filter_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8561,8 +8561,8 @@ target_include_directories(generic_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8603,8 +8603,8 @@ target_include_directories(golden_file_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8635,8 +8635,8 @@ target_include_directories(grpc_cli
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8922,8 +8922,8 @@ target_include_directories(grpc_tool_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8967,8 +8967,8 @@ target_include_directories(grpclb_api_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9007,8 +9007,8 @@ target_include_directories(grpclb_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9042,8 +9042,8 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9077,8 +9077,8 @@ target_include_directories(http2_client
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9113,8 +9113,8 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9148,8 +9148,8 @@ target_include_directories(interop_client
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9187,8 +9187,8 @@ target_include_directories(interop_server
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9228,8 +9228,8 @@ target_include_directories(interop_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9264,8 +9264,8 @@ target_include_directories(json_run_localhost
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9308,8 +9308,8 @@ target_include_directories(metrics_client
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9341,8 +9341,8 @@ target_include_directories(mock_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9376,8 +9376,8 @@ target_include_directories(noop-benchmark
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9406,8 +9406,8 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9443,8 +9443,8 @@ target_include_directories(proto_utils_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9475,8 +9475,8 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9512,8 +9512,8 @@ target_include_directories(qps_json_driver
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9550,8 +9550,8 @@ target_include_directories(qps_openloop_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9588,8 +9588,8 @@ target_include_directories(qps_worker
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9646,8 +9646,8 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9703,8 +9703,8 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9741,8 +9741,8 @@ target_include_directories(round_robin_end2end_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9776,8 +9776,8 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9812,8 +9812,8 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9849,8 +9849,8 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9884,8 +9884,8 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9919,8 +9919,8 @@ target_include_directories(server_crash_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9955,8 +9955,8 @@ target_include_directories(server_crash_test_client
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9990,8 +9990,8 @@ target_include_directories(shutdown_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10025,8 +10025,8 @@ target_include_directories(status_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10060,8 +10060,8 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10128,8 +10128,8 @@ target_include_directories(stress_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10164,8 +10164,8 @@ target_include_directories(thread_manager_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10197,8 +10197,8 @@ target_include_directories(thread_stress_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10233,8 +10233,8 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
