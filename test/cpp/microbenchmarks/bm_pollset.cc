@@ -150,14 +150,20 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
 }
 BENCHMARK(BM_PollEmptyPollset);
 
+class Closure : public grpc_closure {
+ public:
+  virtual ~Closure() {}
+};
+
 template <class F>
-grpc_closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
-  struct C : public grpc_closure {
+Closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
+  struct C : public Closure {
     C(F f, grpc_closure_scheduler* scheduler) : f_(f) {
       grpc_closure_init(this, C::cbfn, this, scheduler);
     }
     static void cbfn(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-      static_cast<C*>(arg)->f_();
+      C* p = static_cast<C*>(arg);
+      p->f_();
     }
     F f_;
   };
@@ -212,7 +218,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read");
   grpc_pollset_add_fd(&exec_ctx, ps, wakeup);
   bool done = false;
-  grpc_closure* continue_closure = MakeClosure(
+  Closure* continue_closure = MakeClosure(
       [&]() {
         GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
         if (!state.KeepRunning()) {
@@ -241,6 +247,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_wakeup_fd_destroy(&wakeup_fd);
   gpr_free(ps);
   track_counters.Finish(state);
+  delete continue_closure;
 }
 BENCHMARK(BM_SingleThreadPollOneFd);
 
