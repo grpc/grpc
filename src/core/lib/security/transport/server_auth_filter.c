@@ -139,9 +139,10 @@ static void on_md_processing_done(
                         ? error_details
                         : "Authentication metadata processing failed.";
     calld->transport_op->send_initial_metadata = NULL;
-    if (calld->transport_op->send_message != NULL) {
-      grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);
-      calld->transport_op->send_message = NULL;
+    if (calld->transport_op->send_message) {
+      grpc_byte_stream_destroy(
+          &exec_ctx, calld->transport_op->payload->send_message.send_message);
+      calld->transport_op->send_message = false;
     }
     calld->transport_op->send_trailing_metadata = NULL;
     grpc_closure_sched(&exec_ctx, calld->on_done_recv,
@@ -173,11 +174,14 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
                                       grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata != NULL) {
+  if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
-    calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->auth_on_recv;
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->on_done_recv =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->auth_on_recv;
     calld->transport_op = op;
   }
 }

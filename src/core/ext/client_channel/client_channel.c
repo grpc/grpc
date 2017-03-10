@@ -449,7 +449,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
 static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error_ignored) {
   grpc_transport_op *op = arg;
-  grpc_channel_element *elem = op->transport_private.args[0];
+  grpc_channel_element *elem = op->transport_private.extra_arg;
   channel_data *chand = elem->channel_data;
 
   if (op->on_connectivity_state_change != NULL) {

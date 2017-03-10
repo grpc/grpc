@@ -210,7 +210,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
-  calld->send_op->send_message = &calld->replacement_stream.base;
+  calld->send_op->payload->send_message.send_message =
+      &calld->replacement_stream.base;
   calld->post_send = calld->send_op->on_complete;
   calld->send_op->on_complete = &calld->send_done;
 
