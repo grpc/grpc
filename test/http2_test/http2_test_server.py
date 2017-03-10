@@ -90,9 +90,9 @@ def listen(endpoint, test_case):
   deferred = endpoint.listen(H2Factory(test_case))
   def listen_error(reason):
     # If listening fails, we stop the reactor and exit the program
-    # with exit_code = 1.
+    # with exit code 1.
     global _exit_code
-    exit_code = 1
+    _exit_code = 1
     logging.error('Listening failed: %s' % reason.value)
     twisted.internet.reactor.stop()
   deferred.addErrback(listen_error)
