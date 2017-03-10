@@ -37,6 +37,7 @@
 #include <string.h>
 #include <sstream>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -55,6 +56,8 @@ extern "C" {
 #include "src/core/lib/transport/transport_impl.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
@@ -104,6 +107,33 @@ static void BM_CallCreateDestroy(benchmark::State &state) {
 
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, InsecureChannel);
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, LameChannel);
+
+static void *tag(int i) {
+  return reinterpret_cast<void *>(static_cast<intptr_t>(i));
+}
+
+static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
+  TrackCounters track_counters;
+  auto stub =
+      grpc::testing::EchoTestService::NewStub(grpc::CreateChannelInternal(
+          "", grpc_lame_client_channel_create(
+                  "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah")));
+  grpc::CompletionQueue cq;
+  grpc::testing::EchoRequest send_request;
+  grpc::testing::EchoResponse recv_response;
+  grpc::Status recv_status;
+  while (state.KeepRunning()) {
+    grpc::ClientContext cli_ctx;
+    auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
+    reader->Finish(&recv_response, &recv_status, tag(0));
+    void *t;
+    bool ok;
+    GPR_ASSERT(cq.Next(&t, &ok));
+    GPR_ASSERT(ok);
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_LameChannelCallCreateCpp);
 
 static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
