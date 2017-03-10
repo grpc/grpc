@@ -634,7 +634,8 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, s->id) == NULL);
   }
 
-  clean_unprocessed_frames_buffer(exec_ctx, t, s);
+  grpc_slice_buffer_destroy_internal(exec_ctx,
+                                     &s->unprocessed_incoming_frames_buffer);
   if (s->incoming_frames != NULL) {
     grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
     s->incoming_frames = NULL;
