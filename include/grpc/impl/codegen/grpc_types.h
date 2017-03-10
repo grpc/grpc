@@ -298,12 +298,8 @@ typedef enum grpc_call_error {
 /** Force compression to be disabled for a particular write
     (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
-/** Force coalescing of last streaming message and trailing metadata into the
-   same core batch */
-#define GRPC_WRITE_LAST_MESSAGE (0x00000004u)
 /** Mask of all valid flags. */
-#define GRPC_WRITE_USED_MASK \
-  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_LAST_MESSAGE)
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
 /* Initial metadata flags */
 /** Signal that the call is idempotent */

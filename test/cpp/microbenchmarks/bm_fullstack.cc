@@ -766,7 +766,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 //  Second parameter (i.e state.range(1)): Number of ping pong messages.
 //      Note: One ping-pong means two messages (one from client to server and
 //      the other from server to client):
-//  Third parameter (i.e state.range(2)): Swtich between using WriteAndFinish
+//  Third parameter (i.e state.range(2)): Switch between using WriteAndFinish
 //  API and WriteLast API for server.
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {

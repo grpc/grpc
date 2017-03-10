@@ -84,8 +84,9 @@ inline grpc_metadata* FillMetadataArray(
 /// Per-message write options.
 class WriteOptions {
  public:
-  WriteOptions() : flags_(0) {}
-  WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
+  WriteOptions() : flags_(0), last_message_(false) {}
+  WriteOptions(const WriteOptions& other)
+      : flags_(other.flags_), last_message_(other.last_message_) {}
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -160,19 +161,15 @@ class WriteOptions {
   /// in a single step
   /// server-side:  hold the Write until the service handler returns (sync api)
   /// or until Finish is called (async api)
-  ///
-  /// \sa GRPC_WRITE_LAST_MESSAGE
   inline WriteOptions& set_last_message() {
-    SetBit(GRPC_WRITE_LAST_MESSAGE);
+    last_message_ = true;
     return *this;
   }
 
   /// Clears flag indicating that this is the last message in a stream,
   /// disabling coalescing.
-  ///
-  /// \sa GRPC_WRITE_LAST_MESSAGE
   inline WriteOptions& clear_last_messsage() {
-    ClearBit(GRPC_WRITE_LAST_MESSAGE);
+    last_message_ = false;
     return *this;
   }
 
@@ -180,7 +177,7 @@ class WriteOptions {
   /// should be coalesced with trailing metadata.
   ///
   /// \sa GRPC_WRITE_LAST_MESSAGE
-  bool is_last_message() const { return GetBit(GRPC_WRITE_LAST_MESSAGE); }
+  bool is_last_message() const { return last_message_; }
 
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
@@ -195,6 +192,7 @@ class WriteOptions {
   bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
 
   uint32_t flags_;
+  bool last_message_;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be
