@@ -509,10 +509,11 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
-  grpc_closure_sched(exec_ctx, grpc_closure_create(
-                                   destroy_transport_locked, t,
-                                   grpc_combiner_scheduler(t->combiner, false)),
-                     GRPC_ERROR_NONE);
+  grpc_closure_sched(
+      exec_ctx,
+      grpc_closure_create(destroy_transport_locked, t,
+                          grpc_combiner_scheduler(t->combiner, false)),
+      GRPC_ERROR_NONE);
 }
 
 static void close_transport_locked(grpc_exec_ctx *exec_ctx,
@@ -691,8 +692,9 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   s->destroy_stream_arg = and_free_memory;
   grpc_closure_sched(
-      exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
-                                  grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx,
+      grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
+                        grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("destroy_stream", 0);
 }
@@ -1497,9 +1499,10 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   op->transport_private.args[0] = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_closure_sched(
-      exec_ctx, grpc_closure_init(&op->transport_private.closure,
-                                  perform_transport_op_locked, op,
-                                  grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx,
+      grpc_closure_init(&op->transport_private.closure,
+                        perform_transport_op_locked, op,
+                        grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
 }
 
@@ -1539,7 +1542,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                              grpc_chttp2_stream *s) {
   if (s->recv_message_ready != NULL) {
     if (s->final_metadata_requested && s->seen_error) {
-      if(s->incoming_frames != NULL) {
+      if (s->incoming_frames != NULL) {
         grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
         s->incoming_frames = NULL;
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
@@ -1606,8 +1609,8 @@ static void decrement_active_streams_locked(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&s->buffer_mu);
   length = s->unprocessed_incoming_frames_buffer.length;
   gpr_mu_unlock(&s->buffer_mu);
-  if ((s->all_incoming_byte_streams_finished = (gpr_unref(&s->active_streams) &&
-      length == 0))) {
+  if ((s->all_incoming_byte_streams_finished =
+           (gpr_unref(&s->active_streams) && length == 0))) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
 }
@@ -1616,15 +1619,15 @@ static void clean_unprocessed_frames_buffer(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
   gpr_mu_lock(&s->buffer_mu);
-  grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
-                                             &s->unprocessed_incoming_frames_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(
+      exec_ctx, &s->unprocessed_incoming_frames_buffer);
   gpr_mu_unlock(&s->buffer_mu);
   // TODO (mxyan): add get ref count in sync.c?
-  gpr_atm active_streams = gpr_atm_no_barrier_fetch_add(&s->active_streams.count, 0);
-  if ((s->all_incoming_byte_streams_finished =
-       (active_streams == 0))) {
-         grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
-       }
+  gpr_atm active_streams =
+      gpr_atm_no_barrier_fetch_add(&s->active_streams.count, 0);
+  if ((s->all_incoming_byte_streams_finished = (active_streams == 0))) {
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
+  }
 }
 
 static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -2754,9 +2757,10 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
               s->id);
     }
     grpc_chttp2_cancel_stream(
-        exec_ctx, t, s, grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                                           GRPC_ERROR_INT_HTTP2_ERROR,
-                                           GRPC_HTTP2_ENHANCE_YOUR_CALM));
+        exec_ctx, t, s,
+        grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
+                           GRPC_ERROR_INT_HTTP2_ERROR,
+                           GRPC_HTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
       /* Since we cancel one stream per destructive reclamation, if
          there are more streams left, we can immediately post a new
