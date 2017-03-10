@@ -1519,9 +1519,13 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
       }
+      size_t length;
       gpr_mu_lock(&s->buffer_mu);
-      clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      length = s->unprocessed_incoming_frames_buffer.length;
       gpr_mu_unlock(&s->buffer_mu);
+      if (length > 0) {
+        clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      }
     }
     grpc_chttp2_incoming_metadata_buffer_publish(
         exec_ctx, &s->metadata_buffer[0], s->recv_initial_metadata);
@@ -1541,9 +1545,13 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
       }
+      size_t length;
       gpr_mu_lock(&s->buffer_mu);
-      clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      length = s->unprocessed_incoming_frames_buffer.length;
       gpr_mu_unlock(&s->buffer_mu);
+      if (length > 0) {
+        clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      }
     }
     if (s->incoming_frames != NULL) {
       *s->recv_message = &s->incoming_frames->base;
@@ -1572,9 +1580,13 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
       }
+      size_t length;
       gpr_mu_lock(&s->buffer_mu);
-      clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      length = s->unprocessed_incoming_frames_buffer.length;
       gpr_mu_unlock(&s->buffer_mu);
+      if (length > 0) {
+        clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      }
     }
     if (s->all_incoming_byte_streams_finished &&
         s->recv_trailing_metadata_finished != NULL) {
@@ -1590,13 +1602,13 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
 static void decrement_active_streams_locked(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
+  size_t length;
   gpr_mu_lock(&s->buffer_mu);
+  length = s->unprocessed_incoming_frames_buffer.length;
+  gpr_mu_unlock(&s->buffer_mu);
   if ((s->all_incoming_byte_streams_finished = (gpr_unref(&s->active_streams) &&
-      s->unprocessed_incoming_frames_buffer.length == 0))) {
-    gpr_mu_unlock(&s->buffer_mu);
+      length == 0))) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
-  } else {
-    gpr_mu_unlock(&s->buffer_mu);
   }
 }
 
@@ -1606,14 +1618,12 @@ static void clean_unprocessed_frames_buffer(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&s->buffer_mu);
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                              &s->unprocessed_incoming_frames_buffer);
+  gpr_mu_unlock(&s->buffer_mu);
   // TODO (mxyan): add get ref count in sync.c?
   gpr_atm active_streams = gpr_atm_no_barrier_fetch_add(&s->active_streams.count, 0);
   if ((s->all_incoming_byte_streams_finished =
        (active_streams == 0))) {
-         gpr_mu_unlock(&s->buffer_mu);
          grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
-       } else {
-         gpr_mu_unlock(&s->buffer_mu);
        }
 }
 
