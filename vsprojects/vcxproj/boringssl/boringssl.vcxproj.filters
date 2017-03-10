@@ -364,6 +364,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\err\err.c">
       <Filter>third_party\boringssl\crypto\err</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\err\err_data.c">
+      <Filter>third_party\boringssl\crypto\err</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\digestsign.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>

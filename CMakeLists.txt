@@ -9886,7 +9886,7 @@ add_executable(server_builder_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
   test/cpp/server/server_builder_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9905,8 +9905,8 @@ target_include_directories(server_builder_test
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 

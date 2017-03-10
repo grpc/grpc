@@ -815,6 +815,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c )
   s.files += %w( third_party/boringssl/crypto/engine/engine.c )
   s.files += %w( third_party/boringssl/crypto/err/err.c )
+  s.files += %w( third_party/boringssl/crypto/err/err_data.c )
   s.files += %w( third_party/boringssl/crypto/evp/digestsign.c )
   s.files += %w( third_party/boringssl/crypto/evp/evp.c )
   s.files += %w( third_party/boringssl/crypto/evp/evp_asn1.c )
