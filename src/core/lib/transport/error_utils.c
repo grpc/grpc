@@ -46,7 +46,7 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   // Otherwise, search through its children.
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    linked_error *lerr = (linked_error *)(error->arena + slot);
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
     grpc_error *result = recursively_find_error_with_field(lerr->err, which);
     if (result) return result;
     slot = lerr->next;
@@ -114,7 +114,7 @@ bool grpc_error_has_clear_grpc_status(grpc_error *error) {
   }
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    linked_error *lerr = (linked_error *)(error->arena + slot);
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
     if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }

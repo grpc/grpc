@@ -39,9 +39,9 @@
 
 #include <grpc/support/sync.h>
 
-typedef struct linked_error linked_error;
+typedef struct grpc_linked_error grpc_linked_error;
 
-struct linked_error {
+struct grpc_linked_error {
   grpc_error *err;
   uint8_t next;
 };

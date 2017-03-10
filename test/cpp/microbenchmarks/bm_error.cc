@@ -83,6 +83,30 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
 
+static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
+  TrackCounters track_counters;
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  int n = 0;
+  while (state.KeepRunning()) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, n++);
+  }
+  GRPC_ERROR_UNREF(error);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_ErrorCreateAndSetIntLoop);
+
+static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
+  TrackCounters track_counters;
+  grpc_error* error = GRPC_ERROR_CREATE("Error");
+  const char* str = "hello";
+  while (state.KeepRunning()) {
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, str);
+  }
+  GRPC_ERROR_UNREF(error);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_ErrorCreateAndSetStrLoop);
+
 static void BM_ErrorRefUnref(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_error* error = GRPC_ERROR_CREATE("Error");

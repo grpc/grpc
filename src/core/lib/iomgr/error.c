@@ -155,7 +155,7 @@ grpc_error *grpc_error_ref(grpc_error *err) {
 static void unref_errs(grpc_error *err) {
   uint8_t slot = err->first_err;
   while (slot != UINT8_MAX) {
-    linked_error *lerr = (linked_error *)(err->arena + slot);
+    grpc_linked_error *lerr = (grpc_linked_error *)(err->arena + slot);
     GRPC_ERROR_UNREF(lerr->err);
     GPR_ASSERT(err->last_err == slot ? lerr->next == UINT8_MAX
                                      : lerr->next != UINT8_MAX);
@@ -254,25 +254,26 @@ static void internal_set_time(grpc_error **err, grpc_error_times which,
 }
 
 static void internal_add_error(grpc_error **err, grpc_error *new) {
-  linked_error new_last = {new, UINT8_MAX};
-  uint8_t slot = get_placement(err, sizeof(linked_error));
+  grpc_linked_error new_last = {new, UINT8_MAX};
+  uint8_t slot = get_placement(err, sizeof(grpc_linked_error));
   if ((*err)->first_err == UINT8_MAX) {
     GPR_ASSERT((*err)->last_err == UINT8_MAX);
     (*err)->last_err = slot;
     (*err)->first_err = slot;
   } else {
     GPR_ASSERT((*err)->last_err != UINT8_MAX);
-    linked_error *old_last = (linked_error *)((*err)->arena + (*err)->last_err);
+    grpc_linked_error *old_last =
+        (grpc_linked_error *)((*err)->arena + (*err)->last_err);
     old_last->next = slot;
     (*err)->last_err = slot;
   }
-  memcpy((*err)->arena + slot, &new_last, sizeof(linked_error));
+  memcpy((*err)->arena + slot, &new_last, sizeof(grpc_linked_error));
 }
 
 #define SLOTS_PER_INT (sizeof(intptr_t) / sizeof(intptr_t))
 #define SLOTS_PER_STR (sizeof(grpc_slice) / sizeof(intptr_t))
 #define SLOTS_PER_TIME (sizeof(gpr_timespec) / sizeof(intptr_t))
-#define SLOTS_PER_LINKED_ERROR (sizeof(linked_error) / sizeof(intptr_t))
+#define SLOTS_PER_LINKED_ERROR (sizeof(grpc_linked_error) / sizeof(intptr_t))
 
 // size of storing one int and two slices and a timespec. For line, desc, file,
 // and time created
@@ -345,7 +346,7 @@ static void ref_strs(grpc_error *err) {
 static void ref_errs(grpc_error *err) {
   uint8_t slot = err->first_err;
   while (slot != UINT8_MAX) {
-    linked_error *lerr = (linked_error *)(err->arena + slot);
+    grpc_linked_error *lerr = (grpc_linked_error *)(err->arena + slot);
     GRPC_ERROR_REF(lerr->err);
     slot = lerr->next;
   }
@@ -636,7 +637,7 @@ static void add_errs(grpc_error *err, char **s, size_t *sz, size_t *cap) {
   uint8_t slot = err->first_err;
   bool first = true;
   while (slot != UINT8_MAX) {
-    linked_error *lerr = (linked_error *)(err->arena + slot);
+    grpc_linked_error *lerr = (grpc_linked_error *)(err->arena + slot);
     if (!first) append_chr(',', s, sz, cap);
     first = false;
     const char *e = grpc_error_string(lerr->err);
