@@ -265,6 +265,10 @@ PACKAGES = setuptools.find_packages(PYTHON_STEM)
 setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
+  description='HTTP/2-based RPC framework',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='http://www.grpc.io',
   license=LICENSE,
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
