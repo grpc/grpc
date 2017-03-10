@@ -98,13 +98,27 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Client sends a request with payload, server reads then returns status. */
-static void test(grpc_end2end_test_config config, bool request_status_early) {
+static void test(grpc_end2end_test_config config, bool request_status_early, bool large_payload) {
+  const size_t large_payload_length = 16 * 1024;
   grpc_call *c;
   grpc_call *s;
-  grpc_slice response_payload1_slice = grpc_slice_from_copied_string("hello");
+  char response1_str[large_payload_length];
+  char response2_str[large_payload_length];
+  grpc_slice response_payload1_slice;
+  grpc_slice response_payload2_slice;
+  if (large_payload) {
+    memset(response1_str, 'x', large_payload_length - 1);
+    response1_str[large_payload_length - 1] = '\0';
+    response_payload1_slice = grpc_slice_from_copied_string(response1_str);
+    memset(response2_str, 'y', large_payload_length - 1);
+    response2_str[large_payload_length - 1] = '\0';
+    response_payload2_slice = grpc_slice_from_copied_string(response2_str);
+  } else {
+    response_payload1_slice = grpc_slice_from_copied_string("hello");
+    response_payload2_slice = grpc_slice_from_copied_string("world");
+  }
   grpc_byte_buffer *response_payload1 =
       grpc_raw_byte_buffer_create(&response_payload1_slice, 1);
-  grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer *response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -271,8 +285,10 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
 }
 
 void streaming_error_response(grpc_end2end_test_config config) {
-  test(config, false);
-  test(config, true);
+  test(config, false, false);
+  test(config, true, false);
+  test(config, false, true);
+  test(config, true, true);
 }
 
 void streaming_error_response_pre_init(void) {}
