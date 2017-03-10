@@ -374,14 +374,15 @@ static hc_mutate_op_result hc_mutate_op(grpc_exec_ctx *exec_ctx,
         &calld->hc_on_recv_initial_metadata;
   }
 
-  if (op->recv_trailing_metadata != NULL) {
+  if (op->recv_trailing_metadata) {
     /* substitute our callback for the higher callback */
-    calld->recv_trailing_metadata = op->recv_trailing_metadata;
+    calld->recv_trailing_metadata =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata;
     calld->on_done_recv_trailing_metadata = op->on_complete;
     op->on_complete = &calld->hc_on_recv_trailing_metadata;
   }
 
-  return GRPC_ERROR_NONE;
+  return result;
 }
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -389,18 +390,14 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GPR_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
-  if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+  hc_mutate_op_result result = hc_mutate_op(exec_ctx, elem, op);
+  if (result.error != GRPC_ERROR_NONE) {
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, result.error);
+  } else if (result.op_stalled) {
+    /* Don't forward the op. send_message contains slices that aren't ready yet.
+       The call will be forwarded by the op_complete of slice read call. */
   } else {
-    call_data *calld = elem->call_data;
-    if (op->send_message != NULL && calld->send_message_blocked) {
-      /* Don't forward the op. send_message contains slices that aren't ready
-      yet. The call will be forwarded by the op_complete of slice read call.
-      */
-    } else {
-      grpc_call_next_op(exec_ctx, elem, op);
-    }
+    grpc_call_next_op(exec_ctx, elem, op);
   }
   GPR_TIMER_END("hc_start_transport_op", 0);
 }
