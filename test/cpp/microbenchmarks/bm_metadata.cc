@@ -36,8 +36,10 @@
 #include <grpc/grpc.h>
 
 extern "C" {
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/transport.h"
 }
 
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -62,6 +64,19 @@ static void BM_SliceFromCopied(benchmark::State& state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SliceFromCopied);
+
+static void BM_SliceFromStreamOwnedBuffer(benchmark::State& state) {
+  grpc_stream_refcount r;
+  GRPC_STREAM_REF_INIT(&r, 1, NULL, NULL, "test");
+  char buffer[64];
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (state.KeepRunning()) {
+    grpc_slice_unref_internal(&exec_ctx, grpc_slice_from_stream_owned_buffer(
+                                             &r, buffer, sizeof(buffer)));
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+BENCHMARK(BM_SliceFromStreamOwnedBuffer);
 
 static void BM_SliceIntern(benchmark::State& state) {
   TrackCounters track_counters;

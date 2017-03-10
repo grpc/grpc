@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+require 'etc'
 require 'mkmf'
 
 LIBDIR = RbConfig::CONFIG['libdir']
@@ -80,7 +81,9 @@ ENV['BUILDDIR'] = output_dir
 
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
-  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
+  nproc = 4
+  nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+  system("make -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
   exit 1 unless $? == 0
 end
 

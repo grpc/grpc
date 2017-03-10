@@ -413,11 +413,12 @@ class NodeLanguage:
         client_type='ASYNC_CLIENT', server_type='async_server',
         client_language='c++')
 
-    yield _ping_pong_scenario(
-        'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='async',
-        categories=[SCALABLE, SMOKETEST])
+    # TODO(murgatroid99): fix bugs with this scenario and re-enable it
+    # yield _ping_pong_scenario(
+    #     'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+    #     client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #     unconstrained_client='async',
+    #     categories=[SCALABLE, SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
