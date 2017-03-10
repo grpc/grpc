@@ -39,6 +39,7 @@ import json
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -55,7 +56,7 @@ atexit.register(lambda: subprocess.call(['stty', 'echo']))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
-_DEFAULT_SERVER_PORT=8080
+_DEFAULT_SERVER_PORT = 8080
 
 _SKIP_CLIENT_COMPRESSION = ['client_compressed_unary',
                             'client_compressed_streaming']
@@ -71,6 +72,9 @@ _SKIP_ADVANCED = ['status_code_and_message',
                   'unimplemented_service']
 
 _TEST_TIMEOUT = 3*60
+
+# Path of docker image in Google Container Registry
+_GCR_PATH = 'gcr.io/grpc-testing'
 
 class CXXLanguage:
 
@@ -481,6 +485,7 @@ _HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during
 _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python', 'c++']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
+DOCKER_TEST_INFO = os.path.join(DOCKER_WORKDIR_ROOT, 'test_info')
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
@@ -736,6 +741,63 @@ def aggregate_http2_results(stdout):
     'percent': 1.0 * passed / (passed + failed)
   }
 
+def push_to_gke_registry(image, gcr_path, gcr_tag='latest', with_files=[]):
+  """Tags and Pushes a docker image in Google Containger Registry.
+
+  image: docker image name grpc_interop_java:26328ad8
+  gcr_path: the name path for docker image on Google Container Registry (GCR).
+  gcr_tag: tag for uploading docker image to GCR.
+  with_files: additional files to copied into the docker image.
+  """
+  tag_idx = image.find(':')
+  if tag_idx == -1:
+    print('Failed to parse docker image name %s' % image)
+    return False
+
+  # Create an empty tmp directory.
+  tmp_dir = os.path.join('/tmp', os.path.basename(DOCKER_TEST_INFO))
+  shutil.rmtree(tmp_dir, ignore_errors=True)
+  os.makedirs(tmp_dir)
+
+  # Stores the original image:tag which will be referenced by tests
+  # during replay.
+  with open(os.path.join(tmp_dir, 'original_image'), 'w') as f:
+    f.write(image + '\n')
+
+  # Copy with_files inside the tmp directory.
+  for f in with_files:
+    shutil.copy(f, tmp_dir)
+
+  # Store all files with the image and commit it.
+  tag_name = '%s/%s:%s' % (gcr_path, image[:tag_idx], gcr_tag)
+  tmp_container_name = str(uuid.uuid4())
+  cmd = (
+      'docker run -v %(src)s:%(mnt)s:ro --name=%(vm)s %(img)s cp -r %(mnt)s %(dst)s'
+  ) % {
+      'src': tmp_dir,
+      'mnt': os.path.join('/mnt/', os.path.basename(tmp_dir)),
+      'vm': tmp_container_name,
+      'img':image,
+      'tag': tag_name,
+      'dst': os.path.dirname(DOCKER_TEST_INFO),
+  }
+  if (subprocess.call(cmd.split()) or
+      subprocess.call(['docker', 'commit', '-m',
+                       'added ' + DOCKER_TEST_INFO, tmp_container_name, tag_name])):
+    print('Error in copying files into the image')
+    succeed = False
+  else:
+    print('Pushing %s to the GKE registry..' % tag_name)
+    if subprocess.call(['gcloud', 'docker', 'push', tag_name]):
+      print('Error in pushing the image %s to the GKE registry' % tag_name)
+      succeed = False
+    succeed = True
+
+  # Clean up
+  subprocess.call(['docker', 'rm', tmp_container_name])
+  dockerjob.remove_image(tag_name)
+  return succeed
+
 # A dictionary of prod servers to test.
 # Format: server_name: (server_host, server_host_override, errors_allowed)
 # TODO(adelez): implement logic for errors_allowed where if the indicated tests
@@ -772,6 +834,9 @@ argp.add_argument('--cloud_to_prod_auth',
                   action='store_const',
                   const=True,
                   help='Run cloud_to_prod_auth tests.')
+argp.add_argument('--gcr_tag',
+                  help='When specified, docker images will be stored in Google ' +
+                       'Container Registery under ' + _GCR_PATH)
 argp.add_argument('--prod_servers',
                   choices=prod_servers.keys(),
                   default=['default'],
@@ -998,7 +1063,8 @@ try:
     sys.exit(1)
 
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
-                                       maxjobs=args.jobs)
+                                       maxjobs=args.jobs,
+                                       joblog="testcase_cmds.txt")
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
@@ -1029,5 +1095,9 @@ finally:
   dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
 
   for image in docker_images.itervalues():
+    if args.gcr_tag:
+      push_to_gke_registry(
+          image, _GCR_PATH, args.gcr_tag,
+          with_files=['report.xml', 'testcase_cmds.txt'])
     print('Removing docker image %s' % image)
     dockerjob.remove_image(image)
