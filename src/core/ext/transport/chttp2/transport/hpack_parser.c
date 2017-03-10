@@ -1625,8 +1625,14 @@ grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
      stack space usage when no tail call optimization is
      available */
   p->current_slice_refcount = slice.refcount;
-  grpc_error *error = p->state(exec_ctx, p, GRPC_SLICE_START_PTR(slice),
-                               GRPC_SLICE_END_PTR(slice));
+  uint8_t *start = GRPC_SLICE_START_PTR(slice);
+  uint8_t *end = GRPC_SLICE_END_PTR(slice);
+  grpc_error *error = GRPC_ERROR_NONE;
+  while (start != end && error == GRPC_ERROR_NONE) {
+    uint8_t *target = start + GPR_MIN(1024, end - start);
+    error = p->state(exec_ctx, p, start, target);
+    start = target;
+  }
   p->current_slice_refcount = NULL;
   return error;
 }
