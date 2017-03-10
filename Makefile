@@ -2627,6 +2627,8 @@ uninstall-static_cxx: uninstall-pkg-config_cxx
 
 
 
+uninstall-shared: uninstall-shared_c uninstall-shared_cxx uninstall-shared_csharp
+
 uninstall-shared_c: uninstall-pkg-config_c
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)

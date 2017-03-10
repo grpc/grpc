@@ -1432,6 +1432,8 @@
   endif
   </%def>
 
+  uninstall-shared: uninstall-shared_c uninstall-shared_cxx uninstall-shared_csharp
+
   uninstall-shared_c: uninstall-pkg-config_c
   ${uninstall_shared("c")}
 
