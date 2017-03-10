@@ -231,8 +231,8 @@ argp.add_argument('--summary_time',
 args = argp.parse_args()
 
 try:
-  for bm_name in args.benchmarks:
-    for collect in args.collect:
+  for collect in args.collect:
+    for bm_name in args.benchmarks:
       collectors[collect](bm_name, args)
   if args.diff_perf:
     if 'summary' not in args.collect:
