@@ -1620,10 +1620,6 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
                                            grpc_slice slice) {
-  /* TODO(ctiller): limit the distance of end from beg, and perform multiple
-     steps in the event of a large chunk of data to limit
-     stack space usage when no tail call optimization is
-     available */
   p->current_slice_refcount = slice.refcount;
   uint8_t *start = GRPC_SLICE_START_PTR(slice);
   uint8_t *end = GRPC_SLICE_END_PTR(slice);
