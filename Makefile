@@ -2633,7 +2633,7 @@ uninstall-shared_c: uninstall-pkg-config_c
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgpr.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgpr.so.2
+	$(Q) $(RM) $(prefix)/lib/libgpr.so.3
 	$(Q) $(RM) $(prefix)/lib/libgpr.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2641,7 +2641,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2649,7 +2649,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2657,7 +2657,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2673,7 +2673,7 @@ uninstall-shared_cxx: uninstall-shared_c uninstall-pkg-config_cxx
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc++.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc++.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc++.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2681,7 +2681,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2689,7 +2689,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.so
 endif
 	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2697,7 +2697,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2713,7 +2713,7 @@ uninstall-shared_csharp:
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so.2
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so.3
 	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 ifneq ($(SYSTEM),MINGW32)
