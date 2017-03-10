@@ -1518,10 +1518,10 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
         s->incoming_frames = NULL;
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
-        gpr_mu_lock(&s->buffer_mu);
-        clean_unprocessed_frames_buffer(exec_ctx, t, s);
-        gpr_mu_unlock(&s->buffer_mu);
       }
+      gpr_mu_lock(&s->buffer_mu);
+      clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      gpr_mu_unlock(&s->buffer_mu);
     }
     grpc_chttp2_incoming_metadata_buffer_publish(
         exec_ctx, &s->metadata_buffer[0], s->recv_initial_metadata);
@@ -1534,12 +1534,13 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                              grpc_chttp2_transport *t,
                                              grpc_chttp2_stream *s) {
   if (s->recv_message_ready != NULL) {
-    if (s->final_metadata_requested && s->seen_error &&
-        s->incoming_frames != NULL) {
-      grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
-      s->incoming_frames = NULL;
-      incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
-                                          GRPC_ERROR_NONE);
+    if (s->final_metadata_requested && s->seen_error) {
+      if(s->incoming_frames != NULL) {
+        grpc_chttp2_incoming_byte_stream *ibs = s->incoming_frames;
+        s->incoming_frames = NULL;
+        incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
+                                            GRPC_ERROR_NONE);
+      }
       gpr_mu_lock(&s->buffer_mu);
       clean_unprocessed_frames_buffer(exec_ctx, t, s);
       gpr_mu_unlock(&s->buffer_mu);
@@ -1570,10 +1571,10 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         s->incoming_frames = NULL;
         incoming_byte_stream_destroy_locked(exec_ctx, &ibs->base,
                                             GRPC_ERROR_NONE);
-        gpr_mu_lock(&s->buffer_mu);
-        clean_unprocessed_frames_buffer(exec_ctx, t, s);
-        gpr_mu_unlock(&s->buffer_mu);
       }
+      gpr_mu_lock(&s->buffer_mu);
+      clean_unprocessed_frames_buffer(exec_ctx, t, s);
+      gpr_mu_unlock(&s->buffer_mu);
     }
     if (s->all_incoming_byte_streams_finished &&
         s->recv_trailing_metadata_finished != NULL) {
