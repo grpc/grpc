@@ -113,7 +113,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&message, "Received RST_STREAM with error code %d", reason);
       error = grpc_error_set_int(
           grpc_error_set_str(GRPC_ERROR_CREATE("RST_STREAM"),
-                             GRPC_ERROR_STR_GRPC_MESSAGE, message),
+                             GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(message)),
           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
       gpr_free(message);
     }

@@ -80,7 +80,7 @@ end:
   if (error != GRPC_ERROR_NONE) {
     grpc_error *error_out = grpc_error_set_str(
         GRPC_ERROR_CREATE_REFERENCING("Failed to load file", &error, 1),
-        GRPC_ERROR_STR_FILENAME, filename);
+        GRPC_ERROR_STR_FILENAME, grpc_slice_from_copied_string(filename)); // TODO(ncteisen), always static?
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }

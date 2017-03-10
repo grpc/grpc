@@ -608,7 +608,7 @@ static grpc_error *error_from_status(grpc_status_code status,
                                      const char *description) {
   return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
+                         GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(description)),
       GRPC_ERROR_INT_GRPC_STATUS, status);
 }
 
@@ -628,16 +628,15 @@ static bool get_final_status_from(
     void (*set_value)(grpc_status_code code, void *user_data),
     void *set_value_user_data, grpc_slice *details) {
   grpc_status_code code;
-  const char *msg = NULL;
-  grpc_error_get_status(error, call->send_deadline, &code, &msg, NULL);
+  grpc_slice slice;
+  grpc_error_get_status(error, call->send_deadline, &code, &slice, NULL);
   if (code == GRPC_STATUS_OK && !allow_ok_status) {
     return false;
   }
 
   set_value(code, set_value_user_data);
   if (details != NULL) {
-    *details =
-        msg == NULL ? grpc_empty_slice() : grpc_slice_from_copied_string(msg);
+    *details = grpc_slice_ref_internal(slice);
   }
   return true;
 }
@@ -911,13 +910,10 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                  (intptr_t)status_code);
 
     if (b->idx.named.grpc_message != NULL) {
-      char *msg =
-          grpc_slice_to_c_string(GRPC_MDVALUE(b->idx.named.grpc_message->md));
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
-      gpr_free(msg);
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
     } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, grpc_empty_slice());
     }
 
     set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
@@ -1550,7 +1546,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             char *msg = grpc_slice_to_c_string(
                 GRPC_MDVALUE(call->send_extra_metadata[1].md));
             override_error = grpc_error_set_str(
-                override_error, GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+                override_error, GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
             gpr_free(msg);
           }
           set_status_from_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,

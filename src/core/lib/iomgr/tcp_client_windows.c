@@ -239,7 +239,7 @@ failure:
   char *target_uri = grpc_sockaddr_to_uri(addr);
   grpc_error *final_error = grpc_error_set_str(
       GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
+      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(target_uri));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

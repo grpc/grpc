@@ -77,7 +77,7 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
     GRPC_ERROR_UNREF(grpc_error_set_str(
         grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
                            GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
-        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
+        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_static_string("raw bytes")));
   }
   track_counters.Finish(state);
 }
@@ -100,7 +100,7 @@ static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   grpc_error* error = GRPC_ERROR_CREATE("Error");
   const char* str = "hello";
   while (state.KeepRunning()) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, str);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_static_string(str));
   }
   GRPC_ERROR_UNREF(error);
   track_counters.Finish(state);
@@ -253,8 +253,8 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
   Fixture fixture;
   while (state.KeepRunning()) {
     grpc_status_code status;
-    const char* msg;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &msg,
+    grpc_slice slice;
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
                           NULL);
   }
   track_counters.Finish(state);

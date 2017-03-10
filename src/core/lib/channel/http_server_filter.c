@@ -132,7 +132,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":method"));
+                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
   }
 
   if (b->idx.named.te != NULL) {
@@ -145,7 +145,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, "te"));
+                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
   }
 
   if (b->idx.named.scheme != NULL) {
@@ -160,7 +160,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":scheme"));
+                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
   }
 
   if (b->idx.named.content_type != NULL) {
@@ -195,7 +195,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   if (b->idx.named.path == NULL) {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":path"));
+                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
   }
 
   if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
@@ -214,7 +214,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   if (b->idx.named.authority == NULL) {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":authority"));
+                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
   if (b->idx.named.grpc_payload_bin != NULL) {

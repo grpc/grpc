@@ -39,6 +39,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 static grpc_error *conforms_to(grpc_slice slice, const uint8_t *legal_bits,
@@ -54,7 +55,7 @@ static grpc_error *conforms_to(grpc_slice slice, const uint8_t *legal_bits,
       grpc_error *error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE(err_desc), GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES, dump);
+          GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_copied_string(dump));
       gpr_free(dump);
       return error;
     }

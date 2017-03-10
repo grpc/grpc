@@ -111,7 +111,7 @@ typedef struct {
 static grpc_error *tcp_annotate_error(grpc_error *src_error, grpc_tcp *tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(tcp->peer_string));
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,

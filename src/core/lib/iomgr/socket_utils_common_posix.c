@@ -268,7 +268,7 @@ static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
   char *addr_str;
   grpc_sockaddr_to_string(&addr_str, addr, 0);
   grpc_error *err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
-                                       GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+                                       GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(addr_str));
   gpr_free(addr_str);
   return err;
 }

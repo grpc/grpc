@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
@@ -156,7 +157,7 @@ typedef enum {
 const char *grpc_error_string(grpc_error *error);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
-grpc_error *grpc_error_create(const char *file, int line, const char *desc,
+grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
                               grpc_error **referencing, size_t num_referencing);
 /// Create an error (this is the preferred way of generating an error that is
 ///   not due to a system call - for system calls, use GRPC_OS_ERROR or
@@ -166,13 +167,30 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 /// err = grpc_error_create(x, y, z, r, nr) is equivalent to:
 ///   err = grpc_error_create(x, y, z, NULL, 0);
 ///   for (i=0; i<nr; i++) err = grpc_error_add_child(err, r[i]);
-#define GRPC_ERROR_CREATE(desc) \
-  grpc_error_create(__FILE__, __LINE__, desc, NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_static_string(desc), NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_copied_string(desc), NULL, 0)
+
+// MOCKED...
+#define GRPC_ERROR_CREATE(desc)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_copied_string(desc), NULL, 0)
+#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_copied_string(desc), errs, count)
+
 
 // Create an error that references some other errors. This function adds a
 // reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count) \
-  grpc_error_create(__FILE__, __LINE__, desc, errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_static_string(desc), errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)                     \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+                    grpc_slice_from_copied_string(desc), errs, count)
 
 //#define GRPC_ERROR_REFCOUNT_DEBUG
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
@@ -193,11 +211,10 @@ void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
-grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
-                               const char *value) GRPC_MUST_USE_RESULT;
-/// Returns NULL if the specified string is not set.
-/// Caller does NOT own return value.
-const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
+grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which, grpc_slice str) GRPC_MUST_USE_RESULT;
+/// Returns false if the specified string is not set.
+/// Caller does NOT own the slice.
+bool grpc_error_get_str(grpc_error *error, grpc_error_strs which, grpc_slice *s);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

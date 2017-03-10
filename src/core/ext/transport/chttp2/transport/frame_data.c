@@ -179,7 +179,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
           gpr_free(msg);
           msg = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
           p->error =
-              grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, msg);
+              grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_copied_string(msg));
           gpr_free(msg);
           p->error =
               grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);

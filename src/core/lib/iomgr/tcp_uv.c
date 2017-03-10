@@ -195,7 +195,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (status != 0) {
     error = GRPC_ERROR_CREATE("TCP Read failed at start");
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_static_string(uv_strerror(status)));
     grpc_closure_sched(exec_ctx, cb, error);
   }
   if (grpc_tcp_trace) {

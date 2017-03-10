@@ -250,7 +250,7 @@ failure:
   grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
                              "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
+                         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(tgtaddr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);

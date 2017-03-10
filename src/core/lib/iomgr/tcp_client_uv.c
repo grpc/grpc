@@ -104,14 +104,14 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
     error = GRPC_ERROR_CREATE("Failed to connect to remote host");
     error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, -status);
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_static_string(uv_strerror(status)));
     if (status == UV_ECANCELED) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                                 "Timeout occurred");
+                                 grpc_slice_from_static_string("Timeout occurred"));
       // This should only happen if the handle is already closed
     } else {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                                 uv_strerror(status));
+                                 grpc_slice_from_static_string(uv_strerror(status)));
       uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
     }
   }
