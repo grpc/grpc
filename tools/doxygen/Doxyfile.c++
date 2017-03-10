@@ -779,12 +779,14 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/server_side_auth.md \
 doc/service_config.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
@@ -801,6 +803,7 @@ include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
 include/grpc++/health_check_service_interface.h \
 include/grpc++/impl/call.h \
+include/grpc++/impl/channel_argument_option.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \

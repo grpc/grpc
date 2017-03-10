@@ -31,6 +31,7 @@
 
 from __future__ import print_function
 
+import logging
 import multiprocessing
 import os
 import platform
@@ -128,6 +129,8 @@ _TAG_COLOR = {
     'SKIPPED': 'cyan'
     }
 
+_FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
@@ -137,8 +140,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   try:
     if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
-        print(explanatory_text)
-      print('%s: %s' % (tag, msg))
+        logging.info(explanatory_text)
+      logging.info('%s: %s', tag, msg)
     else:
       sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
           _BEGINNING_OF_LINE,
@@ -473,13 +476,13 @@ def run(cmdlines,
         skip_jobs=False,
         quiet_success=False):
   if skip_jobs:
-    results = {}
+    resultset = {}
     skipped_job_result = JobResult()
     skipped_job_result.state = 'SKIPPED'
     for job in cmdlines:
       message('SKIPPED', job.shortname, do_newline=True)
-      results[job.shortname] = [skipped_job_result]
-    return results
+      resultset[job.shortname] = [skipped_job_result]
+    return 0, resultset
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,

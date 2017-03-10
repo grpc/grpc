@@ -84,6 +84,39 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
+#define STREAM_REF_FROM_SLICE_REF(p)         \
+  ((grpc_stream_refcount *)(((uint8_t *)p) - \
+                            offsetof(grpc_stream_refcount, slice_refcount)))
+
+static void slice_stream_ref(void *p) {
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
+                                               void *buffer, size_t length) {
+  slice_stream_ref(&refcount->slice_refcount);
+  return (grpc_slice){.refcount = &refcount->slice_refcount,
+                      .data.refcounted = {.bytes = buffer, .length = length}};
+}
+
+static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
+    .ref = slice_stream_ref,
+    .unref = slice_stream_unref,
+    .eq = grpc_slice_default_eq_impl,
+    .hash = grpc_slice_default_hash_impl};
+
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
@@ -95,6 +128,8 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
   grpc_closure_init(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
+  refcount->slice_refcount.vtable = &stream_ref_slice_vtable;
+  refcount->slice_refcount.sub_refcount = &refcount->slice_refcount;
 }
 
 static void move64(uint64_t *from, uint64_t *to) {

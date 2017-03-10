@@ -72,8 +72,11 @@ static grpc_channel *client_channel_factory_create_channel(
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVER_URI;
-  arg.value.string = grpc_resolver_factory_add_default_prefix_if_needed(target);
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  arg.value.string =
+      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target);
+  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args *new_args =
+      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   gpr_free(arg.value.string);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);

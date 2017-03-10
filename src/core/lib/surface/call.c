@@ -156,6 +156,7 @@ struct grpc_call {
   bool receiving_message;
   bool requested_final_op;
   bool received_final_op;
+  bool sent_any_op;
 
   /* have we received initial metadata */
   bool has_initial_md_been_received;
@@ -485,7 +486,7 @@ void grpc_call_destroy(grpc_call *c) {
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  cancel = !c->received_final_op;
+  cancel = c->sent_any_op && !c->received_final_op;
   gpr_mu_unlock(&c->mu);
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
@@ -1685,6 +1686,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
                     grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
+  call->sent_any_op = true;
   gpr_mu_unlock(&call->mu);
 
   execute_op(exec_ctx, call, stream_op);

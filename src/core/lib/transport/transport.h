@@ -64,6 +64,7 @@ typedef struct grpc_stream_refcount {
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   const char *object_type;
 #endif
+  grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -83,6 +84,11 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
+
+/* Wrap a buffer that is owned by some stream object into a slice that shares
+   the same refcount */
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
+                                               void *buffer, size_t length);
 
 typedef struct {
   uint64_t framing_bytes;

@@ -6,8 +6,8 @@
       "Grpc.Reflection": {
         "target": "project"
       },
-      "NUnit": "3.2.0",
-      "NUnitLite": "3.2.0-*"
+      "NUnit": "3.6.0",
+      "NUnitLite": "3.6.0"
     },
     "frameworks": {
       "net45": { },
