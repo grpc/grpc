@@ -1033,16 +1033,13 @@ static batch_control *allocate_batch_control(grpc_call *call,
                                              const grpc_op *ops,
                                              size_t num_ops) {
   int slot = batch_slot_for_op(ops[0].op);
-  for (size_t i = 1; i < num_ops; i++) {
-    int op_slot = batch_slot_for_op(ops[i].op);
-    slot = GPR_MIN(slot, op_slot);
-  }
   batch_control *bctl = &call->active_batches[slot];
   if (bctl->call != NULL) {
     return NULL;
   }
   memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
+  bctl->op.payload = &call->stream_op_payload;
   return bctl;
 }
 
@@ -1398,7 +1395,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op *stream_op = &bctl->op;
   grpc_transport_stream_op_payload *stream_op_payload =
       &call->stream_op_payload;
-  memset(stream_op, 0, sizeof(*stream_op));
   stream_op->covered_by_poller = true;
 
   /* rewrite batch ops into a transport op */
