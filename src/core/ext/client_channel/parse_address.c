@@ -128,6 +128,7 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
     GPR_ASSERT(host_end >= host);
     char host_without_scope[INET6_ADDRSTRLEN];
     size_t host_without_scope_len = (size_t)(host_end - host);
+    uint32_t sin6_scope_id = 0;
     strncpy(host_without_scope, host, host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
     if (inet_pton(AF_INET6, host_without_scope, &in6->sin6_addr) == 0) {
@@ -136,10 +137,12 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
     }
     if (gpr_parse_bytes_to_uint32(host_end + 1,
                                   strlen(host) - host_without_scope_len - 1,
-                                  &in6->sin6_scope_id) == 0) {
+                                  &sin6_scope_id) == 0) {
       gpr_log(GPR_ERROR, "invalid ipv6 scope id: '%s'", host_end + 1);
       goto done;
     }
+    // Handle "sin6_scope_id" being type "u_long". See grpc issue ##10027.
+    in6->sin6_scope_id = sin6_scope_id;
   } else {
     if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
       gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
