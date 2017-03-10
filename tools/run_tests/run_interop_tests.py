@@ -707,11 +707,14 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
                                         ['--name=%s' % container_name])
   if manual_cmd_log is not None:
       manual_cmd_log.append(manual_cmdline(docker_cmdline))
+  timeout = 30*60
+  if language.safename == 'http2':
+    timeout *= 2 # the http2 interop server needs a bit more time
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
           shortname='interop_server_%s' % language,
-          timeout_seconds=30*60)
+          timeout_seconds=timeout)
   server_job.container_name = container_name
   return server_job
 
