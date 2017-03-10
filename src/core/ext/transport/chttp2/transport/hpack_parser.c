@@ -1620,12 +1620,15 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
                                            grpc_slice slice) {
+  /* max number of bytes to parse at a time... limits call stack depth on
+   * compilers without TCO */
+  const size_t max_parse_length = 1024;
   p->current_slice_refcount = slice.refcount;
   uint8_t *start = GRPC_SLICE_START_PTR(slice);
   uint8_t *end = GRPC_SLICE_END_PTR(slice);
   grpc_error *error = GRPC_ERROR_NONE;
   while (start != end && error == GRPC_ERROR_NONE) {
-    uint8_t *target = start + GPR_MIN(1024, end - start);
+    uint8_t *target = start + GPR_MIN(max_parse_length, end - start);
     error = p->state(exec_ctx, p, start, target);
     start = target;
   }
