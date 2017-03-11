@@ -62,7 +62,7 @@ class TestFilteringTest(unittest.TestCase):
     def _get_changed_files(foo):
       return changed_files
     filter_pull_request_tests._get_changed_files = _get_changed_files
-    print
+    print()
     filtered_jobs = filter_pull_request_tests.filter_tests(all_jobs, "test")
 
     # Make sure sanity tests aren't being filtered out

@@ -30,6 +30,8 @@
 
 # Uploads performance benchmark result file to bigquery.
 
+from __future__ import print_function
+
 import argparse
 import calendar
 import json
@@ -70,7 +72,7 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
   _create_results_table(bq, dataset_id, table_id)
 
   if not _insert_result(bq, dataset_id, table_id, scenario_result, flatten=False):
-    print 'Error uploading result to bigquery.'
+    print('Error uploading result to bigquery.')
     sys.exit(1)
 
 
@@ -82,7 +84,7 @@ def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file):
   _create_results_table(bq, dataset_id, table_id)
 
   if not _insert_result(bq, dataset_id, table_id, scenario_result):
-    print 'Error uploading result to bigquery.'
+    print('Error uploading result to bigquery.')
     sys.exit(1)
 
 
@@ -179,4 +181,4 @@ if args.file_format == 'netperf_latency_csv':
   _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, args.file_to_upload)
 else:
   _upload_scenario_result_to_bigquery(dataset_id, table_id, args.file_to_upload)
-print 'Successfully uploaded %s to BigQuery.\n' % args.file_to_upload
+print('Successfully uploaded %s to BigQuery.\n' % args.file_to_upload)
