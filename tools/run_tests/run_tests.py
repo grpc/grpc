@@ -1279,10 +1279,10 @@ if args.use_docker:
   if len(dockerfile_dirs) > 1:
     if 'gcov' in args.config:
       dockerfile_dir = 'tools/dockerfile/test/multilang_jessie_x64'
-      print('Using multilang_jessie_x64 docker image for code coverage for '
+      print ('Using multilang_jessie_x64 docker image for code coverage for '
              'all languages.')
     else:
-      print('Languages to be tested require running under different docker '
+      print ('Languages to be tested require running under different docker '
              'images.')
       sys.exit(1)
   else:

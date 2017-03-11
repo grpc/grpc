@@ -44,7 +44,7 @@ os.chdir(_ROOT)
 
 # Set the timeout high to allow enough time for sanitizers and pre-building
 # clang docker.
-_RUNTESTS_TIMEOUT = 4 * 60 * 60
+_RUNTESTS_TIMEOUT = 4*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -67,8 +67,7 @@ def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   return test_job
 
 
-def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
-                       inner_jobs=_DEFAULT_INNER_JOBS):
+def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a separate workspace"""
   if not workspace_name:
     workspace_name = 'workspace_%s' % name
@@ -104,11 +103,9 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
 
         runtests_args += extra_args
         if platform == 'linux':
-          job = _docker_jobspec(name=name, runtests_args=runtests_args,
-                                inner_jobs=inner_jobs)
+          job = _docker_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
         else:
-          job = _workspace_jobspec(name=name, runtests_args=runtests_args,
-                                   inner_jobs=inner_jobs)
+          job = _workspace_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
 
         job.labels = [platform, config, language] + labels
         result.append(job)
@@ -119,11 +116,11 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs = []
   # supported on linux only
   test_jobs += _generate_jobs(languages=['sanity', 'php7'],
-                              configs=['dbg', 'opt'],
-                              platforms=['linux'],
-                              labels=['basictests'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+                             configs=['dbg', 'opt'],
+                             platforms=['linux'],
+                             labels=['basictests'],
+                             extra_args=extra_args,
+                             inner_jobs=inner_jobs)
 
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
@@ -175,8 +172,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   return test_jobs
 
 
-def _create_portability_test_jobs(extra_args=[],
-                                  inner_jobs=_DEFAULT_INNER_JOBS):
+def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs = []
   # portability C x86
   test_jobs += _generate_jobs(languages=['c'],
@@ -321,10 +317,9 @@ def _runs_per_test_type(arg_str):
 
 
 if __name__ == "__main__":
-  argp = argparse.ArgumentParser(
-    description='Run a matrix of run_tests.py tests.')
+  argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
   argp.add_argument('-j', '--jobs',
-                    default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+                    default=multiprocessing.cpu_count()/_DEFAULT_INNER_JOBS,
                     type=int,
                     help='Number of concurrent run_tests.py instances.')
   argp.add_argument('-f', '--filter',
@@ -363,10 +358,9 @@ if __name__ == "__main__":
                     default=_DEFAULT_INNER_JOBS,
                     type=int,
                     help='Number of jobs in each run_tests.py instance')
-  argp.add_argument('-n', '--runs_per_test', default=1,
-                    type=_runs_per_test_type,
+  argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
                     help='How many times to run each tests. >1 runs implies ' +
-                         'omitting passing test from the output & reports.')
+                    'omitting passing test from the output & reports.')
   args = argp.parse_args()
 
   extra_args = []
@@ -379,16 +373,13 @@ if __name__ == "__main__":
     extra_args.append('%s' % args.runs_per_test)
     extra_args.append('--quiet_success')
 
-  all_jobs = _create_test_jobs(extra_args=extra_args,
-                               inner_jobs=args.inner_jobs) + \
-             _create_portability_test_jobs(extra_args=extra_args,
-                                           inner_jobs=args.inner_jobs)
+  all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
+             _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
 
   jobs = []
   for job in all_jobs:
     if not args.filter or all(filter in job.labels for filter in args.filter):
-      if not any(
-          exclude_label in job.labels for exclude_label in args.exclude):
+      if not any(exclude_label in job.labels for exclude_label in args.exclude):
         jobs.append(job)
 
   if not jobs:
@@ -442,8 +433,7 @@ if __name__ == "__main__":
                                        suite_name='aggregate_tests')
 
   if num_failures == 0:
-    jobset.message('SUCCESS',
-                   'All run_tests.py instance finished successfully.',
+    jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
                    do_newline=True)
   else:
     jobset.message('FAILED', 'Some run_tests.py instance have failed.',

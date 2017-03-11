@@ -503,10 +503,8 @@ args = argp.parse_args()
 
 languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      six.iterkeys(scenario_config.LANGUAGES)
-                      if x == 'all'
-                      else [x]
-                      for x in args.language))
+                      six.iterkeys(scenario_config.LANGUAGES) if x == 'all'
+                      else [x] for x in args.language))
 
 
 # Put together set of remote hosts where to run and build
