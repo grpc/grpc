@@ -143,9 +143,8 @@ struct grpc_call {
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
-  gpr_atm has_children;
   gpr_timespec start_time;
-  /* protects first_child, setting has_children, and child next/prev links */
+  /* protects first_child, and child next/prev links */
   gpr_mu child_list_mu;
 
   /* client or server call */
@@ -315,7 +314,6 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(!args->parent_call->is_client);
 
     gpr_mu_lock(&args->parent_call->child_list_mu);
-    gpr_atm_rel_store(&args->parent_call->has_children, 1);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = gpr_time_min(
@@ -566,45 +564,19 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return GRPC_CALL_OK;
 }
 
-typedef struct termination_closure {
-  grpc_closure closure;
-  grpc_call *call;
-  grpc_transport_stream_op op;
-} termination_closure;
-
-static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
+static void done_termination(grpc_exec_ctx *exec_ctx, void *call,
                              grpc_error *error) {
-  termination_closure *tc = tcp;
-  GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "termination");
-  gpr_free(tc);
-}
-
-static void send_termination(grpc_exec_ctx *exec_ctx, void *tcp,
-                             grpc_error *error) {
-  termination_closure *tc = tcp;
-  memset(&tc->op, 0, sizeof(tc->op));
-  tc->op.cancel_error = GRPC_ERROR_REF(error);
-  /* reuse closure to catch completion */
-  tc->op.on_complete = grpc_closure_init(&tc->closure, done_termination, tc,
-                                         grpc_schedule_on_exec_ctx);
-  execute_op(exec_ctx, tc->call, &tc->op);
-}
-
-static void terminate_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                                 grpc_error *error) {
-  termination_closure *tc = gpr_malloc(sizeof(*tc));
-  memset(tc, 0, sizeof(*tc));
-  tc->call = c;
-  GRPC_CALL_INTERNAL_REF(tc->call, "termination");
-  grpc_closure_sched(exec_ctx, grpc_closure_init(&tc->closure, send_termination,
-                                                 tc, grpc_schedule_on_exec_ctx),
-                     error);
+  GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "termination");
 }
 
 static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
                               status_source source, grpc_error *error) {
+  GRPC_CALL_INTERNAL_REF(c, "termination");
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
-  terminate_with_error(exec_ctx, c, error);
+  grpc_transport_stream_op *op = grpc_make_transport_stream_op(
+      grpc_closure_create(done_termination, c, grpc_schedule_on_exec_ctx));
+  op->cancel_error = error;
+  execute_op(exec_ctx, c, op);
 }
 
 static grpc_error *error_from_status(grpc_status_code status,
@@ -1100,23 +1072,21 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 
     gpr_atm_rel_store(&call->received_final_op_atm, 1);
     /* propagate cancellation to any interested children */
-    if (gpr_atm_acq_load(&call->has_children)) {
-      gpr_mu_lock(&call->child_list_mu);
-      child_call = call->first_child;
-      if (child_call != NULL) {
-        do {
-          next_child_call = child_call->sibling_next;
-          if (child_call->cancellation_is_inherited) {
-            GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
-            cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
-                              GRPC_ERROR_CANCELLED);
-            GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
-          }
-          child_call = next_child_call;
-        } while (child_call != call->first_child);
-      }
-      gpr_mu_unlock(&call->child_list_mu);
+    gpr_mu_lock(&call->child_list_mu);
+    child_call = call->first_child;
+    if (child_call != NULL) {
+      do {
+        next_child_call = child_call->sibling_next;
+        if (child_call->cancellation_is_inherited) {
+          GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
+          cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                            GRPC_ERROR_CANCELLED);
+          GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
+        }
+        child_call = next_child_call;
+      } while (child_call != call->first_child);
     }
+    gpr_mu_unlock(&call->child_list_mu);
 
     if (call->is_client) {
       get_final_status(call, set_status_value_directly,
