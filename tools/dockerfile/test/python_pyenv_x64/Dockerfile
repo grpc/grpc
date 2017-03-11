@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
 # Install dependencies for pyenv
 RUN apt-get update && apt-get install -y \
@@ -95,15 +95,15 @@ ENV PATH /root/.pyenv/shims:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr
 
 # Install Pyenv
 RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
-RUN echo "export PYENV_ROOT=/root/.pyenv" >> /root/.bashrc
-RUN echo "export PATH=/root/.pyenv/shims:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> /root/.bashrc
-RUN echo 'eval "$(pyenv init -)"' >> /root/.bashrc
 
-# Install Python interpreters for Python 3.5.2, 3.6-dev, and PyPy 5.4.1
-RUN pyenv install 3.5.2
+ENV PATH /root/.pyenv/bin:$PATH
+RUN eval "$(pyenv init -)"
+RUN eval "$(pyenv virtualenv-init -)"
+RUN pyenv update
+RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev
 RUN pyenv install pypy-5.4.1
-RUN pyenv global 3.5.2 3.6-dev pypy-5.4.1
+RUN pyenv global 3.5-dev 3.6-dev pypy-5.4.1
 RUN python3.5 -m pip install futures==2.2.0 protobuf==3.0.0a2 six==1.10.0 virtualenv
 RUN python3.6 -m pip install futures==2.2.0 protobuf==3.0.0a2 six==1.10.0 virtualenv
 RUN pypy -m pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0 virtualenv

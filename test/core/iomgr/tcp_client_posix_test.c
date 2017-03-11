@@ -62,7 +62,7 @@ static int g_connections_complete = 0;
 static grpc_endpoint *g_connecting = NULL;
 
 static gpr_timespec test_deadline(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  return grpc_timeout_seconds_to_deadline(10);
 }
 
 static void finish_connection() {
@@ -77,7 +77,8 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_shutdown(exec_ctx, g_connecting);
+  grpc_endpoint_shutdown(exec_ctx, g_connecting,
+                         GRPC_ERROR_CREATE("must_succeed called"));
   grpc_endpoint_destroy(exec_ctx, g_connecting);
   g_connecting = NULL;
   finish_connection();
@@ -139,7 +140,7 @@ void test_succeeds(void) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC),
-                          GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))));
+                          grpc_timeout_seconds_to_deadline(5))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -204,14 +205,14 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset_set = grpc_pollset_set_create();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_pollset_set_add_pollset(&exec_ctx, g_pollset_set, g_pollset);
   grpc_exec_ctx_finish(&exec_ctx);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
-  grpc_pollset_set_destroy(g_pollset_set);
+  grpc_pollset_set_destroy(&exec_ctx, g_pollset_set);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);

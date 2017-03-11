@@ -89,7 +89,8 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   int i;
 
   for (i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, tfds[i].fd);
+    grpc_fd_shutdown(exec_ctx, tfds[i].fd,
+                     GRPC_ERROR_CREATE("test_fd_cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
@@ -103,7 +104,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
 static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
   int i;
   for (i = 0; i < num_pollsets; i++) {
-    pollsets[i].pollset = gpr_malloc(grpc_pollset_size());
+    pollsets[i].pollset = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].pollset, &pollsets[i].mu);
   }
 }
@@ -315,6 +316,7 @@ int main(int argc, char **argv) {
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }
+
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_iomgr_shutdown(&exec_ctx);

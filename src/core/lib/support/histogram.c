@@ -102,8 +102,7 @@ gpr_histogram *gpr_histogram_create(double resolution,
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   GPR_ASSERT(h->num_buckets > 1);
   GPR_ASSERT(h->num_buckets < 100000000);
-  h->buckets = gpr_malloc(sizeof(uint32_t) * h->num_buckets);
-  memset(h->buckets, 0, sizeof(uint32_t) * h->num_buckets);
+  h->buckets = gpr_zalloc(sizeof(uint32_t) * h->num_buckets);
   return h;
 }
 

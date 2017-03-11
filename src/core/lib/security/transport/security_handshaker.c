@@ -124,13 +124,13 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
   }
   const char *msg = grpc_error_string(error);
   gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
-  grpc_error_free_string(msg);
+
   if (!h->shutdown) {
     // TODO(ctiller): It is currently necessary to shutdown endpoints
     // before destroying them, even if we know that there are no
     // pending read/write callbacks.  This should be fixed, at which
     // point this can be removed.
-    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
+    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint, GRPC_ERROR_REF(error));
     // Not shutting down, so the write failed.  Clean up before
     // invoking the callback.
     cleanup_args_for_failure_locked(exec_ctx, h);
@@ -347,15 +347,17 @@ static void security_handshaker_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 static void security_handshaker_shutdown(grpc_exec_ctx *exec_ctx,
-                                         grpc_handshaker *handshaker) {
+                                         grpc_handshaker *handshaker,
+                                         grpc_error *why) {
   security_handshaker *h = (security_handshaker *)handshaker;
   gpr_mu_lock(&h->mu);
   if (!h->shutdown) {
     h->shutdown = true;
-    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
+    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint, GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(exec_ctx, h);
   }
   gpr_mu_unlock(&h->mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void security_handshaker_do_handshake(grpc_exec_ctx *exec_ctx,
@@ -385,8 +387,7 @@ static const grpc_handshaker_vtable security_handshaker_vtable = {
 static grpc_handshaker *security_handshaker_create(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector) {
-  security_handshaker *h = gpr_malloc(sizeof(security_handshaker));
-  memset(h, 0, sizeof(security_handshaker));
+  security_handshaker *h = gpr_zalloc(sizeof(security_handshaker));
   grpc_handshaker_init(&security_handshaker_vtable, &h->base);
   h->handshaker = handshaker;
   h->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "handshake");
@@ -417,7 +418,10 @@ static void fail_handshaker_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 static void fail_handshaker_shutdown(grpc_exec_ctx *exec_ctx,
-                                     grpc_handshaker *handshaker) {}
+                                     grpc_handshaker *handshaker,
+                                     grpc_error *why) {
+  GRPC_ERROR_UNREF(why);
+}
 
 static void fail_handshaker_do_handshake(grpc_exec_ctx *exec_ctx,
                                          grpc_handshaker *handshaker,
@@ -446,7 +450,7 @@ static void client_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory,
     const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr) {
   grpc_channel_security_connector *security_connector =
-      (grpc_channel_security_connector *)grpc_find_security_connector_in_args(
+      (grpc_channel_security_connector *)grpc_security_connector_find_in_args(
           args);
   grpc_channel_security_connector_add_handshakers(exec_ctx, security_connector,
                                                   handshake_mgr);
@@ -456,7 +460,7 @@ static void server_handshaker_factory_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *hf,
     const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr) {
   grpc_server_security_connector *security_connector =
-      (grpc_server_security_connector *)grpc_find_security_connector_in_args(
+      (grpc_server_security_connector *)grpc_security_connector_find_in_args(
           args);
   grpc_server_security_connector_add_handshakers(exec_ctx, security_connector,
                                                  handshake_mgr);

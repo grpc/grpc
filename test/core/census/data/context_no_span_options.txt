@@ -1,0 +1,3 @@
+trace_id_hi : 5
+trace_id_lo : 1
+span_id : 7

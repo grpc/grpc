@@ -114,7 +114,7 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, grpc_mdstr *path, gpr_timespec start_time,
+    grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
     gpr_timespec deadline, grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
@@ -178,6 +178,9 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
 void grpc_get_subchannel_address_arg(grpc_exec_ctx *exec_ctx,
                                      const grpc_channel_args *args,
                                      grpc_resolved_address *addr);
+
+/// Returns the URI string for the address to connect to.
+const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args);
 
 /// Returns a new channel arg encoding the subchannel address as a string.
 /// Caller is responsible for freeing the string.

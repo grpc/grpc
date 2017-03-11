@@ -41,7 +41,7 @@
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100);
+  return grpc_timeout_seconds_to_deadline(100);
 }
 
 typedef struct args_struct {
@@ -57,7 +57,7 @@ static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
   gpr_event_init(&args->ev);
-  args->pollset = gpr_malloc(grpc_pollset_size());
+  args->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
@@ -69,7 +69,7 @@ void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
-  grpc_pollset_set_destroy(args->pollset_set);
+  grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
   grpc_closure do_nothing_cb;
   grpc_closure_init(&do_nothing_cb, do_nothing, NULL,
                     grpc_schedule_on_exec_ctx);

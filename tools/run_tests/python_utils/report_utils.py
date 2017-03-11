@@ -83,7 +83,8 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases,
-  resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
+  http2_badserver_cases, client_langs_http2_badserver_cases, resultset, 
+  num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
   template_file = 'tools/run_tests/interop/interop_html_report.template'
   try:
@@ -98,6 +99,9 @@ def render_interop_html_report(
   sorted_test_cases = sorted(test_cases)
   sorted_auth_test_cases = sorted(auth_test_cases)
   sorted_http2_cases = sorted(http2_cases)
+  sorted_http2_badserver_cases = sorted(http2_badserver_cases)
+  sorted_client_langs_http2_badserver_cases = sorted(
+      client_langs_http2_badserver_cases)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
   sorted_prod_servers = sorted(prod_servers)
@@ -107,6 +111,9 @@ def render_interop_html_report(
           'test_cases': sorted_test_cases,
           'auth_test_cases': sorted_auth_test_cases,
           'http2_cases': sorted_http2_cases,
+          'http2_badserver_cases': sorted_http2_badserver_cases,
+          'client_langs_http2_badserver_cases': (
+              sorted_client_langs_http2_badserver_cases),
           'resultset': resultset,
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,

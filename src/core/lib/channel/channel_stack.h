@@ -81,7 +81,7 @@ typedef struct {
   grpc_call_stack *call_stack;
   const void *server_transport_data;
   grpc_call_context_element *context;
-  grpc_mdstr *path;
+  grpc_slice path;
   gpr_timespec start_time;
   gpr_timespec deadline;
 } grpc_call_element_args;
@@ -128,10 +128,11 @@ typedef struct {
      server_transport_data is an opaque pointer. If it is NULL, this call is
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
-     argument. */
+     argument.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_call_elem)(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_call_element_args *args);
+                                const grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent);
@@ -152,7 +153,8 @@ typedef struct {
      is what needs initializing.
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
-     The filter does not need to do any chaining */
+     The filter does not need to do any chaining.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_channel_elem)(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
                                    grpc_channel_element_args *args);
@@ -238,7 +240,7 @@ grpc_error *grpc_call_stack_init(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
     int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
     grpc_call_context_element *context, const void *transport_server_data,
-    grpc_mdstr *path, gpr_timespec start_time, gpr_timespec deadline,
+    grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
     grpc_call_stack *call_stack);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
@@ -299,18 +301,9 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem, grpc_transport_stream_op *op);
 
-void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
-                                   grpc_call_element *cur_elem);
-
-void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
-                                                grpc_call_element *cur_elem,
-                                                grpc_status_code status,
-                                                grpc_slice *optional_message);
-
-void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
-                                               grpc_call_element *cur_elem,
-                                               grpc_status_code status,
-                                               grpc_slice *optional_message);
+void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *cur_elem,
+                                    grpc_error *error);
 
 extern int grpc_trace_channel;
 

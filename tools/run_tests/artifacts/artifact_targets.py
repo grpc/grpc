@@ -188,24 +188,14 @@ class CSharpExtArtifact:
     self.labels = ['artifact', 'csharp', platform, arch]
 
   def pre_build_jobspecs(self):
-    if self.platform == 'windows':
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\helper_scripts\\pre_build_c.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return []
 
   def build_jobspec(self):
     if self.platform == 'windows':
-      msbuild_platform = 'Win32' if self.arch == 'x86' else self.arch
+      cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                             'vsprojects\\grpc_csharp_ext.sln',
-                             '/p:Configuration=Release',
-                             '/p:PlatformToolset=v120',
-                             '/p:Platform=%s' % msbuild_platform],
+                             cmake_arch_option],
                             shell=True)
     else:
       environ = {'CONFIG': 'opt',

@@ -57,7 +57,6 @@ _CLOSED = 'closed'
 _CANCELLED = 'cancelled'
 
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = cygrpc.Metadata(())
 
 _UNEXPECTED_EXIT_SERVER_GRACE = 1.0
 
@@ -143,14 +142,14 @@ def _abort(state, call, code, details):
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (cygrpc.operation_send_initial_metadata(
-                _EMPTY_METADATA, _EMPTY_FLAGS),
-                          cygrpc.operation_send_status_from_server(
-                              _common.cygrpc_metadata(state.trailing_metadata),
-                              effective_code, effective_details, _EMPTY_FLAGS),)
+                _common.EMPTY_METADATA,
+                _EMPTY_FLAGS), cygrpc.operation_send_status_from_server(
+                    _common.to_cygrpc_metadata(state.trailing_metadata),
+                    effective_code, effective_details, _EMPTY_FLAGS),)
             token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
         else:
             operations = (cygrpc.operation_send_status_from_server(
-                _common.cygrpc_metadata(state.trailing_metadata),
+                _common.to_cygrpc_metadata(state.trailing_metadata),
                 effective_code, effective_details, _EMPTY_FLAGS),)
             token = _SEND_STATUS_FROM_SERVER_TOKEN
         call.start_server_batch(
@@ -251,7 +250,7 @@ class _Context(grpc.ServicerContext):
             self._state.disable_next_compression = True
 
     def invocation_metadata(self):
-        return _common.application_metadata(self._rpc_event.request_metadata)
+        return _common.to_application_metadata(self._rpc_event.request_metadata)
 
     def peer(self):
         return _common.decode(self._rpc_event.operation_call.peer())
@@ -263,7 +262,8 @@ class _Context(grpc.ServicerContext):
             else:
                 if self._state.initial_metadata_allowed:
                     operation = cygrpc.operation_send_initial_metadata(
-                        _common.cygrpc_metadata(initial_metadata), _EMPTY_FLAGS)
+                        _common.to_cygrpc_metadata(initial_metadata),
+                        _EMPTY_FLAGS)
                     self._rpc_event.operation_call.start_server_batch(
                         cygrpc.Operations((operation,)),
                         _send_initial_metadata(self._state))
@@ -274,7 +274,7 @@ class _Context(grpc.ServicerContext):
 
     def set_trailing_metadata(self, trailing_metadata):
         with self._state.condition:
-            self._state.trailing_metadata = _common.cygrpc_metadata(
+            self._state.trailing_metadata = _common.to_cygrpc_metadata(
                 trailing_metadata)
 
     def set_code(self, code):
@@ -343,7 +343,7 @@ def _unary_request(rpc_event, state, request_deserializer):
             if state.client is _CANCELLED or state.statused:
                 return None
             else:
-                start_server_batch_result = rpc_event.operation_call.start_server_batch(
+                rpc_event.operation_call.start_server_batch(
                     cygrpc.Operations(
                         (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
                     _receive_message(state, rpc_event.operation_call,
@@ -416,7 +416,7 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (cygrpc.operation_send_initial_metadata(
-                    _EMPTY_METADATA, _EMPTY_FLAGS),
+                    _common.EMPTY_METADATA, _EMPTY_FLAGS),
                               cygrpc.operation_send_message(serialized_response,
                                                             _EMPTY_FLAGS),)
                 state.initial_metadata_allowed = False
@@ -437,7 +437,8 @@ def _send_response(rpc_event, state, serialized_response):
 def _status(rpc_event, state, serialized_response):
     with state.condition:
         if state.client is not _CANCELLED:
-            trailing_metadata = _common.cygrpc_metadata(state.trailing_metadata)
+            trailing_metadata = _common.to_cygrpc_metadata(
+                state.trailing_metadata)
             code = _completion_code(state)
             details = _details(state)
             operations = [
@@ -446,8 +447,8 @@ def _status(rpc_event, state, serialized_response):
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                           _EMPTY_FLAGS))
+                    cygrpc.operation_send_initial_metadata(
+                        _common.EMPTY_METADATA, _EMPTY_FLAGS))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.operation_send_message(serialized_response,
@@ -549,12 +550,12 @@ def _find_method_handler(rpc_event, generic_handlers):
 
 
 def _handle_unrecognized_method(rpc_event):
-    operations = (
-        cygrpc.operation_send_initial_metadata(_EMPTY_METADATA, _EMPTY_FLAGS),
-        cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
-        cygrpc.operation_send_status_from_server(
-            _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
-            b'Method not found!', _EMPTY_FLAGS),)
+    operations = (cygrpc.operation_send_initial_metadata(_common.EMPTY_METADATA,
+                                                         _EMPTY_FLAGS),
+                  cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
+                  cygrpc.operation_send_status_from_server(
+                      _common.EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
+                      b'Method not found!', _EMPTY_FLAGS),)
     rpc_state = _RPCState()
     rpc_event.operation_call.start_server_batch(
         operations, lambda ignored_event: (rpc_state, (),))
@@ -587,6 +588,8 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
 
 
 def _handle_call(rpc_event, generic_handlers, thread_pool):
+    if not rpc_event.success:
+        return None
     if rpc_event.request_call_details.method is not None:
         method_handler = _find_method_handler(rpc_event, generic_handlers)
         if method_handler is None:

@@ -67,9 +67,7 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             channel_data *chand) {
   grpc_linked_mdelem *m;
   for (m = md->list.head; m != NULL; m = m->next) {
-    if (m->md->key == GRPC_MDSTR_PATH) {
-      gpr_log(GPR_DEBUG, "%s",
-              (const char *)GRPC_SLICE_START_PTR(m->md->value->slice));
+    if (grpc_slice_eq(GRPC_MDKEY(m->md), GRPC_MDSTR_PATH)) {
       /* Add method tag here */
     }
   }
@@ -129,7 +127,7 @@ static void server_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 static grpc_error *client_init_call_elem(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
-                                         grpc_call_element_args *args) {
+                                         const grpc_call_element_args *args) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   memset(d, 0, sizeof(*d));
@@ -148,7 +146,7 @@ static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
 
 static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
-                                         grpc_call_element_args *args) {
+                                         const grpc_call_element_args *args) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   memset(d, 0, sizeof(*d));

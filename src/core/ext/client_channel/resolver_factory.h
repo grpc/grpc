@@ -50,6 +50,7 @@ typedef struct grpc_resolver_args {
   grpc_uri *uri;
   const grpc_channel_args *args;
   grpc_pollset_set *pollset_set;
+  grpc_combiner *combiner;
 } grpc_resolver_args;
 
 struct grpc_resolver_factory_vtable {

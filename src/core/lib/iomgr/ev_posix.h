@@ -51,7 +51,7 @@ typedef struct grpc_event_engine_vtable {
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
-  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
   void (*fd_notify_on_read)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -64,7 +64,6 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-  void (*pollset_reset)(grpc_pollset *pollset);
   void (*pollset_destroy)(grpc_pollset *pollset);
   grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker, gpr_timespec now,
@@ -75,7 +74,8 @@ typedef struct grpc_event_engine_vtable {
                          struct grpc_fd *fd);
 
   grpc_pollset_set *(*pollset_set_create)(void);
-  void (*pollset_set_destroy)(grpc_pollset_set *pollset_set);
+  void (*pollset_set_destroy)(grpc_exec_ctx *exec_ctx,
+                              grpc_pollset_set *pollset_set);
   void (*pollset_set_add_pollset)(grpc_exec_ctx *exec_ctx,
                                   grpc_pollset_set *pollset_set,
                                   grpc_pollset *pollset);
@@ -140,7 +140,7 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
 bool grpc_fd_is_shutdown(grpc_fd *fd);
 
 /* Cause any current and future callbacks to fail. */
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by

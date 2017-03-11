@@ -51,7 +51,7 @@ static gpr_mu *g_mu;
 static grpc_polling_entity g_pops;
 
 static gpr_timespec n_seconds_time(int seconds) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
+  return grpc_timeout_seconds_to_deadline(seconds);
 }
 
 static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -202,14 +202,14 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_httpcli_context_init(&g_context);
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_mu);
   g_pops = grpc_polling_entity_create_from_pollset(pollset);
 
   test_get(port);
   test_post(port);
 
-  grpc_httpcli_context_destroy(&g_context);
+  grpc_httpcli_context_destroy(&exec_ctx, &g_context);
   grpc_closure_init(&destroyed, destroy_pops, &g_pops,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops),

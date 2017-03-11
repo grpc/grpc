@@ -200,31 +200,37 @@ int grpc_sockaddr_to_string(char **out,
 }
 
 char *grpc_sockaddr_to_uri(const grpc_resolved_address *resolved_addr) {
-  char *temp;
-  char *result;
   grpc_resolved_address addr_normalized;
-  const struct sockaddr *addr;
-
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
   }
+  const char *scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
+  if (scheme == NULL || strcmp("unix", scheme) == 0) {
+    return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
+  }
+  char *path = NULL;
+  char *uri_str = NULL;
+  if (grpc_sockaddr_to_string(&path, resolved_addr,
+                              false /* suppress errors */) &&
+      scheme != NULL) {
+    gpr_asprintf(&uri_str, "%s:%s", scheme, path);
+  }
+  gpr_free(path);
+  return uri_str != NULL ? uri_str : NULL;
+}
 
-  addr = (const struct sockaddr *)resolved_addr->addr;
-
+const char *grpc_sockaddr_get_uri_scheme(
+    const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   switch (addr->sa_family) {
     case AF_INET:
-      grpc_sockaddr_to_string(&temp, resolved_addr, 0);
-      gpr_asprintf(&result, "ipv4:%s", temp);
-      gpr_free(temp);
-      return result;
+      return "ipv4";
     case AF_INET6:
-      grpc_sockaddr_to_string(&temp, resolved_addr, 0);
-      gpr_asprintf(&result, "ipv6:%s", temp);
-      gpr_free(temp);
-      return result;
-    default:
-      return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
+      return "ipv6";
+    case AF_UNIX:
+      return "unix";
   }
+  return NULL;
 }
 
 int grpc_sockaddr_get_port(const grpc_resolved_address *resolved_addr) {

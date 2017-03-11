@@ -40,6 +40,8 @@
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 
+typedef struct grpc_slice grpc_slice;
+
 /* Slice API
 
    A slice represents a contiguous reference counted array of bytes.
@@ -53,14 +55,25 @@
    reference ownership semantics (who should call unref?) and mutability
    constraints (is the callee allowed to modify the slice?) */
 
+typedef struct grpc_slice_refcount_vtable {
+  void (*ref)(void *);
+  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
+  int (*eq)(grpc_slice a, grpc_slice b);
+  uint32_t (*hash)(grpc_slice slice);
+} grpc_slice_refcount_vtable;
+
 /* Reference count container for grpc_slice. Contains function pointers to
    increment and decrement reference counts. Implementations should cleanup
    when the reference count drops to zero.
    Typically client code should not touch this, and use grpc_slice_malloc,
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
-  void (*ref)(void *);
-  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
+  const grpc_slice_refcount_vtable *vtable;
+  /* If a subset of this slice is taken, use this pointer for the refcount.
+     Typically points back to the refcount itself, however iterning
+     implementations can use this to avoid a verification step on each hash
+     or equality check */
+  struct grpc_slice_refcount *sub_refcount;
 } grpc_slice_refcount;
 
 #define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
@@ -74,7 +87,7 @@ typedef struct grpc_slice_refcount {
 
    If the slice does not have a refcount, it represents an inlined small piece
    of data that is copied by value. */
-typedef struct grpc_slice {
+struct grpc_slice {
   struct grpc_slice_refcount *refcount;
   union {
     struct {
@@ -86,18 +99,23 @@ typedef struct grpc_slice {
       uint8_t bytes[GRPC_SLICE_INLINED_SIZE];
     } inlined;
   } data;
-} grpc_slice;
+};
 
 #define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
 
 /* Represents an expandable array of slices, to be interpreted as a
    single item. */
 typedef struct {
-  /* slices in the array */
+  /* This is for internal use only. External users (i.e any code outside grpc
+   * core) MUST NOT use this field */
+  grpc_slice *base_slices;
+
+  /* slices in the array (Points to the first valid grpc_slice in the array) */
   grpc_slice *slices;
   /* the number of slices in the array */
   size_t count;
-  /* the number of slices allocated in the array */
+  /* the number of slices allocated in the array. External users (i.e any code
+   * outside grpc core) MUST NOT use this field */
   size_t capacity;
   /* the combined length of all slices in the array */
   size_t length;

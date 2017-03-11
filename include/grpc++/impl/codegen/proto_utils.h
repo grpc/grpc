@@ -50,6 +50,8 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 
+class GrpcBufferWriterPeer;
+
 const int kGrpcBufferWriterMaxBufferLength = 8192;
 
 class GrpcBufferWriter final
@@ -91,13 +93,18 @@ class GrpcBufferWriter final
           &slice_, GRPC_SLICE_LENGTH(slice_) - count);
       g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     }
-    have_backup_ = true;
+    // It's dangerous to keep an inlined grpc_slice as the backup slice, since
+    // on a following Next() call, a reference will be returned to this slice
+    // via GRPC_SLICE_START_PTR, which will not be an adddress held by
+    // slice_buffer_.
+    have_backup_ = backup_slice_.refcount != NULL;
     byte_count_ -= count;
   }
 
   grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
 
  private:
+  friend class GrpcBufferWriterPeer;
   const int block_size_;
   int64_t byte_count_;
   grpc_slice_buffer* slice_buffer_;
@@ -203,8 +210,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   }
 
   static Status Deserialize(grpc_byte_buffer* buffer,
-                            grpc::protobuf::Message* msg,
-                            int max_receive_message_size) {
+                            grpc::protobuf::Message* msg) {
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
@@ -215,10 +221,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
         return reader.status();
       }
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-      if (max_receive_message_size > 0) {
-        decoder.SetTotalBytesLimit(max_receive_message_size,
-                                   max_receive_message_size);
-      }
+      decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
       if (!msg->ParseFromCodedStream(&decoder)) {
         result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
       }

@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.1.4'
+  version = '1.3.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -51,7 +51,7 @@ Pod::Spec.new do |s|
     :submodules => true,
   }
 
-  s.ios.deployment_target = '7.0'
+  s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
   s.requires_arc = false
 
@@ -162,6 +162,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -200,6 +201,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/env.h',
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/spinlock.h',
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
@@ -274,6 +276,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/error.h',
+                      'src/core/lib/iomgr/error_internal.h',
                       'src/core/lib/iomgr/ev_epoll_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
@@ -326,6 +329,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_writer.h',
                       'src/core/lib/slice/percent_encoding.h',
+                      'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.h',
@@ -339,14 +343,18 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/init.h',
                       'src/core/lib/surface/lame_client.h',
                       'src/core/lib/surface/server.h',
+                      'src/core/lib/surface/validate_metadata.h',
+                      'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/byte_stream.h',
                       'src/core/lib/transport/connectivity_state.h',
-                      'src/core/lib/transport/mdstr_hash_table.h',
+                      'src/core/lib/transport/error_utils.h',
+                      'src/core/lib/transport/http2_errors.h',
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/pid_controller.h',
                       'src/core/lib/transport/service_config.h',
                       'src/core/lib/transport/static_metadata.h',
+                      'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
                       'src/core/lib/transport/transport_impl.h',
@@ -363,11 +371,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
-                      'src/core/ext/transport/chttp2/transport/http2_errors.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
-                      'src/core/ext/transport/chttp2/transport/status_conversion.h',
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
@@ -384,6 +390,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/transport/auth_filters.h',
+                      'src/core/lib/security/transport/lb_targets_info.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
                       'src/core/lib/security/transport/security_connector.h',
                       'src/core/lib/security/transport/security_handshaker.h',
@@ -400,11 +407,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/client_channel_factory.h',
                       'src/core/ext/client_channel/connector.h',
                       'src/core/ext/client_channel/http_connect_handshaker.h',
+                      'src/core/ext/client_channel/http_proxy.h',
                       'src/core/ext/client_channel/initial_connect_string.h',
                       'src/core/ext/client_channel/lb_policy.h',
                       'src/core/ext/client_channel/lb_policy_factory.h',
                       'src/core/ext/client_channel/lb_policy_registry.h',
                       'src/core/ext/client_channel/parse_address.h',
+                      'src/core/ext/client_channel/proxy_mapper.h',
+                      'src/core/ext/client_channel/proxy_mapper_registry.h',
                       'src/core/ext/client_channel/resolver.h',
                       'src/core/ext/client_channel/resolver_factory.h',
                       'src/core/ext/client_channel/resolver_registry.h',
@@ -413,6 +423,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/uri_parser.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/lb_policy/grpclb/grpclb.h',
+                      'src/core/ext/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'third_party/nanopb/pb.h',
@@ -432,6 +443,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
                       'src/core/ext/census/trace_context.h',
+                      'src/core/ext/census/trace_label.h',
+                      'src/core/ext/census/trace_propagation.h',
+                      'src/core/ext/census/trace_status.h',
+                      'src/core/ext/census/trace_string.h',
+                      'src/core/ext/census/tracing.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -517,6 +533,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.c',
                       'src/core/lib/slice/slice.c',
                       'src/core/lib/slice/slice_buffer.c',
+                      'src/core/lib/slice/slice_hash_table.c',
+                      'src/core/lib/slice/slice_intern.c',
                       'src/core/lib/slice/slice_string_helpers.c',
                       'src/core/lib/surface/alarm.c',
                       'src/core/lib/surface/api_trace.c',
@@ -536,14 +554,16 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/server.c',
                       'src/core/lib/surface/validate_metadata.c',
                       'src/core/lib/surface/version.c',
+                      'src/core/lib/transport/bdp_estimator.c',
                       'src/core/lib/transport/byte_stream.c',
                       'src/core/lib/transport/connectivity_state.c',
-                      'src/core/lib/transport/mdstr_hash_table.c',
+                      'src/core/lib/transport/error_utils.c',
                       'src/core/lib/transport/metadata.c',
                       'src/core/lib/transport/metadata_batch.c',
                       'src/core/lib/transport/pid_controller.c',
                       'src/core/lib/transport/service_config.c',
                       'src/core/lib/transport/static_metadata.c',
+                      'src/core/lib/transport/status_conversion.c',
                       'src/core/lib/transport/timeout_encoding.c',
                       'src/core/lib/transport/transport.c',
                       'src/core/lib/transport/transport_op_string.c',
@@ -564,7 +584,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.c',
                       'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
                       'src/core/ext/transport/chttp2/transport/parsing.c',
-                      'src/core/ext/transport/chttp2/transport/status_conversion.c',
                       'src/core/ext/transport/chttp2/transport/stream_lists.c',
                       'src/core/ext/transport/chttp2/transport/stream_map.c',
                       'src/core/ext/transport/chttp2/transport/varint.c',
@@ -586,6 +605,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.c',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.c',
                       'src/core/lib/security/transport/client_auth_filter.c',
+                      'src/core/lib/security/transport/lb_targets_info.c',
                       'src/core/lib/security/transport/secure_endpoint.c',
                       'src/core/lib/security/transport/security_connector.c',
                       'src/core/lib/security/transport/security_handshaker.c',
@@ -606,11 +626,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/connector.c',
                       'src/core/ext/client_channel/default_initial_connect_string.c',
                       'src/core/ext/client_channel/http_connect_handshaker.c',
+                      'src/core/ext/client_channel/http_proxy.c',
                       'src/core/ext/client_channel/initial_connect_string.c',
                       'src/core/ext/client_channel/lb_policy.c',
                       'src/core/ext/client_channel/lb_policy_factory.c',
                       'src/core/ext/client_channel/lb_policy_registry.c',
                       'src/core/ext/client_channel/parse_address.c',
+                      'src/core/ext/client_channel/proxy_mapper.c',
+                      'src/core/ext/client_channel/proxy_mapper_registry.c',
                       'src/core/ext/client_channel/resolver.c',
                       'src/core/ext/client_channel/resolver_factory.c',
                       'src/core/ext/client_channel/resolver_registry.c',
@@ -623,6 +646,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
                       'src/core/ext/lb_policy/grpclb/grpclb.c',
+                      'src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'third_party/nanopb/pb_common.c',
@@ -656,6 +680,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/env.h',
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
+                              'src/core/lib/support/spinlock.h',
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
@@ -686,6 +711,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/endpoint.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/error.h',
+                              'src/core/lib/iomgr/error_internal.h',
                               'src/core/lib/iomgr/ev_epoll_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
@@ -738,6 +764,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_writer.h',
                               'src/core/lib/slice/percent_encoding.h',
+                              'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
@@ -751,14 +778,18 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/server.h',
+                              'src/core/lib/surface/validate_metadata.h',
+                              'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
-                              'src/core/lib/transport/mdstr_hash_table.h',
+                              'src/core/lib/transport/error_utils.h',
+                              'src/core/lib/transport/http2_errors.h',
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/pid_controller.h',
                               'src/core/lib/transport/service_config.h',
                               'src/core/lib/transport/static_metadata.h',
+                              'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
@@ -775,11 +806,9 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_table.h',
-                              'src/core/ext/transport/chttp2/transport/http2_errors.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
-                              'src/core/ext/transport/chttp2/transport/status_conversion.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
@@ -796,6 +825,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                               'src/core/lib/security/transport/auth_filters.h',
+                              'src/core/lib/security/transport/lb_targets_info.h',
                               'src/core/lib/security/transport/secure_endpoint.h',
                               'src/core/lib/security/transport/security_connector.h',
                               'src/core/lib/security/transport/security_handshaker.h',
@@ -812,11 +842,14 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/client_channel_factory.h',
                               'src/core/ext/client_channel/connector.h',
                               'src/core/ext/client_channel/http_connect_handshaker.h',
+                              'src/core/ext/client_channel/http_proxy.h',
                               'src/core/ext/client_channel/initial_connect_string.h',
                               'src/core/ext/client_channel/lb_policy.h',
                               'src/core/ext/client_channel/lb_policy_factory.h',
                               'src/core/ext/client_channel/lb_policy_registry.h',
                               'src/core/ext/client_channel/parse_address.h',
+                              'src/core/ext/client_channel/proxy_mapper.h',
+                              'src/core/ext/client_channel/proxy_mapper_registry.h',
                               'src/core/ext/client_channel/resolver.h',
                               'src/core/ext/client_channel/resolver_factory.h',
                               'src/core/ext/client_channel/resolver_registry.h',
@@ -825,6 +858,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/uri_parser.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/lb_policy/grpclb/grpclb.h',
+                              'src/core/ext/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                               'third_party/nanopb/pb.h',
@@ -843,12 +877,18 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h',
-                              'src/core/ext/census/trace_context.h'
+                              'src/core/ext/census/trace_context.h',
+                              'src/core/ext/census/trace_label.h',
+                              'src/core/ext/census/trace_propagation.h',
+                              'src/core/ext/census/trace_status.h',
+                              'src/core/ext/census/trace_string.h',
+                              'src/core/ext/census/tracing.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|
@@ -860,7 +900,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
                       'src/core/ext/transport/cronet/transport/cronet_transport.c',
-                      'third_party/Cronet/bidirectional_stream_c.h'
+                      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
   s.subspec 'Tests' do |ss|
@@ -874,9 +914,10 @@ Pod::Spec.new do |s|
                       'test/core/end2end/end2end_test_utils.c',
                       'test/core/end2end/tests/*.{c,h}',
                       'test/core/end2end/data/*.{c,h}',
+                      'test/core/util/debugger_macros.c',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port_posix.c',
+                      'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
 end

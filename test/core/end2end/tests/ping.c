@@ -37,6 +37,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 #include "test/core/end2end/cq_verifier.h"
 
@@ -48,7 +49,15 @@ static void test_ping(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  config.init_client(&f, NULL);
+  grpc_arg a[] = {{.type = GRPC_ARG_INTEGER,
+                   .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
+                   .value.integer = 0},
+                  {.type = GRPC_ARG_INTEGER,
+                   .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
+                   .value.integer = 20}};
+  grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+
+  config.init_client(&f, &client_args);
   config.init_server(&f, NULL);
 
   grpc_channel_ping(f.client, f.cq, tag(0), NULL);
@@ -61,7 +70,7 @@ static void test_ping(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(99));
+        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);

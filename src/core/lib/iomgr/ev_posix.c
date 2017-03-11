@@ -52,6 +52,8 @@
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
 
+grpc_wakeup_fd grpc_global_wakeup_fd;
+
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
@@ -160,8 +162,8 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
   g_event_engine->fd_orphan(exec_ctx, fd, on_done, release_fd, reason);
 }
 
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  g_event_engine->fd_shutdown(exec_ctx, fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+  g_event_engine->fd_shutdown(exec_ctx, fd, why);
 }
 
 bool grpc_fd_is_shutdown(grpc_fd *fd) {
@@ -189,10 +191,6 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   g_event_engine->pollset_shutdown(exec_ctx, pollset, closure);
 }
 
-void grpc_pollset_reset(grpc_pollset *pollset) {
-  g_event_engine->pollset_reset(pollset);
-}
-
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
@@ -217,8 +215,9 @@ grpc_pollset_set *grpc_pollset_set_create(void) {
   return g_event_engine->pollset_set_create();
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
-  g_event_engine->pollset_set_destroy(pollset_set);
+void grpc_pollset_set_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_pollset_set *pollset_set) {
+  g_event_engine->pollset_set_destroy(exec_ctx, pollset_set);
 }
 
 void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,

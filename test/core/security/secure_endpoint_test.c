@@ -164,10 +164,12 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);
-  GPR_ASSERT(0 == grpc_slice_cmp(s, incoming.slices[0]));
+  GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
-  grpc_endpoint_shutdown(&exec_ctx, f.server_ep);
+  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
+                         GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(&exec_ctx, f.server_ep,
+                         GRPC_ERROR_CREATE("test_leftover end"));
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);

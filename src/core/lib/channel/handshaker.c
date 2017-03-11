@@ -55,8 +55,8 @@ void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                              grpc_handshaker* handshaker) {
-  handshaker->vtable->shutdown(exec_ctx, handshaker);
+                              grpc_handshaker* handshaker, grpc_error* why) {
+  handshaker->vtable->shutdown(exec_ctx, handshaker, why);
 }
 
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
@@ -92,14 +92,50 @@ struct grpc_handshake_manager {
   void* user_data;
   // Handshaker args.
   grpc_handshaker_args args;
+  // Links to the previous and next managers in a list of all pending handshakes
+  // Used at server side only.
+  grpc_handshake_manager* prev;
+  grpc_handshake_manager* next;
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
-  grpc_handshake_manager* mgr = gpr_malloc(sizeof(grpc_handshake_manager));
-  memset(mgr, 0, sizeof(*mgr));
+  grpc_handshake_manager* mgr = gpr_zalloc(sizeof(grpc_handshake_manager));
   gpr_mu_init(&mgr->mu);
   gpr_ref_init(&mgr->refs, 1);
   return mgr;
+}
+
+void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
+                                             grpc_handshake_manager* mgr) {
+  GPR_ASSERT(mgr->prev == NULL);
+  GPR_ASSERT(mgr->next == NULL);
+  mgr->next = *head;
+  if (*head) {
+    (*head)->prev = mgr;
+  }
+  *head = mgr;
+}
+
+void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
+                                                grpc_handshake_manager* mgr) {
+  if (mgr->next != NULL) {
+    mgr->next->prev = mgr->prev;
+  }
+  if (mgr->prev != NULL) {
+    mgr->prev->next = mgr->next;
+  } else {
+    GPR_ASSERT(*head == mgr);
+    *head = mgr->next;
+  }
+}
+
+void grpc_handshake_manager_pending_list_shutdown_all(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why) {
+  while (head != NULL) {
+    grpc_handshake_manager_shutdown(exec_ctx, head, GRPC_ERROR_REF(why));
+    head = head->next;
+  }
+  GRPC_ERROR_UNREF(why);
 }
 
 static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
@@ -141,14 +177,17 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
-                                     grpc_handshake_manager* mgr) {
+                                     grpc_handshake_manager* mgr,
+                                     grpc_error* why) {
   gpr_mu_lock(&mgr->mu);
   // Shutdown the handshaker that's currently in progress, if any.
   if (!mgr->shutdown && mgr->index > 0) {
     mgr->shutdown = true;
-    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1]);
+    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1],
+                             GRPC_ERROR_REF(why));
   }
   gpr_mu_unlock(&mgr->mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 // Helper function to call either the next handshaker or the
@@ -197,7 +236,8 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
 static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_handshake_manager* mgr = arg;
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
-    grpc_handshake_manager_shutdown(exec_ctx, mgr);
+    grpc_handshake_manager_shutdown(exec_ctx, mgr,
+                                    GRPC_ERROR_CREATE("Handshake timed out"));
   }
   grpc_handshake_manager_unref(exec_ctx, mgr);
 }

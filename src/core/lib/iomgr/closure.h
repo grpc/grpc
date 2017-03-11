@@ -66,6 +66,7 @@ typedef struct grpc_closure_scheduler_vtable {
               grpc_error *error);
   void (*sched)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                 grpc_error *error);
+  const char *name;
 } grpc_closure_scheduler_vtable;
 
 /** Abstract type that can schedule closures for execution */
@@ -115,8 +116,9 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
 void grpc_closure_list_init(grpc_closure_list *list);
 
 /** add \a closure to the end of \a list
-    and set \a closure's result to \a error */
-void grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
+    and set \a closure's result to \a error
+    Returns true if \a list becomes non-empty */
+bool grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
                               grpc_error *error);
 
 /** force all success bits in \a list to false */

@@ -31,8 +31,12 @@
 
 import hashlib
 import itertools
+import collections
 import os
 import sys
+import subprocess
+import re
+import perfection
 
 # configuration: a list of either strings or 2-tuples of strings
 # a single string represents a static grpc_mdstr
@@ -40,6 +44,8 @@ import sys
 # also be created)
 
 CONFIG = [
+    # metadata strings
+    'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
     'grpc-payload-bin',
@@ -48,12 +54,19 @@ CONFIG = [
     'grpc-accept-encoding',
     'user-agent',
     ':authority',
-    'host',
     'grpc-message',
     'grpc-status',
     'grpc-tracing-bin',
     'grpc-stats-bin',
     '',
+    # channel arg keys
+    'grpc.wait_for_ready',
+    'grpc.timeout',
+    'grpc.max_request_message_bytes',
+    'grpc.max_response_message_bytes',
+    # well known method names
+    '/grpc.lb.v1.LoadBalancer/BalanceLoad',
+    # metadata elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
     ('grpc-status', '2'),
@@ -110,7 +123,6 @@ CONFIG = [
     ('if-unmodified-since', ''),
     ('last-modified', ''),
     ('lb-token', ''),
-    ('lb-cost-bin', ''),
     ('link', ''),
     ('location', ''),
     ('max-forwards', ''),
@@ -130,6 +142,25 @@ CONFIG = [
     ('www-authenticate', ''),
 ]
 
+METADATA_BATCH_CALLOUTS = [
+    ':path',
+    ':method',
+    ':status',
+    ':authority',
+    ':scheme',
+    'te',
+    'grpc-message',
+    'grpc-status',
+    'grpc-payload-bin',
+    'grpc-encoding',
+    'grpc-accept-encoding',
+    'content-type',
+    'grpc-internal-encoding-request',
+    'user-agent',
+    'host',
+    'lb-token',
+]
+
 COMPRESSION_ALGORITHMS = [
     'identity',
     'deflate',
@@ -137,7 +168,7 @@ COMPRESSION_ALGORITHMS = [
 ]
 
 # utility: mangle the name of a config
-def mangle(elem):
+def mangle(elem, name=None):
   xl = {
       '-': '_',
       ':': '',
@@ -162,10 +193,14 @@ def mangle(elem):
         r += put
     if r[-1] == '_': r = r[:-1]
     return r
+  def n(default, name=name):
+    if name is None: return 'grpc_%s_' % default
+    if name == '': return ''
+    return 'grpc_%s_' % name
   if isinstance(elem, tuple):
-    return 'grpc_mdelem_%s_%s' % (m0(elem[0]), m0(elem[1]))
+    return '%s%s_%s' % (n('mdelem'), m0(elem[0]), m0(elem[1]))
   else:
-    return 'grpc_mdstr_%s' % (m0(elem))
+    return '%s%s' % (n('mdstr'), m0(elem))
 
 # utility: generate some hash value for a string
 def fake_hash(elem):
@@ -181,28 +216,37 @@ def put_banner(files, banner):
     print >>f
 
 # build a list of all the strings we need
-all_strs = set()
-all_elems = set()
+all_strs = list()
+all_elems = list()
 static_userdata = {}
+# put metadata batch callouts first, to make the check of if a static metadata
+# string is a callout trivial
+for elem in METADATA_BATCH_CALLOUTS:
+  if elem not in all_strs:
+    all_strs.append(elem)
 for elem in CONFIG:
   if isinstance(elem, tuple):
-    all_strs.add(elem[0])
-    all_strs.add(elem[1])
-    all_elems.add(elem)
+    if elem[0] not in all_strs:
+      all_strs.append(elem[0])
+    if elem[1] not in all_strs:
+      all_strs.append(elem[1])
+    if elem not in all_elems:
+      all_elems.append(elem)
   else:
-    all_strs.add(elem)
+    if elem not in all_strs:
+      all_strs.append(elem)
 compression_elems = []
 for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
   val = ','.join(COMPRESSION_ALGORITHMS[alg]
                  for alg in range(0, len(COMPRESSION_ALGORITHMS))
                  if (1 << alg) & mask)
   elem = ('grpc-accept-encoding', val)
-  all_strs.add(val)
-  all_elems.add(elem)
+  if val not in all_strs:
+    all_strs.append(val)
+  if elem not in all_elems:
+    all_elems.append(elem)
   compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
-all_strs = sorted(list(all_strs), key=mangle)
-all_elems = sorted(list(all_elems), key=mangle)
 
 # output configuration
 args = sys.argv[1:]
@@ -279,15 +323,52 @@ print >>H
 
 print >>C, '#include "src/core/lib/transport/static_metadata.h"'
 print >>C
+print >>C, '#include "src/core/lib/slice/slice_internal.h"'
+print >>C
+
+str_ofs = 0
+id2strofs = {}
+for i, elem in enumerate(all_strs):
+  id2strofs[i] = str_ofs
+  str_ofs += len(elem);
+def slice_def(i):
+  return '{.refcount = &grpc_static_metadata_refcounts[%d], .data.refcounted = {g_bytes+%d, %d}}' % (i, id2strofs[i], len(all_strs[i]))
+
+# validate configuration
+for elem in METADATA_BATCH_CALLOUTS:
+  assert elem in all_strs
 
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >>H, 'extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];'
+print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
 for i, elem in enumerate(all_strs):
   print >>H, '/* "%s" */' % elem
-  print >>H, '#define %s (&grpc_static_mdstr_table[%d])' % (mangle(elem).upper(), i)
+  print >>H, '#define %s (grpc_static_slice_table[%d])' % (mangle(elem).upper(), i)
 print >>H
-print >>C, 'grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];'
+print >>C, 'static uint8_t g_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in ''.join(all_strs)))
 print >>C
+print >>C, 'static void static_ref(void *unused) {}'
+print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
+print >>C, 'static const grpc_slice_refcount_vtable static_sub_vtable = {static_ref, static_unref, grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};';
+print >>H, 'extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;';
+print >>C, 'const grpc_slice_refcount_vtable grpc_static_metadata_vtable = {static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash};';
+print >>C, 'static grpc_slice_refcount static_sub_refcnt = {&static_sub_vtable, &static_sub_refcnt};';
+print >>H, 'extern grpc_slice_refcount grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];'
+print >>C, 'grpc_slice_refcount grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {'
+for i, elem in enumerate(all_strs):
+  print >>C, '  {&grpc_static_metadata_vtable, &static_sub_refcnt},'
+print >>C, '};'
+print >>C
+print >>H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
+print >>H, '  ((slice).refcount != NULL && (slice).refcount->vtable == &grpc_static_metadata_vtable)'
+print >>H
+print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
+for i, elem in enumerate(all_strs):
+  print >>C, slice_def(i) + ','
+print >>C, '};'
+print >>C
+print >>H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
+print >>H, '  ((int)((static_slice).refcount - grpc_static_metadata_refcounts))'
+print >>H
 
 print >>D, '# hpack fuzzing dictionary'
 for i, elem in enumerate(all_strs):
@@ -297,13 +378,12 @@ for i, elem in enumerate(all_elems):
                               [len(elem[1])] + [ord(c) for c in elem[1]]))
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
-print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
+print >>H, 'extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
 print >>H, 'extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
-  print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
+  print >>H, '#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], GRPC_MDELEM_STORAGE_STATIC))' % (mangle(elem).upper(), i)
 print >>H
-print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
 print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >>C, '};'
@@ -319,17 +399,92 @@ def md_idx(m):
     if m == m2:
       return i
 
-print >>H, 'extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
-print >>C, 'const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
-print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
-print >>C, '};'
+def offset_trials(mink):
+  yield 0
+  for i in range(1, 100):
+    for mul in [-1, 1]:
+      yield mul * i
+
+def perfect_hash(keys, name):
+  p = perfection.hash_parameters(keys)
+  def f(i, p=p):
+    i += p.offset
+    x = i % p.t
+    y = i / p.t
+    return x + p.r[y]
+  return {
+    'PHASHRANGE': p.t - 1 + max(p.r),
+    'PHASHNKEYS': len(p.slots),
+    'pyfunc': f,
+    'code': """
+static const int8_t %(name)s_r[] = {%(r)s};
+static uint32_t %(name)s_phash(uint32_t i) {
+  i %(offset_sign)s= %(offset)d;
+  uint32_t x = i %% %(t)d;
+  uint32_t y = i / %(t)d;
+  uint32_t h = x;
+  if (y < GPR_ARRAY_SIZE(%(name)s_r)) {
+    uint32_t delta = (uint32_t)%(name)s_r[y];
+    h += delta;
+  }
+  return h;
+}
+    """ % {
+      'name': name,
+      'r': ','.join('%d' % (r if r is not None else 0) for r in p.r),
+      't': p.t,
+      'offset': abs(p.offset),
+      'offset_sign': '+' if p.offset > 0 else '-'
+    }
+  }
+
+
+elem_keys = [str_idx(elem[0]) * len(all_strs) + str_idx(elem[1]) for elem in all_elems]
+elem_hash = perfect_hash(elem_keys, "elems")
+print >>C, elem_hash['code']
+
+keys = [0] * int(elem_hash['PHASHRANGE'])
+idxs = [255] * int(elem_hash['PHASHNKEYS'])
+for i, k in enumerate(elem_keys):
+    h = elem_hash['pyfunc'](k)
+    assert keys[h] == 0
+    keys[h] = k
+    idxs[h] = i
+print >>C, 'static const uint16_t elem_keys[] = {%s};' % ','.join('%d' % k for k in keys)
+print >>C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join('%d' % i for i in idxs)
 print >>C
 
-print >>H, 'extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
-print >>C, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {'
-print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
-print >>C, '};'
+print >>H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);'
+print >>C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
+print >>C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
+print >>C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
+print >>C, '  uint32_t h = elems_phash(k);'
+print >>C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
+print >>C, '}'
 print >>C
+
+print >>C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
+for a, b in all_elems:
+  print >>C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
+print >>C, '};'
+
+print >>H, 'typedef enum {'
+for elem in METADATA_BATCH_CALLOUTS:
+  print >>H, '  %s,' % mangle(elem, 'batch').upper()
+print >>H, '  GRPC_BATCH_CALLOUTS_COUNT'
+print >>H, '} grpc_metadata_batch_callouts_index;'
+print >>H
+print >>H, 'typedef union {'
+print >>H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
+print >>H, '  struct {'
+for elem in METADATA_BATCH_CALLOUTS:
+  print >>H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
+print >>H, '  } named;'
+print >>H, '} grpc_metadata_batch_callouts;'
+print >>H
+print >>H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
+print >>H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
+print >>H
 
 print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
 print >>C, 'const uint8_t grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
@@ -337,7 +492,7 @@ print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >>C, '};'
 print >>C
 
-print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])'
+print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >>H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

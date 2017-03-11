@@ -64,13 +64,17 @@ typedef struct {
   char *alpn_preferred;
 } server_args;
 
-// From https://wiki.openssl.org/index.php/Simple_TLS_Server.
-static int create_socket(int port) {
+// Based on https://wiki.openssl.org/index.php/Simple_TLS_Server.
+// Pick an arbitrary unused port and return it in *out_port. Return
+// an fd>=0 on success.
+static int create_socket(int *out_port) {
   int s;
   struct sockaddr_in addr;
+  socklen_t addr_len;
+  *out_port = -1;
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((uint16_t)port);
+  addr.sin_port = 0;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   s = socket(AF_INET, SOCK_STREAM, 0);
@@ -81,7 +85,7 @@ static int create_socket(int port) {
 
   if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     perror("Unable to bind");
-    gpr_log(GPR_ERROR, "Unable to bind to %d", port);
+    gpr_log(GPR_ERROR, "%s", "Unable to bind to any port");
     close(s);
     return -1;
   }
@@ -92,6 +96,16 @@ static int create_socket(int port) {
     return -1;
   }
 
+  addr_len = sizeof(addr);
+  if (getsockname(s, (struct sockaddr *)&addr, &addr_len) != 0 ||
+      addr_len > sizeof(addr)) {
+    perror("getsockname");
+    gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
+    close(s);
+    return -1;
+  }
+
+  *out_port = ntohs(addr.sin_port);
   return s;
 }
 
@@ -220,13 +234,12 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   int server_socket = -1;
   int socket_retries = 30;
   while (server_socket == -1 && socket_retries-- > 0) {
-    port = grpc_pick_unused_port_or_die();
-    server_socket = create_socket(port);
+    server_socket = create_socket(&port);
     if (server_socket == -1) {
       sleep(1);
     }
   }
-  GPR_ASSERT(server_socket > 0);
+  GPR_ASSERT(server_socket > 0 && port > 0);
 
   // Launch the TLS server thread.
   gpr_thd_options thdopt = gpr_thd_options_default();
@@ -279,8 +292,8 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(
-        channel, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), cq, NULL);
-    gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+        channel, state, grpc_timeout_seconds_to_deadline(3), cq, NULL);
+    gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     state =

@@ -70,8 +70,7 @@ class ServerShutdownOp : public Op {
     return Nan::New<External>(reinterpret_cast<void *>(server));
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
+  bool ParseOp(Local<Value> value, grpc_op *out) {
     return true;
   }
   bool IsFinalOp() {
@@ -119,8 +118,7 @@ void Server::ShutdownServer() {
 
     grpc_server_shutdown_and_notify(
         this->wrapped_server, GetCompletionQueue(),
-        new struct tag(new Callback(**shutdown_callback), ops.release(),
-                       shared_ptr<Resources>(nullptr), NULL));
+        new struct tag(new Callback(**shutdown_callback), ops.release(), NULL));
     grpc_server_cancel_all_calls(this->wrapped_server);
     CompletionQueueNext();
     this->wrapped_server = NULL;

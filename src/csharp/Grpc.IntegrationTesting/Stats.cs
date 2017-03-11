@@ -90,7 +90,7 @@ namespace Grpc.Testing {
     public const int TimeElapsedFieldNumber = 1;
     private double timeElapsed_;
     /// <summary>
-    ///  wall clock time change in seconds since last reset
+    /// wall clock time change in seconds since last reset
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeElapsed {
@@ -104,7 +104,7 @@ namespace Grpc.Testing {
     public const int TimeUserFieldNumber = 2;
     private double timeUser_;
     /// <summary>
-    ///  change in user time (in seconds) used by the server since last reset
+    /// change in user time (in seconds) used by the server since last reset
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeUser {
@@ -118,8 +118,8 @@ namespace Grpc.Testing {
     public const int TimeSystemFieldNumber = 3;
     private double timeSystem_;
     /// <summary>
-    ///  change in server time (in seconds) used by the server process and all
-    ///  threads since last reset
+    /// change in server time (in seconds) used by the server process and all
+    /// threads since last reset
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeSystem {
@@ -133,7 +133,7 @@ namespace Grpc.Testing {
     public const int TotalCpuTimeFieldNumber = 4;
     private ulong totalCpuTime_;
     /// <summary>
-    ///  change in total cpu time of the server (data from proc/stat)
+    /// change in total cpu time of the server (data from proc/stat)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong TotalCpuTime {
@@ -147,7 +147,7 @@ namespace Grpc.Testing {
     public const int IdleCpuTimeFieldNumber = 5;
     private ulong idleCpuTime_;
     /// <summary>
-    ///  change in idle time of the server (data from proc/stat)
+    /// change in idle time of the server (data from proc/stat)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong IdleCpuTime {
@@ -296,7 +296,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Histogram params based on grpc/support/histogram.c
+  /// Histogram params based on grpc/support/histogram.c
   /// </summary>
   public sealed partial class HistogramParams : pb::IMessage<HistogramParams> {
     private static readonly pb::MessageParser<HistogramParams> _parser = new pb::MessageParser<HistogramParams>(() => new HistogramParams());
@@ -335,7 +335,7 @@ namespace Grpc.Testing {
     public const int ResolutionFieldNumber = 1;
     private double resolution_;
     /// <summary>
-    ///  first bucket is [0, 1 + resolution)
+    /// first bucket is [0, 1 + resolution)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Resolution {
@@ -349,7 +349,7 @@ namespace Grpc.Testing {
     public const int MaxPossibleFieldNumber = 2;
     private double maxPossible_;
     /// <summary>
-    ///  use enough buckets to allow this value
+    /// use enough buckets to allow this value
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double MaxPossible {
@@ -450,7 +450,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Histogram data based on grpc/support/histogram.c
+  /// Histogram data based on grpc/support/histogram.c
   /// </summary>
   public sealed partial class HistogramData : pb::IMessage<HistogramData> {
     private static readonly pb::MessageParser<HistogramData> _parser = new pb::MessageParser<HistogramData>(() => new HistogramData());
@@ -887,7 +887,7 @@ namespace Grpc.Testing {
     public const int LatenciesFieldNumber = 1;
     private global::Grpc.Testing.HistogramData latencies_;
     /// <summary>
-    ///  Latency histogram. Data points are in nanoseconds.
+    /// Latency histogram. Data points are in nanoseconds.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.HistogramData Latencies {
@@ -901,7 +901,7 @@ namespace Grpc.Testing {
     public const int TimeElapsedFieldNumber = 2;
     private double timeElapsed_;
     /// <summary>
-    ///  See ServerStats for details.
+    /// See ServerStats for details.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeElapsed {
@@ -939,7 +939,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(42, global::Grpc.Testing.RequestResultCount.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> requestResults_ = new pbc::RepeatedField<global::Grpc.Testing.RequestResultCount>();
     /// <summary>
-    ///  Number of failed requests (one row per status code seen)
+    /// Number of failed requests (one row per status code seen)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> RequestResults {

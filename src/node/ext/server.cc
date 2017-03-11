@@ -46,6 +46,7 @@
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
 #include "server_credentials.h"
+#include "slice.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -97,10 +98,11 @@ class NewCallOp : public Op {
     }
     Local<Object> obj = Nan::New<Object>();
     Nan::Set(obj, Nan::New("call").ToLocalChecked(), Call::WrapStruct(call));
+    // TODO(murgatroid99): Use zero-copy string construction instead
     Nan::Set(obj, Nan::New("method").ToLocalChecked(),
-             Nan::New(details.method).ToLocalChecked());
+             CopyStringFromSlice(details.method));
     Nan::Set(obj, Nan::New("host").ToLocalChecked(),
-             Nan::New(details.host).ToLocalChecked());
+             CopyStringFromSlice(details.host));
     Nan::Set(obj, Nan::New("deadline").ToLocalChecked(),
              Nan::New<Date>(TimespecToMilliseconds(details.deadline))
                  .ToLocalChecked());
@@ -109,8 +111,7 @@ class NewCallOp : public Op {
     return scope.Escape(obj);
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
+  bool ParseOp(Local<Value> value, grpc_op *out) {
     return true;
   }
   bool IsFinalOp() {
@@ -192,7 +193,7 @@ NAN_METHOD(Server::RequestCall) {
       GetCompletionQueue(),
       GetCompletionQueue(),
       new struct tag(new Callback(info[0].As<Function>()), ops.release(),
-                     shared_ptr<Resources>(nullptr), NULL));
+                     NULL));
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("requestCall failed", error));
   }
@@ -245,7 +246,7 @@ NAN_METHOD(Server::TryShutdown) {
   grpc_server_shutdown_and_notify(
       server->wrapped_server, GetCompletionQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),
-                     shared_ptr<Resources>(nullptr), NULL));
+                     NULL));
   CompletionQueueNext();
 }
 

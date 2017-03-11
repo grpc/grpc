@@ -35,12 +35,12 @@
 
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/executor.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/support/string.h"
 
 /* -- Fake transport security credentials. -- */
 
@@ -49,7 +49,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
     grpc_call_credentials *call_creds, const char *target,
     const grpc_channel_args *args, grpc_channel_security_connector **sc,
     grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds);
+  *sc = grpc_fake_channel_security_connector_create(call_creds, target, args);
   return GRPC_SECURITY_OK;
 }
 
@@ -71,8 +71,7 @@ static grpc_server_credentials_vtable
 
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(
     void) {
-  grpc_channel_credentials *c = gpr_malloc(sizeof(grpc_channel_credentials));
-  memset(c, 0, sizeof(grpc_channel_credentials));
+  grpc_channel_credentials *c = gpr_zalloc(sizeof(grpc_channel_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   c->vtable = &fake_transport_security_credentials_vtable;
   gpr_ref_init(&c->refcount, 1);
@@ -131,8 +130,7 @@ static grpc_call_credentials_vtable md_only_test_vtable = {
 grpc_call_credentials *grpc_md_only_test_credentials_create(
     const char *md_key, const char *md_value, int is_async) {
   grpc_md_only_test_credentials *c =
-      gpr_malloc(sizeof(grpc_md_only_test_credentials));
-  memset(c, 0, sizeof(grpc_md_only_test_credentials));
+      gpr_zalloc(sizeof(grpc_md_only_test_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);

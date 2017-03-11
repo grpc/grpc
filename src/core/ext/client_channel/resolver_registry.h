@@ -65,7 +65,8 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     should not be NULL. */
 grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
                                     const grpc_channel_args *args,
-                                    grpc_pollset_set *pollset_set);
+                                    grpc_pollset_set *pollset_set,
+                                    grpc_combiner *combiner);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */

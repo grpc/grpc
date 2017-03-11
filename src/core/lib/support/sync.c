@@ -37,6 +37,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include <assert.h>
+
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */
 enum { event_sync_partitions = 31 };
@@ -99,8 +101,12 @@ void gpr_ref_init(gpr_refcount *r, int n) { gpr_atm_rel_store(&r->count, n); }
 void gpr_ref(gpr_refcount *r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
 
 void gpr_ref_non_zero(gpr_refcount *r) {
+#ifndef NDEBUG
   gpr_atm prior = gpr_atm_no_barrier_fetch_add(&r->count, 1);
-  GPR_ASSERT(prior > 0);
+  assert(prior > 0);
+#else
+  gpr_ref(r);
+#endif
 }
 
 void gpr_refn(gpr_refcount *r, int n) {
@@ -111,6 +117,10 @@ int gpr_unref(gpr_refcount *r) {
   gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
   GPR_ASSERT(prior > 0);
   return prior == 1;
+}
+
+int gpr_ref_is_unique(gpr_refcount *r) {
+  return gpr_atm_acq_load(&r->count) == 1;
 }
 
 void gpr_stats_init(gpr_stats_counter *c, intptr_t n) {

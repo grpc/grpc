@@ -60,7 +60,7 @@
         'GPR_BACKWARDS_COMPATIBILITY_MODE'
       ],
       'conditions': [
-        ['runtime=="node" and grpc_uv=="true"', {
+        ['grpc_uv=="true"', {
           'defines': [
             'GRPC_UV'
           ]

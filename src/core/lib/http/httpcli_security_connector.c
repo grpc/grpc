@@ -118,8 +118,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
@@ -156,7 +155,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
-    grpc_error_free_string(msg);
+
     c->func(exec_ctx, c->arg, NULL);
   } else {
     grpc_channel_args_destroy(exec_ctx, args->args);

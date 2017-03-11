@@ -112,7 +112,9 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         next_state_ = State::RESP_DONE;
         return true;
       case State::RESP_DONE:
-        entry->set_value((UsageTimer::Now() - start_) * 1e9);
+        if (status_.ok()) {
+          entry->set_value((UsageTimer::Now() - start_) * 1e9);
+        }
         callback_(status_, &response_, entry);
         next_state_ = State::INVALID;
         return false;

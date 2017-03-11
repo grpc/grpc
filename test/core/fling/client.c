@@ -57,8 +57,7 @@ static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
 static grpc_byte_buffer *response_payload_recv = NULL;
 static grpc_status_code status;
-static char *details = NULL;
-static size_t details_capacity = 0;
+static grpc_slice details;
 static grpc_op *op;
 
 static void init_ping_pong_request(void) {
@@ -86,15 +85,16 @@ static void init_ping_pong_request(void) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op++;
 }
 
 static void step_ping_pong_request(void) {
   GPR_TIMER_BEGIN("ping_pong", 1);
-  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Reflector/reflectUnary", "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
+  call = grpc_channel_create_call(
+      channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
                                                    (size_t)(op - ops),
                                                    (void *)1, NULL));
@@ -109,9 +109,11 @@ static void init_ping_pong_stream(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
 
   grpc_call_error error;
-  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Reflector/reflectStream", "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
+  call = grpc_channel_create_call(
+      channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/Reflector/reflectStream"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   stream_init_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_ops[0].data.send_initial_metadata.count = 0;
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -212,9 +214,9 @@ int main(int argc, char **argv) {
 
   sc.init();
 
-  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds);
+  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
   gpr_timespec end_profiling =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds);
+      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();

@@ -270,8 +270,7 @@ grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
     fragment_end = i;
   }
 
-  uri = gpr_malloc(sizeof(*uri));
-  memset(uri, 0, sizeof(*uri));
+  uri = gpr_zalloc(sizeof(*uri));
   uri->scheme =
       decode_and_copy_component(exec_ctx, uri_text, scheme_begin, scheme_end);
   uri->authority = decode_and_copy_component(exec_ctx, uri_text,
