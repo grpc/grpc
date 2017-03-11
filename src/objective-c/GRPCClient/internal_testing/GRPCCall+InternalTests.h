@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_TEST_OBJC
+
 #import "../GRPCCall.h"
 
 /**
@@ -55,3 +57,5 @@
 + (NSArray *)obtainAndCleanOpBatchLog;
 
 @end
+
+#endif

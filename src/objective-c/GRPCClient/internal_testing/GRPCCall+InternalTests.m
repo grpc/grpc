@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_TEST_OBJC
+
 #import "GRPCCall+InternalTests.h"
 
 #import "../private/GRPCOpBatchLog.h"
@@ -38,24 +40,13 @@
 @implementation GRPCCall (InternalTests)
 
 + (void)enableOpBatchLog:(BOOL)enabled {
-#ifdef GRPC_TEST_OBJC
   [GRPCOpBatchLog enableOpBatchLog:enabled];
-#else
-  NSLog(@"This function is for internal testing of gRPC only. "
-        "It is not part of gRPC's public interface. Do not use in production. "
-        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
-#endif
 }
 
 + (NSArray *)obtainAndCleanOpBatchLog {
-#ifdef GRPC_TEST_OBJC
   return [GRPCOpBatchLog obtainAndCleanOpBatchLog];
-#else
-  NSLog(@"This function is for internal testing of gRPC only. "
-        "It is not part of gRPC's public interface. Do not use in production. "
-        "To enable, set the preprocessor flag GRPC_TEST_OBJC.");
-  return nil;
-#endif
 }
 
 @end
+
+#endif
