@@ -40,6 +40,7 @@ except (ImportError):
 import os
 import string
 import xml.etree.cElementTree as ET
+import six
 
 
 def _filter_msg(msg, output_format):
@@ -63,7 +64,7 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
   root = ET.Element('testsuites')
   testsuite = ET.SubElement(root, 'testsuite', id='1', package=suite_package,
                             name=suite_name)
-  for shortname, results in resultset.iteritems():
+  for shortname, results in six.iteritems(resultset):
     for result in results:
       xml_test = ET.SubElement(testsuite, 'testcase', name=shortname)
       if result.elapsed_time:

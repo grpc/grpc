@@ -53,6 +53,7 @@ import traceback
 import time
 from six.moves import urllib
 import uuid
+import six
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -726,7 +727,7 @@ class CSharpLanguage(object):
         runtime_cmd = ['mono']
 
     specs = []
-    for assembly in tests_by_assembly.iterkeys():
+    for assembly in six.iterkeys(tests_by_assembly):
       assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
                                                  assembly_subdir,
                                                  assembly,
@@ -1218,10 +1219,10 @@ if args.use_docker:
   if len(dockerfile_dirs) > 1:
     if 'gcov' in args.config:
       dockerfile_dir = 'tools/dockerfile/test/multilang_jessie_x64'
-      print ('Using multilang_jessie_x64 docker image for code coverage for '
+      print('Using multilang_jessie_x64 docker image for code coverage for '
              'all languages.')
     else:
-      print ('Languages to be tested require running under different docker '
+      print('Languages to be tested require running under different docker '
              'images.')
       sys.exit(1)
   else:
