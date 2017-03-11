@@ -38,6 +38,17 @@ import argparse
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
+_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
+                              'bm_fullstack_streaming_ping_pong',
+                              'bm_fullstack_streaming_pump',
+                              'bm_closure',
+                              'bm_cq',
+                              'bm_call_create',
+                              'bm_error',
+                              'bm_chttp2_hpack',
+                              'bm_metadata',
+                              'bm_fullstack_trickle']
+
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -201,17 +212,8 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack_unary_ping_pong',
-                           'bm_fullstack_streaming_ping_pong',
-                           'bm_fullstack_streaming_pump',
-                           'bm_closure',
-                           'bm_cq',
-                           'bm_call_create',
-                           'bm_error',
-                           'bm_chttp2_hpack',
-                           'bm_metadata',
-                           'bm_fullstack_trickle',
-                           ],
+                  choices=_AVAILABLE_BENCHMARK_TESTS,
+                  default=_AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
@@ -229,20 +231,20 @@ argp.add_argument('--summary_time',
                   type=int,
                   help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
-if args.diff_perf:
-  git_comment = ''
 
 try:
   for collect in args.collect:
     for bm_name in args.benchmarks:
       collectors[collect](bm_name, args)
   if args.diff_perf:
+    git_comment = 'Performance differences between this PR and %s\\n' % args.diff_perf
     if 'summary' not in args.collect:
       for bm_name in args.benchmarks:
         run_summary(bm_name, 'opt', bm_name)
         run_summary(bm_name, 'counters', bm_name)
     where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-    subprocess.check_call(['git', 'checkout', args.diff_perf])
+    # todo(mattkwong): uncomment this before merging
+    # subprocess.check_call(['git', 'checkout', args.diff_perf])
     comparables = []
     subprocess.check_call(['make', 'clean'])
     try:
