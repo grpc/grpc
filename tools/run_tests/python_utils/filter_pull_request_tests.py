@@ -31,6 +31,7 @@
 """Filter out tests based on file differences compared to merge target branch"""
 
 import re
+import six
 from subprocess import check_output
 
 
@@ -125,7 +126,7 @@ _WHITELIST_DICT = {
 }
 
 # Add all triggers to their respective test suites
-for trigger, test_suites in _WHITELIST_DICT.iteritems():
+for trigger, test_suites in six.iteritems(_WHITELIST_DICT):
   for test_suite in test_suites:
     test_suite.add_trigger(trigger)
 

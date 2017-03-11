@@ -124,11 +124,20 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
-                             configs=['dbg', 'opt'],
-                             platforms=['linux', 'macos', 'windows'],
-                             labels=['basictests'],
-                             extra_args=extra_args,
-                             inner_jobs=inner_jobs)
+                              configs=['dbg', 'opt'],
+                              platforms=['linux', 'macos', 'windows'],
+                              labels=['basictests'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  for compiler in ['python3.4', 'python3.5', 'python3.6', 'pypy']:
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                compiler=compiler,
+                                labels=['basictests'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
 
   # supported on linux and mac.
   test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
@@ -222,14 +231,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args + ['--build_only'],
                               inner_jobs=inner_jobs)
 
-  test_jobs += _generate_jobs(languages=['python'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='python3.4',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+  for compiler in ('python3.4', 'python3.5', 'python3.6', 'pypy'):
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                arch='default',
+                                compiler=compiler,
+                                labels=['portability'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
 
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
@@ -327,7 +337,8 @@ if __name__ == "__main__":
                     action='store_const',
                     const=True,
                     help='Pass --build_only flag to run_tests.py instances.')
-  argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
+  argp.add_argument('--force_default_poller', default=False,
+                    action='store_const', const=True,
                     help='Pass --force_default_poller to run_tests.py instances.')
   argp.add_argument('--dry_run',
                     default=False,

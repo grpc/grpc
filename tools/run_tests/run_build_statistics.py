@@ -243,6 +243,6 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
     rows = [big_query_utils.make_row(build_number, build_result)]
     if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, build_name, 
                                        rows):
-      print '====> Error uploading result to bigquery.'
+      print('====> Error uploading result to bigquery.')
       sys.exit(1)
 
