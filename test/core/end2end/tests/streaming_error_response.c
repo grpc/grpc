@@ -31,6 +31,9 @@
  *
  */
 
+/** \file Verify that status ordering rules are obeyed.
+    \ref doc/status_ordering.md */
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <stdio.h>
