@@ -518,6 +518,28 @@
   {
     "args": [], 
     "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 30, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "error_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
       "linux"
     ], 
     "cpu_cost": 1.0, 
@@ -2712,7 +2734,88 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
-    "name": "bm_fullstack", 
+    "name": "bm_fullstack_streaming_ping_pong", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "timeout_seconds": 1200
+  }, 
+  {
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_streaming_pump", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "timeout_seconds": 1200
+  }, 
+  {
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_trickle", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "timeout_seconds": 1200
+  }, 
+  {
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_unary_ping_pong", 
     "platforms": [
       "linux", 
       "mac", 
@@ -3389,6 +3492,28 @@
     "gtest": true, 
     "language": "c++", 
     "name": "server_builder_plugin_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "server_builder_test", 
     "platforms": [
       "linux", 
       "mac", 

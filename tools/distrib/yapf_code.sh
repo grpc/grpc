@@ -31,31 +31,48 @@
 set -ex
 
 # change to root directory
-cd $(dirname $0)/../..
+cd "$(dirname "${0}")/../.."
 
-DIRS=src/python
-EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_health_checking/grpc_*.py src/python/grpcio_reflection/grpc_*.py src/python/grpcio_tests/grpc_*.py'
+DIRS=(
+    'src/python'
+)
+EXCLUSIONS=(
+    'grpcio/grpc_*.py'
+    'grpcio_health_checking/grpc_*.py'
+    'grpcio_reflection/grpc_*.py'
+    'grpcio_tests/grpc_*.py'
+)
 
-VIRTUALENV=python_format_venv
+VIRTUALENV=yapf_virtual_environment
 
 virtualenv $VIRTUALENV
-PYTHON=`realpath $VIRTUALENV/bin/python`
-$PYTHON -m pip install futures
+PYTHON=$(realpath "${VIRTUALENV}/bin/python")
+$PYTHON -m pip install --upgrade pip
+$PYTHON -m pip install --upgrade futures
 $PYTHON -m pip install yapf==0.16.0
 
-exclusion_args=""
-for exclusion in $EXCLUSIONS; do
-  exclusion_args="$exclusion_args --exclude $exclusion"
-done
+yapf() {
+    local exclusion exclusion_args=()
+    for exclusion in "${EXCLUSIONS[@]}"; do
+        exclusion_args+=( "--exclude" "$1/${exclusion}" )
+    done
+    $PYTHON -m yapf -i -r --style=setup.cfg -p "${exclusion_args[@]}" "${1}"
+}
 
-script_result=0
-for dir in $DIRS; do
-  tempdir=`mktemp -d`
-  cp -RT $dir $tempdir
-  $PYTHON -m yapf -i -r -p $exclusion_args $dir
-  if ! diff -r $dir $tempdir; then
-    script_result=1
-  fi
-  rm -rf $tempdir
-done
-exit $script_result
+if [[ -z "${TEST}" ]]; then
+    for dir in "${DIRS[@]}"; do
+	yapf "${dir}"
+    done
+else
+    ok=yes
+    for dir in "${DIRS[@]}"; do
+	tempdir=$(mktemp -d)
+	cp -RT "${dir}" "${tempdir}"
+	yapf "${tempdir}"
+	diff -ru "${dir}" "${tempdir}" || ok=no
+	rm -rf "${tempdir}"
+    done
+    if [[ ${ok} == no ]]; then
+	false
+    fi
+fi

@@ -164,6 +164,10 @@ GPRAPI void gpr_refn(gpr_refcount *r, int n);
    zero. .  Requires *r initialized. */
 GPRAPI int gpr_unref(gpr_refcount *r);
 
+/* Return non-zero iff the reference count of *r is one, and thus is owned
+   by exactly one object. */
+GPRAPI int gpr_ref_is_unique(gpr_refcount *r);
+
 /* --- Stats counters ---
 
    These calls act on the integral type gpr_stats_counter.  It requires no

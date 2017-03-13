@@ -8,7 +8,7 @@ objs
 # Python items
 cython_debug/
 python_build/
-python_format_venv/
+yapf_virtual_environment/
 python_pylint_venv/
 .coverage*
 .eggs
