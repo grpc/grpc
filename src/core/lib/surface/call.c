@@ -138,7 +138,7 @@ typedef struct batch_control {
 } batch_control;
 
 struct grpc_call {
-  grpc_completion_queue *cq;
+     grpc_completion_queue *cq;
   grpc_polling_entity pollent;
   grpc_channel *channel;
   grpc_call *parent;
