@@ -36,6 +36,9 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/useful.h>
 
+#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
+
 typedef struct zone {
   size_t size_begin;
   size_t size_end;
@@ -48,6 +51,7 @@ struct gpr_arena {
 };
 
 gpr_arena *gpr_arena_create(size_t initial_size) {
+  initial_size = ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
   gpr_arena *a = gpr_zalloc(sizeof(gpr_arena) + initial_size);
   a->initial_zone.size_end = initial_size;
   return a;
@@ -66,6 +70,7 @@ size_t gpr_arena_destroy(gpr_arena *arena) {
 }
 
 void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
+  size = ROUND_UP_TO_ALIGNMENT_SIZE(size);
   size_t start =
       (size_t)gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size);
   zone *z = &arena->initial_zone;
