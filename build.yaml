@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 3.0.0-dev
   g_stands_for: green
-  version: 1.2.0-dev
+  version: 1.3.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -586,7 +586,7 @@ filegroups:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fake_resolver.h
-  - test/core/end2end/fixtures/http_proxy.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
@@ -602,7 +602,7 @@ filegroups:
   src:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fake_resolver.c
-  - test/core/end2end/fixtures/http_proxy.c
+  - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/debugger_macros.c
@@ -611,10 +611,8 @@ filegroups:
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/passthru_endpoint.c
-  - test/core/util/port_posix.c
+  - test/core/util/port.c
   - test/core/util/port_server_client.c
-  - test/core/util/port_uv.c
-  - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   - test/core/util/trickle_endpoint.c
   deps:
@@ -776,6 +774,7 @@ filegroups:
   - include/grpc++/grpc++.h
   - include/grpc++/health_check_service_interface.h
   - include/grpc++/impl/call.h
+  - include/grpc++/impl/channel_argument_option.h
   - include/grpc++/impl/client_unary_call.h
   - include/grpc++/impl/codegen/core_codegen.h
   - include/grpc++/impl/grpc_library.h
@@ -832,6 +831,7 @@ filegroups:
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/health/default_health_check_service.cc
@@ -1216,6 +1216,20 @@ libs:
   - grpc++_codegen_base_src
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc_benchmark
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_context_mutators.h
+  - test/cpp/microbenchmarks/fullstack_fixtures.h
+  - test/cpp/microbenchmarks/helpers.h
+  src:
+  - test/cpp/microbenchmarks/helpers.cc
+  deps:
+  - benchmark
+  - grpc++
+  - grpc_test_util
+  - grpc
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -1688,6 +1702,17 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: error_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/error_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -2494,6 +2519,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: parse_address_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/parse_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -2554,6 +2589,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2745,6 +2782,16 @@ targets:
   language: c
   src:
   - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stream_owned_slice_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/stream_owned_slice_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3013,6 +3060,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_call_create.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3032,6 +3080,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3051,6 +3100,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3070,6 +3120,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_cq.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3089,6 +3140,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_error.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3102,12 +3154,85 @@ targets:
   - mac
   - linux
   - posix
-- name: bm_fullstack
+- name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
   src:
-  - test/cpp/microbenchmarks/bm_fullstack.cc
+  - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_streaming_pump
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_trickle
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_trickle.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  excluded_poll_engines:
+  - poll
+  - poll-cv
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_fullstack_unary_ping_pong
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
+  deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
@@ -3131,8 +3256,11 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_metadata.cc
   deps:
+  - grpc_benchmark
   - benchmark
+  - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr_test_util
   - gpr
@@ -3809,6 +3937,21 @@ targets:
   - grpc++
   - grpc
   - gpr_test_util
+  - gpr
+- name: server_builder_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/server/server_builder_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - gpr_test_util
+  - grpc++
+  - grpc
   - gpr
 - name: server_context_test_spouse_test
   gtest: true

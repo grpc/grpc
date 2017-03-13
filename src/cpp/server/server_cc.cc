@@ -534,7 +534,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
   std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
+  if (!shutdown_) {
     shutdown_ = true;
 
     /// The completion queue to use for server shutdown completion notification

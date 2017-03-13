@@ -32,7 +32,6 @@
 #endregion
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,6 +55,7 @@ namespace Grpc.Core
         private Status status = Status.DefaultSuccess;
         private Func<Metadata, Task> writeHeadersFunc;
         private IHasWriteOptions writeOptionsHolder;
+        private Lazy<AuthContext> authContext;
 
         internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
             Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
@@ -68,6 +68,7 @@ namespace Grpc.Core
             this.cancellationToken = cancellationToken;
             this.writeHeadersFunc = writeHeadersFunc;
             this.writeOptionsHolder = writeOptionsHolder;
+            this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
         }
 
         /// <summary>
@@ -185,6 +186,26 @@ namespace Grpc.Core
             set
             {
                 writeOptionsHolder.WriteOptions = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the <c>AuthContext</c> associated with this call.
+        /// Note: Access to AuthContext is an experimental API that can change without any prior notice.
+        /// </summary>
+        public AuthContext AuthContext
+        {
+            get
+            {
+                return authContext.Value;
+            }
+        }
+
+        private AuthContext GetAuthContextEager()
+        {
+            using (var authContextNative = callHandle.GetAuthContext())
+            {
+                return authContextNative.ToAuthContext();
             }
         }
     }
