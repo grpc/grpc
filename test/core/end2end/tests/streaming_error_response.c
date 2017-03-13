@@ -99,25 +99,14 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Client sends a request with payload, server reads then returns status. */
 static void test(grpc_end2end_test_config config, bool request_status_early,
-                 bool large_payload) {
-  const size_t large_payload_length = 16 * 1024;
+                 size_t payload_size) {
   grpc_call *c;
   grpc_call *s;
-  char response1_str[large_payload_length];
-  char response2_str[large_payload_length];
-  grpc_slice response_payload1_slice;
-  grpc_slice response_payload2_slice;
-  if (large_payload) {
-    memset(response1_str, 'x', large_payload_length - 1);
-    response1_str[large_payload_length - 1] = '\0';
-    response_payload1_slice = grpc_slice_from_copied_string(response1_str);
-    memset(response2_str, 'y', large_payload_length - 1);
-    response2_str[large_payload_length - 1] = '\0';
-    response_payload2_slice = grpc_slice_from_copied_string(response2_str);
-  } else {
-    response_payload1_slice = grpc_slice_from_copied_string("hello");
-    response_payload2_slice = grpc_slice_from_copied_string("world");
-  }
+  grpc_slice response_payload1_slice = grpc_slice_malloc(payload_size);
+  memset(GRPC_SLICE_START_PTR(response_payload1_slice), 'x', GRPC_SLICE_LENGTH(response_payload1_slice));
+  grpc_slice response_payload2_slice = grpc_slice_malloc(payload_size);
+  memset(GRPC_SLICE_START_PTR(response_payload2_slice), 'y', GRPC_SLICE_LENGTH(response_payload2_slice));
+
   grpc_byte_buffer *response_payload1 =
       grpc_raw_byte_buffer_create(&response_payload1_slice, 1);
   grpc_byte_buffer *response_payload2 =
@@ -281,15 +270,18 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   grpc_byte_buffer_destroy(response_payload1_recv);
   grpc_byte_buffer_destroy(response_payload2_recv);
 
+  grpc_slice_unref(response_payload1_slice);
+  grpc_slice_unref(response_payload2_slice);
+
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void streaming_error_response(grpc_end2end_test_config config) {
-  test(config, false, false);
-  test(config, true, false);
-  test(config, false, true);
-  test(config, true, true);
+  test(config, false, 5);
+  test(config, true, 5);
+  test(config, false, 64 * 1024);
+  test(config, true, 64 * 1024);
 }
 
 void streaming_error_response_pre_init(void) {}
