@@ -139,12 +139,12 @@ typedef struct {
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
-     \a and_free_memory that should be passed to gpr_free when destruction
-     is complete. \a final_info contains data about the completed call, mainly
-     for reporting purposes. */
+     \a then_schedule_closure that should be passed to grpc_closure_sched when
+     destruction is complete. \a final_info contains data about the completed
+     call, mainly for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
-                            void *and_free_memory);
+                            grpc_closure *then_schedule_closure);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -271,7 +271,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
                              const grpc_call_final_info *final_info,
-                             void *and_free_memory);
+                             grpc_closure *then_schedule_closure);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
  * at all. Does nothing. */
