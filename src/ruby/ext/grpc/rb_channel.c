@@ -416,10 +416,10 @@ static void grpc_rb_channel_safe_destroy(grpc_rb_channel *wrapper) {
   grpc_channel_destroy(wrapper->wrapped);
 }
 
-// Note this loop breaks out when a single call of
+// Note this loop breaks out with a single call of
 // "grpc_rb_event_unblocking_func".
-// TODO (apolcyn) does a ruby call to the unblocking func
-// necesarily mean process shutdown?
+// This assumes that a ruby call the unblocking func
+// indicates process shutdown.
 // In the worst case, this stops polling channel connectivity
 // early and falls back to current behavior.
 static void *run_poll_channels_loop_no_gil(void *arg) {
@@ -430,7 +430,6 @@ static void *run_poll_channels_loop_no_gil(void *arg) {
     event = grpc_completion_queue_next(
         channel_polling_cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     if (event.type == GRPC_QUEUE_SHUTDOWN) {
-      // TODO (apolcyn) is it guaranteed that this cq is empty by now?
       break;
     }
     if (event.type == GRPC_OP_COMPLETE) {
