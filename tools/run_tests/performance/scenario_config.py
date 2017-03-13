@@ -822,7 +822,7 @@ class PhpLanguage:
         server_language='c++', async_server_threads=1)
 
   def __str__(self):
-    return 'ruby'
+    return 'php'
 
 
 class JavaLanguage:
