@@ -44,4 +44,9 @@ else
   PYTHON=python2.7
 fi
 
+make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server
+bins/opt/memory_profile_test
+bq load microbenchmarks.memory memory_usage.csv
+
 $PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
+

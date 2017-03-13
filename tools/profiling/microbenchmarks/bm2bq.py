@@ -73,6 +73,14 @@ columns = [
   ('framing_bytes_per_iteration', 'float'),
 ]
 
+SANITIZE = {
+  'integer': int,
+  'float': float,
+  'boolean': bool,
+  'string': str,
+  'timestamp': str,
+}
+
 if sys.argv[1] == '--schema':
   print ',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)
   sys.exit(0)
@@ -89,7 +97,10 @@ else:
 writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
 
 for row in bm_json.expand_json(js, js2):
-  if 'label' in row:
-    del row['label']
-  del row['cpp_name']
-  writer.writerow(row)
+  sane_row = {}
+  for name, sql_type in columns:
+    if name in row:
+      if row[name] == '': continue
+      sane_row[name] = SANITIZE[sql_type](row[name])
+  writer.writerow(sane_row)
+
