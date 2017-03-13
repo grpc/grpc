@@ -677,9 +677,6 @@ typedef struct client_channel_call_data {
   grpc_linked_mdelem lb_token_mdelem;
 } call_data;
 
-static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
-                                             grpc_call_element *elem);
-
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
     grpc_call_element *call_elem) {
   grpc_subchannel_call *scc = GET_CALL((call_data *)call_elem->call_data);
@@ -728,6 +725,46 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
     grpc_subchannel_call_process_op(exec_ctx, call, ops[i]);
   }
   gpr_free(ops);
+}
+
+// Sets calld->method_params.
+// If the method params specify a timeout, populates
+// *per_method_deadline and returns true.
+static bool set_call_method_params_from_service_config_locked(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    gpr_timespec *per_method_deadline) {
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  if (chand->method_params_table != NULL) {
+    calld->method_params = grpc_method_config_table_get(
+        exec_ctx, chand->method_params_table, calld->path);
+    if (calld->method_params != NULL) {
+      method_parameters_ref(calld->method_params);
+      if (gpr_time_cmp(calld->method_params->timeout,
+                       gpr_time_0(GPR_TIMESPAN)) != 0) {
+        *per_method_deadline =
+            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
+                                             grpc_call_element *elem) {
+  /* apply service-config level configuration to the call (now that we're
+   * certain it exists) */
+  call_data *calld = elem->call_data;
+  gpr_timespec per_method_deadline;
+  if (set_call_method_params_from_service_config_locked(exec_ctx, elem,
+                                                        &per_method_deadline)) {
+    // If the deadline from the service config is shorter than the one
+    // from the client API, reset the deadline timer.
+    if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+      calld->deadline = per_method_deadline;
+      grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
+    }
+  }
 }
 
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -1064,47 +1101,6 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                         grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("cc_start_transport_stream_op", 0);
-}
-
-// Sets calld->method_params.
-// If the method params specify a timeout, populates
-// *per_method_deadline and returns true.
-static bool set_call_method_params_from_service_config_locked(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    gpr_timespec *per_method_deadline) {
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  if (chand->method_params_table != NULL) {
-    calld->method_params = grpc_method_config_table_get(
-        exec_ctx, chand->method_params_table, calld->path);
-    if (calld->method_params != NULL) {
-      method_parameters_ref(calld->method_params);
-      if (gpr_time_cmp(calld->method_params->timeout,
-                       gpr_time_0(GPR_TIMESPAN)) != 0) {
-        *per_method_deadline =
-            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
-                                             grpc_call_element *elem) {
-  /* apply service-config level configuration to the call (now that we're
-   * certain it exists) */
-  call_data *calld = elem->call_data;
-  gpr_timespec per_method_deadline;
-  if (set_call_method_params_from_service_config_locked(exec_ctx, elem,
-                                                        &per_method_deadline)) {
-    // If the deadline from the service config is shorter than the one
-    // from the client API, reset the deadline timer.
-    if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
-      calld->deadline = per_method_deadline;
-      grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
-    }
-  }
 }
 
 /* Constructor for call_data */
