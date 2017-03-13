@@ -88,7 +88,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data);
+      &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
