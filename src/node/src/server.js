@@ -728,7 +728,7 @@ var defaultHandler = {
  *     method implementation for the provided service.
  */
 Server.prototype.addService = function(service, implementation) {
-  if (!_.isObjectLike(service) || !_.isObjectLike(implementation)) {
+  if (!_.isObject(service) || !_.isObject(implementation)) {
     throw new Error('addService requires two objects as arguments');
   }
   if (_.keys(service).length === 0) {
