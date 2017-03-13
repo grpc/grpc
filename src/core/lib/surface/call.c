@@ -1070,8 +1070,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
         &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
     recv_trailing_filter(exec_ctx, call, md);
 
-    gpr_atm_rel_store(&call->received_final_op_atm, 1);
     /* propagate cancellation to any interested children */
+    gpr_atm_rel_store(&call->received_final_op_atm, 1);
     gpr_mu_lock(&call->child_list_mu);
     child_call = call->first_child;
     if (child_call != NULL) {
@@ -1079,7 +1079,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
         next_child_call = child_call->sibling_next;
         if (child_call->cancellation_is_inherited) {
           GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
-          cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+          cancel_with_error(exec_ctx, child_call, STATUS_FROM_API_OVERRIDE,
                             GRPC_ERROR_CANCELLED);
           GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
         }
