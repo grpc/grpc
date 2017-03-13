@@ -112,7 +112,7 @@ class BaseStub
     }
 
     /**
-     * @param $timeout in microseconds
+     * @param int $timeout in microseconds
      *
      * @return bool true if channel is ready
      * @throw Exception if channel is in FATAL_ERROR state
@@ -179,7 +179,7 @@ class BaseStub
     /**
      * validate and normalize the metadata array.
      *
-     * @param $metadata The metadata map
+     * @param array $metadata The metadata map
      *
      * @return $metadata Validated and key-normalized metadata map
      * @throw InvalidArgumentException if key contains invalid characters
@@ -206,8 +206,8 @@ class BaseStub
      * Call a remote method that takes a single argument and has a
      * single output.
      *
-     * @param string $method The name of the method to call
-     * @param $argument The argument to the method
+     * @param string   $method      The name of the method to call
+     * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
      *
@@ -240,8 +240,8 @@ class BaseStub
      * Call a remote method that takes a stream of arguments and has a single
      * output.
      *
-     * @param string $method The name of the method to call
-     * @param $arguments An array or Traversable of arguments to stream to the
+     * @param string   $method      The name of the method to call
+     * @param array    $arguments   An array or Traversable of arguments to stream to the
      *     server
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
@@ -274,8 +274,8 @@ class BaseStub
      * Call a remote method that takes a single argument and returns a stream of
      * responses.
      *
-     * @param string $method The name of the method to call
-     * @param $argument The argument to the method
+     * @param string   $method      The name of the method to call
+     * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
      *
