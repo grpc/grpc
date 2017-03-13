@@ -166,41 +166,32 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-grpc_error *grpc_call_stack_init(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
-    int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
-    grpc_call_context_element *context, const void *transport_server_data,
-    grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
-    grpc_call_stack *call_stack) {
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 const grpc_call_element_args *elem_args) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
   size_t i;
 
-  call_stack->count = count;
-  GRPC_STREAM_REF_INIT(&call_stack->refcount, initial_refs, destroy,
+  elem_args->call_stack->count = count;
+  GRPC_STREAM_REF_INIT(&elem_args->call_stack->refcount, initial_refs, destroy,
                        destroy_arg, "CALL_STACK");
-  call_elems = CALL_ELEMS_FROM_STACK(call_stack);
+  call_elems = CALL_ELEMS_FROM_STACK(elem_args->call_stack);
   user_data = ((char *)call_elems) +
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
   grpc_error *first_error = GRPC_ERROR_NONE;
-  const grpc_call_element_args args = {
-      .start_time = start_time,
-      .call_stack = call_stack,
-      .server_transport_data = transport_server_data,
-      .context = context,
-      .path = path,
-      .deadline = deadline,
-  };
   for (i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
-    grpc_error *error =
-        call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    grpc_error *error = call_elems[i].filter->init_call_elem(
+        exec_ctx, &call_elems[i], elem_args);
     if (error != GRPC_ERROR_NONE) {
       if (first_error == GRPC_ERROR_NONE) {
         first_error = error;

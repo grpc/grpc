@@ -367,11 +367,16 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
+  grpc_call_element_args call_args = {
+      .call_stack = CALL_STACK_FROM_CALL(call),
+      .server_transport_data = args->server_transport_data,
+      .context = call->context,
+      .path = path,
+      .start_time = call->start_time,
+      .deadline = send_deadline,
+      .arena = call->arena};
   add_init_error(&error, grpc_call_stack_init(exec_ctx, channel_stack, 1,
-                                              destroy_call, call, call->context,
-                                              args->server_transport_data, path,
-                                              call->start_time, send_deadline,
-                                              CALL_STACK_FROM_CALL(call)));
+                                              destroy_call, call, &call_args));
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
@@ -431,8 +436,8 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
 static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   grpc_call *c = call;
-  gpr_arena_destroy(c->arena);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
+  gpr_arena_destroy(c->arena);
 }
 
 static void set_status_value_directly(grpc_status_code status, void *dest);

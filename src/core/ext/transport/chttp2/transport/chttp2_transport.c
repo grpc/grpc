@@ -665,16 +665,17 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
 
   GPR_TIMER_END("destroy_stream", 0);
 
-  gpr_free(s->destroy_stream_arg);
+  grpc_closure_sched(exec_ctx, s->destroy_stream_arg, GRPC_ERROR_NONE);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                           grpc_stream *gs, void *and_free_memory) {
+                           grpc_stream *gs,
+                           grpc_closure *then_schedule_closure) {
   GPR_TIMER_BEGIN("destroy_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
-  s->destroy_stream_arg = and_free_memory;
+  s->destroy_stream_arg = then_schedule_closure;
   grpc_closure_sched(
       exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
                                   grpc_combiner_scheduler(t->combiner, false)),
