@@ -130,7 +130,7 @@ gem install bundler
 
 # PHP dependencies
 
-sudo apt-get install -y php5 php5-dev phpunit php-pear zlib1g-dev
+sudo apt-get install -y php5 php5-dev phpunit php-pear unzip zlib1g-dev
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
 
