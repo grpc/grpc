@@ -634,14 +634,13 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
   common_options = [
       '--test_case=%s' % test_case,
       '--server_host=%s' % server_host,
+      '--server_port=%s' % server_port,
   ]
   if test_case in _HTTP2_BADSERVER_TEST_CASES:
-    client_options = common_options + ['--server_port=%s' % server_port]
-    cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
+    cmdline = bash_cmdline(language.client_cmd_http2interop(common_options))
     cwd = language.http2_cwd
   else:
-    client_options = interop_only_options + common_options + ['--server_port=%s' % server_port]
-    cmdline = bash_cmdline(language.client_cmd(client_options))
+    cmdline = bash_cmdline(language.client_cmd(common_options+interop_only_options))
     cwd = language.client_cwd
 
   environ = language.global_env()
@@ -1039,11 +1038,15 @@ try:
     for language in languages_http2_badserver_interop:
       for test_case in _HTTP2_BADSERVER_TEST_CASES:
         offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
+        if not args.manual_run:
+          server_port = http2_badserver_ports[offset]
+        else:
+          server_port = _DEFAULT_SERVER_PORT+offset
         test_job = cloud_to_cloud_jobspec(language,
                                           test_case,
                                           str(http2InteropServer),
                                           'localhost',
-                                          http2_badserver_ports[offset],
+                                          server_port,
                                           docker_image=docker_images.get(str(language)),
                                           manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
