@@ -91,6 +91,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
@@ -106,6 +107,7 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/alloc.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
