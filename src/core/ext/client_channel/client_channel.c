@@ -750,6 +750,7 @@ static bool set_call_method_params_from_service_config_locked(
   }
   return false;
 }
+
 static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
                                              grpc_call_element *elem) {
   /* apply service-config level configuration to the call (now that we're
