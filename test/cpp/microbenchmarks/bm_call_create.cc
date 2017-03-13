@@ -37,6 +37,7 @@
 #include <string.h>
 #include <sstream>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -55,12 +56,34 @@ extern "C" {
 #include "src/core/lib/transport/transport_impl.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
-static struct Init {
-  Init() { grpc_init(); }
-  ~Init() { grpc_shutdown(); }
-} g_init;
+auto &force_library_initialization = Library::get();
+
+void BM_Zalloc(benchmark::State &state) {
+  // speed of light for call creation is zalloc, so benchmark a few interesting
+  // sizes
+  size_t sz = state.range(0);
+  while (state.KeepRunning()) {
+    gpr_free(gpr_zalloc(sz));
+  }
+}
+BENCHMARK(BM_Zalloc)
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512)
+    ->Arg(1024)
+    ->Arg(1536)
+    ->Arg(2048)
+    ->Arg(3072)
+    ->Arg(4096)
+    ->Arg(5120)
+    ->Arg(6144)
+    ->Arg(7168);
 
 class BaseChannelFixture {
  public:
@@ -89,6 +112,7 @@ class LameChannel : public BaseChannelFixture {
 
 template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture fixture;
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
@@ -100,10 +124,38 @@ static void BM_CallCreateDestroy(benchmark::State &state) {
         deadline, NULL));
   }
   grpc_completion_queue_destroy(cq);
+  track_counters.Finish(state);
 }
 
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, InsecureChannel);
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, LameChannel);
+
+static void *tag(int i) {
+  return reinterpret_cast<void *>(static_cast<intptr_t>(i));
+}
+
+static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
+  TrackCounters track_counters;
+  auto stub =
+      grpc::testing::EchoTestService::NewStub(grpc::CreateChannelInternal(
+          "", grpc_lame_client_channel_create(
+                  "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah")));
+  grpc::CompletionQueue cq;
+  grpc::testing::EchoRequest send_request;
+  grpc::testing::EchoResponse recv_response;
+  grpc::Status recv_status;
+  while (state.KeepRunning()) {
+    grpc::ClientContext cli_ctx;
+    auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
+    reader->Finish(&recv_response, &recv_status, tag(0));
+    void *t;
+    bool ok;
+    GPR_ASSERT(cq.Next(&t, &ok));
+    GPR_ASSERT(ok);
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_LameChannelCallCreateCpp);
 
 static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
@@ -316,6 +368,7 @@ class SendEmptyMetadata {
 // perform on said filter.
 template <class Fixture, class TestOp>
 static void BM_IsolatedFilter(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture fixture;
   std::ostringstream label;
 
@@ -371,6 +424,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   gpr_free(call_stack);
 
   state.SetLabel(label.str());
+  track_counters.Finish(state);
 }
 
 typedef Fixture<nullptr, 0> NoFilter;
