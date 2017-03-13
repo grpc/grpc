@@ -140,7 +140,7 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (grpc_error_is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->atomics.refs.count, err->atomics.refs.count + 1, file, line,
+          gpr_atm_no_barrier_load(&err->atomics.refs.count), gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
           func);
   gpr_ref(&err->atomics.refs);
   return err;
@@ -192,7 +192,7 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (grpc_error_is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->atomics.refs.count, err->atomics.refs.count - 1, file, line,
+          gpr_atm_no_barrier_load(&err->atomics.refs.count), gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
           func);
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
@@ -384,13 +384,13 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
     gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
-    // manually set the atomics of the error.
-    gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
-    gpr_ref_init(&out->atomics.refs, 1);
     // bulk memcpy of the rest of the struct.
     size_t skip = sizeof(&out->atomics);
     memcpy((void *)((uintptr_t)out + skip), (void *)((uintptr_t)in + skip),
            sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
+    // manually set the atomics and the new capacity
+    gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
+    gpr_ref_init(&out->atomics.refs, 1);
     out->arena_capacity = new_arena_capacity;
     ref_strs(out);
     ref_errs(out);
