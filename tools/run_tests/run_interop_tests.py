@@ -635,10 +635,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
       '--server_host=%s' % server_host,
   ]
   if test_case in _HTTP2_BADSERVER_TEST_CASES:
-    # We are running the http2_badserver_interop test. Adjust command line accordingly.
-    offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
-    client_options = common_options + ['--server_port=%s' %
-                                       (int(server_port)+offset)]
+    client_options = common_options + ['--server_port=%s' % server_port]
     cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
     cwd = language.http2_cwd
   else:
@@ -684,18 +681,11 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
   if language.safename == 'http2':
     # we are running the http2 interop server. Open next N ports beginning
     # with the server port. These ports are used for http2 interop test
-    # (one test case per port). We also attach the docker container running
-    # the server to local network, so we don't have to mess with port mapping
-    port_args = [
-      '-p', str(_DEFAULT_SERVER_PORT+0),
-      '-p', str(_DEFAULT_SERVER_PORT+1),
-      '-p', str(_DEFAULT_SERVER_PORT+2),
-      '-p', str(_DEFAULT_SERVER_PORT+3),
-      '-p', str(_DEFAULT_SERVER_PORT+4),
-      '-p', str(_DEFAULT_SERVER_PORT+5),
-      '-p', str(_DEFAULT_SERVER_PORT+6),
-      '--net=host',
-    ]
+    # (one test case per port).
+    port_args = list(
+        itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
+                                      for i in range(
+                                          len(_HTTP2_BADSERVER_TEST_CASES))))
   else:
     port_args = ['-p', str(_DEFAULT_SERVER_PORT)]
 
@@ -935,6 +925,7 @@ client_manual_cmd_log = [] if args.manual_run else None
 # Start interop servers.
 server_jobs = {}
 server_addresses = {}
+http2_badserver_ports = ()
 try:
   for s in servers:
     lang = str(s)
@@ -956,6 +947,10 @@ try:
     if not args.manual_run:
       job = dockerjob.DockerJob(spec)
       server_jobs[lang] = job
+      http2_badserver_ports = tuple([
+          job.mapped_port(_DEFAULT_SERVER_PORT + i)
+          for i in range(len(_HTTP2_BADSERVER_TEST_CASES))
+      ])
     else:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
@@ -1042,11 +1037,12 @@ try:
   if args.http2_badserver_interop:
     for language in languages_http2_badserver_interop:
       for test_case in _HTTP2_BADSERVER_TEST_CASES:
+        offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
         test_job = cloud_to_cloud_jobspec(language,
                                           test_case,
                                           str(http2InteropServer),
                                           'localhost',
-                                          _DEFAULT_SERVER_PORT,
+                                          http2_badserver_ports[offset],
                                           docker_image=docker_images.get(str(language)),
                                           manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
