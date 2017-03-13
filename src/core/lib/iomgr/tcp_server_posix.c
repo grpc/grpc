@@ -601,7 +601,9 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
                                                  unsigned port_index,
                                                  int requested_port,
                                                  int *out_port) {
-#ifdef GRPC_HAVE_IFADDRS
+#ifndef GRPC_HAVE_IFADDRS
+  return GRPC_ERROR_CREATE("no ifaddrs available");
+#else  /* ifndef GRPC_HAVE_IFADDRS */
   struct ifaddrs *ifa = NULL;
   struct ifaddrs *ifa_it;
   unsigned fd_index = 0;
@@ -689,9 +691,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
     *out_port = sp->port;
     return GRPC_ERROR_NONE;
   }
-#else  /* GRPC_HAVE_IFADDRS */
-  return GRPC_ERROR_NONE;
-#endif /* GRPC_HAVE_IFADDRS */
+#endif /* ifndef GRPC_HAVE_IFADDRS */
 }
 
 /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
@@ -708,10 +708,14 @@ static grpc_error *add_wildcard_addrs_to_server(grpc_tcp_server *s,
   grpc_error *v6_err = GRPC_ERROR_NONE;
   grpc_error *v4_err = GRPC_ERROR_NONE;
   *out_port = -1;
+
+#ifdef GRPC_HAVE_IFADDRS
   if (s->expand_wildcard_addrs) {
     return add_all_local_addrs_to_server(s, port_index, requested_port,
                                          out_port);
   }
+#endif /* GRPC_HAVE_IFADDRS */
+
   grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
   /* Try listening on IPv6 first. */
   if ((v6_err = add_addr_to_server(s, &wild6, port_index, fd_index, &dsmode,
