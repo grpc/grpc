@@ -48,12 +48,12 @@ struct grpc_linked_error {
 
 struct grpc_error {
   gpr_refcount refs;
+  gpr_atm error_string;
   uint8_t ints[GRPC_ERROR_INT_MAX];
   uint8_t strs[GRPC_ERROR_STR_MAX];
   uint8_t times[GRPC_ERROR_TIME_MAX];
   uint8_t first_err;
   uint8_t last_err;
-  gpr_atm error_string;
   uint8_t arena_size;
   uint8_t arena_capacity;
   intptr_t arena[0];

@@ -382,10 +382,12 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
     gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
-    memcpy(out, in, sizeof(*in) + in->arena_size * sizeof(intptr_t));
-    out->arena_capacity = new_arena_capacity;
-    gpr_atm_no_barrier_store(&out->error_string, 0);
     gpr_ref_init(&out->refs, 1);
+    gpr_atm_no_barrier_store(&out->error_string, 0);
+    size_t skip = sizeof(gpr_refcount) + sizeof(gpr_atm);
+    memcpy((void *)out + skip, (void *)in + skip,
+           sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
+    out->arena_capacity = new_arena_capacity;
     ref_strs(out);
     ref_errs(out);
     GRPC_ERROR_UNREF(in);
