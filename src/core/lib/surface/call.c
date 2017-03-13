@@ -1509,7 +1509,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         stream_op->send_trailing_metadata = true;
         call->sent_final_op = 1;
-        stream_op->send_trailing_metadata =
+        stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
