@@ -152,12 +152,16 @@ struct write_state {
 struct op_state {
   bool state_op_done[OP_NUM_OPS];
   bool state_callback_received[OP_NUM_OPS];
+  /* A non-zero gRPC status code has been seen */
   bool fail_state;
+  /* Transport is discarding all buffered messages */
   bool flush_read;
   bool flush_cronet_when_ready;
   bool pending_write_for_trailer;
   bool pending_send_message;
+  /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata;
+  /* Cronet has not issued a callback of a bidirectional read */
   bool pending_read_from_cronet;
   grpc_error *cancel_error;
   /* data structure for storing data coming from server */
@@ -260,6 +264,13 @@ static void null_and_maybe_free_read_buffer(stream_obj *s) {
 }
 
 static void maybe_flush_read(stream_obj *s) {
+  /* To enter flush read state (discarding all the buffered messages in
+   * transport layer), two conditions must be satisfied: 1) non-zero grpc status
+   * has been received, and 2) an op requesting the status code
+   * (RECV_TRAILING_METADATA) is issued by the user. (See
+   * doc/status_ordering.md) */
+  /* Whenever the evaluation of any of the two condition is changed, we check
+   * whether we should enter the flush read state. */
   if (s->state.pending_recv_trailing_metadata && s->state.fail_state) {
     if (!s->state.flush_read) {
       CRONET_LOG(GPR_DEBUG, "%p: Flush read", s);
