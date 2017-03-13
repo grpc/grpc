@@ -42,9 +42,12 @@
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
+#ifdef GRPC_HAVE_IFADDRS
+#include <ifaddrs.h>
+#endif /* GRPC_HAVE_IFADDRS */
+
 #include <errno.h>
 #include <fcntl.h>
-#include <ifaddrs.h>
 #include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -598,6 +601,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
                                                  unsigned port_index,
                                                  int requested_port,
                                                  int *out_port) {
+#ifdef GRPC_HAVE_IFADDRS
   struct ifaddrs *ifa = NULL;
   struct ifaddrs *ifa_it;
   unsigned fd_index = 0;
@@ -685,6 +689,9 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
     *out_port = sp->port;
     return GRPC_ERROR_NONE;
   }
+#else  /* GRPC_HAVE_IFADDRS */
+  return GRPC_ERROR_NONE;
+#endif /* GRPC_HAVE_IFADDRS */
 }
 
 /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
