@@ -76,6 +76,7 @@ static void test(const char *name, size_t init_size, const size_t *allocs,
     memset(ps[i], 1, allocs[i]);
   }
   gpr_arena_destroy(a);
+  gpr_free(ps);
 }
 
 #define TEST(name, init_size, ...)                     \
@@ -99,6 +100,8 @@ static void concurrent_test_body(void *arg) {
 }
 
 static void concurrent_test(void) {
+  gpr_log(GPR_DEBUG, "concurrent_test");
+
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
   args.arena = gpr_arena_create(1024);
@@ -107,7 +110,7 @@ static void concurrent_test(void) {
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_is_joinable(&opt);
+    gpr_thd_options_set_joinable(&opt);
     gpr_thd_new(&thds[i], concurrent_test_body, &args, &opt);
   }
 
@@ -116,6 +119,8 @@ static void concurrent_test(void) {
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     gpr_thd_join(thds[i]);
   }
+
+  gpr_arena_destroy(args.arena);
 }
 
 int main(int argc, char *argv[]) {

@@ -34,6 +34,7 @@
 #include "src/core/lib/support/arena.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
 #define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
@@ -74,16 +75,16 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   size_t start =
       (size_t)gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size);
   zone *z = &arena->initial_zone;
-  while (start > z->size_begin) {
+  while (start > z->size_end) {
     zone *next_z = (zone *)gpr_atm_acq_load(&z->next_atm);
-    while (next_z == NULL) {
-      size_t next_z_size = GPR_MAX(2 * start, size);
+    if (next_z == NULL) {
+      size_t next_z_size = GPR_MAX((size_t)gpr_atm_no_barrier_load(&arena->size_so_far), size);
       next_z = gpr_zalloc(sizeof(zone) + next_z_size);
       next_z->size_begin = z->size_end;
       next_z->size_end = z->size_end + next_z_size;
       if (!gpr_atm_rel_cas(&z->next_atm, (gpr_atm)NULL, (gpr_atm)next_z)) {
         gpr_free(next_z);
-        next_z = NULL;
+        next_z = (zone*)gpr_atm_acq_load(&z->next_atm); 
       }
     }
     z = next_z;
@@ -91,5 +92,7 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   if (start + size > z->size_end) {
     return gpr_arena_alloc(arena, size);
   }
+  GPR_ASSERT(start >= z->size_begin);
+  GPR_ASSERT(start + size <= z->size_end);
   return ((char *)(z + 1)) + start - z->size_begin;
 }
