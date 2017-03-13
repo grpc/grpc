@@ -415,8 +415,8 @@ if __name__ == "__main__":
                                        maxjobs=args.jobs)
   # Merge skipped tests into results to show skipped tests on report.xml
   if skipped_jobs:
-    skipped_results = jobset.run(skipped_jobs,
-                                 skip_jobs=True)
+    ignored_num_skipped_failures, skipped_results = jobset.run(
+        skipped_jobs, skip_jobs=True)
     resultset.update(skipped_results)
   report_utils.render_junit_xml_report(resultset, 'report_%s' % _REPORT_SUFFIX,
                                        suite_name='aggregate_tests')
