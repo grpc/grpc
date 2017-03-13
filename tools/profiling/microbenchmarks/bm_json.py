@@ -78,32 +78,36 @@ _BM_SPECS = {
     'tpl': ['fixture'],
     'dyn': [],
   },
-  'BM_IsolatedFilter' : {
+  'BM_IsolatedFilter': {
     'tpl': ['fixture', 'client_mutator'],
     'dyn': [],
   },
-  'BM_HpackEncoderEncodeHeader' : {
+  'BM_HpackEncoderEncodeHeader': {
     'tpl': ['fixture'],
     'dyn': ['end_of_stream', 'request_size'],
   },
-  'BM_HpackParserParseHeader' : {
+  'BM_HpackParserParseHeader': {
     'tpl': ['fixture'],
     'dyn': [],
   },
-  'BM_CallCreateDestroy' : {
+  'BM_CallCreateDestroy': {
     'tpl': ['fixture'],
     'dyn': [],
+  },
+  'BM_Zalloc': {
+    'tpl': [],
+    'dyn': ['request_size'],
   },
 }
 
 def numericalize(s):
   if not s: return ''
   if s[-1] == 'k':
-    return int(s[:-1]) * 1024
+    return float(s[:-1]) * 1024
   if s[-1] == 'M':
-    return int(s[:-1]) * 1024 * 1024
+    return float(s[:-1]) * 1024 * 1024
   if 0 <= (ord(s[-1]) - ord('0')) <= 9:
-    return int(s)
+    return float(s)
   assert 'not a number: %s' % s
 
 def parse_name(name):
