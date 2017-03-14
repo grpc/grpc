@@ -73,7 +73,7 @@ class ProtoBufMethod : public grpc_generator::Method {
   bool get_module_and_message_path_input(grpc::string *str,
                                          grpc::string generator_file_name,
                                          bool generate_in_pb2_grpc,
-                                         grpc::string &import_prefix) const {
+                                         grpc::string import_prefix) const {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->input_type(), str, generator_file_name, generate_in_pb2_grpc,
         import_prefix);
@@ -82,7 +82,7 @@ class ProtoBufMethod : public grpc_generator::Method {
   bool get_module_and_message_path_output(grpc::string *str,
                                           grpc::string generator_file_name,
                                           bool generate_in_pb2_grpc,
-                                          grpc::string &import_prefix) const {
+                                          grpc::string import_prefix) const {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->output_type(), str, generator_file_name, generate_in_pb2_grpc,
         import_prefix);
