@@ -230,13 +230,6 @@ TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   EXPECT_TRUE(HasArg(arg1));
   // arg0 is replaced by arg1
   EXPECT_FALSE(HasArg(arg0));
-
-  // arg0 is destroyed by grpc_socket_mutator_to_arg(mutator1)
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    arg1.value.pointer.vtable->destroy(&exec_ctx, arg1.value.pointer.p);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
 }
 
 TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {

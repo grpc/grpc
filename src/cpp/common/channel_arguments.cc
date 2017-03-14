@@ -111,8 +111,10 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == mutator_arg.type &&
         grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+      GPR_ASSERT(!replaced);
       it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
       it->value.pointer = mutator_arg.value.pointer;
+      replaced = true;
     }
   }
   grpc_exec_ctx_finish(&exec_ctx);
@@ -195,7 +197,7 @@ void ChannelArguments::SetPointerWithVtable(
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
-  arg.value.pointer.p = value;
+  arg.value.pointer.p = vtable->copy(value);
   arg.value.pointer.vtable = vtable;
   args_.push_back(arg);
 }
