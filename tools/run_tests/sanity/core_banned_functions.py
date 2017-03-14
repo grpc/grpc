@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2016, Google Inc.
 # All rights reserved.
@@ -28,6 +28,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from __future__ import print_function
 
 import os
 import sys
@@ -60,7 +62,7 @@ for root, dirs, files in os.walk('src/core'):
     for banned, exceptions in BANNED_EXCEPT.items():
       if path in exceptions: continue
       if banned in text:
-        print 'Illegal use of "%s" in %s' % (banned, path)
+        print('Illegal use of "%s" in %s' % (banned, path))
         errors += 1
 
 assert errors == 0

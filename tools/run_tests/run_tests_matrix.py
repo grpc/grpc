@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -29,6 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Run test matrix."""
+
+from __future__ import print_function
 
 import argparse
 import multiprocessing
