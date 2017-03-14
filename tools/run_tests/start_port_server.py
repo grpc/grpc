@@ -39,8 +39,10 @@ The path to this file is called out in test/core/util/port.c, and printed as
 an error message to users.
 """
 
+from __future__ import print_function
+
 import python_utils.start_port_server as start_port_server
 
 start_port_server.start_port_server()
 
-print "Port server started successfully"
+print("Port server started successfully")
