@@ -628,7 +628,7 @@ def operation_send_message(data, int flags):
   op.c_op.type = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE
   op.c_op.flags = flags
   byte_buffer = ByteBuffer(data)
-  op.c_op.data.send_message.send_message = byte_buffer.c_byte_buffer
+  op.c_op.data.send_byte_buffer_message.send_message = byte_buffer.c_byte_buffer
   op.references.append(byte_buffer)
   op.is_valid = True
   return op

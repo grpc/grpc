@@ -447,7 +447,7 @@ typedef struct grpc_op {
     } send_initial_metadata;
     struct {
       struct grpc_byte_buffer *send_message;
-    } send_message;
+    } send_byte_buffer_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -470,7 +470,7 @@ typedef struct grpc_op {
        */
     struct {
       struct grpc_byte_buffer **recv_message;
-    } recv_message;
+    } recv_byte_buffer_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

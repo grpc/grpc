@@ -344,7 +344,7 @@ PHP_METHOD(Call, startBatch) {
                              1 TSRMLS_CC);
         goto cleanup;
       }
-      ops[op_num].data.send_message.send_message =
+      ops[op_num].data.send_byte_buffer_message.send_message =
           string_to_byte_buffer(Z_STRVAL_P(message_value),
                                 Z_STRLEN_P(message_value));
       break;
@@ -405,7 +405,7 @@ PHP_METHOD(Call, startBatch) {
           &recv_metadata;
       break;
     case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
-      ops[op_num].data.recv_message.recv_message = &message;
+      ops[op_num].data.recv_byte_buffer_message.recv_message = &message;
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
       ops[op_num].data.recv_status_on_client.trailing_metadata =
@@ -509,7 +509,7 @@ cleanup:
   grpc_slice_unref(send_status_details);
   for (int i = 0; i < op_num; i++) {
     if (ops[i].op == GRPC_OP_SEND_BYTE_BUFFER_MESSAGE) {
-      grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
+      grpc_byte_buffer_destroy(ops[i].data.send_byte_buffer_message.send_message);
     }
     if (ops[i].op == GRPC_OP_RECV_BYTE_BUFFER_MESSAGE) {
       grpc_byte_buffer_destroy(message);

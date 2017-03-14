@@ -161,7 +161,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-  op->data.send_message.send_message = request_payload;
+  op->data.send_byte_buffer_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -175,7 +175,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
+  op->data.recv_byte_buffer_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -204,7 +204,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
+  op->data.recv_byte_buffer_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -222,7 +222,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-  op->data.send_message.send_message = response_payload;
+  op->data.send_byte_buffer_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;

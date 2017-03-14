@@ -71,7 +71,7 @@ static void init_ping_pong_request(void) {
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-  op->data.send_message.send_message = the_buffer;
+  op->data.send_byte_buffer_message.send_message = the_buffer;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
@@ -79,7 +79,7 @@ static void init_ping_pong_request(void) {
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
+  op->data.recv_byte_buffer_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -126,9 +126,9 @@ static void init_ping_pong_stream(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
 
   stream_step_ops[0].op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-  stream_step_ops[0].data.send_message.send_message = the_buffer;
+  stream_step_ops[0].data.send_byte_buffer_message.send_message = the_buffer;
   stream_step_ops[1].op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-  stream_step_ops[1].data.recv_message.recv_message = &response_payload_recv;
+  stream_step_ops[1].data.recv_byte_buffer_message.recv_message = &response_payload_recv;
 }
 
 static void step_ping_pong_stream(void) {

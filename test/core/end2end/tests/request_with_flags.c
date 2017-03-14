@@ -140,7 +140,7 @@ static void test_invoke_request_with_flags(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-  op->data.send_message.send_message = request_payload;
+  op->data.send_byte_buffer_message.send_message = request_payload;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;

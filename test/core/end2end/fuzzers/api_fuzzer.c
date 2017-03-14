@@ -994,7 +994,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               } else {
                 has_ops |= 1 << GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
                 g_active_call->send_message =
-                    op->data.send_message.send_message = read_message(&inp);
+                    op->data.send_byte_buffer_message.send_message = read_message(&inp);
               }
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -1023,7 +1023,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
               op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
               has_ops |= 1 << GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-              op->data.recv_message.recv_message = &g_active_call->recv_message;
+              op->data.recv_byte_buffer_message.recv_message = &g_active_call->recv_message;
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;

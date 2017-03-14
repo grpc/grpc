@@ -105,14 +105,14 @@
   }
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
-    _op.data.send_message.send_message = message.grpc_byteBuffer;
+    _op.data.send_byte_buffer_message.send_message = message.grpc_byteBuffer;
     _handler = handler;
   }
   return self;
 }
 
 - (void)dealloc {
-  grpc_byte_buffer_destroy(_op.data.send_message.send_message);
+  grpc_byte_buffer_destroy(_op.data.send_byte_buffer_message.send_message);
 }
 
 @end
@@ -177,7 +177,7 @@
 - (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-    _op.data.recv_message.recv_message = &_receivedMessage;
+    _op.data.recv_byte_buffer_message.recv_message = &_receivedMessage;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;

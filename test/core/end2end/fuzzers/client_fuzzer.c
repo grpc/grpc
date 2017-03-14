@@ -103,7 +103,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
+  op->data.recv_byte_buffer_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
