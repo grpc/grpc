@@ -101,7 +101,7 @@ static void add_error(const char *error_name, grpc_error **cumulative,
                       grpc_error *new) {
   if (new == GRPC_ERROR_NONE) return;
   if (*cumulative == GRPC_ERROR_NONE) {
-    *cumulative = GRPC_ERROR_CREATE(error_name);
+    *cumulative = GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_name);
   }
   *cumulative = grpc_error_add_child(*cumulative, new);
 }
@@ -125,27 +125,32 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       *calld->recv_cacheable_request = true;
     } else {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.method->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.method->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.method);
   } else {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
   }
 
   if (b->idx.named.te != NULL) {
     if (!grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_TE_TRAILERS)) {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.te->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.te->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.te);
   } else {
     add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
+              grpc_error_set_str(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                  GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
   }
 
   if (b->idx.named.scheme != NULL) {
@@ -153,14 +158,17 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
         !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTPS) &&
         !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_GRPC)) {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.scheme->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.scheme->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.scheme);
   } else {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
   }
 
   if (b->idx.named.content_type != NULL) {
@@ -194,8 +202,9 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
   if (b->idx.named.path == NULL) {
     add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
+              grpc_error_set_str(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                  GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
   }
 
   if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
@@ -212,9 +221,11 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   }
 
   if (b->idx.named.authority == NULL) {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
   if (b->idx.named.grpc_payload_bin != NULL) {

@@ -90,7 +90,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
 
   for (i = 0; i < num_fds; i++) {
     grpc_fd_shutdown(exec_ctx, tfds[i].fd,
-                     GRPC_ERROR_CREATE("test_fd_cleanup"));
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");

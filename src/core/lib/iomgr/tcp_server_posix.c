@@ -175,8 +175,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
-                                 " must be an integer");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
+                                                    " must be an integer");
       }
     } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
@@ -186,8 +186,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
-                                 " must be a pointer to a buffer pool");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
       }
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
@@ -195,8 +195,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_EXPAND_WILDCARD_ADDRS
-                                 " must be an integer");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
       }
     }
   }
@@ -291,8 +291,8 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->active_ports) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(exec_ctx, sp->emfd,
-                       GRPC_ERROR_CREATE("Server destroyed"));
+      grpc_fd_shutdown(exec_ctx, sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                               "Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -387,9 +387,10 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error *ret = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
-      GRPC_ERROR_INT_FD, fd);
+  grpc_error *ret =
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Unable to configure socket", &err, 1),
+                         GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
 }
@@ -569,7 +570,8 @@ static grpc_error *get_unused_port(int *port) {
   }
   close(fd);
   *port = grpc_sockaddr_get_port(&wild);
-  return *port <= 0 ? GRPC_ERROR_CREATE("Bad port") : GRPC_ERROR_NONE;
+  return *port <= 0 ? GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad port")
+                    : GRPC_ERROR_NONE;
 }
 
 /* Return the listener in s with address addr or NULL. */
@@ -611,7 +613,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
     if ((err = get_unused_port(&requested_port)) != GRPC_ERROR_NONE) {
       return err;
     } else if (requested_port <= 0) {
-      return GRPC_ERROR_CREATE("Bad get_unused_port()");
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad get_unused_port()");
     }
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
@@ -636,7 +638,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
     memcpy(addr.addr, ifa_it->ifa_addr, addr.len);
     if (!grpc_sockaddr_set_port(&addr, requested_port)) {
       /* Should never happen, because we check sa_family above. */
-      err = GRPC_ERROR_CREATE("Failed to set port");
+      err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set port");
       break;
     }
     if (grpc_sockaddr_to_string(&addr_str, &addr, 0) < 0) {
@@ -660,7 +662,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
       if (gpr_asprintf(&err_str, "Failed to add listener: %s", addr_str) < 0) {
         err_str = gpr_strdup("Failed to add listener");
       }
-      root_err = GRPC_ERROR_CREATE(err_str);
+      root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_str);
       gpr_free(err_str);
       gpr_free(addr_str);
       err = grpc_error_add_child(root_err, err);
@@ -680,7 +682,7 @@ static grpc_error *add_all_local_addrs_to_server(grpc_tcp_server *s,
   if (err != GRPC_ERROR_NONE) {
     return err;
   } else if (sp == NULL) {
-    return GRPC_ERROR_CREATE("No local addresses");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");
   } else {
     *out_port = sp->port;
     return GRPC_ERROR_NONE;
@@ -730,8 +732,8 @@ static grpc_error *add_wildcard_addrs_to_server(grpc_tcp_server *s,
     GRPC_LOG_IF_ERROR("Failed to add 0.0.0.0 listener", v4_err);
     return GRPC_ERROR_NONE;
   } else {
-    grpc_error *root_err =
-        GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
+    grpc_error *root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to add any wildcard listeners");
     GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
@@ -951,7 +953,7 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_fd_shutdown(exec_ctx, sp->emfd,
-                       GRPC_ERROR_CREATE("Server shutdown"));
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
     }
   }
   gpr_mu_unlock(&s->mu);

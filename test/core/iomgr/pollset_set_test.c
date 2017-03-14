@@ -143,7 +143,8 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   int release_fd;
 
   for (int i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, tfds[i].fd, GRPC_ERROR_CREATE("fd cleanup"));
+    grpc_fd_shutdown(exec_ctx, tfds[i].fd,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
     /* grpc_fd_orphan frees the memory allocated for grpc_fd. Normally it also

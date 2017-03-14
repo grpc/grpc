@@ -108,7 +108,7 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       grpc_error *e = grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_set_str(
-                  GRPC_ERROR_CREATE(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
                   GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),

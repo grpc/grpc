@@ -174,22 +174,13 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
   grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
                     grpc_slice_from_copied_string(desc), NULL, 0)
 
-// MOCKED...
-#define GRPC_ERROR_CREATE(desc)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_copied_string(desc), NULL, 0)
-#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_copied_string(desc), errs, count)
-
-
 // Create an error that references some other errors. This function adds a
 // reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
                     grpc_slice_from_static_string(desc), errs, count)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
+  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
                     grpc_slice_from_copied_string(desc), errs, count)
 
 //#define GRPC_ERROR_REFCOUNT_DEBUG
@@ -211,10 +202,12 @@ void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
-grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which, grpc_slice str) GRPC_MUST_USE_RESULT;
+grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
+                               grpc_slice str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
 /// Caller does NOT own the slice.
-bool grpc_error_get_str(grpc_error *error, grpc_error_strs which, grpc_slice *s);
+bool grpc_error_get_str(grpc_error *error, grpc_error_strs which,
+                        grpc_slice *s);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

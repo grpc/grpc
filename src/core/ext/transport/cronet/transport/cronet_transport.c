@@ -257,7 +257,7 @@ static void free_read_buffer(stream_obj *s) {
 }
 
 static grpc_error *make_error_with_desc(int error_code, const char *desc) {
-  grpc_error *error = GRPC_ERROR_CREATE(desc);
+  grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
   return error;
 }

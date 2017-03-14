@@ -121,8 +121,8 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(exec_ctx, ac->fd,
-                     GRPC_ERROR_CREATE("connect() timed out"));
+    grpc_fd_shutdown(exec_ctx, ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                           "connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -191,7 +191,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_static_string("Timeout occurred"));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string("Timeout occurred"));
     goto finish;
   }
 
@@ -255,13 +256,14 @@ finish:
     grpc_slice str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
-    char* desc = grpc_slice_to_c_string(str);
+    char *desc = grpc_slice_to_c_string(str);
     gpr_asprintf(&error_descr, "Failed to connect to remote host: %s", desc);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, grpc_slice_from_copied_string(error_descr));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                               grpc_slice_from_copied_string(error_descr));
     gpr_free(error_descr);
     gpr_free(desc);
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(ac->addr_str));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_copied_string(ac->addr_str));
   }
   if (done) {
     gpr_mu_destroy(&ac->mu);

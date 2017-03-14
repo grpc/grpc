@@ -321,7 +321,7 @@ static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(desc);
+    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -1146,9 +1146,9 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
            schedule the closure with the shutdown error */
         if ((curr & FD_SHUTDOWN_BIT) > 0) {
           grpc_error *shutdown_err = (grpc_error *)(curr & ~FD_SHUTDOWN_BIT);
-          grpc_closure_sched(
-              exec_ctx, closure,
-              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
+          grpc_closure_sched(exec_ctx, closure,
+                             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                 "FD Shutdown", &shutdown_err, 1));
           return;
         }
 
@@ -1203,9 +1203,9 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
            notify_on to ensure that the closure it schedules 'happens-after'
            the set_shutdown is called on the fd */
         if (gpr_atm_rel_cas(state, curr, new_state)) {
-          grpc_closure_sched(
-              exec_ctx, (grpc_closure *)curr,
-              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
+          grpc_closure_sched(exec_ctx, (grpc_closure *)curr,
+                             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                 "FD Shutdown", &shutdown_err, 1));
           return;
         }
 
