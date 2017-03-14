@@ -50,6 +50,11 @@ static void *zalloc_with_gpr_malloc(size_t sz) {
 static gpr_allocation_functions g_alloc_functions = {malloc, zalloc_with_calloc,
                                                      realloc, free};
 
+void gpr_alloc_init(void) {
+  g_alloc_functions =
+      (gpr_allocation_functions){malloc, zalloc_with_calloc, realloc, free};
+}
+
 gpr_allocation_functions gpr_get_allocation_functions() {
   return g_alloc_functions;
 }
