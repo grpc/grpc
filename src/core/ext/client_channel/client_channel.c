@@ -796,7 +796,6 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
-    apply_final_configuration_locked(exec_ctx, elem);
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
         calld->call_start_time, calld->deadline, &subchannel_call);
@@ -894,6 +893,7 @@ static bool pick_subchannel_locked(
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (chand->lb_policy != NULL) {
+    apply_final_configuration_locked(exec_ctx, elem);
     grpc_lb_policy *lb_policy = chand->lb_policy;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     // If the application explicitly set wait_for_ready, use that.
@@ -1025,7 +1025,6 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
-    apply_final_configuration_locked(exec_ctx, elem);
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
         calld->call_start_time, calld->deadline, &subchannel_call);
