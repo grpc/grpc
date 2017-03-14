@@ -91,7 +91,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   grpc_chttp2_ping_parser *p = parser;
 
   while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes |= (((uint64_t)*cur) << (8 * p->byte));
+    p->opaque_8bytes |= (((uint64_t)*cur) << (56 - 8 * p->byte));
     cur++;
     p->byte++;
   }

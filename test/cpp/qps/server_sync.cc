@@ -74,7 +74,9 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
           return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
         }
       }
-      stream->Write(response);
+      if (!stream->Write(response)) {
+        return Status(StatusCode::INTERNAL, "Server couldn't respond");
+      }
     }
     return Status::OK;
   }
