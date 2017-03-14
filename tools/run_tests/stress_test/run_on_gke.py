@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,6 +27,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from __future__ import print_function
+
 import argparse
 import datetime
 import json
@@ -124,23 +127,24 @@ class DockerImage:
     return 'gcr.io/%s/%s' % (project_id, image_name)
 
   def build_image(self):
-    print 'Building docker image: %s (tag: %s)' % (self.image_name,
-                                                   self.tag_name)
+    print('Building docker image: %s (tag: %s)' % (self.image_name,
+                                                   self.tag_name))
     os.environ['INTEROP_IMAGE'] = self.image_name
     os.environ['INTEROP_IMAGE_REPOSITORY_TAG'] = self.tag_name
     os.environ['BASE_NAME'] = self.dockerfile_dir
     os.environ['BUILD_TYPE'] = self.build_type
-    print 'DEBUG: path: ', self.build_script_path
+    print('DEBUG: path: ', self.build_script_path)
     if subprocess.call(args=[self.build_script_path]) != 0:
-      print 'Error in building the Docker image'
+      print('Error in building the Docker image')
       return False
     return True
 
   def push_to_gke_registry(self):
     cmd = ['gcloud', 'docker', 'push', self.tag_name]
-    print 'Pushing %s to the GKE registry..' % self.tag_name
+    print('Pushing %s to the GKE registry..' % self.tag_name)
     if subprocess.call(args=cmd) != 0:
-      print 'Error in pushing the image %s to the GKE registry' % self.tag_name
+      print('Error in pushing the image %s to the GKE registry' %
+            self.tag_name)
       return False
     return True
 
@@ -199,11 +203,11 @@ class Gke:
       cmd = ['kubectl', 'proxy', '--port=%d' % port]
       self.p = subprocess.Popen(args=cmd)
       time.sleep(2)
-      print '\nStarted kubernetes proxy on port: %d' % port
+      print('\nStarted kubernetes proxy on port: %d' % port)
 
     def __del__(self):
       if self.p is not None:
-        print 'Shutting down Kubernetes proxy..'
+        print('Shutting down Kubernetes proxy..')
         self.p.kill()
 
   def __init__(self, project_id, run_id, dataset_id, summary_table_id,
@@ -253,7 +257,7 @@ class Gke:
 
     for pod_name in server_pod_spec.pod_names():
       server_env['POD_NAME'] = pod_name
-      print 'Creating server: %s' % pod_name
+      print('Creating server: %s' % pod_name)
       is_success = kubernetes_api.create_pod_and_service(
           'localhost',
           self.kubernetes_port,
@@ -267,11 +271,11 @@ class Gke:
           True  # Headless = True for server to that GKE creates a DNS record for pod_name
       )
       if not is_success:
-        print 'Error in launching server: %s' % pod_name
+        print('Error in launching server: %s' % pod_name)
         break
 
     if is_success:
-      print 'Successfully created server(s)'
+      print('Successfully created server(s)')
 
     return is_success
 
@@ -301,7 +305,7 @@ class Gke:
 
     for pod_name in client_pod_spec.pod_names():
       client_env['POD_NAME'] = pod_name
-      print 'Creating client: %s' % pod_name
+      print('Creating client: %s' % pod_name)
       is_success = kubernetes_api.create_pod_and_service(
           'localhost',
           self.kubernetes_port,
@@ -316,18 +320,18 @@ class Gke:
       )
 
       if not is_success:
-        print 'Error in launching client %s' % pod_name
+        print('Error in launching client %s' % pod_name)
         break
 
     if is_success:
-      print 'Successfully created all client(s)'
+      print('Successfully created all client(s)')
 
     return is_success
 
   def _delete_pods(self, pod_name_list):
     is_success = True
     for pod_name in pod_name_list:
-      print 'Deleting %s' % pod_name
+      print('Deleting %s' % pod_name)
       is_success = kubernetes_api.delete_pod_and_service(
           'localhost',
           self.kubernetes_port,
@@ -335,11 +339,11 @@ class Gke:
           pod_name)
 
       if not is_success:
-        print 'Error in deleting pod %s' % pod_name
+        print('Error in deleting pod %s' % pod_name)
         break
 
     if is_success:
-      print 'Successfully deleted all pods'
+      print('Successfully deleted all pods')
 
     return is_success
 
@@ -353,7 +357,7 @@ class Gke:
 class Config:
 
   def __init__(self, config_filename, gcp_project_id):
-    print 'Loading configuration...'
+    print('Loading configuration...')
     config_dict = self._load_config(config_filename)
 
     self.global_settings = self._parse_global_settings(config_dict,
@@ -367,7 +371,7 @@ class Config:
     self.client_pod_specs_dict = self._parse_client_pod_specs(
         config_dict, self.docker_images_dict, self.client_templates_dict,
         self.server_pod_specs_dict)
-    print 'Loaded Configuaration.'
+    print('Loaded Configuaration.')
 
   def _parse_global_settings(self, config_dict, gcp_project_id):
     global_settings_dict = config_dict['globalSettings']
@@ -540,8 +544,8 @@ def run_tests(config):
   # run id. This is useful in debugging when looking at records in Biq query)
   run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
   dataset_id = '%s_%s' % (config.global_settings.dataset_id_prefix, run_id)
-  print 'Run id:', run_id
-  print 'Dataset id:', dataset_id
+  print('Run id:', run_id)
+  print('Dataset id:', dataset_id)
 
   bq_helper = BigQueryHelper(run_id, '', '',
                              config.global_settings.gcp_project_id, dataset_id,
@@ -557,7 +561,7 @@ def run_tests(config):
   is_success = True
 
   try:
-    print 'Launching servers..'
+    print('Launching servers..')
     for name, server_pod_spec in config.server_pod_specs_dict.iteritems():
       if not gke.launch_servers(server_pod_spec):
         is_success = False  # is_success is checked in the 'finally' block
@@ -579,11 +583,12 @@ def run_tests(config):
     start_time = datetime.datetime.now()
     end_time = start_time + datetime.timedelta(
         seconds=config.global_settings.test_duration_secs)
-    print 'Running the test until %s' % end_time.isoformat()
+    print('Running the test until %s' % end_time.isoformat())
 
     while True:
       if datetime.datetime.now() > end_time:
-        print 'Test was run for %d seconds' % config.global_settings.test_duration_secs
+        print('Test was run for %d seconds' %
+              config.global_settings.test_duration_secs)
         break
 
       # Check if either stress server or clients have failed (btw, the bq_helper
@@ -591,11 +596,12 @@ def run_tests(config):
       # have a failure status)
       if bq_helper.check_if_any_tests_failed():
         is_success = False
-        print 'Some tests failed.'
+        print('Some tests failed.')
         break  # Don't 'return' here. We still want to call bq_helper to print qps/summary tables
 
       # Tests running fine. Wait until next poll time to check the status
-      print 'Sleeping for %d seconds..' % config.global_settings.test_poll_interval_secs
+      print('Sleeping for %d seconds..' %
+            config.global_settings.test_poll_interval_secs)
       time.sleep(config.global_settings.test_poll_interval_secs)
 
     # Print BiqQuery tables

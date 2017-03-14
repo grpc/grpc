@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -44,6 +44,7 @@ import sys
 import tempfile
 import time
 import uuid
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -501,6 +502,28 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
+def manual_cmdline(docker_cmdline):
+  """Returns docker cmdline adjusted for manual invocation."""
+  print_cmdline = []
+  for item in docker_cmdline:
+    if item.startswith('--name='):
+      continue
+    # add quotes when necessary
+    if any(character.isspace() for character in item):
+      item = "\"%s\"" % item
+    print_cmdline.append(item)
+  return ' '.join(print_cmdline)
+
+
+def write_cmdlog_maybe(cmdlog, filename):
+  """Returns docker cmdline adjusted for manual invocation."""
+  if cmdlog:
+    with open(filename, 'w') as logfile:
+      logfile.write('#!/bin/bash\n')
+      logfile.writelines("%s\n" % line for line in cmdlog)
+    print('Command log written to file %s' % filename)
+
+
 def bash_cmdline(cmdline):
   """Creates bash -c cmdline from args list."""
   # Use login shell:
@@ -551,7 +574,8 @@ def _job_kill_handler(job):
 
 
 def cloud_to_prod_jobspec(language, test_case, server_host_name,
-                          server_host_detail, docker_image=None, auth=False):
+                          server_host_detail, docker_image=None, auth=False,
+                          manual_cmd_log=None):
   """Creates jobspec for cloud-to-prod interop test"""
   container_name = None
   cmdargs = [
@@ -576,7 +600,9 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
                                  cwd=cwd,
                                  environ=environ,
                                  docker_args=['--net=host',
-                                              '--name', container_name])
+                                              '--name=%s' % container_name])
+    if manual_cmd_log is not None:
+      manual_cmd_log.append(manual_cmdline(cmdline))
     cwd = None
     environ = None
 
@@ -597,7 +623,8 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 
 
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
-                           server_port, docker_image=None, insecure=False):
+                           server_port, docker_image=None, insecure=False,
+                           manual_cmd_log=None):
   """Creates jobspec for cloud-to-cloud interop test"""
   interop_only_options = [
       '--server_host_override=foo.test.google.fr',
@@ -628,7 +655,9 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                  environ=environ,
                                  cwd=cwd,
                                  docker_args=['--net=host',
-                                              '--name', container_name])
+                                              '--name=%s' % container_name])
+    if manual_cmd_log is not None:
+      manual_cmd_log.append(manual_cmdline(cmdline))
     cwd = None
 
   test_job = jobset.JobSpec(
@@ -646,7 +675,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
   return test_job
 
 
-def server_jobspec(language, docker_image, insecure=False):
+def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
   cmdline = bash_cmdline(
@@ -676,7 +705,9 @@ def server_jobspec(language, docker_image, insecure=False):
                                       cwd=language.server_cwd,
                                       environ=environ,
                                       docker_args=port_args +
-                                        ['--name', container_name])
+                                        ['--name=%s' % container_name])
+  if manual_cmd_log is not None:
+      manual_cmd_log.append(manual_cmdline(docker_cmdline))
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
@@ -806,6 +837,14 @@ argp.add_argument('--allow_flakes',
                   action='store_const',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
+argp.add_argument('--manual_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Prepare things for running interop tests manually. ' +
+                  'Preserve docker images after building them and skip '
+                  'actually running the tests. Only print commands to run by ' +
+                  'hand.')
 argp.add_argument('--http2_interop',
                   default=False,
                   action='store_const',
@@ -837,13 +876,17 @@ if args.use_docker:
     print('copied to the docker environment.')
     time.sleep(5)
 
+if args.manual_run and not args.use_docker:
+  print('--manual_run is only supported with --use_docker option enabled.')
+  sys.exit(1)
+
 if not args.use_docker and servers:
   print('Running interop servers is only supported with --use_docker option enabled.')
   sys.exit(1)
 
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                    _LANGUAGES.iterkeys() if x == 'all' else [x]
+                    six.iterkeys(_LANGUAGES) if x == 'all' else [x]
                     for x in args.language))
 
 languages_http2_badserver_interop = set()
@@ -883,28 +926,40 @@ if args.use_docker:
     else:
       jobset.message('FAILED', 'Failed to build interop docker images.',
                      do_newline=True)
-      for image in docker_images.itervalues():
+      for image in six.itervalues(docker_images):
         dockerjob.remove_image(image, skip_nonexistent=True)
       sys.exit(1)
 
+server_manual_cmd_log = [] if args.manual_run else None
+client_manual_cmd_log = [] if args.manual_run else None
+
 # Start interop servers.
-server_jobs={}
-server_addresses={}
+server_jobs = {}
+server_addresses = {}
 try:
   for s in servers:
     lang = str(s)
     spec = server_jobspec(_LANGUAGES[lang], docker_images.get(lang),
-                          args.insecure)
-    job = dockerjob.DockerJob(spec)
-    server_jobs[lang] = job
-    server_addresses[lang] = ('localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
+                          args.insecure, manual_cmd_log=server_manual_cmd_log)
+    if not args.manual_run:
+      job = dockerjob.DockerJob(spec)
+      server_jobs[lang] = job
+      server_addresses[lang] = ('localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
+    else:
+      # don't run the server, set server port to a placeholder value
+      server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
   if args.http2_badserver_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
-    spec = server_jobspec(http2InteropServer, docker_images.get(lang))
-    job = dockerjob.DockerJob(spec)
-    server_jobs[lang] = job
+    spec = server_jobspec(http2InteropServer, docker_images.get(lang),
+                          manual_cmd_log=server_manual_cmd_log)
+    if not args.manual_run:
+      job = dockerjob.DockerJob(spec)
+      server_jobs[lang] = job
+    else:
+      # don't run the server, set server port to a placeholder value
+      server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
   jobs = []
   if args.cloud_to_prod:
@@ -918,7 +973,8 @@ try:
               test_job = cloud_to_prod_jobspec(
                   language, test_case, server_host_name,
                   prod_servers[server_host_name],
-                  docker_image=docker_images.get(str(language)))
+                  docker_image=docker_images.get(str(language)),
+                  manual_cmd_log=client_manual_cmd_log)
               jobs.append(test_job)
 
       if args.http2_interop:
@@ -926,7 +982,8 @@ try:
           test_job = cloud_to_prod_jobspec(
               http2Interop, test_case, server_host_name,
               prod_servers[server_host_name],
-              docker_image=docker_images.get(str(http2Interop)))
+              docker_image=docker_images.get(str(http2Interop)),
+              manual_cmd_log=client_manual_cmd_log)
           jobs.append(test_job)
 
   if args.cloud_to_prod_auth:
@@ -939,7 +996,8 @@ try:
             test_job = cloud_to_prod_jobspec(
                 language, test_case, server_host_name,
                 prod_servers[server_host_name],
-                docker_image=docker_images.get(str(language)), auth=True)
+                docker_image=docker_images.get(str(language)), auth=True,
+                manual_cmd_log=client_manual_cmd_log)
             jobs.append(test_job)
 
   for server in args.override_server:
@@ -963,7 +1021,8 @@ try:
                                               server_host,
                                               server_port,
                                               docker_image=docker_images.get(str(language)),
-                                              insecure=args.insecure)
+                                              insecure=args.insecure,
+                                              manual_cmd_log=client_manual_cmd_log)
             jobs.append(test_job)
 
     if args.http2_interop:
@@ -977,7 +1036,8 @@ try:
                                           server_host,
                                           server_port,
                                           docker_image=docker_images.get(str(http2Interop)),
-                                          insecure=args.insecure)
+                                          insecure=args.insecure,
+                                          manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
 
   if args.http2_badserver_interop:
@@ -988,21 +1048,29 @@ try:
                                           str(http2InteropServer),
                                           'localhost',
                                           _DEFAULT_SERVER_PORT,
-                                          docker_image=docker_images.get(str(language)))
+                                          docker_image=docker_images.get(str(language)),
+                                          manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
-    for image in docker_images.itervalues():
+    for image in six.itervalues(docker_images):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
+  if args.manual_run:
+    print('All tests will skipped --manual_run option is active.')
+
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
-                                       maxjobs=args.jobs)
+                                       maxjobs=args.jobs,
+                                       skip_jobs=args.manual_run)
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
+
+  write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
+  write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
   report_utils.render_junit_xml_report(resultset, 'report.xml')
 
@@ -1026,8 +1094,11 @@ finally:
     if not job.is_running():
       print('Server "%s" has exited prematurely.' % server)
 
-  dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
+  dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)])
 
-  for image in docker_images.itervalues():
-    print('Removing docker image %s' % image)
-    dockerjob.remove_image(image)
+  for image in six.itervalues(docker_images):
+    if not args.manual_run:
+      print('Removing docker image %s' % image)
+      dockerjob.remove_image(image)
+    else:
+      print('Preserving docker image: %s' % image)

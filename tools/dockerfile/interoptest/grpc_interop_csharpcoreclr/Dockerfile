@@ -99,8 +99,12 @@ RUN nuget update -self
 
 # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
 RUN apt-get update && apt-get install -y curl libunwind8 gettext
-RUN curl -sSL -o dotnet.tar.gz https://go.microsoft.com/fwlink/?LinkID=809130
-RUN mkdir -p /opt/dotnet && tar zxf dotnet.tar.gz -C /opt/dotnet
+# dotnet-dev-1.0.0-preview2-003121
+RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=809130
+RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
+# dotnet-dev-1.0.1
+RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453
+RUN mkdir -p /opt/dotnet && tar zxf dotnet101.tar.gz -C /opt/dotnet
 RUN ln -s /opt/dotnet/dotnet /usr/local/bin
 
 # Trigger the population of the local package cache
