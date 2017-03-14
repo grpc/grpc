@@ -778,13 +778,13 @@ grpc_error *grpc_connected_subchannel_create_call(
       args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = con;  // Ref is added below.
-  grpc_call_element_args call_args = {.call_stack = callstk,
-                                      .server_transport_data = NULL,
-                                      .context = NULL,
-                                      .path = args->path,
-                                      .start_time = args->start_time,
-                                      .deadline = args->deadline,
-                                      .arena = args->arena};
+  const grpc_call_element_args call_args = {.call_stack = callstk,
+                                            .server_transport_data = NULL,
+                                            .context = NULL,
+                                            .path = args->path,
+                                            .start_time = args->start_time,
+                                            .deadline = args->deadline,
+                                            .arena = args->arena};
   grpc_error *error = grpc_call_stack_init(
       exec_ctx, chanstk, 1, subchannel_call_destroy, *call, &call_args);
   if (error != GRPC_ERROR_NONE) {

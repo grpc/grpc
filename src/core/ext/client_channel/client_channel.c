@@ -755,7 +755,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
-    grpc_connected_subchannel_call_args call_args = {
+    const grpc_connected_subchannel_call_args call_args = {
         .pollent = calld->pollent,
         .path = calld->path,
         .start_time = calld->call_start_time,
@@ -988,7 +988,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
-    grpc_connected_subchannel_call_args call_args = {
+    const grpc_connected_subchannel_call_args call_args = {
         .pollent = calld->pollent,
         .path = calld->path,
         .start_time = calld->call_start_time,

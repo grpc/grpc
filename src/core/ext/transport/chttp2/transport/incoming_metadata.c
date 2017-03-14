@@ -42,8 +42,8 @@
 
 void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena) {
-  grpc_metadata_batch_init(&buffer->batch);
   buffer->arena = arena;
+  grpc_metadata_batch_init(&buffer->batch);
   buffer->batch.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 

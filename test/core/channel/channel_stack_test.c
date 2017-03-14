@@ -139,7 +139,7 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_element_args args = {
+  const grpc_call_element_args args = {
       .call_stack = call_stack,
       .server_transport_data = NULL,
       .context = NULL,
