@@ -51,14 +51,23 @@ class ErrorDeleter {
 };
 typedef std::unique_ptr<grpc_error, ErrorDeleter> ErrorPtr;
 
-static void BM_ErrorCreate(benchmark::State& state) {
+static void BM_ErrorCreateFromStatic(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"));
   }
   track_counters.Finish(state);
 }
-BENCHMARK(BM_ErrorCreate);
+BENCHMARK(BM_ErrorCreateFromStatic);
+
+static void BM_ErrorCreateFromCopied(benchmark::State& state) {
+  TrackCounters track_counters;
+  while (state.KeepRunning()) {
+    GRPC_ERROR_UNREF(GRPC_ERROR_CREATE_FROM_COPIED_STRING("Error not inline"));
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_ErrorCreateFromCopied);
 
 static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
   TrackCounters track_counters;
