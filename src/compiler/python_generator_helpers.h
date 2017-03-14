@@ -67,18 +67,20 @@ typedef vector<grpc::string> StringVector;
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleName(const grpc::string& filename) {
+grpc::string ModuleName(const grpc::string& filename,
+                        const grpc::string& import_prefix) {
   grpc::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
-  return basename + "_pb2";
+  return import_prefix + basename + "_pb2";
 }
 
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleAlias(const grpc::string& filename) {
-  grpc::string module_name = ModuleName(filename);
+grpc::string ModuleAlias(const grpc::string& filename,
+                         const grpc::string& import_prefix) {
+  grpc::string module_name = ModuleName(filename, import_prefix);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
   // duplicate each underscore.
@@ -89,7 +91,8 @@ grpc::string ModuleAlias(const grpc::string& filename) {
 
 bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out,
                              grpc::string generator_file_name,
-                             bool generate_in_pb2_grpc) {
+                             bool generate_in_pb2_grpc,
+                             grpc::string& import_prefix) {
   const Descriptor* path_elem_type = type;
   DescriptorVector message_path;
   do {
@@ -105,7 +108,7 @@ bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out,
 
   grpc::string module;
   if (generator_file_name != file_name || generate_in_pb2_grpc) {
-    module = ModuleAlias(file_name) + ".";
+    module = ModuleAlias(file_name, import_prefix) + ".";
   } else {
     module = "";
   }
