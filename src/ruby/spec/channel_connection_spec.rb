@@ -90,4 +90,53 @@ describe 'channel connection behavior' do
     expect(stub.an_rpc(req)).to be_a(EchoMsg)
     stop_server
   end
+
+  it 'observably connects and reconnects to transient server when using the channel state API', trial: true do
+    port = start_server
+    ch = GRPC::Core::Channel.new("localhost:#{port}", {}, :this_channel_is_insecure)
+
+    expect(ch.connectivity_state).to be(GRPC::Core::ConnectivityStates::IDLE)
+
+    state = ch.connectivity_state(true)
+
+    count = 0
+    while count < 20 and state != GRPC::Core::ConnectivityStates::READY do
+      STDERR.puts "first round of waiting for state to become READY"
+      ch.watch_connectivity_state(state, Time.now + 60)
+      state = ch.connectivity_state(true)
+      count += 1
+    end
+
+    expect(state).to be(GRPC::Core::ConnectivityStates::READY)
+
+    stop_server
+
+    state = ch.connectivity_state
+
+    count = 0
+    while count < 20 and state == GRPC::Core::ConnectivityStates::READY do
+      STDERR.puts "server shut down. waiting for state to not be READY"
+      ch.watch_connectivity_state(state, Time.now + 60)
+      state = ch.connectivity_state
+      count += 1
+    end
+
+    expect(state).to_not be(GRPC::Core::ConnectivityStates::READY)
+
+    start_server(port)
+
+    state = ch.connectivity_state(true)
+
+    count = 0
+    while count < 20 and state != GRPC::Core::ConnectivityStates::READY do
+      STDERR.puts "second round of waiting for state to become READY"
+      ch.watch_connectivity_state(state, Time.now + 60)
+      state = ch.connectivity_state(true)
+      count += 1
+    end
+
+    expect(state).to be(GRPC::Core::ConnectivityStates::READY)
+
+    stop_server
+  end
 end
