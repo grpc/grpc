@@ -51,6 +51,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/support/arena.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -133,6 +134,7 @@ typedef struct batch_control {
 } batch_control;
 
 struct grpc_call {
+  gpr_arena *arena;
   grpc_completion_queue *cq;
   grpc_polling_entity pollent;
   grpc_channel *channel;
@@ -208,6 +210,8 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   uint32_t test_only_last_message_flags;
 
+  grpc_closure release_call;
+
   union {
     struct {
       grpc_status_code *status;
@@ -269,7 +273,11 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_channel_get_channel_stack(args->channel);
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
-  call = gpr_zalloc(sizeof(grpc_call) + channel_stack->call_stack_size);
+  gpr_arena *arena =
+      gpr_arena_create(grpc_channel_get_call_size_estimate(args->channel));
+  call = gpr_arena_alloc(arena,
+                         sizeof(grpc_call) + channel_stack->call_stack_size);
+  call->arena = arena;
   *out_call = call;
   gpr_mu_init(&call->child_list_mu);
   call->channel = args->channel;
@@ -361,11 +369,16 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
+  grpc_call_element_args call_args = {
+      .call_stack = CALL_STACK_FROM_CALL(call),
+      .server_transport_data = args->server_transport_data,
+      .context = call->context,
+      .path = path,
+      .start_time = call->start_time,
+      .deadline = send_deadline,
+      .arena = call->arena};
   add_init_error(&error, grpc_call_stack_init(exec_ctx, channel_stack, 1,
-                                              destroy_call, call, call->context,
-                                              args->server_transport_data, path,
-                                              call->start_time, send_deadline,
-                                              CALL_STACK_FROM_CALL(call)));
+                                              destroy_call, call, &call_args));
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
@@ -422,6 +435,14 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
   GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
+static void release_call(grpc_exec_ctx *exec_ctx, void *call,
+                         grpc_error *error) {
+  grpc_call *c = call;
+  grpc_channel_update_call_size_estimate(c->channel,
+                                         gpr_arena_destroy(c->arena));
+  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
+}
+
 static void set_status_value_directly(grpc_status_code status, void *dest);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
@@ -448,7 +469,6 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
-  grpc_channel *channel = c->channel;
 
   get_final_status(call, set_status_value_directly, &c->final_info.final_status,
                    NULL);
@@ -460,8 +480,9 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
         unpack_received_status(gpr_atm_acq_load(&c->status[i])).error);
   }
 
-  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info, c);
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
+  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info,
+                          grpc_closure_init(&c->release_call, release_call, c,
+                                            grpc_schedule_on_exec_ctx));
   GPR_TIMER_END("destroy_call", 0);
 }
 

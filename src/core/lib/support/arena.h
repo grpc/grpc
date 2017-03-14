@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,24 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
+// \file Arena based allocator
+// Allows very fast allocation of memory, but that memory cannot be freed until
+// the arena as a whole is freed
+// Tracks the total memory allocated against it, so that future arenas can
+// pre-allocate the right amount of memory
 
-#include "src/core/lib/transport/transport.h"
+#ifndef GRPC_CORE_LIB_SUPPORT_ARENA_H
+#define GRPC_CORE_LIB_SUPPORT_ARENA_H
 
-typedef struct {
-  gpr_arena *arena;
-  grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
+#include <stddef.h>
 
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch);
+typedef struct gpr_arena gpr_arena;
 
-grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
+// Create an arena, with \a initial_size bytes in the first allocated buffer
+gpr_arena *gpr_arena_create(size_t initial_size);
+// Allocate \a size bytes from the arena
+void *gpr_arena_alloc(gpr_arena *arena, size_t size);
+// Destroy an arena, returning the total number of bytes allocated
+size_t gpr_arena_destroy(gpr_arena *arena);
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_ARENA_H */

@@ -896,7 +896,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 

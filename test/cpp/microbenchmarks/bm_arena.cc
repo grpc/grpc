@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,39 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
+/* Benchmark arenas */
 
-#include "src/core/lib/transport/transport.h"
+extern "C" {
+#include "src/core/lib/support/arena.h"
+}
+#include "test/cpp/microbenchmarks/helpers.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
 
-typedef struct {
-  gpr_arena *arena;
-  grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
+static void BM_Arena_NoOp(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    gpr_arena_destroy(gpr_arena_create(state.range(0)));
+  }
+}
+BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch);
+static void BM_Arena_ManyAlloc(benchmark::State& state) {
+  gpr_arena* a = gpr_arena_create(state.range(0));
+  while (state.KeepRunning()) {
+    gpr_arena_alloc(a, state.range(1));
+  }
+  gpr_arena_destroy(a);
+}
+BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
-grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
+static void BM_Arena_Batch(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    gpr_arena* a = gpr_arena_create(state.range(0));
+    for (int i = 0; i < state.range(1); i++) {
+      gpr_arena_alloc(a, state.range(2));
+    }
+    gpr_arena_destroy(a);
+  }
+}
+BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */
+BENCHMARK_MAIN();
