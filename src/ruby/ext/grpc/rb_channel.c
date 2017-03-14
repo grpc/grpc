@@ -402,7 +402,7 @@ static void grpc_rb_channel_try_register_connection_polling(
 // Note requires wrapper->wrapped, wrapper->safe_destroy_mu/cv initialized
 static void grpc_rb_channel_safe_destroy(grpc_rb_channel *wrapper) {
   gpr_mu_lock(&wrapper->safe_destroy_mu);
-  if (!wrapper->safe_to_destroy) {
+  while (!wrapper->safe_to_destroy) {
     wrapper->request_safe_destroy = 1;
     gpr_cv_wait(&wrapper->safe_destroy_cv, &wrapper->safe_destroy_mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
