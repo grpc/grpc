@@ -301,7 +301,7 @@ static void add_error(grpc_error **composite, grpc_error *error,
                       const char *composite_error_string) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING(composite_error_string);
+    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(composite_error_string);
   }
   *composite = grpc_error_add_child(*composite, error);
 }

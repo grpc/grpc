@@ -288,7 +288,7 @@ static void maybe_flush_read(stream_obj *s) {
 }
 
 static grpc_error *make_error_with_desc(int error_code, const char *desc) {
-  grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc);
+  grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
   return error;
 }

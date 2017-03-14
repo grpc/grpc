@@ -101,7 +101,7 @@ static void add_error(const char *error_name, grpc_error **cumulative,
                       grpc_error *new) {
   if (new == GRPC_ERROR_NONE) return;
   if (*cumulative == GRPC_ERROR_NONE) {
-    *cumulative = GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_name);
+    *cumulative = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_name);
   }
   *cumulative = grpc_error_add_child(*cumulative, new);
 }

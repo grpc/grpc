@@ -321,7 +321,7 @@ static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc);
+    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
