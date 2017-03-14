@@ -384,6 +384,7 @@ typedef enum {
       This op completes after all bytes for the message have been accepted by
       outgoing flow control. */
   GRPC_OP_SEND_BYTE_BUFFER_MESSAGE,
+  GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
       skipped.
@@ -405,6 +406,7 @@ typedef enum {
       This op completes after all bytes of the received message have been
       read, or after a half-close has been received on this call. */
   GRPC_OP_RECV_BYTE_BUFFER_MESSAGE,
+  GRPC_OP_RECV_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. In that case
@@ -449,6 +451,10 @@ typedef struct grpc_op {
       struct grpc_byte_buffer *send_message;
     } send_byte_buffer_message;
     struct {
+      uint32_t length;
+      grpc_slice_buffer *slices;
+    } send_message;
+    struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
@@ -471,6 +477,10 @@ typedef struct grpc_op {
     struct {
       struct grpc_byte_buffer **recv_message;
     } recv_byte_buffer_message;
+    struct {
+      uint32_t *length;
+      grpc_slice_buffer *slices;
+    } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

@@ -1002,6 +1002,7 @@ static int batch_slot_for_op(grpc_op_type type) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       return 0;
     case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
+    case GRPC_OP_SEND_MESSAGE:
       return 1;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
@@ -1009,6 +1010,7 @@ static int batch_slot_for_op(grpc_op_type type) {
     case GRPC_OP_RECV_INITIAL_METADATA:
       return 3;
     case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
+    case GRPC_OP_RECV_MESSAGE:
       return 4;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -1453,6 +1455,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
+        /* Translate from old-style byte-buffer message to new style incremental
+           message */
+
         if (call->sending_message) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
