@@ -111,8 +111,9 @@ grpc::string ModuleName(const grpc::string& filename) {
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleAlias(const grpc::string& filename) {
-  grpc::string module_name = ModuleName(filename);
+grpc::string ModuleAlias(const grpc::string& filename,
+                         const grpc::string& generated_module_prefix) {
+  grpc::string module_name = generated_module_prefix + ModuleName(filename);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
   // duplicate each underscore.
@@ -189,7 +190,7 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
   grpc::string generator_file_name = file->name();
   grpc::string module;
   if (generator_file_name != file_name || generate_in_pb2_grpc) {
-    module = ModuleAlias(file_name) + ".";
+    module = ModuleAlias(file_name, config.generated_module_prefix) + ".";
   } else {
     module = "";
   }
@@ -666,8 +667,10 @@ bool PrivateGenerator::PrintPreamble() {
         for (int k = 0; k < 2; ++k) {
           const Descriptor* type = types[k];
           grpc::string type_file_name = type->file()->name();
-          grpc::string module_name = ModuleName(type_file_name);
-          grpc::string module_alias = ModuleAlias(type_file_name);
+          grpc::string module_name =
+              config.generated_module_prefix + ModuleName(type_file_name);
+          grpc::string module_alias =
+              ModuleAlias(type_file_name, config.generated_module_prefix);
           imports_set.insert(std::make_tuple(module_name, module_alias));
         }
       }
@@ -684,7 +687,7 @@ bool PrivateGenerator::PrintPreamble() {
 bool PrivateGenerator::PrintGAServices() {
   grpc::string package = file->package();
   if (!package.empty()) {
-    package = package.append(".");
+    package = config.generated_module_prefix + package.append(".");
   }
   for (int i = 0; i < file->service_count(); ++i) {
     const ServiceDescriptor* service = file->service(i);
