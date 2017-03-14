@@ -63,7 +63,7 @@ EchoStub = EchoService.rpc_stub_class
 
 def start_server(port = 0)
   @srv = GRPC::RpcServer.new
-  server_port = @srv.add_http2_port("0.0.0.0:#{port}", :this_port_is_insecure)
+  server_port = @srv.add_http2_port("localhost:#{port}", :this_port_is_insecure)
   @srv.handle(EchoService)
   @server_thd = Thread.new { @srv.run }
   @srv.wait_till_running
@@ -84,24 +84,25 @@ describe 'channel connection behavior' do
     req = EchoMsg.new
     expect(stub.an_rpc(req)).to be_a(EchoMsg)
     stop_server
-    expect { stub.an_rpc(req) }.to raise_error(GRPC::Unavailable)
+    sleep 1
     # TODO(apolcyn) grabbing the same port might fail, is this stable enough?
     start_server(port)
     expect(stub.an_rpc(req)).to be_a(EchoMsg)
     stop_server
   end
 
-  it 'observably connects and reconnects to transient server when using the channel state API', trial: true do
+  it 'observably connects and reconnects to transient server' \
+    'when using the channel state API' do
     port = start_server
-    ch = GRPC::Core::Channel.new("localhost:#{port}", {}, :this_channel_is_insecure)
+    ch = GRPC::Core::Channel.new("localhost:#{port}", {},
+                                 :this_channel_is_insecure)
 
     expect(ch.connectivity_state).to be(GRPC::Core::ConnectivityStates::IDLE)
 
     state = ch.connectivity_state(true)
 
     count = 0
-    while count < 20 and state != GRPC::Core::ConnectivityStates::READY do
-      STDERR.puts "first round of waiting for state to become READY"
+    while count < 20 && state != GRPC::Core::ConnectivityStates::READY
       ch.watch_connectivity_state(state, Time.now + 60)
       state = ch.connectivity_state(true)
       count += 1
@@ -114,8 +115,7 @@ describe 'channel connection behavior' do
     state = ch.connectivity_state
 
     count = 0
-    while count < 20 and state == GRPC::Core::ConnectivityStates::READY do
-      STDERR.puts "server shut down. waiting for state to not be READY"
+    while count < 20 && state == GRPC::Core::ConnectivityStates::READY
       ch.watch_connectivity_state(state, Time.now + 60)
       state = ch.connectivity_state
       count += 1
@@ -128,8 +128,7 @@ describe 'channel connection behavior' do
     state = ch.connectivity_state(true)
 
     count = 0
-    while count < 20 and state != GRPC::Core::ConnectivityStates::READY do
-      STDERR.puts "second round of waiting for state to become READY"
+    while count < 20 && state != GRPC::Core::ConnectivityStates::READY
       ch.watch_connectivity_state(state, Time.now + 60)
       state = ch.connectivity_state(true)
       count += 1
