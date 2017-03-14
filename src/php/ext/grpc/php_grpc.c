@@ -197,7 +197,7 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_OP_SEND_INITIAL_METADATA,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE",
-                         GRPC_OP_SEND_MESSAGE,
+                         GRPC_OP_SEND_BYTE_BUFFER_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_CLOSE_FROM_CLIENT",
                          GRPC_OP_SEND_CLOSE_FROM_CLIENT,
@@ -209,7 +209,7 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_OP_RECV_INITIAL_METADATA,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
-                         GRPC_OP_RECV_MESSAGE,
+                         GRPC_OP_RECV_BYTE_BUFFER_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_STATUS_ON_CLIENT",
                          GRPC_OP_RECV_STATUS_ON_CLIENT,

@@ -202,7 +202,7 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -216,7 +216,7 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
@@ -257,7 +257,7 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
@@ -275,7 +275,7 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -433,7 +433,7 @@ static void test_request_with_server_rejecting_client_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -447,7 +447,7 @@ static void test_request_with_server_rejecting_client_creds(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;

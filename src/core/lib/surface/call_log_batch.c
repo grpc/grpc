@@ -67,7 +67,7 @@ char *grpc_op_string(const grpc_op *op) {
       add_metadata(&b, op->data.send_initial_metadata.metadata,
                    op->data.send_initial_metadata.count);
       break;
-    case GRPC_OP_SEND_MESSAGE:
+    case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
       gpr_asprintf(&tmp, "SEND_MESSAGE ptr=%p",
                    op->data.send_message.send_message);
       gpr_strvec_add(&b, tmp);
@@ -94,7 +94,7 @@ char *grpc_op_string(const grpc_op *op) {
                    op->data.recv_initial_metadata.recv_initial_metadata);
       gpr_strvec_add(&b, tmp);
       break;
-    case GRPC_OP_RECV_MESSAGE:
+    case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       gpr_asprintf(&tmp, "RECV_MESSAGE ptr=%p",
                    op->data.recv_message.recv_message);
       gpr_strvec_add(&b, tmp);

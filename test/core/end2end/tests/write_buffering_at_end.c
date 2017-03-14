@@ -159,7 +159,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = GRPC_WRITE_BUFFER_HINT;
   op++;
@@ -177,7 +177,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* recv message should not succeed yet - it's buffered at the client still */
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv1;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
@@ -204,7 +204,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* and the next recv should be ready immediately also (and empty) */
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv2;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);

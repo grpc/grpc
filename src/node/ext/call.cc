@@ -689,7 +689,7 @@ NAN_METHOD(Call::StartBatch) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         op.reset(new SendMetadataOp());
         break;
-      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
         op.reset(new SendMessageOp());
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -701,7 +701,7 @@ NAN_METHOD(Call::StartBatch) {
       case GRPC_OP_RECV_INITIAL_METADATA:
         op.reset(new GetMetadataOp());
         break;
-      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
         op.reset(new ReadMessageOp());
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:

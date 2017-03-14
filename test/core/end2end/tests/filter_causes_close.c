@@ -143,7 +143,7 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;

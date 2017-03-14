@@ -156,7 +156,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
@@ -173,7 +173,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);

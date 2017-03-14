@@ -1001,14 +1001,14 @@ static int batch_slot_for_op(grpc_op_type type) {
   switch (type) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       return 0;
-    case GRPC_OP_SEND_MESSAGE:
+    case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
       return 1;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
       return 2;
     case GRPC_OP_RECV_INITIAL_METADATA:
       return 3;
-    case GRPC_OP_RECV_MESSAGE:
+    case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       return 4;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -1444,7 +1444,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
             op->flags;
         break;
-      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1579,7 +1579,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->receiving_initial_metadata_ready;
         num_completion_callbacks_needed++;
         break;
-      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;

@@ -538,11 +538,11 @@ static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
   }
   switch (NUM2INT(key)) {
     case GRPC_OP_SEND_INITIAL_METADATA:
-    case GRPC_OP_SEND_MESSAGE:
+    case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
     case GRPC_OP_RECV_INITIAL_METADATA:
-    case GRPC_OP_RECV_MESSAGE:
+    case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       rb_ary_push(ops_ary, key);
@@ -643,7 +643,7 @@ static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
   }
 
   for (i = 0; i < st->op_num; i++) {
-    if (st->ops[i].op == GRPC_OP_SEND_MESSAGE) {
+    if (st->ops[i].op == GRPC_OP_SEND_BYTE_BUFFER_MESSAGE) {
       grpc_byte_buffer_destroy(st->ops[i].data.send_message.send_message);
     }
   }
@@ -675,7 +675,7 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
         st->ops[st->op_num].data.send_initial_metadata.metadata =
             st->send_metadata.metadata;
         break;
-      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
         st->ops[st->op_num].data.send_message.send_message =
             grpc_rb_s_to_byte_buffer(RSTRING_PTR(this_value),
                                      RSTRING_LEN(this_value));
@@ -693,7 +693,7 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
         st->ops[st->op_num].data.recv_initial_metadata.recv_initial_metadata =
             &st->recv_metadata;
         break;
-      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
         st->ops[st->op_num].data.recv_message.recv_message = &st->recv_message;
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -730,7 +730,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         rb_struct_aset(result, sym_send_metadata, Qtrue);
         break;
-      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -742,7 +742,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
       case GRPC_OP_RECV_INITIAL_METADATA:
         rb_struct_aset(result, sym_metadata,
                        grpc_rb_md_ary_to_h(&st->recv_metadata));
-      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
         rb_struct_aset(result, sym_message,
                        grpc_rb_byte_buffer_to_s(st->recv_message));
         break;
@@ -899,7 +899,7 @@ static void Init_grpc_op_codes() {
   rb_define_const(grpc_rb_mCallOps, "SEND_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_SEND_INITIAL_METADATA));
   rb_define_const(grpc_rb_mCallOps, "SEND_MESSAGE",
-                  UINT2NUM(GRPC_OP_SEND_MESSAGE));
+                  UINT2NUM(GRPC_OP_SEND_BYTE_BUFFER_MESSAGE));
   rb_define_const(grpc_rb_mCallOps, "SEND_CLOSE_FROM_CLIENT",
                   UINT2NUM(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
   rb_define_const(grpc_rb_mCallOps, "SEND_STATUS_FROM_SERVER",
@@ -907,7 +907,7 @@ static void Init_grpc_op_codes() {
   rb_define_const(grpc_rb_mCallOps, "RECV_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_RECV_INITIAL_METADATA));
   rb_define_const(grpc_rb_mCallOps, "RECV_MESSAGE",
-                  UINT2NUM(GRPC_OP_RECV_MESSAGE));
+                  UINT2NUM(GRPC_OP_RECV_BYTE_BUFFER_MESSAGE));
   rb_define_const(grpc_rb_mCallOps, "RECV_STATUS_ON_CLIENT",
                   UINT2NUM(GRPC_OP_RECV_STATUS_ON_CLIENT));
   rb_define_const(grpc_rb_mCallOps, "RECV_CLOSE_ON_SERVER",

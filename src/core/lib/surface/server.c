@@ -593,7 +593,7 @@ static void finish_start_new_rpc(
     case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
       grpc_op op;
       memset(&op, 0, sizeof(op));
-      op.op = GRPC_OP_RECV_MESSAGE;
+      op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
       op.data.recv_message.recv_message = &calld->payload;
       grpc_closure_init(&calld->publish, publish_new_rpc, elem,
                         grpc_schedule_on_exec_ctx);

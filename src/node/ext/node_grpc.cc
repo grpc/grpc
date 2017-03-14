@@ -189,7 +189,7 @@ void InitOpTypeConstants(Local<Object> exports) {
   Nan::Set(op_type, Nan::New("SEND_INITIAL_METADATA").ToLocalChecked(),
            SEND_INITIAL_METADATA);
   Local<Value> SEND_MESSAGE(
-      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_BYTE_BUFFER_MESSAGE));
   Nan::Set(op_type, Nan::New("SEND_MESSAGE").ToLocalChecked(), SEND_MESSAGE);
   Local<Value> SEND_CLOSE_FROM_CLIENT(
       Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
@@ -204,7 +204,7 @@ void InitOpTypeConstants(Local<Object> exports) {
   Nan::Set(op_type, Nan::New("RECV_INITIAL_METADATA").ToLocalChecked(),
            RECV_INITIAL_METADATA);
   Local<Value> RECV_MESSAGE(
-      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_BYTE_BUFFER_MESSAGE));
   Nan::Set(op_type, Nan::New("RECV_MESSAGE").ToLocalChecked(), RECV_MESSAGE);
   Local<Value> RECV_STATUS_ON_CLIENT(
       Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_STATUS_ON_CLIENT));

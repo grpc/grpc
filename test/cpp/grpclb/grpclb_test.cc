@@ -217,7 +217,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
 
   // receive request for backends
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
@@ -274,7 +274,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
     op = ops;
-    op->op = GRPC_OP_SEND_MESSAGE;
+    op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
     op->data.send_message.send_message = response_payload;
     op->flags = 0;
     op->reserved = NULL;
@@ -380,7 +380,7 @@ static void start_backend_server(server_fixture *sf) {
     grpc_slice response_payload_slice = grpc_slice_from_copied_string(PAYLOAD);
     while (!exit) {
       op = ops;
-      op->op = GRPC_OP_RECV_MESSAGE;
+      op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
       op->data.recv_message.recv_message = &request_payload_recv;
       op->flags = 0;
       op->reserved = NULL;
@@ -409,7 +409,7 @@ static void start_backend_server(server_fixture *sf) {
         response_payload =
             grpc_raw_byte_buffer_create(&response_payload_slice, 1);
         op = ops;
-        op->op = GRPC_OP_SEND_MESSAGE;
+        op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
         op->data.send_message.send_message = response_payload;
         op->flags = 0;
         op->reserved = NULL;
@@ -519,12 +519,12 @@ static void perform_request(client_fixture *cf) {
     request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
     op = ops;
-    op->op = GRPC_OP_SEND_MESSAGE;
+    op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
     op->data.send_message.send_message = request_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
-    op->op = GRPC_OP_RECV_MESSAGE;
+    op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op->data.recv_message.recv_message = &response_payload_recv;
     op->flags = 0;
     op->reserved = NULL;

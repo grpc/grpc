@@ -536,7 +536,7 @@ grpcsharp_call_start_unary(grpc_call *call, grpcsharp_batch_context *ctx,
   ops[0].flags = initial_metadata_flags;
   ops[0].reserved = NULL;
 
-  ops[1].op = GRPC_OP_SEND_MESSAGE;
+  ops[1].op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
@@ -552,7 +552,7 @@ grpcsharp_call_start_unary(grpc_call *call, grpcsharp_batch_context *ctx,
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
-  ops[4].op = GRPC_OP_RECV_MESSAGE;
+  ops[4].op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   ops[4].data.recv_message.recv_message = &(ctx->recv_message);
   ops[4].flags = 0;
   ops[4].reserved = NULL;
@@ -594,7 +594,7 @@ grpcsharp_call_start_client_streaming(grpc_call *call,
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  ops[2].op = GRPC_OP_RECV_MESSAGE;
+  ops[2].op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   ops[2].data.recv_message.recv_message = &(ctx->recv_message);
   ops[2].flags = 0;
   ops[2].reserved = NULL;
@@ -629,7 +629,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[0].flags = initial_metadata_flags;
   ops[0].reserved = NULL;
 
-  ops[1].op = GRPC_OP_SEND_MESSAGE;
+  ops[1].op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
@@ -707,7 +707,7 @@ grpcsharp_call_send_message(grpc_call *call, grpcsharp_batch_context *ctx,
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   size_t nops = send_empty_initial_metadata ? 2 : 1;
-  ops[0].op = GRPC_OP_SEND_MESSAGE;
+  ops[0].op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[0].data.send_message.send_message = ctx->send_message;
   ops[0].flags = write_flags;
@@ -755,7 +755,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
   if (optional_send_buffer) {
-    ops[nops].op = GRPC_OP_SEND_MESSAGE;
+    ops[nops].op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
     ctx->send_message = string_to_byte_buffer(optional_send_buffer,
                                               optional_send_buffer_len);
     ops[nops].data.send_message.send_message = ctx->send_message;
@@ -776,7 +776,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_recv_message(grpc_call *call, grpcsharp_batch_context *ctx) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
-  ops[0].op = GRPC_OP_RECV_MESSAGE;
+  ops[0].op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   ops[0].data.recv_message.recv_message = &(ctx->recv_message);
   ops[0].flags = 0;
   ops[0].reserved = NULL;

@@ -208,7 +208,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -252,7 +252,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &recv_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -406,7 +406,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &recv_payload;
   op->flags = 0;
   op->reserved = NULL;
@@ -440,7 +440,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;

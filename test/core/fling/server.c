@@ -106,10 +106,10 @@ static void handle_unary_method(void) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &terminal_buffer;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
@@ -143,7 +143,7 @@ static void send_initial_metadata(void) {
 static void start_read_op(int t) {
   grpc_call_error error;
   /* Starting read at server */
-  read_op.op = GRPC_OP_RECV_MESSAGE;
+  read_op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   read_op.data.recv_message.recv_message = &payload_buffer;
   error = grpc_call_start_batch(call, &read_op, 1, tag(t), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -153,7 +153,7 @@ static void start_write_op(void) {
   grpc_call_error error;
   void *tagarg = tag(FLING_SERVER_WRITE_FOR_STREAMING);
   /* Starting write at server */
-  write_op.op = GRPC_OP_SEND_MESSAGE;
+  write_op.op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }

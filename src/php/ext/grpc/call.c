@@ -319,7 +319,7 @@ PHP_METHOD(Call, startBatch) {
       ops[op_num].data.send_initial_metadata.count = metadata.count;
       ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
       break;
-    case GRPC_OP_SEND_MESSAGE:
+    case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
       if (Z_TYPE_P(value) != IS_ARRAY) {
         zend_throw_exception(spl_ce_InvalidArgumentException,
                              "Expected an array for send message",
@@ -404,7 +404,7 @@ PHP_METHOD(Call, startBatch) {
       ops[op_num].data.recv_initial_metadata.recv_initial_metadata =
           &recv_metadata;
       break;
-    case GRPC_OP_RECV_MESSAGE:
+    case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       ops[op_num].data.recv_message.recv_message = &message;
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -446,7 +446,7 @@ PHP_METHOD(Call, startBatch) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       add_property_bool(result, "send_metadata", true);
       break;
-    case GRPC_OP_SEND_MESSAGE:
+    case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
       add_property_bool(result, "send_message", true);
       break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -465,7 +465,7 @@ PHP_METHOD(Call, startBatch) {
 #endif
       PHP_GRPC_DELREF(array);
       break;
-    case GRPC_OP_RECV_MESSAGE:
+    case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       byte_buffer_to_string(message, &message_str, &message_len);
       if (message_str == NULL) {
         add_property_null(result, "message");
@@ -508,10 +508,10 @@ cleanup:
   grpc_slice_unref(recv_status_details);
   grpc_slice_unref(send_status_details);
   for (int i = 0; i < op_num; i++) {
-    if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
+    if (ops[i].op == GRPC_OP_SEND_BYTE_BUFFER_MESSAGE) {
       grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
     }
-    if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
+    if (ops[i].op == GRPC_OP_RECV_BYTE_BUFFER_MESSAGE) {
       grpc_byte_buffer_destroy(message);
       PHP_GRPC_FREE_STD_ZVAL(message_str);
     }

@@ -143,7 +143,7 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   op->data.recv_initial_metadata.recv_initial_metadata =
       &calls[call_idx].initial_metadata_recv;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;

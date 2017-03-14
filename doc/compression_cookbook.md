@@ -128,6 +128,6 @@ textual representation.
 ## Per Message Settings
 
 To disable compression for a specific message, the `flags` field of `grpc_op`
-instances of type `GRPC_OP_SEND_MESSAGE` must have its `GRPC_WRITE_NO_COMPRESS`
+instances of type `GRPC_OP_SEND_BYTE_BUFFER_MESSAGE` must have its `GRPC_WRITE_NO_COMPRESS`
 bit set. Refer to
 [`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),

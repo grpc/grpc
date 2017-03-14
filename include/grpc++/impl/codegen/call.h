@@ -233,7 +233,7 @@ class CallOpSendMessage {
   void AddOp(grpc_op* ops, size_t* nops) {
     if (send_buf_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
-    op->op = GRPC_OP_SEND_MESSAGE;
+    op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
     op->flags = write_options_.flags();
     op->reserved = NULL;
     op->data.send_message.send_message = send_buf_;
@@ -282,7 +282,7 @@ class CallOpRecvMessage {
   void AddOp(grpc_op* ops, size_t* nops) {
     if (message_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
-    op->op = GRPC_OP_RECV_MESSAGE;
+    op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
     op->data.recv_message.recv_message = &recv_buf_;
@@ -358,7 +358,7 @@ class CallOpGenericRecvMessage {
   void AddOp(grpc_op* ops, size_t* nops) {
     if (!deserialize_) return;
     grpc_op* op = &ops[(*nops)++];
-    op->op = GRPC_OP_RECV_MESSAGE;
+    op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
     op->data.recv_message.recv_message = &recv_buf_;
