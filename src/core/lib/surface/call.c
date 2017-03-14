@@ -200,7 +200,11 @@ struct grpc_call {
   grpc_call *sibling_next;
   grpc_call *sibling_prev;
 
-  grpc_slice_buffer_stream sending_stream;
+  grpc_byte_stream sending_stream;
+  grpc_slice_buffer *send_slices;
+  size_t send_bytes_after_this_slice_buffer;
+  grpc_slice *send_next_slice;
+  grpc_closure *send_on_next;
 
   grpc_byte_stream *receiving_stream;
   grpc_byte_buffer **receiving_buffer;
@@ -969,6 +973,41 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
 }
 
 /*******************************************************************************
+ * Sending stream
+ */
+
+static int sending_stream_next(grpc_exec_ctx *exec_ctx,
+                               grpc_byte_stream *byte_stream, grpc_slice *slice,
+                               size_t max_size_hint,
+                               grpc_closure *on_complete) {
+  grpc_call *call = (grpc_call *)(((char *)byte_stream) -
+                                  offsetof(grpc_call, sending_stream));
+  if (call->send_slices != NULL) {
+    *slice = grpc_slice_buffer_take_first(call->send_slices);
+    if (call->send_slices->count == 0) {
+      if (call->send_bytes_after_this_slice_buffer == 0) {
+        /* end of message */
+        abort();
+      } else {
+        /* end of send, still more in the message */
+        call->send_slices = NULL;
+        abort();
+      }
+    }
+    return 1;
+  } else {
+    call->send_next_slice = slice;
+    call->send_on_next = on_complete;
+    return 0;
+  }
+}
+
+static void sending_stream_destroy(grpc_exec_ctx *exec_ctx,
+                                   grpc_byte_stream *byte_stream) {
+  abort();
+}
+
+/*******************************************************************************
  * BATCH API IMPLEMENTATION
  */
 
@@ -1343,6 +1382,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                                         int is_notify_tag_closure) {
   size_t i;
   const grpc_op *op;
+  grpc_op translated_op;
   batch_control *bctl;
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
@@ -1447,36 +1487,43 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             op->flags;
         break;
       case GRPC_OP_SEND_BYTE_BUFFER_MESSAGE:
-        if (!are_write_flags_valid(op->flags)) {
-          error = GRPC_CALL_ERROR_INVALID_FLAGS;
-          goto done_with_error;
-        }
         if (op->data.send_byte_buffer_message.send_message == NULL) {
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
         /* Translate from old-style byte-buffer message to new style incremental
            message */
-
+        translated_op.op = GRPC_OP_SEND_MESSAGE;
+        translated_op.flags = op->flags;
+        translated_op.reserved = NULL;
+        translated_op.data.send_message.length =
+            op->data.send_byte_buffer_message.send_message->data.raw
+                .slice_buffer.length;
+        translated_op.data.send_message.slices =
+            &op->data.send_byte_buffer_message.send_message->data.raw
+                 .slice_buffer;
+        op = &translated_op;
+      /* Fall through */
+      case GRPC_OP_SEND_MESSAGE:
+        if (!are_write_flags_valid(op->flags)) {
+          error = GRPC_CALL_ERROR_INVALID_FLAGS;
+          goto done_with_error;
+        }
         if (call->sending_message) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
         stream_op->send_message = true;
         call->sending_message = true;
-        grpc_slice_buffer_stream_init(&call->sending_stream,
-                                      &op->data.send_byte_buffer_message
-                                           .send_message->data.raw.slice_buffer,
-                                      op->flags);
-        /* If the outgoing buffer is already compressed, mark it as so in the
-           flags. These will be picked up by the compression filter and further
-           (wasteful) attempts at compression skipped. */
-        if (op->data.send_byte_buffer_message.send_message->data.raw
-                .compression > GRPC_COMPRESS_NONE) {
-          call->sending_stream.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+        call->sending_stream.flags = op->flags;
+        call->sending_stream.length = op->data.send_message.length;
+        call->sending_stream.next = sending_stream_next;
+        call->sending_stream.destroy = sending_stream_destroy;
+        call->send_slices = op->data.send_message.slices;
+        if (op->data.send_message.slices != NULL) {
+          num_completion_callbacks_needed++;
         }
-        stream_op_payload->send_message.send_message =
-            &call->sending_stream.base;
+        stream_op_payload->send_message.send_message = &call->sending_stream;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */
@@ -1683,7 +1730,7 @@ done_with_error:
   }
   if (stream_op->send_message) {
     call->sending_message = 0;
-    grpc_byte_stream_destroy(exec_ctx, &call->sending_stream.base);
+    grpc_byte_stream_destroy(exec_ctx, &call->sending_stream);
   }
   if (stream_op->send_trailing_metadata) {
     call->sent_final_op = 0;
