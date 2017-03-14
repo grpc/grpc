@@ -140,7 +140,8 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (grpc_error_is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count), gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
           func);
   gpr_ref(&err->atomics.refs);
   return err;
@@ -192,7 +193,8 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (grpc_error_is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count), gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
           func);
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
