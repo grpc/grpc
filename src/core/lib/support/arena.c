@@ -53,6 +53,7 @@ struct gpr_arena {
 
 gpr_arena *gpr_arena_create(size_t initial_size) {
   initial_size = ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
+  gpr_log(GPR_DEBUG, "arena create: %" PRIdPTR, initial_size);
   gpr_arena *a = gpr_zalloc(sizeof(gpr_arena) + initial_size);
   a->initial_zone.size_end = initial_size;
   return a;

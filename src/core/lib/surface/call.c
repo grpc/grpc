@@ -277,7 +277,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_channel_get_channel_stack(args->channel);
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
-  gpr_arena *arena = gpr_arena_create(8192);
+  gpr_arena *arena =
+      gpr_arena_create(grpc_channel_get_call_size_estimate(args->channel));
   call = gpr_arena_alloc(arena,
                          sizeof(grpc_call) + channel_stack->call_stack_size);
   call->arena = arena;
@@ -436,8 +437,9 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
 static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   grpc_call *c = call;
+  grpc_channel_update_call_size_estimate(c->channel,
+                                         gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
-  gpr_arena_destroy(c->arena);
 }
 
 static void set_status_value_directly(grpc_status_code status, void *dest);
