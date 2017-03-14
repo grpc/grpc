@@ -1130,6 +1130,9 @@ src/core/lib/iomgr/tcp_posix.c \
 src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.h \
 src/core/lib/iomgr/tcp_server_posix.c \
+src/core/lib/iomgr/tcp_server_utils_posix.h \
+src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
 src/core/lib/iomgr/tcp_server_uv.c \
 src/core/lib/iomgr/tcp_server_windows.c \
 src/core/lib/iomgr/tcp_uv.c \
