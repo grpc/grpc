@@ -48,10 +48,23 @@ class ServerContextTestSpouse {
 
   // Inject client metadata to the ServerContext for the test. The test spouse
   // must be alive when ServerContext::client_metadata is called.
-  void AddClientMetadata(const grpc::string& key, const grpc::string& value);
+  void AddClientMetadata(const grpc::string& key, const grpc::string& value) {
+    client_metadata_storage_.insert(
+        std::pair<grpc::string, grpc::string>(key, value));
+    ctx_->client_metadata_.map()->clear();
+    for (auto iter = client_metadata_storage_.begin();
+         iter != client_metadata_storage_.end(); ++iter) {
+      ctx_->client_metadata_.map()->insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              iter->first.c_str(),
+              grpc::string_ref(iter->second.data(), iter->second.size())));
+    }
+  }
+
   std::multimap<grpc::string, grpc::string> GetInitialMetadata() const {
     return ctx_->initial_metadata_;
   }
+
   std::multimap<grpc::string, grpc::string> GetTrailingMetadata() const {
     return ctx_->trailing_metadata_;
   }

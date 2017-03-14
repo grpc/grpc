@@ -45,7 +45,7 @@ def _args():
         '--server_host',
         help='the host to which to connect',
         type=str,
-        default="127.0.0.1")
+        default="localhost")
     parser.add_argument(
         '--server_port', help='the port to which to connect', type=int)
     parser.add_argument(

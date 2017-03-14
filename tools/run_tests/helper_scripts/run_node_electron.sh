@@ -34,7 +34,7 @@ nvm use 6
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
 test_directory='src/node/test'
 timeout=8000

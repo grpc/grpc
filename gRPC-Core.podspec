@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.2.0-dev'
+  version = '1.3.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -162,6 +162,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -200,6 +201,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/env.h',
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/spinlock.h',
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
@@ -678,6 +680,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/env.h',
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
+                              'src/core/lib/support/spinlock.h',
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
@@ -884,7 +887,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|
@@ -913,7 +917,7 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.c',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port_posix.c',
+                      'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
 end

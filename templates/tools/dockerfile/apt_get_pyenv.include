@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y ${'\\'}
 
 # Install Pyenv and dev Python versions 3.5 and 3.6
 RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+ENV PATH /root/.pyenv/bin:$PATH
+RUN eval "$(pyenv init -)"
+RUN eval "$(pyenv virtualenv-init -)"
 RUN pyenv update
 RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev

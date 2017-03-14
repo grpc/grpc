@@ -104,7 +104,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
 static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
   int i;
   for (i = 0; i < num_pollsets; i++) {
-    pollsets[i].pollset = gpr_malloc(grpc_pollset_size());
+    pollsets[i].pollset = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].pollset, &pollsets[i].mu);
   }
 }

@@ -118,8 +118,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;

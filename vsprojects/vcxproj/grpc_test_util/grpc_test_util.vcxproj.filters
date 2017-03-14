@@ -22,7 +22,7 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
@@ -49,19 +49,16 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
@@ -438,6 +435,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\load_reporting.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -518,7 +518,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
@@ -552,6 +552,9 @@
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">

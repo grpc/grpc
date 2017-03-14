@@ -45,6 +45,7 @@
 #include "src/core/ext/client_channel/parse_address.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -58,8 +59,6 @@ typedef struct {
   grpc_lb_addresses *addresses;
   /** channel args */
   grpc_channel_args *channel_args;
-  /** mutex guarding the rest of the state */
-  gpr_mu mu;
   /** have we published? */
   bool published;
   /** pending next completion, or NULL */
@@ -73,48 +72,43 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                               sockaddr_resolver *r);
 
-static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
-static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *r);
-static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                          grpc_channel_args **target_result,
-                          grpc_closure *on_complete);
+static void sockaddr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
+static void sockaddr_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                              grpc_resolver *r);
+static void sockaddr_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
+                                 grpc_channel_args **target_result,
+                                 grpc_closure *on_complete);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
-    sockaddr_destroy, sockaddr_shutdown, sockaddr_channel_saw_error,
-    sockaddr_next};
+    sockaddr_destroy, sockaddr_shutdown_locked,
+    sockaddr_channel_saw_error_locked, sockaddr_next_locked};
 
-static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
-                              grpc_resolver *resolver) {
+static void sockaddr_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
     grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
   }
-  gpr_mu_unlock(&r->mu);
 }
 
-static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *resolver) {
+static void sockaddr_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                              grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
   r->published = false;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
-  gpr_mu_unlock(&r->mu);
 }
 
-static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                          grpc_channel_args **target_result,
-                          grpc_closure *on_complete) {
+static void sockaddr_next_locked(grpc_exec_ctx *exec_ctx,
+                                 grpc_resolver *resolver,
+                                 grpc_channel_args **target_result,
+                                 grpc_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_result = target_result;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
-  gpr_mu_unlock(&r->mu);
 }
 
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -131,7 +125,6 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
-  gpr_mu_destroy(&r->mu);
   grpc_lb_addresses_destroy(exec_ctx, r->addresses);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
@@ -197,12 +190,10 @@ static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
   /* Instantiate resolver. */
-  sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
-  memset(r, 0, sizeof(*r));
+  sockaddr_resolver *r = gpr_zalloc(sizeof(sockaddr_resolver));
   r->addresses = addresses;
   r->channel_args = grpc_channel_args_copy(args->args);
-  gpr_mu_init(&r->mu);
-  grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
+  grpc_resolver_init(&r->base, &sockaddr_resolver_vtable, args->combiner);
   return &r->base;
 }
 

@@ -31,6 +31,7 @@
 import argparse
 
 import grpc
+import time
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import messages_pb2
 
@@ -75,6 +76,7 @@ def _goaway(stub):
     first_response = stub.UnaryCall(_SIMPLE_REQUEST)
     _validate_payload_type_and_length(first_response, messages_pb2.COMPRESSABLE,
                                       _RESPONSE_SIZE)
+    time.sleep(1)
     second_response = stub.UnaryCall(_SIMPLE_REQUEST)
     _validate_payload_type_and_length(second_response,
                                       messages_pb2.COMPRESSABLE, _RESPONSE_SIZE)

@@ -38,6 +38,10 @@
 
 static NSString * const kLocalCleartextHost = @"localhost:5050";
 
+// The Protocol Buffers encoding overhead of local interop server. Acquired
+// by experiment. Adjust this when server's proto file changes.
+static int32_t kLocalInteropServerOverhead = 10;
+
 /** Tests in InteropTests.m, sending the RPCs to a local cleartext server. */
 @interface InteropTestsLocalCleartext : InteropTests
 @end
@@ -49,7 +53,7 @@ static NSString * const kLocalCleartextHost = @"localhost:5050";
 }
 
 - (int32_t)encodingOverhead {
-  return 10; // bytes
+  return kLocalInteropServerOverhead; // bytes
 }
 
 - (void)setUp {

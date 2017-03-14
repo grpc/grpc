@@ -153,6 +153,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
@@ -181,7 +182,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h" />
@@ -193,6 +194,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -315,7 +317,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
@@ -333,15 +335,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>

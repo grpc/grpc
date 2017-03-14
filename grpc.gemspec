@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.1.0'
+  s.add_dependency 'google-protobuf', '~> 3.1'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -35,7 +35,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.9'
   s.add_development_dependency 'rake',               '~> 10.4'
-  s.add_development_dependency 'rake-compiler',      '~> 0.9'
+  s.add_development_dependency 'rake-compiler',      '~> 1.0'
   s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
   s.add_development_dependency 'rspec',              '~> 3.2'
   s.add_development_dependency 'rubocop',            '~> 0.30.0'
@@ -87,6 +87,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/env.h )
   s.files += %w( src/core/lib/support/mpscq.h )
   s.files += %w( src/core/lib/support/murmur_hash.h )
+  s.files += %w( src/core/lib/support/spinlock.h )
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )
   s.files += %w( src/core/lib/support/string_windows.h )
@@ -143,6 +144,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
   s.files += %w( include/grpc/grpc_security_constants.h )
+  s.files += %w( include/grpc/load_reporting.h )
   s.files += %w( include/grpc/slice.h )
   s.files += %w( include/grpc/slice_buffer.h )
   s.files += %w( include/grpc/status.h )

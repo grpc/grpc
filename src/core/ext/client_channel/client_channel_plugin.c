@@ -39,6 +39,7 @@
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/http_proxy.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
@@ -63,7 +64,7 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
     }
   }
   char *default_authority = grpc_get_default_authority(
-      grpc_channel_stack_builder_get_target(builder));
+      exec_ctx, grpc_channel_stack_builder_get_target(builder));
   if (default_authority != NULL) {
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
@@ -82,6 +83,7 @@ void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
   grpc_proxy_mapper_registry_init();
+  grpc_register_http_proxy_mapper();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);

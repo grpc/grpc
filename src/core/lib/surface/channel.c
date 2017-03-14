@@ -128,7 +128,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         }
         channel->default_authority = grpc_mdelem_from_slices(
             exec_ctx, GRPC_MDSTR_AUTHORITY,
-            grpc_slice_from_copied_string(args->args[i].value.string));
+            grpc_slice_intern(
+                grpc_slice_from_static_string(args->args[i].value.string)));
       }
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
@@ -144,7 +145,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         } else {
           channel->default_authority = grpc_mdelem_from_slices(
               exec_ctx, GRPC_MDSTR_AUTHORITY,
-              grpc_slice_from_copied_string(args->args[i].value.string));
+              grpc_slice_intern(
+                  grpc_slice_from_static_string(args->args[i].value.string)));
         }
       }
     } else if (0 == strcmp(args->args[i].key,

@@ -540,7 +540,8 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
         grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure, error);
+    grpc_closure_sched(exec_ctx, &calld->kill_zombie_closure,
+                       GRPC_ERROR_REF(error));
     return;
   }
 
@@ -879,7 +880,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
 
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
@@ -1015,11 +1016,9 @@ void grpc_server_register_non_listening_completion_queue(
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
-  grpc_server *server = gpr_malloc(sizeof(grpc_server));
+  grpc_server *server = gpr_zalloc(sizeof(grpc_server));
 
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
-
-  memset(server, 0, sizeof(grpc_server));
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
@@ -1069,8 +1068,7 @@ void *grpc_server_register_method(
             flags);
     return NULL;
   }
-  m = gpr_malloc(sizeof(registered_method));
-  memset(m, 0, sizeof(*m));
+  m = gpr_zalloc(sizeof(registered_method));
   m->method = gpr_strdup(method);
   m->host = gpr_strdup(host);
   m->next = server->registered_methods;
@@ -1174,8 +1172,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   if (num_registered_methods > 0) {
     slots = 2 * num_registered_methods;
     alloc = sizeof(channel_registered_method) * slots;
-    chand->registered_methods = gpr_malloc(alloc);
-    memset(chand->registered_methods, 0, alloc);
+    chand->registered_methods = gpr_zalloc(alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
       grpc_slice host;
       bool has_host;
@@ -1198,7 +1195,9 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       crm->server_registered_method = rm;
       crm->flags = rm->flags;
       crm->has_host = has_host;
-      crm->host = host;
+      if (has_host) {
+        crm->host = host;
+      }
       crm->method = method;
     }
     GPR_ASSERT(slots <= UINT32_MAX);

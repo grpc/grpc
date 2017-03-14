@@ -41,6 +41,10 @@
 
 static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
+// The Protocol Buffers encoding overhead of remote interop server. Acquired
+// by experiment. Adjust this when server's proto file changes.
+static int32_t kRemoteInteropServerOverhead = 12;
+
 /** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
 @interface InteropTestsRemoteWithCronet : InteropTests
 @end
@@ -49,6 +53,10 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
 + (NSString *)host {
   return kRemoteSSLHost;
+}
+
+- (int32_t)encodingOverhead {
+  return kRemoteInteropServerOverhead; // bytes
 }
 
 @end
