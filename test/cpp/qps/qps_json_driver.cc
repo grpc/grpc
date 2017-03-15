@@ -31,6 +31,7 @@
  *
  */
 
+#include <iostream>
 #include <memory>
 #include <set>
 
