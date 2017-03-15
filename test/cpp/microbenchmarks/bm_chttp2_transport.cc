@@ -148,15 +148,20 @@ class Stream {
     GRPC_STREAM_REF_INIT(&refcount_, 1, DoNothing, nullptr, "test_stream");
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
+    arena_ = gpr_arena_create(4096);
   }
 
-  ~Stream() { gpr_free(stream_); }
+  ~Stream() { gpr_free(stream_);gpr_arena_destroy(arena_); }
 
-  void Init() {
+  void Init(benchmark::State& state) {
     memset(stream_, 0, stream_size_);
+    if ((state.iterations() & 0xffff) == 0) {
+      gpr_arena_destroy(arena_);
+      arena_ = gpr_arena_create(4096);
+    }
     grpc_transport_init_stream(f_->exec_ctx(), f_->transport(),
                                static_cast<grpc_stream *>(stream_), &refcount_,
-                               NULL);
+                               NULL, arena_);
   }
 
   void DestroyThen(grpc_closure *closure) {
@@ -172,6 +177,7 @@ class Stream {
  private:
   Fixture *f_;
   grpc_stream_refcount refcount_;
+  gpr_arena *arena_;
   size_t stream_size_;
   void *stream_;
 };
@@ -215,7 +221,7 @@ static void BM_StreamCreateDestroy(benchmark::State &state) {
   Stream s(&f);
   grpc_closure *next = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (!state.KeepRunning()) return;
-    s.Init();
+    s.Init(state);
     s.DestroyThen(next);
   });
   grpc_closure_run(f.exec_ctx(), next, GRPC_ERROR_NONE);
@@ -268,7 +274,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   f.FlushExecCtx();
   start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (!state.KeepRunning()) return;
-    s.Init();
+    s.Init(state);
     memset(&op, 0, sizeof(op));
     op.on_complete = done;
     op.send_initial_metadata = &b;
@@ -289,7 +295,7 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
-  s.Init();
+  s.Init(state);
   grpc_transport_stream_op op;
   grpc_closure *c =
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
