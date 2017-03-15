@@ -438,8 +438,7 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   grpc_call *c = call;
   grpc_channel *channel = c->channel;
-  grpc_channel_update_call_size_estimate(channel,
-                                         gpr_arena_destroy(c->arena));
+  grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
 

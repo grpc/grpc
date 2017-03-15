@@ -177,6 +177,7 @@ struct op_storage {
 };
 
 struct stream_obj {
+  gpr_arena *arena;
   struct op_and_state *oas;
   grpc_transport_stream_op *curr_op;
   grpc_cronet_transport *curr_ct;
@@ -451,15 +452,18 @@ static void on_response_headers_received(
   gpr_mu_lock(&s->mu);
   memset(&s->state.rs.initial_metadata, 0,
          sizeof(s->state.rs.initial_metadata));
-  grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.initial_metadata);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.initial_metadata,
+                                            s->arena);
   for (size_t i = 0; i < headers->count; i++) {
-    grpc_chttp2_incoming_metadata_buffer_add(
-        &s->state.rs.initial_metadata,
-        grpc_mdelem_from_slices(
-            &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
-                           headers->headers[i].key)),
-            grpc_slice_intern(
-                grpc_slice_from_static_string(headers->headers[i].value))));
+    GRPC_LOG_IF_ERROR(
+        "on_response_headers_received",
+        grpc_chttp2_incoming_metadata_buffer_add(
+            &exec_ctx, &s->state.rs.initial_metadata,
+            grpc_mdelem_from_slices(
+                &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
+                               headers->headers[i].key)),
+                grpc_slice_intern(grpc_slice_from_static_string(
+                    headers->headers[i].value)))));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
   if (!(s->state.state_op_done[OP_CANCEL_ERROR] ||
@@ -549,17 +553,20 @@ static void on_response_trailers_received(
   memset(&s->state.rs.trailing_metadata, 0,
          sizeof(s->state.rs.trailing_metadata));
   s->state.rs.trailing_metadata_valid = false;
-  grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.trailing_metadata);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.trailing_metadata,
+                                            s->arena);
   for (size_t i = 0; i < trailers->count; i++) {
     CRONET_LOG(GPR_DEBUG, "trailer key=%s, value=%s", trailers->headers[i].key,
                trailers->headers[i].value);
-    grpc_chttp2_incoming_metadata_buffer_add(
-        &s->state.rs.trailing_metadata,
-        grpc_mdelem_from_slices(
-            &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
-                           trailers->headers[i].key)),
-            grpc_slice_intern(
-                grpc_slice_from_static_string(trailers->headers[i].value))));
+    GRPC_LOG_IF_ERROR(
+        "on_response_trailers_received",
+        grpc_chttp2_incoming_metadata_buffer_add(
+            &exec_ctx, &s->state.rs.trailing_metadata,
+            grpc_mdelem_from_slices(
+                &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(
+                               trailers->headers[i].key)),
+                grpc_slice_intern(grpc_slice_from_static_string(
+                    trailers->headers[i].value)))));
     s->state.rs.trailing_metadata_valid = true;
     if (0 == strcmp(trailers->headers[i].key, "grpc-status") &&
         0 != strcmp(trailers->headers[i].value, "0")) {
@@ -1174,7 +1181,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
 
 static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_stream *gs, grpc_stream_refcount *refcount,
-                       const void *server_data) {
+                       const void *server_data, gpr_arena *arena) {
   stream_obj *s = (stream_obj *)gs;
   memset(&s->storage, 0, sizeof(s->storage));
   s->storage.head = NULL;
@@ -1194,6 +1201,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   s->curr_gs = gs;
   s->curr_ct = (grpc_cronet_transport *)gt;
+  s->arena = arena;
 
   gpr_mu_init(&s->mu);
   return 0;
@@ -1238,9 +1246,11 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                           grpc_stream *gs, void *and_free_memory) {
+                           grpc_stream *gs,
+                           grpc_closure *then_schedule_closure) {
   stream_obj *s = (stream_obj *)gs;
   GRPC_ERROR_UNREF(s->state.cancel_error);
+  grpc_closure_sched(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {}
