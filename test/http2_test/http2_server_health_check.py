@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,27 +27,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM golang:1.5
+import argparse
+import hyper
+import sys
 
-# Using login shell removes Go from path, so we add it.
-RUN ln -s /usr/local/go/bin/go /usr/local/bin
-
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
-
-RUN pip install twisted h2 hyper
-
-# Define the default command.
-CMD ["bash"]
+# Utility to healthcheck the http2 server. Used when starting the server to
+# verify that the server is live before tests begin.
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--server_host', type=str, default='localhost')
+  parser.add_argument('--server_port', type=int, default=8080)
+  args = parser.parse_args()
+  server_host = args.server_host
+  server_port = args.server_port
+  conn = hyper.HTTP20Connection('%s:%d' % (server_host, server_port))
+  conn.request('POST', '/grpc.testing.TestService/UnaryCall')
+  resp = conn.get_response()
+  if resp.headers.get('grpc-encoding') is None:
+    sys.exit(1)
+  else:
+    sys.exit(0)
