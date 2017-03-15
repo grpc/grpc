@@ -437,9 +437,10 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
 static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   grpc_call *c = call;
-  grpc_channel_update_call_size_estimate(c->channel,
+  grpc_channel *channel = c->channel;
+  grpc_channel_update_call_size_estimate(channel,
                                          gpr_arena_destroy(c->arena));
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
+  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
 
 static void set_status_value_directly(grpc_status_code status, void *dest);
