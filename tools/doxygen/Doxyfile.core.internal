@@ -1228,6 +1228,8 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.c \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/support/alloc.c \
+src/core/lib/support/arena.c \
+src/core/lib/support/arena.h \
 src/core/lib/support/avl.c \
 src/core/lib/support/backoff.c \
 src/core/lib/support/backoff.h \
