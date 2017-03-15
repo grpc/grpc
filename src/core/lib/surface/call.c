@@ -97,6 +97,8 @@ typedef enum {
   STATUS_SOURCE_COUNT
 } status_source;
 
+typedef enum { RECV_IDLE, RECV_REQUESTED, RECV_READY } recv_state;
+
 typedef struct {
   bool is_set;
   grpc_error *error;
@@ -155,8 +157,8 @@ struct grpc_call {
   bool sending_message;
   bool sent_final_op;
   bool received_initial_metadata;
-  bool receiving_message;
   bool requested_final_op;
+  recv_state recv_state;
   gpr_atm any_ops_sent_atm;
   gpr_atm received_final_op_atm;
 
@@ -1637,7 +1639,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (call->receiving_message) {
+        case GRPC_OP_RECV_MESSAGE:
+        if (call->recv_state != RECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }

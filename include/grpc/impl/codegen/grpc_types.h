@@ -301,6 +301,14 @@ typedef enum grpc_call_error {
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
+/* Read flags: */
+/** Don't finish a read until all bytes from the message are present */
+#define GRPC_READ_ENTIRE_MESSAGE (0x00000100u)
+/** Read into the provided slices (don't append to the slice buffer) */
+#define GRPC_READ_INTO_SLICES (0x00000200u)
+/** Mask of all valid flags. */
+#define GRPC_READ_USED_MASK (GRPC_READ_ENTIRE_MESSAGE | GRPC_READ_INTO_SLICES)
+
 /* Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
