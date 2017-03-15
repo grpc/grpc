@@ -36,9 +36,8 @@ class ChannelClosingClientController < ClientControl::ClientController::Service
     @ch = ch
   end
   def shutdown(_, _)
-    STDERR.puts "about to close channel"
     @ch.close
-    STDERR.puts "just closed channel"
+    ClientControl::Void.new
   end
 end
 
@@ -63,12 +62,13 @@ def main
     srv.run
   end
 
-  # this should break out once the channel is closed
+  # this should break out with an exception once the channel is closed
   loop do
-    state = ch.connectivity_state(true)
     begin
+      state = ch.connectivity_state(true)
       ch.watch_connectivity_state(state, Time.now + 360)
-    rescue RuntimeException => e
+    rescue RuntimeError => e
+      STDERR.puts "(expected) error occurred: #{e.inspect}"
       break
     end
   end
