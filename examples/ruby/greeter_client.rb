@@ -40,39 +40,11 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 require 'grpc'
 require 'helloworld_services_pb'
 
-$int_count = 0
-
-def shut_down_term
-  puts "term sig"
-  $int_count += 1
-  if $int_count > 4
-    exit
-  end
-end
-
-def shut_down_kill
-  puts "kill sig"
-  $int_count += 1
-  if $int_count > 4
-    exit
-  end
-end
-
-
 def main
   stub = Helloworld::Greeter::Stub.new('localhost:50051', :this_channel_is_insecure)
   user = ARGV.size > 0 ?  ARGV[0] : 'world'
-  Signal.trap("TERM") do
-    shut_down_term
-  end
-  Signal.trap("INT") do
-    shut_down_kill
-  end
-  loop do
-    message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
-    p "Greeting: #{message}"
-    sleep 4
-  end
+  message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
+  p "Greeting: #{message}"
 end
 
 main
