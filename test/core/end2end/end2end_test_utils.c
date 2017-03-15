@@ -39,10 +39,10 @@
 
 const char *get_host_override_string(const char *str,
                                      grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    return str;
-  } else {
+  if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_AUTHORITY_HEADER) {
     return NULL;
+  } else {
+    return str;
   }
 }
 
@@ -59,7 +59,8 @@ const grpc_slice *get_host_override_slice(const char *str,
 
 void validate_host_override_string(const char *pattern, grpc_slice str,
                                    grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
+  if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_AUTHORITY_HEADER) {
+    return;
   }
+  GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
 }

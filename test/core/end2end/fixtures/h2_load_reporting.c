@@ -108,8 +108,7 @@ void chttp2_tear_down_load_reporting(grpc_end2end_test_fixture *f) {
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack+load_reporting",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
      chttp2_create_fixture_load_reporting, chttp2_init_client_load_reporting,
      chttp2_init_server_load_reporting, chttp2_tear_down_load_reporting},
 };

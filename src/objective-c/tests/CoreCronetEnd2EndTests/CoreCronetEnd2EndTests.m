@@ -163,7 +163,8 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_DOES_NOT_SUPPORT_AUTHORITY_HEADER,
      chttp2_create_fixture_secure_fullstack,
      cronet_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,

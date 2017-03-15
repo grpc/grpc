@@ -190,10 +190,9 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
 }
 
 void authority_not_supported(grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    return;
+  if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_AUTHORITY_HEADER) {
+    test_with_authority_header(config);
   }
-  test_with_authority_header(config);
 }
 
 void authority_not_supported_pre_init(void) {}
