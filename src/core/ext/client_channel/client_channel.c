@@ -1138,8 +1138,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   add_waiting_locked(calld, op);
 }
 
-static void on_complete_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                               grpc_error *error) {
+static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
   if (calld->retry_throttle_data != NULL) {
@@ -1170,7 +1169,7 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (op->recv_trailing_metadata != NULL) {
     GPR_ASSERT(op->on_complete != NULL);
     calld->original_on_complete = op->on_complete;
-    grpc_closure_init(&calld->on_complete, on_complete_locked, elem,
+    grpc_closure_init(&calld->on_complete, on_complete, elem,
                       grpc_schedule_on_exec_ctx);
     op->on_complete = &calld->on_complete;
   }
