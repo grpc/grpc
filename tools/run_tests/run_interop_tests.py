@@ -678,23 +678,32 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT,
                            '--use_tls=%s' % ('false' if insecure else 'true')]))
   environ = language.global_env()
+  docker_args = ['--name=%s' % container_name]
   if language.safename == 'http2':
     # we are running the http2 interop server. Open next N ports beginning
     # with the server port. These ports are used for http2 interop test
     # (one test case per port).
-    port_args = list(
+    docker_args += list(
         itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
                                       for i in range(
                                           len(_HTTP2_BADSERVER_TEST_CASES))))
+    docker_args += [
+        '--health-cmd=python test/http2_test/http2_server_health_check.py '
+        '--server_host=%s --server_port=%d'
+        % ('localhost', _DEFAULT_SERVER_PORT),
+        '--health-interval=1s',
+        '--health-retries=5',
+        '--health-timeout=1s',
+    ]
+
   else:
-    port_args = ['-p', str(_DEFAULT_SERVER_PORT)]
+    docker_args += ['-p', str(_DEFAULT_SERVER_PORT)]
 
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
                                       environ=environ,
-                                      docker_args=port_args +
-                                        ['--name=%s' % container_name])
+                                      docker_args=docker_args)
   if manual_cmd_log is not None:
       manual_cmd_log.append(manual_cmdline(docker_cmdline))
   server_job = jobset.JobSpec(
@@ -881,7 +890,8 @@ languages = set(_LANGUAGES[l]
 languages_http2_badserver_interop = set()
 if args.http2_badserver_interop:
   languages_http2_badserver_interop = set(
-      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS)
+      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS
+      if 'all' in args.language or l in args.language)
 
 http2Interop = Http2Client() if args.http2_interop else None
 http2InteropServer = Http2Server() if args.http2_badserver_interop else None
@@ -946,6 +956,7 @@ try:
                           manual_cmd_log=server_manual_cmd_log)
     if not args.manual_run:
       job = dockerjob.DockerJob(spec)
+      job.wait_for_healthy(timeout_seconds=15)
       server_jobs[lang] = job
       http2_badserver_ports = tuple([
           job.mapped_port(_DEFAULT_SERVER_PORT + i)
