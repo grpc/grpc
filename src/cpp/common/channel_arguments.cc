@@ -101,8 +101,10 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == mutator_arg.type &&
         grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+      GPR_ASSERT(!replaced);
       it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
       it->value.pointer = mutator_arg.value.pointer;
+      replaced = true;
     }
   }
   grpc_exec_ctx_finish(&exec_ctx);
