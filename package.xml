@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-01-13</date>
+ <date>2017-03-01</date>
  <time>16:06:07</time>
  <version>
-  <release>1.2.0dev</release>
-  <api>1.2.0dev</api>
+  <release>1.3.0dev</release>
+  <api>1.3.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,8 +22,8 @@
  </stability>
  <license>BSD</license>
  <notes>
-- PHP Proto3 adoption #8179
-- Various bug fixes     
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1278,8 +1278,8 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>1.1.0dev</release>
-    <api>1.1.0dev</api>
+    <release>1.1.0RC1</release>
+    <api>1.1.0RC1</api>
    </version>
    <stability>
     <release>beta</release>
@@ -1289,7 +1289,39 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - PHP Proto3 adoption #8179
-- Various bug fixes     
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0</release>
+    <api>1.1.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2017-01-31</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0RC1</release>
+    <api>1.2.0RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
    </notes>
   </release>
  </changelog>

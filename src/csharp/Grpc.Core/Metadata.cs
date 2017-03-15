@@ -32,12 +32,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -242,7 +240,6 @@ namespace Grpc.Core
         /// </summary>
         public class Entry
         {
-            private static readonly Encoding Encoding = Encoding.ASCII;
             private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
 
             readonly string key;
@@ -306,7 +303,7 @@ namespace Grpc.Core
                 {
                     if (valueBytes == null)
                     {
-                        return Encoding.GetBytes(value);
+                        return MarshalUtils.GetBytesASCII(value);
                     }
 
                     // defensive copy to guarantee immutability
@@ -324,7 +321,7 @@ namespace Grpc.Core
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value ?? Encoding.GetString(valueBytes);
+                    return value ?? MarshalUtils.GetStringASCII(valueBytes);
                 }
             }
 
@@ -358,7 +355,7 @@ namespace Grpc.Core
             /// </summary>
             internal byte[] GetSerializedValueUnsafe()
             {
-                return valueBytes ?? Encoding.GetBytes(value);
+                return valueBytes ?? MarshalUtils.GetBytesASCII(value);
             }
 
             /// <summary>
@@ -371,7 +368,7 @@ namespace Grpc.Core
                 {
                     return new Entry(key, null, valueBytes);
                 }
-                return new Entry(key, Encoding.GetString(valueBytes), null);
+                return new Entry(key, MarshalUtils.GetStringASCII(valueBytes), null);
             }
 
             private static string NormalizeKey(string key)

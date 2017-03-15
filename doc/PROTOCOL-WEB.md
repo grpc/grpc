@@ -94,8 +94,6 @@ the response stream needs to be text encoded e.g. when XHR is used or due
 to security policies with XHR
   * Accept: application/grpc-web-text
 2. The default text encoding is base64
-  * Text encoding may be specified with Content-Type or Accept headers as
-      * application/grpc-web-text-base64
   * Note that “Content-Transfer-Encoding: base64” should not be used.
   Due to in-stream base64 padding when delimiting messages, the entire
   response body is not necessarily a valid base64-encoded entity
