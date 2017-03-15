@@ -7,15 +7,11 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "client_control.DoEchoRpcRequest" do
     optional :request, :string, 1
   end
-  add_message "client_control.CreateClientStubRequest" do
-    optional :server_address, :string, 1
-  end
   add_message "client_control.Void" do
   end
 end
 
 module ClientControl
   DoEchoRpcRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("client_control.DoEchoRpcRequest").msgclass
-  CreateClientStubRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("client_control.CreateClientStubRequest").msgclass
   Void = Google::Protobuf::DescriptorPool.generated_pool.lookup("client_control.Void").msgclass
 end

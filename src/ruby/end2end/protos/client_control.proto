@@ -33,16 +33,11 @@ package client_control;
 
 service ClientController {
   rpc DoEchoRpc (DoEchoRpcRequest) returns (Void) {}
-  rpc CreateClientStub(CreateClientStubRequest) returns (Void) {}
   rpc Shutdown(Void) returns (Void) {}
 }
 
 message DoEchoRpcRequest {
   string request = 1;
-}
-
-message CreateClientStubRequest {
-  string server_address = 1;
 }
 
 message Void{}

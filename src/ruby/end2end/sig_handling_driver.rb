@@ -32,38 +32,19 @@
 # smoke test for a grpc-using app that receives and
 # handles process-ending signals
 
-this_dir = File.expand_path(File.dirname(__FILE__))
-protos_lib_dir = File.join(this_dir, 'lib')
-grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
-$LOAD_PATH.unshift(grpc_lib_dir) unless $LOAD_PATH.include?(grpc_lib_dir)
-$LOAD_PATH.unshift(protos_lib_dir) unless $LOAD_PATH.include?(protos_lib_dir)
-$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
-
-require 'grpc'
-require 'echo_server'
-require 'client_control_services_pb'
+require_relative './end2end_common'
 
 def main
-  this_dir = File.expand_path(File.dirname(__FILE__))
-  lib_dir = File.join(File.dirname(this_dir), 'lib')
-
-  server_port = '50051'
   STDERR.puts "start server"
-  server_runner = ServerRunner.new(server_port)
-  server_runner.run
+  server_runner = ServerRunner.new
+  server_port = server_runner.run
 
   sleep 1
-
-  client_control_port = '50052'
 
   STDERR.puts "start client"
-  client_path = File.join(this_dir, "sig_handling_client.rb")
-  client_pid = Process.spawn(RbConfig.ruby, client_path, "--client_control_port=#{client_control_port}")
-  control_stub = ClientControl::ClientController::Stub.new("localhost:#{client_control_port}", :this_channel_is_insecure)
+  control_stub, client_pid = start_client("sig_handling_client.rb", server_port)
 
   sleep 1
-
-  control_stub.create_client_stub(ClientControl::CreateClientStubRequest.new(server_address: "localhost:#{server_port}"))
 
   count = 0
   while count < 5
@@ -73,16 +54,7 @@ def main
     count += 1
   end
 
-  control_stub.shutdown(ClientControl::Void.new)
-  Process.wait(client_pid)
-
-  client_exit_code = $?.exitstatus
-
-  if client_exit_code != 0
-    raise "term sig test failure: client exit code: #{client_exit_code}"
-  end
-
-  server_runner.stop
+  cleanup(control_stub, server_runner)
 end
 
 main

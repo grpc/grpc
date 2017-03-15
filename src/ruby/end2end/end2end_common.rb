@@ -38,6 +38,10 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
 require 'echo_services_pb'
+require 'client_control_services_pb'
+require 'socket'
+require 'optparse'
+require 'thread'
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class EchoServerImpl < Echo::EchoServer::Service
@@ -48,21 +52,51 @@ class EchoServerImpl < Echo::EchoServer::Service
 end
 
 class ServerRunner
-  def initialize(port)
-    @port = port
+  def initialize
   end
   def run
     @srv = GRPC::RpcServer.new
+    port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+    @srv.handle(EchoServerImpl)
+
     @thd = Thread.new do
-      @srv.add_http2_port("localhost:#{@port}", :this_port_is_insecure)
-      @srv.handle(EchoServerImpl)
       @srv.run
     end
     @srv.wait_till_running
+    port
   end
   def stop
     @srv.stop
     @thd.join
     raise "server not stopped" unless @srv.stopped?
   end
+end
+
+def start_client(client_main, server_port)
+  this_dir = File.expand_path(File.dirname(__FILE__))
+
+  tmp_server = TCPServer.new(0)
+  client_control_port = tmp_server.local_address.ip_port
+  tmp_server.close
+
+  client_path = File.join(this_dir, client_main)
+  client_pid = Process.spawn(RbConfig.ruby, client_path,
+			     "--client_control_port=#{client_control_port}",
+			     "--server_port=#{server_port}")
+  sleep 1
+  control_stub = ClientControl::ClientController::Stub.new("localhost:#{client_control_port}", :this_channel_is_insecure)
+  return control_stub, client_pid
+end
+
+def cleanup(control_stub, server_runner)
+  control_stub.shutdown(ClientControl::Void.new)
+  Process.wait(client_pid)
+
+  client_exit_code = $?.exitstatus
+
+  if client_exit_code != 0
+    raise "term sig test failure: client exit code: #{client_exit_code}"
+  end
+
+  server_runner.stop
 end

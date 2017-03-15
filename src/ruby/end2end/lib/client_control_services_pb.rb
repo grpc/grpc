@@ -45,7 +45,6 @@ module ClientControl
       self.service_name = 'client_control.ClientController'
 
       rpc :DoEchoRpc, DoEchoRpcRequest, Void
-      rpc :CreateClientStub, CreateClientStubRequest, Void
       rpc :Shutdown, Void, Void
     end
 

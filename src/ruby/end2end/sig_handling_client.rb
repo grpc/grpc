@@ -29,30 +29,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-this_dir = File.expand_path(File.dirname(__FILE__))
-protos_lib_dir = File.join(this_dir, 'lib')
-grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
-$LOAD_PATH.unshift(grpc_lib_dir) unless $LOAD_PATH.include?(grpc_lib_dir)
-$LOAD_PATH.unshift(protos_lib_dir) unless $LOAD_PATH.include?(protos_lib_dir)
-$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
-
-require 'grpc'
-require 'echo_services_pb'
-require 'client_control_services_pb'
-require 'optparse'
-require 'thread'
+require_relative './end2end_common'
 
 class SigHandlingClientController < ClientControl::ClientController::Service
-  def initialize(srv)
+  def initialize(srv, stub)
     @srv = srv
+    @stub = stub
   end
   def do_echo_rpc(req, _)
     response = @stub.echo(Echo::EchoRequest.new(request: req.request))
     raise "bad response" unless response.response == req.request
-    ClientControl::Void.new
-  end
-  def create_client_stub(req, _)
-    @stub = Echo::EchoServer::Stub.new(req.server_address, :this_channel_is_insecure)
     ClientControl::Void.new
   end
   def shutdown(_, _)
@@ -68,9 +54,13 @@ end
 
 def main
   client_control_port = ''
+  server_port = ''
   OptionParser.new do |opts|
     opts.on('--client_control_port=P', String) do |p|
       client_control_port = p
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
     end
   end.parse!
 
@@ -83,8 +73,9 @@ def main
   end
 
   srv = GRPC::RpcServer.new
-  srv.add_http2_port("localhost:#{client_control_port}", :this_port_is_insecure)
-  srv.handle(SigHandlingClientController.new(srv))
+  srv.add_http2_port("0.0.0.0:#{client_control_port}", :this_port_is_insecure)
+  stub = Echo::EchoServer::Stub.new("localhost:#{server_port}", :this_channel_is_insecure)
+  srv.handle(SigHandlingClientController.new(srv, stub))
   srv.run
 end
 
