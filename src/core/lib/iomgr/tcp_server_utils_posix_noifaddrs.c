@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifndef GRPC_HAVE_IFADDRS
+#if defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS)
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
@@ -46,4 +46,4 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
 
 bool grpc_tcp_server_have_ifaddrs(void) { return false; }
 
-#endif /* ifndef GRPC_HAVE_IFADDRS */
+#endif /* defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS) */

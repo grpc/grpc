@@ -44,10 +44,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -69,56 +67,6 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
-
-#define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
-
-static gpr_once s_init_max_accept_queue_size;
-static int s_max_accept_queue_size;
-
-/* the overall server */
-struct grpc_tcp_server {
-  gpr_refcount refs;
-  /* Called whenever accept() succeeds on a server port. */
-  grpc_tcp_server_cb on_accept_cb;
-  void *on_accept_cb_arg;
-
-  gpr_mu mu;
-
-  /* active port count: how many ports are actually still listening */
-  size_t active_ports;
-  /* destroyed port count: how many ports are completely destroyed */
-  size_t destroyed_ports;
-
-  /* is this server shutting down? */
-  bool shutdown;
-  /* have listeners been shutdown? */
-  bool shutdown_listeners;
-  /* use SO_REUSEPORT */
-  bool so_reuseport;
-  /* expand wildcard addresses to a list of all local addresses */
-  bool expand_wildcard_addrs;
-
-  /* linked list of server ports */
-  grpc_tcp_listener *head;
-  grpc_tcp_listener *tail;
-  unsigned nports;
-
-  /* List of closures passed to shutdown_starting_add(). */
-  grpc_closure_list shutdown_starting;
-
-  /* shutdown callback */
-  grpc_closure *shutdown_complete;
-
-  /* all pollsets interested in new connections */
-  grpc_pollset **pollsets;
-  /* number of pollsets in the pollsets array */
-  size_t pollset_count;
-
-  /* next pollset to assign a channel to */
-  gpr_atm next_pollset_to_assign;
-
-  grpc_resource_quota *resource_quota;
-};
 
 static gpr_once check_init = GPR_ONCE_INIT;
 static bool has_so_reuseport = false;
@@ -278,99 +226,6 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   }
 }
 
-/* get max listen queue size on linux */
-static void init_max_accept_queue_size(void) {
-  int n = SOMAXCONN;
-  char buf[64];
-  FILE *fp = fopen("/proc/sys/net/core/somaxconn", "r");
-  if (fp == NULL) {
-    /* 2.4 kernel. */
-    s_max_accept_queue_size = SOMAXCONN;
-    return;
-  }
-  if (fgets(buf, sizeof buf, fp)) {
-    char *end;
-    long i = strtol(buf, &end, 10);
-    if (i > 0 && i <= INT_MAX && end && *end == 0) {
-      n = (int)i;
-    }
-  }
-  fclose(fp);
-  s_max_accept_queue_size = n;
-
-  if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    gpr_log(GPR_INFO,
-            "Suspiciously small accept queue (%d) will probably lead to "
-            "connection drops",
-            s_max_accept_queue_size);
-  }
-}
-
-static int get_max_accept_queue_size(void) {
-  gpr_once_init(&s_init_max_accept_queue_size, init_max_accept_queue_size);
-  return s_max_accept_queue_size;
-}
-
-/* Prepare a recently-created socket for listening. */
-static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
-                                  bool so_reuseport, int *port) {
-  grpc_resolved_address sockname_temp;
-  grpc_error *err = GRPC_ERROR_NONE;
-
-  GPR_ASSERT(fd >= 0);
-
-  if (so_reuseport && !grpc_is_unix_socket(addr)) {
-    err = grpc_set_socket_reuse_port(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
-  }
-
-  err = grpc_set_socket_nonblocking(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
-  err = grpc_set_socket_cloexec(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
-  if (!grpc_is_unix_socket(addr)) {
-    err = grpc_set_socket_low_latency(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
-    err = grpc_set_socket_reuse_addr(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
-  }
-  err = grpc_set_socket_no_sigpipe_if_possible(fd);
-  if (err != GRPC_ERROR_NONE) goto error;
-
-  GPR_ASSERT(addr->len < ~(socklen_t)0);
-  if (bind(fd, (struct sockaddr *)addr->addr, (socklen_t)addr->len) < 0) {
-    err = GRPC_OS_ERROR(errno, "bind");
-    goto error;
-  }
-
-  if (listen(fd, get_max_accept_queue_size()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
-  }
-
-  sockname_temp.len = sizeof(struct sockaddr_storage);
-
-  if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
-                  (socklen_t *)&sockname_temp.len) < 0) {
-    err = GRPC_OS_ERROR(errno, "getsockname");
-    goto error;
-  }
-
-  *port = grpc_sockaddr_get_port(&sockname_temp);
-  return GRPC_ERROR_NONE;
-
-error:
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  if (fd >= 0) {
-    close(fd);
-  }
-  grpc_error *ret = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
-      GRPC_ERROR_INT_FD, fd);
-  GRPC_ERROR_UNREF(err);
-  return ret;
-}
-
 /* event manager callback when reads are ready */
 static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
   grpc_tcp_listener *sp = arg;
@@ -454,88 +309,6 @@ error:
   }
 }
 
-static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
-                                        const grpc_resolved_address *addr,
-                                        unsigned port_index, unsigned fd_index,
-                                        grpc_tcp_listener **listener) {
-  grpc_tcp_listener *sp = NULL;
-  int port = -1;
-  char *addr_str;
-  char *name;
-
-  grpc_error *err = prepare_socket(fd, addr, s->so_reuseport, &port);
-  if (err == GRPC_ERROR_NONE) {
-    GPR_ASSERT(port > 0);
-    grpc_sockaddr_to_string(&addr_str, addr, 1);
-    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
-    gpr_mu_lock(&s->mu);
-    s->nports++;
-    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = gpr_malloc(sizeof(grpc_tcp_listener));
-    sp->next = NULL;
-    if (s->head == NULL) {
-      s->head = sp;
-    } else {
-      s->tail->next = sp;
-    }
-    s->tail = sp;
-    sp->server = s;
-    sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
-    memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
-    sp->port = port;
-    sp->port_index = port_index;
-    sp->fd_index = fd_index;
-    sp->is_sibling = 0;
-    sp->sibling = NULL;
-    GPR_ASSERT(sp->emfd);
-    gpr_mu_unlock(&s->mu);
-    gpr_free(addr_str);
-    gpr_free(name);
-  }
-
-  *listener = sp;
-  return err;
-}
-
-/* If successful, add a listener to s for addr, set *dsmode for the socket, and
-   return the *listener. */
-grpc_error *grpc_tcp_server_add_addr(grpc_tcp_server *s,
-                                     const grpc_resolved_address *addr,
-                                     unsigned port_index, unsigned fd_index,
-                                     grpc_dualstack_mode *dsmode,
-                                     grpc_tcp_listener **listener) {
-  grpc_resolved_address addr4_copy;
-  int fd;
-  grpc_error *err =
-      grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
-  }
-  if (*dsmode == GRPC_DSMODE_IPV4 &&
-      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
-    addr = &addr4_copy;
-  }
-  return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
-}
-
-/* Return the listener in s with address addr or NULL. */
-grpc_tcp_listener *grpc_tcp_server_find_listener_with_addr(
-    grpc_tcp_server *s, grpc_resolved_address *addr) {
-  grpc_tcp_listener *l;
-  gpr_mu_lock(&s->mu);
-  for (l = s->head; l != NULL; l = l->next) {
-    if (l->addr.len != addr->len) {
-      continue;
-    }
-    if (memcmp(l->addr.addr, addr->addr, addr->len) == 0) {
-      break;
-    }
-  }
-  gpr_mu_unlock(&s->mu);
-  return l;
-}
-
 /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
 static grpc_error *add_wildcard_addrs_to_server(grpc_tcp_server *s,
                                                 unsigned port_index,
@@ -607,7 +380,7 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
     if (err != GRPC_ERROR_NONE) return err;
-    err = prepare_socket(fd, &listener->addr, true, &port);
+    err = grpc_tcp_server_prepare_socket(fd, &listener->addr, true, &port);
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);

@@ -61,6 +61,51 @@ typedef struct grpc_tcp_listener {
   int is_sibling;
 } grpc_tcp_listener;
 
+/* the overall server */
+struct grpc_tcp_server {
+  gpr_refcount refs;
+  /* Called whenever accept() succeeds on a server port. */
+  grpc_tcp_server_cb on_accept_cb;
+  void *on_accept_cb_arg;
+
+  gpr_mu mu;
+
+  /* active port count: how many ports are actually still listening */
+  size_t active_ports;
+  /* destroyed port count: how many ports are completely destroyed */
+  size_t destroyed_ports;
+
+  /* is this server shutting down? */
+  bool shutdown;
+  /* have listeners been shutdown? */
+  bool shutdown_listeners;
+  /* use SO_REUSEPORT */
+  bool so_reuseport;
+  /* expand wildcard addresses to a list of all local addresses */
+  bool expand_wildcard_addrs;
+
+  /* linked list of server ports */
+  grpc_tcp_listener *head;
+  grpc_tcp_listener *tail;
+  unsigned nports;
+
+  /* List of closures passed to shutdown_starting_add(). */
+  grpc_closure_list shutdown_starting;
+
+  /* shutdown callback */
+  grpc_closure *shutdown_complete;
+
+  /* all pollsets interested in new connections */
+  grpc_pollset **pollsets;
+  /* number of pollsets in the pollsets array */
+  size_t pollset_count;
+
+  /* next pollset to assign a channel to */
+  gpr_atm next_pollset_to_assign;
+
+  grpc_resource_quota *resource_quota;
+};
+
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the
    socket, and return the \a listener. */
 grpc_error *grpc_tcp_server_add_addr(grpc_tcp_server *s,
@@ -68,10 +113,6 @@ grpc_error *grpc_tcp_server_add_addr(grpc_tcp_server *s,
                                      unsigned port_index, unsigned fd_index,
                                      grpc_dualstack_mode *dsmode,
                                      grpc_tcp_listener **listener);
-
-/* Return the listener in \a s with address \a addr or NULL. */
-grpc_tcp_listener *grpc_tcp_server_find_listener_with_addr(
-    grpc_tcp_server *s, grpc_resolved_address *addr);
 
 /* Get all addresses assigned to network interfaces on the machine and create a
    listener for each. requested_port is the port to use for every listener, or 0
@@ -83,6 +124,10 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
                                                 int requested_port,
                                                 int *out_port);
 
+/* Prepare a recently-created socket for listening. */
+grpc_error *grpc_tcp_server_prepare_socket(int fd,
+                                           const grpc_resolved_address *addr,
+                                           bool so_reuseport, int *port);
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
 

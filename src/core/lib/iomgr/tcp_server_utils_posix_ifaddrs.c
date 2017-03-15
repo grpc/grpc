@@ -50,6 +50,23 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
+/* Return the listener in s with address addr or NULL. */
+static grpc_tcp_listener *find_listener_with_addr(grpc_tcp_server *s,
+                                                  grpc_resolved_address *addr) {
+  grpc_tcp_listener *l;
+  gpr_mu_lock(&s->mu);
+  for (l = s->head; l != NULL; l = l->next) {
+    if (l->addr.len != addr->len) {
+      continue;
+    }
+    if (memcmp(l->addr.addr, addr->addr, addr->len) == 0) {
+      break;
+    }
+  }
+  gpr_mu_unlock(&s->mu);
+  return l;
+}
+
 /* Bind to "::" to get a port number not used by any address. */
 static grpc_error *get_unused_port(int *port) {
   grpc_resolved_address wild;
@@ -133,7 +150,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
             ifa_name, ifa_it->ifa_flags, addr_str);
     /* We could have multiple interfaces with the same address (e.g., bonding),
        so look for duplicates. */
-    if (grpc_tcp_server_find_listener_with_addr(s, &addr) != NULL) {
+    if (find_listener_with_addr(s, &addr) != NULL) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s", addr_str,
               ifa_name);
       gpr_free(addr_str);

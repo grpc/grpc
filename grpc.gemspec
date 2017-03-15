@@ -426,6 +426,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/tcp_client_windows.c )
   s.files += %w( src/core/lib/iomgr/tcp_posix.c )
   s.files += %w( src/core/lib/iomgr/tcp_server_posix.c )
+  s.files += %w( src/core/lib/iomgr/tcp_server_utils_posix_common.c )
   s.files += %w( src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c )
   s.files += %w( src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c )
   s.files += %w( src/core/lib/iomgr/tcp_server_uv.c )
