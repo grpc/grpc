@@ -98,6 +98,10 @@ _BM_SPECS = {
     'tpl': [],
     'dyn': ['request_size'],
   },
+  'BM_PollEmptyPollset_SpeedOfLight': {
+    'tpl': [],
+    'dyn': ['request_size', 'request_count'],
+  }
 }
 
 def numericalize(s):

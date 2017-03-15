@@ -45,7 +45,10 @@ namespace grpc_python_generator {
 struct GeneratorConfiguration {
   GeneratorConfiguration();
   grpc::string grpc_package_root;
+  // TODO(https://github.com/grpc/grpc/issues/8622): Drop this.
   grpc::string beta_package_root;
+  // TODO(https://github.com/google/protobuf/issues/888): Drop this.
+  grpc::string import_prefix;
 };
 
 class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
