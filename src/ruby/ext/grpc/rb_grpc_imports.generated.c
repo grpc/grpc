@@ -220,6 +220,7 @@ grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_
 grpc_slice_buffer_take_first_type grpc_slice_buffer_take_first_import;
 grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_import;
 gpr_malloc_type gpr_malloc_import;
+gpr_zalloc_type gpr_zalloc_import;
 gpr_free_type gpr_free_import;
 gpr_realloc_type gpr_realloc_import;
 gpr_malloc_aligned_type gpr_malloc_aligned_import;
@@ -295,6 +296,7 @@ gpr_ref_type gpr_ref_import;
 gpr_ref_non_zero_type gpr_ref_non_zero_import;
 gpr_refn_type gpr_refn_import;
 gpr_unref_type gpr_unref_import;
+gpr_ref_is_unique_type gpr_ref_is_unique_import;
 gpr_stats_init_type gpr_stats_init_import;
 gpr_stats_inc_type gpr_stats_inc_import;
 gpr_stats_read_type gpr_stats_read_import;
@@ -512,6 +514,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_slice_buffer_take_first_import = (grpc_slice_buffer_take_first_type) GetProcAddress(library, "grpc_slice_buffer_take_first");
   grpc_slice_buffer_undo_take_first_import = (grpc_slice_buffer_undo_take_first_type) GetProcAddress(library, "grpc_slice_buffer_undo_take_first");
   gpr_malloc_import = (gpr_malloc_type) GetProcAddress(library, "gpr_malloc");
+  gpr_zalloc_import = (gpr_zalloc_type) GetProcAddress(library, "gpr_zalloc");
   gpr_free_import = (gpr_free_type) GetProcAddress(library, "gpr_free");
   gpr_realloc_import = (gpr_realloc_type) GetProcAddress(library, "gpr_realloc");
   gpr_malloc_aligned_import = (gpr_malloc_aligned_type) GetProcAddress(library, "gpr_malloc_aligned");
@@ -587,6 +590,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_ref_non_zero_import = (gpr_ref_non_zero_type) GetProcAddress(library, "gpr_ref_non_zero");
   gpr_refn_import = (gpr_refn_type) GetProcAddress(library, "gpr_refn");
   gpr_unref_import = (gpr_unref_type) GetProcAddress(library, "gpr_unref");
+  gpr_ref_is_unique_import = (gpr_ref_is_unique_type) GetProcAddress(library, "gpr_ref_is_unique");
   gpr_stats_init_import = (gpr_stats_init_type) GetProcAddress(library, "gpr_stats_init");
   gpr_stats_inc_import = (gpr_stats_inc_type) GetProcAddress(library, "gpr_stats_inc");
   gpr_stats_read_import = (gpr_stats_read_type) GetProcAddress(library, "gpr_stats_read");

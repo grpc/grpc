@@ -36,4 +36,4 @@ export GRPC_CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-bundle install
+tools/run_tests/helper_scripts/bundle_install_wrapper.sh

@@ -62,8 +62,7 @@ static int g_number_of_writes = 0;
 static int g_number_of_bytes_read = 0;
 static int g_number_of_orphan_calls = 0;
 
-static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
-                    grpc_server *server) {
+static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd, void *user_data) {
   char read_buffer[512];
   ssize_t byte_count;
 
@@ -79,7 +78,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
   gpr_mu_unlock(g_mu);
 }
 
-static void on_write(grpc_exec_ctx *exec_ctx, grpc_fd *emfd) {
+static void on_write(grpc_exec_ctx *exec_ctx, grpc_fd *emfd, void *user_data) {
   gpr_mu_lock(g_mu);
   g_number_of_writes++;
 
@@ -88,7 +87,8 @@ static void on_write(grpc_exec_ctx *exec_ctx, grpc_fd *emfd) {
   gpr_mu_unlock(g_mu);
 }
 
-static void on_fd_orphaned(grpc_exec_ctx *exec_ctx, grpc_fd *emfd) {
+static void on_fd_orphaned(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                           void *user_data) {
   gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
           grpc_fd_wrapped_fd(emfd));
   g_number_of_orphan_calls++;
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();

@@ -607,6 +607,113 @@ describe('Client malformed response handling', function() {
     call.end();
   });
 });
+describe('Server serialization failure handling', function() {
+  function serializeFail(obj) {
+    throw new Error('Serialization failed');
+  }
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
+    var malformed_test_service = {
+      unary: {
+        path: '/TestService/Unary',
+        requestStream: false,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      clientStream: {
+        path: '/TestService/ClientStream',
+        requestStream: true,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      serverStream: {
+        path: '/TestService/ServerStream',
+        requestStream: false,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      bidiStream: {
+        path: '/TestService/BidiStream',
+        requestStream: true,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      }
+    };
+    server = new grpc.Server();
+    server.addService(malformed_test_service, {
+      unary: function(call, cb) {
+        cb(null, {});
+      },
+      clientStream: function(stream, cb) {
+        stream.on('data', function() {/* Ignore requests */});
+        stream.on('end', function() {
+          cb(null, {});
+        });
+      },
+      serverStream: function(stream) {
+        stream.write({});
+        stream.end();
+      },
+      bidiStream: function(stream) {
+        stream.on('data', function() {
+          // Ignore requests
+          stream.write({});
+        });
+        stream.on('end', function() {
+          stream.end();
+        });
+      }
+    });
+    var port = server.bind('localhost:0', server_insecure_creds);
+    var Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  it('should get an INTERNAL status with a unary call', function(done) {
+    client.unary({}, function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a client stream call', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
+  });
+  it('should get an INTERNAL status with a server stream call', function(done) {
+    var call = client.serverStream({});
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a bidi stream call', function(done) {
+    var call = client.bidiStream();
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
+  });
+});
 describe('Other conditions', function() {
   var test_service;
   var Client;

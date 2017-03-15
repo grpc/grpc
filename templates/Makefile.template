@@ -1492,7 +1492,7 @@
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
-    common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
+    common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
     lib_deps = ' $(ZLIB_DEP)'
@@ -1542,6 +1542,8 @@
     ldflags = '$(LDFLAGS)'
     if lib.get('LDFLAGS', None):
       ldflags += ' ' + lib['LDFLAGS']
+
+    common = common + ' $(LDLIBS)'
   %>
 
   % if lib.build == "all":

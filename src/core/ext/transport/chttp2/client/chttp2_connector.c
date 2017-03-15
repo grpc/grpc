@@ -226,7 +226,7 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
                                      grpc_closure *notify) {
   chttp2_connector *c = (chttp2_connector *)con;
   grpc_resolved_address addr;
-  grpc_get_subchannel_address_arg(args->channel_args, &addr);
+  grpc_get_subchannel_address_arg(exec_ctx, args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == NULL);
   c->notify = notify;
@@ -248,8 +248,7 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector *grpc_chttp2_connector_create() {
-  chttp2_connector *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  chttp2_connector *c = gpr_zalloc(sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);

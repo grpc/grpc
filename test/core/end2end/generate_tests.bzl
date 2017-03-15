@@ -106,6 +106,7 @@ END2END_TESTS = {
     'high_initial_seqno': test_options(),
     'idempotent_request': test_options(),
     'invoke_large_request': test_options(),
+    'keepalive_timeout': test_options(proxyable=False),
     'large_metadata': test_options(),
     'max_concurrent_streams': test_options(proxyable=False),
     'max_message_length': test_options(),

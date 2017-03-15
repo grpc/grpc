@@ -40,6 +40,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -54,7 +55,35 @@ typedef struct request {
   grpc_closure *on_done;
   grpc_resolved_addresses **addresses;
   struct addrinfo *hints;
+  char *host;
+  char *port;
 } request;
+
+static int retry_named_port_failure(int status, request *r,
+                                    uv_getaddrinfo_cb getaddrinfo_cb) {
+  if (status != 0) {
+    // This loop is copied from resolve_address_posix.c
+    char *svc[][2] = {{"http", "80"}, {"https", "443"}};
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
+      if (strcmp(r->port, svc[i][0]) == 0) {
+        int retry_status;
+        uv_getaddrinfo_t *req = gpr_malloc(sizeof(uv_getaddrinfo_t));
+        req->data = r;
+        retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
+                                      r->host, svc[i][1], r->hints);
+        if (retry_status < 0 || getaddrinfo_cb == NULL) {
+          // The callback will not be called
+          gpr_free(req);
+        }
+        return retry_status;
+      }
+    }
+  }
+  /* If this function calls uv_getaddrinfo, it will return that function's
+     return value. That function only returns numbers <=0, so we can safely
+     return 1 to indicate that we never retried */
+  return 1;
+}
 
 static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
                                           grpc_resolved_addresses **addresses) {
@@ -97,13 +126,21 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   request *r = (request *)req->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error;
+  int retry_status;
+
+  gpr_free(req);
+  retry_status = retry_named_port_failure(status, r, getaddrinfo_callback);
+  if (retry_status == 0) {
+    // The request is being retried. Nothing should be done here
+    return;
+  }
+  /* Either no retry was attempted, or the retry failed. Either way, the
+     original error probably has more interesting information */
   error = handle_addrinfo_result(status, res, r->addresses);
   grpc_closure_sched(&exec_ctx, r->on_done, error);
   grpc_exec_ctx_finish(&exec_ctx);
-
   gpr_free(r->hints);
   gpr_free(r);
-  gpr_free(req);
   uv_freeaddrinfo(res);
 }
 
@@ -113,14 +150,15 @@ static grpc_error *try_split_host_port(const char *name,
   /* parse name, splitting it into host and port parts */
   grpc_error *error;
   gpr_split_host_port(name, host, port);
-  if (host == NULL) {
+  if (*host == NULL) {
     char *msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
     error = GRPC_ERROR_CREATE(msg);
     gpr_free(msg);
     return error;
   }
-  if (port == NULL) {
+  if (*port == NULL) {
+    // TODO(murgatroid99): add tests for this case
     if (default_port == NULL) {
       char *msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);
@@ -142,6 +180,7 @@ static grpc_error *blocking_resolve_address_impl(
   uv_getaddrinfo_t req;
   int s;
   grpc_error *err;
+  int retry_status;
 
   req.addrinfo = NULL;
 
@@ -157,6 +196,12 @@ static grpc_error *blocking_resolve_address_impl(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   s = uv_getaddrinfo(uv_default_loop(), &req, NULL, host, port, &hints);
+  request r = {
+      .addresses = addresses, .hints = &hints, .host = host, .port = port};
+  retry_status = retry_named_port_failure(s, &r, NULL);
+  if (retry_status <= 0) {
+    s = retry_status;
+  }
   err = handle_addrinfo_result(s, req.addrinfo, addresses);
 
 done:
@@ -199,6 +244,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r = gpr_malloc(sizeof(request));
   r->on_done = on_done;
   r->addresses = addrs;
+  r->host = host;
+  r->port = port;
   req = gpr_malloc(sizeof(uv_getaddrinfo_t));
   req->data = r;
 
@@ -221,6 +268,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
     gpr_free(r);
     gpr_free(req);
     gpr_free(hints);
+    gpr_free(host);
+    gpr_free(port);
   }
 }
 
