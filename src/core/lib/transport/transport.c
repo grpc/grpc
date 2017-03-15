@@ -162,9 +162,9 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx,
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
                                grpc_stream_refcount *refcount,
-                               const void *server_data) {
+                               const void *server_data, gpr_arena *arena) {
   return transport->vtable->init_stream(exec_ctx, transport, stream, refcount,
-                                        server_data);
+                                        server_data, arena);
 }
 
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
@@ -197,9 +197,10 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream, void *and_free_memory) {
+                                   grpc_stream *stream,
+                                   grpc_closure *then_schedule_closure) {
   transport->vtable->destroy_stream(exec_ctx, transport, stream,
-                                    and_free_memory);
+                                    then_schedule_closure);
 }
 
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
