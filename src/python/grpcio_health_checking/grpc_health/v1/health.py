@@ -33,9 +33,10 @@ import threading
 import grpc
 
 from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 
 
-class HealthServicer(health_pb2.HealthServicer):
+class HealthServicer(health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
 
     def __init__(self):
