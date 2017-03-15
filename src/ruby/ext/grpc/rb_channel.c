@@ -73,7 +73,6 @@ typedef struct grpc_rb_channel {
 
   /* The actual channel */
   grpc_channel *wrapped;
-  grpc_completion_queue *queue;
   int request_safe_destroy;
   int safe_to_destroy;
   grpc_connectivity_state current_connectivity_state;
@@ -103,7 +102,6 @@ static void grpc_rb_channel_free(void *p) {
 
   if (ch->wrapped != NULL) {
     grpc_rb_channel_safe_destroy(ch);
-    grpc_rb_completion_queue_destroy(ch->queue);
     ch->wrapped = NULL;
   }
 
@@ -215,7 +213,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   }
   rb_ivar_set(self, id_target, target);
   wrapper->wrapped = ch;
-  wrapper->queue = grpc_completion_queue_create(NULL);
   return self;
 }
 
@@ -404,8 +401,6 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   ch = wrapper->wrapped;
   if (ch != NULL) {
     grpc_rb_channel_safe_destroy(wrapper);
-    GPR_ASSERT(wrapper->queue != NULL);
-    grpc_rb_completion_queue_destroy(wrapper->queue);
     wrapper->wrapped = NULL;
   }
 
