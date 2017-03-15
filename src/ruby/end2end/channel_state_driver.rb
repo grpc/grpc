@@ -29,8 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# smoke test for a grpc-using app that receives and
-# handles process-ending signals
+# make sure that the client doesn't hang when process ended abruptly
 
 require_relative './end2end_common'
 
@@ -54,7 +53,8 @@ def main
     STDERR.puts "timeout wait for client pid #{client_pid}"
     Process.kill('SIGKILL', client_pid)
     Process.wait(client_pid)
-    raise 'Timed out waiting for client process. It likely hangs'
+    STDERR.puts "killed client child"
+    raise 'Timed out waiting for client process. It likely hangs when ended abruptly'
   end
 
   server_runner.stop

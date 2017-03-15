@@ -36,8 +36,6 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
-puts $LOAD_PATH
-
 require 'grpc'
 require 'optparse'
 require 'histogram'

@@ -695,7 +695,6 @@ class RubyLanguage(object):
     tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                   timeout_seconds=10*60,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-    # note these aren't getting ran on windows since no workers
     tests.append(self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
                  timeout_seconds=10*60,
                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
