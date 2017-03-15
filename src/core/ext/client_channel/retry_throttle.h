@@ -40,17 +40,13 @@
 typedef struct grpc_server_retry_throttle_data grpc_server_retry_throttle_data;
 
 /// Records a failure.  Returns true if it's okay to send a retry.
-/// Updates \a throttle_data if the original value is stale and has been
-/// replaced.  Not thread safe; caller must synchronize.
 bool grpc_server_retry_throttle_data_record_failure(
-    grpc_server_retry_throttle_data** throttle_data);
+    grpc_server_retry_throttle_data* throttle_data);
 /// Records a success.
-/// Updates \a throttle_data if the original value is stale and has been
-/// replaced.  Not thread safe; caller must synchronize.
 void grpc_server_retry_throttle_data_record_success(
-    grpc_server_retry_throttle_data** throttle_data);
+    grpc_server_retry_throttle_data* throttle_data);
 
-void grpc_server_retry_throttle_data_ref(
+grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_ref(
     grpc_server_retry_throttle_data* throttle_data);
 void grpc_server_retry_throttle_data_unref(
     grpc_server_retry_throttle_data* throttle_data);

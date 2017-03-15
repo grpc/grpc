@@ -64,26 +64,18 @@ static void get_replacement_throttle_data_if_needed(
         (grpc_server_retry_throttle_data*)gpr_atm_acq_load(
             &(*throttle_data)->replacement);
     if (new_throttle_data == NULL) return;
-    // Reset *throttle_data to its replacement, updating refcounts as
-    // appropriate.
-    // Note: It's safe to do this here, because the caller ensures that
-    // this will only be called with a given value of throttle_data from
-    // one thread at a time.
-    grpc_server_retry_throttle_data_ref(new_throttle_data);
-    grpc_server_retry_throttle_data* old_throttle_data = *throttle_data;
     *throttle_data = new_throttle_data;
-    grpc_server_retry_throttle_data_unref(old_throttle_data);
   }
 }
 
 bool grpc_server_retry_throttle_data_record_failure(
-    grpc_server_retry_throttle_data** throttle_data) {
+    grpc_server_retry_throttle_data* throttle_data) {
   // First, check if we are stale and need to be replaced.
-  get_replacement_throttle_data_if_needed(throttle_data);
+  get_replacement_throttle_data_if_needed(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
   const int delta = -1000;
   const int old_value = (int)gpr_atm_full_fetch_add(
-      &(*throttle_data)->milli_tokens, (gpr_atm)delta);
+      &throttle_data->milli_tokens, (gpr_atm)delta);
   // If the above change takes us below 0, then re-add the excess.  Note
   // that between these two atomic operations, the value will be
   // artificially low by as much as 1000, but this window should be
@@ -91,41 +83,42 @@ bool grpc_server_retry_throttle_data_record_failure(
   int new_value = old_value - 1000;
   if (new_value < 0) {
     const int excess_value = new_value - (old_value < 0 ? old_value : 0);
-    gpr_atm_full_fetch_add(&(*throttle_data)->milli_tokens,
+    gpr_atm_full_fetch_add(&throttle_data->milli_tokens,
                            (gpr_atm)-excess_value);
     new_value = 0;
   }
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
-  return new_value > (*throttle_data)->max_milli_tokens / 2;
+  return new_value > throttle_data->max_milli_tokens / 2;
 }
 
 void grpc_server_retry_throttle_data_record_success(
-    grpc_server_retry_throttle_data** throttle_data) {
+    grpc_server_retry_throttle_data* throttle_data) {
   // First, check if we are stale and need to be replaced.
-  get_replacement_throttle_data_if_needed(throttle_data);
+  get_replacement_throttle_data_if_needed(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
-  const int delta = (*throttle_data)->milli_token_ratio;
+  const int delta = throttle_data->milli_token_ratio;
   const int old_value = (int)gpr_atm_full_fetch_add(
-      &(*throttle_data)->milli_tokens, (gpr_atm)delta);
+      &throttle_data->milli_tokens, (gpr_atm)delta);
   // If the above change takes us over max_milli_tokens, then subtract
   // the excess.  Note that between these two atomic operations, the
   // value will be artificially high by as much as milli_token_ratio,
   // but this window should be brief.
-  const int new_value = old_value + (*throttle_data)->milli_token_ratio;
-  if (new_value > (*throttle_data)->max_milli_tokens) {
+  const int new_value = old_value + throttle_data->milli_token_ratio;
+  if (new_value > throttle_data->max_milli_tokens) {
     const int excess_value =
-        new_value - (old_value > (*throttle_data)->max_milli_tokens
+        new_value - (old_value > throttle_data->max_milli_tokens
                          ? old_value
-                         : (*throttle_data)->max_milli_tokens);
-    gpr_atm_full_fetch_add(&(*throttle_data)->milli_tokens,
+                         : throttle_data->max_milli_tokens);
+    gpr_atm_full_fetch_add(&throttle_data->milli_tokens,
                            (gpr_atm)-excess_value);
   }
 }
 
-void grpc_server_retry_throttle_data_ref(
+grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_ref(
     grpc_server_retry_throttle_data* throttle_data) {
   gpr_ref(&throttle_data->refs);
+  return throttle_data;
 }
 
 void grpc_server_retry_throttle_data_unref(
@@ -189,8 +182,7 @@ static void destroy_server_retry_throttle_data(void* value) {
 
 static void* copy_server_retry_throttle_data(void* value) {
   grpc_server_retry_throttle_data* throttle_data = value;
-  grpc_server_retry_throttle_data_ref(throttle_data);
-  return value;
+  return grpc_server_retry_throttle_data_ref(throttle_data);
 }
 
 static const gpr_avl_vtable avl_vtable = {

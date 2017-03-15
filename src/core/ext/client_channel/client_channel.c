@@ -423,7 +423,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
             grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
         GPR_ASSERT(channel_arg != NULL);
         GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-        grpc_uri *uri = grpc_uri_parse(channel_arg->value.string, true);
+        grpc_uri *uri =
+            grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
         GPR_ASSERT(uri->path[0] != '\0');
         parsing_state.server_name =
             uri->path[0] == '/' ? uri->path + 1 : uri->path;
@@ -738,6 +739,7 @@ typedef struct client_channel_call_data {
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
+  grpc_server_retry_throttle_data *retry_throttle_data;
   method_parameters *method_params;
 
   grpc_error *cancel_error;
@@ -814,7 +816,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
   gpr_free(ops);
 }
 
-// Sets calld->method_params.
+// Sets calld->method_params and calld->retry_throttle_data.
 // If the method params specify a timeout, populates
 // *per_method_deadline and returns true.
 static bool set_call_method_params_from_service_config_locked(
@@ -822,6 +824,10 @@ static bool set_call_method_params_from_service_config_locked(
     gpr_timespec *per_method_deadline) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
+  if (chand->retry_throttle_data != NULL) {
+    calld->retry_throttle_data =
+        grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
+  }
   if (chand->method_params_table != NULL) {
     calld->method_params = grpc_method_config_table_get(
         exec_ctx, chand->method_params_table, calld->path);
@@ -1135,19 +1141,18 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
 static void on_complete_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_call_element *elem = arg;
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  if (chand->retry_throttle_data != NULL) {
+  if (calld->retry_throttle_data != NULL) {
     if (error == GRPC_ERROR_NONE) {
       grpc_server_retry_throttle_data_record_success(
-          &chand->retry_throttle_data);
+          calld->retry_throttle_data);
     } else {
       // TODO(roth): In a subsequent PR, check the return value here and
       // decide whether or not to retry.  Note that we should only
       // record failures whose statuses match the configured retryable
       // or non-fatal status codes.
       grpc_server_retry_throttle_data_record_failure(
-          &chand->retry_throttle_data);
+          calld->retry_throttle_data);
     }
   }
   grpc_closure_run(exec_ctx, calld->original_on_complete,
@@ -1160,14 +1165,13 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
   grpc_transport_stream_op *op = arg;
   grpc_call_element *elem = op->handler_private.args[0];
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 
   if (op->recv_trailing_metadata != NULL) {
     GPR_ASSERT(op->on_complete != NULL);
     calld->original_on_complete = op->on_complete;
     grpc_closure_init(&calld->on_complete, on_complete_locked, elem,
-                      grpc_combiner_scheduler(chand->combiner, false));
+                      grpc_schedule_on_exec_ctx);
     op->on_complete = &calld->on_complete;
   }
 
