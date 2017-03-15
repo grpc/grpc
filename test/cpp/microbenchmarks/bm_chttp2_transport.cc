@@ -46,6 +46,7 @@ extern "C" {
 #include "src/core/lib/transport/static_metadata.h"
 }
 #include "third_party/benchmark/include/benchmark/benchmark.h"
+#include "test/cpp/microbenchmarks/helpers.h"
 
 static struct Init {
   Init() {
@@ -145,20 +146,22 @@ class Stream {
  public:
   Stream(Fixture *f) : f_(f) {
     GRPC_STREAM_REF_INIT(&refcount_, 1, DoNothing, nullptr, "test_stream");
-    stream_ = gpr_malloc(grpc_transport_stream_size(f->transport()));
+    stream_size_ = grpc_transport_stream_size(f->transport());
+    stream_ = gpr_malloc(stream_size_);
   }
 
   ~Stream() { gpr_free(stream_); }
 
   void Init() {
+    memset(stream_, 0, stream_size_);
     grpc_transport_init_stream(f_->exec_ctx(), f_->transport(),
                                static_cast<grpc_stream *>(stream_), &refcount_,
                                NULL);
   }
 
-  void Destroy() {
+  void DestroyThen(grpc_closure *closure) {
     grpc_transport_destroy_stream(f_->exec_ctx(), f_->transport(),
-                                  static_cast<grpc_stream *>(stream_), NULL);
+                                  static_cast<grpc_stream *>(stream_), closure);
   }
 
   void Op(grpc_transport_stream_op *op) {
@@ -169,6 +172,7 @@ class Stream {
  private:
   Fixture *f_;
   grpc_stream_refcount refcount_;
+  size_t stream_size_;
   void *stream_;
 };
 
@@ -186,18 +190,37 @@ grpc_closure *MakeClosure(
   return grpc_closure_init(c, C::Execute, c, sched);
 }
 
+template <class F>
+grpc_closure *MakeOnceClosure(
+    F f, grpc_closure_scheduler *sched = grpc_schedule_on_exec_ctx) {
+  struct C : public grpc_closure {
+    C(const F &f) : f_(f) {}
+    F f_;
+    static void Execute(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+      static_cast<C *>(arg)->f_(exec_ctx, error);
+      delete static_cast<C *>(arg);
+    }
+  };
+  auto *c = new C{f};
+  return grpc_closure_init(c, C::Execute, c, sched);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks
 //
 
 static void BM_StreamCreateDestroy(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
-  while (state.KeepRunning()) {
+  grpc_closure *next = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    if (!state.KeepRunning()) return;
     s.Init();
-    s.Destroy();
-    f.FlushExecCtx();
-  }
+    s.DestroyThen(next);
+  });
+  grpc_closure_run(f.exec_ctx(), next, GRPC_ERROR_NONE);
+  f.FlushExecCtx();
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_StreamCreateDestroy);
 
@@ -224,6 +247,7 @@ class RepresentativeClientInitialMetadata {
 
 template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op op;
@@ -251,17 +275,18 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
     s.Op(&op);
   });
   done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    s.Destroy();
-    grpc_closure_run(exec_ctx, start, GRPC_ERROR_NONE);
+    s.DestroyThen(start);
   });
   grpc_closure_sched(f.exec_ctx(), start, GRPC_ERROR_NONE);
   f.FlushExecCtx();
   grpc_metadata_batch_destroy(f.exec_ctx(), &b);
+  track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
                    RepresentativeClientInitialMetadata);
 
 static void BM_TransportEmptyOp(benchmark::State &state) {
+  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init();
@@ -275,8 +300,9 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
       });
   grpc_closure_sched(f.exec_ctx(), c, GRPC_ERROR_NONE);
   f.FlushExecCtx();
-  s.Destroy();
+  s.DestroyThen(MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
   f.FlushExecCtx();
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
 

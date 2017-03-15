@@ -7733,6 +7733,7 @@ target_include_directories(bm_chttp2_transport
 target_link_libraries(bm_chttp2_transport
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
   benchmark
   grpc++_test_util
   grpc_test_util

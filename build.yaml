@@ -3100,6 +3100,7 @@ targets:
   src:
   - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:
+  - grpc_benchmark
   - benchmark
   - grpc++_test_util
   - grpc_test_util
