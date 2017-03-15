@@ -33,4 +33,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-ruby src/ruby/end2end/sig_handling_driver.rb
+EXIT_CODE=0
+ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
+ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
+exit $EXIT_CODE

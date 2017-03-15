@@ -42,19 +42,22 @@ def main
   sleep 1
 
   STDERR.puts "start client"
-  control_stub, client_pid = start_client("sig_handling_client.rb", server_port)
+  _, client_pid = start_client("channel_state_client.rb", server_port)
 
-  sleep 1
+  sleep 3
 
-  count = 0
-  while count < 5
-    control_stub.do_echo_rpc(ClientControl::DoEchoRpcRequest.new(request: 'hello'))
-    Process.kill('SIGTERM', client_pid)
-    Process.kill('SIGINT', client_pid)
-    count += 1
+  Process.kill('SIGTERM', client_pid)
+
+  begin
+    Timeout.timeout(10) { Process.wait(client_pid) }
+  rescue Timeout::Error
+    STDERR.puts "timeout wait for client pid #{client_pid}"
+    Process.kill('SIGKILL', client_pid)
+    Process.wait(client_pid)
+    raise 'Timed out waiting for client process. It likely hangs'
   end
 
-  cleanup(control_stub, client_pid, server_runner)
+  server_runner.stop
 end
 
 main

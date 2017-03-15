@@ -42,6 +42,7 @@ require 'client_control_services_pb'
 require 'socket'
 require 'optparse'
 require 'thread'
+require 'timeout'
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class EchoServerImpl < Echo::EchoServer::Service
@@ -88,7 +89,7 @@ def start_client(client_main, server_port)
   return control_stub, client_pid
 end
 
-def cleanup(control_stub, server_runner)
+def cleanup(control_stub, client_pid, server_runner)
   control_stub.shutdown(ClientControl::Void.new)
   Process.wait(client_pid)
 
