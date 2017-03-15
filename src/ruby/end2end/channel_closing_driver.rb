@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,13 +29,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# make sure that the client doesn't hang when process ended abruptly
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+require_relative './end2end_common'
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  STDERR.puts "start server"
+  server_runner = ServerRunner.new
+  server_port = server_runner.run
+
+  sleep 1
+
+  STDERR.puts "start client"
+  control_stub, client_pid = start_client("channel_closing_client.rb", server_port)
+
+  sleep 3
+
+
+  begin
+    Timeout.timeout(10) do
+      control_stub.shutdown(ClientControl::Void.new)
+      Process.wait(client_pid)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout wait for client pid #{client_pid}"
+    Process.kill('SIGKILL', client_pid)
+    Process.wait(client_pid)
+    STDERR.puts "killed client child"
+    raise 'Timed out waiting for client process. It likely hangs when a channel is closed while connectivity is watched'
+  end
+
+  server_runner.stop
+end
+
+main

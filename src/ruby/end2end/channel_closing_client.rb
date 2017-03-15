@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +29,52 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+require_relative './end2end_common'
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+class ChannelClosingClientController < ClientControl::ClientController::Service
+  def initialize(ch)
+    @ch = ch
+  end
+  def shutdown(_, _)
+    STDERR.puts "about to close channel"
+    @ch.close
+    STDERR.puts "just closed channel"
+  end
+end
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  client_control_port = ''
+  server_port = ''
+  OptionParser.new do |opts|
+    opts.on('--client_control_port=P', String) do |p|
+      client_control_port = p
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
+    end
+  end.parse!
+
+  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {}, :this_channel_is_insecure)
+
+  srv = GRPC::RpcServer.new
+  thd = Thread.new do
+    srv.add_http2_port("0.0.0.0:#{client_control_port}", :this_port_is_insecure)
+    srv.handle(ChannelClosingClientController.new(ch))
+    srv.run
+  end
+
+  # this should break out once the channel is closed
+  loop do
+    state = ch.connectivity_state(true)
+    begin
+      ch.watch_connectivity_state(state, Time.now + 360)
+    rescue RuntimeException => e
+      break
+    end
+  end
+
+  srv.stop
+  thd.join
+end
+
+main
