@@ -109,8 +109,8 @@ struct grpc_udp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
-  /* The parent grpc server */
-  grpc_server *grpc_server;
+  /* opaque object to pass to callbacks */
+  void *user_data;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
@@ -178,7 +178,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
       /* Call the orphan_cb to signal that the FD is about to be closed and
        * should no longer be used. */
       GPR_ASSERT(sp->orphan_cb);
-      sp->orphan_cb(exec_ctx, sp->emfd);
+      sp->orphan_cb(exec_ctx, sp->emfd, sp->server->user_data);
 
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "udp_listener_shutdown");
@@ -204,7 +204,7 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   if (s->active_ports) {
     for (sp = s->head; sp; sp = sp->next) {
       GPR_ASSERT(sp->orphan_cb);
-      sp->orphan_cb(exec_ctx, sp->emfd);
+      sp->orphan_cb(exec_ctx, sp->emfd, sp->server->user_data);
       grpc_fd_shutdown(exec_ctx, sp->emfd,
                        GRPC_ERROR_CREATE("Server destroyed"));
     }
@@ -299,7 +299,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(exec_ctx, sp->emfd, sp->server->grpc_server);
+  sp->read_cb(exec_ctx, sp->emfd, sp->server->user_data);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
@@ -322,7 +322,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   /* Tell the registered callback that the socket is writeable. */
   GPR_ASSERT(sp->write_cb);
-  sp->write_cb(exec_ctx, sp->emfd);
+  sp->write_cb(exec_ctx, sp->emfd, sp->server->user_data);
 
   /* Re-arm the notification event so we get another chance to write. */
   grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
@@ -464,13 +464,13 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index) {
 
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                            grpc_pollset **pollsets, size_t pollset_count,
-                           grpc_server *server) {
+                           void *user_data) {
   size_t i;
   gpr_mu_lock(&s->mu);
   grpc_udp_listener *sp;
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
-  s->grpc_server = server;
+  s->user_data = user_data;
 
   sp = s->head;
   while (sp != NULL) {
