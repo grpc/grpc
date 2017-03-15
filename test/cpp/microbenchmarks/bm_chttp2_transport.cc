@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
+#include <memory>
 #include <sstream>
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -45,8 +46,8 @@ extern "C" {
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 }
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 static struct Init {
   Init() {
@@ -84,15 +85,16 @@ class DummyEndpoint : public grpc_endpoint {
 
  private:
   grpc_resource_user *ru_;
+  grpc_closure *read_cb_ = nullptr;
 
   static void read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                    grpc_slice_buffer *slices, grpc_closure *cb) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CANCELLED);
+    static_cast<DummyEndpoint *>(ep)->read_cb_ = cb;
   }
 
   static void write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                     grpc_slice_buffer *slices, grpc_closure *cb) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CANCELLED);
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
   }
 
   static grpc_workqueue *get_workqueue(grpc_endpoint *ep) { return NULL; }
@@ -104,10 +106,16 @@ class DummyEndpoint : public grpc_endpoint {
                                  grpc_pollset_set *pollset) {}
 
   static void shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                       grpc_error *why) {}
+                       grpc_error *why) {
+    grpc_resource_user_shutdown(exec_ctx,
+                                static_cast<DummyEndpoint *>(ep)->ru_);
+    grpc_closure_sched(exec_ctx, static_cast<DummyEndpoint *>(ep)->read_cb_,
+                       why);
+  }
 
   static void destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
     grpc_resource_user_unref(exec_ctx, static_cast<DummyEndpoint *>(ep)->ru_);
+    delete static_cast<DummyEndpoint *>(ep);
   }
 
   static grpc_resource_user *get_resource_user(grpc_endpoint *ep) {
@@ -151,9 +159,12 @@ class Stream {
     arena_ = gpr_arena_create(4096);
   }
 
-  ~Stream() { gpr_free(stream_);gpr_arena_destroy(arena_); }
+  ~Stream() {
+    gpr_free(stream_);
+    gpr_arena_destroy(arena_);
+  }
 
-  void Init(benchmark::State& state) {
+  void Init(benchmark::State &state) {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       gpr_arena_destroy(arena_);
@@ -182,18 +193,24 @@ class Stream {
   void *stream_;
 };
 
+class Closure : public grpc_closure {
+ public:
+  virtual ~Closure() {}
+};
+
 template <class F>
-grpc_closure *MakeClosure(
+std::unique_ptr<Closure> MakeClosure(
     F f, grpc_closure_scheduler *sched = grpc_schedule_on_exec_ctx) {
-  struct C : public grpc_closure {
-    C(const F &f) : f_(f) {}
+  struct C : public Closure {
+    C(const F &f, grpc_closure_scheduler *sched) : f_(f) {
+      grpc_closure_init(this, Execute, this, sched);
+    }
     F f_;
     static void Execute(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       static_cast<C *>(arg)->f_(exec_ctx, error);
     }
   };
-  auto *c = new C{f};
-  return grpc_closure_init(c, C::Execute, c, sched);
+  return std::unique_ptr<Closure>(new C(f, sched));
 }
 
 template <class F>
@@ -219,12 +236,13 @@ static void BM_StreamCreateDestroy(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
-  grpc_closure *next = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    if (!state.KeepRunning()) return;
-    s.Init(state);
-    s.DestroyThen(next);
-  });
-  grpc_closure_run(f.exec_ctx(), next, GRPC_ERROR_NONE);
+  std::unique_ptr<Closure> next =
+      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+        if (!state.KeepRunning()) return;
+        s.Init(state);
+        s.DestroyThen(next.get());
+      });
+  grpc_closure_run(f.exec_ctx(), next.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
@@ -257,8 +275,8 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op op;
-  grpc_closure *start;
-  grpc_closure *done;
+  std::unique_ptr<Closure> start;
+  std::unique_ptr<Closure> done;
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -276,14 +294,17 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
     if (!state.KeepRunning()) return;
     s.Init(state);
     memset(&op, 0, sizeof(op));
-    op.on_complete = done;
+    op.on_complete = done.get();
     op.send_initial_metadata = &b;
     s.Op(&op);
   });
   done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    s.DestroyThen(start);
+    memset(&op, 0, sizeof(op));
+    op.cancel_error = GRPC_ERROR_CANCELLED;
+    s.Op(&op);
+    s.DestroyThen(start.get());
   });
-  grpc_closure_sched(f.exec_ctx(), start, GRPC_ERROR_NONE);
+  grpc_closure_sched(f.exec_ctx(), start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   grpc_metadata_batch_destroy(f.exec_ctx(), &b);
   track_counters.Finish(state);
@@ -297,16 +318,17 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op op;
-  grpc_closure *c =
+  std::unique_ptr<Closure> c =
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         memset(&op, 0, sizeof(op));
-        op.on_complete = c;
+        op.on_complete = c.get();
         s.Op(&op);
       });
-  grpc_closure_sched(f.exec_ctx(), c, GRPC_ERROR_NONE);
+  grpc_closure_sched(f.exec_ctx(), c.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
-  s.DestroyThen(MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
+  s.DestroyThen(
+      MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
   f.FlushExecCtx();
   track_counters.Finish(state);
 }

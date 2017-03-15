@@ -33,8 +33,8 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-#include <string.h>
 #include <assert.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
