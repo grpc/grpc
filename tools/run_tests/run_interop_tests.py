@@ -686,6 +686,14 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
         itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
                                       for i in range(
                                           len(_HTTP2_BADSERVER_TEST_CASES))))
+    # Enable docker's healthcheck mechanism.
+    # This runs a Python script inside the container every second. The script
+    # pings the http2 server to verify it is ready. The 'health-retries' flag
+    # specifies the number of consecutive failures before docker will report
+    # the container's status as 'unhealthy'. Prior to the first 'health_retries'
+    # failures or the first success, the status will be 'starting'. 'docker ps'
+    # or 'docker inspect' can be used to see the health of the container on the
+    # command line.
     docker_args += [
         '--health-cmd=python test/http2_test/http2_server_health_check.py '
         '--server_host=%s --server_port=%d'
