@@ -83,6 +83,8 @@ def wait_for_healthy(cid, shortname, timeout_seconds):
         return
     except subprocess.CalledProcessError as e:
       pass
+    time.sleep(1)
+  print(subprocess.check_output(['docker', 'ps']))
   raise Exception('Timed out waiting for %s (%s) to pass health check' %
                   (shortname, cid))
 
@@ -130,7 +132,7 @@ class DockerJob:
   def mapped_port(self, port):
     return docker_mapped_port(self._container_name, port)
 
-  def wait_for_healthy(self, timeout_seconds=15):
+  def wait_for_healthy(self, timeout_seconds):
     wait_for_healthy(self._container_name, self._spec.shortname, timeout_seconds)
 
   def kill(self, suppress_failure=False):
