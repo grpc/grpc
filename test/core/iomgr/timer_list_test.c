@@ -57,6 +57,8 @@ static void add_test(void) {
   grpc_timer timers[20];
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  gpr_log(GPR_INFO, "add_test");
+
   grpc_timer_list_init(start);
   memset(cb_called, 0, sizeof(cb_called));
 
@@ -120,15 +122,15 @@ static void add_test(void) {
 }
 
 static gpr_timespec tfm(int m) {
-  gpr_timespec t = gpr_time_from_millis(m, GPR_TIMESPAN);
-  t.clock_type = GPR_CLOCK_REALTIME;
-  return t;
+  return gpr_time_from_millis(m, GPR_CLOCK_REALTIME);
 }
 
 /* Cleaning up a list with pending timers. */
 void destruction_test(void) {
   grpc_timer timers[5];
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  gpr_log(GPR_INFO, "destruction_test");
 
   grpc_timer_list_init(gpr_time_0(GPR_CLOCK_REALTIME));
   memset(cb_called, 0, sizeof(cb_called));
