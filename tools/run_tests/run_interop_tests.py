@@ -956,6 +956,7 @@ try:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
+  http2_server_job = None
   if args.http2_badserver_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
@@ -963,8 +964,8 @@ try:
                           manual_cmd_log=server_manual_cmd_log)
     if not args.manual_run:
       job = dockerjob.DockerJob(spec)
-      job.wait_for_healthy(timeout_seconds=240)
-      print(subprocess.check_output(['docker', 'version']))
+      #job.wait_for_healthy(timeout_seconds=240)
+      http2_server_job = job
       server_jobs[lang] = job
       http2_badserver_ports = tuple([
           job.mapped_port(_DEFAULT_SERVER_PORT + i)
@@ -1054,6 +1055,8 @@ try:
         jobs.append(test_job)
 
   if args.http2_badserver_interop:
+    print(subprocess.check_output(['docker', 'ps']))
+    http2_server_job.wait_for_healthy(timeout_seconds=600)
     for language in languages_http2_badserver_interop:
       for test_case in _HTTP2_BADSERVER_TEST_CASES:
         offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
