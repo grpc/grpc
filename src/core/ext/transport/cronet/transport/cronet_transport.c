@@ -272,7 +272,7 @@ static void maybe_flush_read(stream_obj *s) {
   /* Whenever the evaluation of any of the two condition is changed, we check
    * whether we should enter the flush read state. */
   if (s->state.pending_recv_trailing_metadata && s->state.fail_state) {
-    if (!s->state.flush_read) {
+    if (!s->state.flush_read && !s->state.rs.read_stream_closed) {
       CRONET_LOG(GPR_DEBUG, "%p: Flush read", s);
       s->state.flush_read = true;
       null_and_maybe_free_read_buffer(s);
