@@ -340,17 +340,15 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(new_address != NULL);
     gpr_free(addr);
     addr = new_address;
-    if (new_args != NULL) c->args = new_args;
   }
-  if (c->args == NULL) {
-    static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-    grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
-    c->args = grpc_channel_args_copy_and_add_and_remove(
-        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &new_arg,
-        1);
-    gpr_free(new_arg.value.string);
-  }
+  static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
+  grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
   gpr_free(addr);
+  c->args = grpc_channel_args_copy_and_add_and_remove(
+      new_args != NULL ? new_args : args->args, keys_to_remove,
+      GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
+  gpr_free(new_arg.value.string);
+  if (new_args != NULL) grpc_channel_args_destroy(exec_ctx, new_args);
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c,
