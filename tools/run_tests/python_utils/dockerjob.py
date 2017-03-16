@@ -76,15 +76,13 @@ def wait_for_healthy(cid, shortname, timeout_seconds):
   while time.time() - started < timeout_seconds:
     try:
       output = subprocess.check_output(
-          ['docker', 'inspect', '--format="{{.State.Health.Status}}"', cid])
-          #stderr=_DEVNULL)
-      print(output)
+          ['docker', 'inspect', '--format="{{.State.Health.Status}}"', cid],
+          stderr=_DEVNULL)
       if output.strip('\n') == 'healthy':
         return
     except subprocess.CalledProcessError as e:
       pass
     time.sleep(1)
-  print(subprocess.check_output(['docker', 'ps']))
   raise Exception('Timed out waiting for %s (%s) to pass health check' %
                   (shortname, cid))
 

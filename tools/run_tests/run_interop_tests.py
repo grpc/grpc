@@ -700,7 +700,7 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
         % ('localhost', _DEFAULT_SERVER_PORT),
         '--health-interval=1s',
         '--health-retries=5',
-        '--health-timeout=1s',
+        '--health-timeout=10s',
     ]
 
   else:
@@ -956,21 +956,15 @@ try:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
-  http2_server_job = None
+  http2_badserver_job = None
   if args.http2_badserver_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
     spec = server_jobspec(http2InteropServer, docker_images.get(lang),
                           manual_cmd_log=server_manual_cmd_log)
     if not args.manual_run:
-      job = dockerjob.DockerJob(spec)
-      #job.wait_for_healthy(timeout_seconds=240)
-      http2_server_job = job
-      server_jobs[lang] = job
-      http2_badserver_ports = tuple([
-          job.mapped_port(_DEFAULT_SERVER_PORT + i)
-          for i in range(len(_HTTP2_BADSERVER_TEST_CASES))
-      ])
+      http2_badserver_job = dockerjob.DockerJob(spec)
+      server_jobs[lang] = http2_badserver_job
     else:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
@@ -1055,15 +1049,14 @@ try:
         jobs.append(test_job)
 
   if args.http2_badserver_interop:
-    print(subprocess.check_output(['docker', 'ps']))
-    http2_server_job.wait_for_healthy(timeout_seconds=600)
+    if not args.manual_run:
+      http2_badserver_job.wait_for_healthy(timeout_seconds=600)
     for language in languages_http2_badserver_interop:
       for test_case in _HTTP2_BADSERVER_TEST_CASES:
         offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
+        server_port = _DEFAULT_SERVER_PORT+offset
         if not args.manual_run:
-          server_port = http2_badserver_ports[offset]
-        else:
-          server_port = _DEFAULT_SERVER_PORT+offset
+          server_port = http2_badserver_job.mapped_port(server_port)
         test_job = cloud_to_cloud_jobspec(language,
                                           test_case,
                                           str(http2InteropServer),
