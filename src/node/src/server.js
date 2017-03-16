@@ -774,17 +774,33 @@ Server.prototype.addService = function(service, implementation) {
 
 /**
  * Add a proto service to the server, with a corresponding implementation
+ * @deprecated Use grpc.load and Server#addService instead
  * @param {Protobuf.Reflect.Service} service The proto service descriptor
  * @param {Object<String, function>} implementation Map of method names to
  *     method implementation for the provided service.
  */
 Server.prototype.addProtoService = function(service, implementation) {
   var options;
-  if (service.grpc_options) {
-    options = service.grpc_options;
+  common.log(grpc.logVerbosity.INFO,
+             'Server#addProtoService is deprecated. Use addService instead');
+  if (service.hasOwnProperty('children')) {
+    // Heuristically: this is a Protobuf.js 5 service object
+    var protobuf_js_5_common = require('./protobuf_js_5_common');
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_5_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else if (service.hasOwnProperty('methods')) {
+    // Heuristically: this is a Protobuf.js 6 service object
+    var protobuf_js_6_common = require('./protobuf_js_6_common');
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_6_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else {
+    // We assume that this is a service attributes object
+    this.addService(service, implementation);
   }
-  this.addService(common.getProtobufServiceAttrs(service, options),
-                  implementation);
 };
 
 /**

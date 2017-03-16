@@ -34,17 +34,26 @@
 'use strict';
 
 var assert = require('assert');
+var _ = require('lodash');
 
-var common = require('../src/common.js');
+var common = require('../src/common');
+var protobuf_js_6_common = require('../src/protobuf_js_6_common');
+
+var serializeCls = protobuf_js_6_common.serializeCls;
+var deserializeCls = protobuf_js_6_common.deserializeCls;
 
 var ProtoBuf = require('protobufjs');
 
-var messages_proto = ProtoBuf.loadProtoFile(
-    __dirname + '/test_messages.proto').build();
+var messages_proto = new ProtoBuf.Root();
+messages_proto = messages_proto.loadSync(
+    __dirname + '/test_messages.proto', {keepCase: true}).resolveAll();
+
+var default_options = common.defaultGrpcOptions;
 
 describe('Proto message long int serialize and deserialize', function() {
-  var longSerialize = common.serializeCls(messages_proto.LongValues);
-  var longDeserialize = common.deserializeCls(messages_proto.LongValues);
+  var longSerialize = serializeCls(messages_proto.LongValues);
+  var longDeserialize = deserializeCls(messages_proto.LongValues,
+                                       default_options);
   var pos_value = '314159265358979';
   var neg_value = '-27182818284590';
   it('should preserve positive int64 values', function() {
@@ -88,8 +97,9 @@ describe('Proto message long int serialize and deserialize', function() {
                        neg_value);
   });
   it('should deserialize as a number with the right option set', function() {
-    var longNumDeserialize = common.deserializeCls(messages_proto.LongValues,
-                                                   false, false);
+    var num_options = _.defaults({longsAsStrings: false}, default_options);
+    var longNumDeserialize = deserializeCls(messages_proto.LongValues,
+                                            num_options);
     var serialized = longSerialize({int_64: pos_value});
     assert.strictEqual(typeof longDeserialize(serialized).int_64, 'string');
     /* With the longsAsStrings option disabled, long values are represented as
@@ -98,11 +108,12 @@ describe('Proto message long int serialize and deserialize', function() {
   });
 });
 describe('Proto message bytes serialize and deserialize', function() {
-  var sequenceSerialize = common.serializeCls(messages_proto.SequenceValues);
-  var sequenceDeserialize = common.deserializeCls(
-      messages_proto.SequenceValues);
-  var sequenceBase64Deserialize = common.deserializeCls(
-      messages_proto.SequenceValues, true);
+  var sequenceSerialize = serializeCls(messages_proto.SequenceValues);
+  var sequenceDeserialize = deserializeCls(
+      messages_proto.SequenceValues, default_options);
+  var b64_options = _.defaults({binaryAsBase64: true}, default_options);
+  var sequenceBase64Deserialize = deserializeCls(
+      messages_proto.SequenceValues, b64_options);
   var buffer_val = new Buffer([0x69, 0xb7]);
   var base64_val = 'abc=';
   it('should preserve a buffer', function() {

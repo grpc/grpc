@@ -132,7 +132,7 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
       streamingCall: makeStreamingGenericCall(response_size)
     });
   } else {
-    server.addProtoService(serviceProto.BenchmarkService.service, {
+    server.addService(serviceProto.BenchmarkService.service, {
       unaryCall: unaryCall,
       streamingCall: streamingCall
     });

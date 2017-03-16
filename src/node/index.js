@@ -52,31 +52,35 @@ var Metadata = require('./src/metadata.js');
 
 var grpc = require('./src/grpc_extension');
 
+var protobuf_js_5_common = require('./src/protobuf_js_5_common');
+var protobuf_js_6_common = require('./src/protobuf_js_6_common');
+
 grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
 
-/**
- * Load a gRPC object from an existing ProtoBuf.Reflect object.
- * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
- * @param {Object=} options Options to apply to the loaded object
- * @return {Object<string, *>} The resulting gRPC object
- */
 exports.loadObject = function loadObject(value, options) {
-  var result = {};
-  if (value.className === 'Namespace') {
-    _.each(value.children, function(child) {
-      result[child.name] = loadObject(child, options);
-    });
-    return result;
-  } else if (value.className === 'Service') {
-    return client.makeProtobufClientConstructor(value, options);
-  } else if (value.className === 'Message' || value.className === 'Enum') {
-    return value.build();
-  } else {
-    return value;
+  options = _.defaults(options, {'protobufjs_version': 5});
+  switch (options.protobufjs_version) {
+    case 5: return protobuf_js_5_common.loadObject(value, options);
+    case 6: return protobuf_js_6_common.loadObject(value, options);
+    default: throw new Error('Unrecognized protobufjs_version:',
+                             options.protobufjs_version);
   }
 };
 
 var loadObject = exports.loadObject;
+
+function applyProtoRoot(filename, root) {
+  if (_.isString(filename)) {
+    return filename;
+  }
+  filename.root = path.resolve(filename.root) + '/';
+  root.resolvePath = function(originPath, importPath, alreadyNormalized) {
+    return ProtoBuf.util.path.resolve(filename.root,
+                                      importPath,
+                                      alreadyNormalized);
+  };
+  return filename.file;
+}
 
 /**
  * Load a gRPC object from a .proto file. The options object can provide the
@@ -99,29 +103,17 @@ var loadObject = exports.loadObject;
  * @return {Object<string, *>} The resulting gRPC object
  */
 exports.load = function load(filename, format, options) {
-  if (!format) {
-    format = 'proto';
-  }
-  var convertFieldsToCamelCaseOriginal = ProtoBuf.convertFieldsToCamelCase;
-  if(options && options.hasOwnProperty('convertFieldsToCamelCase')) {
-    ProtoBuf.convertFieldsToCamelCase = options.convertFieldsToCamelCase;
-  }
-  var builder;
-  try {
-    switch(format) {
-      case 'proto':
-      builder = ProtoBuf.loadProtoFile(filename);
-      break;
-      case 'json':
-      builder = ProtoBuf.loadJsonFile(filename);
-      break;
-      default:
-      throw new Error('Unrecognized format "' + format + '"');
-    }
-  } finally {
-    ProtoBuf.convertFieldsToCamelCase = convertFieldsToCamelCaseOriginal;
-  }
-  return loadObject(builder.ns, options);
+  /* Note: format is currently unused, because the API for loading a proto
+     file or a JSON file is identical in Protobuf.js 6. In the future, there is
+     still the possibility of adding other formats that would be loaded
+     differently */
+  options = _.defaults(options, common.defaultGrpcOptions);
+  options.protobufjs_version = 6;
+  var root = new ProtoBuf.Root();
+  var parse_options = {keepCase: !options.convertFieldsToCamelCase};
+  return loadObject(root.loadSync(applyProtoRoot(filename, root),
+                                  parse_options),
+                    options);
 };
 
 var log_template = _.template(
