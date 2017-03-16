@@ -9,3 +9,7 @@ race:__sleep_for
 # protobuf has an idempotent write race in ByteSize
 # https://github.com/google/protobuf/issues/2169
 race:ByteSize
+# There is a safe lock-inversion between these functions
+# See src/core/lib/iomgr/ev_poll_posix.c cvfd_poll() for details
+deadlock:cvfd_poll
+deadlock:cv_fd_wakeup

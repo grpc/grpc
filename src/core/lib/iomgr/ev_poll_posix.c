@@ -262,6 +262,7 @@ typedef enum poll_status_t { INPROGRESS, COMPLETED, CANCELLED } poll_status_t;
 
 typedef struct poll_args {
   gpr_refcount refcount;
+  gpr_mu *mu;
   gpr_cv *cv;
   struct pollfd *fds;
   nfds_t nfds;
@@ -271,7 +272,11 @@ typedef struct poll_args {
   gpr_atm status;
 } poll_args;
 
-cv_fd_table g_cvfds;
+cv_fd_table g_cvfds[GRPC_POLLCV_TABLE_SHARDS];
+static gpr_mu g_cvfds_shutdown_mu;
+static gpr_cv g_cvfds_shutdown_cv;
+static gpr_refcount g_cvfds_pollcount;
+static grpc_poll_function_type g_cvfds_poll;
 
 /*******************************************************************************
  * fd_posix.c
@@ -1330,6 +1335,8 @@ static void decref_poll_args(poll_args *args) {
     gpr_free(args->fds);
     gpr_cv_destroy(args->cv);
     gpr_free(args->cv);
+    gpr_mu_destroy(args->mu);
+    gpr_free(args->mu);
     gpr_free(args);
   }
 }
@@ -1345,53 +1352,68 @@ static void run_poll(void *arg) {
       timeout = GPR_MIN(CV_POLL_PERIOD_MS, pargs->timeout);
       pargs->timeout -= timeout;
     }
-    retval = g_cvfds.poll(pargs->fds, pargs->nfds, timeout);
+    retval = g_cvfds_poll(pargs->fds, pargs->nfds, timeout);
     if (retval != 0 || pargs->timeout == 0) {
       pargs->retval = retval;
       pargs->err = errno;
       break;
     }
   }
-  gpr_mu_lock(&g_cvfds.mu);
+  gpr_mu_lock(pargs->mu);
   if (gpr_atm_no_barrier_load(&pargs->status) == INPROGRESS) {
     // Signal main thread that the poll completed
     gpr_atm_no_barrier_store(&pargs->status, COMPLETED);
     gpr_cv_signal(pargs->cv);
   }
+  gpr_mu_unlock(pargs->mu);
   decref_poll_args(pargs);
-  g_cvfds.pollcount--;
-  if (g_cvfds.shutdown && g_cvfds.pollcount == 0) {
-    gpr_cv_signal(&g_cvfds.shutdown_complete);
+
+  if (gpr_unref(&g_cvfds_pollcount)) {
+    gpr_mu_lock(&g_cvfds_shutdown_mu);
+    gpr_cv_signal(&g_cvfds_shutdown_cv);
+    gpr_mu_unlock(&g_cvfds_shutdown_mu);
   }
-  gpr_mu_unlock(&g_cvfds.mu);
 }
 
 // This function overrides poll() to handle condition variable wakeup fds
 static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
-  unsigned int i;
-  int res, idx;
+  unsigned int i, j;
+  int res, shard, idx;
   gpr_cv *pollcv;
+  gpr_mu *pollmu;
   cv_node *cvn, *prev;
   int skip_poll = 0;
+  int poll_completed = 0;
   nfds_t nsockfds = 0;
   gpr_thd_id t_id;
   gpr_thd_options opt;
   poll_args *pargs = NULL;
-  gpr_mu_lock(&g_cvfds.mu);
   pollcv = gpr_malloc(sizeof(gpr_cv));
+  pollmu = gpr_malloc(sizeof(gpr_mu));
+  gpr_mu_init(pollmu);
   gpr_cv_init(pollcv);
+  gpr_mu_lock(pollmu);
   for (i = 0; i < nfds; i++) {
     fds[i].revents = 0;
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      idx = FD_TO_IDX(fds[i].fd);
+      shard = GRPC_POLLCV_FD_TO_SHARD(fds[i].fd);
+      // Note that g_cvfds[shard].mu and pollmu are aquired in opposite order
+      // between here and cv_fd_wakeup() (deadlock-prone).  However,
+      // g_cvfds[shard] can only get a reference to pollmu once we have
+      // succesfully aquired both locks here, and we never hold both locks
+      // again in this function.
+      gpr_mu_lock(&g_cvfds[shard].mu);
+      idx = GRPC_POLLCV_FD_TO_IDX(fds[i].fd);
       cvn = gpr_malloc(sizeof(cv_node));
       cvn->cv = pollcv;
-      cvn->next = g_cvfds.cvfds[idx].cvs;
-      g_cvfds.cvfds[idx].cvs = cvn;
+      cvn->mu = pollmu;
+      cvn->next = g_cvfds[shard].cvfds[idx].cvs;
+      g_cvfds[shard].cvfds[idx].cvs = cvn;
       // Don't bother polling if a wakeup fd is ready
-      if (g_cvfds.cvfds[idx].is_set) {
+      if (g_cvfds[shard].cvfds[idx].is_set) {
         skip_poll = 1;
       }
+      gpr_mu_unlock(&g_cvfds[shard].mu);
     } else if (fds[i].fd >= 0) {
       nsockfds++;
     }
@@ -1402,6 +1424,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     pargs = gpr_malloc(sizeof(struct poll_args));
     // Both the main thread and calling thread get a reference
     gpr_ref_init(&pargs->refcount, 2);
+    pargs->mu = pollmu;
     pargs->cv = pollcv;
     pargs->fds = gpr_malloc(sizeof(struct pollfd) * nsockfds);
     pargs->nfds = nsockfds;
@@ -1418,15 +1441,16 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
         idx++;
       }
     }
-    g_cvfds.pollcount++;
+    gpr_ref(&g_cvfds_pollcount);
     opt = gpr_thd_options_default();
     gpr_thd_options_set_detached(&opt);
     gpr_thd_new(&t_id, &run_poll, pargs, &opt);
     // We want the poll() thread to trigger the deadline, so wait forever here
-    gpr_cv_wait(pollcv, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_cv_wait(pollcv, pollmu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     if (gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
       res = pargs->retval;
       errno = pargs->err;
+      poll_completed = 1;
     } else {
       errno = 0;
       gpr_atm_no_barrier_store(&pargs->status, CANCELLED);
@@ -1435,13 +1459,19 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
     deadline =
         gpr_time_add(deadline, gpr_time_from_millis(timeout, GPR_TIMESPAN));
-    gpr_cv_wait(pollcv, &g_cvfds.mu, deadline);
+    gpr_cv_wait(pollcv, pollmu, deadline);
   }
+  // This needs to be released before calling gpr_mu_lock(&g_cvfds[shard].mu)
+  // (see above)
+  gpr_mu_unlock(pollmu);
 
-  idx = 0;
+  j = 0;
   for (i = 0; i < nfds; i++) {
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      cvn = g_cvfds.cvfds[FD_TO_IDX(fds[i].fd)].cvs;
+      shard = GRPC_POLLCV_FD_TO_SHARD(fds[i].fd);
+      idx = GRPC_POLLCV_FD_TO_IDX(fds[i].fd);
+      gpr_mu_lock(&g_cvfds[shard].mu);
+      cvn = g_cvfds[shard].cvfds[idx].cvs;
       prev = NULL;
       while (cvn->cv != pollcv) {
         prev = cvn;
@@ -1449,20 +1479,20 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
         GPR_ASSERT(cvn);
       }
       if (!prev) {
-        g_cvfds.cvfds[FD_TO_IDX(fds[i].fd)].cvs = cvn->next;
+        g_cvfds[shard].cvfds[idx].cvs = cvn->next;
       } else {
         prev->next = cvn->next;
       }
       gpr_free(cvn);
 
-      if (g_cvfds.cvfds[FD_TO_IDX(fds[i].fd)].is_set) {
+      if (g_cvfds[shard].cvfds[idx].is_set) {
         fds[i].revents = POLLIN;
         if (res >= 0) res++;
       }
-    } else if (!skip_poll && fds[i].fd >= 0 &&
-               gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
-      fds[i].revents = pargs->fds[idx].revents;
-      idx++;
+      gpr_mu_unlock(&g_cvfds[shard].mu);
+    } else if (poll_completed && fds[i].fd >= 0) {
+      fds[i].revents = pargs->fds[j].revents;
+      j++;
     }
   }
 
@@ -1471,49 +1501,57 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   } else {
     gpr_cv_destroy(pollcv);
     gpr_free(pollcv);
+    gpr_mu_destroy(pollmu);
+    gpr_free(pollmu);
   }
-  gpr_mu_unlock(&g_cvfds.mu);
-
   return res;
 }
 
 static void global_cv_fd_table_init() {
-  gpr_mu_init(&g_cvfds.mu);
-  gpr_mu_lock(&g_cvfds.mu);
-  gpr_cv_init(&g_cvfds.shutdown_complete);
-  g_cvfds.shutdown = 0;
-  g_cvfds.pollcount = 0;
-  g_cvfds.size = CV_DEFAULT_TABLE_SIZE;
-  g_cvfds.cvfds = gpr_malloc(sizeof(fd_node) * CV_DEFAULT_TABLE_SIZE);
-  g_cvfds.free_fds = NULL;
-  for (int i = 0; i < CV_DEFAULT_TABLE_SIZE; i++) {
-    g_cvfds.cvfds[i].is_set = 0;
-    g_cvfds.cvfds[i].cvs = NULL;
-    g_cvfds.cvfds[i].next_free = g_cvfds.free_fds;
-    g_cvfds.free_fds = &g_cvfds.cvfds[i];
+  gpr_mu_init(&g_cvfds_shutdown_mu);
+  gpr_mu_lock(&g_cvfds_shutdown_mu);
+  gpr_cv_init(&g_cvfds_shutdown_cv);
+  gpr_ref_init(&g_cvfds_pollcount, 1);
+
+  for (int i = 0; i < GRPC_POLLCV_TABLE_SHARDS; i++) {
+    gpr_mu_init(&g_cvfds[i].mu);
+    g_cvfds[i].size = CV_DEFAULT_TABLE_SIZE;
+    g_cvfds[i].cvfds = gpr_malloc(sizeof(fd_node) * CV_DEFAULT_TABLE_SIZE);
+    g_cvfds[i].free_fds = NULL;
+    for (int j = 0; j < CV_DEFAULT_TABLE_SIZE; j++) {
+      g_cvfds[i].cvfds[j].is_set = 0;
+      g_cvfds[i].cvfds[j].cvs = NULL;
+      g_cvfds[i].cvfds[j].next_free = g_cvfds[i].free_fds;
+      g_cvfds[i].free_fds = &g_cvfds[i].cvfds[j];
+    }
   }
+
   // Override the poll function with one that supports cvfds
-  g_cvfds.poll = grpc_poll_function;
+  g_cvfds_poll = grpc_poll_function;
   grpc_poll_function = &cvfd_poll;
-  gpr_mu_unlock(&g_cvfds.mu);
+  gpr_mu_unlock(&g_cvfds_shutdown_mu);
 }
 
 static void global_cv_fd_table_shutdown() {
-  gpr_mu_lock(&g_cvfds.mu);
-  g_cvfds.shutdown = 1;
+  gpr_mu_lock(&g_cvfds_shutdown_mu);
   // Attempt to wait for all abandoned poll() threads to terminate
   // Not doing so will result in reported memory leaks
-  if (g_cvfds.pollcount > 0) {
-    int res = gpr_cv_wait(&g_cvfds.shutdown_complete, &g_cvfds.mu,
+  if (!gpr_unref(&g_cvfds_pollcount)) {
+    int res = gpr_cv_wait(&g_cvfds_shutdown_cv, &g_cvfds_shutdown_mu,
                           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                        gpr_time_from_seconds(3, GPR_TIMESPAN)));
     GPR_ASSERT(res == 0);
   }
-  gpr_cv_destroy(&g_cvfds.shutdown_complete);
-  grpc_poll_function = g_cvfds.poll;
-  gpr_free(g_cvfds.cvfds);
-  gpr_mu_unlock(&g_cvfds.mu);
-  gpr_mu_destroy(&g_cvfds.mu);
+  gpr_cv_destroy(&g_cvfds_shutdown_cv);
+  grpc_poll_function = g_cvfds_poll;
+  for (int i = 0; i < GRPC_POLLCV_TABLE_SHARDS; i++) {
+    gpr_mu_lock(&g_cvfds[i].mu);
+    gpr_free(g_cvfds[i].cvfds);
+    gpr_mu_unlock(&g_cvfds[i].mu);
+    gpr_mu_destroy(&g_cvfds[i].mu);
+  }
+  gpr_mu_unlock(&g_cvfds_shutdown_mu);
+  gpr_mu_destroy(&g_cvfds_shutdown_mu);
 }
 
 /*******************************************************************************

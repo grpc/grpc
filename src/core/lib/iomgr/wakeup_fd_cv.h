@@ -38,11 +38,15 @@
  * available.  It can only be used with the "poll" engine.
  *
  * Implementation:
- * A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
- * file descriptor.  poll() is then run in a background thread with only the
- * real socket fds while we wait on a condition variable trigged by either the
- * poll() completion or a wakeup_fd() call.
- *
+ * A condition variable (cv) wakeup fd is represented as a negative number.
+ * The poll() function is overriden to allow polling on these cv wakeup fds.
+ * When we poll a cv wakeup fd, we create a condition variable.  This condition
+ * variable is then stored in a sharded global table, and indexed by the wakeup
+ * fd.
+ * The non-wakeup (socket) fds are then poll()ed in a background thread, while
+ * the
+ * main thread waits on the condition variable.  The condition variable can be
+ * triggered by either the socket poll() returning, or a wakeup fd being set.
  */
 
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
@@ -52,11 +56,17 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define FD_TO_IDX(fd) (-(fd)-1)
-#define IDX_TO_FD(idx) (-(idx)-1)
+#define GRPC_POLLCV_TABLE_SHARDS 16
+#define GRPC_POLLCV_MAX_SHARD_SIZE ((1 << 30) / GRPC_POLLCV_TABLE_SHARDS)
+
+#define GRPC_POLLCV_FD_TO_SHARD(fd) ((-(fd)-1) / GRPC_POLLCV_MAX_SHARD_SIZE)
+#define GRPC_POLLCV_FD_TO_IDX(fd) ((-(fd)-1) % GRPC_POLLCV_MAX_SHARD_SIZE)
+#define GRPC_POLLCV_SHARD_IDX_TO_FD(shard, idx) \
+  (-(shard * GRPC_POLLCV_MAX_SHARD_SIZE + idx) - 1)
 
 typedef struct cv_node {
   gpr_cv* cv;
+  gpr_mu* mu;
   struct cv_node* next;
 } cv_node;
 
@@ -68,13 +78,9 @@ typedef struct fd_node {
 
 typedef struct cv_fd_table {
   gpr_mu mu;
-  int pollcount;
-  int shutdown;
-  gpr_cv shutdown_complete;
   fd_node* cvfds;
   fd_node* free_fds;
-  unsigned int size;
-  grpc_poll_function_type poll;
+  int size;
 } cv_fd_table;
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */
