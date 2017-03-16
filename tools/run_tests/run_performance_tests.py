@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -46,6 +46,7 @@ import tempfile
 import time
 import traceback
 import uuid
+import six
 
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
@@ -502,8 +503,8 @@ args = argp.parse_args()
 
 languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+                      six.iterkeys(scenario_config.LANGUAGES) if x == 'all'
+                      else [x] for x in args.language))
 
 
 # Put together set of remote hosts where to run and build
@@ -572,8 +573,8 @@ for scenario in scenarios:
         jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
       scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
-      merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
-                                              resultset.iteritems()))
+      merged_resultset = dict(itertools.chain(six.iteritems(merged_resultset),
+                                              six.iteritems(resultset)))
     finally:
       # Consider qps workers that need to be killed as failures
       qps_workers_killed += finish_qps_workers(scenario.workers)
