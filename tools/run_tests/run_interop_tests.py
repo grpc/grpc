@@ -964,7 +964,7 @@ try:
                           manual_cmd_log=server_manual_cmd_log)
     if not args.manual_run:
       job = dockerjob.DockerJob(spec)
-      #job.wait_for_healthy(timeout_seconds=240)
+      job.wait_for_healthy(timeout_seconds=240)
       print(subprocess.check_output(['docker', 'version']))
       server_jobs[lang] = job
       http2_badserver_ports = tuple([
