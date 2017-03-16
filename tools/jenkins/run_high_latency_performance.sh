@@ -31,11 +31,11 @@
 # This script is invoked by Jenkins and runs high latency performance test suite.
 set -ex
 
-BQ_DATASET=${1:-performance_test}
-BQ_TABLE=${2:-performance_high_latency}
+BQ_DATASET=${BQ_DATASET:-performance_test}
+BQ_TABLE=${BQ_TABLE:-performance_high_latency}
 
 # by default run single stream unary only
-SCENARIO_REGEX=${3:-.*unary.*ping_pong*}
+SCENARIO_REGEX=${SCENARIO_REGEX:-.*unary.*ping_pong*}
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
