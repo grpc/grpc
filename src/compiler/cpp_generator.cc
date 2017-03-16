@@ -1078,8 +1078,8 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "const $Request$& request, "
         "::grpc::CompletionQueue* cq) {\n");
     printer->Print(*vars,
-                   "  return new "
-                   "::grpc::ClientAsyncResponseReader< $Response$>("
+                   "  return "
+                   "::grpc::ClientAsyncResponseReader< $Response$>::Create("
                    "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"

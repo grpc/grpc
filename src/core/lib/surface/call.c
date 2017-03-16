@@ -268,6 +268,10 @@ static void add_init_error(grpc_error **composite, grpc_error *new) {
   *composite = grpc_error_add_child(*composite, new);
 }
 
+void *grpc_call_arena_alloc(grpc_call *call, size_t size) {
+  return gpr_arena_alloc(call->arena, size);
+}
+
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                              const grpc_call_create_args *args,
                              grpc_call **out_call) {

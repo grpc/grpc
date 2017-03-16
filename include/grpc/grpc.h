@@ -198,6 +198,10 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved);
 
+/** Allocate memory in the grpc_call arena: this memory is automatically
+    discarded at call completion */
+GRPCAPI void *grpc_call_arena_alloc(grpc_call *call, size_t size);
+
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
