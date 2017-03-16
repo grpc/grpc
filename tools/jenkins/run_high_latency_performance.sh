@@ -34,6 +34,9 @@ set -ex
 BQ_DATASET=${1:-performance_test}
 BQ_TABLE=${2:-performance_high_latency}
 
+# by default run single stream unary only
+SCENARIO_REGEX=${3:-.*unary.*ping_pong*}
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
@@ -43,7 +46,7 @@ tools/run_tests/run_performance_tests.py \
     -l go c++ java \
     --netperf \
     --category sweep \
-    -r .*unary.*ping_pong* \
+    -r "${SCENARIO_REGEX}" \
     --bq_result_table "${BQ_DATASET}.${BQ_TABLE}" \
     --remote_worker_host grpc-performance-2core grpc-performance-asia-east-2core \
     --xml_report report_high_latency_2core.xml \
