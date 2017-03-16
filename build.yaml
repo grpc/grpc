@@ -4285,8 +4285,8 @@ configs:
       TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow
-      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang
@@ -4294,7 +4294,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
