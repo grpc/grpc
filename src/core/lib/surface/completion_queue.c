@@ -64,6 +64,10 @@ typedef struct {
 struct grpc_completion_queue {
   /** owned by pollset */
   gpr_mu *mu;
+
+  grpc_cq_completion_type completion_type;
+  grpc_cq_polling_type polling_type;
+
   /** completed events */
   grpc_cq_completion completed_head;
   grpc_cq_completion *completed_tail;
@@ -79,6 +83,7 @@ struct grpc_completion_queue {
   int shutdown_called;
   int is_server_cq;
   /** Can the server cq accept incoming channels */
+  /* TODO: sreek - This will no longer be needed. Use polling_type set */
   int is_non_listening_server_cq;
   int num_pluckers;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
@@ -110,7 +115,9 @@ int grpc_cq_event_timeout_trace;
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
 
-grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
+grpc_completion_queue *grpc_completion_queue_create_ex(
+    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
+    void *reserved) {
   grpc_completion_queue *cc;
   GPR_ASSERT(!reserved);
 
@@ -146,6 +153,10 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   GPR_TIMER_END("grpc_completion_queue_create", 0);
 
   return cc;
+}
+
+grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
+  return grpc_completion_queue_create_ex(0, DEFAULT_POLLING, reserved);
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
@@ -356,8 +367,9 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5,
+      (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+       reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cc);
@@ -524,8 +536,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
-            (int)deadline.clock_type, reserved));
+        6,
+        (cc, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+         reserved));
   }
   GPR_ASSERT(!reserved);
 
@@ -681,10 +694,14 @@ grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
 }
 
 void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc) {
+  /* TODO: sreek - use cc->polling_type field here and add a validation check
+     (i.e grpc_cq_mark_non_listening_server_cq can only be called on a cc whose
+     polling_type is set to NON_LISTENING */
   cc->is_non_listening_server_cq = 1;
 }
 
 bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc) {
+  /* TODO (sreek) - return (cc->polling_type == NON_LISTENING) */
   return (cc->is_non_listening_server_cq == 1);
 }
 
