@@ -29,18 +29,19 @@
 """Entry points into the Beta API of gRPC Python."""
 
 # threading is referenced from specification in this module.
-import abc
-import enum
 import threading  # pylint: disable=unused-import
 
-# cardinality and face are referenced from specification in this module.
+# interfaces, cardinality, and face are referenced from specification in this
+# module.
 import grpc
 from grpc import _auth
 from grpc.beta import _client_adaptations
 from grpc.beta import _server_adaptations
-from grpc.beta import interfaces
+from grpc.beta import interfaces  # pylint: disable=unused-import
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
+
+# pylint: disable=too-many-arguments
 
 ChannelCredentials = grpc.ChannelCredentials
 ssl_channel_credentials = grpc.ssl_channel_credentials
@@ -218,7 +219,7 @@ def dynamic_stub(channel, service, cardinalities, options=None):
   Returns:
     A face.DynamicStub with which RPCs can be invoked.
   """
-    effective_options = StubOptions() if options is None else options
+    effective_options = _EMPTY_STUB_OPTIONS if options is None else options
     return _client_adaptations.dynamic_stub(
         channel._channel,  # pylint: disable=protected-access
         service,

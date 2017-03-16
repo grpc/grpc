@@ -37,7 +37,7 @@ import six
 import grpc
 from grpc._cython import cygrpc
 
-_EMPTY_METADATA = cygrpc.Metadata(())
+EMPTY_METADATA = cygrpc.Metadata(())
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle:
@@ -97,22 +97,22 @@ def decode(b):
 
 
 def channel_args(options):
-    channel_args = []
+    cygrpc_args = []
     for key, value in options:
         if isinstance(value, six.string_types):
-            channel_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
+            cygrpc_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
         else:
-            channel_args.append(cygrpc.ChannelArg(encode(key), value))
-    return cygrpc.ChannelArgs(channel_args)
+            cygrpc_args.append(cygrpc.ChannelArg(encode(key), value))
+    return cygrpc.ChannelArgs(cygrpc_args)
 
 
-def cygrpc_metadata(application_metadata):
-    return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
+def to_cygrpc_metadata(application_metadata):
+    return EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
         cygrpc.Metadatum(encode(key), encode(value))
         for key, value in application_metadata)
 
 
-def application_metadata(cygrpc_metadata):
+def to_application_metadata(cygrpc_metadata):
     if cygrpc_metadata is None:
         return ()
     else:

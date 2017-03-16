@@ -118,7 +118,7 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 
   GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
 
-  cc = gpr_malloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
+  cc = gpr_zalloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
   grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
 #ifndef NDEBUG
   cc->outstanding_tags = NULL;

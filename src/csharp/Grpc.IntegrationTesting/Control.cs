@@ -30,63 +30,66 @@ namespace Grpc.Testing {
             "cnBjLnRlc3RpbmcuQ2xvc2VkTG9vcFBhcmFtc0gAEi4KB3BvaXNzb24YAiAB",
             "KAsyGy5ncnBjLnRlc3RpbmcuUG9pc3NvblBhcmFtc0gAQgYKBGxvYWQiQwoO",
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
-            "X2hvc3Rfb3ZlcnJpZGUYAiABKAki8AMKDENsaWVudENvbmZpZxIWCg5zZXJ2",
-            "ZXJfdGFyZ2V0cxgBIAMoCRItCgtjbGllbnRfdHlwZRgCIAEoDjIYLmdycGMu",
-            "dGVzdGluZy5DbGllbnRUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgDIAEoCzIc",
-            "LmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIkChxvdXRzdGFuZGluZ19y",
-            "cGNzX3Blcl9jaGFubmVsGAQgASgFEhcKD2NsaWVudF9jaGFubmVscxgFIAEo",
-            "BRIcChRhc3luY19jbGllbnRfdGhyZWFkcxgHIAEoBRInCghycGNfdHlwZRgI",
-            "IAEoDjIVLmdycGMudGVzdGluZy5ScGNUeXBlEi0KC2xvYWRfcGFyYW1zGAog",
-            "ASgLMhguZ3JwYy50ZXN0aW5nLkxvYWRQYXJhbXMSMwoOcGF5bG9hZF9jb25m",
-            "aWcYCyABKAsyGy5ncnBjLnRlc3RpbmcuUGF5bG9hZENvbmZpZxI3ChBoaXN0",
-            "b2dyYW1fcGFyYW1zGAwgASgLMh0uZ3JwYy50ZXN0aW5nLkhpc3RvZ3JhbVBh",
-            "cmFtcxIRCgljb3JlX2xpc3QYDSADKAUSEgoKY29yZV9saW1pdBgOIAEoBRIY",
-            "ChBvdGhlcl9jbGllbnRfYXBpGA8gASgJIjgKDENsaWVudFN0YXR1cxIoCgVz",
-            "dGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIVCgRNYXJr",
-            "Eg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAYASABKAsy",
-            "Gi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgCIAEoCzIS",
-            "LmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSK0AgoMU2VydmVyQ29u",
-            "ZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5nLlNlcnZl",
-            "clR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50ZXN0aW5n",
-            "LlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVy",
-            "X3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2Fk",
-            "X2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnEhEK",
-            "CWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsgASgJEhwK",
-            "E3Jlc291cmNlX3F1b3RhX3NpemUY6QcgASgFImgKClNlcnZlckFyZ3MSKwoF",
-            "c2V0dXAYASABKAsyGi5ncnBjLnRlc3RpbmcuU2VydmVyQ29uZmlnSAASIgoE",
-            "bWFyaxgCIAEoCzISLmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSJV",
-            "CgxTZXJ2ZXJTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBjLnRlc3Rpbmcu",
-            "U2VydmVyU3RhdHMSDAoEcG9ydBgCIAEoBRINCgVjb3JlcxgDIAEoBSINCgtD",
-            "b3JlUmVxdWVzdCIdCgxDb3JlUmVzcG9uc2USDQoFY29yZXMYASABKAUiBgoE",
-            "Vm9pZCL9AQoIU2NlbmFyaW8SDAoEbmFtZRgBIAEoCRIxCg1jbGllbnRfY29u",
-            "ZmlnGAIgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVudENvbmZpZxITCgtudW1f",
-            "Y2xpZW50cxgDIAEoBRIxCg1zZXJ2ZXJfY29uZmlnGAQgASgLMhouZ3JwYy50",
-            "ZXN0aW5nLlNlcnZlckNvbmZpZxITCgtudW1fc2VydmVycxgFIAEoBRIWCg53",
-            "YXJtdXBfc2Vjb25kcxgGIAEoBRIZChFiZW5jaG1hcmtfc2Vjb25kcxgHIAEo",
-            "BRIgChhzcGF3bl9sb2NhbF93b3JrZXJfY291bnQYCCABKAUiNgoJU2NlbmFy",
-            "aW9zEikKCXNjZW5hcmlvcxgBIAMoCzIWLmdycGMudGVzdGluZy5TY2VuYXJp",
-            "byL4AgoVU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EgsKA3FwcxgBIAEoARIbChNx",
-            "cHNfcGVyX3NlcnZlcl9jb3JlGAIgASgBEhoKEnNlcnZlcl9zeXN0ZW1fdGlt",
-            "ZRgDIAEoARIYChBzZXJ2ZXJfdXNlcl90aW1lGAQgASgBEhoKEmNsaWVudF9z",
-            "eXN0ZW1fdGltZRgFIAEoARIYChBjbGllbnRfdXNlcl90aW1lGAYgASgBEhIK",
-            "CmxhdGVuY3lfNTAYByABKAESEgoKbGF0ZW5jeV85MBgIIAEoARISCgpsYXRl",
-            "bmN5Xzk1GAkgASgBEhIKCmxhdGVuY3lfOTkYCiABKAESEwoLbGF0ZW5jeV85",
-            "OTkYCyABKAESGAoQc2VydmVyX2NwdV91c2FnZRgMIAEoARImCh5zdWNjZXNz",
-            "ZnVsX3JlcXVlc3RzX3Blcl9zZWNvbmQYDSABKAESIgoaZmFpbGVkX3JlcXVl",
-            "c3RzX3Blcl9zZWNvbmQYDiABKAEigwMKDlNjZW5hcmlvUmVzdWx0EigKCHNj",
-            "ZW5hcmlvGAEgASgLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxhdGVu",
-            "Y2llcxgCIAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8KDGNs",
-            "aWVudF9zdGF0cxgDIAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cxIv",
-            "CgxzZXJ2ZXJfc3RhdHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVyU3Rh",
-            "dHMSFAoMc2VydmVyX2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsyIy5n",
-            "cnBjLnRlc3RpbmcuU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EhYKDmNsaWVudF9z",
-            "dWNjZXNzGAcgAygIEhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVl",
-            "c3RfcmVzdWx0cxgJIAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0",
-            "Q291bnQqQQoKQ2xpZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5D",
-            "X0NMSUVOVBABEhAKDE9USEVSX0NMSUVOVBACKlsKClNlcnZlclR5cGUSDwoL",
-            "U1lOQ19TRVJWRVIQABIQCgxBU1lOQ19TRVJWRVIQARIYChRBU1lOQ19HRU5F",
-            "UklDX1NFUlZFUhACEhAKDE9USEVSX1NFUlZFUhADKiMKB1JwY1R5cGUSCQoF",
-            "VU5BUlkQABINCglTVFJFQU1JTkcQAWIGcHJvdG8z"));
+            "X2hvc3Rfb3ZlcnJpZGUYAiABKAkiTQoKQ2hhbm5lbEFyZxIMCgRuYW1lGAEg",
+            "ASgJEhMKCXN0cl92YWx1ZRgCIAEoCUgAEhMKCWludF92YWx1ZRgDIAEoBUgA",
+            "QgcKBXZhbHVlIqAECgxDbGllbnRDb25maWcSFgoOc2VydmVyX3RhcmdldHMY",
+            "ASADKAkSLQoLY2xpZW50X3R5cGUYAiABKA4yGC5ncnBjLnRlc3RpbmcuQ2xp",
+            "ZW50VHlwZRI1Cg9zZWN1cml0eV9wYXJhbXMYAyABKAsyHC5ncnBjLnRlc3Rp",
+            "bmcuU2VjdXJpdHlQYXJhbXMSJAocb3V0c3RhbmRpbmdfcnBjc19wZXJfY2hh",
+            "bm5lbBgEIAEoBRIXCg9jbGllbnRfY2hhbm5lbHMYBSABKAUSHAoUYXN5bmNf",
+            "Y2xpZW50X3RocmVhZHMYByABKAUSJwoIcnBjX3R5cGUYCCABKA4yFS5ncnBj",
+            "LnRlc3RpbmcuUnBjVHlwZRItCgtsb2FkX3BhcmFtcxgKIAEoCzIYLmdycGMu",
+            "dGVzdGluZy5Mb2FkUGFyYW1zEjMKDnBheWxvYWRfY29uZmlnGAsgASgLMhsu",
+            "Z3JwYy50ZXN0aW5nLlBheWxvYWRDb25maWcSNwoQaGlzdG9ncmFtX3BhcmFt",
+            "cxgMIAEoCzIdLmdycGMudGVzdGluZy5IaXN0b2dyYW1QYXJhbXMSEQoJY29y",
+            "ZV9saXN0GA0gAygFEhIKCmNvcmVfbGltaXQYDiABKAUSGAoQb3RoZXJfY2xp",
+            "ZW50X2FwaRgPIAEoCRIuCgxjaGFubmVsX2FyZ3MYECADKAsyGC5ncnBjLnRl",
+            "c3RpbmcuQ2hhbm5lbEFyZyI4CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASAB",
+            "KAsyGS5ncnBjLnRlc3RpbmcuQ2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNl",
+            "dBgBIAEoCCJoCgpDbGllbnRBcmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50",
+            "ZXN0aW5nLkNsaWVudENvbmZpZ0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRl",
+            "c3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUitAIKDFNlcnZlckNvbmZpZxItCgtz",
+            "ZXJ2ZXJfdHlwZRgBIAEoDjIYLmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUK",
+            "D3NlY3VyaXR5X3BhcmFtcxgCIAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0",
+            "eVBhcmFtcxIMCgRwb3J0GAQgASgFEhwKFGFzeW5jX3NlcnZlcl90aHJlYWRz",
+            "GAcgASgFEhIKCmNvcmVfbGltaXQYCCABKAUSMwoOcGF5bG9hZF9jb25maWcY",
+            "CSABKAsyGy5ncnBjLnRlc3RpbmcuUGF5bG9hZENvbmZpZxIRCgljb3JlX2xp",
+            "c3QYCiADKAUSGAoQb3RoZXJfc2VydmVyX2FwaRgLIAEoCRIcChNyZXNvdXJj",
+            "ZV9xdW90YV9zaXplGOkHIAEoBSJoCgpTZXJ2ZXJBcmdzEisKBXNldHVwGAEg",
+            "ASgLMhouZ3JwYy50ZXN0aW5nLlNlcnZlckNvbmZpZ0gAEiIKBG1hcmsYAiAB",
+            "KAsyEi5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUiVQoMU2VydmVy",
+            "U3RhdHVzEigKBXN0YXRzGAEgASgLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0",
+            "YXRzEgwKBHBvcnQYAiABKAUSDQoFY29yZXMYAyABKAUiDQoLQ29yZVJlcXVl",
+            "c3QiHQoMQ29yZVJlc3BvbnNlEg0KBWNvcmVzGAEgASgFIgYKBFZvaWQi/QEK",
+            "CFNjZW5hcmlvEgwKBG5hbWUYASABKAkSMQoNY2xpZW50X2NvbmZpZxgCIAEo",
+            "CzIaLmdycGMudGVzdGluZy5DbGllbnRDb25maWcSEwoLbnVtX2NsaWVudHMY",
+            "AyABKAUSMQoNc2VydmVyX2NvbmZpZxgEIAEoCzIaLmdycGMudGVzdGluZy5T",
+            "ZXJ2ZXJDb25maWcSEwoLbnVtX3NlcnZlcnMYBSABKAUSFgoOd2FybXVwX3Nl",
+            "Y29uZHMYBiABKAUSGQoRYmVuY2htYXJrX3NlY29uZHMYByABKAUSIAoYc3Bh",
+            "d25fbG9jYWxfd29ya2VyX2NvdW50GAggASgFIjYKCVNjZW5hcmlvcxIpCglz",
+            "Y2VuYXJpb3MYASADKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8i+AIKFVNj",
+            "ZW5hcmlvUmVzdWx0U3VtbWFyeRILCgNxcHMYASABKAESGwoTcXBzX3Blcl9z",
+            "ZXJ2ZXJfY29yZRgCIAEoARIaChJzZXJ2ZXJfc3lzdGVtX3RpbWUYAyABKAES",
+            "GAoQc2VydmVyX3VzZXJfdGltZRgEIAEoARIaChJjbGllbnRfc3lzdGVtX3Rp",
+            "bWUYBSABKAESGAoQY2xpZW50X3VzZXJfdGltZRgGIAEoARISCgpsYXRlbmN5",
+            "XzUwGAcgASgBEhIKCmxhdGVuY3lfOTAYCCABKAESEgoKbGF0ZW5jeV85NRgJ",
+            "IAEoARISCgpsYXRlbmN5Xzk5GAogASgBEhMKC2xhdGVuY3lfOTk5GAsgASgB",
+            "EhgKEHNlcnZlcl9jcHVfdXNhZ2UYDCABKAESJgoec3VjY2Vzc2Z1bF9yZXF1",
+            "ZXN0c19wZXJfc2Vjb25kGA0gASgBEiIKGmZhaWxlZF9yZXF1ZXN0c19wZXJf",
+            "c2Vjb25kGA4gASgBIoMDCg5TY2VuYXJpb1Jlc3VsdBIoCghzY2VuYXJpbxgB",
+            "IAEoCzIWLmdycGMudGVzdGluZy5TY2VuYXJpbxIuCglsYXRlbmNpZXMYAiAB",
+            "KAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9ncmFtRGF0YRIvCgxjbGllbnRfc3Rh",
+            "dHMYAyADKAsyGS5ncnBjLnRlc3RpbmcuQ2xpZW50U3RhdHMSLwoMc2VydmVy",
+            "X3N0YXRzGAQgAygLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0YXRzEhQKDHNl",
+            "cnZlcl9jb3JlcxgFIAMoBRI0CgdzdW1tYXJ5GAYgASgLMiMuZ3JwYy50ZXN0",
+            "aW5nLlNjZW5hcmlvUmVzdWx0U3VtbWFyeRIWCg5jbGllbnRfc3VjY2VzcxgH",
+            "IAMoCBIWCg5zZXJ2ZXJfc3VjY2VzcxgIIAMoCBI5Cg9yZXF1ZXN0X3Jlc3Vs",
+            "dHMYCSADKAsyIC5ncnBjLnRlc3RpbmcuUmVxdWVzdFJlc3VsdENvdW50KkEK",
+            "CkNsaWVudFR5cGUSDwoLU1lOQ19DTElFTlQQABIQCgxBU1lOQ19DTElFTlQQ",
+            "ARIQCgxPVEhFUl9DTElFTlQQAipbCgpTZXJ2ZXJUeXBlEg8KC1NZTkNfU0VS",
+            "VkVSEAASEAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZTkNfR0VORVJJQ19TRVJW",
+            "RVIQAhIQCgxPVEhFUl9TRVJWRVIQAyojCgdScGNUeXBlEgkKBVVOQVJZEAAS",
+            "DQoJU1RSRUFNSU5HEAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -94,7 +97,8 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
@@ -116,13 +120,13 @@ namespace Grpc.Testing {
   #region Enums
   public enum ClientType {
     /// <summary>
-    ///  Many languages support a basic distinction between using
-    ///  sync or async client, and this allows the specification
+    /// Many languages support a basic distinction between using
+    /// sync or async client, and this allows the specification
     /// </summary>
     [pbr::OriginalName("SYNC_CLIENT")] SyncClient = 0,
     [pbr::OriginalName("ASYNC_CLIENT")] AsyncClient = 1,
     /// <summary>
-    ///  used for some language-specific variants
+    /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_CLIENT")] OtherClient = 2,
   }
@@ -132,7 +136,7 @@ namespace Grpc.Testing {
     [pbr::OriginalName("ASYNC_SERVER")] AsyncServer = 1,
     [pbr::OriginalName("ASYNC_GENERIC_SERVER")] AsyncGenericServer = 2,
     /// <summary>
-    ///  used for some language-specific variants
+    /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_SERVER")] OtherServer = 3,
   }
@@ -146,8 +150,8 @@ namespace Grpc.Testing {
 
   #region Messages
   /// <summary>
-  ///  Parameters of poisson process distribution, which is a good representation
-  ///  of activity coming in from independent identical stationary sources.
+  /// Parameters of poisson process distribution, which is a good representation
+  /// of activity coming in from independent identical stationary sources.
   /// </summary>
   public sealed partial class PoissonParams : pb::IMessage<PoissonParams> {
     private static readonly pb::MessageParser<PoissonParams> _parser = new pb::MessageParser<PoissonParams>(() => new PoissonParams());
@@ -185,7 +189,7 @@ namespace Grpc.Testing {
     public const int OfferedLoadFieldNumber = 1;
     private double offeredLoad_;
     /// <summary>
-    ///  The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
+    /// The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double OfferedLoad {
@@ -270,8 +274,8 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Once an RPC finishes, immediately start a new one.
-  ///  No configuration parameters needed.
+  /// Once an RPC finishes, immediately start a new one.
+  /// No configuration parameters needed.
   /// </summary>
   public sealed partial class ClosedLoopParams : pb::IMessage<ClosedLoopParams> {
     private static readonly pb::MessageParser<ClosedLoopParams> _parser = new pb::MessageParser<ClosedLoopParams>(() => new ClosedLoopParams());
@@ -549,7 +553,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  presence of SecurityParams implies use of TLS
+  /// presence of SecurityParams implies use of TLS
   /// </summary>
   public sealed partial class SecurityParams : pb::IMessage<SecurityParams> {
     private static readonly pb::MessageParser<SecurityParams> _parser = new pb::MessageParser<SecurityParams>(() => new SecurityParams());
@@ -696,6 +700,210 @@ namespace Grpc.Testing {
 
   }
 
+  public sealed partial class ChannelArg : pb::IMessage<ChannelArg> {
+    private static readonly pb::MessageParser<ChannelArg> _parser = new pb::MessageParser<ChannelArg>(() => new ChannelArg());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ChannelArg> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg(ChannelArg other) : this() {
+      name_ = other.name_;
+      switch (other.ValueCase) {
+        case ValueOneofCase.StrValue:
+          StrValue = other.StrValue;
+          break;
+        case ValueOneofCase.IntValue:
+          IntValue = other.IntValue;
+          break;
+      }
+
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg Clone() {
+      return new ChannelArg(this);
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "str_value" field.</summary>
+    public const int StrValueFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string StrValue {
+      get { return valueCase_ == ValueOneofCase.StrValue ? (string) value_ : ""; }
+      set {
+        value_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        valueCase_ = ValueOneofCase.StrValue;
+      }
+    }
+
+    /// <summary>Field number for the "int_value" field.</summary>
+    public const int IntValueFieldNumber = 3;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int IntValue {
+      get { return valueCase_ == ValueOneofCase.IntValue ? (int) value_ : 0; }
+      set {
+        value_ = value;
+        valueCase_ = ValueOneofCase.IntValue;
+      }
+    }
+
+    private object value_;
+    /// <summary>Enum of possible cases for the "value" oneof.</summary>
+    public enum ValueOneofCase {
+      None = 0,
+      StrValue = 2,
+      IntValue = 3,
+    }
+    private ValueOneofCase valueCase_ = ValueOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ValueOneofCase ValueCase {
+      get { return valueCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void ClearValue() {
+      valueCase_ = ValueOneofCase.None;
+      value_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ChannelArg);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ChannelArg other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Name != other.Name) return false;
+      if (StrValue != other.StrValue) return false;
+      if (IntValue != other.IntValue) return false;
+      if (ValueCase != other.ValueCase) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (valueCase_ == ValueOneofCase.StrValue) hash ^= StrValue.GetHashCode();
+      if (valueCase_ == ValueOneofCase.IntValue) hash ^= IntValue.GetHashCode();
+      hash ^= (int) valueCase_;
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
+      }
+      if (valueCase_ == ValueOneofCase.StrValue) {
+        output.WriteRawTag(18);
+        output.WriteString(StrValue);
+      }
+      if (valueCase_ == ValueOneofCase.IntValue) {
+        output.WriteRawTag(24);
+        output.WriteInt32(IntValue);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (valueCase_ == ValueOneofCase.StrValue) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(StrValue);
+      }
+      if (valueCase_ == ValueOneofCase.IntValue) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(IntValue);
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ChannelArg other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      switch (other.ValueCase) {
+        case ValueOneofCase.StrValue:
+          StrValue = other.StrValue;
+          break;
+        case ValueOneofCase.IntValue:
+          IntValue = other.IntValue;
+          break;
+      }
+
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            Name = input.ReadString();
+            break;
+          }
+          case 18: {
+            StrValue = input.ReadString();
+            break;
+          }
+          case 24: {
+            IntValue = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class ClientConfig : pb::IMessage<ClientConfig> {
     private static readonly pb::MessageParser<ClientConfig> _parser = new pb::MessageParser<ClientConfig>(() => new ClientConfig());
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -703,7 +911,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -733,6 +941,7 @@ namespace Grpc.Testing {
       coreList_ = other.coreList_.Clone();
       coreLimit_ = other.coreLimit_;
       otherClientApi_ = other.otherClientApi_;
+      channelArgs_ = other.channelArgs_.Clone();
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -746,7 +955,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForString(10);
     private readonly pbc::RepeatedField<string> serverTargets_ = new pbc::RepeatedField<string>();
     /// <summary>
-    ///  List of targets to connect to. At least one target needs to be specified.
+    /// List of targets to connect to. At least one target needs to be specified.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<string> ServerTargets {
@@ -779,8 +988,8 @@ namespace Grpc.Testing {
     public const int OutstandingRpcsPerChannelFieldNumber = 4;
     private int outstandingRpcsPerChannel_;
     /// <summary>
-    ///  How many concurrent RPCs to start for each channel.
-    ///  For synchronous client, use a separate thread for each outstanding RPC.
+    /// How many concurrent RPCs to start for each channel.
+    /// For synchronous client, use a separate thread for each outstanding RPC.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int OutstandingRpcsPerChannel {
@@ -794,8 +1003,8 @@ namespace Grpc.Testing {
     public const int ClientChannelsFieldNumber = 5;
     private int clientChannels_;
     /// <summary>
-    ///  Number of independent client channels to create.
-    ///  i-th channel will connect to server_target[i % server_targets.size()]
+    /// Number of independent client channels to create.
+    /// i-th channel will connect to server_target[i % server_targets.size()]
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ClientChannels {
@@ -809,7 +1018,7 @@ namespace Grpc.Testing {
     public const int AsyncClientThreadsFieldNumber = 7;
     private int asyncClientThreads_;
     /// <summary>
-    ///  Only for async client. Number of threads to use to start/manage RPCs.
+    /// Only for async client. Number of threads to use to start/manage RPCs.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int AsyncClientThreads {
@@ -834,7 +1043,7 @@ namespace Grpc.Testing {
     public const int LoadParamsFieldNumber = 10;
     private global::Grpc.Testing.LoadParams loadParams_;
     /// <summary>
-    ///  The requested load for the entire client (aggregated over all the threads).
+    /// The requested load for the entire client (aggregated over all the threads).
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.LoadParams LoadParams {
@@ -872,7 +1081,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(106);
     private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Specify the cores we should run the client on, if desired
+    /// Specify the cores we should run the client on, if desired
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> CoreList {
@@ -894,7 +1103,7 @@ namespace Grpc.Testing {
     public const int OtherClientApiFieldNumber = 15;
     private string otherClientApi_ = "";
     /// <summary>
-    ///  If we use an OTHER_CLIENT client_type, this string gives more detail
+    /// If we use an OTHER_CLIENT client_type, this string gives more detail
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string OtherClientApi {
@@ -902,6 +1111,16 @@ namespace Grpc.Testing {
       set {
         otherClientApi_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
+    }
+
+    /// <summary>Field number for the "channel_args" field.</summary>
+    public const int ChannelArgsFieldNumber = 16;
+    private static readonly pb::FieldCodec<global::Grpc.Testing.ChannelArg> _repeated_channelArgs_codec
+        = pb::FieldCodec.ForMessage(130, global::Grpc.Testing.ChannelArg.Parser);
+    private readonly pbc::RepeatedField<global::Grpc.Testing.ChannelArg> channelArgs_ = new pbc::RepeatedField<global::Grpc.Testing.ChannelArg>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Grpc.Testing.ChannelArg> ChannelArgs {
+      get { return channelArgs_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -930,6 +1149,7 @@ namespace Grpc.Testing {
       if(!coreList_.Equals(other.coreList_)) return false;
       if (CoreLimit != other.CoreLimit) return false;
       if (OtherClientApi != other.OtherClientApi) return false;
+      if(!channelArgs_.Equals(other.channelArgs_)) return false;
       return true;
     }
 
@@ -949,6 +1169,7 @@ namespace Grpc.Testing {
       hash ^= coreList_.GetHashCode();
       if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
       if (OtherClientApi.Length != 0) hash ^= OtherClientApi.GetHashCode();
+      hash ^= channelArgs_.GetHashCode();
       return hash;
     }
 
@@ -1005,6 +1226,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(122);
         output.WriteString(OtherClientApi);
       }
+      channelArgs_.WriteTo(output, _repeated_channelArgs_codec);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1045,6 +1267,7 @@ namespace Grpc.Testing {
       if (OtherClientApi.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(OtherClientApi);
       }
+      size += channelArgs_.CalculateSize(_repeated_channelArgs_codec);
       return size;
     }
 
@@ -1100,6 +1323,7 @@ namespace Grpc.Testing {
       if (other.OtherClientApi.Length != 0) {
         OtherClientApi = other.OtherClientApi;
       }
+      channelArgs_.Add(other.channelArgs_);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1175,6 +1399,10 @@ namespace Grpc.Testing {
             OtherClientApi = input.ReadString();
             break;
           }
+          case 130: {
+            channelArgs_.AddEntriesFrom(input, _repeated_channelArgs_codec);
+            break;
+          }
         }
       }
     }
@@ -1188,7 +1416,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1305,7 +1533,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Request current stats
+  /// Request current stats
   /// </summary>
   public sealed partial class Mark : pb::IMessage<Mark> {
     private static readonly pb::MessageParser<Mark> _parser = new pb::MessageParser<Mark>(() => new Mark());
@@ -1314,7 +1542,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1343,7 +1571,7 @@ namespace Grpc.Testing {
     public const int ResetFieldNumber = 1;
     private bool reset_;
     /// <summary>
-    ///  if true, the stats will be reset after taking their snapshot.
+    /// if true, the stats will be reset after taking their snapshot.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Reset {
@@ -1434,7 +1662,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1620,7 +1848,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1679,7 +1907,7 @@ namespace Grpc.Testing {
     public const int PortFieldNumber = 4;
     private int port_;
     /// <summary>
-    ///  Port on which to listen. Zero means pick unused port.
+    /// Port on which to listen. Zero means pick unused port.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Port {
@@ -1693,7 +1921,7 @@ namespace Grpc.Testing {
     public const int AsyncServerThreadsFieldNumber = 7;
     private int asyncServerThreads_;
     /// <summary>
-    ///  Only for async server. Number of threads used to serve the requests.
+    /// Only for async server. Number of threads used to serve the requests.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int AsyncServerThreads {
@@ -1707,7 +1935,7 @@ namespace Grpc.Testing {
     public const int CoreLimitFieldNumber = 8;
     private int coreLimit_;
     /// <summary>
-    ///  Specify the number of cores to limit server to, if desired
+    /// Specify the number of cores to limit server to, if desired
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CoreLimit {
@@ -1721,7 +1949,10 @@ namespace Grpc.Testing {
     public const int PayloadConfigFieldNumber = 9;
     private global::Grpc.Testing.PayloadConfig payloadConfig_;
     /// <summary>
-    ///  payload config, used in generic server
+    /// payload config, used in generic server.
+    /// Note this must NOT be used in proto (non-generic) servers. For proto servers,
+    /// 'response sizes' must be configured from the 'response_size' field of the
+    /// 'SimpleRequest' objects in RPC requests.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadConfig PayloadConfig {
@@ -1737,7 +1968,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(82);
     private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Specify the cores we should run the server on, if desired
+    /// Specify the cores we should run the server on, if desired
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> CoreList {
@@ -1748,7 +1979,7 @@ namespace Grpc.Testing {
     public const int OtherServerApiFieldNumber = 11;
     private string otherServerApi_ = "";
     /// <summary>
-    ///  If we use an OTHER_SERVER client_type, this string gives more detail
+    /// If we use an OTHER_SERVER client_type, this string gives more detail
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string OtherServerApi {
@@ -1762,7 +1993,7 @@ namespace Grpc.Testing {
     public const int ResourceQuotaSizeFieldNumber = 1001;
     private int resourceQuotaSize_;
     /// <summary>
-    ///  Buffer pool size (no buffer pool specified if unset)
+    /// Buffer pool size (no buffer pool specified if unset)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ResourceQuotaSize {
@@ -1987,7 +2218,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2173,7 +2404,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2215,7 +2446,7 @@ namespace Grpc.Testing {
     public const int PortFieldNumber = 2;
     private int port_;
     /// <summary>
-    ///  the port bound by the server
+    /// the port bound by the server
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Port {
@@ -2229,7 +2460,7 @@ namespace Grpc.Testing {
     public const int CoresFieldNumber = 3;
     private int cores_;
     /// <summary>
-    ///  Number of cores available to the server
+    /// Number of cores available to the server
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Cores {
@@ -2358,7 +2589,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2447,7 +2678,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2476,7 +2707,7 @@ namespace Grpc.Testing {
     public const int CoresFieldNumber = 1;
     private int cores_;
     /// <summary>
-    ///  Number of cores available on the server
+    /// Number of cores available on the server
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Cores {
@@ -2567,7 +2798,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2650,7 +2881,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A single performance scenario: input to qps_json_driver
+  /// A single performance scenario: input to qps_json_driver
   /// </summary>
   public sealed partial class Scenario : pb::IMessage<Scenario> {
     private static readonly pb::MessageParser<Scenario> _parser = new pb::MessageParser<Scenario>(() => new Scenario());
@@ -2659,7 +2890,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2695,7 +2926,7 @@ namespace Grpc.Testing {
     public const int NameFieldNumber = 1;
     private string name_ = "";
     /// <summary>
-    ///  Human readable name for this scenario
+    /// Human readable name for this scenario
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Name {
@@ -2709,7 +2940,7 @@ namespace Grpc.Testing {
     public const int ClientConfigFieldNumber = 2;
     private global::Grpc.Testing.ClientConfig clientConfig_;
     /// <summary>
-    ///  Client configuration
+    /// Client configuration
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientConfig ClientConfig {
@@ -2723,7 +2954,7 @@ namespace Grpc.Testing {
     public const int NumClientsFieldNumber = 3;
     private int numClients_;
     /// <summary>
-    ///  Number of clients to start for the test
+    /// Number of clients to start for the test
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int NumClients {
@@ -2737,7 +2968,7 @@ namespace Grpc.Testing {
     public const int ServerConfigFieldNumber = 4;
     private global::Grpc.Testing.ServerConfig serverConfig_;
     /// <summary>
-    ///  Server configuration
+    /// Server configuration
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerConfig ServerConfig {
@@ -2751,7 +2982,7 @@ namespace Grpc.Testing {
     public const int NumServersFieldNumber = 5;
     private int numServers_;
     /// <summary>
-    ///  Number of servers to start for the test
+    /// Number of servers to start for the test
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int NumServers {
@@ -2765,7 +2996,7 @@ namespace Grpc.Testing {
     public const int WarmupSecondsFieldNumber = 6;
     private int warmupSeconds_;
     /// <summary>
-    ///  Warmup period, in seconds
+    /// Warmup period, in seconds
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int WarmupSeconds {
@@ -2779,7 +3010,7 @@ namespace Grpc.Testing {
     public const int BenchmarkSecondsFieldNumber = 7;
     private int benchmarkSeconds_;
     /// <summary>
-    ///  Benchmark time, in seconds
+    /// Benchmark time, in seconds
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int BenchmarkSeconds {
@@ -2793,7 +3024,7 @@ namespace Grpc.Testing {
     public const int SpawnLocalWorkerCountFieldNumber = 8;
     private int spawnLocalWorkerCount_;
     /// <summary>
-    ///  Number of workers to spawn locally (usually zero)
+    /// Number of workers to spawn locally (usually zero)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int SpawnLocalWorkerCount {
@@ -3002,7 +3233,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A set of scenarios to be run with qps_json_driver
+  /// A set of scenarios to be run with qps_json_driver
   /// </summary>
   public sealed partial class Scenarios : pb::IMessage<Scenarios> {
     private static readonly pb::MessageParser<Scenarios> _parser = new pb::MessageParser<Scenarios>(() => new Scenarios());
@@ -3011,7 +3242,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3114,8 +3345,8 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Basic summary that can be computed from ClientStats and ServerStats
-  ///  once the scenario has finished.
+  /// Basic summary that can be computed from ClientStats and ServerStats
+  /// once the scenario has finished.
   /// </summary>
   public sealed partial class ScenarioResultSummary : pb::IMessage<ScenarioResultSummary> {
     private static readonly pb::MessageParser<ScenarioResultSummary> _parser = new pb::MessageParser<ScenarioResultSummary>(() => new ScenarioResultSummary());
@@ -3124,7 +3355,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[17]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3166,7 +3397,7 @@ namespace Grpc.Testing {
     public const int QpsFieldNumber = 1;
     private double qps_;
     /// <summary>
-    ///  Total number of operations per second over all clients.
+    /// Total number of operations per second over all clients.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Qps {
@@ -3180,7 +3411,7 @@ namespace Grpc.Testing {
     public const int QpsPerServerCoreFieldNumber = 2;
     private double qpsPerServerCore_;
     /// <summary>
-    ///  QPS per one server core.
+    /// QPS per one server core.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double QpsPerServerCore {
@@ -3194,7 +3425,7 @@ namespace Grpc.Testing {
     public const int ServerSystemTimeFieldNumber = 3;
     private double serverSystemTime_;
     /// <summary>
-    ///  server load based on system_time (0.85 => 85%)
+    /// server load based on system_time (0.85 => 85%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerSystemTime {
@@ -3208,7 +3439,7 @@ namespace Grpc.Testing {
     public const int ServerUserTimeFieldNumber = 4;
     private double serverUserTime_;
     /// <summary>
-    ///  server load based on user_time (0.85 => 85%)
+    /// server load based on user_time (0.85 => 85%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerUserTime {
@@ -3222,7 +3453,7 @@ namespace Grpc.Testing {
     public const int ClientSystemTimeFieldNumber = 5;
     private double clientSystemTime_;
     /// <summary>
-    ///  client load based on system_time (0.85 => 85%)
+    /// client load based on system_time (0.85 => 85%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientSystemTime {
@@ -3236,7 +3467,7 @@ namespace Grpc.Testing {
     public const int ClientUserTimeFieldNumber = 6;
     private double clientUserTime_;
     /// <summary>
-    ///  client load based on user_time (0.85 => 85%)
+    /// client load based on user_time (0.85 => 85%)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientUserTime {
@@ -3250,7 +3481,7 @@ namespace Grpc.Testing {
     public const int Latency50FieldNumber = 7;
     private double latency50_;
     /// <summary>
-    ///  X% latency percentiles (in nanoseconds)
+    /// X% latency percentiles (in nanoseconds)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency50 {
@@ -3308,7 +3539,7 @@ namespace Grpc.Testing {
     public const int ServerCpuUsageFieldNumber = 12;
     private double serverCpuUsage_;
     /// <summary>
-    ///  server cpu usage percentage
+    /// server cpu usage percentage
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerCpuUsage {
@@ -3322,7 +3553,7 @@ namespace Grpc.Testing {
     public const int SuccessfulRequestsPerSecondFieldNumber = 13;
     private double successfulRequestsPerSecond_;
     /// <summary>
-    ///  Number of requests that succeeded/failed
+    /// Number of requests that succeeded/failed
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double SuccessfulRequestsPerSecond {
@@ -3626,7 +3857,7 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Results of a single benchmark scenario.
+  /// Results of a single benchmark scenario.
   /// </summary>
   public sealed partial class ScenarioResult : pb::IMessage<ScenarioResult> {
     private static readonly pb::MessageParser<ScenarioResult> _parser = new pb::MessageParser<ScenarioResult>(() => new ScenarioResult());
@@ -3635,7 +3866,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3672,7 +3903,7 @@ namespace Grpc.Testing {
     public const int ScenarioFieldNumber = 1;
     private global::Grpc.Testing.Scenario scenario_;
     /// <summary>
-    ///  Inputs used to run the scenario.
+    /// Inputs used to run the scenario.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Scenario Scenario {
@@ -3686,7 +3917,7 @@ namespace Grpc.Testing {
     public const int LatenciesFieldNumber = 2;
     private global::Grpc.Testing.HistogramData latencies_;
     /// <summary>
-    ///  Histograms from all clients merged into one histogram.
+    /// Histograms from all clients merged into one histogram.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.HistogramData Latencies {
@@ -3702,7 +3933,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(26, global::Grpc.Testing.ClientStats.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.ClientStats> clientStats_ = new pbc::RepeatedField<global::Grpc.Testing.ClientStats>();
     /// <summary>
-    ///  Client stats for each client
+    /// Client stats for each client
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.ClientStats> ClientStats {
@@ -3715,7 +3946,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(34, global::Grpc.Testing.ServerStats.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.ServerStats> serverStats_ = new pbc::RepeatedField<global::Grpc.Testing.ServerStats>();
     /// <summary>
-    ///  Server stats for each server
+    /// Server stats for each server
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.ServerStats> ServerStats {
@@ -3728,7 +3959,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(42);
     private readonly pbc::RepeatedField<int> serverCores_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Number of cores available to each server
+    /// Number of cores available to each server
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> ServerCores {
@@ -3739,7 +3970,7 @@ namespace Grpc.Testing {
     public const int SummaryFieldNumber = 6;
     private global::Grpc.Testing.ScenarioResultSummary summary_;
     /// <summary>
-    ///  An after-the-fact computed summary
+    /// An after-the-fact computed summary
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ScenarioResultSummary Summary {
@@ -3755,7 +3986,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForBool(58);
     private readonly pbc::RepeatedField<bool> clientSuccess_ = new pbc::RepeatedField<bool>();
     /// <summary>
-    ///  Information on success or failure of each worker
+    /// Information on success or failure of each worker
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<bool> ClientSuccess {
@@ -3778,7 +4009,7 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(74, global::Grpc.Testing.RequestResultCount.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> requestResults_ = new pbc::RepeatedField<global::Grpc.Testing.RequestResultCount>();
     /// <summary>
-    ///  Number of failed requests (one row per status code seen)
+    /// Number of failed requests (one row per status code seen)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> RequestResults {

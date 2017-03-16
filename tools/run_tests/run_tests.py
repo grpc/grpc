@@ -38,6 +38,7 @@ import collections
 import glob
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import os.path
@@ -53,6 +54,7 @@ import traceback
 import time
 from six.moves import urllib
 import uuid
+import six
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -84,8 +86,8 @@ def run_shell_command(cmd, env=None, cwd=None):
   try:
     subprocess.check_output(cmd, shell=True, env=env, cwd=cwd)
   except subprocess.CalledProcessError as e:
-    print("Error while running command '%s'. Exit status %d. Output:\n%s",
-          e.cmd, e.returncode, e.output)
+    logging.exception("Error while running command '%s'. Exit status %d. Output:\n%s",
+                       e.cmd, e.returncode, e.output)
     raise
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -306,9 +308,9 @@ class CLanguage(object):
                 assert base is not None
                 assert line[1] == ' '
                 test = base + line.strip()
-                cmdline = [binary] + ['--gtest_filter=%s' % test]
+                cmdline = [binary, '--gtest_filter=%s' % test] + target['args']
                 out.append(self.config.job_spec(cmdline,
-                                                shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
+                                                shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
                                                 timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
@@ -423,9 +425,13 @@ class NodeLanguage(object):
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3'])
+    if args.iomgr_platform == "uv":
+      self.use_uv = True
+    else:
+      self.use_uv = False
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '4'
+      self.node_version = '7'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -454,7 +460,8 @@ class NodeLanguage(object):
       build_script = 'pre_build_node'
       if self.runtime == 'electron':
         build_script += '_electron'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version]]
 
   def make_targets(self):
     return []
@@ -464,14 +471,22 @@ class NodeLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\build_node.bat']]
+      if self.config == 'dbg':
+        config_flag = '--debug'
+      else:
+        config_flag = '--release'
+      return [['tools\\run_tests\\helper_scripts\\build_node.bat',
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
+               config_flag]]
     else:
       build_script = 'build_node'
       if self.runtime == 'electron':
         build_script += '_electron'
         # building for electron requires a patch version
         self.node_version += '.0'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script), self.node_version]]
+      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
+               self.node_version,
+               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
 
   def post_tests_steps(self):
     return []
@@ -678,18 +693,11 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    #TODO(apolcyn) turn mac ruby tests back on once ruby 2.4 issues done
-    if platform_string() == 'mac':
-      print('skipping ruby test_specs on mac until running on 2.4')
-      return []
     return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby pre_build_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
   def make_targets(self):
@@ -699,15 +707,9 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby build_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
   def post_tests_steps(self):
-    if platform_string() == 'mac':
-      print('skipping ruby post_test_steps on mac until running on 2.4')
-      return []
     return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
   def makefile_name(self):
@@ -770,7 +772,7 @@ class CSharpLanguage(object):
         runtime_cmd = ['mono']
 
     specs = []
-    for assembly in tests_by_assembly.iterkeys():
+    for assembly in six.iterkeys(tests_by_assembly):
       assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
                                                  assembly_subdir,
                                                  assembly,
@@ -1297,7 +1299,9 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
+  subprocess.check_call('tools/run_tests/dockerize/build_docker_and_run_tests.sh',
+                        shell=True,
+                        env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)
@@ -1437,8 +1441,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 32766
-  start_port_server.start_port_server(port_server_port)
+  start_port_server.start_port_server()
   resultset = None
   num_test_failures = 0
   try:
@@ -1465,10 +1468,9 @@ def _build_and_run(
       sample_size = int(num_jobs * args.sample_percent/100.0)
       massaged_one_run = random.sample(massaged_one_run, sample_size)
       if not isclose(args.sample_percent, 100.0):
+        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
         print("Running %d tests out of %d (~%d%%)" %
               (sample_size, num_jobs, args.sample_percent))
-      else:
-        assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
     if infinite_runs:
       assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
@@ -1481,7 +1483,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port},
         quiet_success=args.quiet_success)
     if resultset:
       for k, v in sorted(resultset.items()):

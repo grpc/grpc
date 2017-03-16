@@ -65,7 +65,8 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     should not be NULL. */
 grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
                                     const grpc_channel_args *args,
-                                    grpc_pollset_set *pollset_set);
+                                    grpc_pollset_set *pollset_set,
+                                    grpc_combiner *combiner);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */
@@ -73,10 +74,11 @@ grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name);
 
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */
-char *grpc_get_default_authority(const char *target);
+char *grpc_get_default_authority(grpc_exec_ctx *exec_ctx, const char *target);
 
 /** Returns a newly allocated string containing \a target, adding the
     default prefix if needed. */
-char *grpc_resolver_factory_add_default_prefix_if_needed(const char *target);
+char *grpc_resolver_factory_add_default_prefix_if_needed(
+    grpc_exec_ctx *exec_ctx, const char *target);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_REGISTRY_H */

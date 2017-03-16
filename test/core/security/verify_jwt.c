@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
 
-  sync.pollset = gpr_malloc(grpc_pollset_size());
+  sync.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 

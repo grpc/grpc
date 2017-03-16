@@ -166,7 +166,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
-                                  grpc_call_element_args* args) {
+                                  const grpc_call_element_args* args) {
   channel_data* chand = elem->channel_data;
   call_data* calld = elem->call_data;
   calld->next_recv_message_ready = NULL;
@@ -208,7 +208,6 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  memset(chand, 0, sizeof(*chand));
   chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {

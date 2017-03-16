@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,7 +30,10 @@
 
 """Filter out tests based on file differences compared to merge target branch"""
 
+from __future__ import print_function
+
 import re
+import six
 from subprocess import check_output
 
 
@@ -98,6 +101,7 @@ _WHITELIST_DICT = {
   '^test/distrib/php/': [_PHP_TEST_SUITE],
   '^test/distrib/python/': [_PYTHON_TEST_SUITE],
   '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
+  '^tools/internal_ci/': [],
   '^vsprojects/': [_WINDOWS_TEST_SUITE],
   'binding\.gyp$': [_NODE_TEST_SUITE],
   'composer\.json$': [_PHP_TEST_SUITE],
@@ -124,7 +128,7 @@ _WHITELIST_DICT = {
 }
 
 # Add all triggers to their respective test suites
-for trigger, test_suites in _WHITELIST_DICT.iteritems():
+for trigger, test_suites in six.iteritems(_WHITELIST_DICT):
   for test_suite in test_suites:
     test_suite.add_trigger(trigger)
 
