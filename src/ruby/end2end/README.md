@@ -4,7 +4,7 @@ Each test here involves two files: a "driver" and a "client". For example,
 the "channel_closing" test involves channel_closing_driver.rb
 and channel_closing_client.rb.
 
-Typically, the "driver will start up a simple "echo" server, and then
+Typically, the "driver" will start up a simple "echo" server, and then
 spawn a client. It gives the client the address of the "echo" server as
 well as an address to listen on for control rpcs. Depending on the test, the
 client usually starts up a "ClientControl" grpc server for the driver to

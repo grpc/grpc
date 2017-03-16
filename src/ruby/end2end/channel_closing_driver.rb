@@ -29,7 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# make sure that the client doesn't hang when process ended abruptly
+# make sure that the client doesn't hang when channel is closed explictly while it's used
 
 require_relative './end2end_common'
 
