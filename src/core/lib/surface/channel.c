@@ -83,19 +83,10 @@ struct grpc_channel {
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error);
 
-grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                  const grpc_channel_args *input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport *optional_transport) {
-  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                   input_args);
-  grpc_channel_stack_builder_set_target(builder, target);
-  grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
-    grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    return NULL;
-  }
+grpc_channel *grpc_channel_create_with_builder(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    grpc_channel_stack_type channel_stack_type) {
+  char *target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
   grpc_channel_args *args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_channel *channel;
@@ -106,11 +97,12 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
+    gpr_free(target);
     goto done;
   }
 
   memset(channel, 0, sizeof(*channel));
-  channel->target = gpr_strdup(target);
+  channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
@@ -175,6 +167,23 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 done:
   grpc_channel_args_destroy(exec_ctx, args);
   return channel;
+}
+
+grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                  const grpc_channel_args *input_args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport *optional_transport) {
+  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
+                                                   input_args);
+  grpc_channel_stack_builder_set_target(builder, target);
+  grpc_channel_stack_builder_set_transport(builder, optional_transport);
+  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
+    grpc_channel_stack_builder_destroy(exec_ctx, builder);
+    return NULL;
+  }
+  return grpc_channel_create_with_builder(exec_ctx, builder,
+                                          channel_stack_type);
 }
 
 char *grpc_channel_get_target(grpc_channel *channel) {
