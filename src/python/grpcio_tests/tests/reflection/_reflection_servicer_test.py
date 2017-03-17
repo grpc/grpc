@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,24 +38,25 @@ from grpc_reflection.v1alpha import reflection_pb2
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
 
-from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 from src.proto.grpc.testing import empty_pb2
+
+from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
+from src.proto.grpc.testing.proto2 import empty2_pb2
+
 from tests.unit.framework.common import test_constants
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
 _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
 _SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman',
                   'Galilei')
-
+_EMPTY_WITH_EXTENSIONS_SYMBOL_NAME = 'grpc.testing.proto2.EmptyWithExtensions'
 
 def _file_descriptor_to_proto(descriptor):
     proto = descriptor_pb2.FileDescriptorProto()
     descriptor.CopyToProto(proto)
     return proto.SerializeToString()
 
-
 class ReflectionServicerTest(unittest.TestCase):
-
     def setUp(self):
         servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
@@ -108,13 +109,10 @@ class ReflectionServicerTest(unittest.TestCase):
                 )),)
         self.assertSequenceEqual(expected_responses, responses)
 
-    @unittest.skip(
-        'TODO(atash): implement file-containing-extension reflection '
-        '(see https://github.com/google/protobuf/issues/2248)')
     def testFileContainingExtension(self):
         requests = (reflection_pb2.ServerReflectionRequest(
             file_containing_extension=reflection_pb2.ExtensionRequest(
-                containing_type='grpc.testing.proto2.Empty',
+                containing_type=_EMPTY_WITH_EXTENSIONS_SYMBOL_NAME,
                 extension_number=125,),
         ), reflection_pb2.ServerReflectionRequest(
             file_containing_extension=reflection_pb2.ExtensionRequest(
@@ -126,7 +124,7 @@ class ReflectionServicerTest(unittest.TestCase):
                 valid_host='',
                 file_descriptor_response=reflection_pb2.FileDescriptorResponse(
                     file_descriptor_proto=(_file_descriptor_to_proto(
-                        empty_extensions_pb2.DESCRIPTOR),))),
+                        empty2_extensions_pb2.DESCRIPTOR),))),
             reflection_pb2.ServerReflectionResponse(
                 valid_host='',
                 error_response=reflection_pb2.ErrorResponse(
@@ -150,3 +148,4 @@ class ReflectionServicerTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
