@@ -46,11 +46,14 @@
 #include "tools/grpcz/census.grpc.pb.h"
 #include "tools/grpcz/monitoring.grpc.pb.h"
 
-DEFINE_string(server, "127.0.0.1:50052",
-              "file path (or host:port) where grpcz server is running");
+DEFINE_string(
+    grpcz_server, "127.0.0.1:8080",
+    "Unix domain socket path (e.g. unix://tmp/grpcz.sock) or IP address"
+    "(host:port) where grpcz server is running.");
 DEFINE_string(http_port, "8000",
               "Port id for accessing the HTTP server that renders /grpcz page");
-DEFINE_bool(print, false, "only print the output and quit");
+DEFINE_bool(print_to_console, false,
+            "print the JSON retreived from grpcz server and quit");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -68,11 +71,14 @@ table, td, th { border: 1px solid black; } \
 
 static const std::string static_html_footer =
     "' class='hidden'></div>\
-<h1> GRPCZ FTW </h1> <div id='table'> </div> \
+<h1>GRPCZ Statistics</h1> <div id='table'> </div> \
 <script> \
   var canonical_stats = JSON.parse(\
             document.getElementById('stats').getAttribute('stats')); \
   var table = document.createElement('table'); \
+  if (canonical_stats['Error Message'] != undefined) { \
+     document.getElementById('table').innerHTML = canonical_stats['Error Message']; } \
+  else {\
   for (var key in canonical_stats) { \
     name = canonical_stats[key]['view']['viewName']; \
     distribution = canonical_stats[key]['view']['distributionView']; \
@@ -87,6 +93,7 @@ static const std::string static_html_footer =
     col2.innerHTML = '<pre>' + value + '</pre>'; \
   } \
   document.getElementById('table').appendChild(table); \
+  }\
 </script> </body> </html>";
 
 class GrpczClient {
@@ -106,11 +113,9 @@ class GrpczClient {
       return json_str;
     } else {
       static const std::string error_message_json =
-          "{\"grpcz Access Error\"\
-      :{\"view\":{\"viewName\":\"grpcz Access Error\",\
-      \"intervalView\":\"Server not running?\"}}}";
-      std::cout << status.error_code() << ":= " << status.error_message()
-                << std::endl;
+          "{\"Error Message\":\"" + status.error_message() + "\"}";
+      gpr_log(GPR_DEBUG, "%d: %s", status.error_code(),
+              status.error_message().c_str());
       return error_message_json;
     }
   }
@@ -131,7 +136,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 static void grpcz_handler(struct mg_connection *nc, int ev, void *ev_data) {
   (void)ev;
   (void)ev_data;
-  gpr_log(GPR_INFO, "fetching grpcz stats from %s", FLAGS_server.c_str());
+  gpr_log(GPR_INFO, "fetching grpcz stats from %s", FLAGS_grpcz_server.c_str());
   std::string json_str = g_grpcz_client->GetStatsAsJson();
   std::string rendered_html =
       static_html_header + json_str + static_html_footer;
@@ -143,10 +148,13 @@ int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // Create a client
-  g_grpcz_client.reset(new GrpczClient(
-      grpc::CreateChannel(FLAGS_server, grpc::InsecureChannelCredentials())));
-  if (FLAGS_print) {
-    g_grpcz_client->GetStatsAsJson();
+  g_grpcz_client.reset(new GrpczClient(grpc::CreateChannel(
+      FLAGS_grpcz_server, grpc::InsecureChannelCredentials())));
+  if (FLAGS_print_to_console) {
+    // using GPR_ERROR since this is the default verbosity. _DEBUG or _INFO
+    // won't print unless GRPC_VERBOSITY env var is set appropriately, which
+    // might confuse users of this utility.
+    gpr_log(GPR_ERROR, "%s\n", g_grpcz_client->GetStatsAsJson().c_str());
     return 0;
   }
 
@@ -160,14 +168,15 @@ int main(int argc, char **argv) {
   if (nc == NULL) {
     gpr_log(GPR_ERROR, "Failed to create listener on port %s\n",
             FLAGS_http_port.c_str());
-    return -11;
+    return -1;
   }
   mg_register_http_endpoint(nc, "/grpcz", grpcz_handler);
   mg_set_protocol_http_websocket(nc);
 
   // Poll in a loop and serve /grpcz pages
   for (;;) {
-    mg_mgr_poll(&mgr, 100);
+    static const int k_sleep_millis = 100;
+    mg_mgr_poll(&mgr, k_sleep_millis);
   }
   mg_mgr_free(&mgr);
   return 0;

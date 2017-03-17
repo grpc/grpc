@@ -34,8 +34,8 @@ syntax = "proto3";
 // TODO(ericgribkoff) Figure out how to manage the external Census proto
 // dependency.
 import "tools/grpcz/census.proto";
-import "tools/grpcz/empty.proto";
-import "tools/grpcz/any.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
 
 package grpc.instrumentation.v1alpha;
 
@@ -126,6 +126,6 @@ message MonitoringDataGroup {
 // The wrapper for custom monitoring data.
 message CustomMonitoringData {
   // can be any application specific monitoring data
-  Any contents = 1;
+  google.protobuf.Any contents = 1;
 }
 

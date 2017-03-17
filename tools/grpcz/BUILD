@@ -31,43 +31,33 @@ licenses(["notice"])  # 3-clause BSD
 
 package(default_visibility = ["//visibility:public"])
 
-load("//:bazel/generate_cc.bzl", "generate_cc")
+load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
 
-proto_library (
-    name = "monitoring_proto_local_copy",
+grpc_proto_library (
+    name = "monitoring_proto",
     srcs = [
-        # TODO (ericgribkoff) : remove the local copies of these protos
         "monitoring.proto",
-        "empty.proto",
-        "any.proto",
+    ],
+    deps = [
+        ":census_proto",
+    ],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
+)
+
+grpc_proto_library (
+    name = "census_proto",
+    srcs = [
         "census.proto",
     ],
-)
-
-generate_cc(
-    name = "monitoring_codegen",
-    srcs = [":monitoring_proto_local_copy"],
-)
-
-generate_cc(
-    name = "monitoring_grpc_codegen",
-    srcs = [":monitoring_proto_local_copy"],
-    plugin = "//:grpc_cpp_plugin",
-)
-
-cc_library(
-    name = "proto_lib",
-    srcs = [":monitoring_codegen", ":monitoring_grpc_codegen"],
-    hdrs = [":monitoring_codegen", ":monitoring_grpc_codegen"],
-    deps = ["//:grpc++", "//:grpc++_codegen_proto", "//external:protobuf"],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
 )
 
 cc_binary(
     name = "grpcz_client",
     srcs = ["grpcz_client.cc",],
     deps = [
-        "proto_lib",
         "//external:gflags",
+        "monitoring_proto",
         "@mongoose_repo//:mongoose_lib",
     ],
 )
