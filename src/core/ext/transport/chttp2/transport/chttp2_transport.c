@@ -1760,6 +1760,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_chttp2_stream *s, grpc_error *error) {
   grpc_slice hdr;
   grpc_slice status_hdr;
+  grpc_slice http_status_hdr;
   grpc_slice message_pfx;
   uint8_t *p;
   uint32_t len = 0;
@@ -1775,6 +1776,26 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      It's complicated by the fact that our send machinery would be dead by
      the time we got around to sending this, so instead we ignore HPACK
      compression and just write the uncompressed bytes onto the wire. */
+  if (!s->sent_initial_metadata) {
+    http_status_hdr = grpc_slice_malloc(13);
+    p = GRPC_SLICE_START_PTR(http_status_hdr);
+    *p++ = 0x00;
+    *p++ = 7;
+    *p++ = ':';
+    *p++ = 's';
+    *p++ = 't';
+    *p++ = 'a';
+    *p++ = 't';
+    *p++ = 'u';
+    *p++ = 's';
+    *p++ = 3;
+    *p++ = '2';
+    *p++ = '0';
+    *p++ = '0';
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
+    len += (uint32_t)GRPC_SLICE_LENGTH(http_status_hdr);
+  }
+
   status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
   *p++ = 0x00; /* literal header, not indexed */
@@ -1842,6 +1863,9 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GPR_ASSERT(p == GRPC_SLICE_END_PTR(hdr));
 
   grpc_slice_buffer_add(&t->qbuf, hdr);
+  if (!s->sent_initial_metadata) {
+    grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
+  }
   grpc_slice_buffer_add(&t->qbuf, status_hdr);
   if (msg != NULL) {
     grpc_slice_buffer_add(&t->qbuf, message_pfx);
