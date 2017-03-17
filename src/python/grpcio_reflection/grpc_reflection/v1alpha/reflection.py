@@ -138,3 +138,13 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
                         error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
                         .encode(),))
 
+
+def enable_server_reflection(service_names, server):
+    """Enables server reflection on a server.
+
+    Args:
+      service_names: Iterable of fully-qualified service names available.
+      server: Server to which reflection service will be added.
+    """
+    reflection_pb2_grpc.add_ServerReflectionServicer_to_server(ReflectionServicer(service_names), server)
+
