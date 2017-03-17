@@ -248,7 +248,7 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                           grpc_closure *on_complete) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   dns_ares_next_locked_args *args =
-      gpr_malloc(sizeof(dns_ares_next_locked_args));
+      gpr_zalloc(sizeof(dns_ares_next_locked_args));
   args->target_result = target_result;
   args->on_complete = on_complete;
   args->resolver = resolver;
@@ -308,8 +308,7 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
   }
   if (path[0] == '/') ++path;
   // Create resolver.
-  ares_dns_resolver *r = gpr_malloc(sizeof(ares_dns_resolver));
-  memset(r, 0, sizeof(*r));
+  ares_dns_resolver *r = gpr_zalloc(sizeof(ares_dns_resolver));
   r->combiner = grpc_combiner_create(NULL);
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, r->combiner);
   r->name_to_resolve = gpr_strdup(path);
