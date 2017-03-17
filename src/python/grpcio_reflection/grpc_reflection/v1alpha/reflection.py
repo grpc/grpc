@@ -84,13 +84,17 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor)
 
-    def _file_containing_extension(containing_type, extension_number):
-        # TODO(atash) Python protobuf currently doesn't support querying extensions.
-        # https://github.com/google/protobuf/issues/2248
-        return reflection_pb2.ServerReflectionResponse(
-            error_response=reflection_pb2.ErrorResponse(
-                error_code=grpc.StatusCode.UNIMPLEMENTED.value[0],
-                error_message=grpc.StatusCode.UNIMPLMENTED.value[1].encode(),))
+    def _file_containing_extension(self, containing_type, extension_number):
+        try:
+            message_descriptor = self._pool.FindMessageTypeByName(containing_type)
+            extension_descriptor = self._pool.FindExtensionByNumber(
+                message_descriptor, extension_number)
+            descriptor = self._pool.FindFileContainingSymbol(
+                extension_descriptor.full_name)
+        except KeyError:
+            return _not_found_error()
+        else:
+            return _file_descriptor_response(descriptor)
 
     def _extension_numbers_of_type(fully_qualified_name):
         # TODO(atash) We're allowed to leave this unsupported according to the
