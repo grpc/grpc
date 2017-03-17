@@ -180,17 +180,15 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING)) {
-      channel->tracer = grpc_channel_tracer_init_tracer();
+      channel->tracer =
+          grpc_channel_tracer_create((uint32_t)args->args[i].value.integer);
     }
   }
 
 done:
   grpc_channel_args_destroy(exec_ctx, args);
-  char *created = strdup("Channel Created");
-  if (channel->tracer)
-    grpc_channel_tracer_add_trace(&channel->tracer->node_list, created,
-                                  GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME),
-                                  GRPC_CHANNEL_INIT);
+  GRPC_CHANNEL_TRACER_ADD_TRACE(channel->tracer, "Channel created",
+                                GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
   return channel;
 }
 

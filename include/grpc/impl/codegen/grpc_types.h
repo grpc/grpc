@@ -240,7 +240,8 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
-/** Toggles channel tracing behavior */
+/** Toggles channel tracing behavior. 0 means off. Non zero sets max nodes
+ * tracked per tracing object */
 #define GRPC_ARG_CHANNEL_TRACING "grpc.channel_tracing"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames when
  * possible. */

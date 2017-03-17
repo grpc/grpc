@@ -43,85 +43,127 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
+// One node of tracing data
 struct grpc_trace_node {
-  char* data;
+  const char* file;
+  int line;
+  const char* data;
   grpc_error* error;
   gpr_timespec time;
   grpc_connectivity_state connectivity_state;
   grpc_trace_node* next;
+
+  // The tracer object that owns this trace node. This is used to ref and
+  // unref the tracing object as nodes are added or overwritten
+  grpc_channel_tracer* subchannel;
 };
 
-grpc_channel_tracer* grpc_channel_tracer_init_tracer() {
-  grpc_channel_tracer* tracer = gpr_malloc(sizeof(grpc_channel_tracer));
-  memset(tracer, 0, sizeof(*tracer));
+struct grpc_trace_node_list {
+  uint32_t size;
+  uint32_t max_size;
+  grpc_trace_node* head_trace;
+  grpc_trace_node* tail_trace;
+};
+
+/* the channel tracing object */
+struct grpc_channel_tracer {
+  gpr_refcount refs;
+  gpr_mu tracer_mu;
+  uint32_t num_nodes_logged;
+  grpc_trace_node_list node_list;
+  gpr_timespec time_created;
+};
+
+grpc_channel_tracer* grpc_channel_tracer_create(uint32_t max_nodes) {
+  grpc_channel_tracer* tracer = gpr_zalloc(sizeof(grpc_channel_tracer));
   gpr_mu_init(&tracer->tracer_mu);
+  gpr_ref_init(&tracer->refs, 1);
+  tracer->node_list.max_size = max_nodes;
+  tracer->time_created = gpr_now(GPR_CLOCK_REALTIME);
   return tracer;
 }
 
-grpc_subchannel_tracer* grpc_subchannel_tracer_init_tracer() {
-  grpc_subchannel_tracer* tracer = gpr_malloc(sizeof(grpc_subchannel_tracer));
-  memset(tracer, 0, sizeof(*tracer));
-  gpr_mu_init(&tracer->tracer_mu);
+grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer) {
+  gpr_ref(&tracer->refs);
   return tracer;
 }
 
-void grpc_channel_tracer_destroy_tracer(grpc_channel_tracer* tracer) {
+void grpc_channel_tracer_unref(grpc_channel_tracer* tracer) {
+  if (!gpr_unref(&tracer->refs)) {
+    grpc_channel_tracer_destroy(tracer);
+  }
+}
+
+void grpc_channel_tracer_destroy(grpc_channel_tracer* tracer) {
   if (!tracer) return;
   // free the nodes. Do they own data?
   // free the subchannel tracers
   // free this tracer
 }
 
-void grpc_subchannel_tracer_destroy_tracer(grpc_subchannel_tracer* tracer) {
-  if (!tracer) return;
-  // free the nodes. Do they own data?
-  // free the subchannel tracers
-  // free this tracer
+static void free_node(grpc_trace_node* node) {
+  // no need to free string, since they are always static
+  GRPC_ERROR_UNREF(node->error);
+  if (node->subchannel) {
+    grpc_channel_tracer_unref(node->subchannel);
+  }
 }
 
-static grpc_trace_node* grpc_channel_tracer_new_node(
-    char* trace, grpc_error* error, gpr_timespec time,
-    grpc_connectivity_state connectivity_state) {
+static void add_trace(grpc_trace_node_list* list, const char* file, int line,
+                      const char* trace, grpc_error* error,
+                      grpc_connectivity_state connectivity_state,
+                      grpc_channel_tracer* subchannel) {
   grpc_trace_node* new_trace_node = gpr_malloc(sizeof(grpc_trace_node));
+  new_trace_node->file = file;
+  new_trace_node->line = line;
   new_trace_node->data = trace;
   new_trace_node->error = error;
-  new_trace_node->time = time;
+  new_trace_node->time = gpr_now(GPR_CLOCK_REALTIME);
   new_trace_node->connectivity_state = connectivity_state;
   new_trace_node->next = NULL;
-  return new_trace_node;
-}
+  new_trace_node->subchannel = subchannel;
 
-void grpc_channel_tracer_add_trace(trace_node_list* node_list, char* trace,
-                                   grpc_error* error, gpr_timespec time,
-                                   grpc_connectivity_state connectivity_state) {
-  if (!node_list) return;
-  grpc_trace_node* new_trace_node =
-      grpc_channel_tracer_new_node(trace, error, time, connectivity_state);
-  if (!node_list->head_trace) {
-    node_list->head_trace = node_list->tail_trace = new_trace_node;
-  } else {
-    node_list->tail_trace->next = new_trace_node;
-    node_list->tail_trace = node_list->tail_trace->next;
+  if (subchannel) {
+    grpc_channel_tracer_ref(subchannel);
   }
-  node_list->size += 1;
+
+  // first node in case
+  if (!list->head_trace) {
+    list->head_trace = list->tail_trace = new_trace_node;
+  }
+  // regular node add case
+  else {
+    list->tail_trace->next = new_trace_node;
+    list->tail_trace = list->tail_trace->next;
+  }
+  list->size++;
+
+  // maybe garbage collect the end
+  if (list->size > list->max_size) {
+    grpc_trace_node* to_free = list->head_trace;
+    list->head_trace = list->head_trace->next;
+    free_node(to_free);
+    list->size--;
+  }
 }
 
-void grpc_channel_tracer_add_subchannel(
-    grpc_channel_tracer* tracer, grpc_subchannel_tracer* new_subchannel) {
+void grpc_channel_tracer_add_trace(const char* file, int line,
+                                   grpc_channel_tracer* tracer,
+                                   const char* trace, grpc_error* error,
+                                   grpc_connectivity_state connectivity_state,
+                                   grpc_channel_tracer* subchannel) {
   if (!tracer) return;
-  if (!tracer->head_subchannel) {
-    tracer->head_subchannel = tracer->tail_subchannel = new_subchannel;
-  } else {
-    tracer->tail_subchannel->next = new_subchannel;
-    tracer->tail_subchannel = tracer->tail_subchannel->next;
-  }
+  tracer->num_nodes_logged++;
+  add_trace(&tracer->node_list, file, line, trace, error, connectivity_state,
+            subchannel);
 }
 
 static void log_trace(grpc_trace_node* tn, bool is_subchannel) {
   char* maybe_tab = is_subchannel ? "\t\t" : "";
   while (tn) {
-    gpr_log(GPR_ERROR, "%s%s, %s, %lld:%d, %s", maybe_tab, tn->data,
-            grpc_error_string(tn->error), tn->time.tv_sec, tn->time.tv_nsec,
+    gpr_log(GPR_ERROR, "%s%s:%d - %s, %s, %lld:%d, %s", maybe_tab, tn->file,
+            tn->line, tn->data, grpc_error_string(tn->error), tn->time.tv_sec,
+            tn->time.tv_nsec,
             grpc_connectivity_state_name(tn->connectivity_state));
     tn = tn->next;
   }
@@ -129,12 +171,11 @@ static void log_trace(grpc_trace_node* tn, bool is_subchannel) {
 
 void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer) {
   if (!tracer) return;
-  grpc_subchannel_tracer* subchannel_iterator = tracer->head_subchannel;
   gpr_log(GPR_ERROR, "Parent trace:");
   log_trace(tracer->node_list.head_trace, false);
-  while (subchannel_iterator) {
-    gpr_log(GPR_ERROR, "Child trace:");
-    log_trace(subchannel_iterator->node_list.head_trace, true);
-    subchannel_iterator = subchannel_iterator->next;
-  }
+  // while (subchannel_iterator) {
+  //   gpr_log(GPR_ERROR, "Child trace:");
+  //   log_trace(subchannel_iterator->node_list.head_trace, true);
+  //   subchannel_iterator = subchannel_iterator->next;
+  // }
 }

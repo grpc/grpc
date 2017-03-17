@@ -41,36 +41,17 @@
 
 #include "test/core/util/test_config.h"
 
-static void test_channel_tracing(void) {
-  grpc_channel_tracer* tracer = grpc_channel_tracer_init_tracer();
-  grpc_subchannel_tracer* sc1 = grpc_subchannel_tracer_init_tracer();
-  grpc_subchannel_tracer* sc2 = grpc_subchannel_tracer_init_tracer();
-  char* test = strdup("test1");
-  char* test2 = strdup("test2");
-  char* test3 = strdup("test3");
-  grpc_channel_tracer_add_subchannel(tracer, sc1);
-  grpc_channel_tracer_add_subchannel(tracer, sc2);
-  grpc_channel_tracer_add_trace(
-      &tracer->node_list, test, GRPC_ERROR_CREATE("Created Error"),
-      gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&tracer->node_list, test2, GRPC_ERROR_NONE,
-                                gpr_now(GPR_CLOCK_REALTIME),
-                                GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&tracer->node_list, test3, GRPC_ERROR_CANCELLED,
-                                gpr_now(GPR_CLOCK_REALTIME),
-                                GRPC_CHANNEL_READY);
-  char* sct1 = strdup("sc1");
-  char* sct11 = strdup("sc11");
-  char* sct2 = strdup("sc2");
-  grpc_channel_tracer_add_trace(&sc1->node_list, sct1, GRPC_ERROR_NONE,
-                                gpr_now(GPR_CLOCK_REALTIME),
-                                GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&sc1->node_list, sct11,
-                                GRPC_ERROR_CREATE("Some Other Error"),
-                                gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_IDLE);
-  grpc_channel_tracer_add_trace(&sc2->node_list, sct2, GRPC_ERROR_NONE,
-                                gpr_now(GPR_CLOCK_REALTIME),
-                                GRPC_CHANNEL_READY);
+static void test_channel_tracing() {
+  grpc_channel_tracer* tracer = grpc_channel_tracer_create(5);
+  // grpc_subchannel_tracer* sc1 = grpc_channel_tracer_create();
+  // grpc_subchannel_tracer* sc2 = grpc_channel_tracer_create();
+  GRPC_CHANNEL_TRACER_ADD_TRACE(tracer, "trace added",
+                                GRPC_ERROR_CREATE("Created Error"),
+                                GRPC_CHANNEL_READY, NULL);
+  GRPC_CHANNEL_TRACER_ADD_TRACE(tracer, "test2", GRPC_ERROR_NONE,
+                                GRPC_CHANNEL_READY, NULL);
+  GRPC_CHANNEL_TRACER_ADD_TRACE(tracer, "test3", GRPC_ERROR_CANCELLED,
+                                GRPC_CHANNEL_READY, NULL);
   grpc_channel_tracer_log_trace(tracer);
 }
 
