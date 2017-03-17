@@ -43,6 +43,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/workqueue.h"
@@ -301,6 +303,88 @@ static void test_add_fd_to_pollset() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+typedef struct threading_shared {
+  gpr_mu *mu;
+  grpc_pollset *pollset;
+  grpc_wakeup_fd *wakeup_fd;
+  grpc_fd *wakeup_desc;
+  grpc_closure on_wakeup;
+  int wakeups;
+} threading_shared;
+
+static __thread bool thread_done = false;
+
+static void test_threading_loop(void *arg) {
+  threading_shared *shared = arg;
+  while (!thread_done) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_worker *worker;
+    gpr_mu_lock(shared->mu);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(shared->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
+static void test_threading_wakeup(grpc_exec_ctx *exec_ctx, void *arg,
+                                  grpc_error *error) {
+  threading_shared *shared = arg;
+  if (++shared->wakeups > 1000000) {
+    thread_done = true;
+  }
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
+                               grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
+  grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
+}
+
+static void test_threading(void) {
+  threading_shared shared;
+  shared.pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(shared.pollset, &shared.mu);
+
+  gpr_thd_id thds[100];
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
+    gpr_thd_options opt = gpr_thd_options_default();
+    gpr_thd_options_set_joinable(&opt);
+    gpr_thd_new(&thds[i], test_threading_loop, &shared, &opt);
+  }
+  grpc_wakeup_fd fd;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
+  shared.wakeup_fd = &fd;
+  shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup");
+  shared.wakeups = 0;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
+    grpc_fd_notify_on_read(
+        &exec_ctx, shared.wakeup_desc,
+        grpc_closure_init(&shared.on_wakeup, test_threading_wakeup, &shared,
+                          grpc_schedule_on_exec_ctx));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
+                               grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
+    gpr_thd_join(thds[i]);
+  }
+  fd.read_fd = 0;
+  grpc_wakeup_fd_destroy(&fd);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
+    grpc_pollset_shutdown(&exec_ctx, shared.pollset,
+                          grpc_closure_create(destroy_pollset, shared.pollset,
+                                              grpc_schedule_on_exec_ctx));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
@@ -310,6 +394,7 @@ int main(int argc, char **argv) {
   if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
     test_add_fd_to_pollset();
     test_pollset_queue_merge_items();
+    test_threading();
   } else {
     gpr_log(GPR_INFO,
             "Skipping the test. The test is only relevant for 'epoll' "
