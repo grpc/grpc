@@ -308,6 +308,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/profiling/basic_timers.c",
         "src/core/lib/profiling/stap_timers.c",
+        "src/core/lib/support/arena.c",
         "src/core/lib/support/alloc.c",
         "src/core/lib/support/atm.c",
         "src/core/lib/support/avl.c",
@@ -353,6 +354,7 @@ grpc_cc_library(
         "src/core/lib/support/wrap_memcpy.c",
     ],
     hdrs = [
+        "src/core/lib/support/arena.h",
         "src/core/lib/profiling/timers.h",
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
@@ -1135,6 +1137,7 @@ grpc_cc_library(
         "src/cpp/common/rpc_method.cc",
         "src/cpp/common/version_cc.cc",
         "src/cpp/server/async_generic_service.cc",
+        "src/cpp/server/channel_argument_option.cc",
         "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.cc",
         "src/cpp/server/health/default_health_check_service.cc",
@@ -1176,6 +1179,7 @@ grpc_cc_library(
         "include/grpc++/grpc++.h",
         "include/grpc++/health_check_service_interface.h",
         "include/grpc++/impl/call.h",
+        "include/grpc++/impl/channel_argument_option.h",
         "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/codegen/core_codegen.h",
         "include/grpc++/impl/grpc_library.h",

@@ -232,7 +232,7 @@ static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
 
 static void DestroyCallElem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
-                            void *and_free_memory) {}
+                            grpc_closure *then_sched_closure) {}
 
 grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                             grpc_channel_element_args *args) {
@@ -275,7 +275,7 @@ const char *name;
 /* implementation of grpc_transport_init_stream */
 int InitStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                grpc_stream *stream, grpc_stream_refcount *refcount,
-               const void *server_data) {
+               const void *server_data, gpr_arena *arena) {
   return 0;
 }
 
@@ -299,7 +299,7 @@ void PerformOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_destroy_stream */
 void DestroyStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                   grpc_stream *stream, void *and_free_memory) {}
+                   grpc_stream *stream, grpc_closure *then_sched_closure) {}
 
 /* implementation of grpc_transport_destroy */
 void Destroy(grpc_exec_ctx *exec_ctx, grpc_transport *self) {}
@@ -394,7 +394,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_channel_stack *channel_stack =
       static_cast<grpc_channel_stack *>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "call_stack_init",
+      "channel_stack_init",
       grpc_channel_stack_init(&exec_ctx, 1, FilterDestroy, channel_stack,
                               &filters[0], filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
@@ -409,15 +409,29 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
+  grpc_call_element_args call_args;
+  call_args.call_stack = call_stack;
+  call_args.server_transport_data = NULL;
+  call_args.context = NULL;
+  call_args.path = method;
+  call_args.start_time = start_time;
+  call_args.deadline = deadline;
+  const int kArenaSize = 4096;
+  call_args.arena = gpr_arena_create(kArenaSize);
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
-                                          DoNothing, NULL, NULL, NULL, method,
-                                          start_time, deadline, call_stack));
+                                          DoNothing, NULL, &call_args));
     typename TestOp::Op op(&exec_ctx, &test_op_data, call_stack);
     grpc_call_stack_destroy(&exec_ctx, call_stack, &final_info, NULL);
     op.Finish(&exec_ctx);
     grpc_exec_ctx_flush(&exec_ctx);
+    // recreate arena every 64k iterations to avoid oom
+    if (0 == (state.iterations() & 0xffff)) {
+      gpr_arena_destroy(call_args.arena);
+      call_args.arena = gpr_arena_create(kArenaSize);
+    }
   }
+  gpr_arena_destroy(call_args.arena);
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(channel_stack);

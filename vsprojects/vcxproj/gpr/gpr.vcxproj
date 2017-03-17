@@ -188,6 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\profiling\timers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\arena.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
@@ -207,6 +208,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\stap_timers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\arena.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.c">
     </ClCompile>

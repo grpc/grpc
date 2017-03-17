@@ -256,7 +256,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.  Used for both client and server filters.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              void* and_free_memory) {
+                              grpc_closure* ignored) {
   grpc_deadline_state_destroy(exec_ctx, elem);
 }
 
