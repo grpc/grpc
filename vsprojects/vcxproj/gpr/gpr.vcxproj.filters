@@ -10,6 +10,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\avl.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>

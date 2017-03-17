@@ -208,6 +208,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\avl.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\backoff.c">

@@ -97,6 +97,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/profiling/basic_timers.c )
   s.files += %w( src/core/lib/profiling/stap_timers.c )
   s.files += %w( src/core/lib/support/alloc.c )
+  s.files += %w( src/core/lib/support/atm.c )
   s.files += %w( src/core/lib/support/avl.c )
   s.files += %w( src/core/lib/support/backoff.c )
   s.files += %w( src/core/lib/support/cmdline.c )

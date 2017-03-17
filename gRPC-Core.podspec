@@ -211,6 +211,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.c',
                       'src/core/lib/profiling/stap_timers.c',
                       'src/core/lib/support/alloc.c',
+                      'src/core/lib/support/atm.c',
                       'src/core/lib/support/avl.c',
                       'src/core/lib/support/backoff.c',
                       'src/core/lib/support/cmdline.c',

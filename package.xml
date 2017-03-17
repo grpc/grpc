@@ -106,6 +106,7 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/alloc.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
