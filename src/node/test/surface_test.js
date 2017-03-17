@@ -49,8 +49,7 @@ math_proto = math_proto.loadSync(__dirname +
 
 var mathService = math_proto.lookup('math.Math');
 var mathServiceAttrs = grpc.loadObject(
-    mathService,
-    _.defaults({protobufjs_version: 6}, common.defaultGrpcOptions)).service;
+    mathService, common.defaultGrpcOptions).service;
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -178,7 +177,7 @@ describe('Server.prototype.addService', function() {
     beforeEach(function() {
       server.addService(mathServiceAttrs, {});
       var port = server.bind('localhost:0', server_insecure_creds);
-      var Client = grpc.loadObject(mathService, {protobufjs_version: 6});
+      var Client = grpc.loadObject(mathService);
       client = new Client('localhost:' + port,
                           grpc.credentials.createInsecure());
       server.start();
@@ -250,7 +249,7 @@ describe('waitForClientReady', function() {
     server = new grpc.Server();
     port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
     server.start();
-    Client = grpc.loadObject(mathService, {protobufjs_version: 6});
+    Client = grpc.loadObject(mathService);
   });
   beforeEach(function() {
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
@@ -311,7 +310,7 @@ describe('Echo service', function() {
     test_proto = test_proto.loadSync(__dirname + '/echo_service.proto',
                                          {keepCase: true});
     var echo_service = test_proto.lookup('EchoService');
-    var Client = grpc.loadObject(echo_service, {protobufjs_version: 6});
+    var Client = grpc.loadObject(echo_service);
     server = new grpc.Server();
     server.addService(Client.service, {
       echo: function(call, callback) {
@@ -436,7 +435,7 @@ describe('Echo metadata', function() {
     test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
                                          {keepCase: true});
     var test_service = test_proto.lookup('TestService');
-    var Client = grpc.loadObject(test_service, {protobufjs_version: 6});
+    var Client = grpc.loadObject(test_service);
     server = new grpc.Server();
     server.addService(Client.service, {
       unary: function(call, cb) {
@@ -595,7 +594,7 @@ describe('Client malformed response handling', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = grpc.loadObject(test_service, {protobufjs_version: 6});
+    var Client = grpc.loadObject(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -704,7 +703,7 @@ describe('Server serialization failure handling', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = grpc.loadObject(test_service, {protobufjs_version: 6});
+    var Client = grpc.loadObject(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -757,7 +756,7 @@ describe('Other conditions', function() {
     test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
                                          {keepCase: true});
     test_service = test_proto.lookup('TestService');
-    Client = grpc.loadObject(test_service, {protobufjs_version: 6});
+    Client = grpc.loadObject(test_service);
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
     trailer_metadata.add('trailer-present', 'yes');
@@ -1106,7 +1105,7 @@ describe('Call propagation', function() {
                                          {keepCase: true});
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
-    Client = grpc.loadObject(test_service, {protobufjs_version: 6});
+    Client = grpc.loadObject(test_service);
     server.addService(Client.service, {
       unary: function(call) {},
       clientStream: function(stream) {},
