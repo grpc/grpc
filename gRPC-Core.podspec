@@ -51,7 +51,7 @@ Pod::Spec.new do |s|
     :submodules => true,
   }
 
-  s.ios.deployment_target = '7.1'
+  s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.requires_arc = false
 
@@ -887,8 +887,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|
@@ -899,7 +898,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Cronet-Interface", version
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.c',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
@@ -914,7 +913,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/end2end_test_utils.c',
                       'test/core/end2end/tests/*.{c,h}',
                       'test/core/end2end/data/*.{c,h}',
-                      'test/core/util/debugger_macros.c',
+                      'test/core/util/debugger_macros.{c,h}',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
                       'test/core/util/port.c',
