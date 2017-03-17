@@ -312,11 +312,11 @@ typedef struct threading_shared {
   int wakeups;
 } threading_shared;
 
-static __thread bool thread_done = false;
+static __thread int thread_wakeups = 0;
 
 static void test_threading_loop(void *arg) {
   threading_shared *shared = arg;
-  while (!thread_done) {
+  while (thread_wakeups < 1000000) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_pollset_worker *worker;
     gpr_mu_lock(shared->mu);
@@ -333,14 +333,13 @@ static void test_threading_loop(void *arg) {
 static void test_threading_wakeup(grpc_exec_ctx *exec_ctx, void *arg,
                                   grpc_error *error) {
   threading_shared *shared = arg;
-  if (++shared->wakeups > 1000000) {
-    thread_done = true;
-  }
+  ++shared->wakeups;
+  ++thread_wakeups;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
+  grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
                                grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
-  grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
 }
 
 static void test_threading(void) {
@@ -348,7 +347,7 @@ static void test_threading(void) {
   shared.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(shared.pollset, &shared.mu);
 
-  gpr_thd_id thds[100];
+  gpr_thd_id thds[2];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
