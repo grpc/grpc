@@ -1,4 +1,4 @@
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
 from grpc_reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 _POOL = descriptor_pool.Default()
 
@@ -84,13 +85,18 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor)
 
-    def _file_containing_extension(containing_type, extension_number):
-        # TODO(atash) Python protobuf currently doesn't support querying extensions.
-        # https://github.com/google/protobuf/issues/2248
-        return reflection_pb2.ServerReflectionResponse(
-            error_response=reflection_pb2.ErrorResponse(
-                error_code=grpc.StatusCode.UNIMPLEMENTED.value[0],
-                error_message=grpc.StatusCode.UNIMPLMENTED.value[1].encode(),))
+    def _file_containing_extension(self, containing_type, extension_number):
+        try:
+            pool = self._pool
+            message_descriptor = pool.FindMessageTypeByName(containing_type)
+            extension_descriptor = pool.FindExtensionByNumber(
+                message_descriptor, extension_number)
+            descriptor = pool.FindFileContainingSymbol(
+                extension_descriptor.full_name)
+        except KeyError:
+            return _not_found_error()
+        else:
+            return _file_descriptor_response(descriptor)
 
     def _extension_numbers_of_type(fully_qualified_name):
         # TODO(atash) We're allowed to leave this unsupported according to the
@@ -131,3 +137,4 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
                         error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
                         .encode(),))
+
