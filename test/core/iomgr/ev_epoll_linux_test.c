@@ -347,7 +347,7 @@ static void test_threading(void) {
   shared.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(shared.pollset, &shared.mu);
 
-  gpr_thd_id thds[2];
+  gpr_thd_id thds[10];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
