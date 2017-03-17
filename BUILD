@@ -308,6 +308,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/profiling/basic_timers.c",
         "src/core/lib/profiling/stap_timers.c",
+        "src/core/lib/support/arena.c",
         "src/core/lib/support/alloc.c",
         "src/core/lib/support/avl.c",
         "src/core/lib/support/backoff.c",
@@ -352,6 +353,7 @@ grpc_cc_library(
         "src/core/lib/support/wrap_memcpy.c",
     ],
     hdrs = [
+        "src/core/lib/support/arena.h",
         "src/core/lib/profiling/timers.h",
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
