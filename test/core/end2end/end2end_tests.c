@@ -91,6 +91,8 @@ extern void idempotent_request(grpc_end2end_test_config config);
 extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
+extern void keepalive_timeout(grpc_end2end_test_config config);
+extern void keepalive_timeout_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
 extern void load_reporting_hook(grpc_end2end_test_config config);
@@ -171,6 +173,7 @@ void grpc_end2end_tests_pre_init(void) {
   hpack_size_pre_init();
   idempotent_request_pre_init();
   invoke_large_request_pre_init();
+  keepalive_timeout_pre_init();
   large_metadata_pre_init();
   load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
@@ -229,6 +232,7 @@ void grpc_end2end_tests(int argc, char **argv,
     hpack_size(config);
     idempotent_request(config);
     invoke_large_request(config);
+    keepalive_timeout(config);
     large_metadata(config);
     load_reporting_hook(config);
     max_concurrent_streams(config);
@@ -349,6 +353,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {
       invoke_large_request(config);
+      continue;
+    }
+    if (0 == strcmp("keepalive_timeout", argv[i])) {
+      keepalive_timeout(config);
       continue;
     }
     if (0 == strcmp("large_metadata", argv[i])) {

@@ -238,9 +238,7 @@ static void add_pending_pick(pending_pick **root,
                              const grpc_lb_policy_pick_args *pick_args,
                              grpc_connected_subchannel **target,
                              grpc_closure *on_complete) {
-  pending_pick *pp = gpr_malloc(sizeof(*pp));
-  memset(pp, 0, sizeof(pending_pick));
-  memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
+  pending_pick *pp = gpr_zalloc(sizeof(*pp));
   pp->next = *root;
   pp->pick_args = *pick_args;
   pp->target = target;
@@ -265,9 +263,7 @@ typedef struct pending_ping {
 } pending_ping;
 
 static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
-  pending_ping *pping = gpr_malloc(sizeof(*pping));
-  memset(pping, 0, sizeof(pending_ping));
-  memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
+  pending_ping *pping = gpr_zalloc(sizeof(*pping));
   pping->wrapped_notify_arg.wrapped_closure = notify;
   pping->wrapped_notify_arg.free_when_done = pping;
   pping->next = *root;
@@ -674,8 +670,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
   /* Allocate the data for the tracking of the new RR policy's connectivity.
    * It'll be deallocated in glb_rr_connectivity_changed() */
   rr_connectivity_data *rr_connectivity =
-      gpr_malloc(sizeof(rr_connectivity_data));
-  memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
+      gpr_zalloc(sizeof(rr_connectivity_data));
   grpc_closure_init(&rr_connectivity->on_change,
                     glb_rr_connectivity_changed_locked, rr_connectivity,
                     grpc_combiner_scheduler(glb_policy->base.combiner, false));
@@ -860,14 +855,13 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   }
   if (num_grpclb_addrs == 0) return NULL;
 
-  glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
-  memset(glb_policy, 0, sizeof(*glb_policy));
+  glb_lb_policy *glb_policy = gpr_zalloc(sizeof(*glb_policy));
 
   /* Get server name. */
   arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  grpc_uri *uri = grpc_uri_parse(arg->value.string, true);
+  grpc_uri *uri = grpc_uri_parse(exec_ctx, arg->value.string, true);
   GPR_ASSERT(uri->path[0] != '\0');
   glb_policy->server_name =
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
@@ -1047,8 +1041,7 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
 
-    wrapped_rr_closure_arg *wc_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
-    memset(wc_arg, 0, sizeof(wrapped_rr_closure_arg));
+    wrapped_rr_closure_arg *wc_arg = gpr_zalloc(sizeof(wrapped_rr_closure_arg));
 
     grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
                       grpc_schedule_on_exec_ctx);

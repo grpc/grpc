@@ -454,10 +454,11 @@ int main(int argc, char **argv) {
   const grpc_channel_args channel_args = {1, chan_args};
   struct ifaddrs *ifa = NULL;
   struct ifaddrs *ifa_it;
-  test_addrs dst_addrs;
+  // Zalloc dst_addrs to avoid oversized frames.
+  test_addrs *dst_addrs = gpr_zalloc(sizeof(*dst_addrs));
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();
@@ -469,24 +470,25 @@ int main(int argc, char **argv) {
     gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
     return EXIT_FAILURE;
   }
-  dst_addrs.naddrs = 0;
-  for (ifa_it = ifa; ifa_it != NULL && dst_addrs.naddrs < MAX_ADDRS;
+  dst_addrs->naddrs = 0;
+  for (ifa_it = ifa; ifa_it != NULL && dst_addrs->naddrs < MAX_ADDRS;
        ifa_it = ifa_it->ifa_next) {
     if (ifa_it->ifa_addr == NULL) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      dst_addrs.addrs[dst_addrs.naddrs].addr.len = sizeof(struct sockaddr_in);
+      dst_addrs->addrs[dst_addrs->naddrs].addr.len = sizeof(struct sockaddr_in);
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      dst_addrs.addrs[dst_addrs.naddrs].addr.len = sizeof(struct sockaddr_in6);
+      dst_addrs->addrs[dst_addrs->naddrs].addr.len =
+          sizeof(struct sockaddr_in6);
     } else {
       continue;
     }
-    memcpy(dst_addrs.addrs[dst_addrs.naddrs].addr.addr, ifa_it->ifa_addr,
-           dst_addrs.addrs[dst_addrs.naddrs].addr.len);
+    memcpy(dst_addrs->addrs[dst_addrs->naddrs].addr.addr, ifa_it->ifa_addr,
+           dst_addrs->addrs[dst_addrs->naddrs].addr.len);
     GPR_ASSERT(
-        grpc_sockaddr_set_port(&dst_addrs.addrs[dst_addrs.naddrs].addr, 0));
-    test_addr_init_str(&dst_addrs.addrs[dst_addrs.naddrs]);
-    ++dst_addrs.naddrs;
+        grpc_sockaddr_set_port(&dst_addrs->addrs[dst_addrs->naddrs].addr, 0));
+    test_addr_init_str(&dst_addrs->addrs[dst_addrs->naddrs]);
+    ++dst_addrs->naddrs;
   }
   freeifaddrs(ifa);
   ifa = NULL;
@@ -495,20 +497,21 @@ int main(int argc, char **argv) {
   test_connect(1, NULL, NULL, false);
   test_connect(10, NULL, NULL, false);
 
-  /* Set dst_addrs.addrs[i].len=0 for dst_addrs that are unreachable with a "::"
-     listener. */
-  test_connect(1, NULL, &dst_addrs, true);
+  /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
+     "::" listener. */
+  test_connect(1, NULL, dst_addrs, true);
 
   /* Test connect(2) with dst_addrs. */
-  test_connect(1, &channel_args, &dst_addrs, false);
+  test_connect(1, &channel_args, dst_addrs, false);
   /* Test connect(2) with dst_addrs. */
-  test_connect(10, &channel_args, &dst_addrs, false);
+  test_connect(10, &channel_args, dst_addrs, false);
 
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+  gpr_free(dst_addrs);
   gpr_free(g_pollset);
   return EXIT_SUCCESS;
 }

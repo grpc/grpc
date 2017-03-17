@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-01-13</date>
+ <date>2017-03-01</date>
  <time>16:06:07</time>
  <version>
-  <release>1.2.0dev</release>
-  <api>1.2.0dev</api>
+  <release>1.3.0dev</release>
+  <api>1.3.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,8 +22,8 @@
  </stability>
  <license>BSD</license>
  <notes>
-- PHP Proto3 adoption #8179
-- Various bug fixes     
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -91,11 +91,13 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
@@ -105,6 +107,7 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/alloc.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
@@ -234,6 +237,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
@@ -435,6 +439,9 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_common.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.c" role="src" />
@@ -1280,8 +1287,8 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>1.1.0dev</release>
-    <api>1.1.0dev</api>
+    <release>1.1.0RC1</release>
+    <api>1.1.0RC1</api>
    </version>
    <stability>
     <release>beta</release>
@@ -1291,7 +1298,39 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - PHP Proto3 adoption #8179
-- Various bug fixes     
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0</release>
+    <api>1.1.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2017-01-31</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0RC1</release>
+    <api>1.2.0RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
    </notes>
   </release>
  </changelog>

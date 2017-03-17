@@ -102,8 +102,6 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  memset(calld, 0, sizeof(call_data));
-
   calld->id = (intptr_t)args->call_stack;
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -125,7 +123,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   call_data *calld = elem->call_data;
 
   /* TODO(dgq): do something with the data
@@ -154,8 +152,6 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!args->is_last);
 
   channel_data *chand = elem->channel_data;
-  memset(chand, 0, sizeof(channel_data));
-
   chand->id = (intptr_t)args->channel_stack;
 
   /* TODO(dgq): do something with the data

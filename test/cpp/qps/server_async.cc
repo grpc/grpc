@@ -103,24 +103,25 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     server_ = builder.BuildAndStart();
 
-    using namespace std::placeholders;
-
     auto process_rpc_bound =
-        std::bind(process_rpc, config.payload_config(), _1, _2);
+        std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
+                  std::placeholders::_2);
 
     for (int i = 0; i < 15000; i++) {
       for (int j = 0; j < num_threads; j++) {
         if (request_unary_function) {
-          auto request_unary =
-              std::bind(request_unary_function, &async_service_, _1, _2, _3,
-                        srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
+          auto request_unary = std::bind(
+              request_unary_function, &async_service_, std::placeholders::_1,
+              std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
+              srv_cqs_[j].get(), std::placeholders::_4);
           contexts_.emplace_back(
               new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
         }
         if (request_streaming_function) {
-          auto request_streaming =
-              std::bind(request_streaming_function, &async_service_, _1, _2,
-                        srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
+          auto request_streaming = std::bind(
+              request_streaming_function, &async_service_,
+              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
+              srv_cqs_[j].get(), std::placeholders::_3);
           contexts_.emplace_back(new ServerRpcContextStreamingImpl(
               request_streaming, process_rpc_bound));
         }

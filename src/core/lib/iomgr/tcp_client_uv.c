@@ -76,7 +76,6 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name, str);
-    grpc_error_free_string(str);
   }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
@@ -144,8 +143,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  connect = gpr_malloc(sizeof(grpc_uv_tcp_connect));
-  memset(connect, 0, sizeof(grpc_uv_tcp_connect));
+  connect = gpr_zalloc(sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
   connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));

@@ -144,8 +144,7 @@ static void grow_shard(slice_shard *shard) {
 
   GPR_TIMER_BEGIN("grow_strtab", 0);
 
-  strtab = gpr_malloc(sizeof(interned_slice_refcount *) * capacity);
-  memset(strtab, 0, sizeof(interned_slice_refcount *) * capacity);
+  strtab = gpr_zalloc(sizeof(interned_slice_refcount *) * capacity);
 
   for (i = 0; i < shard->capacity; i++) {
     for (s = shard->strs[i]; s; s = next) {
@@ -296,8 +295,7 @@ void grpc_slice_intern_init(void) {
     gpr_mu_init(&shard->mu);
     shard->count = 0;
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->strs = gpr_malloc(sizeof(*shard->strs) * shard->capacity);
-    memset(shard->strs, 0, sizeof(*shard->strs) * shard->capacity);
+    shard->strs = gpr_zalloc(sizeof(*shard->strs) * shard->capacity);
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(static_metadata_hash); i++) {
     static_metadata_hash[i].hash = 0;

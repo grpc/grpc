@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.2.0-dev'
+  version = '1.3.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -197,11 +197,13 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/arena.h',
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/spinlock.h',
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
@@ -211,6 +213,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.c',
                       'src/core/lib/profiling/stap_timers.c',
                       'src/core/lib/support/alloc.c',
+                      'src/core/lib/support/arena.c',
                       'src/core/lib/support/avl.c',
                       'src/core/lib/support/backoff.c',
                       'src/core/lib/support/cmdline.c',
@@ -309,6 +312,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_posix.h',
                       'src/core/lib/iomgr/tcp_posix.h',
                       'src/core/lib/iomgr/tcp_server.h',
+                      'src/core/lib/iomgr/tcp_server_utils_posix.h',
                       'src/core/lib/iomgr/tcp_uv.h',
                       'src/core/lib/iomgr/tcp_windows.h',
                       'src/core/lib/iomgr/time_averaged_stats.h',
@@ -510,6 +514,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_windows.c',
                       'src/core/lib/iomgr/tcp_posix.c',
                       'src/core/lib/iomgr/tcp_server_posix.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_common.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c',
                       'src/core/lib/iomgr/tcp_server_uv.c',
                       'src/core/lib/iomgr/tcp_server_windows.c',
                       'src/core/lib/iomgr/tcp_uv.c',
@@ -680,11 +687,13 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
+                              'src/core/lib/support/arena.h',
                               'src/core/lib/support/backoff.h',
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
+                              'src/core/lib/support/spinlock.h',
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
@@ -748,6 +757,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',
                               'src/core/lib/iomgr/tcp_server.h',
+                              'src/core/lib/iomgr/tcp_server_utils_posix.h',
                               'src/core/lib/iomgr/tcp_uv.h',
                               'src/core/lib/iomgr/tcp_windows.h',
                               'src/core/lib/iomgr/time_averaged_stats.h',
@@ -923,7 +933,7 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.c',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port_posix.c',
+                      'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
 end

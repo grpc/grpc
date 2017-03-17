@@ -200,7 +200,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              void* ignored) {}
+                              grpc_closure* ignored) {}
 
 // Constructor for channel_data.
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
@@ -208,7 +208,6 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  memset(chand, 0, sizeof(*chand));
   chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {

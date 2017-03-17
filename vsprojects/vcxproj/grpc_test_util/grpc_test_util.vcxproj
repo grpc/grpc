@@ -182,7 +182,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h" />
@@ -252,6 +252,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.h" />
@@ -317,7 +318,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
@@ -335,13 +336,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
     </ClCompile>
@@ -464,6 +461,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
     </ClCompile>

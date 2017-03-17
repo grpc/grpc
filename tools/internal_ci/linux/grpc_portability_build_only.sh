@@ -35,4 +35,6 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-tools/jenkins/run_jenkins_matrix.sh -f portability linux --build_only
+# download docker images from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+tools/run_tests/run_tests_matrix.py -f portability linux --build_only

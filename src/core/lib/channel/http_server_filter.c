@@ -345,7 +345,6 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
-  memset(calld, 0, sizeof(*calld));
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem,
@@ -359,7 +358,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   call_data *calld = elem->call_data;
   grpc_slice_buffer_destroy_internal(exec_ctx, &calld->read_slice_buffer);
 }

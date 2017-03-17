@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -64,6 +65,7 @@ typedef struct grpc_stream_refcount {
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   const char *object_type;
 #endif
+  grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -83,6 +85,11 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
+
+/* Wrap a buffer that is owned by some stream object into a slice that shares
+   the same refcount */
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
+                                               void *buffer, size_t length);
 
 typedef struct {
   uint64_t framing_bytes;
@@ -213,6 +220,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
 /* Initialize transport data for a stream.
 
    Returns 0 on success, any other (transport-defined) value for failure.
+   May assume that stream contains all-zeros.
 
    Arguments:
      transport   - the transport on which to create this stream
@@ -222,7 +230,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
                                grpc_stream_refcount *refcount,
-                               const void *server_data);
+                               const void *server_data, gpr_arena *arena);
 
 void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
                              grpc_stream *stream, grpc_polling_entity *pollent);
@@ -239,7 +247,8 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
                  caller, but any child memory must be cleaned up) */
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream, void *and_free_memory);
+                                   grpc_stream *stream,
+                                   grpc_closure *then_schedule_closure);
 
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,

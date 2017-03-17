@@ -1023,6 +1023,31 @@ GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_cr
   return grpc_metadata_credentials_create_from_plugin(plugin, NULL);
 }
 
+/* Auth context */
+
+GPR_EXPORT grpc_auth_context *GPR_CALLTYPE grpcsharp_call_auth_context(grpc_call *call) {
+  return grpc_call_auth_context(call);
+}
+
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_auth_context_peer_identity_property_name(
+    const grpc_auth_context *ctx) {
+  return grpc_auth_context_peer_identity_property_name(ctx);
+}
+
+GPR_EXPORT grpc_auth_property_iterator GPR_CALLTYPE
+grpcsharp_auth_context_property_iterator(const grpc_auth_context *ctx) {
+  return grpc_auth_context_property_iterator(ctx);
+}
+
+GPR_EXPORT const grpc_auth_property *GPR_CALLTYPE grpcsharp_auth_property_iterator_next(
+    grpc_auth_property_iterator *it) {
+  return grpc_auth_property_iterator_next(it);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_auth_context_release(grpc_auth_context *ctx) {
+  grpc_auth_context_release(ctx);
+}
+
 /* Logging */
 
 typedef void(GPR_CALLTYPE *grpcsharp_log_func)(const char *file, int32_t line,

@@ -40,8 +40,8 @@
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/proto/grpc/testing/empty.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"

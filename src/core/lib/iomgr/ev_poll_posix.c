@@ -1131,8 +1131,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pollset_set = gpr_malloc(sizeof(*pollset_set));
-  memset(pollset_set, 0, sizeof(*pollset_set));
+  grpc_pollset_set *pollset_set = gpr_zalloc(sizeof(*pollset_set));
   gpr_mu_init(&pollset_set->mu);
   return pollset_set;
 }
