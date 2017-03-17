@@ -142,7 +142,7 @@ gem install bundler
 # Significant performance improvements with grpc-go have been observed after
 # upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
-GO_VERSION=1.7.1
+GO_VERSION=1.8
 OS=linux
 ARCH=amd64
 curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz

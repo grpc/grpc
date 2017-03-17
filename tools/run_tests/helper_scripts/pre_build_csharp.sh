@@ -73,18 +73,6 @@ then
   nuget restore -PackagesDirectory ../packages
   cd ..
 
-  cd Grpc.IntegrationTesting.Client
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.IntegrationTesting.QpsWorker
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.IntegrationTesting.StressClient
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
   cd Grpc.IntegrationTesting
   nuget restore -PackagesDirectory ../packages
   cd ..

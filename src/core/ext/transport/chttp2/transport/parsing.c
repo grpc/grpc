@@ -376,34 +376,47 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     return err;
   }
 
-  uint32_t target_incoming_window = GPR_MAX(
-      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      1024);
-  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
-                                   incoming_frame_size);
-  if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
-  }
-
   if (s != NULL) {
     if (incoming_frame_size >
         s->incoming_window_delta +
             t->settings[GRPC_ACKED_SETTINGS]
                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-      char *msg;
-      gpr_asprintf(&msg,
-                   "frame of size %d overflows incoming window of %" PRId64,
-                   t->incoming_frame_size,
-                   s->incoming_window_delta +
-                       t->settings[GRPC_ACKED_SETTINGS]
-                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-      grpc_error *err = GRPC_ERROR_CREATE(msg);
-      gpr_free(msg);
-      return err;
+      if (incoming_frame_size <=
+          s->incoming_window_delta +
+              t->settings[GRPC_SENT_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
+        gpr_log(
+            GPR_ERROR,
+            "Incoming frame of size %d exceeds incoming window size of %" PRId64
+            ".\n"
+            "The (un-acked, future) window size would be %" PRId64
+            " which is not exceeded.\n"
+            "This would usually cause a disconnection, but allowing it due to "
+            "broken HTTP2 implementations in the wild.\n"
+            "See (for example) https://github.com/netty/netty/issues/6520.",
+            t->incoming_frame_size,
+            s->incoming_window_delta +
+                t->settings[GRPC_ACKED_SETTINGS]
+                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+            s->incoming_window_delta +
+                t->settings[GRPC_SENT_SETTINGS]
+                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+      } else {
+        char *msg;
+        gpr_asprintf(&msg,
+                     "frame of size %d overflows incoming window of %" PRId64,
+                     t->incoming_frame_size,
+                     s->incoming_window_delta +
+                         t->settings[GRPC_ACKED_SETTINGS]
+                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+        grpc_error *err = GRPC_ERROR_CREATE(msg);
+        gpr_free(msg);
+        return err;
+      }
     }
 
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
-                                  incoming_frame_size);
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
+                                                        incoming_frame_size);
     if ((int64_t)t->settings[GRPC_SENT_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
             (int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
@@ -415,6 +428,13 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
                                   "window-update-required");
     }
     s->received_bytes += incoming_frame_size;
+  }
+
+  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
+  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
+                                   incoming_frame_size);
+  if (t->incoming_window <= target_incoming_window / 2) {
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
   }
 
   return GRPC_ERROR_NONE;
@@ -528,7 +548,14 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
       s->seen_error = true;
       GRPC_MDELEM_UNREF(exec_ctx, md);
     } else {
-      grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
+      grpc_error *error = grpc_chttp2_incoming_metadata_buffer_add(
+          exec_ctx, &s->metadata_buffer[0], md);
+      if (error != GRPC_ERROR_NONE) {
+        grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
+        grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
+        s->seen_error = true;
+        GRPC_MDELEM_UNREF(exec_ctx, md);
+      }
     }
   }
 
@@ -578,7 +605,14 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
     s->seen_error = true;
     GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
-    grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[1], md);
+    grpc_error *error = grpc_chttp2_incoming_metadata_buffer_add(
+        exec_ctx, &s->metadata_buffer[1], md);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
+      grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
+      s->seen_error = true;
+      GRPC_MDELEM_UNREF(exec_ctx, md);
+    }
   }
 
   GPR_TIMER_END("on_trailing_header", 0);

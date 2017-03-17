@@ -62,8 +62,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
     }
     dec_arg->num_servers++;
   } else { /* second pass. Actually decode. */
-    grpc_grpclb_server *server = gpr_malloc(sizeof(grpc_grpclb_server));
-    memset(server, 0, sizeof(grpc_grpclb_server));
+    grpc_grpclb_server *server = gpr_zalloc(sizeof(grpc_grpclb_server));
     GPR_ASSERT(dec_arg->num_servers > 0);
     if (dec_arg->decoding_idx == 0) { /* first iteration of second pass */
       dec_arg->servers =
@@ -160,8 +159,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
     return NULL;
   }
 
-  grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
-  memset(sl, 0, sizeof(*sl));
+  grpc_grpclb_serverlist *sl = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   sl->num_servers = arg.num_servers;
   sl->servers = arg.servers;
   if (res.server_list.has_expiration_interval) {
@@ -183,8 +181,7 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist) {
 
 grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
     const grpc_grpclb_serverlist *sl) {
-  grpc_grpclb_serverlist *copy = gpr_malloc(sizeof(grpc_grpclb_serverlist));
-  memset(copy, 0, sizeof(grpc_grpclb_serverlist));
+  grpc_grpclb_serverlist *copy = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   copy->num_servers = sl->num_servers;
   memcpy(&copy->expiration_interval, &sl->expiration_interval,
          sizeof(grpc_grpclb_duration));

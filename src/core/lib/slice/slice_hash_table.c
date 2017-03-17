@@ -82,15 +82,13 @@ static void grpc_slice_hash_table_add(
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries) {
-  grpc_slice_hash_table* table = gpr_malloc(sizeof(*table));
-  memset(table, 0, sizeof(*table));
+  grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   // Quadratic probing gets best performance when the table is no more
   // than half full.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
-  table->entries = gpr_malloc(entry_size);
-  memset(table->entries, 0, entry_size);
+  table->entries = gpr_zalloc(entry_size);
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
     grpc_slice_hash_table_add(table, entry->key, entry->value, entry->vtable);

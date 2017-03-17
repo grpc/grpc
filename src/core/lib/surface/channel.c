@@ -68,6 +68,8 @@ struct grpc_channel {
   grpc_compression_options compression_options;
   grpc_mdelem default_authority;
 
+  gpr_atm call_size_estimate;
+
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
 
@@ -115,6 +117,10 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
+  gpr_atm_no_barrier_store(
+      &channel->call_size_estimate,
+      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
+
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
@@ -128,7 +134,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         }
         channel->default_authority = grpc_mdelem_from_slices(
             exec_ctx, GRPC_MDSTR_AUTHORITY,
-            grpc_slice_from_copied_string(args->args[i].value.string));
+            grpc_slice_intern(
+                grpc_slice_from_static_string(args->args[i].value.string)));
       }
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
@@ -144,7 +151,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         } else {
           channel->default_authority = grpc_mdelem_from_slices(
               exec_ctx, GRPC_MDSTR_AUTHORITY,
-              grpc_slice_from_copied_string(args->args[i].value.string));
+              grpc_slice_intern(
+                  grpc_slice_from_static_string(args->args[i].value.string)));
         }
       }
     } else if (0 == strcmp(args->args[i].key,
@@ -173,6 +181,32 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 done:
   grpc_channel_args_destroy(exec_ctx, args);
   return channel;
+}
+
+size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
+#define ROUND_UP_SIZE 256
+  return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
+          ROUND_UP_SIZE) &
+         ~(size_t)(ROUND_UP_SIZE - 1);
+}
+
+void grpc_channel_update_call_size_estimate(grpc_channel *channel,
+                                            size_t size) {
+  size_t cur = (size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate);
+  if (cur < size) {
+    /* size grew: update estimate */
+    gpr_atm_no_barrier_cas(&channel->call_size_estimate, (gpr_atm)cur,
+                           (gpr_atm)size);
+    /* if we lose: never mind, something else will likely update soon enough */
+  } else if (cur == size) {
+    /* no change: holding pattern */
+  } else if (cur > 0) {
+    /* size shrank: decrease estimate */
+    gpr_atm_no_barrier_cas(
+        &channel->call_size_estimate, (gpr_atm)cur,
+        (gpr_atm)(GPR_MIN(cur - 1, (255 * cur + size) / 256)));
+    /* if we lose: never mind, something else will likely update soon enough */
+  }
 }
 
 char *grpc_channel_get_target(grpc_channel *channel) {

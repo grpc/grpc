@@ -44,12 +44,12 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   }
   if (grpc_error_is_special(error)) return NULL;
   // Otherwise, search through its children.
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    grpc_error *result = recursively_find_error_with_field(child_error, which);
-    if (result != NULL) return result;
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    grpc_error *result = recursively_find_error_with_field(lerr->err, which);
+    if (result) return result;
+    slot = lerr->next;
   }
   return NULL;
 }
@@ -112,13 +112,13 @@ bool grpc_error_has_clear_grpc_status(grpc_error *error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
     return true;
   }
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    if (grpc_error_has_clear_grpc_status(child_error)) {
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }
+    slot = lerr->next;
   }
   return false;
 }

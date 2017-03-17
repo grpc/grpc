@@ -70,11 +70,26 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\channel_argument_option.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\default_health_check_service.cc">
+      <Filter>src\cpp\server\health</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.c">
+      <Filter>src\cpp\server\health</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health_check_service.cc">
+      <Filter>src\cpp\server\health</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\health\health_check_service_server_builder_option.cc">
+      <Filter>src\cpp\server\health</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
       <Filter>src\cpp\server</Filter>
@@ -132,6 +147,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_server_builder_option.h">
+      <Filter>include\grpc++\ext</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h">
       <Filter>include\grpc++\generic</Filter>
     </ClInclude>
@@ -141,7 +159,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\health_check_service_interface.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\channel_argument_option.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h">
@@ -387,6 +411,12 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h">
@@ -410,6 +440,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h">
       <Filter>src\cpp\server</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\default_health_check_service.h">
+      <Filter>src\cpp\server\health</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.h">
+      <Filter>src\cpp\server\health</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h">
       <Filter>src\cpp\server</Filter>
     </ClInclude>
@@ -427,6 +463,9 @@
     </Filter>
     <Filter Include="include\grpc++">
       <UniqueIdentifier>{784a0281-f547-aeb0-9f55-b26b7de9c769}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\ext">
+      <UniqueIdentifier>{25501d8e-5fae-2fe4-14a6-d69a07acefdd}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\generic">
       <UniqueIdentifier>{51dae921-3aa2-1976-2ee4-c5615de1af54}</UniqueIdentifier>
@@ -469,6 +508,9 @@
     </Filter>
     <Filter Include="src\cpp\server">
       <UniqueIdentifier>{321b0980-74ad-e8ca-f23b-deffa5d6bb8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\server\health">
+      <UniqueIdentifier>{5bc9ef4e-78c1-159e-4e4e-30ddfce3e140}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\thread_manager">
       <UniqueIdentifier>{23f9df56-8604-52a0-e6a2-f01b8e68d0e7}</UniqueIdentifier>

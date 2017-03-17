@@ -46,10 +46,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/support/env.h"
 
-static char* grpc_get_http_proxy_server() {
+static char* grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx) {
   char* uri_str = gpr_getenv("http_proxy");
   if (uri_str == NULL) return NULL;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  grpc_uri* uri =
+      grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
   char* proxy_name = NULL;
   if (uri == NULL || uri->authority == NULL) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
@@ -76,15 +77,22 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
-  *name_to_resolve = grpc_get_http_proxy_server();
+  *name_to_resolve = grpc_get_http_proxy_server(exec_ctx);
   if (*name_to_resolve == NULL) return false;
-  grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
+  grpc_uri* uri =
+      grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
   if (uri == NULL || uri->path[0] == '\0') {
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
             "parse server URI '%s' -- not using proxy",
             server_uri);
     if (uri != NULL) grpc_uri_destroy(uri);
+    return false;
+  }
+  if (strcmp(uri->scheme, "unix") == 0) {
+    gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
+            server_uri);
+    grpc_uri_destroy(uri);
     return false;
   }
   grpc_arg new_arg;

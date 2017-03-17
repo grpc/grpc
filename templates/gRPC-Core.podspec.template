@@ -161,7 +161,8 @@
 
     s.subspec 'Cronet-Interface' do |ss|
       ss.header_mappings_dir = 'include/grpc'
-      ss.source_files = 'include/grpc/grpc_cronet.h'
+      ss.source_files = 'include/grpc/grpc_cronet.h',
+                        'src/core/ext/transport/cronet/transport/cronet_transport.h'
     end
 
     s.subspec 'Cronet-Implementation' do |ss|
@@ -190,7 +191,7 @@
                         'test/core/util/debugger_macros.c',
                         'test/core/util/test_config.{c,h}',
                         'test/core/util/port.h',
-                        'test/core/util/port_posix.c',
+                        'test/core/util/port.c',
                         'test/core/util/port_server_client.{c,h}'
     end
   end

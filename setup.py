@@ -105,8 +105,11 @@ if EXTRA_ENV_COMPILE_ARGS is None:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
     else:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+  elif 'win32' in sys.platform:
+    EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
   elif "linux" in sys.platform or "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv'
+
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
   if "linux" in sys.platform or "darwin" in sys.platform:
@@ -206,7 +209,7 @@ INSTALL_REQUIRES = (
     'enum34>=1.0.4',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.0.0',
+    'protobuf>=3.2.0',
 )
 
 if not PY3:

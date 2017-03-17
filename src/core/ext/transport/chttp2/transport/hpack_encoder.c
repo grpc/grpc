@@ -173,6 +173,7 @@ static void add_header_data(framer_state *st, grpc_slice slice) {
 
 static uint8_t *add_tiny_header_data(framer_state *st, size_t len) {
   ensure_space(st, len);
+  st->stats->header_bytes += len;
   return grpc_slice_buffer_tiny_add(st->output, len);
 }
 

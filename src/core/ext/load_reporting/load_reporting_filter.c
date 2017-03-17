@@ -31,11 +31,13 @@
  *
  */
 
+#include <string.h>
+
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <string.h>
 
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
@@ -46,8 +48,6 @@
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
-  bool have_trailing_md_string;
-  grpc_slice trailing_md_string;
   bool have_initial_md_string;
   grpc_slice initial_md_string;
   bool have_service_method;
@@ -100,10 +100,8 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  memset(calld, 0, sizeof(call_data));
-
   calld->id = (intptr_t)args->call_stack;
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -125,7 +123,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   call_data *calld = elem->call_data;
 
   /* TODO(dgq): do something with the data
@@ -142,9 +140,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (calld->have_initial_md_string) {
     grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
   }
-  if (calld->have_trailing_md_string) {
-    grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
-  }
   if (calld->have_service_method) {
     grpc_slice_unref_internal(exec_ctx, calld->service_method);
   }
@@ -157,8 +152,6 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!args->is_last);
 
   channel_data *chand = elem->channel_data;
-  memset(chand, 0, sizeof(channel_data));
-
   chand->id = (intptr_t)args->channel_stack;
 
   /* TODO(dgq): do something with the data
@@ -201,15 +194,6 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     /* substitute our callback for the higher callback */
     calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
-  } else if (op->send_trailing_metadata) {
-    if (op->send_trailing_metadata->idx.named.lb_cost_bin != NULL) {
-      calld->trailing_md_string = grpc_slice_ref_internal(
-          GRPC_MDVALUE(op->send_trailing_metadata->idx.named.lb_cost_bin->md));
-      calld->have_trailing_md_string = true;
-      grpc_metadata_batch_remove(
-          exec_ctx, op->send_trailing_metadata,
-          op->send_trailing_metadata->idx.named.lb_cost_bin);
-    }
   }
   grpc_call_next_op(exec_ctx, elem, op);
 

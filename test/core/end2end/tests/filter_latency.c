@@ -260,14 +260,14 @@ static void test_request(grpc_end2end_test_config config) {
 
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   return GRPC_ERROR_NONE;
 }
 
 static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_final_info *final_info,
-                                     void *and_free_memory) {
+                                     grpc_closure *ignored) {
   gpr_mu_lock(&g_mu);
   g_client_latency = final_info->stats.latency;
   gpr_mu_unlock(&g_mu);
@@ -276,7 +276,7 @@ static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
 static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_final_info *final_info,
-                                     void *and_free_memory) {
+                                     grpc_closure *ignored) {
   gpr_mu_lock(&g_mu);
   g_server_latency = final_info->stats.latency;
   gpr_mu_unlock(&g_mu);

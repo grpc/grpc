@@ -52,7 +52,9 @@ fi
 set +ex
 rvm use default
 gem install bundler --update
-bundle install
+
+tools/run_tests/helper_scripts/bundle_install_wrapper.sh
+
 set -ex
 
 rake gem:native

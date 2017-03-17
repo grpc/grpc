@@ -48,16 +48,19 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
@@ -65,6 +68,10 @@
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+
+#define DEFAULT_KEEPALIVE_TIME_SECOND INT_MAX
+#define DEFAULT_KEEPALIVE_TIMEOUT_SECOND 20
+#define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 int grpc_http_trace = 0;
@@ -139,6 +146,16 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 #define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
 
+/** keepalive-relevant functions */
+static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                       grpc_error *error);
+static void start_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error);
+static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                         grpc_error *error);
+static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                            grpc_error *error);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -168,7 +185,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_map_destroy(&t->stream_map);
   grpc_connectivity_state_destroy(exec_ctx, &t->channel_callback.state_tracker);
 
-  grpc_combiner_destroy(exec_ctx, t->combiner);
+  GRPC_COMBINER_UNREF(exec_ctx, t->combiner, "chttp2_transport");
 
   cancel_pings(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
 
@@ -218,8 +235,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
-  memset(t, 0, sizeof(*t));
-
   t->base.vtable = &vtable;
   t->ep = ep;
   /* one ref is for destroy */
@@ -255,6 +270,17 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
+                    t, grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->start_keepalive_ping_locked,
+                    start_keepalive_ping_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->finish_keepalive_ping_locked,
+                    finish_keepalive_ping_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->keepalive_watchdog_fired_locked,
+                    keepalive_watchdog_fired_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
 
   grpc_bdp_estimator_init(&t->bdp_estimator, t->peer_string);
   t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -265,7 +291,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .gain_d = 0,
                                  .initial_control_value = log2(DEFAULT_WINDOW),
                                  .min_control_value = -1,
-                                 .max_control_value = 22,
+                                 .max_control_value = 25,
                                  .integral_range = 10});
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
@@ -316,6 +342,18 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
   };
 
+  /* client-side keepalive setting */
+  t->keepalive_time =
+      DEFAULT_KEEPALIVE_TIME_SECOND == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_KEEPALIVE_TIME_SECOND, GPR_TIMESPAN);
+  t->keepalive_timeout =
+      DEFAULT_KEEPALIVE_TIMEOUT_SECOND == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_KEEPALIVE_TIMEOUT_SECOND,
+                                  GPR_TIMESPAN);
+  t->keepalive_permit_without_calls = DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key,
@@ -363,6 +401,28 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                  strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_BDP_PROBE)) {
         t->enable_bdp_probe = grpc_channel_arg_get_integer(
             &channel_args->args[i], (grpc_integer_options){1, 0, 1});
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_KEEPALIVE_TIME)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_KEEPALIVE_TIME_SECOND, 1, INT_MAX});
+        t->keepalive_time = value == INT_MAX
+                                ? gpr_inf_future(GPR_TIMESPAN)
+                                : gpr_time_from_seconds(value, GPR_TIMESPAN);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_KEEPALIVE_TIMEOUT_SECOND, 0,
+                                   INT_MAX});
+        t->keepalive_timeout = value == INT_MAX
+                                   ? gpr_inf_future(GPR_TIMESPAN)
+                                   : gpr_time_from_seconds(value, GPR_TIMESPAN);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
+        t->keepalive_permit_without_calls =
+            (uint32_t)grpc_channel_arg_get_integer(
+                &channel_args->args[i], (grpc_integer_options){0, 0, 1});
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -414,6 +474,16 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
 
+  /** Start client-side keepalive pings */
+  if (t->is_client) {
+    t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
+    GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+    grpc_timer_init(
+        exec_ctx, &t->keepalive_ping_timer,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
+        &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+  }
+
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
   post_benign_reclaimer(exec_ctx, t);
 }
@@ -441,6 +511,10 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_error *error) {
   if (!t->closed) {
+    if (!grpc_error_has_clear_grpc_status(error)) {
+      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_UNAVAILABLE);
+    }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
       if (t->close_transport_on_writes_finished == NULL) {
         t->close_transport_on_writes_finished =
@@ -450,14 +524,26 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
     }
-    if (!grpc_error_has_clear_grpc_status(error)) {
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE);
-    }
     t->closed = 1;
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
+    if (t->is_client) {
+      switch (t->keepalive_state) {
+        case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING: {
+          grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+          break;
+        }
+        case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
+          grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+          grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
+          break;
+        }
+        case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
+          break;
+        }
+      }
+    }
 
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;
@@ -489,12 +575,10 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s) {
 
 static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_stream *gs, grpc_stream_refcount *refcount,
-                       const void *server_data) {
+                       const void *server_data, gpr_arena *arena) {
   GPR_TIMER_BEGIN("init_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
-
-  memset(s, 0, sizeof(*s));
 
   s->t = t;
   s->refcount = refcount;
@@ -504,8 +588,8 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_ref_init(&s->active_streams, 1);
   GRPC_CHTTP2_STREAM_REF(s, "chttp2");
 
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0]);
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1]);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0], arena);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
@@ -569,20 +653,29 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);
 
+  if (s->incoming_window_delta > 0) {
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(
+        "destroy", t, s, s->incoming_window_delta);
+  } else if (s->incoming_window_delta < 0) {
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(
+        "destroy", t, s, -s->incoming_window_delta);
+  }
+
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
   GPR_TIMER_END("destroy_stream", 0);
 
-  gpr_free(s->destroy_stream_arg);
+  grpc_closure_sched(exec_ctx, s->destroy_stream_arg, GRPC_ERROR_NONE);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                           grpc_stream *gs, void *and_free_memory) {
+                           grpc_stream *gs,
+                           grpc_closure *then_schedule_closure) {
   GPR_TIMER_BEGIN("destroy_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
-  s->destroy_stream_arg = and_free_memory;
+  s->destroy_stream_arg = then_schedule_closure;
   grpc_closure_sched(
       exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
                                   grpc_combiner_scheduler(t->combiner, false)),
@@ -1033,8 +1126,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
   grpc_transport_stream_op *op = stream_op;
-  grpc_chttp2_transport *t = op->transport_private.args[0];
-  grpc_chttp2_stream *s = op->transport_private.args[1];
+  grpc_chttp2_transport *t = op->handler_private.args[0];
+  grpc_chttp2_stream *s = op->handler_private.args[1];
 
   if (grpc_http_trace) {
     char *str = grpc_transport_stream_op_string(op);
@@ -1106,8 +1199,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             grpc_chttp2_list_add_waiting_for_concurrency(t, s);
             maybe_start_some_streams(exec_ctx, t);
           } else {
-            grpc_chttp2_cancel_stream(exec_ctx, t, s,
-                                      GRPC_ERROR_CREATE("Transport closed"));
+            grpc_chttp2_cancel_stream(
+                exec_ctx, t, s,
+                grpc_error_set_int(GRPC_ERROR_CREATE("Transport closed"),
+                                   GRPC_ERROR_INT_GRPC_STATUS,
+                                   GRPC_STATUS_UNAVAILABLE));
           }
         } else {
           GPR_ASSERT(s->id != 0);
@@ -1255,13 +1351,13 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     gpr_free(str);
   }
 
-  op->transport_private.args[0] = gt;
-  op->transport_private.args[1] = gs;
+  op->handler_private.args[0] = gt;
+  op->handler_private.args[1] = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   grpc_closure_sched(
       exec_ctx,
       grpc_closure_init(
-          &op->transport_private.closure, perform_stream_op_locked, op,
+          &op->handler_private.closure, perform_stream_op_locked, op,
           grpc_combiner_scheduler(t->combiner, op->covered_by_poller)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("perform_stream_op", 0);
@@ -1534,15 +1630,19 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       s->recv_trailing_metadata_finished != NULL) {
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
-    grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-        exec_ctx, &s->metadata_buffer[1],
-        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
-                                grpc_slice_from_copied_string(status_string)));
+    GRPC_LOG_IF_ERROR("add_status",
+                      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+                          exec_ctx, &s->metadata_buffer[1],
+                          grpc_mdelem_from_slices(
+                              exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                              grpc_slice_from_copied_string(status_string))));
     if (msg != NULL) {
-      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-          exec_ctx, &s->metadata_buffer[1],
-          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-                                  grpc_slice_from_copied_string(msg)));
+      GRPC_LOG_IF_ERROR(
+          "add_status_message",
+          grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+              exec_ctx, &s->metadata_buffer[1],
+              grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                                      grpc_slice_from_copied_string(msg))));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
@@ -1801,12 +1901,12 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
     return;
   }
+  if (grpc_bdp_estimator_trace) {
+    gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
+            (int)bdp);
+  }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
 }
-
-/*******************************************************************************
- * INPUT PROCESSING - PARSING
- */
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t) {
@@ -1976,6 +2076,77 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }
 
+static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                       grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
+  if (error == GRPC_ERROR_NONE && !(t->destroying || t->closed)) {
+    if (t->keepalive_permit_without_calls || t->stream_map.count > 0) {
+      t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
+      GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
+      send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE,
+                       &t->start_keepalive_ping_locked,
+                       &t->finish_keepalive_ping_locked);
+    } else {
+      GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+      grpc_timer_init(
+          exec_ctx, &t->keepalive_ping_timer,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
+          &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+    }
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "init keepalive ping");
+}
+
+static void start_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
+  grpc_timer_init(
+      exec_ctx, &t->keepalive_watchdog_timer,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_timeout),
+      &t->keepalive_watchdog_fired_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
+static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                         grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
+    if (error == GRPC_ERROR_NONE) {
+      t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
+      grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
+      GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+      grpc_timer_init(
+          exec_ctx, &t->keepalive_ping_timer,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
+          grpc_closure_create(init_keepalive_ping_locked, t,
+                              grpc_combiner_scheduler(t->combiner, false)),
+          gpr_now(GPR_CLOCK_MONOTONIC));
+    }
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive ping end");
+}
+
+static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                            grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
+    if (error == GRPC_ERROR_NONE) {
+      t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
+      close_transport_locked(exec_ctx, t,
+                             GRPC_ERROR_CREATE("keepalive watchdog timeout"));
+    }
+  } else {
+    /** The watchdog timer should have been cancelled by
+        finish_keepalive_ping_locked. */
+    if (error != GRPC_ERROR_CANCELLED) {
+      gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
+              t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
+    }
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive watchdog");
+}
+
 /*******************************************************************************
  * CALLBACK LOOP
  */
@@ -2054,8 +2225,8 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         (int64_t)have_already) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
     }
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
-                                   add_max_recv_bytes);
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA("op", t, s,
+                                                         add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
     if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
@@ -2417,7 +2588,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
     grpc_endpoint *ep, int is_client) {
-  grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
+  grpc_chttp2_transport *t = gpr_zalloc(sizeof(grpc_chttp2_transport));
   init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
   return &t->base;
 }

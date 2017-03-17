@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
 # Install dependencies for pyenv
 RUN apt-get update && apt-get install -y \
@@ -92,6 +92,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install Pyenv and dev Python versions 3.5 and 3.6
 RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+ENV PATH /root/.pyenv/bin:$PATH
+RUN eval "$(pyenv init -)"
+RUN eval "$(pyenv virtualenv-init -)"
 RUN pyenv update
 RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev

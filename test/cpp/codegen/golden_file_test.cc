@@ -34,15 +34,18 @@
 #include <fstream>
 #include <sstream>
 
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-// These paths rely on the fact that we run our tests under grpc/
-const char kGeneratedFilePath[] =
-    "gens/src/proto/grpc/testing/compiler_test.grpc.pb.h";
+DEFINE_string(generated_file_path, "",
+              "path to the generated compiler_test.grpc.pb.h file");
+
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";
 
 TEST(GoldenFileTest, TestGeneratedFile) {
-  std::ifstream generated(kGeneratedFilePath);
+  ASSERT_FALSE(FLAGS_generated_file_path.empty());
+
+  std::ifstream generated(FLAGS_generated_file_path);
   std::ifstream golden(kGoldenFilePath);
 
   ASSERT_TRUE(generated.good());
@@ -60,5 +63,6 @@ TEST(GoldenFileTest, TestGeneratedFile) {
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  ::google::ParseCommandLineFlags(&argc, &argv, true);
   return RUN_ALL_TESTS();
 }

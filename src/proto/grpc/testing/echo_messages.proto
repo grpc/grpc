@@ -50,6 +50,7 @@ message RequestParams {
   bool skip_cancelled_check = 9;
   string expected_transport_security_type = 10;
   DebugInfo debug_info = 11;
+  bool server_die = 12; // Server should not see a request with this set.
 }
 
 message EchoRequest {

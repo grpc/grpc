@@ -127,7 +127,6 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
-        "include/grpc++/impl/codegen/core_codegen.h",
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
@@ -140,6 +139,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
     ],
 )
 
@@ -308,6 +308,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/profiling/basic_timers.c",
         "src/core/lib/profiling/stap_timers.c",
+        "src/core/lib/support/arena.c",
         "src/core/lib/support/alloc.c",
         "src/core/lib/support/avl.c",
         "src/core/lib/support/backoff.c",
@@ -352,12 +353,14 @@ grpc_cc_library(
         "src/core/lib/support/wrap_memcpy.c",
     ],
     hdrs = [
+        "src/core/lib/support/arena.h",
         "src/core/lib/profiling/timers.h",
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
+        "src/core/lib/support/spinlock.h",
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
@@ -526,13 +529,13 @@ grpc_cc_library(
         "src/core/lib/surface/server.c",
         "src/core/lib/surface/validate_metadata.c",
         "src/core/lib/surface/version.c",
+        "src/core/lib/transport/bdp_estimator.c",
         "src/core/lib/transport/byte_stream.c",
         "src/core/lib/transport/connectivity_state.c",
         "src/core/lib/transport/error_utils.c",
         "src/core/lib/transport/metadata.c",
         "src/core/lib/transport/metadata_batch.c",
         "src/core/lib/transport/pid_controller.c",
-        "src/core/lib/transport/bdp_estimator.c",
         "src/core/lib/transport/service_config.c",
         "src/core/lib/transport/static_metadata.c",
         "src/core/lib/transport/status_conversion.c",
@@ -633,6 +636,7 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/surface/validate_metadata.h",
+        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/error_utils.h",
@@ -640,7 +644,6 @@ grpc_cc_library(
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/pid_controller.h",
-        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/service_config.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
@@ -656,6 +659,7 @@ grpc_cc_library(
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/compression.h",
+        "include/grpc/load_reporting.h",
         "include/grpc/grpc.h",
         "include/grpc/grpc_posix.h",
         "include/grpc/grpc_security_constants.h",
@@ -866,8 +870,8 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.c",
         "src/core/lib/security/credentials/ssl/ssl_credentials.c",
         "src/core/lib/security/transport/client_auth_filter.c",
-        "src/core/lib/security/transport/secure_endpoint.c",
         "src/core/lib/security/transport/lb_targets_info.c",
+        "src/core/lib/security/transport/secure_endpoint.c",
         "src/core/lib/security/transport/security_connector.c",
         "src/core/lib/security/transport/security_handshaker.c",
         "src/core/lib/security/transport/server_auth_filter.c",
@@ -890,8 +894,8 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/transport/auth_filters.h",
-        "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/lb_targets_info.h",
+        "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_connector.h",
         "src/core/lib/security/transport/security_handshaker.h",
         "src/core/lib/security/transport/tsi_error.h",
@@ -1071,6 +1075,7 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.c",
     ],
     hdrs = [
+        "src/core/ext/transport/cronet/transport/cronet_transport.h",
         "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c",
@@ -1122,11 +1127,17 @@ grpc_cc_library(
         "src/cpp/common/channel_filter.cc",
         "src/cpp/common/completion_queue_cc.cc",
         "src/cpp/common/core_codegen.cc",
+        "src/cpp/common/resource_quota_cc.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/common/version_cc.cc",
         "src/cpp/server/async_generic_service.cc",
+        "src/cpp/server/channel_argument_option.cc",
         "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.cc",
+        "src/cpp/server/health/default_health_check_service.cc",
+        "src/cpp/server/health/health.pb.c",
+        "src/cpp/server/health/health_check_service.cc",
+        "src/cpp/server/health/health_check_service_server_builder_option.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_cc.cc",
         "src/cpp/server/server_context.cc",
@@ -1143,6 +1154,8 @@ grpc_cc_library(
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
         "src/cpp/server/dynamic_thread_pool.h",
+        "src/cpp/server/health/default_health_check_service.h",
+        "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
     ],
@@ -1154,10 +1167,13 @@ grpc_cc_library(
         "include/grpc++/completion_queue.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/create_channel_posix.h",
+        "include/grpc++/ext/health_check_service_server_builder_option.h",
         "include/grpc++/generic/async_generic_service.h",
         "include/grpc++/generic/generic_stub.h",
         "include/grpc++/grpc++.h",
+        "include/grpc++/health_check_service_interface.h",
         "include/grpc++/impl/call.h",
+        "include/grpc++/impl/channel_argument_option.h",
         "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/codegen/core_codegen.h",
         "include/grpc++/impl/grpc_library.h",
@@ -1264,12 +1280,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_config_proto",
+    external_deps = [
+        "protobuf",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
-    ],
-    external_deps = [
-        "protobuf",
     ],
 )
 
@@ -1282,5 +1298,24 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_codegen_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_reflection",
+    srcs = [
+        "src/cpp/ext/proto_server_reflection.cc",
+        "src/cpp/ext/proto_server_reflection_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/proto_server_reflection.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc++/ext/proto_server_reflection_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )

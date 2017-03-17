@@ -37,6 +37,7 @@
 #include "src/core/ext/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -112,10 +113,18 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a subchannel call */
+typedef struct {
+  grpc_polling_entity *pollent;
+  grpc_slice path;
+  gpr_timespec start_time;
+  gpr_timespec deadline;
+  gpr_arena *arena;
+} grpc_connected_subchannel_call_args;
+
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, grpc_slice path, gpr_timespec start_time,
-    gpr_timespec deadline, grpc_subchannel_call **subchannel_call);
+    const grpc_connected_subchannel_call_args *args,
+    grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(
@@ -154,6 +163,11 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
 char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
                                     grpc_subchannel_call *subchannel_call);
 
+/** Must be called once per call. Sets the 'then_schedule_closure' argument for
+    call stack destruction. */
+void grpc_subchannel_call_set_cleanup_closure(
+    grpc_subchannel_call *subchannel_call, grpc_closure *closure);
+
 grpc_call_stack *grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call *subchannel_call);
 
@@ -175,7 +189,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         const grpc_subchannel_args *args);
 
 /// Sets \a addr from \a args.
-void grpc_get_subchannel_address_arg(const grpc_channel_args *args,
+void grpc_get_subchannel_address_arg(grpc_exec_ctx *exec_ctx,
+                                     const grpc_channel_args *args,
                                      grpc_resolved_address *addr);
 
 /// Returns the URI string for the address to connect to.

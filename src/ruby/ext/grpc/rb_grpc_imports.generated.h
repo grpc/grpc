@@ -272,6 +272,9 @@ extern grpc_call_start_batch_type grpc_call_start_batch_import;
 typedef char *(*grpc_call_get_peer_type)(grpc_call *call);
 extern grpc_call_get_peer_type grpc_call_get_peer_import;
 #define grpc_call_get_peer grpc_call_get_peer_import
+typedef void(*grpc_call_set_load_reporting_cost_context_type)(grpc_call *call, struct grpc_load_reporting_cost_context *context);
+extern grpc_call_set_load_reporting_cost_context_type grpc_call_set_load_reporting_cost_context_import;
+#define grpc_call_set_load_reporting_cost_context grpc_call_set_load_reporting_cost_context_import
 typedef void(*grpc_census_call_set_context_type)(grpc_call *call, struct census_context *context);
 extern grpc_census_call_set_context_type grpc_census_call_set_context_import;
 #define grpc_census_call_set_context grpc_census_call_set_context_import
@@ -608,6 +611,9 @@ extern grpc_slice_buffer_undo_take_first_type grpc_slice_buffer_undo_take_first_
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
+typedef void *(*gpr_zalloc_type)(size_t size);
+extern gpr_zalloc_type gpr_zalloc_import;
+#define gpr_zalloc gpr_zalloc_import
 typedef void(*gpr_free_type)(void *ptr);
 extern gpr_free_type gpr_free_import;
 #define gpr_free gpr_free_import
@@ -833,6 +839,9 @@ extern gpr_refn_type gpr_refn_import;
 typedef int(*gpr_unref_type)(gpr_refcount *r);
 extern gpr_unref_type gpr_unref_import;
 #define gpr_unref gpr_unref_import
+typedef int(*gpr_ref_is_unique_type)(gpr_refcount *r);
+extern gpr_ref_is_unique_type gpr_ref_is_unique_import;
+#define gpr_ref_is_unique gpr_ref_is_unique_import
 typedef void(*gpr_stats_init_type)(gpr_stats_counter *c, intptr_t n);
 extern gpr_stats_init_type gpr_stats_init_import;
 #define gpr_stats_init gpr_stats_init_import

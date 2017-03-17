@@ -39,6 +39,7 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -57,23 +58,39 @@ int grpc_pollset_work_run_loop;
 
 gpr_mu grpc_polling_mu;
 
+/* This is used solely to kick the uv loop, by setting a callback to be run
+   immediately in the next loop iteration.
+   Note: In the future, if there is a bug that involves missing wakeups in the
+   future, try adding a uv_async_t to kick the loop differently */
+uv_timer_t *dummy_uv_handle;
+
 size_t grpc_pollset_size() { return sizeof(grpc_pollset); }
+
+void dummy_timer_cb(uv_timer_t *handle) {}
+
+void dummy_handle_close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 void grpc_pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
+  dummy_uv_handle = gpr_malloc(sizeof(uv_timer_t));
+  uv_timer_init(uv_default_loop(), dummy_uv_handle);
   grpc_pollset_work_run_loop = 1;
 }
 
-void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
+void grpc_pollset_global_shutdown(void) {
+  gpr_mu_destroy(&grpc_polling_mu);
+  uv_close((uv_handle_t *)dummy_uv_handle, dummy_handle_close_cb);
+}
+
+static void timer_run_cb(uv_timer_t *timer) {}
+
+static void timer_close_cb(uv_handle_t *handle) { handle->data = (void *)1; }
 
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &grpc_polling_mu;
-  memset(pollset, 0, sizeof(grpc_pollset));
   uv_timer_init(uv_default_loop(), &pollset->timer);
   pollset->shutting_down = 0;
 }
-
-static void timer_close_cb(uv_handle_t *handle) { handle->data = (void *)1; }
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
@@ -82,6 +99,9 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (grpc_pollset_work_run_loop) {
     // Drain any pending UV callbacks without blocking
     uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+  } else {
+    // kick the loop once
+    uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   }
   grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
 }
@@ -96,13 +116,6 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
     }
   }
 }
-
-void grpc_pollset_reset(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->shutting_down);
-  pollset->shutting_down = 0;
-}
-
-static void timer_run_cb(uv_timer_t *timer) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
@@ -136,6 +149,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker) {
+  uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   return GRPC_ERROR_NONE;
 }
 
