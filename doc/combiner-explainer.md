@@ -92,7 +92,7 @@ class combiner {
 
 So that explains how combiners work in general. In gRPC, there is
 `start_batch(..., tag)` and then work only gets activated by somebody
-calling `cq::next` which returns a tag. This gives and API-level
+calling `cq::next` which returns a tag. This gives an API-level
 guarantee that there will be a thread doing polling to actually make
 work happen. However, some operations are not covered by a poller
 thread, such as cancellation that doesn't have a completion. Other
@@ -128,12 +128,12 @@ tries to spray events onto as many threads as possible to get as much concurrenc
 So `offload` really does:
 
 ``` 
-  distributor.run(continue_from_while_loop);
+  workqueue.run(continue_from_while_loop);
   break;
 ```
 
-This needs us to add another class variable for a `distributor`
-(called a `workqueue` in the code).
+This needs us to add another class variable for a `workqueue`
+(which is really conceptually a distributor).
 
 ```
 workqueue::run(f) {
