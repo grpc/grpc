@@ -92,19 +92,21 @@ static void chttp2_connector_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void chttp2_connector_shutdown(grpc_exec_ctx *exec_ctx,
-                                      grpc_connector *con) {
+                                      grpc_connector *con, grpc_error *why) {
   chttp2_connector *c = (chttp2_connector *)con;
   gpr_mu_lock(&c->mu);
   c->shutdown = true;
   if (c->handshake_mgr != NULL) {
-    grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr);
+    grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr,
+                                    GRPC_ERROR_REF(why));
   }
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
   if (!c->connecting && c->endpoint != NULL) {
-    grpc_endpoint_shutdown(exec_ctx, c->endpoint);
+    grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(why));
   }
   gpr_mu_unlock(&c->mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
@@ -121,7 +123,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       // before destroying them, even if we know that there are no
       // pending read/write callbacks.  This should be fixed, at which
       // point this can be removed.
-      grpc_endpoint_shutdown(exec_ctx, args->endpoint);
+      grpc_endpoint_shutdown(exec_ctx, args->endpoint, GRPC_ERROR_REF(error));
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
       grpc_channel_args_destroy(exec_ctx, args->args);
       grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
@@ -195,7 +197,9 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_closure_sched(exec_ctx, notify, error);
-    if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
+    if (c->endpoint != NULL) {
+      grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(error));
+    }
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, arg);
   } else {
@@ -222,7 +226,7 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
                                      grpc_closure *notify) {
   chttp2_connector *c = (chttp2_connector *)con;
   grpc_resolved_address addr;
-  grpc_get_subchannel_address_arg(args->channel_args, &addr);
+  grpc_get_subchannel_address_arg(exec_ctx, args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == NULL);
   c->notify = notify;
@@ -244,8 +248,7 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector *grpc_chttp2_connector_create() {
-  chttp2_connector *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
+  chttp2_connector *c = gpr_zalloc(sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);

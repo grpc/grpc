@@ -50,7 +50,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -58,7 +58,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -74,7 +74,7 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -113,6 +113,10 @@ static grpc_slice generate_random_slice() {
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER) {
+    return;
+  }
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
@@ -149,8 +153,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_call_details *call_details =
       malloc(sizeof(grpc_call_details) * NUM_CALLS);
   grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
-  char **details = malloc(sizeof(char *) * NUM_CALLS);
-  size_t *details_capacity = malloc(sizeof(size_t) * NUM_CALLS);
+  grpc_slice *details = malloc(sizeof(grpc_slice) * NUM_CALLS);
   grpc_byte_buffer **request_payload_recv =
       malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
   int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);
@@ -161,6 +164,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int pending_server_end_calls = 0;
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
+  int deadline_exceeded = 0;
 
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -173,8 +177,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
     grpc_metadata_array_init(&trailing_metadata_recv[i]);
     grpc_metadata_array_init(&request_metadata_recv[i]);
     grpc_call_details_init(&call_details[i]);
-    details[i] = NULL;
-    details_capacity[i] = 0;
     request_payload_recv[i] = NULL;
     was_cancelled[i] = 0;
   }
@@ -190,8 +192,10 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
   for (int i = 0; i < NUM_CALLS; i++) {
     client_calls[i] = grpc_channel_create_call(
-        f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
-        "foo.test.google.fr", n_seconds_time(60), NULL);
+        f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+        grpc_slice_from_static_string("/foo"),
+        get_host_override_slice("foo.test.google.fr", config),
+        n_seconds_time(60), NULL);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -201,7 +205,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = request_payload;
+    op->data.send_message.send_message = request_payload;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -210,7 +214,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &initial_metadata_recv[i];
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &initial_metadata_recv[i];
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -219,8 +224,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
         &trailing_metadata_recv[i];
     op->data.recv_status_on_client.status = &status[i];
     op->data.recv_status_on_client.status_details = &details[i];
-    op->data.recv_status_on_client.status_details_capacity =
-        &details_capacity[i];
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -249,6 +252,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
         case GRPC_STATUS_RESOURCE_EXHAUSTED:
           cancelled_calls_on_client++;
           break;
+        case GRPC_STATUS_DEADLINE_EXCEEDED:
+          deadline_exceeded++;
+          break;
         case GRPC_STATUS_OK:
           break;
         default:
@@ -260,7 +266,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
       grpc_call_destroy(client_calls[call_id]);
-      gpr_free(details[call_id]);
+      grpc_slice_unref(details[call_id]);
 
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
@@ -277,7 +283,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       op->reserved = NULL;
       op++;
       op->op = GRPC_OP_RECV_MESSAGE;
-      op->data.recv_message = &request_payload_recv[call_id];
+      op->data.recv_message.recv_message = &request_payload_recv[call_id];
       op->flags = 0;
       op->reserved = NULL;
       op++;
@@ -317,7 +323,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
       op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
       op->data.send_status_from_server.trailing_metadata_count = 0;
       op->data.send_status_from_server.status = GRPC_STATUS_OK;
-      op->data.send_status_from_server.status_details = "xyz";
+      grpc_slice status_details = grpc_slice_from_static_string("xyz");
+      op->data.send_status_from_server.status_details = &status_details;
       op->flags = 0;
       op->reserved = NULL;
       op++;
@@ -344,23 +351,18 @@ void resource_quota_server(grpc_end2end_test_config config) {
     }
   }
 
-  gpr_log(
-      GPR_INFO,
-      "Done. %d total calls: %d cancelled at server, %d cancelled at client.",
-      NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client);
-
-  /* The call may be cancelled after the server has sent its status but before
-   * the client has received it. This means that we should see strictly more
-   * failures on the client than on the server. */
-  GPR_ASSERT(cancelled_calls_on_client >= cancelled_calls_on_server);
-  /* However, we shouldn't see radically more... 0.9 is a guessed bound on what
-   * we'd want that ratio to be... to at least trigger some investigation should
-   * that ratio become much higher. */
-  GPR_ASSERT(cancelled_calls_on_server >= 0.9 * cancelled_calls_on_client);
+  gpr_log(GPR_INFO,
+          "Done. %d total calls: %d cancelled at server, %d cancelled at "
+          "client, %d timed out.",
+          NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
+          deadline_exceeded);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
+
+  end_test(&f);
+  config.tear_down_data(&f);
 
   free(client_calls);
   free(server_calls);
@@ -370,12 +372,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(call_details);
   free(status);
   free(details);
-  free(details_capacity);
   free(request_payload_recv);
   free(was_cancelled);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void resource_quota_server_pre_init(void) {}

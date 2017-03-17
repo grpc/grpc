@@ -36,20 +36,23 @@
 
 #include <map>
 #include <memory>
+#include <vector>
+
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/load_reporting.h>
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
+#include <grpc++/impl/codegen/metadata_map.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/compression_types.h>
 
 struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
 namespace grpc {
-
 class ClientContext;
 template <class W, class R>
 class ServerAsyncReader;
@@ -123,7 +126,7 @@ class ServerContext {
 
   const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
       const {
-    return client_metadata_;
+    return *client_metadata_.map();
   }
 
   grpc_compression_level compression_level() const {
@@ -141,6 +144,9 @@ class ServerContext {
     return compression_algorithm_;
   }
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
+  // Set the load reporting costs in \a cost_data for the call.
+  void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
 
   std::shared_ptr<const AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
@@ -207,8 +213,7 @@ class ServerContext {
 
   void BeginCompletionOp(Call* call);
 
-  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
-                size_t metadata_count);
+  ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 
   void set_call(grpc_call* call) { call_ = call; }
 
@@ -223,7 +228,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  std::multimap<grpc::string_ref, grpc::string_ref> client_metadata_;
+  MetadataMap client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 

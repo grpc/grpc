@@ -63,7 +63,7 @@ class ClientStreamingCall extends AbstractCall
      */
     public function write($data, array $options = [])
     {
-        $message_array = ['message' => $this->serializeMessage($data)];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
@@ -90,6 +90,6 @@ class ClientStreamingCall extends AbstractCall
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
 
-        return [$this->deserializeResponse($event->message), $status];
+        return [$this->_deserializeResponse($event->message), $status];
     }
 }

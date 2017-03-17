@@ -42,6 +42,8 @@ from grpc.framework.foundation import abandonment  # pylint: disable=unused-impo
 from grpc.framework.foundation import future  # pylint: disable=unused-import
 from grpc.framework.foundation import stream  # pylint: disable=unused-import
 
+# pylint: disable=too-many-arguments
+
 
 class NoSuchMethodError(Exception):
     """Raised by customer code to indicate an unrecognized method.
@@ -63,18 +65,13 @@ class NoSuchMethodError(Exception):
         self.method = method
 
     def __repr__(self):
-        return 'face.NoSuchMethodError(%s, %s)' % (
-            self.group,
-            self.method,)
+        return 'face.NoSuchMethodError(%s, %s)' % (self.group, self.method,)
 
 
 class Abortion(
-        collections.namedtuple('Abortion', (
-            'kind',
-            'initial_metadata',
-            'terminal_metadata',
-            'code',
-            'details',))):
+        collections.namedtuple('Abortion',
+                               ('kind', 'initial_metadata', 'terminal_metadata',
+                                'code', 'details',))):
     """A value describing RPC abortion.
 
   Attributes:

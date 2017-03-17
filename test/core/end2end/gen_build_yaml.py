@@ -91,6 +91,7 @@ LOWCPU = 0.1
 
 # maps test names to options
 END2END_TESTS = {
+    'authority_not_supported': default_test_options,
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
     'resource_quota_server': default_test_options._replace(large_writes=True,
@@ -118,6 +119,7 @@ END2END_TESTS = {
     'high_initial_seqno': default_test_options,
     'idempotent_request': default_test_options,
     'invoke_large_request': default_test_options,
+    'keepalive_timeout': default_test_options._replace(proxyable=False),
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
     'max_message_length': default_test_options,
@@ -143,7 +145,6 @@ END2END_TESTS = {
     'simple_request_with_channel_tracing': default_test_options,
     'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
-    'authority_not_supported': default_test_options,
     'write_buffering': default_test_options,
     'write_buffering_at_end': default_test_options,
 }

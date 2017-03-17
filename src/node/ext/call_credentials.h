@@ -34,7 +34,7 @@
 #ifndef GRPC_NODE_CALL_CREDENTIALS_H_
 #define GRPC_NODE_CALL_CREDENTIALS_H_
 
-#include <list>
+#include <queue>
 
 #include <node.h>
 #include <nan.h>
@@ -84,7 +84,7 @@ typedef struct plugin_callback_data {
 
 typedef struct plugin_state {
   Nan::Callback *callback;
-  std::list<plugin_callback_data*> *pending_callbacks;
+  std::queue<plugin_callback_data*> *pending_callbacks;
   uv_mutex_t plugin_mutex;
   // async.data == this
   uv_async_t plugin_async;

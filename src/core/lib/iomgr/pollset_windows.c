@@ -98,7 +98,6 @@ size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
 
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &grpc_polling_mu;
-  memset(pollset, 0, sizeof(*pollset));
   pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
       pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
           &pollset->root_worker;
@@ -116,16 +115,6 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {}
-
-void grpc_pollset_reset(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(
-      !has_workers(&pollset->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET));
-  pollset->shutting_down = 0;
-  pollset->is_iocp_worker = 0;
-  pollset->kicked_without_pollers = 0;
-  pollset->on_shutdown = NULL;
-}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,

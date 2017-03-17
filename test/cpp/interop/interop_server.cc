@@ -31,8 +31,6 @@
  *
  */
 
-#include <unistd.h>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -45,12 +43,13 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/proto/grpc/testing/empty.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
@@ -91,7 +90,9 @@ void MaybeEchoMetadata(ServerContext* context) {
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
-    context->AddInitialMetadata(kEchoInitialMetadataKey, iter->second.data());
+    context->AddInitialMetadata(
+        kEchoInitialMetadataKey,
+        grpc::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
@@ -105,7 +106,9 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     iter = client_metadata.find("user-agent");
     if (iter != client_metadata.end()) {
-      context->AddInitialMetadata(kEchoUserAgentKey, iter->second.data());
+      context->AddInitialMetadata(
+          kEchoUserAgentKey,
+          grpc::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
@@ -346,6 +349,7 @@ void grpc::testing::interop::RunServer(
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
-    sleep(5);
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }

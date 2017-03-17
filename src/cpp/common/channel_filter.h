@@ -76,8 +76,8 @@ class MetadataBatch {
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem &operator*() const { return *elem_->md; }
-    const grpc_mdelem *operator->() const { return elem_->md; }
+    const grpc_mdelem &operator*() const { return elem_->md; }
+    const grpc_mdelem operator->() const { return elem_->md; }
 
     const_iterator &operator++() {
       elem_ = elem_->next;
@@ -133,7 +133,7 @@ class TransportOp {
   grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->send_goaway; }
+  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -244,7 +244,7 @@ class CallData {
 
   /// Initializes the call data.
   virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
-                           grpc_call_element_args *args) {
+                           const grpc_call_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
@@ -308,7 +308,7 @@ class ChannelFilter final {
 
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     grpc_call_element_args *args) {
+                                     const grpc_call_element_args *args) {
     ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
     CallDataType *call_data = new (elem->call_data) CallDataType();
@@ -318,7 +318,8 @@ class ChannelFilter final {
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
                                  const grpc_call_final_info *final_info,
-                                 void *and_free_memory) {
+                                 grpc_closure *then_call_closure) {
+    GPR_ASSERT(then_call_closure == NULL);
     reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
   }
 

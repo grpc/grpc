@@ -58,7 +58,7 @@ static void message_size_limits_free(grpc_exec_ctx* exec_ctx, void* value) {
   gpr_free(value);
 }
 
-static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
+static const grpc_slice_hash_table_vtable message_size_limits_vtable = {
     message_size_limits_free, message_size_limits_copy};
 
 static void* message_size_limits_create_from_json(const grpc_json* json) {
@@ -68,12 +68,16 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
     if (field->key == NULL) continue;
     if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
       if (max_request_message_bytes >= 0) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return NULL;
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        return NULL;
+      }
       max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
       if (max_request_message_bytes == -1) return NULL;
     } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
       if (max_response_message_bytes >= 0) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return NULL;
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        return NULL;
+      }
       max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
       if (max_response_message_bytes == -1) return NULL;
     }
@@ -101,7 +105,7 @@ typedef struct channel_data {
   int max_send_size;
   int max_recv_size;
   // Maps path names to message_size_limits structs.
-  grpc_mdstr_hash_table* method_limit_table;
+  grpc_slice_hash_table* method_limit_table;
 } channel_data;
 
 // Callback invoked when we receive a message.  Here we check the max
@@ -142,10 +146,12 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->send_message->length, calld->max_send_size);
-    grpc_slice message = grpc_slice_from_copied_string(message_string);
+    grpc_transport_stream_op_finish_with_failure(
+        exec_ctx, op, grpc_error_set_int(GRPC_ERROR_CREATE(message_string),
+                                         GRPC_ERROR_INT_GRPC_STATUS,
+                                         GRPC_STATUS_INVALID_ARGUMENT));
     gpr_free(message_string);
-    grpc_call_element_send_close_with_message(
-        exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
+    return;
   }
   // Inject callback for receiving a message.
   if (op->recv_message_ready != NULL) {
@@ -160,7 +166,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
-                                  grpc_call_element_args* args) {
+                                  const grpc_call_element_args* args) {
   channel_data* chand = elem->channel_data;
   call_data* calld = elem->call_data;
   calld->next_recv_message_ready = NULL;
@@ -194,7 +200,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              void* ignored) {}
+                              grpc_closure* ignored) {}
 
 // Constructor for channel_data.
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
@@ -202,7 +208,6 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  memset(chand, 0, sizeof(*chand));
   chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
@@ -243,7 +248,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {
   channel_data* chand = elem->channel_data;
-  grpc_mdstr_hash_table_unref(exec_ctx, chand->method_limit_table);
+  grpc_slice_hash_table_unref(exec_ctx, chand->method_limit_table);
 }
 
 const grpc_channel_filter grpc_message_size_filter = {

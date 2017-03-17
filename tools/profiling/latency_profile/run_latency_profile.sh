@@ -28,55 +28,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# format argument via
-# $ echo '{...}' | python -mjson.tool
-read -r -d '' SCENARIOS_JSON_ARG <<'EOF'
-{
-    "scenarios": [
-        {
-            "benchmark_seconds": 5,
-            "client_config": {
-                "client_channels": 1,
-                "client_type": "SYNC_CLIENT",
-                "histogram_params": {
-                    "max_possible": 60000000000.0,
-                    "resolution": 0.01
-                },
-                "load_params": {
-                    "closed_loop": {}
-                },
-                "outstanding_rpcs_per_channel": 1,
-                "payload_config": {
-                    "simple_params": {
-                        "req_size": 0,
-                        "resp_size": 0
-                    }
-                },
-                "rpc_type": "UNARY",
-                "security_params": {
-                    "server_host_override": "foo.test.google.fr",
-                    "use_test_ca": true
-                }
-            },
-            "name": "cpp_protobuf_sync_unary_ping_pong_secure",
-            "num_clients": 1,
-            "num_servers": 1,
-            "server_config": {
-                "core_limit": 1,
-                "security_params": {
-                    "server_host_override": "foo.test.google.fr",
-                    "use_test_ca": true
-                },
-                "server_type": "SYNC_SERVER"
-            },
-            "spawn_local_worker_count": 2,
-            "warmup_seconds": 5
-        }
-    ]
-}
-
-EOF
-
 set -ex
 
 cd $(dirname $0)/../../..
@@ -93,14 +44,9 @@ else
   PYTHON=python2.7
 fi
 
-make CONFIG=basicprof -j$CPUS qps_json_driver
+make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server
+bins/opt/memory_profile_test
+bq load microbenchmarks.memory memory_usage.csv
 
-mkdir -p reports
-bins/basicprof/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
 
-echo '<html><head></head><body>Latency profile for:<br/>' > reports/index.html
-echo "<p><pre>${SCENARIOS_JSON_ARG}</pre></p>" >> reports/index.html
-echo '<p><pre>' >> reports/index.html
-$PYTHON tools/profiling/latency_profile/profile_analyzer.py \
-    --source=latency_trace.txt --fmt=simple >> reports/index.html
-echo '</pre></p></body></html>' >> reports/index.html

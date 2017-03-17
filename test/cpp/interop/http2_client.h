@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 #include <grpc/grpc.h>
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
@@ -70,8 +70,11 @@ class Http2Client {
 
   void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
   bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  Status SendUnaryCall(SimpleResponse* response);
+  SimpleRequest BuildDefaultRequest();
   ServiceStub serviceStub_;
   std::shared_ptr<Channel> channel_;
+  SimpleRequest defaultRequest_;
 };
 
 }  // namespace testing

@@ -38,7 +38,7 @@ library, so we can build it in all environments */
 
 #include <grpc/support/log.h>
 
-#include "third_party/Cronet/bidirectional_stream_c.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 /* link with the real CRONET library in the build system */
@@ -79,5 +79,17 @@ int bidirectional_stream_write(bidirectional_stream* stream, const char* buffer,
 void bidirectional_stream_cancel(bidirectional_stream* stream) {
   GPR_ASSERT(0);
 }
+
+void bidirectional_stream_disable_auto_flush(bidirectional_stream* stream,
+                                             bool disable_auto_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_delay_request_headers_until_flush(
+    bidirectional_stream* stream, bool delay_headers_until_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_flush(bidirectional_stream* stream) { GPR_ASSERT(0); }
 
 #endif /* GRPC_COMPILE_WITH_CRONET */

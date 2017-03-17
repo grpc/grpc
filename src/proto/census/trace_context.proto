@@ -31,18 +31,14 @@ syntax = "proto3";
 
 package google.trace;
 
-// A TraceId uniquely represents a single Trace. It is a 128-bit nonce.
-message TraceId {
-  fixed64 hi = 1;
-  fixed64 lo = 2;
-}
-
 // Tracing information that is propagated with RPC's.
 message TraceContext {
-  // Trace identifer. Must be present.
-  TraceId trace_id = 1;
-  // ID of parent (client) span. Must be present.
-  fixed64 span_id = 2;
-  // true if this trace is sampled.
-  bool is_sampled = 3;
+  // A TraceId uniquely represents a single Trace. It is a 128-bit nonce.
+  // The 128-bit ID is split into 2 64-bit chunks. (REQUIRED)
+  fixed64 trace_id_hi = 1;
+  fixed64 trace_id_lo = 2;
+  // ID of parent (client) span. (REQUIRED)
+  fixed64 span_id = 3;
+  // Span option flags. First bit is true if this trace is sampled. (OPTIONAL)
+  fixed32 span_options = 4;
 }

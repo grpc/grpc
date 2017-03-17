@@ -487,9 +487,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
-        RPC completion, the return Future's result value will be the response
-        message of the RPC. Should the event terminate with non-OK status, the
-        returned Future's exception value will be an RpcError.
+        RPC completion, the return Call-Future's result value will be the
+        response message of the RPC. Should the event terminate with non-OK
+        status, the returned Call-Future's exception value will be an RpcError.
     """
         raise NotImplementedError()
 
@@ -510,8 +510,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
-        values. Drawing response values from the returned iterator may raise
-        RpcError indicating termination of the RPC with non-OK status.
+        values. Drawing response values from the returned Call-iterator may
+        raise RpcError indicating termination of the RPC with non-OK status.
     """
         raise NotImplementedError()
 
@@ -535,8 +535,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       credentials: An optional CallCredentials for the RPC.
 
     Returns:
-      The response value for the RPC, and a Call for the RPC if with_call was
-        set to True at invocation.
+      The response value for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -587,9 +586,9 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
-        RPC completion, the return Future's result value will be the response
-        message of the RPC. Should the event terminate with non-OK status, the
-        returned Future's exception value will be an RpcError.
+        RPC completion, the return Call-Future's result value will be the
+        response message of the RPC. Should the event terminate with non-OK
+        status, the returned Call-Future's exception value will be an RpcError.
     """
         raise NotImplementedError()
 
@@ -614,8 +613,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
-        values. Drawing response values from the returned iterator may raise
-        RpcError indicating termination of the RPC with non-OK status.
+        values. Drawing response values from the returned Call-iterator may
+        raise RpcError indicating termination of the RPC with non-OK status.
     """
         raise NotImplementedError()
 
@@ -1005,7 +1004,7 @@ def unary_unary_rpc_method_handler(behavior,
     An RpcMethodHandler for a unary-unary RPC method constructed from the given
       parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(False, False, request_deserializer,
                                        response_serializer, behavior, None,
                                        None, None)
@@ -1026,7 +1025,7 @@ def unary_stream_rpc_method_handler(behavior,
     An RpcMethodHandler for a unary-stream RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(False, True, request_deserializer,
                                        response_serializer, None, behavior,
                                        None, None)
@@ -1047,7 +1046,7 @@ def stream_unary_rpc_method_handler(behavior,
     An RpcMethodHandler for a stream-unary RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(True, False, request_deserializer,
                                        response_serializer, None, None,
                                        behavior, None)
@@ -1069,7 +1068,7 @@ def stream_stream_rpc_method_handler(behavior,
     An RpcMethodHandler for a stream-stream RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(True, True, request_deserializer,
                                        response_serializer, None, None, None,
                                        behavior)
@@ -1086,7 +1085,7 @@ def method_handlers_generic_handler(service, method_handlers):
   Returns:
     A GenericRpcHandler constructed from the given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.DictionaryGenericHandler(service, method_handlers)
 
 
@@ -1125,7 +1124,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
   Returns:
     A CallCredentials.
   """
-    from grpc import _plugin_wrapping
+    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
     if name is None:
         try:
             effective_name = metadata_plugin.__name__
@@ -1148,7 +1147,7 @@ def access_token_call_credentials(access_token):
   Returns:
     A CallCredentials.
   """
-    from grpc import _auth
+    from grpc import _auth  # pylint: disable=cyclic-import
     return metadata_call_credentials(
         _auth.AccessTokenCallCredentials(access_token))
 
@@ -1162,7 +1161,7 @@ def composite_call_credentials(*call_credentials):
   Returns:
     A CallCredentials object composed of the given CallCredentials objects.
   """
-    from grpc import _credential_composition
+    from grpc import _credential_composition  # pylint: disable=cyclic-import
     cygrpc_call_credentials = tuple(
         single_call_credentials._credentials
         for single_call_credentials in call_credentials)
@@ -1181,7 +1180,7 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
     A ChannelCredentials composed of the given ChannelCredentials and
       CallCredentials objects.
   """
-    from grpc import _credential_composition
+    from grpc import _credential_composition  # pylint: disable=cyclic-import
     cygrpc_call_credentials = tuple(
         single_call_credentials._credentials
         for single_call_credentials in call_credentials)
@@ -1238,7 +1237,7 @@ def channel_ready_future(channel):
     A Future that matures when the given Channel has connectivity
       ChannelConnectivity.READY.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.channel_ready_future(channel)
 
 
@@ -1253,7 +1252,7 @@ def insecure_channel(target, options=None):
   Returns:
     A Channel to the target through which RPCs may be conducted.
   """
-    from grpc import _channel
+    from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options, None)
 
 
@@ -1269,7 +1268,7 @@ def secure_channel(target, credentials, options=None):
   Returns:
     A Channel to the target through which RPCs may be conducted.
   """
-    from grpc import _channel
+    from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials)
 
@@ -1291,54 +1290,29 @@ def server(thread_pool, handlers=None, options=None):
   Returns:
     A Server with which RPCs can be serviced.
   """
-    from grpc import _server
+    from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
                           if options is None else options)
 
 
 ###################################  __all__  #################################
 
-__all__ = (
-    'FutureTimeoutError',
-    'FutureCancelledError',
-    'Future',
-    'ChannelConnectivity',
-    'StatusCode',
-    'RpcError',
-    'RpcContext',
-    'Call',
-    'ChannelCredentials',
-    'CallCredentials',
-    'AuthMetadataContext',
-    'AuthMetadataPluginCallback',
-    'AuthMetadataPlugin',
-    'ServerCredentials',
-    'UnaryUnaryMultiCallable',
-    'UnaryStreamMultiCallable',
-    'StreamUnaryMultiCallable',
-    'StreamStreamMultiCallable',
-    'Channel',
-    'ServicerContext',
-    'RpcMethodHandler',
-    'HandlerCallDetails',
-    'GenericRpcHandler',
-    'ServiceRpcHandler',
-    'Server',
-    'unary_unary_rpc_method_handler',
-    'unary_stream_rpc_method_handler',
-    'stream_unary_rpc_method_handler',
-    'stream_stream_rpc_method_handler',
-    'method_handlers_generic_handler',
-    'ssl_channel_credentials',
-    'metadata_call_credentials',
-    'access_token_call_credentials',
-    'composite_call_credentials',
-    'composite_channel_credentials',
-    'ssl_server_credentials',
-    'channel_ready_future',
-    'insecure_channel',
-    'secure_channel',
-    'server',)
+__all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
+           'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
+           'Call', 'ChannelCredentials', 'CallCredentials',
+           'AuthMetadataContext', 'AuthMetadataPluginCallback',
+           'AuthMetadataPlugin', 'ServerCredentials', 'UnaryUnaryMultiCallable',
+           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
+           'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
+           'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
+           'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
+           'unary_stream_rpc_method_handler', 'stream_unary_rpc_method_handler',
+           'stream_stream_rpc_method_handler',
+           'method_handlers_generic_handler', 'ssl_channel_credentials',
+           'metadata_call_credentials', 'access_token_call_credentials',
+           'composite_call_credentials', 'composite_channel_credentials',
+           'ssl_server_credentials', 'channel_ready_future', 'insecure_channel',
+           'secure_channel', 'server',)
 
 ############################### Extension Shims ################################
 

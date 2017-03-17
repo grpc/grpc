@@ -33,12 +33,13 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
   grpc_metadata_batch *recv_initial_metadata;
@@ -67,48 +68,34 @@ static grpc_metadata_array metadata_batch_to_md_array(
   grpc_metadata_array_init(&result);
   for (l = batch->list.head; l != NULL; l = l->next) {
     grpc_metadata *usr_md = NULL;
-    grpc_mdelem *md = l->md;
-    grpc_mdstr *key = md->key;
-    grpc_mdstr *value = md->value;
+    grpc_mdelem md = l->md;
+    grpc_slice key = GRPC_MDKEY(md);
+    grpc_slice value = GRPC_MDVALUE(md);
     if (result.count == result.capacity) {
       result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
       result.metadata =
           gpr_realloc(result.metadata, result.capacity * sizeof(grpc_metadata));
     }
     usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_mdstr_as_c_string(key);
-    usr_md->value = grpc_mdstr_as_c_string(value);
-    usr_md->value_length = GRPC_SLICE_LENGTH(value->slice);
+    usr_md->key = grpc_slice_ref_internal(key);
+    usr_md->value = grpc_slice_ref_internal(value);
   }
   return result;
 }
 
-static grpc_mdelem *remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       grpc_mdelem *md) {
+static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
+                                               void *user_data,
+                                               grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata *consumed_md = &calld->consumed_md[i];
-    /* Maybe we could do a pointer comparison but we do not have any guarantee
-       that the metadata processor used the same pointers for consumed_md in the
-       callback. */
-    if (GRPC_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
-        GRPC_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
-      continue;
-    }
-    if (memcmp(GRPC_SLICE_START_PTR(md->key->slice), consumed_md->key,
-               GRPC_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GRPC_SLICE_START_PTR(md->value->slice), consumed_md->value,
-               GRPC_SLICE_LENGTH(md->value->slice)) == 0) {
-      return NULL; /* Delete. */
-    }
+    if (grpc_slice_eq(GRPC_MDKEY(md), consumed_md->key) &&
+        grpc_slice_eq(GRPC_MDVALUE(md), consumed_md->value))
+      return GRPC_FILTERED_REMOVE();
   }
-  return md;
-}
-
-static void destroy_op(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  gpr_free(arg);
+  return GRPC_FILTERED_MDELEM(md);
 }
 
 /* called from application code */
@@ -130,29 +117,33 @@ static void on_md_processing_done(
   if (status == GRPC_STATUS_OK) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
-    grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
-                               remove_consumed_md, elem);
+    /* TODO(ctiller): propagate error */
+    GRPC_LOG_IF_ERROR(
+        "grpc_metadata_batch_filter",
+        grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
+                                   remove_consumed_md, elem,
+                                   "Response metadata filtering error"));
+    for (size_t i = 0; i < calld->md.count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&calld->md);
     grpc_closure_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE);
   } else {
-    grpc_slice message;
-    grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
-    memset(close_op, 0, sizeof(*close_op));
+    for (size_t i = 0; i < calld->md.count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    message = grpc_slice_from_copied_string(error_details);
     calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message != NULL) {
       grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);
       calld->transport_op->send_message = NULL;
     }
     calld->transport_op->send_trailing_metadata = NULL;
-    close_op->on_complete =
-        grpc_closure_create(destroy_op, close_op, grpc_schedule_on_exec_ctx);
-    grpc_transport_stream_op_add_close(&exec_ctx, close_op, status, &message);
-    grpc_call_next_op(&exec_ctx, elem, close_op);
     grpc_closure_sched(&exec_ctx, calld->on_done_recv,
                        grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
                                           GRPC_ERROR_INT_GRPC_STATUS, status));
@@ -206,7 +197,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -236,7 +227,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {}
+                              grpc_closure *ignored) {}
 
 /* Constructor for channel_data */
 static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,

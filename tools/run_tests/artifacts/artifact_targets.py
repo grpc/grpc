@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -40,7 +40,8 @@ import python_utils.jobset as jobset
 
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
-                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60):
+                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
+                   docker_base_image=None):
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
@@ -51,6 +52,9 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
                 'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
                 'OUTPUT_DIR': 'artifacts'}
+
+  if docker_base_image is not None:
+    docker_env['DOCKER_BASE_IMAGE'] = docker_base_image
   jobspec = jobset.JobSpec(
           cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
@@ -116,7 +120,8 @@ class PythonArtifact:
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/artifacts/build_artifact_python.sh',
           environ=environ,
-          timeout_seconds=60*60)
+          timeout_seconds=60*60,
+          docker_base_image='quay.io/pypa/manylinux1_i686' if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
     elif self.platform == 'windows':
       if 'Python27' in self.py_version or 'Python34' in self.py_version:
         environ['EXT_COMPILER'] = 'mingw32'
@@ -183,24 +188,14 @@ class CSharpExtArtifact:
     self.labels = ['artifact', 'csharp', platform, arch]
 
   def pre_build_jobspecs(self):
-    if self.platform == 'windows':
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\helper_scripts\\pre_build_c.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return []
 
   def build_jobspec(self):
     if self.platform == 'windows':
-      msbuild_platform = 'Win32' if self.arch == 'x86' else self.arch
+      cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                             'vsprojects\\grpc_csharp_ext.sln',
-                             '/p:Configuration=Release',
-                             '/p:PlatformToolset=v120',
-                             '/p:Platform=%s' % msbuild_platform],
+                             cmake_arch_option],
                             shell=True)
     else:
       environ = {'CONFIG': 'opt',
@@ -336,19 +331,24 @@ def targets():
            PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
            PythonArtifact('linux', 'x86', 'cp34-cp34m'),
            PythonArtifact('linux', 'x86', 'cp35-cp35m'),
+           PythonArtifact('linux', 'x86', 'cp36-cp36m'),
            PythonArtifact('linux', 'x64', 'cp27-cp27m'),
            PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
            PythonArtifact('linux', 'x64', 'cp34-cp34m'),
            PythonArtifact('linux', 'x64', 'cp35-cp35m'),
+           PythonArtifact('linux', 'x64', 'cp36-cp36m'),
            PythonArtifact('macos', 'x64', 'python2.7'),
            PythonArtifact('macos', 'x64', 'python3.4'),
            PythonArtifact('macos', 'x64', 'python3.5'),
+           PythonArtifact('macos', 'x64', 'python3.6'),
            PythonArtifact('windows', 'x86', 'Python27_32bits'),
            PythonArtifact('windows', 'x86', 'Python34_32bits'),
            PythonArtifact('windows', 'x86', 'Python35_32bits'),
+           PythonArtifact('windows', 'x86', 'Python36_32bits'),
            PythonArtifact('windows', 'x64', 'Python27'),
            PythonArtifact('windows', 'x64', 'Python34'),
            PythonArtifact('windows', 'x64', 'Python35'),
+           PythonArtifact('windows', 'x64', 'Python36'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),

@@ -336,6 +336,22 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void StatusDetailIsUtf8()
+        {
+            // some japanese and chinese characters
+            var nonAsciiString = "\u30a1\u30a2\u30a3 \u62b5\u6297\u662f\u5f92\u52b3\u7684";
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                context.Status = new Status(StatusCode.Unknown, nonAsciiString);
+                return "";
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
+            Assert.AreEqual(nonAsciiString, ex.Status.Detail);
+        }
+
+        [Test]
         public void ServerCallContext_PeerInfoPresent()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
@@ -354,6 +370,18 @@ namespace Grpc.Core.Tests
             {
                 Assert.IsTrue(context.Host.Contains(Host));
                 Assert.AreEqual("/tests.Test/Unary", context.Method);
+                return "PASS";
+            });
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+        }
+
+        [Test]
+        public void ServerCallContext_AuthContextNotPopulated()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.IsFalse(context.AuthContext.IsPeerAuthenticated);
+                Assert.AreEqual(0, context.AuthContext.Properties.Count());
                 return "PASS";
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));

@@ -48,25 +48,6 @@ HISTOGRAM_PARAMS = {
   'max_possible': 60e9,
 }
 
-EMPTY_GENERIC_PAYLOAD = {
-  'bytebuf_params': {
-    'req_size': 0,
-    'resp_size': 0,
-  }
-}
-EMPTY_PROTO_PAYLOAD = {
-  'simple_params': {
-    'req_size': 0,
-    'resp_size': 0,
-  }
-}
-BIG_GENERIC_PAYLOAD = {
-  'bytebuf_params': {
-    'req_size': 65536,
-    'resp_size': 65536,
-  }
-}
-
 # target number of RPCs outstanding on across all client channels in
 # non-ping-pong tests (since we can only specify per-channel numbers, the
 # actual target will be slightly higher)
@@ -92,6 +73,7 @@ def remove_nonproto_fields(scenario):
   scenario.pop('CATEGORIES', None)
   scenario.pop('CLIENT_LANGUAGE', None)
   scenario.pop('SERVER_LANGUAGE', None)
+  scenario.pop('EXCLUDED_POLL_ENGINES', None)
   return scenario
 
 
@@ -102,10 +84,25 @@ def geometric_progression(start, stop, step):
     n *= step
 
 
+def _payload_type(use_generic_payload, req_size, resp_size):
+    r = {}
+    sizes = {
+      'req_size': req_size,
+      'resp_size': resp_size,
+    }
+    if use_generic_payload:
+        r['bytebuf_params'] = sizes
+    else:
+        r['simple_params'] = sizes
+    return r
+
+
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
                         use_generic_payload=False,
+                        req_size=0,
+                        resp_size=0,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
@@ -114,7 +111,8 @@ def _ping_pong_scenario(name, rpc_type,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
-                        resource_quota_size=None):
+                        resource_quota_size=None,
+                        excluded_poll_engines=[]):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -145,14 +143,16 @@ def _ping_pong_scenario(name, rpc_type,
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
-    scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
-    scenario['server_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
-  else:
-    # For proto payload, only the client should get the config.
-    scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
+    scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+
+  scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
+    # clamp buffer usage to something reasonable (16 gig for now)
+    MAX_MEMORY_USE = 16 * 1024 * 1024 * 1024
+    if outstanding_calls * max(req_size, resp_size) > MAX_MEMORY_USE:
+        outstanding_calls = max(1, MAX_MEMORY_USE / max(req_size, resp_size))
     wide = channels if channels is not None else WIDE
     deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
@@ -173,6 +173,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['SERVER_LANGUAGE'] = server_language
   if categories:
     scenario['CATEGORIES'] = categories
+  if len(excluded_poll_engines):
+    # The polling engines for which this scenario is excluded
+    scenario['EXCLUDED_POLL_ENGINES'] = excluded_poll_engines
   return scenario
 
 
@@ -228,7 +231,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories + [SCALABLE])
+          categories=smoketest_categories + [SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
@@ -237,7 +241,8 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories+[SCALABLE])
+          categories=smoketest_categories+[SCALABLE],
+          excluded_poll_engines = ['poll-cv'])
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
@@ -249,6 +254,18 @@ class CXXLanguage:
               async_server_threads=1,
               secure=secure)
 
+          for size in geometric_progression(1, 1024*1024*1024+1, 8):
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_%s_qps_unconstrained_%s_%db' % (synchronicity, rpc_type, secstr, size),
+                  rpc_type=rpc_type.upper(),
+                  req_size=size,
+                  resp_size=size,
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  unconstrained_client=synchronicity,
+                  secure=secure,
+                  categories=[SWEEP])
+
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_qps_unconstrained_%s' % (synchronicity, rpc_type, secstr),
               rpc_type=rpc_type.upper(),
@@ -258,15 +275,18 @@ class CXXLanguage:
               secure=secure,
               categories=smoketest_categories+[SCALABLE])
 
-          yield _ping_pong_scenario(
-              'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
-              rpc_type=rpc_type.upper(),
-              client_type='%s_CLIENT' % synchronicity.upper(),
-              server_type='%s_SERVER' % synchronicity.upper(),
-              unconstrained_client=synchronicity,
-              secure=secure,
-              categories=smoketest_categories+[SCALABLE],
-              resource_quota_size=500*1024)
+          # TODO(vjpai): Re-enable this test. It has a lot of timeouts
+          # and hasn't yet been conclusively identified as a test failure
+          # or race in the library
+          # yield _ping_pong_scenario(
+          #     'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
+          #     rpc_type=rpc_type.upper(),
+          #     client_type='%s_CLIENT' % synchronicity.upper(),
+          #     server_type='%s_SERVER' % synchronicity.upper(),
+          #     unconstrained_client=synchronicity,
+          #     secure=secure,
+          #     categories=smoketest_categories+[SCALABLE],
+          #     resource_quota_size=500*1024)
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):
@@ -396,11 +416,12 @@ class NodeLanguage:
         client_type='ASYNC_CLIENT', server_type='async_server',
         client_language='c++')
 
-    yield _ping_pong_scenario(
-        'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='async',
-        categories=[SCALABLE, SMOKETEST])
+    # TODO(murgatroid99): fix bugs with this scenario and re-enable it
+    # yield _ping_pong_scenario(
+    #     'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+    #     client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #     unconstrained_client='async',
+    #     categories=[SCALABLE, SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(

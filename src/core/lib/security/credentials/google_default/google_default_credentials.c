@@ -112,7 +112,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
      on compute engine. */
   gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
@@ -154,7 +154,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
   }
   gpr_mu_unlock(g_polling_mu);
 
-  grpc_httpcli_context_destroy(&context);
+  grpc_httpcli_context_destroy(exec_ctx, &context);
   grpc_closure_init(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);
@@ -177,7 +177,7 @@ static grpc_error *create_default_creds_from_path(
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
-  grpc_slice creds_data = gpr_empty_slice();
+  grpc_slice creds_data = grpc_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
     error = GRPC_ERROR_CREATE("creds_path unset");

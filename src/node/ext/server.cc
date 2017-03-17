@@ -46,6 +46,7 @@
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
 #include "server_credentials.h"
+#include "slice.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -77,8 +78,6 @@ using v8::Value;
 Nan::Callback *Server::constructor;
 Persistent<FunctionTemplate> Server::fun_tpl;
 
-static Callback *shutdown_callback;
-
 class NewCallOp : public Op {
  public:
   NewCallOp() {
@@ -99,10 +98,11 @@ class NewCallOp : public Op {
     }
     Local<Object> obj = Nan::New<Object>();
     Nan::Set(obj, Nan::New("call").ToLocalChecked(), Call::WrapStruct(call));
+    // TODO(murgatroid99): Use zero-copy string construction instead
     Nan::Set(obj, Nan::New("method").ToLocalChecked(),
-             Nan::New(details.method).ToLocalChecked());
+             CopyStringFromSlice(details.method));
     Nan::Set(obj, Nan::New("host").ToLocalChecked(),
-             Nan::New(details.host).ToLocalChecked());
+             CopyStringFromSlice(details.host));
     Nan::Set(obj, Nan::New("deadline").ToLocalChecked(),
              Nan::New<Date>(TimespecToMilliseconds(details.deadline))
                  .ToLocalChecked());
@@ -111,8 +111,7 @@ class NewCallOp : public Op {
     return scope.Escape(obj);
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
+  bool ParseOp(Local<Value> value, grpc_op *out) {
     return true;
   }
   bool IsFinalOp() {
@@ -126,52 +125,6 @@ class NewCallOp : public Op {
  protected:
   std::string GetTypeString() const { return "new_call"; }
 };
-
-class ServerShutdownOp : public Op {
- public:
-  ServerShutdownOp(grpc_server *server): server(server) {
-  }
-
-  ~ServerShutdownOp() {
-  }
-
-  Local<Value> GetNodeValue() const {
-    return Nan::New<External>(reinterpret_cast<void *>(server));
-  }
-
-  bool ParseOp(Local<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
-    return true;
-  }
-  bool IsFinalOp() {
-    return false;
-  }
-
-  grpc_server *server;
-
- protected:
-  std::string GetTypeString() const { return "shutdown"; }
-};
-
-NAN_METHOD(ServerShutdownCallback) {
-  if (!info[0]->IsNull()) {
-    return Nan::ThrowError("forceShutdown failed somehow");
-  }
-  MaybeLocal<Object> maybe_result = Nan::To<Object>(info[1]);
-  Local<Object> result = maybe_result.ToLocalChecked();
-  Local<Value> server_val = Nan::Get(
-      result, Nan::New("shutdown").ToLocalChecked()).ToLocalChecked();
-  Local<External> server_extern = server_val.As<External>();
-  grpc_server *server = reinterpret_cast<grpc_server *>(server_extern->Value());
-  grpc_server_destroy(server);
-}
-
-Server::Server(grpc_server *server) : wrapped_server(server) {
-}
-
-Server::~Server() {
-  this->ShutdownServer();
-}
 
 void Server::Init(Local<Object> exports) {
   HandleScope scope;
@@ -187,32 +140,11 @@ void Server::Init(Local<Object> exports) {
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(exports, Nan::New("Server").ToLocalChecked(), ctr);
   constructor = new Callback(ctr);
-
-  Local<FunctionTemplate>callback_tpl =
-      Nan::New<FunctionTemplate>(ServerShutdownCallback);
-  shutdown_callback = new Callback(
-      Nan::GetFunction(callback_tpl).ToLocalChecked());
 }
 
 bool Server::HasInstance(Local<Value> val) {
   HandleScope scope;
   return Nan::New(fun_tpl)->HasInstance(val);
-}
-
-void Server::ShutdownServer() {
-  if (this->wrapped_server != NULL) {
-    ServerShutdownOp *op = new ServerShutdownOp(this->wrapped_server);
-    unique_ptr<OpVec> ops(new OpVec());
-    ops->push_back(unique_ptr<Op>(op));
-
-    grpc_server_shutdown_and_notify(
-        this->wrapped_server, GetCompletionQueue(),
-        new struct tag(new Callback(**shutdown_callback), ops.release(),
-                       shared_ptr<Resources>(nullptr), NULL));
-    grpc_server_cancel_all_calls(this->wrapped_server);
-    CompletionQueueNext();
-    this->wrapped_server = NULL;
-  }
 }
 
 NAN_METHOD(Server::New) {
@@ -261,7 +193,7 @@ NAN_METHOD(Server::RequestCall) {
       GetCompletionQueue(),
       GetCompletionQueue(),
       new struct tag(new Callback(info[0].As<Function>()), ops.release(),
-                     shared_ptr<Resources>(nullptr), NULL));
+                     NULL));
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("requestCall failed", error));
   }
@@ -314,7 +246,7 @@ NAN_METHOD(Server::TryShutdown) {
   grpc_server_shutdown_and_notify(
       server->wrapped_server, GetCompletionQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),
-                     shared_ptr<Resources>(nullptr), NULL));
+                     NULL));
   CompletionQueueNext();
 }
 

@@ -43,10 +43,13 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/transport/lb_targets_info.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/support/env.h"
@@ -205,23 +208,23 @@ static const grpc_arg_pointer_vtable connector_pointer_vtable = {
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
   grpc_arg result;
   result.type = GRPC_ARG_POINTER;
-  result.key = GRPC_SECURITY_CONNECTOR_ARG;
+  result.key = GRPC_ARG_SECURITY_CONNECTOR;
   result.value.pointer.vtable = &connector_pointer_vtable;
   result.value.pointer.p = sc;
   return result;
 }
 
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {
-  if (strcmp(arg->key, GRPC_SECURITY_CONNECTOR_ARG)) return NULL;
+  if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR)) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_SECURITY_CONNECTOR_ARG);
+            GRPC_ARG_SECURITY_CONNECTOR);
     return NULL;
   }
   return arg->value.pointer.p;
 }
 
-grpc_security_connector *grpc_find_security_connector_in_args(
+grpc_security_connector *grpc_security_connector_find_in_args(
     const grpc_channel_args *args) {
   size_t i;
   if (args == NULL) return NULL;
@@ -235,16 +238,88 @@ grpc_security_connector *grpc_find_security_connector_in_args(
 
 /* -- Fake implementation. -- */
 
+typedef struct {
+  grpc_channel_security_connector base;
+  char *target;
+  char *expected_targets;
+  bool is_lb_channel;
+} grpc_fake_channel_security_connector;
+
 static void fake_channel_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_security_connector *sc) {
-  grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
-  grpc_call_credentials_unref(exec_ctx, c->request_metadata_creds);
-  gpr_free(sc);
+  grpc_fake_channel_security_connector *c =
+      (grpc_fake_channel_security_connector *)sc;
+  grpc_call_credentials_unref(exec_ctx, c->base.request_metadata_creds);
+  gpr_free(c->target);
+  gpr_free(c->expected_targets);
+  gpr_free(c);
 }
 
 static void fake_server_destroy(grpc_exec_ctx *exec_ctx,
                                 grpc_security_connector *sc) {
   gpr_free(sc);
+}
+
+static bool fake_check_target(const char *target_type, const char *target,
+                              const char *set_str) {
+  GPR_ASSERT(target_type != NULL);
+  GPR_ASSERT(target != NULL);
+  char **set = NULL;
+  size_t set_size = 0;
+  gpr_string_split(set_str, ",", &set, &set_size);
+  bool found = false;
+  for (size_t i = 0; i < set_size; ++i) {
+    if (set[i] != NULL && strcmp(target, set[i]) == 0) found = true;
+  }
+  for (size_t i = 0; i < set_size; ++i) {
+    gpr_free(set[i]);
+  }
+  gpr_free(set);
+  return found;
+}
+
+static void fake_secure_name_check(const char *target,
+                                   const char *expected_targets,
+                                   bool is_lb_channel) {
+  if (expected_targets == NULL) return;
+  char **lbs_and_backends = NULL;
+  size_t lbs_and_backends_size = 0;
+  bool success = false;
+  gpr_string_split(expected_targets, ";", &lbs_and_backends,
+                   &lbs_and_backends_size);
+  if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
+    gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'",
+            expected_targets);
+    goto done;
+  }
+  if (is_lb_channel) {
+    if (lbs_and_backends_size != 2) {
+      gpr_log(GPR_ERROR,
+              "Invalid expected targets arg value: '%s'. Expectations for LB "
+              "channels must be of the form 'be1,be2,be3,...;lb1,lb2,...",
+              expected_targets);
+      goto done;
+    }
+    if (!fake_check_target("LB", target, lbs_and_backends[1])) {
+      gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
+              target, lbs_and_backends[1]);
+      goto done;
+    }
+    success = true;
+  } else {
+    if (!fake_check_target("Backend", target, lbs_and_backends[0])) {
+      gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
+              target, lbs_and_backends[0]);
+      goto done;
+    }
+    success = true;
+  }
+done:
+  for (size_t i = 0; i < lbs_and_backends_size; ++i) {
+    gpr_free(lbs_and_backends[i]);
+  }
+  gpr_free(lbs_and_backends);
+  if (!success) abort();
 }
 
 static void fake_check_peer(grpc_exec_ctx *exec_ctx,
@@ -277,10 +352,26 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
   grpc_auth_context_add_cstring_property(
       *auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
-
 end:
   grpc_closure_sched(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
+}
+
+static void fake_channel_check_peer(grpc_exec_ctx *exec_ctx,
+                                    grpc_security_connector *sc, tsi_peer peer,
+                                    grpc_auth_context **auth_context,
+                                    grpc_closure *on_peer_checked) {
+  fake_check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
+  grpc_fake_channel_security_connector *c =
+      (grpc_fake_channel_security_connector *)sc;
+  fake_secure_name_check(c->target, c->expected_targets, c->is_lb_channel);
+}
+
+static void fake_server_check_peer(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc, tsi_peer peer,
+                                   grpc_auth_context **auth_context,
+                                   grpc_closure *on_peer_checked) {
+  fake_check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
 }
 
 static void fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
@@ -313,29 +404,37 @@ static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_security_connector_vtable fake_channel_vtable = {
-    fake_channel_destroy, fake_check_peer};
+    fake_channel_destroy, fake_channel_check_peer};
 
-static grpc_security_connector_vtable fake_server_vtable = {fake_server_destroy,
-                                                            fake_check_peer};
+static grpc_security_connector_vtable fake_server_vtable = {
+    fake_server_destroy, fake_server_check_peer};
 
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds) {
-  grpc_channel_security_connector *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
-  gpr_ref_init(&c->base.refcount, 1);
-  c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
-  c->base.vtable = &fake_channel_vtable;
-  c->request_metadata_creds = grpc_call_credentials_ref(request_metadata_creds);
-  c->check_call_host = fake_channel_check_call_host;
-  c->add_handshakers = fake_channel_add_handshakers;
-  return c;
+    grpc_call_credentials *request_metadata_creds, const char *target,
+    const grpc_channel_args *args) {
+  grpc_fake_channel_security_connector *c = gpr_zalloc(sizeof(*c));
+  gpr_ref_init(&c->base.base.refcount, 1);
+  c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
+  c->base.base.vtable = &fake_channel_vtable;
+  c->base.request_metadata_creds =
+      grpc_call_credentials_ref(request_metadata_creds);
+  c->base.check_call_host = fake_channel_check_call_host;
+  c->base.add_handshakers = fake_channel_add_handshakers;
+  c->target = gpr_strdup(target);
+  const grpc_arg *expected_target_arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (expected_target_arg != NULL) {
+    GPR_ASSERT(expected_target_arg->type == GRPC_ARG_STRING);
+    c->expected_targets = gpr_strdup(expected_target_arg->value.string);
+  }
+  c->is_lb_channel = (grpc_lb_targets_info_find_in_args(args) != NULL);
+  return &c->base;
 }
 
 grpc_server_security_connector *grpc_fake_server_security_connector_create(
     void) {
   grpc_server_security_connector *c =
-      gpr_malloc(sizeof(grpc_server_security_connector));
-  memset(c, 0, sizeof(*c));
+      gpr_zalloc(sizeof(grpc_server_security_connector));
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
@@ -601,7 +700,7 @@ static grpc_security_connector_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_check_peer};
 
 static grpc_slice compute_default_pem_root_certs_once(void) {
-  grpc_slice result = gpr_empty_slice();
+  grpc_slice result = grpc_empty_slice();
 
   /* First try to load the roots from the environment. */
   char *default_root_certs_path =
@@ -714,8 +813,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     pem_root_certs_size = config->pem_root_certs_size;
   }
 
-  c = gpr_malloc(sizeof(grpc_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
@@ -776,8 +874,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
     goto error;
   }
-  c = gpr_malloc(sizeof(grpc_ssl_server_security_connector));
-  memset(c, 0, sizeof(grpc_ssl_server_security_connector));
+  c = gpr_zalloc(sizeof(grpc_ssl_server_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;

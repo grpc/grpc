@@ -83,12 +83,12 @@ static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
 /* Constructor for call_data */
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data);
+      &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
@@ -105,12 +105,12 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *and_free_memory) {
+                              grpc_closure *then_schedule_closure) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_transport_destroy_stream(exec_ctx, chand->transport,
                                 TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                and_free_memory);
+                                then_schedule_closure);
 }
 
 /* Constructor for channel_data */
@@ -140,7 +140,7 @@ static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
                                  const grpc_channel_info *channel_info) {}
 
-static const grpc_channel_filter connected_channel_filter = {
+const grpc_channel_filter grpc_connected_filter = {
     con_start_transport_stream_op,
     con_start_transport_op,
     sizeof(call_data),
@@ -158,7 +158,7 @@ static const grpc_channel_filter connected_channel_filter = {
 static void bind_transport(grpc_channel_stack *channel_stack,
                            grpc_channel_element *elem, void *t) {
   channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(elem->filter == &connected_channel_filter);
+  GPR_ASSERT(elem->filter == &grpc_connected_filter);
   GPR_ASSERT(cd->transport == NULL);
   cd->transport = t;
 
@@ -178,7 +178,7 @@ bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
   GPR_ASSERT(t != NULL);
   return grpc_channel_stack_builder_append_filter(
-      builder, &connected_channel_filter, bind_transport, t);
+      builder, &grpc_connected_filter, bind_transport, t);
 }
 
 grpc_stream *grpc_connected_channel_get_stream(grpc_call_element *elem) {

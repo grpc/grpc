@@ -45,7 +45,7 @@ def _args():
         '--server_host',
         help='the host to which to connect',
         type=str,
-        default="127.0.0.1")
+        default="localhost")
     parser.add_argument(
         '--server_port', help='the port to which to connect', type=int)
     parser.add_argument(
@@ -116,9 +116,8 @@ def _stub(args):
             channel_credentials = grpc.composite_channel_credentials(
                 channel_credentials, call_credentials)
 
-        channel = grpc.secure_channel(target, channel_credentials, ((
-            'grpc.ssl_target_name_override',
-            args.server_host_override,),))
+        channel = grpc.secure_channel(target, channel_credentials, (
+            ('grpc.ssl_target_name_override', args.server_host_override,),))
     else:
         channel = grpc.insecure_channel(target)
     if args.test_case == "unimplemented_service":

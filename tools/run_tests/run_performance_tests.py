@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -46,6 +46,7 @@ import tempfile
 import time
 import traceback
 import uuid
+import six
 
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
@@ -96,16 +97,18 @@ def create_qpsworker_job(language, shortname=None, port=10000, remote_host=None,
     # specify -o output file so perf.data gets collected when worker stopped
     cmdline = perf_cmd + ['-o', '%s-perf.data' % perf_file_base_name] + cmdline
 
+  worker_timeout = 3 * 60
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     ssh_cmd = ['ssh']
-    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && %s' % ' '.join(cmdline)])
+    cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
+    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && tools/run_tests/start_port_server.py && %s' % ' '.join(cmdline)])
     cmdline = ssh_cmd
 
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=5*60,  # workers get restarted after each scenario
+      timeout_seconds=worker_timeout,  # workers get restarted after each scenario
       verbose_success=True)
   return QpsWorkerJob(jobspec, language, host_and_port, perf_file_base_name)
 
@@ -500,8 +503,8 @@ args = argp.parse_args()
 
 languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+                      six.iterkeys(scenario_config.LANGUAGES) if x == 'all'
+                      else [x] for x in args.language))
 
 
 # Put together set of remote hosts where to run and build
@@ -570,8 +573,8 @@ for scenario in scenarios:
         jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
       scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
-      merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
-                                              resultset.iteritems()))
+      merged_resultset = dict(itertools.chain(six.iteritems(merged_resultset),
+                                              six.iteritems(resultset)))
     finally:
       # Consider qps workers that need to be killed as failures
       qps_workers_killed += finish_qps_workers(scenario.workers)
@@ -591,12 +594,13 @@ if perf_cmd and not args.skip_generate_flamegraphs:
   # write the index fil to the output dir, with all profiles from all scenarios/workers
   report_utils.render_perf_profiling_results('%s/index.html' % args.flame_graph_reports, profile_output_files)
 
+report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
+                                     suite_name='benchmarks')
+
 if total_scenario_failures > 0 or qps_workers_killed > 0:
   print('%s scenarios failed and %s qps worker jobs killed' % (total_scenario_failures, qps_workers_killed))
   sys.exit(1)
 
-report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
-                                     suite_name='benchmarks')
 if perf_report_failures > 0:
   print('%s perf profile collection jobs failed' % perf_report_failures)
   sys.exit(1)

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.1.0-dev
+PROJECT_NUMBER         = 1.3.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -779,13 +779,16 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/server_side_auth.md \
 doc/service_config.md \
+doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \
@@ -795,10 +798,13 @@ include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
 include/grpc++/create_channel_posix.h \
+include/grpc++/ext/health_check_service_server_builder_option.h \
 include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
+include/grpc++/health_check_service_interface.h \
 include/grpc++/impl/call.h \
+include/grpc++/impl/channel_argument_option.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
@@ -810,11 +816,14 @@ include/grpc++/impl/codegen/client_unary_call.h \
 include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/grpc_library.h \
+include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
+include/grpc++/impl/codegen/proto_utils.h \
 include/grpc++/impl/codegen/rpc_method.h \
 include/grpc++/impl/codegen/rpc_service_method.h \
 include/grpc++/impl/codegen/security/auth_context.h \
@@ -822,6 +831,7 @@ include/grpc++/impl/codegen/serialization_traits.h \
 include/grpc++/impl/codegen/server_context.h \
 include/grpc++/impl/codegen/server_interface.h \
 include/grpc++/impl/codegen/service_type.h \
+include/grpc++/impl/codegen/slice.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
 include/grpc++/impl/codegen/status_helper.h \

@@ -69,7 +69,7 @@ class BidiStreamingCall extends AbstractCall
             $this->metadata = $read_event->metadata;
         }
 
-        return $this->deserializeResponse($read_event->message);
+        return $this->_deserializeResponse($read_event->message);
     }
 
     /**
@@ -82,7 +82,7 @@ class BidiStreamingCall extends AbstractCall
      */
     public function write($data, array $options = [])
     {
-        $message_array = ['message' => $this->serializeMessage($data)];
+        $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }

@@ -33,6 +33,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using Grpc.Core;
 
 namespace Grpc.Core.Internal
@@ -71,7 +72,9 @@ namespace Grpc.Core.Internal
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
+            UIntPtr detailsLength;
+            IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
+            string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int) detailsLength.ToUInt32());
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);

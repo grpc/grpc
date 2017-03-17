@@ -41,57 +41,48 @@
 #include <grpc/support/log.h>
 
 void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer) {
-  buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena) {
+  buffer->arena = arena;
+  grpc_metadata_batch_init(&buffer->batch);
+  buffer->batch.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer) {
-  size_t i;
-  if (!buffer->published) {
-    for (i = 0; i < buffer->count; i++) {
-      GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
-    }
-  }
-  gpr_free(buffer->elems);
+  grpc_metadata_batch_destroy(exec_ctx, &buffer->batch);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
-  GPR_ASSERT(!buffer->published);
-  if (buffer->capacity == buffer->count) {
-    buffer->capacity = GPR_MAX(8, 2 * buffer->capacity);
-    buffer->elems =
-        gpr_realloc(buffer->elems, sizeof(*buffer->elems) * buffer->capacity);
-  }
-  buffer->elems[buffer->count++].md = elem;
+grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
+  return grpc_metadata_batch_add_tail(
+      exec_ctx, &buffer->batch,
+      gpr_arena_alloc(buffer->arena, sizeof(grpc_linked_mdelem)), elem);
+}
+
+grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem) {
+  for (grpc_linked_mdelem *l = buffer->batch.list.head; l != NULL;
+       l = l->next) {
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
+      GRPC_MDELEM_UNREF(exec_ctx, l->md);
+      l->md = elem;
+      return GRPC_ERROR_NONE;
+    }
+  }
+  return grpc_chttp2_incoming_metadata_buffer_add(exec_ctx, buffer, elem);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
-  GPR_ASSERT(!buffer->published);
-  buffer->deadline = deadline;
+  buffer->batch.deadline = deadline;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch) {
-  GPR_ASSERT(!buffer->published);
-  buffer->published = 1;
-  if (buffer->count > 0) {
-    size_t i;
-    for (i = 1; i < buffer->count; i++) {
-      buffer->elems[i].prev = &buffer->elems[i - 1];
-    }
-    for (i = 0; i < buffer->count - 1; i++) {
-      buffer->elems[i].next = &buffer->elems[i + 1];
-    }
-    buffer->elems[0].prev = NULL;
-    buffer->elems[buffer->count - 1].next = NULL;
-    batch->list.head = &buffer->elems[0];
-    batch->list.tail = &buffer->elems[buffer->count - 1];
-  } else {
-    batch->list.head = batch->list.tail = NULL;
-  }
-  batch->deadline = buffer->deadline;
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_metadata_batch *batch) {
+  *batch = buffer->batch;
+  grpc_metadata_batch_init(&buffer->batch);
 }

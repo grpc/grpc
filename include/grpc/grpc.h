@@ -178,8 +178,8 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *completion_queue, const char *method,
-    const char *host, gpr_timespec deadline, void *reserved);
+    grpc_completion_queue *completion_queue, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
     to ping); if the channel is not connected, posts a failed. */
@@ -229,14 +229,20 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
 
+struct grpc_load_reporting_cost_context;
+
+/* Associate costs contained in \a cost_context to \a call. */
+GRPCAPI void grpc_call_set_load_reporting_cost_context(
+    grpc_call *call, struct grpc_load_reporting_cost_context *context);
+
 struct census_context;
 
-/* Set census context for a call; Must be called before first call to
+/** Set census context for a call; Must be called before first call to
    grpc_call_start_batch(). */
 GRPCAPI void grpc_census_call_set_context(grpc_call *call,
                                           struct census_context *context);
 
-/* Retrieve the calls current census context. */
+/** Retrieve the calls current census context. */
 GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
 
 /** Return a newly allocated string representing the target a channel was
@@ -402,14 +408,14 @@ GRPCAPI void grpc_server_destroy(grpc_server *server);
 GRPCAPI int grpc_tracer_set_enabled(const char *name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
-GRPCAPI int grpc_header_key_is_legal(const char *key, size_t length);
+GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+GRPCAPI int grpc_header_nonbin_value_is_legal(grpc_slice slice);
 
 /** Check whether a metadata key corresponds to a binary value */
-GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
+GRPCAPI int grpc_is_binary_header(grpc_slice slice);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);

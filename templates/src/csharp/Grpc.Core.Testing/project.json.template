@@ -1,0 +1,41 @@
+%YAML 1.2
+--- |
+  {
+    "version": "${settings.csharp_version}",
+    "title": "gRPC C# Core Testing",
+    "authors": [ "Google Inc." ],
+    "copyright": "Copyright 2017, Google Inc.",
+    "packOptions": {
+      "summary": "Testing support for gRPC C#",
+      "description": "Useful when testing code that uses gRPC.",
+      "owners": [ "grpc-packages" ],
+      "licenseUrl": "https://github.com/grpc/grpc/blob/master/LICENSE",
+      "projectUrl": "https://github.com/grpc/grpc",
+      "requireLicenseAcceptance": false,
+      "tags": [ "gRPC test testing" ]
+    },
+    "buildOptions": {
+      "define": [ "SIGNED" ],
+      "keyFile": "../keys/Grpc.snk",
+      "xmlDoc": true,
+      "compile": {
+        "includeFiles": [ "../Grpc.Core/Version.cs" ]
+      }
+    },
+    "dependencies": {
+      "Grpc.Core": "${settings.csharp_version}"
+    },
+    "frameworks": {
+      "net45": {
+        "frameworkAssemblies": {
+          "System.Runtime": "",
+          "System.IO": ""
+        }
+      },
+      "netstandard1.5": {
+        "dependencies": {
+          "NETStandard.Library": "1.6.0"
+        }
+      }
+    }
+  }

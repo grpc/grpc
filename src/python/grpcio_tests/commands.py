@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Provides distutils command classes for the gRPC Python setup process."""
 
-import distutils
+from distutils import errors as _errors
 import glob
 import os
 import os.path
@@ -121,8 +121,8 @@ class BuildProtoModules(setuptools.Command):
                 '--grpc_python_out={}'.format(PROTO_STEM),
             ] + [path]
             if protoc.main(command) != 0:
-                sys.stderr.write('warning: Command:\n{}\nFailed'.format(
-                    command))
+                sys.stderr.write(
+                    'warning: Command:\n{}\nFailed'.format(command))
 
         # Generated proto directories dont include __init__.py, but
         # these are needed for python package resolution
@@ -186,7 +186,7 @@ class RunInterop(test.test):
 
     def finalize_options(self):
         if self.client and self.server:
-            raise DistutilsOptionError(
+            raise _errors.DistutilsOptionError(
                 'you may only specify one of client or server')
 
     def run(self):

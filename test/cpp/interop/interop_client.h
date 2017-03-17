@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 #include <grpc/grpc.h>
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
@@ -107,6 +107,7 @@ class InteropClient {
 
    private:
     std::unique_ptr<TestService::Stub> stub_;
+    std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
     std::shared_ptr<Channel> channel_;
     bool new_stub_every_call_;  // If true, a new stub is returned by every
                                 // Get() call

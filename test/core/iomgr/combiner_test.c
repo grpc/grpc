@@ -44,7 +44,7 @@
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner_destroy(&exec_ctx, grpc_combiner_create(NULL));
+  GRPC_COMBINER_UNREF(&exec_ctx, grpc_combiner_create(NULL), "test_no_op");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -65,7 +65,7 @@ static void test_execute_one(void) {
                      GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(done);
-  grpc_combiner_destroy(&exec_ctx, lock);
+  GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_one");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -103,7 +103,7 @@ static void execute_many_loop(void *a) {
     }
     // sleep for a little bit, to test a combiner draining and another thread
     // picking it up
-    gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -125,7 +125,7 @@ static void test_execute_many(void) {
     gpr_thd_join(thds[i]);
   }
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner_destroy(&exec_ctx, lock);
+  GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_many");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -153,7 +153,7 @@ static void test_execute_finally(void) {
                      GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(got_in_finally);
-  grpc_combiner_destroy(&exec_ctx, lock);
+  GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_finally");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

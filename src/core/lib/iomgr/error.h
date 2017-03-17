@@ -102,6 +102,9 @@ typedef enum {
   GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
+
+  /// Must always be last
+  GRPC_ERROR_INT_MAX,
 } grpc_error_ints;
 
 typedef enum {
@@ -124,24 +127,33 @@ typedef enum {
   /// filename that we were trying to read/write when this error occurred
   GRPC_ERROR_STR_FILENAME,
   /// which data was queued for writing when the error occurred
-  GRPC_ERROR_STR_QUEUED_BUFFERS
+  GRPC_ERROR_STR_QUEUED_BUFFERS,
+  /// key associated with the error
+  GRPC_ERROR_STR_KEY,
+  /// value associated with the error
+  GRPC_ERROR_STR_VALUE,
+
+  /// Must always be last
+  GRPC_ERROR_STR_MAX,
 } grpc_error_strs;
 
 typedef enum {
   /// timestamp of error creation
   GRPC_ERROR_TIME_CREATED,
+
+  /// Must always be last
+  GRPC_ERROR_TIME_MAX,
 } grpc_error_times;
 
 /// The following "special" errors can be propagated without allocating memory.
-/// They are always even so that other code (particularly combiner locks) can
-/// safely use the lower bit for themselves.
+/// They are always even so that other code (particularly combiner locks,
+/// polling engines) can safely use the lower bit for themselves.
 
 #define GRPC_ERROR_NONE ((grpc_error *)NULL)
 #define GRPC_ERROR_OOM ((grpc_error *)2)
 #define GRPC_ERROR_CANCELLED ((grpc_error *)4)
 
 const char *grpc_error_string(grpc_error *error);
-void grpc_error_free_string(const char *str);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
 grpc_error *grpc_error_create(const char *file, int line, const char *desc,
@@ -181,19 +193,11 @@ void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
-grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
-                                gpr_timespec value) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) GRPC_MUST_USE_RESULT;
 /// Returns NULL if the specified string is not set.
 /// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
-
-/// A utility function to get the status code and message to be returned
-/// to the application.  If not set in the top-level message, looks
-/// through child errors until it finds the first one with these attributes.
-void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
-                           const char **msg);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
