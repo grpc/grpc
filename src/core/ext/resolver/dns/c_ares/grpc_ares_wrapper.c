@@ -98,6 +98,7 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
   // If there are no pending queries, invoke on_done callback and destroy the
   // request
   if (gpr_unref(&r->pending_queries)) {
+    // TODO(zyc): Sort results with RPC6724 before invoking on_done.
     if (exec_ctx == NULL) {
       // A new exec_ctx is created here, as the c-ares interface does not
       // provide one in ares_host_callback. It's safe to schedule on_done with
@@ -240,6 +241,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
+  // TODO(zyc): Handle CNAME records here.
   grpc_ares_ev_driver_start(exec_ctx, r->ev_driver);
   grpc_ares_request_unref(exec_ctx, r);
   return;
