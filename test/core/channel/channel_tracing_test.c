@@ -31,8 +31,8 @@
  *
  */
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -50,20 +50,31 @@ static void test_channel_tracing(void) {
   char* test3 = strdup("test3");
   grpc_channel_tracer_add_subchannel(tracer, sc1);
   grpc_channel_tracer_add_subchannel(tracer, sc2);
-  grpc_channel_tracer_add_trace(&tracer->node_list, test, GRPC_ERROR_CREATE("Created Error"), gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&tracer->node_list, test2, GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&tracer->node_list, test3, GRPC_ERROR_CANCELLED, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
+  grpc_channel_tracer_add_trace(
+      &tracer->node_list, test, GRPC_ERROR_CREATE("Created Error"),
+      gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
+  grpc_channel_tracer_add_trace(&tracer->node_list, test2, GRPC_ERROR_NONE,
+                                gpr_now(GPR_CLOCK_REALTIME),
+                                GRPC_CHANNEL_READY);
+  grpc_channel_tracer_add_trace(&tracer->node_list, test3, GRPC_ERROR_CANCELLED,
+                                gpr_now(GPR_CLOCK_REALTIME),
+                                GRPC_CHANNEL_READY);
   char* sct1 = strdup("sc1");
   char* sct11 = strdup("sc11");
-  char* sct2 = strdup("sc2"); 
-  grpc_channel_tracer_add_trace(&sc1->node_list, sct1, GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
-  grpc_channel_tracer_add_trace(&sc1->node_list, sct11, GRPC_ERROR_CREATE("Some Other Error"), gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_IDLE);
-  grpc_channel_tracer_add_trace(&sc2->node_list, sct2, GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_READY);
+  char* sct2 = strdup("sc2");
+  grpc_channel_tracer_add_trace(&sc1->node_list, sct1, GRPC_ERROR_NONE,
+                                gpr_now(GPR_CLOCK_REALTIME),
+                                GRPC_CHANNEL_READY);
+  grpc_channel_tracer_add_trace(&sc1->node_list, sct11,
+                                GRPC_ERROR_CREATE("Some Other Error"),
+                                gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_IDLE);
+  grpc_channel_tracer_add_trace(&sc2->node_list, sct2, GRPC_ERROR_NONE,
+                                gpr_now(GPR_CLOCK_REALTIME),
+                                GRPC_CHANNEL_READY);
   grpc_channel_tracer_log_trace(tracer);
 }
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_channel_tracing();

@@ -397,6 +397,7 @@ add_dependencies(buildtests_c grpc_b64_test)
 add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
 add_dependencies(buildtests_c grpc_channel_args_test)
 add_dependencies(buildtests_c grpc_channel_stack_test)
+add_dependencies(buildtests_c grpc_channel_tracing_test)
 add_dependencies(buildtests_c grpc_completion_queue_test)
 add_dependencies(buildtests_c grpc_completion_queue_threading_test)
 add_dependencies(buildtests_c grpc_credentials_test)
@@ -866,6 +867,7 @@ add_library(grpc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/channel_tracer.c
   src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
@@ -1178,6 +1180,7 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/channel_tracer.c
   src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
@@ -1481,6 +1484,7 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/channel_tracer.c
   src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
@@ -1730,6 +1734,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/channel_tracer.c
   src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
@@ -2340,6 +2345,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/channel_tracer.c
   src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
@@ -3897,6 +3903,7 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/simple_request_with_channel_tracing.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/write_buffering.c
@@ -3987,6 +3994,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/simple_request_with_channel_tracing.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/write_buffering.c
@@ -5569,6 +5577,33 @@ target_include_directories(grpc_channel_stack_test
 )
 
 target_link_libraries(grpc_channel_stack_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_channel_tracing_test
+  test/core/channel/channel_tracing_test.c
+)
+
+
+target_include_directories(grpc_channel_tracing_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(grpc_channel_tracing_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

@@ -35,8 +35,8 @@
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
 
 #include <grpc/grpc.h>
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,13 +55,13 @@ void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer);
 grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer);
 
 /* Adds a string of trace to the tracing object */
-void grpc_channel_tracer_add_trace(trace_node_list* node_list, 
-    char* trace, struct grpc_error* error, gpr_timespec time, 
-    grpc_connectivity_state connectivity_state);
+void grpc_channel_tracer_add_trace(trace_node_list* node_list, char* trace,
+                                   struct grpc_error* error, gpr_timespec time,
+                                   grpc_connectivity_state connectivity_state);
 
 /* Adds a subchannel to the tracing object */
-void grpc_channel_tracer_add_subchannel(grpc_channel_tracer* tracer, 
-    grpc_subchannel_tracer* subchannel);
+void grpc_channel_tracer_add_subchannel(grpc_channel_tracer* tracer,
+                                        grpc_subchannel_tracer* subchannel);
 
 /* Initializes the tracing object with gpr_malloc. The caller has
    ownership over the returned tracing object */
@@ -81,7 +81,7 @@ struct trace_node_list {
 
 /* the channel tracing object */
 struct grpc_channel_tracer {
-  gpr_mu tracer_mu; 
+  gpr_mu tracer_mu;
   trace_node_list node_list;
   grpc_subchannel_tracer* head_subchannel;
   grpc_subchannel_tracer* tail_subchannel;

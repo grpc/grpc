@@ -186,9 +186,11 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 
 done:
   grpc_channel_args_destroy(exec_ctx, args);
-  char* created = strdup("Channel Created");
+  char *created = strdup("Channel Created");
   if (channel->tracer)
-    grpc_channel_tracer_add_trace(&channel->tracer->node_list, created, GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME), GRPC_CHANNEL_INIT);
+    grpc_channel_tracer_add_trace(&channel->tracer->node_list, created,
+                                  GRPC_ERROR_NONE, gpr_now(GPR_CLOCK_REALTIME),
+                                  GRPC_CHANNEL_INIT);
   return channel;
 }
 

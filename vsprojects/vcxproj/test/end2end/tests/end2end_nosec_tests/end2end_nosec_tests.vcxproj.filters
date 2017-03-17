@@ -142,6 +142,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request_with_channel_tracing.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\streaming_error_response.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

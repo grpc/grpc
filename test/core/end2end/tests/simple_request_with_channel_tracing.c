@@ -42,9 +42,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/lib/channel/channel_args.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -230,14 +230,13 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   arg.key = GRPC_ARG_CHANNEL_TRACING;
   arg.value.integer = 1;
   grpc_channel_args *client_channel_args =
-    grpc_channel_args_copy_and_add(NULL, &arg, 1);
+      grpc_channel_args_copy_and_add(NULL, &arg, 1);
   f = begin_test(config, "test_invoke_simple_request_with_channel_tracing",
-    client_channel_args, NULL);
+                 client_channel_args, NULL);
   simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
-
 
 void simple_request_with_channel_tracing(grpc_end2end_test_config config) {
   test_invoke_simple_request(config);

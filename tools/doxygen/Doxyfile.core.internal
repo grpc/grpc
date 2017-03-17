@@ -1018,6 +1018,8 @@ src/core/lib/channel/channel_stack.c \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.c \
 src/core/lib/channel/channel_stack_builder.h \
+src/core/lib/channel/channel_tracer.c \
+src/core/lib/channel/channel_tracer.h \
 src/core/lib/channel/compress_filter.c \
 src/core/lib/channel/compress_filter.h \
 src/core/lib/channel/connected_channel.c \

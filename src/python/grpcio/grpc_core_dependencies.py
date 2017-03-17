@@ -79,6 +79,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/channel/channel_args.c',
   'src/core/lib/channel/channel_stack.c',
   'src/core/lib/channel/channel_stack_builder.c',
+  'src/core/lib/channel/channel_tracer.c',
   'src/core/lib/channel/compress_filter.c',
   'src/core/lib/channel/connected_channel.c',
   'src/core/lib/channel/deadline_filter.c',
