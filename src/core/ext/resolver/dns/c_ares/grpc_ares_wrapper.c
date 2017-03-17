@@ -95,16 +95,16 @@ static uint16_t strhtons(const char *port) {
 
 static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
                                     grpc_ares_request *r) {
-  // If there are no pending queries, invoke on_done callback and destroy the
-  // request
+  /* If there are no pending queries, invoke on_done callback and destroy the
+     request */
   if (gpr_unref(&r->pending_queries)) {
-    // TODO(zyc): Sort results with RPC6724 before invoking on_done.
+    /* TODO(zyc): Sort results with RPC6724 before invoking on_done. */
     if (exec_ctx == NULL) {
-      // A new exec_ctx is created here, as the c-ares interface does not
-      // provide one in ares_host_callback. It's safe to schedule on_done with
-      // the newly created exec_ctx, since the caller has been warned not to
-      // acquire locks in on_done. ares_dns_resolver is using combiner to
-      // protect resources needed by on_done.
+      /* A new exec_ctx is created here, as the c-ares interface does not
+         provide one in ares_host_callback. It's safe to schedule on_done with
+         the newly created exec_ctx, since the caller has been warned not to
+         acquire locks in on_done. ares_dns_resolver is using combiner to
+         protect resources needed by on_done. */
       grpc_exec_ctx new_exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_closure_sched(&new_exec_ctx, r->on_done, r->error);
       grpc_exec_ctx_finish(&new_exec_ctx);
@@ -197,6 +197,12 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
+  /* TODO(zyc): Enable tracing after #9603 is checked in */
+  /* if (grpc_dns_trace) {
+      gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
+              name, default_port);
+     } */
+
   /* parse name, splitting it into host and port parts */
   char *host;
   char *port;
@@ -241,7 +247,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  // TODO(zyc): Handle CNAME records here.
+  /* TODO(zyc): Handle CNAME records here. */
   grpc_ares_ev_driver_start(exec_ctx, r->ev_driver);
   grpc_ares_request_unref(exec_ctx, r);
   return;

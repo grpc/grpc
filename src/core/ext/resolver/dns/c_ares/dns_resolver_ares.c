@@ -253,10 +253,11 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
   args->on_complete = on_complete;
   args->resolver = resolver;
   GRPC_RESOLVER_REF(resolver, "ares-next");
-  grpc_closure_sched(exec_ctx, grpc_closure_create(
-                                   dns_ares_next_locked, args,
-                                   grpc_combiner_scheduler(r->combiner, false)),
-                     GRPC_ERROR_NONE);
+  grpc_closure_sched(
+      exec_ctx,
+      grpc_closure_create(dns_ares_next_locked, args,
+                          grpc_combiner_scheduler(r->base.combiner, false)),
+      GRPC_ERROR_NONE);
 }
 
 static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
@@ -286,7 +287,6 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
-  GRPC_COMBINER_UNREF(exec_ctx, r->combiner, "dns_ares_destroy");
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
@@ -309,8 +309,7 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
   if (path[0] == '/') ++path;
   // Create resolver.
   ares_dns_resolver *r = gpr_zalloc(sizeof(ares_dns_resolver));
-  r->combiner = grpc_combiner_create(NULL);
-  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, r->combiner);
+  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, args->combiner);
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
@@ -325,16 +324,16 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   grpc_closure_init(&r->dns_ares_shutdown_locked, dns_ares_shutdown_locked, r,
-                    grpc_combiner_scheduler(r->combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner, false));
   grpc_closure_init(&r->dns_ares_channel_saw_error_locked,
                     dns_ares_channel_saw_error_locked, r,
-                    grpc_combiner_scheduler(r->combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner, false));
   grpc_closure_init(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
-                    grpc_combiner_scheduler(r->combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner, false));
   grpc_closure_init(&r->dns_ares_on_resolved_locked,
                     dns_ares_on_resolved_locked, r,
-                    grpc_combiner_scheduler(r->combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner, false));
   return &r->base;
 }
 
