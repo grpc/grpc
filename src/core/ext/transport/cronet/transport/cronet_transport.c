@@ -484,6 +484,16 @@ static void on_response_headers_received(
   CRONET_LOG(GPR_DEBUG, "R: on_response_headers_received(%p, %p, %s)", stream,
              headers, negotiated_protocol);
   stream_obj *s = (stream_obj *)stream->annotation;
+
+  /* Identify if this is a header or a trailer (in a trailer-only response case)
+   */
+  for (size_t i = 0; i < headers->count; i++) {
+    if (0 == strcmp("grpc-status", headers->headers[i].key)) {
+      on_response_trailers_received(stream, headers);
+      return;
+    }
+  }
+
   gpr_mu_lock(&s->mu);
   memset(&s->state.rs.initial_metadata, 0,
          sizeof(s->state.rs.initial_metadata));
@@ -795,7 +805,8 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
     else if (!stream_state->state_callback_received[OP_SEND_INITIAL_METADATA])
       result = false;
     /* we haven't received headers yet. */
-    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA])
+    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA] &&
+             !stream_state->state_op_done[OP_RECV_TRAILING_METADATA])
       result = false;
   } else if (op_id == OP_SEND_MESSAGE) {
     /* already executed (note we're checking op specific state, not stream
@@ -808,7 +819,8 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
     /* already executed */
     if (op_state->state_op_done[OP_RECV_MESSAGE]) result = false;
     /* we haven't received headers yet. */
-    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA])
+    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA] &&
+             !stream_state->state_op_done[OP_RECV_TRAILING_METADATA])
       result = false;
   } else if (op_id == OP_RECV_TRAILING_METADATA) {
     /* already executed */
@@ -1021,6 +1033,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                          GRPC_ERROR_NONE);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
+      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
+                         GRPC_ERROR_NONE);
+    } else if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
       grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                          GRPC_ERROR_NONE);
     } else {
