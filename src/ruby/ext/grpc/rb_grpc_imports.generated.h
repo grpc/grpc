@@ -266,6 +266,9 @@ extern grpc_channel_register_call_type grpc_channel_register_call_import;
 typedef grpc_call *(*grpc_channel_create_registered_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, void *registered_call_handle, gpr_timespec deadline, void *reserved);
 extern grpc_channel_create_registered_call_type grpc_channel_create_registered_call_import;
 #define grpc_channel_create_registered_call grpc_channel_create_registered_call_import
+typedef void *(*grpc_call_arena_alloc_type)(grpc_call *call, size_t size);
+extern grpc_call_arena_alloc_type grpc_call_arena_alloc_import;
+#define grpc_call_arena_alloc grpc_call_arena_alloc_import
 typedef grpc_call_error(*grpc_call_start_batch_type)(grpc_call *call, const grpc_op *ops, size_t nops, void *tag, void *reserved);
 extern grpc_call_start_batch_type grpc_call_start_batch_import;
 #define grpc_call_start_batch grpc_call_start_batch_import

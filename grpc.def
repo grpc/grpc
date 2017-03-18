@@ -67,6 +67,7 @@ EXPORTS
     grpc_channel_ping
     grpc_channel_register_call
     grpc_channel_create_registered_call
+    grpc_call_arena_alloc
     grpc_call_start_batch
     grpc_call_get_peer
     grpc_call_set_load_reporting_cost_context
