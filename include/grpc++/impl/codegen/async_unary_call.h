@@ -61,6 +61,11 @@ template <class R>
 class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
+  ~ClientAsyncResponseReader() {
+    if (collection_ != nullptr && collection_->Unref()) {
+      delete collection_;
+    }
+  }
   template <class W>
   static ClientAsyncResponseReader* Create(ChannelInterface* channel,
                                            CompletionQueue* cq,
@@ -72,9 +77,10 @@ class ClientAsyncResponseReader final
         grpc_call_arena_alloc(call.call(), sizeof(*reader)));
     new (&reader->call_) Call(std::move(call));
     reader->context_ = context;
-    new (&reader->collection_) std::shared_ptr<CallOpSetCollection>(
+    reader->collection_ =
         new (grpc_call_arena_alloc(call.call(), sizeof(CallOpSetCollection)))
-            CallOpSetCollection());
+            CallOpSetCollection();
+
     reader->collection_->init_buf_.SetCollection(reader->collection_);
     reader->collection_->init_buf_.SendInitialMetadata(
         context->send_initial_metadata_, context->initial_metadata_flags());
@@ -138,7 +144,7 @@ class ClientAsyncResponseReader final
     // disable operator new
     static void* operator new(std::size_t size);
   };
-  std::shared_ptr<CallOpSetCollection> collection_;
+  CallOpSetCollection* collection_;
 };
 
 template <class W>
