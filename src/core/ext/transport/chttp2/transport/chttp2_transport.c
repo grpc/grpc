@@ -509,11 +509,10 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_create(destroy_transport_locked, t,
-                          grpc_combiner_scheduler(t->combiner, false)),
-      GRPC_ERROR_NONE);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(
+                                   destroy_transport_locked, t,
+                                   grpc_combiner_scheduler(t->combiner, false)),
+                     GRPC_ERROR_NONE);
 }
 
 static void close_transport_locked(grpc_exec_ctx *exec_ctx,
@@ -693,9 +692,8 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   s->destroy_stream_arg = and_free_memory;
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
-                        grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
+                                  grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("destroy_stream", 0);
 }
@@ -1500,10 +1498,9 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   op->transport_private.args[0] = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&op->transport_private.closure,
-                        perform_transport_op_locked, op,
-                        grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx, grpc_closure_init(&op->transport_private.closure,
+                                  perform_transport_op_locked, op,
+                                  grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
 }
 
@@ -2766,10 +2763,9 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
               s->id);
     }
     grpc_chttp2_cancel_stream(
-        exec_ctx, t, s,
-        grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                           GRPC_ERROR_INT_HTTP2_ERROR,
-                           GRPC_HTTP2_ENHANCE_YOUR_CALM));
+        exec_ctx, t, s, grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
+                                           GRPC_ERROR_INT_HTTP2_ERROR,
+                                           GRPC_HTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
       /* Since we cancel one stream per destructive reclamation, if
          there are more streams left, we can immediately post a new
