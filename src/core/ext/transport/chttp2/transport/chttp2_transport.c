@@ -1646,15 +1646,18 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     bs->push_closed = true;
     if (bs->on_next != NULL) {
       gpr_mu_unlock(&bs->slice_mu);
+      gpr_mu_unlock(&s->buffer_mu);
       grpc_chttp2_incoming_byte_stream_finished(
           exec_ctx, s->data_parser.parsing_frame, GRPC_ERROR_REF(error));
       s->data_parser.parsing_frame = NULL;
     } else {
       bs->error = GRPC_ERROR_REF(error);
       gpr_mu_unlock(&bs->slice_mu);
+      gpr_mu_unlock(&s->buffer_mu);
     }
+  } else {
+    gpr_mu_unlock(&s->buffer_mu);
   }
-  gpr_mu_unlock(&s->buffer_mu);
 
   if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     post_benign_reclaimer(exec_ctx, t);
@@ -2519,8 +2522,9 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
                        GRPC_ERROR_REF(bs->error));
   } else if (bs->push_closed) {
     if (bs->remaining_bytes != 0) {
+      bs->error = GRPC_ERROR_CREATE("Truncated message");
       grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
-                         GRPC_ERROR_CREATE("Truncated message"));
+                         GRPC_ERROR_REF(bs->error));
     } else {
       /* Should never reach here. */
       GPR_ASSERT(false);
@@ -2557,6 +2561,10 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       gpr_mu_unlock(&s->buffer_mu);
       return error;
     }
+  } else {
+    bs->error = GRPC_ERROR_CREATE("Truncated message");
+    gpr_mu_unlock(&s->buffer_mu);
+    return bs->error;
   }
   gpr_mu_unlock(&s->buffer_mu);
   GPR_TIMER_END("incoming_byte_stream_pull", 0);
