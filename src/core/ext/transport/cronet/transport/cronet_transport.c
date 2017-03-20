@@ -733,26 +733,17 @@ static void convert_metadata_to_cronet_headers(
   *p_num_headers = (size_t)num_headers;
 }
 
-static bool parse_grpc_header(const uint8_t *data,
+static void parse_grpc_header(const uint8_t *data,
                               int *length,
                               bool *compressed) {
   const uint8_t c = *data;
   const uint8_t *p = data + 1;
+  *compressed = ((c & 0x01) == 0x01);
   *length = 0;
   *length |= ((uint8_t)*p++) << 24;
   *length |= ((uint8_t)*p++) << 16;
   *length |= ((uint8_t)*p++) << 8;
   *length |= ((uint8_t)*p++);
-  switch (c) {
-    case 0:
-      *compressed = false;
-      return true;
-    case 1:
-      *compressed = true;
-      return true;
-    default:
-      return false;
-  }
 }
 
 static bool header_has_authority(grpc_linked_mdelem *head) {
@@ -1082,15 +1073,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */
         stream_state->rs.length_field_received = true;
-        if (parse_grpc_header((const uint8_t *)stream_state->rs.read_buffer,
-                              &stream_state->rs.length_field,
-                              &stream_state->rs.compressed)) {
-          stream_state->rs.remaining_bytes = stream_state->rs.length_field;
-        } else {
-          /* Error deframing the data frame. */
-          CRONET_LOG(GPR_DEBUG, "stream deframing error");
-          GPR_ASSERT(false);
-        }
+        parse_grpc_header((const uint8_t *)stream_state->rs.read_buffer,
+                          &stream_state->rs.length_field,
+                          &stream_state->rs.compressed);
         CRONET_LOG(GPR_DEBUG, "length field = %d",
                    stream_state->rs.length_field);
         if (stream_state->rs.length_field > 0) {
