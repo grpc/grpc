@@ -296,7 +296,6 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
   while (ev_driver->fds != NULL) {
     fd_node *cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    // grpc_fd_shutdown(exec_ctx, cur->grpc_fd);
     fd_node_destroy(exec_ctx, cur);
   }
   ev_driver->fds = new_list;
