@@ -1297,7 +1297,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         s->send_trailing_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_trailing_metadata_finished,
-            grpc_metadata_batch_is_empty(s->send_trailing_metadata)
+            grpc_metadata_batch_is_empty(
+                op->payload->send_initial_metadata.send_initial_metadata)
                 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE("Attempt to send trailing metadata after "
                                     "stream was closed"),
