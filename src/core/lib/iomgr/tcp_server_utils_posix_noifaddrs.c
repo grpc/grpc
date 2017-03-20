@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,19 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/transport/transport.h"
+#if defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS)
 
-typedef struct {
-  gpr_arena *arena;
-  grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch);
+grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
+                                                unsigned port_index,
+                                                int requested_port,
+                                                int *out_port) {
+  return GRPC_ERROR_CREATE("no ifaddrs available");
+}
 
-grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
+bool grpc_tcp_server_have_ifaddrs(void) { return false; }
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */
+#endif /* defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS) */

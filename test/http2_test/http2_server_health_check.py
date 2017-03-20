@@ -27,13 +27,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+import argparse
+import hyper
+import sys
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_portability.sh"
-timeout_mins: 720
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
+# Utility to healthcheck the http2 server. Used when starting the server to
+# verify that the server is live before tests begin.
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--server_host', type=str, default='localhost')
+  parser.add_argument('--server_port', type=int, default=8080)
+  args = parser.parse_args()
+  server_host = args.server_host
+  server_port = args.server_port
+  conn = hyper.HTTP20Connection('%s:%d' % (server_host, server_port))
+  conn.request('POST', '/grpc.testing.TestService/UnaryCall')
+  resp = conn.get_response()
+  if resp.headers.get('grpc-encoding') is None:
+    sys.exit(1)
+  else:
+    sys.exit(0)
