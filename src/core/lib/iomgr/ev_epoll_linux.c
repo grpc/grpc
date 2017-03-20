@@ -1111,7 +1111,7 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
     switch (curr) {
       case CLOSURE_NOT_READY: {
         /* CLOSURE_NOT_READY -> <closure>. */
-        if (gpr_atm_no_barrier_cas(state, CLOSURE_NOT_READY,
+        if (gpr_atm_full_cas(state, CLOSURE_NOT_READY,
                                    (gpr_atm)closure)) {
           return; /* Successful. Return */
         }
