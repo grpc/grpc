@@ -200,31 +200,34 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   } else if (*calld->recv_cacheable_request == true) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
-    char *path =
-        grpc_dump_slice(GRPC_MDVALUE(b->idx.named.path->md), GPR_DUMP_ASCII);
-    static const char *QUERY_SEPARATOR = "?";
-    char **query_parts;
-    size_t num_query_parts;
-    gpr_string_split(path, QUERY_SEPARATOR, &query_parts, &num_query_parts);
-    GPR_ASSERT(num_query_parts == 2);
+    static const char *k_query_separator = "?";
+    grpc_slice path_slice = GRPC_MDVALUE(b->idx.named.path->md);
+    char *path_ptr = (char *)GRPC_SLICE_START_PTR(path_slice);
+    size_t path_length = GRPC_SLICE_LENGTH(path_slice);
+    /* offset of the character '?' */
+    size_t offset = 0;
+    for (offset = 0; *path_ptr != k_query_separator[0] && offset < path_length;
+         path_ptr++, offset++)
+      ;
+    grpc_slice query_slice =
+        grpc_slice_sub(path_slice, offset + 1, path_length);
+
     /* substitute path metadata with just the path (not query) */
     grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
-        exec_ctx, GRPC_MDSTR_PATH,
-        grpc_slice_from_copied_buffer((const char *)query_parts[0],
-                                      strlen(query_parts[0])));
+        exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
+
     grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
                                    mdelem_path_without_query);
-    gpr_free(query_parts[0]);
 
-    /* decode query into payload and add it to the slice buffer to be returned
-     * */
+    /* decode payload from query and add to the slice buffer to be returned */
     static const int k_url_safe = 1;
     grpc_slice_buffer_add(
         &calld->read_slice_buffer,
-        grpc_base64_decode(exec_ctx, (const char *)query_parts[1], k_url_safe));
+        grpc_base64_decode(exec_ctx,
+                           (const char *)GRPC_SLICE_START_PTR(query_slice),
+                           k_url_safe));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
-    gpr_free(query_parts[1]);
     calld->seen_path_with_query = true;
   }
 

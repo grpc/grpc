@@ -296,28 +296,44 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
          * MDELEM by appending base64 encoded query to the path */
         static const int k_url_safe = 1;
         static const int k_multi_line = 0;
-        static char *k_query_separator = "?";
-        char *strs_to_concatenate[3];
-        strs_to_concatenate[0] = grpc_dump_slice(
-            GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md),
-            GPR_DUMP_ASCII);
-        strs_to_concatenate[1] = k_query_separator;
-        strs_to_concatenate[2] = grpc_base64_encode(
-            (const void *)calld->payload_bytes, op->send_message->length,
-            k_url_safe, k_multi_line);
-        size_t concatenated_len;
-        char *path_with_query = gpr_strjoin((const char **)strs_to_concatenate,
-                                            3, &concatenated_len);
-        gpr_log(GPR_DEBUG, "Path with query: %s\n", path_with_query);
-        gpr_free(strs_to_concatenate[0]);
-        gpr_free(strs_to_concatenate[2]);
+        static const char *k_query_separator = "?";
 
-        /* substitute previous path with the new path */
+        grpc_slice path_slice =
+            GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md);
+        /* sum up individual component's lengths and allocate enough memory to
+         * hold combined path+query */
+        size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
+        estimated_len += strlen(k_query_separator);
+        estimated_len += grpc_base64_estimate_encoded_size(
+            op->send_message->length, k_url_safe, k_multi_line);
+        estimated_len += 1; /* for the trailing 0 */
+        grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
+
+        /* memcopy individual pieces into this slice */
+        char *write_ptr = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+
+        char *original_path = (char *)GRPC_SLICE_START_PTR(path_slice);
+        memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
+        write_ptr += (int)GRPC_SLICE_LENGTH(path_slice);
+
+        memcpy(write_ptr, k_query_separator, strlen(k_query_separator));
+        write_ptr += strlen(k_query_separator);
+
+        grpc_base64_encode_core(write_ptr, calld->payload_bytes,
+                                op->send_message->length, k_url_safe,
+                                k_multi_line);
+
+        /* remove trailing unused memory and add trailing 0 to terminate string
+         */
+        char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        size_t path_length = strlen(t) + 1;
+        *(t + path_length) = 0;
+        path_with_query_slice =
+            grpc_slice_sub(path_with_query_slice, 0, path_length);
+
+        /* substitute previous path with the new path+query */
         grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
-            exec_ctx, GRPC_MDSTR_PATH,
-            grpc_slice_from_copied_buffer((const char *)path_with_query,
-                                          concatenated_len));
-        gpr_free(path_with_query);
+            exec_ctx, GRPC_MDSTR_PATH, path_with_query_slice);
         grpc_metadata_batch *b = op->send_initial_metadata;
         error = grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
                                                mdelem_path_and_query);
