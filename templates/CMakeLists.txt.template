@@ -176,11 +176,15 @@
 
   if("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "module")
     if(NOT CARES_ROOT_DIR)
-      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/c-ares)
+      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares)
     endif()
-    set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares")
+    string(TOLOWER <%text>${CMAKE_SYSTEM_NAME}</%text> CARES_SYSTEM_NAME)
+    set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares")
+    set(CARES_PLATFORM_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/config_<%text>${CARES_SYSTEM_NAME}</%text>")
     if(EXISTS "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares/CMakeLists.txt")
-        add_subdirectory(src/c-ares third_party/c-ares)
+        add_definitions("-DHAVE_CONFIG_H")
+        add_definitions("-D_GNU_SOURCE")
+        add_subdirectory(src/c-ares third_party/cares)
         if(TARGET cares)
             set(_gRPC_CARES_LIBRARIES cares)
         endif()
@@ -496,7 +500,7 @@
     PRIVATE <%text>${BENCHMARK}</%text>/include
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares
+    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
@@ -564,8 +568,9 @@
     PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
-    PRIVATE <%text>${CARES_ROOT_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/c-ares
+    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/include

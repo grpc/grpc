@@ -42,6 +42,7 @@ if(${cares_system_name} MATCHES windows)
 else()
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares/config_${cares_system_name})
   add_definitions(-DHAVE_CONFIG_H=1)
+  add_definitions(-D_GNU_SOURCE=1)
 endif()
 
 file(GLOB lib_sources ../../third_party/cares/cares/*.c)
