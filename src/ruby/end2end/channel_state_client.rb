@@ -34,15 +34,16 @@ require_relative './end2end_common'
 def main
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do |p|
-      STDERR.puts "client_control_port ignored"
+    opts.on('--client_control_port=P', String) do
+      STDERR.puts 'client_control_port ignored'
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
     end
   end.parse!
 
-  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {}, :this_channel_is_insecure)
+  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {},
+                               :this_channel_is_insecure)
 
   loop do
     state = ch.connectivity_state

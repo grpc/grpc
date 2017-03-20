@@ -34,14 +34,14 @@
 require_relative './end2end_common'
 
 def main
-  STDERR.puts "start server"
+  STDERR.puts 'start server'
   server_runner = ServerRunner.new
   server_port = server_runner.run
 
   sleep 1
 
-  STDERR.puts "start client"
-  _, client_pid = start_client("channel_state_client.rb", server_port)
+  STDERR.puts 'start client'
+  _, client_pid = start_client('channel_state_client.rb', server_port)
 
   sleep 3
 
@@ -53,8 +53,9 @@ def main
     STDERR.puts "timeout wait for client pid #{client_pid}"
     Process.kill('SIGKILL', client_pid)
     Process.wait(client_pid)
-    STDERR.puts "killed client child"
-    raise 'Timed out waiting for client process. It likely hangs when ended abruptly'
+    STDERR.puts 'killed client child'
+    raise 'Timed out waiting for client process. ' \
+           'It likely hangs when ended abruptly'
   end
 
   server_runner.stop

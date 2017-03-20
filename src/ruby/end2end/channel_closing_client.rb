@@ -31,10 +31,13 @@
 
 require_relative './end2end_common'
 
+# Calls '#close' on a Channel when "shutdown" called. This tries to
+# trigger a hang or crash bug by closing a channel actively being watched
 class ChannelClosingClientController < ClientControl::ClientController::Service
   def initialize(ch)
     @ch = ch
   end
+
   def shutdown(_, _)
     @ch.close
     ClientControl::Void.new
@@ -53,7 +56,8 @@ def main
     end
   end.parse!
 
-  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {}, :this_channel_is_insecure)
+  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {},
+                               :this_channel_is_insecure)
 
   srv = GRPC::RpcServer.new
   thd = Thread.new do

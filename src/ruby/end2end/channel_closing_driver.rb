@@ -29,22 +29,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# make sure that the client doesn't hang when channel is closed explictly while it's used
+# make sure that the client doesn't hang when channel is closed
+# explictly while it's used
 
 require_relative './end2end_common'
 
 def main
-  STDERR.puts "start server"
+  STDERR.puts 'start server'
   server_runner = ServerRunner.new
   server_port = server_runner.run
 
   sleep 1
 
-  STDERR.puts "start client"
-  control_stub, client_pid = start_client("channel_closing_client.rb", server_port)
+  STDERR.puts 'start client'
+  control_stub, client_pid = start_client('channel_closing_client.rb',
+                                          server_port)
 
   sleep 3
-
 
   begin
     Timeout.timeout(10) do
@@ -55,8 +56,9 @@ def main
     STDERR.puts "timeout wait for client pid #{client_pid}"
     Process.kill('SIGKILL', client_pid)
     Process.wait(client_pid)
-    STDERR.puts "killed client child"
-    raise 'Timed out waiting for client process. It likely hangs when a channel is closed while connectivity is watched'
+    STDERR.puts 'killed client child'
+    raise 'Timed out waiting for client process. It likely hangs when a ' \
+      'channel is closed while connectivity is watched'
   end
 
   server_runner.stop

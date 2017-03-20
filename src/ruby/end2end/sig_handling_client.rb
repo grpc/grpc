@@ -31,20 +31,25 @@
 
 require_relative './end2end_common'
 
+# Test client. Sends RPC's as normal but process also has signal handlers
 class SigHandlingClientController < ClientControl::ClientController::Service
   def initialize(srv, stub)
     @srv = srv
     @stub = stub
   end
+
   def do_echo_rpc(req, _)
     response = @stub.echo(Echo::EchoRequest.new(request: req.request))
-    raise "bad response" unless response.response == req.request
+    fail 'bad response' unless response.response == req.request
     ClientControl::Void.new
   end
+
   def shutdown(_, _)
     Thread.new do
-      #TODO(apolcyn) There is a race between stopping the server and the "shutdown" rpc completing,
-      # See if stop method on server can end active RPC cleanly, to avoid this sleep.
+      # TODO(apolcyn) There is a race between stopping the
+      # server and the "shutdown" rpc completing,
+      # See if stop method on server can end active RPC cleanly, to
+      # avoid this sleep.
       sleep 3
       @srv.stop
     end
@@ -64,17 +69,19 @@ def main
     end
   end.parse!
 
-  Signal.trap("TERM") do
-    STDERR.puts "SIGTERM received"
+  Signal.trap('TERM') do
+    STDERR.puts 'SIGTERM received'
   end
 
-  Signal.trap("INT") do
-    STDERR.puts "SIGINT received"
+  Signal.trap('INT') do
+    STDERR.puts 'SIGINT received'
   end
 
   srv = GRPC::RpcServer.new
-  srv.add_http2_port("0.0.0.0:#{client_control_port}", :this_port_is_insecure)
-  stub = Echo::EchoServer::Stub.new("localhost:#{server_port}", :this_channel_is_insecure)
+  srv.add_http2_port("0.0.0.0:#{client_control_port}",
+                     :this_port_is_insecure)
+  stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
+                                    :this_channel_is_insecure)
   srv.handle(SigHandlingClientController.new(srv, stub))
   srv.run
 end

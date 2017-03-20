@@ -35,20 +35,21 @@
 require_relative './end2end_common'
 
 def main
-  STDERR.puts "start server"
+  STDERR.puts 'start server'
   server_runner = ServerRunner.new
   server_port = server_runner.run
 
   sleep 1
 
-  STDERR.puts "start client"
-  control_stub, client_pid = start_client("sig_handling_client.rb", server_port)
+  STDERR.puts 'start client'
+  control_stub, client_pid = start_client('sig_handling_client.rb', server_port)
 
   sleep 1
 
   count = 0
   while count < 5
-    control_stub.do_echo_rpc(ClientControl::DoEchoRpcRequest.new(request: 'hello'))
+    control_stub.do_echo_rpc(
+      ClientControl::DoEchoRpcRequest.new(request: 'hello'))
     Process.kill('SIGTERM', client_pid)
     Process.kill('SIGINT', client_pid)
     count += 1

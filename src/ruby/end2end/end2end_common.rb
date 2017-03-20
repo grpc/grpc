@@ -43,6 +43,7 @@ require 'socket'
 require 'optparse'
 require 'thread'
 require 'timeout'
+require 'English' # see https://github.com/bbatsov/rubocop/issues/1747
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class EchoServerImpl < Echo::EchoServer::Service
@@ -52,9 +53,11 @@ class EchoServerImpl < Echo::EchoServer::Service
   end
 end
 
+# ServerRunner starts an "echo server" that test clients can make calls to
 class ServerRunner
   def initialize
   end
+
   def run
     @srv = GRPC::RpcServer.new
     port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
@@ -66,10 +69,11 @@ class ServerRunner
     @srv.wait_till_running
     port
   end
+
   def stop
     @srv.stop
     @thd.join
-    raise "server not stopped" unless @srv.stopped?
+    fail 'server not stopped' unless @srv.stopped?
   end
 end
 
@@ -81,22 +85,24 @@ def start_client(client_main, server_port)
   tmp_server.close
 
   client_path = File.join(this_dir, client_main)
-  client_pid = Process.spawn(RbConfig.ruby, client_path,
-			     "--client_control_port=#{client_control_port}",
-			     "--server_port=#{server_port}")
+  client_pid = Process.spawn(RbConfig.ruby,
+                             client_path,
+                             "--client_control_port=#{client_control_port}",
+                             "--server_port=#{server_port}")
   sleep 1
-  control_stub = ClientControl::ClientController::Stub.new("localhost:#{client_control_port}", :this_channel_is_insecure)
-  return control_stub, client_pid
+  control_stub = ClientControl::ClientController::Stub.new(
+    "localhost:#{client_control_port}", :this_channel_is_insecure)
+  [control_stub, client_pid]
 end
 
 def cleanup(control_stub, client_pid, server_runner)
   control_stub.shutdown(ClientControl::Void.new)
   Process.wait(client_pid)
 
-  client_exit_code = $?.exitstatus
+  client_exit_code = $CHILD_STATUS
 
   if client_exit_code != 0
-    raise "term sig test failure: client exit code: #{client_exit_code}"
+    fail "term sig test failure: client exit code: #{client_exit_code}"
   end
 
   server_runner.stop
