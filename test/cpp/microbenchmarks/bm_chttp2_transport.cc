@@ -39,6 +39,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include <memory>
+#include <queue>
 #include <sstream>
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -73,13 +74,41 @@ class DummyEndpoint : public grpc_endpoint {
     ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
   }
 
+  void PushInput(grpc_exec_ctx *exec_ctx, grpc_slice slice) {
+    if (read_cb_ == nullptr) {
+      GPR_ASSERT(!have_slice_);
+      buffered_slice_ = slice;
+      have_slice_ = true;
+      return;
+    }
+    grpc_slice_buffer_add(slices_, slice);
+    grpc_closure_sched(exec_ctx, read_cb_, GRPC_ERROR_NONE);
+    read_cb_ = nullptr;
+  }
+
  private:
   grpc_resource_user *ru_;
   grpc_closure *read_cb_ = nullptr;
+  grpc_slice_buffer *slices_ = nullptr;
+  bool have_slice_ = false;
+  grpc_slice buffered_slice_;
+
+  void QueueRead(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *slices,
+                 grpc_closure *cb) {
+    GPR_ASSERT(read_cb_ == nullptr);
+    if (have_slice_) {
+      have_slice_ = false;
+      grpc_slice_buffer_add(slices, buffered_slice_);
+      grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+      return;
+    }
+    read_cb_ = cb;
+    slices_ = slices;
+  }
 
   static void read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                    grpc_slice_buffer *slices, grpc_closure *cb) {
-    static_cast<DummyEndpoint *>(ep)->read_cb_ = cb;
+    static_cast<DummyEndpoint *>(ep)->QueueRead(exec_ctx, slices, cb);
   }
 
   static void write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -119,8 +148,10 @@ class Fixture {
  public:
   Fixture(const grpc::ChannelArguments &args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
-    t_ = grpc_create_chttp2_transport(&exec_ctx_, &c_args, new DummyEndpoint,
-                                      client);
+    ep_ = new DummyEndpoint;
+    t_ = grpc_create_chttp2_transport(exec_ctx(), &c_args, ep_, client);
+    grpc_chttp2_transport_start_reading(exec_ctx(), t_, NULL);
+    FlushExecCtx();
   }
 
   void FlushExecCtx() { grpc_exec_ctx_flush(&exec_ctx_); }
@@ -136,7 +167,10 @@ class Fixture {
   grpc_transport *transport() { return t_; }
   grpc_exec_ctx *exec_ctx() { return &exec_ctx_; }
 
+  void PushInput(grpc_slice slice) { ep_->PushInput(exec_ctx(), slice); }
+
  private:
+  DummyEndpoint *ep_;
   grpc_exec_ctx exec_ctx_ = GRPC_EXEC_CTX_INIT;
   grpc_transport *t_;
 };
@@ -371,10 +405,7 @@ static void BM_TransportStreamSend(benchmark::State &state) {
 
   memset(&op, 0, sizeof(op));
   op.send_initial_metadata = &b;
-  op.on_complete =
-      MakeOnceClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-        grpc_closure_sched(f.exec_ctx(), c.get(), GRPC_ERROR_NONE);
-      });
+  op.on_complete = c.get();
   s.Op(&op);
 
   f.FlushExecCtx();
@@ -388,6 +419,169 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   grpc_metadata_batch_destroy(f.exec_ctx(), &b);
   grpc_slice_buffer_destroy(&send_buffer);
 }
-BENCHMARK(BM_TransportStreamSend)->Range(0, 100 * 1024 * 1024);
+BENCHMARK(BM_TransportStreamSend)->Range(0, 128 * 1024 * 1024);
+
+#define SLICE_FROM_BUFFER(s) grpc_slice_from_static_buffer(s, sizeof(s) - 1)
+
+static grpc_slice CreateIncomingDataSlice(size_t length, size_t frame_size) {
+  std::queue<char> unframed;
+
+  unframed.push(static_cast<uint8_t>(0));
+  unframed.push(static_cast<uint8_t>(length >> 24));
+  unframed.push(static_cast<uint8_t>(length >> 16));
+  unframed.push(static_cast<uint8_t>(length >> 8));
+  unframed.push(static_cast<uint8_t>(length));
+  for (size_t i = 0; i < length; i++) {
+    unframed.push('a');
+  }
+
+  std::vector<char> framed;
+  while (unframed.size() > frame_size) {
+    // frame size
+    framed.push_back(static_cast<uint8_t>(frame_size >> 16));
+    framed.push_back(static_cast<uint8_t>(frame_size >> 8));
+    framed.push_back(static_cast<uint8_t>(frame_size));
+    // data frame
+    framed.push_back(0);
+    // no flags
+    framed.push_back(0);
+    // stream id
+    framed.push_back(0);
+    framed.push_back(0);
+    framed.push_back(0);
+    framed.push_back(1);
+    // frame data
+    for (size_t i = 0; i < frame_size; i++) {
+      framed.push_back(unframed.front());
+      unframed.pop();
+    }
+  }
+
+  // frame size
+  framed.push_back(static_cast<uint8_t>(unframed.size() >> 16));
+  framed.push_back(static_cast<uint8_t>(unframed.size() >> 8));
+  framed.push_back(static_cast<uint8_t>(unframed.size()));
+  // data frame
+  framed.push_back(0);
+  // no flags
+  framed.push_back(0);
+  // stream id
+  framed.push_back(0);
+  framed.push_back(0);
+  framed.push_back(0);
+  framed.push_back(1);
+  while (!unframed.empty()) {
+    framed.push_back(unframed.front());
+    unframed.pop();
+  }
+
+  return grpc_slice_from_copied_buffer(framed.data(), framed.size());
+}
+
+static void BM_TransportStreamRecv(benchmark::State &state) {
+  TrackCounters track_counters;
+  Fixture f(grpc::ChannelArguments(), true);
+  Stream s(&f);
+  s.Init(state);
+  grpc_transport_stream_op op;
+  grpc_byte_stream *recv_stream;
+  grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
+
+  grpc_metadata_batch b;
+  grpc_metadata_batch_init(&b);
+  grpc_metadata_batch b_recv;
+  grpc_metadata_batch_init(&b_recv);
+  b.deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  std::vector<grpc_mdelem> elems =
+      RepresentativeClientInitialMetadata::GetElems(f.exec_ctx());
+  std::vector<grpc_linked_mdelem> storage(elems.size());
+  for (size_t i = 0; i < elems.size(); i++) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        grpc_metadata_batch_add_tail(f.exec_ctx(), &b, &storage[i], elems[i])));
+  }
+
+  std::unique_ptr<Closure> do_nothing =
+      MakeClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {});
+
+  uint32_t received;
+
+  std::unique_ptr<Closure> drain_start;
+  std::unique_ptr<Closure> drain;
+  std::unique_ptr<Closure> drain_continue;
+  grpc_slice recv_slice;
+
+  std::unique_ptr<Closure> c =
+      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+        if (!state.KeepRunning()) return;
+        // force outgoing window to be yuge
+        s.chttp2_stream()->incoming_window_delta = 1024 * 1024 * 1024;
+        f.chttp2_transport()->incoming_window = 1024 * 1024 * 1024;
+        received = 0;
+        memset(&op, 0, sizeof(op));
+        op.on_complete = do_nothing.get();
+        op.recv_message = &recv_stream;
+        op.recv_message_ready = drain_start.get();
+        s.Op(&op);
+        f.PushInput(grpc_slice_ref(incoming_data));
+      });
+
+  drain_start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    if (recv_stream == NULL) {
+      GPR_ASSERT(!state.KeepRunning());
+      return;
+    }
+    grpc_closure_run(exec_ctx, drain.get(), GRPC_ERROR_NONE);
+  });
+
+  drain = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    do {
+      if (received == recv_stream->length) {
+        grpc_byte_stream_destroy(exec_ctx, recv_stream);
+        grpc_closure_sched(exec_ctx, c.get(), GRPC_ERROR_NONE);
+        return;
+      }
+    } while (grpc_byte_stream_next(exec_ctx, recv_stream, &recv_slice,
+                                   recv_stream->length - received,
+                                   drain_continue.get()));
+  });
+
+  drain_continue = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    received += GRPC_SLICE_LENGTH(recv_slice);
+    grpc_slice_unref_internal(exec_ctx, recv_slice);
+    grpc_closure_run(exec_ctx, drain.get(), GRPC_ERROR_NONE);
+  });
+
+  memset(&op, 0, sizeof(op));
+  op.send_initial_metadata = &b;
+  op.recv_initial_metadata = &b_recv;
+  op.on_complete = c.get();
+  s.Op(&op);
+  f.PushInput(SLICE_FROM_BUFFER(
+      "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+      // Generated using:
+      // tools/codegen/core/gen_header_frame.py <
+      // test/cpp/microbenchmarks/representative_server_initial_metadata.headers
+      "\x00\x00X\x01\x04\x00\x00\x00\x01"
+      "\x10\x07:status\x03"
+      "200"
+      "\x10\x0c"
+      "content-type\x10"
+      "application/grpc"
+      "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"));
+
+  f.FlushExecCtx();
+  memset(&op, 0, sizeof(op));
+  op.cancel_error = GRPC_ERROR_CANCELLED;
+  s.Op(&op);
+  s.DestroyThen(
+      MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
+  f.FlushExecCtx();
+  track_counters.Finish(state);
+  grpc_metadata_batch_destroy(f.exec_ctx(), &b);
+  grpc_metadata_batch_destroy(f.exec_ctx(), &b_recv);
+  grpc_slice_unref(incoming_data);
+}
+BENCHMARK(BM_TransportStreamRecv)->Range(0, 128 * 1024 * 1024);
 
 BENCHMARK_MAIN();
