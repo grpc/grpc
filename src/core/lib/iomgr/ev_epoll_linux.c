@@ -1107,19 +1107,15 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
                       grpc_closure *closure) {
   while (true) {
-    /* Fast-path: CLOSURE_NOT_READY -> <closure>.
-       The 'release' cas here matches the 'acquire' load in set_ready and
-       set_shutdown ensuring that the closure (scheduled by set_ready or
-       set_shutdown) happens-after the I/O event on the fd */
-    if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
-      return; /* Fast-path successful. Return */
-    }
-
-    /* Slowpath. The 'acquire' load matches the 'release' cas in set_ready and
-       set_shutdown */
-    gpr_atm curr = gpr_atm_acq_load(state);
+    gpr_atm curr = gpr_atm_no_barrier_load(state);
     switch (curr) {
       case CLOSURE_NOT_READY: {
+        /* CLOSURE_NOT_READY -> <closure>. */
+        if (gpr_atm_no_barrier_cas(state, CLOSURE_NOT_READY,
+                                   (gpr_atm)closure)) {
+          return; /* Successful. Return */
+        }
+
         break; /* retry */
       }
 
@@ -1165,30 +1161,19 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 
 static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
                          grpc_error *shutdown_err) {
-  /* Try the fast-path first (i.e expect the current value to be
-     CLOSURE_NOT_READY */
-  gpr_atm curr = CLOSURE_NOT_READY;
   gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
 
   while (true) {
-    /* The 'release' cas here matches the 'acquire' load in notify_on to ensure
-       that the closure it schedules 'happens-after' the set_shutdown is called
-       on the fd */
-    if (gpr_atm_rel_cas(state, curr, new_state)) {
-      return; /* Fast-path successful. Return */
-    }
-
     /* Fallback to slowpath. This 'acquire' load matches the 'release' cas in
        notify_on and set_ready */
-    curr = gpr_atm_acq_load(state);
+    gpr_atm curr = gpr_atm_no_barrier_load(state);
     switch (curr) {
-      case CLOSURE_READY: {
+      case CLOSURE_READY:
+      case CLOSURE_NOT_READY:
+        if (gpr_atm_full_cas(state, curr, new_state)) {
+          return; /* early out */
+        }
         break; /* retry */
-      }
-
-      case CLOSURE_NOT_READY: {
-        break; /* retry */
-      }
 
       default: {
         /* 'curr' is either a closure or the fd is already shutdown */
@@ -1199,10 +1184,8 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
         }
 
         /* Fd is not shutdown. Schedule the closure and move the state to
-           shutdown state. The 'release' cas here matches the 'acquire' load in
-           notify_on to ensure that the closure it schedules 'happens-after'
-           the set_shutdown is called on the fd */
-        if (gpr_atm_rel_cas(state, curr, new_state)) {
+           shutdown state. */
+        if (gpr_atm_full_cas(state, curr, new_state)) {
           grpc_closure_sched(
               exec_ctx, (grpc_closure *)curr,
               GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
@@ -1220,52 +1203,36 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 }
 
 static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
-  /* Try an optimistic case first (i.e assume current state is
-     CLOSURE_NOT_READY).
+  while (true) {
+    gpr_atm curr = gpr_atm_acq_load(state);
 
-     This 'release' cas matches the 'acquire' load in notify_on ensuring that
-     any closure (scheduled by notify_on) 'happens-after' the return from
-     epoll_pwait */
-  if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
-    return; /* early out */
-  }
-
-  /* The 'acquire' load here matches the 'release' cas in notify_on and
-     set_shutdown */
-  gpr_atm curr = gpr_atm_acq_load(state);
-  switch (curr) {
-    case CLOSURE_READY: {
-      /* Already ready. We are done here */
-      break;
-    }
-
-    case CLOSURE_NOT_READY: {
-      /* The state was not CLOSURE_NOT_READY when we checked initially at the
-         beginning of this function but now it is CLOSURE_NOT_READY again.
-         This is only possible if the state transitioned out of
-         CLOSURE_NOT_READY to either CLOSURE_READY or <some closure> and then
-         back to CLOSURE_NOT_READY again (i.e after we entered this function,
-         the fd became "ready" and the necessary actions were already done).
-         So there is no need to make the state CLOSURE_READY now */
-      break;
-    }
-
-    default: {
-      /* 'curr' is either a closure or the fd is shutdown */
-      if ((curr & FD_SHUTDOWN_BIT) > 0) {
-        /* The fd is shutdown. Do nothing */
-      } else if (gpr_atm_no_barrier_cas(state, curr, CLOSURE_NOT_READY)) {
-        /* The cas above was no-barrier since the state is being transitioned to
-           CLOSURE_NOT_READY; notify_on and set_shutdown do not schedule any
-           closures when transitioning out of CLOSURE_NO_READY state (i.e there
-           is no other code that needs to 'happen-after' this) */
-
-        grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+    switch (curr) {
+      case CLOSURE_READY: {
+        /* Already ready. We are done here */
+        return;
       }
-      /* else the state changed again (only possible by either a racing
-         set_ready or set_shutdown functions. In both these cases, the closure
-         would have been scheduled for execution. So we are done here */
-      break;
+
+      case CLOSURE_NOT_READY: {
+        if (gpr_atm_no_barrier_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
+          return; /* early out */
+        }
+        break; /* retry */
+      }
+
+      default: {
+        /* 'curr' is either a closure or the fd is shutdown */
+        if ((curr & FD_SHUTDOWN_BIT) > 0) {
+          /* The fd is shutdown. Do nothing */
+          return;
+        } else if (gpr_atm_full_barrier_cas(state, curr, CLOSURE_NOT_READY)) {
+          grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+          return;
+        }
+        /* else the state changed again (only possible by either a racing
+           set_ready or set_shutdown functions. In both these cases, the closure
+           would have been scheduled for execution. So we are done here */
+        return;
+      }
     }
   }
 }
