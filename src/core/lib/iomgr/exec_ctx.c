@@ -64,7 +64,6 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
 
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
-  gpr_log(GPR_DEBUG, "grpc_exec_ctx_flush");
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(exec_ctx->closure_list)) {

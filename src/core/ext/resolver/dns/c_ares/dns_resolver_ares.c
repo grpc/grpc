@@ -369,7 +369,9 @@ static grpc_resolver_factory *dns_ares_resolver_factory_create() {
 
 void grpc_resolver_dns_ares_init(void) {
   char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (resolver == NULL || gpr_stricmp(resolver, "ares") == 0) {
+  /* TODO(zyc): Turn on c-ares based resolver by default after the address
+     sorter is added. */
+  if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
     grpc_error *error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);

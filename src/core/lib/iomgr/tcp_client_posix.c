@@ -35,9 +35,6 @@
 
 #ifdef GRPC_POSIX_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 
 #include <errno.h>
@@ -289,24 +286,6 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   grpc_error *error;
 
   *ep = NULL;
-
-  struct sockaddr_in *addr4 = (struct sockaddr_in *)addr->addr;
-  if (addr4->sin_family == AF_INET) {
-    char output[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr4->sin_addr, output, INET_ADDRSTRLEN);
-    gpr_log(GPR_DEBUG,
-            "native resolver gets a AF_INET result: \n"
-            "  addr: %s\n",
-            output);
-  } else {
-    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr->addr;
-    char output[INET6_ADDRSTRLEN];
-    inet_ntop(AF_INET6, &addr6->sin6_addr, output, INET6_ADDRSTRLEN);
-    gpr_log(GPR_DEBUG,
-            "native resolver gets a AF_INET6 result: \n"
-            "  addr: %s\n, sin6_scope_id: %d\n",
-            output, addr6->sin6_scope_id);
-  }
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {

@@ -98,7 +98,7 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
-    /* TODO(zyc): Sort results with RPC6724 before invoking on_done. */
+    /* TODO(zyc): Sort results with RFC6724 before invoking on_done. */
     if (exec_ctx == NULL) {
       /* A new exec_ctx is created here, as the c-ares interface does not
          provide one in ares_host_callback. It's safe to schedule on_done with
