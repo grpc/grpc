@@ -131,19 +131,27 @@ describe('Proto message bytes serialize and deserialize', function() {
     var deserialized = sequenceBase64Deserialize(serialized);
     assert.strictEqual(deserialized.bytes_field, base64_val);
   });
-  /* The next two tests are specific tests to verify that issue
-   * https://github.com/grpc/grpc/issues/5174 has been fixed. They are skipped
-   * because they will not pass until a protobuf.js release has been published
-   * with a fix for https://github.com/dcodeIO/protobuf.js/issues/390 */
-  it.skip('should serialize a repeated field as packed by default', function() {
-    var expected_serialize = new Buffer([0x12, 0x01, 0x01, 0x0a]);
+  it('should serialize a repeated field as packed by default', function() {
+    var expected_serialize = new Buffer([0x12, 0x01, 0x0a]);
     var serialized = sequenceSerialize({repeated_field: [10]});
     assert.strictEqual(expected_serialize.compare(serialized), 0);
   });
-  it.skip('should deserialize packed or unpacked repeated', function() {
-    var serialized = new Buffer([0x12, 0x01, 0x01, 0x0a]);
+  it('should deserialize packed or unpacked repeated', function() {
+    var expectedDeserialize = {
+      bytes_field: new Buffer(''),
+      repeated_field: [10]
+    };
+    var packedSerialized = new Buffer([0x12, 0x01, 0x0a]);
+    var unpackedSerialized = new Buffer([0x10, 0x0a]);
+    var packedDeserialized;
+    var unpackedDeserialized;
     assert.doesNotThrow(function() {
-      sequenceDeserialize(serialized);
+      packedDeserialized = sequenceDeserialize(packedSerialized);
     });
+    assert.doesNotThrow(function() {
+      unpackedDeserialized = sequenceDeserialize(unpackedSerialized);
+    });
+    assert.deepEqual(packedDeserialized, expectedDeserialize);
+    assert.deepEqual(unpackedDeserialized, expectedDeserialize);
   });
 });
