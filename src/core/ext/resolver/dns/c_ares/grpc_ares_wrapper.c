@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && !defined(GRPC_UV)
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -285,4 +285,4 @@ void grpc_ares_cleanup(void) {
   gpr_mu_unlock(&g_init_mu);
 }
 
-#endif /* GRPC_ARES == 1 */
+#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */

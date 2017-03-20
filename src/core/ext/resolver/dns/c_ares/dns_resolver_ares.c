@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && !defined(GRPC_UV)
 
 #include <string.h>
 
@@ -385,10 +385,10 @@ void grpc_resolver_dns_ares_init(void) {
 
 void grpc_resolver_dns_ares_shutdown(void) { grpc_ares_cleanup(); }
 
-#else /* GRPC_ARES == 1 */
+#else /* GRPC_ARES == 1 && !defined(GRPC_UV) */
 
 void grpc_resolver_dns_ares_init(void) {}
 
 void grpc_resolver_dns_ares_shutdown(void) {}
 
-#endif /* GRPC_ARES == 1 */
+#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */

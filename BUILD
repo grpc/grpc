@@ -851,10 +851,8 @@ grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c",
-        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_fallback.c",
         "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
         "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c",
-        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c",
     ],
     hdrs = [
         "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",

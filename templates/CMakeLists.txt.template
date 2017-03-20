@@ -496,7 +496,8 @@
     PRIVATE <%text>${BENCHMARK}</%text>/include
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/c-ares
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/include
