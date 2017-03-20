@@ -234,7 +234,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
 
   /* "01" == 0 mandatory args, 1 (try_to_connect) is optional */
   rb_scan_args(argc, argv, "01", &try_to_connect_param);
-  grpc_try_to_connect = try_to_connect_param == Qtrue ? 1 : 0;
+  grpc_try_to_connect = RTEST(try_to_connect_param) ? 1 : 0;
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
