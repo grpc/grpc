@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -51,8 +52,8 @@ typedef struct call_data {
   grpc_linked_mdelem status;
   grpc_linked_mdelem content_type;
 
-  /* did this request come with payload-bin */
-  bool seen_payload_bin;
+  /* did this request come with path query containing request payload */
+  bool seen_path_with_query;
   /* flag to ensure payload_bin is delivered only once */
   bool payload_bin_delivered;
 
@@ -61,7 +62,7 @@ typedef struct call_data {
   bool *recv_cacheable_request;
   /** Closure to call when finished with the hs_on_recv hook */
   grpc_closure *on_done_recv;
-  /** Closure to call when we retrieve read message from the payload-bin header
+  /** Closure to call when we retrieve read message from the path URI
    */
   grpc_closure *recv_message_ready;
   grpc_closure *on_complete;
@@ -196,6 +197,35 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
                                  GRPC_ERROR_STR_KEY, ":path"));
+  } else if (*calld->recv_cacheable_request == true) {
+    /* We have a cacheable request made with GET verb. The path contains the
+     * query parameter which is base64 encoded request payload. */
+    char *path =
+        grpc_dump_slice(GRPC_MDVALUE(b->idx.named.path->md), GPR_DUMP_ASCII);
+    static const char *QUERY_SEPARATOR = "?";
+    char **query_parts;
+    size_t num_query_parts;
+    gpr_string_split(path, QUERY_SEPARATOR, &query_parts, &num_query_parts);
+    GPR_ASSERT(num_query_parts == 2);
+    /* substitute path metadata with just the path (not query) */
+    grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
+        exec_ctx, GRPC_MDSTR_PATH,
+        grpc_slice_from_copied_buffer((const char *)query_parts[0],
+                                      strlen(query_parts[0])));
+    grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                   mdelem_path_without_query);
+    gpr_free(query_parts[0]);
+
+    /* decode query into payload and add it to the slice buffer to be returned
+     * */
+    static const int k_url_safe = 1;
+    grpc_slice_buffer_add(
+        &calld->read_slice_buffer,
+        grpc_base64_decode(exec_ctx, (const char *)query_parts[1], k_url_safe));
+    grpc_slice_buffer_stream_init(&calld->read_stream,
+                                  &calld->read_slice_buffer, 0);
+    gpr_free(query_parts[1]);
+    calld->seen_path_with_query = true;
   }
 
   if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
@@ -215,16 +245,6 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
                                  GRPC_ERROR_STR_KEY, ":authority"));
-  }
-
-  if (b->idx.named.grpc_payload_bin != NULL) {
-    calld->seen_payload_bin = true;
-    grpc_slice_buffer_add(&calld->read_slice_buffer,
-                          grpc_slice_ref_internal(
-                              GRPC_MDVALUE(b->idx.named.grpc_payload_bin->md)));
-    grpc_slice_buffer_stream_init(&calld->read_stream,
-                                  &calld->read_slice_buffer, 0);
-    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_payload_bin);
   }
 
   return error;
@@ -247,8 +267,8 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                            grpc_error *err) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  /* Call recv_message_ready if we got the payload via the header field */
-  if (calld->seen_payload_bin && calld->recv_message_ready != NULL) {
+  /* Call recv_message_ready if we got the payload via the path field */
+  if (calld->seen_path_with_query && calld->recv_message_ready != NULL) {
     *calld->pp_recv_message = calld->payload_bin_delivered
                                   ? NULL
                                   : (grpc_byte_stream *)&calld->read_stream;
@@ -263,7 +283,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
                                   grpc_error *err) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  if (calld->seen_payload_bin) {
+  if (calld->seen_path_with_query) {
     /* do nothing. This is probably a GET request, and payload will be returned
     in hs_on_complete callback. */
   } else {

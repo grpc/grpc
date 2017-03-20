@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -56,7 +57,6 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
-  grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -292,16 +292,37 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
       continue_send_message(exec_ctx, elem);
 
       if (calld->send_message_blocked == false) {
-        /* when all the send_message data is available, then create a MDELEM and
-        append to headers */
-        grpc_mdelem payload_bin = grpc_mdelem_from_slices(
-            exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
-                                          op->send_message->length));
-        error =
-            grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
-                                         &calld->payload_bin, payload_bin);
+        /* when all the send_message data is available, then modify the path
+         * MDELEM by appending base64 encoded query to the path */
+        static const int k_url_safe = 1;
+        static const int k_multi_line = 0;
+        static char *k_query_separator = "?";
+        char *strs_to_concatenate[3];
+        strs_to_concatenate[0] = grpc_dump_slice(
+            GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md),
+            GPR_DUMP_ASCII);
+        strs_to_concatenate[1] = k_query_separator;
+        strs_to_concatenate[2] = grpc_base64_encode(
+            (const void *)calld->payload_bytes, op->send_message->length,
+            k_url_safe, k_multi_line);
+        size_t concatenated_len;
+        char *path_with_query = gpr_strjoin((const char **)strs_to_concatenate,
+                                            3, &concatenated_len);
+        gpr_log(GPR_DEBUG, "Path with query: %s\n", path_with_query);
+        gpr_free(strs_to_concatenate[0]);
+        gpr_free(strs_to_concatenate[2]);
+
+        /* substitute previous path with the new path */
+        grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH,
+            grpc_slice_from_copied_buffer((const char *)path_with_query,
+                                          concatenated_len));
+        gpr_free(path_with_query);
+        grpc_metadata_batch *b = op->send_initial_metadata;
+        error = grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                               mdelem_path_and_query);
         if (error != GRPC_ERROR_NONE) return error;
+
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
         op->send_message = NULL;
