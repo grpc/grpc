@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -229,7 +230,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
                                grpc_stream_refcount *refcount,
-                               const void *server_data);
+                               const void *server_data, gpr_arena *arena);
 
 void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
                              grpc_stream *stream, grpc_polling_entity *pollent);
@@ -246,7 +247,8 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
                  caller, but any child memory must be cleaned up) */
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream, void *and_free_memory);
+                                   grpc_stream *stream,
+                                   grpc_closure *then_schedule_closure);
 
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,

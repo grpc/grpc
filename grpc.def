@@ -258,6 +258,7 @@ EXPORTS
     gpr_ref_non_zero
     gpr_refn
     gpr_unref
+    gpr_ref_is_unique
     gpr_stats_init
     gpr_stats_inc
     gpr_stats_read
