@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['lock_5fguard',['lock_guard',['../classgrpc_1_1mutex.html#a4cfa68eb2ccf47f11c725b6773ff9a5b',1,'grpc::mutex']]]
+  ['grpcbufferwriterpeer',['GrpcBufferWriterPeer',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html#ad7d78d8afffe2e98007bd63036c19c42',1,'grpc::internal::GrpcBufferWriter']]]
 ];

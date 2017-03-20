@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['port_5fplatform_2eh',['port_platform.h',['../impl_2codegen_2port__platform_8h.html',1,'']]],
-  ['port_5fplatform_2eh',['port_platform.h',['../support_2port__platform_8h.html',1,'']]],
-  ['propagation_5fbits_2eh',['propagation_bits.h',['../propagation__bits_8h.html',1,'']]]
+  ['health_2dchecking_2emd',['health-checking.md',['../health-checking_8md.html',1,'']]],
+  ['histogram_2eh',['histogram.h',['../histogram_8h.html',1,'']]],
+  ['host_5fport_2eh',['host_port.h',['../host__port_8h.html',1,'']]],
+  ['http_2dgrpc_2dstatus_2dmapping_2emd',['http-grpc-status-mapping.md',['../http-grpc-status-mapping_8md.html',1,'']]]
 ];

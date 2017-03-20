@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['grpc_20core',['GRPC Core',['../index.html',1,'']]]
+  ['binary_20logging',['Binary Logging',['../md_doc_binary-logging.html',1,'']]]
 ];

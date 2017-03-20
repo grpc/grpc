@@ -1,9 +1,6 @@
 var searchData=
 [
-  ['thread',['thread',['../classgrpc_1_1thread.html#a02b103e08092d24bf65e1a7b5b384269',1,'grpc::thread::thread(void(T::*fptr)(), T *obj)'],['../classgrpc_1_1thread.html#a29d6af6625e856cff70ae7c408754306',1,'grpc::thread::thread(void(T::*fptr)(U arg), T *obj, U arg)'],['../classgrpc_1_1thread.html#a1745625af6d7f8c1a9c473b2bfc77ccf',1,'grpc::thread::thread(thread &amp;&amp;other)']]],
-  ['timepoint',['TimePoint',['../classgrpc_1_1_time_point.html#aebfa8f327b7609f7e895845b36f060ad',1,'grpc::TimePoint::TimePoint()'],['../classgrpc_1_1_time_point_3_01gpr__timespec_01_4.html#a092aa1afe85bf73a10bf906bb9924007',1,'grpc::TimePoint&lt; gpr_timespec &gt;::TimePoint()'],['../classgrpc_1_1_time_point_3_01std_1_1chrono_1_1system__clock_1_1time__point_01_4.html#ad4276af3251c142fbe7f161391609d4f',1,'grpc::TimePoint&lt; std::chrono::system_clock::time_point &gt;::TimePoint()']]],
-  ['timepoint2timespec',['Timepoint2Timespec',['../namespacegrpc.html#a4e160d3739280d51ec130ab1bb1c549c',1,'grpc']]],
-  ['timepointhr2timespec',['TimepointHR2Timespec',['../namespacegrpc.html#a8b3b542af97e1ae35f327c7095d98369',1,'grpc']]],
-  ['timespec2timepoint',['Timespec2Timepoint',['../namespacegrpc.html#a12896f279762d0100669da708d466ec1',1,'grpc']]],
-  ['trycancel',['TryCancel',['../classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984',1,'grpc::ClientContext::TryCancel()'],['../classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155',1,'grpc::ServerContext::TryCancel()']]]
+  ['updatearguments',['UpdateArguments',['../classgrpc_1_1_health_check_service_server_builder_option.html#a194b4e3f33c4f7463098c919dab93fb6',1,'grpc::HealthCheckServiceServerBuilderOption::UpdateArguments()'],['../classgrpc_1_1_server_builder_option.html#afe8967fb9178469882575953827d9b6d',1,'grpc::ServerBuilderOption::UpdateArguments()'],['../classgrpc_1_1_server_1_1_global_callbacks.html#a5c7616e3cbb9b7e2df16a62ebfeb7a33',1,'grpc::Server::GlobalCallbacks::UpdateArguments()']]],
+  ['updatechannelarguments',['UpdateChannelArguments',['../classgrpc_1_1_server_builder_plugin.html#a616e24edf3859bb1feb9ec1d4db8dbe7',1,'grpc::ServerBuilderPlugin']]],
+  ['updateplugins',['UpdatePlugins',['../classgrpc_1_1_health_check_service_server_builder_option.html#a24614ed26168e443d768884359480e02',1,'grpc::HealthCheckServiceServerBuilderOption::UpdatePlugins()'],['../classgrpc_1_1_server_builder_option.html#a0982ec51ac0dc01b33a0f864e2ad0884',1,'grpc::ServerBuilderOption::UpdatePlugins()']]]
 ];

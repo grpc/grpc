@@ -58,7 +58,6 @@ var searchData=
   ['clientwriterinterface',['ClientWriterInterface',['../classgrpc_1_1_client_writer_interface.html',1,'grpc']]],
   ['completionqueue',['CompletionQueue',['../classgrpc_1_1_completion_queue.html',1,'grpc']]],
   ['completionqueuetag',['CompletionQueueTag',['../classgrpc_1_1_completion_queue_tag.html',1,'grpc']]],
-  ['condition_5fvariable',['condition_variable',['../classgrpc_1_1condition__variable.html',1,'grpc']]],
   ['corecodegen',['CoreCodegen',['../classgrpc_1_1_core_codegen.html',1,'grpc']]],
   ['corecodegeninterface',['CoreCodegenInterface',['../classgrpc_1_1_core_codegen_interface.html',1,'grpc']]]
 ];

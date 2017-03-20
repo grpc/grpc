@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['lock_5fguard',['lock_guard',['../classgrpc_1_1lock__guard.html',1,'grpc']]]
+  ['metadatacredentialsplugin',['MetadataCredentialsPlugin',['../classgrpc_1_1_metadata_credentials_plugin.html',1,'grpc']]],
+  ['metadatamap',['MetadataMap',['../classgrpc_1_1_metadata_map.html',1,'grpc']]],
+  ['methodhandler',['MethodHandler',['../classgrpc_1_1_method_handler.html',1,'grpc']]]
 ];

@@ -4,16 +4,16 @@ var searchData=
   ['call_5f',['call_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a54c3a6173cfd54c784475f95d20a77d8',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['call_5fcq_5f',['call_cq_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a1372192c43404f40e7046aab632569ab',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['cancelled',['cancelled',['../structgrpc__op.html#ae5a9717d4a69c46f343381596e223874',1,'grpc_op::cancelled()'],['../classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab',1,'grpc::Status::CANCELLED()']]],
-  ['capacity',['capacity',['../structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97',1,'grpc_metadata_array::capacity()'],['../structgpr__slice__buffer.html#a48b6efc57238e7abd0bcbb579219456e',1,'gpr_slice_buffer::capacity()']]],
+  ['capacity',['capacity',['../structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97',1,'grpc_metadata_array::capacity()'],['../structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833',1,'grpc_slice_buffer::capacity()']]],
   ['cert_5fchain',['cert_chain',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad58d2824d15cc6a1d646b8bef0b8352e',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]],
   ['client_5fcertificate_5frequest',['client_certificate_request',['../structgrpc_1_1_ssl_server_credentials_options.html#a646486fd3adbacf5805ff013f5362f5c',1,'grpc::SslServerCredentialsOptions']]],
   ['clock_5ftype',['clock_type',['../structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff',1,'gpr_timespec']]],
-  ['cmp',['cmp',['../structgrpc__arg__pointer__vtable.html#a32cf9ad123eb45c82c41b4845b3dc236',1,'grpc_arg_pointer_vtable']]],
+  ['cmp',['cmp',['../structgrpc__arg__pointer__vtable.html#a1037c7866bb3f070f4689b4a8ad04c09',1,'grpc_arg_pointer_vtable']]],
   ['collection_5f',['collection_',['../classgrpc_1_1_call_op_set_interface.html#a74088df7daa571675fd994dbe3ad8b40',1,'grpc::CallOpSetInterface']]],
   ['compression',['compression',['../structgrpc__byte__buffer.html#a3663648016e1076b82c5e731dc5b2399',1,'grpc_byte_buffer']]],
   ['context_5f',['context_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a04daf9d2fca21bc2bb78cc7823f2f118',1,'grpc::ServerInterface::BaseAsyncRequest']]],
-  ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a1a71527a772bae82735ef8682d0668ad',1,'grpc_arg_pointer_vtable']]],
-  ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a',1,'grpc_op::count()'],['../structgpr__slice__buffer.html#a3adc77c3ef399ae0aa1ce1377e0e9fff',1,'gpr_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
+  ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a4b937861a8c7c8165fcb3bfc831dd95e',1,'grpc_arg_pointer_vtable']]],
+  ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a',1,'grpc_op::count()'],['../structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc',1,'grpc_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
   ['cs',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
-  ['current',['current',['../structgrpc__byte__buffer__reader.html#ac0cf32fb95d6523d4360ee5bb0dd163f',1,'grpc_byte_buffer_reader']]]
+  ['current',['current',['../structgrpc__byte__buffer__reader.html#acebe9b66a2fb35a613f9342de0f6ca91',1,'grpc_byte_buffer_reader']]]
 ];

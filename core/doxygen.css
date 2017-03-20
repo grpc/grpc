@@ -1,4 +1,4 @@
-/* The standard CSS for doxygen 1.8.11 */
+/* The standard CSS for doxygen 1.8.6 */
 
 body, table, div, p, dl {
 	font: 400 14px/22px Roboto,sans-serif;
@@ -206,11 +206,6 @@ div.line {
 	transition-duration: 0.5s;
 }
 
-div.line:after {
-    content:"\000A";
-    white-space: pre;
-}
-
 div.line.glow {
 	background-color: cyan;
 	box-shadow: 0 0 10px cyan;
@@ -232,7 +227,7 @@ span.lineno a:hover {
 	background-color: #C8C8C8;
 }
 
-div.ah, span.ah {
+div.ah {
 	background-color: black;
 	font-weight: bold;
 	color: #ffffff;
@@ -247,16 +242,7 @@ div.ah, span.ah {
 	-webkit-box-shadow: 2px 2px 3px #999;
 	-moz-box-shadow: rgba(0, 0, 0, 0.15) 2px 2px 2px;
 	background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),color-stop(0.3, #444));
-	background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000 110%);
-}
-
-div.classindex ul {
-        list-style: none;
-        padding-left: 0;
-}
-
-div.classindex span.ai {
-        display: inline-block;
+	background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000);
 }
 
 div.groupHeader {
@@ -684,12 +670,12 @@ span.mlabel {
 
 /* @end */
 
-/* these are for tree view inside a (index) page */
+/* these are for tree view when not used as main index */
 
 div.directory {
         margin: 10px 0px;
-        border-top: 1px solid #9CAFD4;
-        border-bottom: 1px solid #9CAFD4;
+        border-top: 1px solid #A8B8D9;
+        border-bottom: 1px solid #A8B8D9;
         width: 100%;
 }
 
@@ -748,80 +734,6 @@ div.directory {
 	color: #3D578C;
 }
 
-.arrow {
-    color: #9CAFD4;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    cursor: pointer;
-    font-size: 80%;
-    display: inline-block;
-    width: 16px;
-    height: 22px;
-}
-
-.icon {
-    font-family: Arial, Helvetica;
-    font-weight: bold;
-    font-size: 12px;
-    height: 14px;
-    width: 16px;
-    display: inline-block;
-    background-color: #728DC1;
-    color: white;
-    text-align: center;
-    border-radius: 4px;
-    margin-left: 2px;
-    margin-right: 2px;
-}
-
-.icona {
-    width: 24px;
-    height: 22px;
-    display: inline-block;
-}
-
-.iconfopen {
-    width: 24px;
-    height: 18px;
-    margin-bottom: 4px;
-    background-image:url('folderopen.png');
-    background-position: 0px -4px;
-    background-repeat: repeat-y;
-    vertical-align:top;
-    display: inline-block;
-}
-
-.iconfclosed {
-    width: 24px;
-    height: 18px;
-    margin-bottom: 4px;
-    background-image:url('folderclosed.png');
-    background-position: 0px -4px;
-    background-repeat: repeat-y;
-    vertical-align:top;
-    display: inline-block;
-}
-
-.icondoc {
-    width: 24px;
-    height: 18px;
-    margin-bottom: 4px;
-    background-image:url('doc.png');
-    background-position: 0px -4px;
-    background-repeat: repeat-y;
-    vertical-align:top;
-    display: inline-block;
-}
-
-table.directory {
-    font: 400 14px Roboto,sans-serif;
-}
-
-/* @end */
-
 div.dynheader {
         margin-top: 8px;
 	-webkit-touch-callout: none;
@@ -835,10 +747,6 @@ div.dynheader {
 address {
 	font-style: normal;
 	color: #2A3D61;
-}
-
-table.doxtable caption {
-	caption-side: top;
 }
 
 table.doxtable {
@@ -1006,18 +914,6 @@ div.summary a
 	white-space: nowrap;
 }
 
-table.classindex
-{
-        margin: 10px;
-        white-space: nowrap;
-        margin-left: 3%;
-        margin-right: 3%;
-        width: 94%;
-        border: 0;
-        border-spacing: 0; 
-        padding: 0;
-}
-
 div.ingroups
 {
 	font-size: 8pt;
@@ -1129,11 +1025,6 @@ dl.section dd {
 	border: 0px none;
 }
  
-#projectalign
-{
-        vertical-align: middle;
-}
-
 #projectname
 {
 	font: 300% Tahoma, Arial,sans-serif;
@@ -1217,7 +1108,7 @@ div.toc {
         border-radius: 7px 7px 7px 7px;
         float: right;
         height: auto;
-        margin: 0 8px 10px 10px;
+        margin: 0 20px 10px 10px;
         width: 200px;
 }
 

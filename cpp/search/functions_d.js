@@ -1,14 +1,12 @@
 var searchData=
 [
-  ['ok',['ok',['../classgrpc_1_1_core_codegen_interface.html#a8cbf222da90eae854d072d3b2ef8e3ce',1,'grpc::CoreCodegenInterface::ok()'],['../classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc',1,'grpc::Status::ok()']]],
-  ['operator_21_3d',['operator!=',['../classgrpc_1_1_auth_property_iterator.html#af3d2671fe70be36b2ed26a75874f2fc1',1,'grpc::AuthPropertyIterator::operator!=()'],['../namespacegrpc.html#a48f3e907b6269b7f0f8095fa2db0afe3',1,'grpc::operator!=()']]],
-  ['operator_2a',['operator*',['../classgrpc_1_1_auth_property_iterator.html#a564f39b91f4168c6f660bbd3144f1f0e',1,'grpc::AuthPropertyIterator']]],
-  ['operator_2b_2b',['operator++',['../classgrpc_1_1_auth_property_iterator.html#ac4a895110475c25b9bdce9b72eb19cd6',1,'grpc::AuthPropertyIterator::operator++()'],['../classgrpc_1_1_auth_property_iterator.html#a76dd5ef5047b10f889d85ce2bb33b84b',1,'grpc::AuthPropertyIterator::operator++(int)']]],
-  ['operator_3c',['operator&lt;',['../namespacegrpc.html#a9dc0aa9da43925f6ff5f52895e08ce93',1,'grpc']]],
-  ['operator_3c_3c',['operator&lt;&lt;',['../namespacegrpc.html#a2ed883f54d74eb634ffe44edeaac21da',1,'grpc']]],
-  ['operator_3c_3d',['operator&lt;=',['../namespacegrpc.html#a6ab53d108309107dda6b2a4e13646d96',1,'grpc']]],
-  ['operator_3d',['operator=',['../classgrpc_1_1_byte_buffer.html#ac17487e1e411f469d653e3c44c873e6d',1,'grpc::ByteBuffer::operator=()'],['../classgrpc_1_1_channel_arguments.html#ac75ba90de32a5c7f3cb6c62f7ce649be',1,'grpc::ChannelArguments::operator=()'],['../classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1',1,'grpc::Slice::operator=()'],['../classgrpc_1_1_write_options.html#abe3d32a3e5879022e7b8f1c6a7533841',1,'grpc::WriteOptions::operator=()'],['../classgrpc_1_1string__ref.html#a4363e737a77a7b2784ee1e3b915315e3',1,'grpc::string_ref::operator=()']]],
-  ['operator_3d_3d',['operator==',['../classgrpc_1_1_auth_property_iterator.html#ab5ab6a2c9a4df2b02086513716553dee',1,'grpc::AuthPropertyIterator::operator==()'],['../namespacegrpc.html#add0b2451b8e272bad6d673bc2ada0f47',1,'grpc::operator==()']]],
-  ['operator_3e',['operator&gt;',['../namespacegrpc.html#a43a91fc985698c2346d3942b6bb64bc3',1,'grpc']]],
-  ['operator_3e_3d',['operator&gt;=',['../namespacegrpc.html#a068f3ef856653abfa58ddd445a281461',1,'grpc']]]
+  ['payloadasyncrequest',['PayloadAsyncRequest',['../classgrpc_1_1_server_interface_1_1_payload_async_request.html#aa7ea8b3c6cf76450f4366bffbb729441',1,'grpc::ServerInterface::PayloadAsyncRequest']]],
+  ['peer',['peer',['../classgrpc_1_1_client_context.html#a905d667d96613e022cd83c13dbedb4c3',1,'grpc::ClientContext::peer()'],['../classgrpc_1_1_server_context.html#a5ef7910ccd61514eafa7087519bb17bb',1,'grpc::ServerContext::peer()']]],
+  ['performops',['PerformOps',['../classgrpc_1_1_call.html#a78ca141a1008fbbb122ee4de076edcc4',1,'grpc::Call']]],
+  ['performopsoncall',['PerformOpsOnCall',['../classgrpc_1_1_call_hook.html#acf08b6dd7d1faba4efeeb4937bc81d29',1,'grpc::CallHook::PerformOpsOnCall()'],['../classgrpc_1_1_server_interface.html#a16320b2185bda0965e51a73bf0fb9472',1,'grpc::ServerInterface::PerformOpsOnCall()']]],
+  ['postsynchronousrequest',['PostSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a3a20848314924c94c349508e970138e9',1,'grpc::Server::GlobalCallbacks']]],
+  ['preserverstart',['PreServerStart',['../classgrpc_1_1_server_1_1_global_callbacks.html#a0700ca2be64da5a8caf318ed99dff165',1,'grpc::Server::GlobalCallbacks']]],
+  ['presynchronousrequest',['PreSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a15b846ff19bee0bf9a3b929efc4b7e11',1,'grpc::Server::GlobalCallbacks']]],
+  ['process',['Process',['../classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303',1,'grpc::AuthMetadataProcessor']]],
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]]
 ];

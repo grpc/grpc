@@ -1,29 +1,6 @@
 var searchData=
 [
-  ['genericclientasyncreaderwriter',['GenericClientAsyncReaderWriter',['../namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539',1,'grpc']]],
-  ['genericserverasyncreaderwriter',['GenericServerAsyncReaderWriter',['../namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a',1,'grpc']]],
-  ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7',1,'alloc.h']]],
-  ['gpr_5fatm',['gpr_atm',['../atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_windows.h']]],
-  ['gpr_5fcv',['gpr_cv',['../sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885',1,'gpr_cv():&#160;sync_posix.h'],['../sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d',1,'gpr_cv():&#160;sync_windows.h']]],
-  ['gpr_5flog_5ffunc',['gpr_log_func',['../log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05',1,'log.h']]],
-  ['gpr_5flog_5fseverity',['gpr_log_severity',['../log_8h.html#ad49303346a78cf4881129958214fde8d',1,'log.h']]],
-  ['gpr_5fmu',['gpr_mu',['../sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f',1,'sync_posix.h']]],
-  ['gpr_5fonce',['gpr_once',['../sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f',1,'gpr_once():&#160;sync_posix.h'],['../sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13',1,'gpr_once():&#160;sync_windows.h']]],
-  ['gpr_5fslice',['gpr_slice',['../grpc_2impl_2codegen_2slice_8h.html#a91fe16db371db7c53d6e3adc90a6678c',1,'slice.h']]],
-  ['gpr_5fslice_5frefcount',['gpr_slice_refcount',['../grpc_2impl_2codegen_2slice_8h.html#af8841873e741f6cf38b2192147ea4f3e',1,'slice.h']]],
-  ['gpr_5ftimespec',['gpr_timespec',['../grpc_2impl_2codegen_2time_8h.html#a7dd12c72fcf53ebecfdfc13632914c45',1,'time.h']]],
-  ['grpc_5falarm',['grpc_alarm',['../grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13',1,'grpc_types.h']]],
-  ['grpc_5farg_5fpointer_5fvtable',['grpc_arg_pointer_vtable',['../grpc__types_8h.html#a8499b89a510e8a3d4e76e011776a1548',1,'grpc_types.h']]],
-  ['grpc_5fbyte_5fbuffer',['grpc_byte_buffer',['../grpc_2impl_2codegen_2byte__buffer_8h.html#a670951ae03b0a2dc4e50f4e25160fc2e',1,'byte_buffer.h']]],
-  ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../grpc_2impl_2codegen_2byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1',1,'byte_buffer.h']]],
-  ['grpc_5fcall',['grpc_call',['../grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222',1,'grpc_types.h']]],
-  ['grpc_5fcall_5ferror',['grpc_call_error',['../grpc__types_8h.html#abb51216cb5ac1cfd8ca4d096e060adbb',1,'grpc_types.h']]],
-  ['grpc_5fchannel',['grpc_channel',['../grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e',1,'grpc_types.h']]],
-  ['grpc_5fcompletion_5fqueue',['grpc_completion_queue',['../grpc__types_8h.html#a895faab0e6035445750e43482651ba2f',1,'grpc_types.h']]],
-  ['grpc_5fcompletion_5ftype',['grpc_completion_type',['../grpc__types_8h.html#a70454b2958c92c1cd8feeaa45f157b74',1,'grpc_types.h']]],
-  ['grpc_5fcompression_5foptions',['grpc_compression_options',['../compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde',1,'compression_types.h']]],
-  ['grpc_5fevent',['grpc_event',['../grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7',1,'grpc_types.h']]],
-  ['grpc_5fmetadata',['grpc_metadata',['../grpc__types_8h.html#a1da84eaead787d991c5a0c87aed7c30b',1,'grpc_types.h']]],
-  ['grpc_5fop',['grpc_op',['../grpc__types_8h.html#a6556a58ca45ad5132b89c770cf875215',1,'grpc_types.h']]],
-  ['grpc_5fserver',['grpc_server',['../grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8',1,'grpc_types.h']]]
+  ['descriptor',['Descriptor',['../namespacegrpc_1_1protobuf.html#ababc8ec340544f15423e2b3b4a4fa0ba',1,'grpc::protobuf']]],
+  ['descriptordatabase',['DescriptorDatabase',['../namespacegrpc_1_1protobuf.html#a1cdb52fe8ceb9a801ce993df114debca',1,'grpc::protobuf']]],
+  ['descriptorpool',['DescriptorPool',['../namespacegrpc_1_1protobuf.html#a24eed64953f36717691bb4897859b061',1,'grpc::protobuf']]]
 ];

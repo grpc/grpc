@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['permission_5fdenied',['PERMISSION_DENIED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba671e44044d68f82be37c8ec3b0a9c449',1,'grpc']]]
+  ['ok',['OK',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65',1,'grpc']]],
+  ['out_5fof_5frange',['OUT_OF_RANGE',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43babb9d017cdfdd51b177b3591301c42901',1,'grpc']]]
 ];

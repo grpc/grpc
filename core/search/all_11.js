@@ -1,10 +1,8 @@
 var searchData=
 [
   ['tag',['tag',['../structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201',1,'grpc_event']]],
-  ['tags',['tags',['../structcensus__view__aggregation__data.html#a6972f32742ac590473852310ccf0c2bc',1,'census_view_aggregation_data']]],
   ['thd_2eh',['thd.h',['../thd_8h.html',1,'']]],
-  ['time_2eh',['time.h',['../support_2time_8h.html',1,'']]],
-  ['time_2eh',['time.h',['../impl_2codegen_2time_8h.html',1,'']]],
+  ['time_2eh',['time.h',['../time_8h.html',1,'']]],
   ['timestamp',['timestamp',['../structcensus__trace__record.html#ac7f74956d51898681b8e35a8031ac9fb',1,'census_trace_record']]],
   ['tls_2eh',['tls.h',['../tls_8h.html',1,'']]],
   ['tls_5fgcc_2eh',['tls_gcc.h',['../tls__gcc_8h.html',1,'']]],
@@ -16,5 +14,5 @@ var searchData=
   ['ts',['ts',['../structcensus__timestamp.html#a36ed36ffcf81f720bbdade460f957004',1,'census_timestamp']]],
   ['tv_5fnsec',['tv_nsec',['../structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0',1,'gpr_timespec']]],
   ['tv_5fsec',['tv_sec',['../structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb',1,'gpr_timespec']]],
-  ['type',['type',['../structgrpc__byte__buffer.html#aa7357d67e401d5bc9d10d8fed008dec8',1,'grpc_byte_buffer::type()'],['../structgrpc__arg.html#aa26f2d3c4b1649c9eb061d24a8c10fd4',1,'grpc_arg::type()'],['../structgrpc__event.html#a8e7f571b759f55db4f6bebc2a4f56ad7',1,'grpc_event::type()'],['../structgrpc__metadata__credentials__plugin.html#a6c02843e7eff42cb3b397800bd64f2dc',1,'grpc_metadata_credentials_plugin::type()'],['../structcensus__trace__record.html#a76b2b8a9206a720e02c32c13a534ba78',1,'census_trace_record::type()']]]
+  ['type',['type',['../structcensus__trace__record.html#a76b2b8a9206a720e02c32c13a534ba78',1,'census_trace_record::type()'],['../structgrpc__metadata__credentials__plugin.html#a6c02843e7eff42cb3b397800bd64f2dc',1,'grpc_metadata_credentials_plugin::type()'],['../structgrpc__byte__buffer.html#aa7357d67e401d5bc9d10d8fed008dec8',1,'grpc_byte_buffer::type()'],['../structgrpc__arg.html#aa26f2d3c4b1649c9eb061d24a8c10fd4',1,'grpc_arg::type()'],['../structgrpc__event.html#a8e7f571b759f55db4f6bebc2a4f56ad7',1,'grpc_event::type()']]]
 ];

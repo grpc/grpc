@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['unique_5flock',['unique_lock',['../classgrpc_1_1unique__lock.html',1,'grpc']]],
-  ['unknownmethodhandler',['UnknownMethodHandler',['../classgrpc_1_1_unknown_method_handler.html',1,'grpc']]]
+  ['writeoptions',['WriteOptions',['../classgrpc_1_1_write_options.html',1,'grpc']]],
+  ['writerinterface',['WriterInterface',['../classgrpc_1_1_writer_interface.html',1,'grpc']]],
+  ['writerinterface_3c_20responsetype_20_3e',['WriterInterface&lt; ResponseType &gt;',['../classgrpc_1_1_writer_interface.html',1,'grpc']]]
 ];
