@@ -52,20 +52,20 @@ python tools\distrib\python\make_grpcio_tools.py
 @rem Build gRPC Python extensions
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
-pushd tools\distrib\python\grpcio_tools
+pushd src\python\grpcio_tools
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
 @rem Build gRPC Python distributions
 python setup.py bdist_wheel || goto :error
 
-pushd tools\distrib\python\grpcio_tools
+pushd src\python\grpcio_tools
 python setup.py bdist_wheel || goto :error
 popd
 
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
-xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S src\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
 
 popd
 rmdir /s /q %BUILD_DIR%

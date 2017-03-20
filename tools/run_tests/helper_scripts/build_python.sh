@@ -174,7 +174,7 @@ $VENV_PYTHON -m pip install six enum34 protobuf futures
 pip_install_dir $ROOT
 
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
-pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
+pip_install_dir $ROOT/src/python/grpcio_tools
 
 # Build/install health checking
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess

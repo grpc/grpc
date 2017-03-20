@@ -57,8 +57,8 @@ GCC-like stuff, but you may end up having a bad time.
   $ cd $REPO_ROOT
   $ git submodule update --init
 
-  $ cd tools/distrib/python/grpcio_tools
-  $ python ../make_grpcio_tools.py
+  $ cd src/python/grpcio_tools
+  $ python ../../../tools/distrib/python/make_grpcio_tools.py
 
   # For the next command do `sudo pip install` if you get permission-denied errors
   $ pip install .

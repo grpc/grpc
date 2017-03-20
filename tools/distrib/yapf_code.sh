@@ -34,7 +34,7 @@ set -ex
 cd $(dirname $0)/../..
 
 DIRS=src/python
-EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_health_checking/grpc_*.py src/python/grpcio_reflection/grpc_*.py src/python/grpcio_tests/grpc_*.py'
+EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_health_checking/grpc_*.py src/python/grpcio_reflection/grpc_*.py src/python/grpcio_tests/grpc_*.py src/python/grpcio_tools/grpc_*.py src/python/grpcio_tools/*_deps.py'
 
 VIRTUALENV=python_format_venv
 

@@ -88,8 +88,7 @@ GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
                  '..', '..', '..'))
 
-GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools', 'distrib',
-                                'python', 'grpcio_tools')
+GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'src', 'python', 'grpcio_tools')
 
 GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = os.path.join('third_party', 'protobuf', 'src')
 GRPC_PROTOBUF = os.path.join(GRPC_ROOT, GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT)

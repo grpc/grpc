@@ -33,7 +33,7 @@ cd $(dirname $0)/../../../
 
 # First check if bazel is installed on the machine. If it is, then we don't need
 # to invoke the docker bazel.
-if [ "bazel version" ]
+if [ $(bazel version) ]
 then
   cd third_party/protobuf
   bazel query 'deps('$1')'
