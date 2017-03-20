@@ -451,7 +451,9 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   ServerContext* ctx_;
   CallOpSet<CallOpSendInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvMessage<R>> read_ops_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> finish_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
+      finish_ops_;
 };
 
 template <class W>
@@ -494,12 +496,14 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void EnsureInitialMetadataSent(CallOpSetInterface* ops) {
+  void EnsureInitialMetadataSent(CallOpSetInterface* ops_in) {
+    CallOpSet<CallOpSendInitialMetadata>* ops =
+        static_cast<CallOpSet<CallOpSendInitialMetadata>*>(ops_in);
     if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_,
-                              ctx_->initial_metadata_flags());
+      ops->SendInitialMetadata(ctx_->initial_metadata_,
+                               ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
-        ops.set_compression_level(ctx_->compression_level());
+        ops->set_compression_level(ctx_->compression_level());
       }
       ctx_->sent_initial_metadata_ = true;
     }
@@ -597,12 +601,14 @@ class ServerAsyncReaderWriter final
     call_.PerformOps(&meta_ops_);
   }
 
-  void EnsureInitialMetadataSent(CallOpSetInterface* ops) {
+  void EnsureInitialMetadataSent(CallOpSetInterface* ops_in) {
+    CallOpSet<CallOpSendInitialMetadata>* ops =
+        static_cast<CallOpSet<CallOpSendInitialMetadata>*>(ops_in);
     if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_,
-                              ctx_->initial_metadata_flags());
+      ops->SendInitialMetadata(ctx_->initial_metadata_,
+                               ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
-        ops.set_compression_level(ctx_->compression_level());
+        ops->set_compression_level(ctx_->compression_level());
       }
       ctx_->sent_initial_metadata_ = true;
     }
