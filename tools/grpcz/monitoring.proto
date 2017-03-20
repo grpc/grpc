@@ -34,8 +34,8 @@ syntax = "proto3";
 // TODO(ericgribkoff) Figure out how to manage the external Census proto
 // dependency.
 import "tools/grpcz/census.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 
 package grpc.instrumentation.v1alpha;
 
@@ -50,8 +50,6 @@ service Monitoring {
 
   // Query the server for specific stats
   rpc GetStats(StatsRequest) returns (StatsResponse) {
-    // TODO(aveitch, ericgribkoff): Pease define the stats response message
-    // StatsRequest would specifically identify the stats to be returned.
   }
 
   // Request the server to stream back snapshots of the requested stats
@@ -76,39 +74,67 @@ service Monitoring {
 
 // Canonical RPC stats exported by gRPC.
 message CanonicalRpcStats {
-  // Wrapper combining View and ViewDescriptor.
-  message View {
-    google.instrumentation.MeasurementDescriptor measurement_descriptor = 1;
-    google.instrumentation.ViewDescriptor view_descriptor = 2;
-    google.instrumentation.View view = 3;
-  }
-
-  View rpc_client_errors = 1;
-  View rpc_client_completed_rpcs = 2;
-  View rpc_client_started_rpcs = 3;
-  View rpc_client_elapsed_time = 4;
-  View rpc_client_server_elapsed_time = 5;
-  View rpc_client_request_bytes = 6;
-  View rpc_client_response_bytes = 7;
-  View rpc_client_request_count = 8;
-  View rpc_client_response_count = 9;
-  View rpc_server_errors = 10;
-  View rpc_server_completed_rpcs = 11;
-  View rpc_server_server_elapsed_time = 12;
-  View rpc_server_request_bytes = 13;
-  View rpc_server_response_bytes = 14;
-  View rpc_server_request_count = 15;
-  View rpc_server_response_count = 16;
-  View rpc_server_elapsed_time = 17;
+  StatsResponse rpc_client_errors = 1;
+  StatsResponse rpc_client_completed_rpcs = 2;
+  StatsResponse rpc_client_started_rpcs = 3;
+  StatsResponse rpc_client_elapsed_time = 4;
+  StatsResponse rpc_client_server_elapsed_time = 5;
+  StatsResponse rpc_client_request_bytes = 6;
+  StatsResponse rpc_client_response_bytes = 7;
+  StatsResponse rpc_client_request_count = 8;
+  StatsResponse rpc_client_response_count = 9;
+  StatsResponse rpc_server_errors = 10;
+  StatsResponse rpc_server_completed_rpcs = 11;
+  StatsResponse rpc_server_server_elapsed_time = 12;
+  StatsResponse rpc_server_request_bytes = 13;
+  StatsResponse rpc_server_response_bytes = 14;
+  StatsResponse rpc_server_request_count = 15;
+  StatsResponse rpc_server_response_count = 16;
+  StatsResponse rpc_server_elapsed_time = 17;
   //TODO(ericgribkoff) Add minute-hour interval stats.
 }
 
+// This message is sent when requesting a set of stats (Census Views) from
+// a client system, as part of the MonitoringService API's.
 message StatsRequest {
-  // TODO(aveitch): Complete definition of this type
+  // An optional set of ViewDescriptor names. Only Views using these
+  // descriptors will be sent back in the response. If no names are provided,
+  // then all Views present in the client system will be included in every
+  // response. If measurement_names is also provided, then Views matching the
+  // intersection of the two are returned.
+  // TODO(aveitch): Consider making this a list of regexes or prefix matches in
+  // the future.
+  repeated string view_names = 1;
+
+  // An optional set of MeasurementDescriptor names. Only Views using these
+  // descriptors will be sent back in the response. If no names are provided,
+  // then all Views present in the client system will be included in every
+  // response. If view_names is also provided, then Views matching the
+  // intersection of the two are returned.
+  // TODO(aveitch): Consider making this a list of regexes or prefix matches in
+  // the future.
+  repeated string measurement_names = 2;
+
+  // By default, the MeasurementDescriptors and ViewDescriptors corresponding to
+  // the Views that are returned in a StatsResponse will be included in the
+  // first such response. Set this to true to have them not sent.
+  bool dont_include_descriptors_in_first_response = 3;
 }
 
+// This message contains all information relevant to a single View. It is the
+// return type for GetStats and WatchStats, and used in CanonicalRpcStats.
 message StatsResponse {
-  // TODO(aveitch): Complete definition of this type
+  // A StatsResponse can optionally contain the MeasurementDescriptor and
+  // ViewDescriptor for the View. These will be sent in the first WatchStats
+  // response, or all GetStats and GetCanonicalRpcStats responses. These will
+  // not be set for {Get,Watch}Stats if
+  // dont_include_descriptors_in_first_response is set to true in the
+  // StatsRequest.
+  google.instrumentation.MeasurementDescriptor measurement_descriptor = 1;
+  google.instrumentation.ViewDescriptor view_descriptor = 2;
+
+  // The View data.
+  google.instrumentation.View view = 3;
 }
 
 message TraceRequest {
@@ -128,4 +154,3 @@ message CustomMonitoringData {
   // can be any application specific monitoring data
   google.protobuf.Any contents = 1;
 }
-

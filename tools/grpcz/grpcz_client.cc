@@ -65,14 +65,14 @@ static const std::string static_html_header =
 table { border-collapse: collapse; width: 100%; } \
 table, td, th { border: 1px solid black; } \
 </style> </head> <body>\
-<div id='stats' stats='";
+<div id='stats' data-stats='";
 
 static const std::string static_html_footer =
     "' class='hidden'></div>\
 <h1>GRPCZ Statistics</h1> <div id='table'> </div> \
 <script> \
   var canonical_stats = JSON.parse(\
-            document.getElementById('stats').getAttribute('stats')); \
+            document.getElementById('stats').getAttribute('data-stats')); \
   var table = document.createElement('table'); \
   if (canonical_stats['Error Message'] != undefined) { \
      document.getElementById('table').innerHTML = canonical_stats['Error Message']; } \
