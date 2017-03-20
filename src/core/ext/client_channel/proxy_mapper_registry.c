@@ -94,6 +94,14 @@ static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
     grpc_proxy_mapper_destroy(list->list[i]);
   }
   gpr_free(list->list);
+  // Clean up in case we re-initialze later.
+  // TODO(ctiller): This should ideally live in
+  // grpc_proxy_mapper_registry_init().  However, if we did this there,
+  // then we would do it AFTER we start registering proxy mappers from
+  // third-party plugins, so they'd never show up (and would leak memory).
+  // We probably need some sort of dependency system for plugins to fix
+  // this.
+  memset(list, 0, sizeof(*list));
 }
 
 //
@@ -102,9 +110,7 @@ static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
 
 static grpc_proxy_mapper_list g_proxy_mapper_list;
 
-void grpc_proxy_mapper_registry_init() {
-  memset(&g_proxy_mapper_list, 0, sizeof(g_proxy_mapper_list));
-}
+void grpc_proxy_mapper_registry_init() {}
 
 void grpc_proxy_mapper_registry_shutdown() {
   grpc_proxy_mapper_list_destroy(&g_proxy_mapper_list);

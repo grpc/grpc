@@ -240,6 +240,10 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
 }
 
 void network_status_change(grpc_end2end_test_config config) {
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_NETWORK_STATUS_CHANGE) {
+    return;
+  }
   test_invoke_network_status_change(config);
 }
 
