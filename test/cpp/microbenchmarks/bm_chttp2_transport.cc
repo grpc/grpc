@@ -41,8 +41,8 @@
 #include <memory>
 #include <sstream>
 extern "C" {
-  #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-  #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -130,7 +130,9 @@ class Fixture {
     grpc_exec_ctx_finish(&exec_ctx_);
   }
 
-grpc_chttp2_transport *chttp2_transport() { return reinterpret_cast<grpc_chttp2_transport*>(t_);}
+  grpc_chttp2_transport *chttp2_transport() {
+    return reinterpret_cast<grpc_chttp2_transport *>(t_);
+  }
   grpc_transport *transport() { return t_; }
   grpc_exec_ctx *exec_ctx() { return &exec_ctx_; }
 
@@ -177,7 +179,7 @@ class Stream {
   }
 
   grpc_chttp2_stream *chttp2_stream() {
-    return static_cast<grpc_chttp2_stream*>(stream_);
+    return static_cast<grpc_chttp2_stream *>(stream_);
   }
 
  private:
@@ -339,12 +341,14 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   grpc_slice_buffer send_buffer;
   grpc_slice_buffer_init(&send_buffer);
   grpc_slice_buffer_add(&send_buffer, gpr_slice_malloc(state.range(0)));
-  memset(GRPC_SLICE_START_PTR(send_buffer.slices[0]), 0, GRPC_SLICE_LENGTH(send_buffer.slices[0]));
+  memset(GRPC_SLICE_START_PTR(send_buffer.slices[0]), 0,
+         GRPC_SLICE_LENGTH(send_buffer.slices[0]));
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
   b.deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  std::vector<grpc_mdelem> elems = RepresentativeClientInitialMetadata::GetElems(f.exec_ctx());
+  std::vector<grpc_mdelem> elems =
+      RepresentativeClientInitialMetadata::GetElems(f.exec_ctx());
   std::vector<grpc_linked_mdelem> storage(elems.size());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -356,8 +360,8 @@ static void BM_TransportStreamSend(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s.chttp2_stream()->outgoing_window_delta = 1024*1024*1024;
-        f.chttp2_transport()->outgoing_window = 1024*1024*1024;
+        s.chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
+        f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         memset(&op, 0, sizeof(op));
         op.on_complete = c.get();
@@ -365,11 +369,12 @@ static void BM_TransportStreamSend(benchmark::State &state) {
         s.Op(&op);
       });
 
-  memset(&op,0,sizeof(op));
+  memset(&op, 0, sizeof(op));
   op.send_initial_metadata = &b;
-  op.on_complete = MakeOnceClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    grpc_closure_sched(f.exec_ctx(), c.get(), GRPC_ERROR_NONE);
-  });
+  op.on_complete =
+      MakeOnceClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+        grpc_closure_sched(f.exec_ctx(), c.get(), GRPC_ERROR_NONE);
+      });
   s.Op(&op);
 
   f.FlushExecCtx();
@@ -383,6 +388,6 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   grpc_metadata_batch_destroy(f.exec_ctx(), &b);
   grpc_slice_buffer_destroy(&send_buffer);
 }
-BENCHMARK(BM_TransportStreamSend)->Range(0,100*1024*1024);
+BENCHMARK(BM_TransportStreamSend)->Range(0, 100 * 1024 * 1024);
 
 BENCHMARK_MAIN();
