@@ -35,6 +35,7 @@ from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
 from grpc_reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 _POOL = descriptor_pool.Default()
 
@@ -142,3 +143,14 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
                         error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
                         .encode(),))
+
+
+def enable_server_reflection(service_names, server):
+    """Enables server reflection on a server.
+
+    Args:
+      service_names: Iterable of fully-qualified service names available.
+      server: Server to which reflection service will be added.
+    """
+    reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
+        ReflectionServicer(service_names), server)
