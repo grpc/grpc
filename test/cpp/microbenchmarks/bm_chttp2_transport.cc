@@ -49,18 +49,7 @@ extern "C" {
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
-static struct Init {
-  Init() {
-    grpc_init();
-    quota = grpc_resource_quota_create("test");
-  }
-  ~Init() {
-    grpc_resource_quota_unref(quota);
-    grpc_shutdown();
-  }
-
-  grpc_resource_quota *quota;
-} g_init;
+auto &force_library_initialization = Library::get();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -80,7 +69,7 @@ class DummyEndpoint : public grpc_endpoint {
                                                    get_peer,
                                                    get_fd};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create(g_init.quota, "dummy_endpoint");
+    ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
   }
 
  private:
