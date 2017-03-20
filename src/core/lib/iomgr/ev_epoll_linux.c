@@ -1224,7 +1224,7 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
         if ((curr & FD_SHUTDOWN_BIT) > 0) {
           /* The fd is shutdown. Do nothing */
           return;
-        } else if (gpr_atm_full_barrier_cas(state, curr, CLOSURE_NOT_READY)) {
+        } else if (gpr_atm_full_cas(state, curr, CLOSURE_NOT_READY)) {
           grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
           return;
         }
