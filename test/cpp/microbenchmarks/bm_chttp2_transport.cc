@@ -380,6 +380,8 @@ static void BM_TransportStreamSend(benchmark::State &state) {
       MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
   f.FlushExecCtx();
   track_counters.Finish(state);
+  grpc_metadata_batch_destroy(f.exec_ctx(), &b);
+  grpc_slice_buffer_destroy(&send_buffer);
 }
 BENCHMARK(BM_TransportStreamSend)->Range(0,100*1024*1024);
 
