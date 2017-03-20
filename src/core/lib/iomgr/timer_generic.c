@@ -88,6 +88,13 @@ static gpr_timespec g_start_time;
 
 GPR_TLS_DECL(g_last_seen_min_timer);
 
+static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
+  if (a > GPR_ATM_MAX - b) {
+    return GPR_ATM_MAX;
+  }
+  return a + b;
+}
+
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
                                    gpr_atm *next, grpc_error *error);
 
@@ -308,8 +315,9 @@ static int refill_queue(shard_type *shard, gpr_atm now) {
   grpc_timer *timer, *next;
 
   /* Compute the new cap and put all timers under it into the queue: */
-  shard->queue_deadline_cap = GPR_MAX(now, shard->queue_deadline_cap) +
-                              (gpr_atm)(deadline_delta * 1000.0);
+  shard->queue_deadline_cap =
+      saturating_add(GPR_MAX(now, shard->queue_deadline_cap),
+                     (gpr_atm)(deadline_delta * 1000.0));
   for (timer = shard->list.next; timer != &shard->list; timer = next) {
     next = timer->next;
 
