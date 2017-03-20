@@ -1,0 +1,7 @@
+# boringssl stuff
+nonnull-attribute:bn_wexpand
+nonnull-attribute:CBB_add_bytes
+nonnull-attribute:rsa_blinding_get
+nonnull-attribute:ssl_copy_key_material
+alignment:CRYPTO_cbc128_encrypt
+

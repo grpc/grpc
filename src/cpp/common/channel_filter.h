@@ -149,10 +149,22 @@ class TransportStreamOp {
   /// long as the TransportStreamOp object does.
   explicit TransportStreamOp(grpc_transport_stream_op *op)
       : op_(op),
-        send_initial_metadata_(op->send_initial_metadata),
-        send_trailing_metadata_(op->send_trailing_metadata),
-        recv_initial_metadata_(op->recv_initial_metadata),
-        recv_trailing_metadata_(op->recv_trailing_metadata) {}
+        send_initial_metadata_(
+            op->send_initial_metadata
+                ? op->payload->send_initial_metadata.send_initial_metadata
+                : nullptr),
+        send_trailing_metadata_(
+            op->send_trailing_metadata
+                ? op->payload->send_trailing_metadata.send_trailing_metadata
+                : nullptr),
+        recv_initial_metadata_(
+            op->recv_initial_metadata
+                ? op->payload->recv_initial_metadata.recv_initial_metadata
+                : nullptr),
+        recv_trailing_metadata_(
+            op->recv_trailing_metadata
+                ? op->payload->recv_trailing_metadata.recv_trailing_metadata
+                : nullptr) {}
 
   grpc_transport_stream_op *op() const { return op_; }
 
@@ -160,50 +172,57 @@ class TransportStreamOp {
   void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
 
   MetadataBatch *send_initial_metadata() {
-    return op_->send_initial_metadata == nullptr ? nullptr
-                                                 : &send_initial_metadata_;
+    return op_->send_initial_metadata ? &send_initial_metadata_ : nullptr;
   }
   MetadataBatch *send_trailing_metadata() {
-    return op_->send_trailing_metadata == nullptr ? nullptr
-                                                  : &send_trailing_metadata_;
+    return op_->send_trailing_metadata ? &send_trailing_metadata_ : nullptr;
   }
   MetadataBatch *recv_initial_metadata() {
-    return op_->recv_initial_metadata == nullptr ? nullptr
-                                                 : &recv_initial_metadata_;
+    return op_->recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
   }
   MetadataBatch *recv_trailing_metadata() {
-    return op_->recv_trailing_metadata == nullptr ? nullptr
-                                                  : &recv_trailing_metadata_;
+    return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
   uint32_t *send_initial_metadata_flags() const {
-    return &op_->send_initial_metadata_flags;
+    return op_->send_initial_metadata
+               ? &op_->payload->send_initial_metadata
+                      .send_initial_metadata_flags
+               : nullptr;
   }
 
   grpc_closure *recv_initial_metadata_ready() const {
-    return op_->recv_initial_metadata_ready;
+    return op_->recv_initial_metadata
+               ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
+               : nullptr;
   }
   void set_recv_initial_metadata_ready(grpc_closure *closure) {
-    op_->recv_initial_metadata_ready = closure;
+    op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream *send_message() const { return op_->send_message; }
+  grpc_byte_stream *send_message() const {
+    return op_->send_message ? op_->payload->send_message.send_message
+                             : nullptr;
+  }
   void set_send_message(grpc_byte_stream *send_message) {
-    op_->send_message = send_message;
+    op_->send_message = true;
+    op_->payload->send_message.send_message = send_message;
   }
 
   /// To be called only on clients and servers, respectively.
   grpc_client_security_context *client_security_context() const {
-    return (grpc_client_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
+    return (grpc_client_security_context *)op_->payload
+        ->context[GRPC_CONTEXT_SECURITY]
         .value;
   }
   grpc_server_security_context *server_security_context() const {
-    return (grpc_server_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
+    return (grpc_server_security_context *)op_->payload
+        ->context[GRPC_CONTEXT_SECURITY]
         .value;
   }
 
   census_context *get_census_context() const {
-    return (census_context *)op_->context[GRPC_CONTEXT_TRACING].value;
+    return (census_context *)op_->payload->context[GRPC_CONTEXT_TRACING].value;
   }
 
  private:

@@ -99,6 +99,28 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "arena_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
     ], 
@@ -1812,7 +1834,9 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -2620,6 +2644,28 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
+    "name": "bm_arena", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
     "name": "bm_call_create", 
     "platforms": [
       "linux", 
@@ -2839,6 +2885,28 @@
     "gtest": false, 
     "language": "c++", 
     "name": "bm_metadata", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "--benchmark_min_time=0"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_pollset", 
     "platforms": [
       "linux", 
       "mac", 

@@ -87,6 +87,21 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "arena_test", 
+    "src": [
+      "test/core/support/arena_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
@@ -2443,6 +2458,27 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_arena", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_arena.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_call_create", 
     "src": [
       "test/cpp/microbenchmarks/bm_call_create.cc"
@@ -2635,6 +2671,27 @@
     "name": "bm_metadata", 
     "src": [
       "test/cpp/microbenchmarks/bm_metadata.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_pollset", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_pollset.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7243,6 +7300,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/arena.h", 
       "src/core/lib/support/backoff.h", 
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
@@ -7290,6 +7348,8 @@
       "src/core/lib/profiling/stap_timers.c", 
       "src/core/lib/profiling/timers.h", 
       "src/core/lib/support/alloc.c", 
+      "src/core/lib/support/arena.c", 
+      "src/core/lib/support/arena.h", 
       "src/core/lib/support/avl.c", 
       "src/core/lib/support/backoff.c", 
       "src/core/lib/support/backoff.h", 

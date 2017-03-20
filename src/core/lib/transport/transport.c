@@ -264,8 +264,9 @@ typedef struct {
 static void destroy_made_transport_stream_op(grpc_exec_ctx *exec_ctx, void *arg,
                                              grpc_error *error) {
   made_transport_stream_op *op = arg;
-  grpc_closure_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
+  grpc_closure *c = op->inner_on_complete;
   gpr_free(op);
+  grpc_closure_run(exec_ctx, c, GRPC_ERROR_REF(error));
 }
 
 grpc_transport_stream_op *grpc_make_transport_stream_op(

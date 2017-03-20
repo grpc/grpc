@@ -140,14 +140,16 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (grpc_error_is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->refs.count, err->refs.count + 1, file, line, func);
-  gpr_ref(&err->refs);
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
+          func);
+  gpr_ref(&err->atomics.refs);
   return err;
 }
 #else
 grpc_error *grpc_error_ref(grpc_error *err) {
   if (grpc_error_is_special(err)) return err;
-  gpr_ref(&err->refs);
+  gpr_ref(&err->atomics.refs);
   return err;
 }
 #endif
@@ -182,7 +184,7 @@ static void error_destroy(grpc_error *err) {
   GPR_ASSERT(!grpc_error_is_special(err));
   unref_errs(err);
   unref_strs(err);
-  gpr_free((void *)gpr_atm_acq_load(&err->error_string));
+  gpr_free((void *)gpr_atm_acq_load(&err->atomics.error_string));
   gpr_free(err);
 }
 
@@ -191,15 +193,17 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (grpc_error_is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->refs.count, err->refs.count - 1, file, line, func);
-  if (gpr_unref(&err->refs)) {
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
+          func);
+  if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
 #else
 void grpc_error_unref(grpc_error *err) {
   if (grpc_error_is_special(err)) return;
-  if (gpr_unref(&err->refs)) {
+  if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
@@ -328,8 +332,8 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 
   internal_set_time(&err, GRPC_ERROR_TIME_CREATED, gpr_now(GPR_CLOCK_REALTIME));
 
-  gpr_atm_no_barrier_store(&err->error_string, 0);
-  gpr_ref_init(&err->refs, 1);
+  gpr_atm_no_barrier_store(&err->atomics.error_string, 0);
+  gpr_ref_init(&err->atomics.refs, 1);
   GPR_TIMER_END("grpc_error_create", 0);
   return err;
 }
@@ -369,7 +373,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
                        grpc_slice_from_static_string("cancelled"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
     }
-  } else if (gpr_ref_is_unique(&in->refs)) {
+  } else if (gpr_ref_is_unique(&in->atomics.refs)) {
     out = in;
   } else {
     uint8_t new_arena_capacity = in->arena_capacity;
@@ -382,10 +386,14 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
     gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
-    memcpy(out, in, sizeof(*in) + in->arena_size * sizeof(intptr_t));
+    // bulk memcpy of the rest of the struct.
+    size_t skip = sizeof(&out->atomics);
+    memcpy((void *)((uintptr_t)out + skip), (void *)((uintptr_t)in + skip),
+           sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
+    // manually set the atomics and the new capacity
+    gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
+    gpr_ref_init(&out->atomics.refs, 1);
     out->arena_capacity = new_arena_capacity;
-    gpr_atm_no_barrier_store(&out->error_string, 0);
-    gpr_ref_init(&out->refs, 1);
     ref_strs(out);
     ref_errs(out);
     GRPC_ERROR_UNREF(in);
@@ -692,7 +700,7 @@ const char *grpc_error_string(grpc_error *err) {
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
-  void *p = (void *)gpr_atm_acq_load(&err->error_string);
+  void *p = (void *)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != NULL) {
     GPR_TIMER_END("grpc_error_string", 0);
     return p;
@@ -712,9 +720,9 @@ const char *grpc_error_string(grpc_error *err) {
 
   char *out = finish_kvs(&kvs);
 
-  if (!gpr_atm_rel_cas(&err->error_string, 0, (gpr_atm)out)) {
+  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
     gpr_free(out);
-    out = (char *)gpr_atm_no_barrier_load(&err->error_string);
+    out = (char *)gpr_atm_no_barrier_load(&err->atomics.error_string);
   }
 
   GPR_TIMER_END("grpc_error_string", 0);
