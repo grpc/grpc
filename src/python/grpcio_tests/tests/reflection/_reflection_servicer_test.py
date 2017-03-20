@@ -50,6 +50,7 @@ _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
 _SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman',
                   'Galilei')
 _EMPTY_EXTENSIONS_SYMBOL_NAME = 'grpc.testing.proto2.EmptyWithExtensions'
+_EMPTY_EXTENSIONS_NUMBERS = (124, 125, 126, 127, 128)
 
 
 def _file_descriptor_to_proto(descriptor):
@@ -128,6 +129,27 @@ class ReflectionServicerTest(unittest.TestCase):
                 file_descriptor_response=reflection_pb2.FileDescriptorResponse(
                     file_descriptor_proto=(_file_descriptor_to_proto(
                         empty2_extensions_pb2.DESCRIPTOR),))),
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                error_response=reflection_pb2.ErrorResponse(
+                    error_code=grpc.StatusCode.NOT_FOUND.value[0],
+                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
+                )),)
+        self.assertSequenceEqual(expected_responses, responses)
+
+    def testExtensionNumbersOfType(self):
+        requests = (reflection_pb2.ServerReflectionRequest(
+            all_extension_numbers_of_type=_EMPTY_EXTENSIONS_SYMBOL_NAME
+        ), reflection_pb2.ServerReflectionRequest(
+            all_extension_numbers_of_type='i.donut.exist.co.uk.net.name.foo'),)
+        responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
+        expected_responses = (
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                all_extension_numbers_response=reflection_pb2.
+                ExtensionNumberResponse(
+                    base_type_name=_EMPTY_EXTENSIONS_SYMBOL_NAME,
+                    extension_number=_EMPTY_EXTENSIONS_NUMBERS)),
             reflection_pb2.ServerReflectionResponse(
                 valid_host='',
                 error_response=reflection_pb2.ErrorResponse(
