@@ -422,13 +422,17 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
                       gpr_timespec *next) {
   GPR_ASSERT(now.clock_type == g_clock_type);
   gpr_atm now_atm = timespec_to_atm_round_down(now);
-  gpr_atm next_atm;
-  bool r = run_some_expired_timers(
-      exec_ctx, now_atm, &next_atm,
+  grpc_error *shutdown_error =
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
           ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE("Shutting down timer system"));
-  if (next != NULL) *next = atm_to_timespec(next_atm);
+          : GRPC_ERROR_CREATE("Shutting down timer system");
+  if (next == NULL) {
+    r = run_some_expired_timers(exec_ctx, now_atm, NULL, shutdown_error);
+  } else {
+    gpr_atm next_atm = timespec_to_atm_round_down(*next);
+    r = run_some_expired_timers(exec_ctx, now_atm, &next_atm, shutdown_error);
+    *next = atm_to_timespec(next_atm);
+  }
   return r;
 }
 
