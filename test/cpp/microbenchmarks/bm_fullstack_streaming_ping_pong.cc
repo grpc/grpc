@@ -63,7 +63,6 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 //      the other from server to client):
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_StreamingPingPong(benchmark::State& state) {
-  TrackCounters track_counters;
   const int msg_size = state.range(0);
   const int max_ping_pongs = state.range(1);
 
@@ -152,14 +151,12 @@ static void BM_StreamingPingPong(benchmark::State& state) {
   fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
-  track_counters.Finish(state);
 }
 
 // Repeatedly sends ping pong messages in a single streaming Bidi call in a loop
 //     First parmeter (i.e state.range(0)):  Message size (in bytes) to use
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_StreamingPingPongMsgs(benchmark::State& state) {
-  TrackCounters track_counters;
   const int msg_size = state.range(0);
 
   EchoTestService::AsyncService service;
@@ -241,7 +238,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
-  track_counters.Finish(state);
 }
 
 /*******************************************************************************
