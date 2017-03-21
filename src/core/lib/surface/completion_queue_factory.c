@@ -52,7 +52,9 @@ static const grpc_completion_queue_factory g_default_cq_factory = {
 const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
     const grpc_completion_queue_attributes* attributes) {
   /* As we add more fields to grpc_completion_queue_attributes, we may have to
-     change this assert */
+     change this assert to:
+         GPR_ASSERT (attributes->version >= 1 &&
+             attributes->version <= GRPC_CQ_CURRENT_VERSION) */
   GPR_ASSERT(attributes->version == 1);
 
   /* The default factory can handle version 1 of the attributes structure. We
