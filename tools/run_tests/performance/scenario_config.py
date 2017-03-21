@@ -275,15 +275,18 @@ class CXXLanguage:
               secure=secure,
               categories=smoketest_categories+[SCALABLE])
 
-          yield _ping_pong_scenario(
-              'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
-              rpc_type=rpc_type.upper(),
-              client_type='%s_CLIENT' % synchronicity.upper(),
-              server_type='%s_SERVER' % synchronicity.upper(),
-              unconstrained_client=synchronicity,
-              secure=secure,
-              categories=smoketest_categories+[SCALABLE],
-              resource_quota_size=500*1024)
+          # TODO(vjpai): Re-enable this test. It has a lot of timeouts
+          # and hasn't yet been conclusively identified as a test failure
+          # or race in the library
+          # yield _ping_pong_scenario(
+          #     'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
+          #     rpc_type=rpc_type.upper(),
+          #     client_type='%s_CLIENT' % synchronicity.upper(),
+          #     server_type='%s_SERVER' % synchronicity.upper(),
+          #     unconstrained_client=synchronicity,
+          #     secure=secure,
+          #     categories=smoketest_categories+[SCALABLE],
+          #     resource_quota_size=500*1024)
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):

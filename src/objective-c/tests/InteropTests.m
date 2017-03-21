@@ -90,6 +90,9 @@
   return nil;
 }
 
+// This number indicates how many bytes of overhead does Protocol Buffers encoding add onto the
+// message. The number varies as different message.proto is used on different servers. The actual
+// number for each interop server is overridden in corresponding derived test classes.
 - (int32_t)encodingOverhead {
   return 0;
 }
@@ -169,8 +172,6 @@
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-#ifndef GRPC_COMPILE_WITH_CRONET
-// TODO (mxyan): Fix this test
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ResponseOverMaxSize"];
@@ -191,7 +192,6 @@
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
-#endif
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
   XCTAssertNotNil(self.class.host);
@@ -327,8 +327,6 @@
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-#ifndef GRPC_COMPILE_WITH_CRONET
-// TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -342,7 +340,6 @@
   }];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
-#endif
 
 - (void)testCancelAfterBeginRPC {
   XCTAssertNotNil(self.class.host);

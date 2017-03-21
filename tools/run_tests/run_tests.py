@@ -54,6 +54,7 @@ import traceback
 import time
 from six.moves import urllib
 import uuid
+import six
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -771,7 +772,7 @@ class CSharpLanguage(object):
         runtime_cmd = ['mono']
 
     specs = []
-    for assembly in tests_by_assembly.iterkeys():
+    for assembly in six.iterkeys(tests_by_assembly):
       assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
                                                  assembly_subdir,
                                                  assembly,
@@ -1298,7 +1299,9 @@ if args.use_docker:
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  run_shell_command('tools/run_tests/dockerize/build_docker_and_run_tests.sh', env=env)
+  subprocess.check_call('tools/run_tests/dockerize/build_docker_and_run_tests.sh',
+                        shell=True,
+                        env=env)
   sys.exit(0)
 
 _check_arch_option(args.arch)

@@ -115,6 +115,10 @@ static grpc_slice generate_random_slice() {
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER) {
+    return;
+  }
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);

@@ -119,6 +119,10 @@ int gpr_unref(gpr_refcount *r) {
   return prior == 1;
 }
 
+int gpr_ref_is_unique(gpr_refcount *r) {
+  return gpr_atm_acq_load(&r->count) == 1;
+}
+
 void gpr_stats_init(gpr_stats_counter *c, intptr_t n) {
   gpr_atm_rel_store(&c->value, n);
 }

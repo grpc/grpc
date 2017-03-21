@@ -511,6 +511,10 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_error *error) {
   if (!t->closed) {
+    if (!grpc_error_has_clear_grpc_status(error)) {
+      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_UNAVAILABLE);
+    }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
       if (t->close_transport_on_writes_finished == NULL) {
         t->close_transport_on_writes_finished =
@@ -519,10 +523,6 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
       t->close_transport_on_writes_finished =
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
-    }
-    if (!grpc_error_has_clear_grpc_status(error)) {
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE);
     }
     t->closed = 1;
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
@@ -575,7 +575,7 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s) {
 
 static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_stream *gs, grpc_stream_refcount *refcount,
-                       const void *server_data) {
+                       const void *server_data, gpr_arena *arena) {
   GPR_TIMER_BEGIN("init_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
@@ -588,8 +588,8 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_ref_init(&s->active_streams, 1);
   GRPC_CHTTP2_STREAM_REF(s, "chttp2");
 
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0]);
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1]);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0], arena);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
@@ -665,16 +665,17 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
 
   GPR_TIMER_END("destroy_stream", 0);
 
-  gpr_free(s->destroy_stream_arg);
+  grpc_closure_sched(exec_ctx, s->destroy_stream_arg, GRPC_ERROR_NONE);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                           grpc_stream *gs, void *and_free_memory) {
+                           grpc_stream *gs,
+                           grpc_closure *then_schedule_closure) {
   GPR_TIMER_BEGIN("destroy_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
-  s->destroy_stream_arg = and_free_memory;
+  s->destroy_stream_arg = then_schedule_closure;
   grpc_closure_sched(
       exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
                                   grpc_combiner_scheduler(t->combiner, false)),
@@ -1629,15 +1630,19 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       s->recv_trailing_metadata_finished != NULL) {
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
-    grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-        exec_ctx, &s->metadata_buffer[1],
-        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
-                                grpc_slice_from_copied_string(status_string)));
+    GRPC_LOG_IF_ERROR("add_status",
+                      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+                          exec_ctx, &s->metadata_buffer[1],
+                          grpc_mdelem_from_slices(
+                              exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                              grpc_slice_from_copied_string(status_string))));
     if (msg != NULL) {
-      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-          exec_ctx, &s->metadata_buffer[1],
-          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-                                  grpc_slice_from_copied_string(msg)));
+      GRPC_LOG_IF_ERROR(
+          "add_status_message",
+          grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+              exec_ctx, &s->metadata_buffer[1],
+              grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                                      grpc_slice_from_copied_string(msg))));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
