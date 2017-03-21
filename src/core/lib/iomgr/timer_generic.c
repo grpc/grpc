@@ -37,10 +37,13 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 #include "src/core/lib/support/spinlock.h"
@@ -52,6 +55,9 @@
 #define ADD_DEADLINE_SCALE 0.33
 #define MIN_QUEUE_WINDOW_DURATION 0.01
 #define MAX_QUEUE_WINDOW_DURATION 1
+
+static int grpc_timer_trace = 0;
+static int grpc_timer_check_trace = 0;
 
 typedef struct {
   gpr_mu mu;
@@ -107,6 +113,7 @@ static gpr_timespec dbl_to_ts(double d) {
 }
 
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
+  ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
              (double)ts.tv_nsec / GPR_NS_PER_MS + 1.0;
   if (x < 0) return 0;
@@ -115,6 +122,7 @@ static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
 }
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
+  ts = gpr_time_sub(ts, g_start_time);
   double x =
       GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -142,6 +150,8 @@ void grpc_timer_list_init(gpr_timespec now) {
   g_shared_mutables.min_timer = timespec_to_atm_round_down(now);
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
+  grpc_register_tracer("timer", &grpc_timer_trace);
+  grpc_register_tracer("timer_check", &grpc_timer_check_trace);
 
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
@@ -220,6 +230,13 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
   timer->deadline = timespec_to_atm_round_up(deadline);
+
+  if (grpc_timer_trace) {
+    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRIdPTR ".%09d now %" PRIdPTR
+                       ".%09d [%" PRIdPTR "] call %p[%p]",
+            timer, deadline.tv_sec, deadline.tv_nsec, now.tv_sec, now.tv_nsec,
+            timer->deadline, closure, closure->cb);
+  }
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
@@ -427,15 +444,41 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE("Shutting down timer system");
+  if (grpc_timer_check_trace) {
+    char *next_str;
+    if (next == NULL) {
+      next_str = gpr_strdup("NULL");
+    } else {
+      gpr_asprintf(&next_str, "%" PRIdPTR ".%09d [%" PRIdPTR "]", next->tv_sec,
+                   next->tv_nsec, timespec_to_atm_round_down(*next));
+    }
+    gpr_log(GPR_DEBUG,
+            "TIMER CHECK BEGIN: now=%" PRIdPTR ".%09d [%" PRIdPTR "] next=%s",
+            now.tv_sec, now.tv_nsec, now_atm, next_str);
+    gpr_free(next_str);
+  }
   bool r;
+  gpr_atm next_atm;
   if (next == NULL) {
     r = run_some_expired_timers(exec_ctx, now_atm, NULL, shutdown_error);
   } else {
-    gpr_atm next_atm = timespec_to_atm_round_down(*next);
+    next_atm = timespec_to_atm_round_down(*next);
     r = run_some_expired_timers(exec_ctx, now_atm, &next_atm, shutdown_error);
     *next = atm_to_timespec(next_atm);
   }
-  return r;
+  if (grpc_timer_check_trace) {
+    char *next_str;
+    if (next == NULL) {
+      next_str = gpr_strdup("NULL");
+    } else {
+      gpr_asprintf(&next_str, "%" PRIdPTR ".%09d [%" PRIdPTR "]", next->tv_sec,
+                   next->tv_nsec, next_atm);
+    }
+    gpr_log(GPR_DEBUG, "TIMER CHECK END: %d timers triggered; next=%s", r,
+            next_str);
+    gpr_free(next_str);
+  }
+  return r > 0;
 }
 
 #endif /* GRPC_TIMER_USE_GENERIC */
