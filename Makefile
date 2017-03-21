@@ -2609,6 +2609,7 @@ LIBGPR_SRC = \
     src/core/lib/profiling/stap_timers.c \
     src/core/lib/support/alloc.c \
     src/core/lib/support/arena.c \
+    src/core/lib/support/atm.c \
     src/core/lib/support/avl.c \
     src/core/lib/support/backoff.c \
     src/core/lib/support/cmdline.c \
@@ -2947,6 +2948,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -3236,6 +3238,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -3775,6 +3778,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -4362,6 +4366,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
