@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,54 +26,24 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""The Python implementation of the GRPC interoperability test server."""
 
 import argparse
-from concurrent import futures
-import logging
-import time
+import hyper
+import sys
 
-import grpc
-from src.proto.grpc.testing import test_pb2_grpc
-
-from tests.interop import methods
-from tests.interop import resources
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
-
-def serve():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--port', help='the port on which to serve', type=int)
-    parser.add_argument(
-        '--use_tls',
-        help='require a secure connection',
-        default=False,
-        type=resources.parse_bool)
-    args = parser.parse_args()
-
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
-                                                    server)
-    if args.use_tls:
-        private_key = resources.private_key()
-        certificate_chain = resources.certificate_chain()
-        credentials = grpc.ssl_server_credentials((
-            (private_key, certificate_chain),))
-        server.add_secure_port('[::]:{}'.format(args.port), credentials)
-    else:
-        server.add_insecure_port('[::]:{}'.format(args.port))
-
-    server.start()
-    logging.info('Server serving.')
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except BaseException as e:
-        logging.info('Caught exception "%s"; stopping server...', e)
-        server.stop(None)
-        logging.info('Server stopped; exiting.')
-
-
+# Utility to healthcheck the http2 server. Used when starting the server to
+# verify that the server is live before tests begin.
 if __name__ == '__main__':
-    serve()
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--server_host', type=str, default='localhost')
+  parser.add_argument('--server_port', type=int, default=8080)
+  args = parser.parse_args()
+  server_host = args.server_host
+  server_port = args.server_port
+  conn = hyper.HTTP20Connection('%s:%d' % (server_host, server_port))
+  conn.request('POST', '/grpc.testing.TestService/UnaryCall')
+  resp = conn.get_response()
+  if resp.headers.get('grpc-encoding') is None:
+    sys.exit(1)
+  else:
+    sys.exit(0)

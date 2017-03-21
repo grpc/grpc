@@ -108,6 +108,7 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/alloc.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
@@ -237,6 +238,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
@@ -346,6 +348,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
@@ -436,6 +439,9 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_common.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.c" role="src" />
@@ -565,6 +571,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/retry_throttle.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.c" role="src" />

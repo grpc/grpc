@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
+#include <grpc/support/atm.h>
+#include <grpc/support/useful.h>
 
-#include "src/core/lib/transport/transport.h"
-
-typedef struct {
-  gpr_arena *arena;
-  grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
-
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch);
-
-grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
-
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */
+gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
+                                       gpr_atm min, gpr_atm max) {
+  gpr_atm current;
+  gpr_atm new;
+  do {
+    current = gpr_atm_no_barrier_load(value);
+    new = GPR_CLAMP(current + delta, min, max);
+    if (new == current) break;
+  } while (!gpr_atm_no_barrier_cas(value, current, new));
+  return new;
+}
