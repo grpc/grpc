@@ -332,7 +332,13 @@ void grpc_resolver_dns_ares_init(void) {
   gpr_free(resolver);
 }
 
-void grpc_resolver_dns_ares_shutdown(void) { grpc_ares_cleanup(); }
+void grpc_resolver_dns_ares_shutdown(void) {
+  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
+    grpc_ares_cleanup();
+  }
+  gpr_free(resolver);
+}
 
 #else /* GRPC_ARES == 1 && !defined(GRPC_UV) */
 
