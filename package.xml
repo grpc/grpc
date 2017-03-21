@@ -268,6 +268,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
@@ -480,6 +481,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />

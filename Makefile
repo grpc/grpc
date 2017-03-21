@@ -2857,6 +2857,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3172,6 +3173,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3478,6 +3480,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3707,6 +3710,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -4319,6 +4323,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \

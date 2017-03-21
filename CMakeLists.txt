@@ -965,6 +965,7 @@ add_library(grpc
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c
@@ -1277,6 +1278,7 @@ add_library(grpc_cronet
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c
@@ -1580,6 +1582,7 @@ add_library(grpc_test_util
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c
@@ -1829,6 +1832,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c
@@ -2439,6 +2443,7 @@ add_library(grpc++_cronet
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c

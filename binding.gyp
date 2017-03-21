@@ -711,6 +711,7 @@
         'src/core/lib/surface/channel_ping.c',
         'src/core/lib/surface/channel_stack_type.c',
         'src/core/lib/surface/completion_queue.c',
+        'src/core/lib/surface/completion_queue_factory.c',
         'src/core/lib/surface/event_string.c',
         'src/core/lib/surface/lame_client.c',
         'src/core/lib/surface/metadata_array.c',
