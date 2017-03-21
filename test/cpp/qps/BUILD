@@ -31,83 +31,131 @@ licenses(["notice"])  # 3-clause BSD
 
 cc_library(
     name = "parse_json",
-    hdrs = ["parse_json.h"],
     srcs = ["parse_json.cc"],
+    hdrs = ["parse_json.h"],
     deps = ["//:grpc++"],
 )
 
 cc_library(
     name = "qps_worker_impl",
-    hdrs = ["client.h", "server.h", "qps_worker.h"],
-    srcs = ["client_async.cc", "client_sync.cc", "server_async.cc", "server_sync.cc", "qps_worker.cc"],
-    deps = ["//:grpc++",
-            "//:grpc",
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:gpr_test_util",
-            "//src/proto/grpc/testing:services_proto",
-            "//src/proto/grpc/testing:payloads_proto",
-            "//src/proto/grpc/testing:control_proto",
-            "//external:gtest"],
+    srcs = [
+        "client_async.cc",
+        "client_sync.cc",
+        "qps_worker.cc",
+        "server_async.cc",
+        "server_sync.cc",
+    ],
+    hdrs = [
+        "client.h",
+        "qps_worker.h",
+        "server.h",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//external:gtest",
+        "//src/proto/grpc/testing:control_proto",
+        "//src/proto/grpc/testing:payloads_proto",
+        "//src/proto/grpc/testing:services_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_library(
     name = "driver_impl",
-    hdrs = ["driver.h", "report.h"],
-    srcs = ["driver.cc", "report.cc"],
-    deps = ["//:grpc++"]
+    srcs = [
+        "driver.cc",
+        "report.cc",
+    ],
+    hdrs = [
+        "driver.h",
+        "report.h",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing:control_proto",
+    ],
 )
 
 cc_library(
     name = "histogram",
-    hdrs = ["histogram.h", "stats.h"],
-    deps = ["//:gpr"]
+    hdrs = [
+        "histogram.h",
+        "stats.h",
+    ],
+    deps = ["//:gpr"],
 )
 
 cc_library(
     name = "interarrival",
     hdrs = ["interarrival.h"],
-    deps = ["//:grpc++"]
+    deps = ["//:grpc++"],
 )
 
 cc_binary(
     name = "json_run_localhost",
     srcs = ["json_run_localhost.cc"],
-    deps = ["//:gpr", "//test/core/util:grpc_test_util", "//test/core/util:gpr_test_util", "//test/cpp/util:test_util"]
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
-    deps = [":histogram", ":interarrival"]
+    deps = [
+        ":histogram",
+        ":interarrival",
+    ],
 )
 
 cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
-    deps = ["//:grpc++", ":driver_impl"]
+    deps = [
+        ":driver_impl",
+        "//:grpc++",
+    ],
 )
 
 cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
-    deps = [":qps_worker_impl", ":driver_impl"]
+    deps = [
+        ":driver_impl",
+        ":qps_worker_impl",
+    ],
 )
 
 cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
-    deps = ["//:grpc++", ":driver_impl"]
+    deps = [
+        ":driver_impl",
+        "//:grpc++",
+    ],
 )
 
 cc_library(
     name = "usage_timer",
     srcs = ["usage_timer.cc"],
     hdrs = ["usage_timer.h"],
-    deps = ["//:gpr"]
+    deps = ["//:gpr"],
 )
 
 cc_binary(
     name = "qps_worker",
     srcs = ["worker.cc"],
-    deps = ["//:grpc++", ":qps_worker_impl", "//test/core/util:grpc_test_util", "//test/core/util:gpr_test_util", "//test/cpp/util:test_util", "//test/cpp/util:test_config"]
+    deps = [
+        ":qps_worker_impl",
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
