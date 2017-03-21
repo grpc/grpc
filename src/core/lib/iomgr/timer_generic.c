@@ -232,10 +232,11 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->deadline = timespec_to_atm_round_up(deadline);
 
   if (grpc_timer_trace) {
-    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRIdPTR ".%09d now %" PRIdPTR
-                       ".%09d [%" PRIdPTR "] call %p[%p]",
-            timer, deadline.tv_sec, deadline.tv_nsec, now.tv_sec, now.tv_nsec,
-            timer->deadline, closure, closure->cb);
+    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRIdPTR ".%09d [%" PRIdPTR
+                       "] now %" PRIdPTR ".%09d [%" PRIdPTR "] call %p[%p]",
+            timer, deadline.tv_sec, deadline.tv_nsec, timer->deadline,
+            now.tv_sec, now.tv_nsec, timespec_to_atm_round_down(now), closure,
+            closure->cb);
   }
 
   if (!g_shared_mutables.initialized) {
@@ -358,7 +359,7 @@ static grpc_timer *pop_one(shard_type *shard, gpr_atm now) {
       if (!refill_queue(shard, now)) return NULL;
     }
     timer = grpc_timer_heap_top(&shard->heap);
-    if (timer->deadline > now) return NULL;
+    if (timer->deadline >= now) return NULL;
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
@@ -452,9 +453,11 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
       gpr_asprintf(&next_str, "%" PRIdPTR ".%09d [%" PRIdPTR "]", next->tv_sec,
                    next->tv_nsec, timespec_to_atm_round_down(*next));
     }
-    gpr_log(GPR_DEBUG,
-            "TIMER CHECK BEGIN: now=%" PRIdPTR ".%09d [%" PRIdPTR "] next=%s",
-            now.tv_sec, now.tv_nsec, now_atm, next_str);
+    gpr_log(GPR_DEBUG, "TIMER CHECK BEGIN: now=%" PRIdPTR ".%09d [%" PRIdPTR
+                       "] next=%s tls_min=%" PRIdPTR " glob_min=%" PRIdPTR,
+            now.tv_sec, now.tv_nsec, now_atm, next_str,
+            gpr_tls_get(&g_last_seen_min_timer),
+            gpr_atm_no_barrier_load(&g_shared_mutables.min_timer));
     gpr_free(next_str);
   }
   bool r;
