@@ -1162,9 +1162,10 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       finish_batch_step(exec_ctx, bctl);
       return;
     }
-    if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
-                              &call->receiving_slice, remaining,
+    if (grpc_byte_stream_next(exec_ctx, call->receiving_stream, remaining,
                               &call->receiving_slice_ready)) {
+      grpc_byte_stream_pull(exec_ctx, call->receiving_stream,
+                            &call->receiving_slice);
       grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                             call->receiving_slice);
     } else {

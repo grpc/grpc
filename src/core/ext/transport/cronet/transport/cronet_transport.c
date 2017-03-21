@@ -908,8 +908,16 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer write_slice_buffer;
       grpc_slice slice;
       grpc_slice_buffer_init(&write_slice_buffer);
-      grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
-                            stream_op->send_message->length, NULL);
+      if (1 != grpc_byte_stream_next(exec_ctx, stream_op->send_message,
+                                     stream_op->send_message->length, NULL)) {
+        /* Should never reach here */
+        GPR_ASSERT(false);
+      }
+      if (GRPC_ERROR_NONE !=
+          grpc_byte_stream_pull(exec_ctx, stream_op->send_message, &slice)) {
+        /* Should never reach here */
+        GPR_ASSERT(false);
+      }
       /* Check that compression flag is OFF. We don't support compression yet.
        */
       if (stream_op->send_message->flags != 0) {

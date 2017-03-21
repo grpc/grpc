@@ -197,12 +197,10 @@ struct grpc_chttp2_incoming_byte_stream {
   gpr_mu slice_mu;  // protects slices, on_next
   grpc_slice_buffer slices;
   grpc_closure *on_next;
-  grpc_slice *next;
   uint32_t remaining_bytes;
 
   struct {
     grpc_closure closure;
-    grpc_slice *slice;
     size_t max_size_hint;
     grpc_closure *on_complete;
   } next_action;

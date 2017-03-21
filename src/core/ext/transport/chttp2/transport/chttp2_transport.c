@@ -1101,8 +1101,9 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       s->fetching_send_message = NULL;
       return; /* early out */
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
-                                     &s->fetching_slice, UINT32_MAX,
-                                     &s->complete_fetch_locked)) {
+                                     UINT32_MAX, &s->complete_fetch_locked)) {
+      grpc_byte_stream_pull(exec_ctx, s->fetching_send_message,
+                            &s->fetching_slice);
       add_fetched_slice_locked(exec_ctx, t, s);
     }
   }
@@ -1113,9 +1114,15 @@ static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
   grpc_chttp2_stream *s = gs;
   grpc_chttp2_transport *t = s->t;
   if (error == GRPC_ERROR_NONE) {
-    add_fetched_slice_locked(exec_ctx, t, s);
-    continue_fetching_send_locked(exec_ctx, t, s);
-  } else {
+    error = grpc_byte_stream_pull(exec_ctx, s->fetching_send_message,
+                                  &s->fetching_slice);
+    if (error == GRPC_ERROR_NONE) {
+      add_fetched_slice_locked(exec_ctx, t, s);
+      continue_fetching_send_locked(exec_ctx, t, s);
+    }
+  }
+
+  if (error != GRPC_ERROR_NONE) {
     /* TODO(ctiller): what to do here */
     abort();
   }
@@ -2530,7 +2537,6 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     }
   } else {
     bs->on_next = bs->next_action.on_complete;
-    bs->next = bs->next_action.slice;
   }
   gpr_mu_unlock(&bs->slice_mu);
   gpr_mu_unlock(&s->buffer_mu);
@@ -2570,13 +2576,12 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
 
 static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
                                      grpc_byte_stream *byte_stream,
-                                     grpc_slice *slice, size_t max_size_hint,
+                                     size_t max_size_hint,
                                      grpc_closure *on_complete) {
   GPR_TIMER_BEGIN("incoming_byte_stream_next", 0);
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   gpr_ref(&bs->refs);
-  bs->next_action.slice = slice;
   bs->next_action.max_size_hint = max_size_hint;
   bs->next_action.on_complete = on_complete;
   grpc_closure_sched(
