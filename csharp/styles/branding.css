@@ -59,6 +59,19 @@ a:hover {
 	text-decoration: none;
 	color: #3390b1;
 }
+a.button, a.button:active, a.button:hover {
+    float: right;
+	background-color: #0080c0;
+    color: white;
+    padding: 6px 12px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+	margin-left: 6px;
+}
+a.button:link, a.button:visited {
+    color: white;
+}
 img {
 	border: 0;
 }
@@ -179,12 +192,8 @@ table.titleTable td {
 	border-width: 0px;
 }
 td.titleColumn {
-	font-family: 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
-	font-size: 2.5em;
-	font-weight: normal;
 	margin-top: 0px;
 	padding-left: 0px;
-	color: #000;
 	vertical-align: middle;
 }
 td.logoColumn {
@@ -424,6 +433,9 @@ div.caption {
 .codeSnippetContainerCode .keyword {
 	color: #0000ff;
 	font-weight: normal;
+}
+
+.copyCodeSnippet {
 }
 
 /* Keyword and phrase styles */
