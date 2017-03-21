@@ -13,33 +13,36 @@ function ThemeNav () {
         winPosition: 0,
         winHeight: null,
         docHeight: null,
-        isRunning: null
+        isRunning: false
     };
 
     nav.enable = function () {
         var self = this;
 
-        jQuery(function ($) {
-            self.init($);
+        if (!self.isRunning) {
+            self.isRunning = true;
+            jQuery(function ($) {
+                self.init($);
 
-            self.reset();
-            self.win.on('hashchange', self.reset);
+                self.reset();
+                self.win.on('hashchange', self.reset);
 
-            // Set scroll monitor
-            self.win.on('scroll', function () {
-                if (!self.linkScroll) {
-                    self.winScroll = true;
-                }
+                // Set scroll monitor
+                self.win.on('scroll', function () {
+                    if (!self.linkScroll) {
+                        self.winScroll = true;
+                    }
+                });
+                setInterval(function () { if (self.winScroll) self.onScroll(); }, 25);
+
+                // Set resize monitor
+                self.win.on('resize', function () {
+                    self.winResize = true;
+                });
+                setInterval(function () { if (self.winResize) self.onResize(); }, 25);
+                self.onResize();
             });
-            setInterval(function () { if (self.winScroll) self.onScroll(); }, 25);
-
-            // Set resize monitor
-            self.win.on('resize', function () {
-                self.winResize = true;
-            });
-            setInterval(function () { if (self.winResize) self.onResize(); }, 25);
-            self.onResize();
-        });
+        };
     };
 
     nav.init = function ($) {
@@ -95,6 +98,19 @@ function ThemeNav () {
             try {
                 var link = $('.wy-menu-vertical')
                     .find('[href="' + anchor + '"]');
+                // If we didn't find a link, it may be because we clicked on
+                // something that is not in the sidebar (eg: when using
+                // sphinxcontrib.httpdomain it generates headerlinks but those
+                // aren't picked up and placed in the toctree). So let's find
+                // the closest header in the document and try with that one.
+                if (link.length === 0) {
+                  var doc_link = $('.document a[href="' + anchor + '"]');
+                  var closest_section = doc_link.closest('div.section');
+                  // Try again with the closest section entry.
+                  link = $('.wy-menu-vertical')
+                    .find('[href="#' + closest_section.attr("id") + '"]');
+
+                }
                 $('.wy-menu-vertical li.toctree-l1 li.current')
                     .removeClass('current');
                 link.closest('li.toctree-l2').addClass('current');
