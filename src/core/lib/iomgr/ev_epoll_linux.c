@@ -1111,8 +1111,7 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
     switch (curr) {
       case CLOSURE_NOT_READY: {
         /* CLOSURE_NOT_READY -> <closure>. */
-        if (gpr_atm_full_cas(state, CLOSURE_NOT_READY,
-                                   (gpr_atm)closure)) {
+        if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
           return; /* Successful. Return */
         }
 
@@ -1204,7 +1203,7 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
 
 static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
   while (true) {
-    gpr_atm curr = gpr_atm_acq_load(state);
+    gpr_atm curr = gpr_atm_no_barrier_load(state);
 
     switch (curr) {
       case CLOSURE_READY: {
