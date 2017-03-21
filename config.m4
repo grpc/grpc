@@ -39,6 +39,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/basic_timers.c \
     src/core/lib/profiling/stap_timers.c \
     src/core/lib/support/alloc.c \
+    src/core/lib/support/arena.c \
+    src/core/lib/support/atm.c \
     src/core/lib/support/avl.c \
     src/core/lib/support/backoff.c \
     src/core/lib/support/cmdline.c \
@@ -140,6 +142,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -269,6 +274,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \

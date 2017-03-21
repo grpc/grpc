@@ -38,4 +38,4 @@
 
 const char *grpc_version_string(void) { return "3.0.0-dev"; }
 
-const char *grpc_g_stands_for(void) { return "green"; }
+const char *grpc_g_stands_for(void) { return "gentle"; }
