@@ -141,6 +141,7 @@ void grpc_timer_list_init(gpr_timespec now) {
   g_start_time = now;
   g_shared_mutables.min_timer = timespec_to_atm_round_down(now);
   gpr_tls_init(&g_last_seen_min_timer);
+  gpr_tls_set(&g_last_seen_min_timer, 0);
 
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
