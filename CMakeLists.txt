@@ -921,6 +921,9 @@ add_library(grpc
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
   src/core/lib/iomgr/tcp_uv.c
@@ -1228,6 +1231,9 @@ add_library(grpc_cronet
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
   src/core/lib/iomgr/tcp_uv.c
@@ -1526,6 +1532,9 @@ add_library(grpc_test_util
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
   src/core/lib/iomgr/tcp_uv.c
@@ -1772,6 +1781,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
   src/core/lib/iomgr/tcp_uv.c
@@ -2377,6 +2389,9 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
   src/core/lib/iomgr/tcp_uv.c

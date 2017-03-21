@@ -764,6 +764,7 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
@@ -1127,6 +1128,10 @@ src/core/lib/iomgr/tcp_posix.c \
 src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.h \
 src/core/lib/iomgr/tcp_server_posix.c \
+src/core/lib/iomgr/tcp_server_utils_posix.h \
+src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
 src/core/lib/iomgr/tcp_server_uv.c \
 src/core/lib/iomgr/tcp_server_windows.c \
 src/core/lib/iomgr/tcp_uv.c \

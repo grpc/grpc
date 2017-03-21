@@ -54,7 +54,7 @@ class ResourceQuota;
 class ChannelArguments {
  public:
   ChannelArguments();
-  ~ChannelArguments() {}
+  ~ChannelArguments();
 
   ChannelArguments(const ChannelArguments& other);
   ChannelArguments& operator=(ChannelArguments other) {
