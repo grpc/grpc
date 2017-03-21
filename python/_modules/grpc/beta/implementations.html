@@ -8,9 +8,11 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.implementations &mdash; grpcio 1.1.0 documentation</title>
+  <title>grpc.beta.implementations &mdash; grpcio 1.2.0 documentation</title>
   
 
+  
+  
   
   
 
@@ -33,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -43,6 +45,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -62,7 +65,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -83,7 +86,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">Contents:</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">grpc package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html#glossary">Glossary</a></li>
@@ -99,8 +105,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../../../index.html">grpcio</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">grpcio</a>
+        
       </nav>
 
 
@@ -113,21 +121,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="../../../index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      
+        
           <li><a href="../../grpc.html">grpc</a> &raquo;</li>
-      
-    <li>grpc.beta.implementations</li>
+        
+      <li>grpc.beta.implementations</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -165,18 +190,19 @@
 <span class="sd">&quot;&quot;&quot;Entry points into the Beta API of gRPC Python.&quot;&quot;&quot;</span>
 
 <span class="c1"># threading is referenced from specification in this module.</span>
-<span class="kn">import</span> <span class="nn">abc</span>
-<span class="kn">import</span> <span class="nn">enum</span>
 <span class="kn">import</span> <span class="nn">threading</span>  <span class="c1"># pylint: disable=unused-import</span>
 
-<span class="c1"># cardinality and face are referenced from specification in this module.</span>
+<span class="c1"># interfaces, cardinality, and face are referenced from specification in this</span>
+<span class="c1"># module.</span>
 <span class="kn">import</span> <span class="nn">grpc</span>
 <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_auth</span>
 <span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_client_adaptations</span>
 <span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_server_adaptations</span>
-<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">interfaces</span>  <span class="c1"># pylint: disable=unused-import</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">cardinality</span>  <span class="c1"># pylint: disable=unused-import</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="k">import</span> <span class="n">face</span>  <span class="c1"># pylint: disable=unused-import</span>
+
+<span class="c1"># pylint: disable=too-many-arguments</span>
 
 <span class="n">ChannelCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span>
 <span class="n">ssl_channel_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ssl_channel_credentials</span>
@@ -354,7 +380,7 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A face.DynamicStub with which RPCs can be invoked.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-    <span class="n">effective_options</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
+    <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
     <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">dynamic_stub</span><span class="p">(</span>
         <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
         <span class="n">service</span><span class="p">,</span>
@@ -449,6 +475,9 @@
 </pre></div>
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -479,10 +508,11 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.1.0',
+            VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="../../../_static/jquery.js"></script>

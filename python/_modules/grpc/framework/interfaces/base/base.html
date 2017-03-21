@@ -8,9 +8,11 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base.base &mdash; grpcio 1.1.0 documentation</title>
+  <title>grpc.framework.interfaces.base.base &mdash; grpcio 1.2.0 documentation</title>
   
 
+  
+  
   
   
 
@@ -33,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../../search.html"/>
-    <link rel="top" title="grpcio 1.1.0 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
@@ -43,6 +45,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -62,7 +65,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -83,7 +86,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">Contents:</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html#glossary">Glossary</a></li>
@@ -99,8 +105,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../../../../../index.html">grpcio</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">grpcio</a>
+        
       </nav>
 
 
@@ -113,21 +121,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
           <li><a href="../../../../index.html">Module code</a> &raquo;</li>
-      
+        
           <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
-      
-    <li>grpc.framework.interfaces.base.base</li>
+        
+      <li>grpc.framework.interfaces.base.base</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -182,26 +207,29 @@
 <span class="c1"># abandonment is referenced from specification in this module.</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="k">import</span> <span class="n">abandonment</span>  <span class="c1"># pylint: disable=unused-import</span>
 
+<span class="c1"># pylint: disable=too-many-arguments</span>
+
 
 <div class="viewcode-block" id="NoSuchMethodError"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.NoSuchMethodError">[docs]</a><span class="k">class</span> <span class="nc">NoSuchMethodError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Indicates that an unrecognized operation has been called.</span>
 
-<span class="sd">  Attributes:</span>
-<span class="sd">    code: A code value to communicate to the other side of the operation along</span>
-<span class="sd">      with indication of operation termination. May be None.</span>
-<span class="sd">    details: A details value to communicate to the other side of the operation</span>
-<span class="sd">      along with indication of operation termination. May be None.</span>
-<span class="sd">  &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Constructor.</span>
-
-<span class="sd">    Args:</span>
+<span class="sd">    Attributes:</span>
 <span class="sd">      code: A code value to communicate to the other side of the operation</span>
 <span class="sd">        along with indication of operation termination. May be None.</span>
 <span class="sd">      details: A details value to communicate to the other side of the</span>
 <span class="sd">        operation along with indication of operation termination. May be None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          code: A code value to communicate to the other side of the operation</span>
+<span class="sd">            along with indication of operation termination. May be None.</span>
+<span class="sd">          details: A details value to communicate to the other side of the</span>
+<span class="sd">            operation along with indication of operation termination. May be None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NoSuchMethodError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">details</span> <span class="o">=</span> <span class="n">details</span></div>
 
@@ -479,6 +507,9 @@
 </pre></div>
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -509,10 +540,11 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'1.1.0',
+            VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
