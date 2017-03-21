@@ -155,3 +155,27 @@ describe('Proto message bytes serialize and deserialize', function() {
     assert.deepEqual(unpackedDeserialized, expectedDeserialize);
   });
 });
+describe('Proto message oneof serialize and deserialize', function() {
+  var oneofSerialize = serializeCls(messages_proto.OneOfValues);
+  var oneofDeserialize = deserializeCls(
+      messages_proto.OneOfValues, default_options);
+  it('Should have idempotent round trips', function() {
+    var test_message = {oneof_choice: 'int_choice', int_choice: 5};
+    var serialized1 = oneofSerialize(test_message);
+    var deserialized1 = oneofDeserialize(serialized1);
+    assert.equal(deserialized1.int_choice, 5);
+    var serialized2 = oneofSerialize(deserialized1);
+    var deserialized2 = oneofDeserialize(serialized2);
+    assert.deepEqual(deserialized1, deserialized2);
+  });
+  it('Should emit a property indicating which field was chosen', function() {
+    var test_message1 = {oneof_choice: 'int_choice', int_choice: 5};
+    var serialized1 = oneofSerialize(test_message1);
+    var deserialized1 = oneofDeserialize(serialized1);
+    assert.equal(deserialized1.oneof_choice, 'int_choice');
+    var test_message2 = {oneof_choice: 'string_choice', string_choice: 'abc'};
+    var serialized2 = oneofSerialize(test_message2);
+    var deserialized2 = oneofDeserialize(serialized2);
+    assert.equal(deserialized2.oneof_choice, 'int_choice');
+  });
+});

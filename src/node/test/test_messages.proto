@@ -41,3 +41,10 @@ message SequenceValues {
   bytes bytes_field = 1;
   repeated int32 repeated_field = 2;
 }
+
+message OneOfValues {
+  oneof oneof_choice {
+    int32 int_choice = 1;
+    string string_choice = 2;
+  }
+}

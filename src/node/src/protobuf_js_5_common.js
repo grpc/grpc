@@ -165,3 +165,16 @@ exports.loadObject = function loadObject(value, options) {
     return value;
   }
 };
+
+/**
+ * The primary purpose of this method is to distinguish between reflection
+ * objects from different versions of ProtoBuf.js. This is just a heuristic,
+ * checking for properties that are (currently) specific to this version of
+ * ProtoBuf.js
+ * @param {Object} obj The object to check
+ * @return {boolean} Whether the object appears to be a Protobuf.js 5
+ *   ReflectionObject
+ */
+exports.isProbablyProtobufJs5 = function isProbablyProtobufJs5(obj) {
+  return _.isArray(obj.children) && (typeof obj.build === 'function');
+};

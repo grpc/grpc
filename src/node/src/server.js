@@ -781,18 +781,16 @@ Server.prototype.addService = function(service, implementation) {
  */
 Server.prototype.addProtoService = function(service, implementation) {
   var options;
+  var protobuf_js_5_common = require('./protobuf_js_5_common');
+  var protobuf_js_6_common = require('./protobuf_js_6_common');
   common.log(grpc.logVerbosity.INFO,
              'Server#addProtoService is deprecated. Use addService instead');
-  if (service.hasOwnProperty('children')) {
-    // Heuristically: this is a Protobuf.js 5 service object
-    var protobuf_js_5_common = require('./protobuf_js_5_common');
+  if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
     options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
     this.addService(
         protobuf_js_5_common.getProtobufServiceAttrs(service, options),
         implementation);
-  } else if (service.hasOwnProperty('methods')) {
-    // Heuristically: this is a Protobuf.js 6 service object
-    var protobuf_js_6_common = require('./protobuf_js_6_common');
+  } else if (protobuf_js_6_common.isProbablyProtobufJs6(service)) {
     options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
     this.addService(
         protobuf_js_6_common.getProtobufServiceAttrs(service, options),
