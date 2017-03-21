@@ -58,14 +58,10 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
     -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    test | xcpretty
 
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    test | xcpretty
