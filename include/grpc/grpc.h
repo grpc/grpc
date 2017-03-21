@@ -96,7 +96,7 @@ GRPCAPI const char *grpc_g_stands_for(void);
 /** Specifies the type of APIs to use to pop events from the completion queue */
 typedef enum {
   /* Events are popped out by calling grpc_completion_queue_next() API ONLY */
-  GRPC_CQ_NEXT = 0,
+  GRPC_CQ_NEXT = 1,
 
   /* Events are popped out by calling grpc_completion_queue_pluck() API ONLY */
   GRPC_CQ_PLUCK
