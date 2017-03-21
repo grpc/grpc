@@ -114169,6 +114169,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/clusterfuzz-testcase-5298216461402112"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/crash-5ac3e1ea7764cfb6383629574262f82dc7b3cada"
     ], 
     "ci_platforms": [
