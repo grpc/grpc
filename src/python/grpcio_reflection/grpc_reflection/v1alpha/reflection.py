@@ -65,7 +65,7 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
     Args:
       service_names: Iterable of fully-qualified service names available.
     """
-        self._service_names = list(service_names)
+        self._service_names = tuple(sorted(service_names))
         self._pool = _POOL if pool is None else pool
 
     def _file_by_filename(self, filename):
