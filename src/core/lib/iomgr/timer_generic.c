@@ -426,6 +426,7 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE("Shutting down timer system");
+  bool r;
   if (next == NULL) {
     r = run_some_expired_timers(exec_ctx, now_atm, NULL, shutdown_error);
   } else {
