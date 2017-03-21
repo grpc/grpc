@@ -735,8 +735,7 @@ static void convert_metadata_to_cronet_headers(
   *p_num_headers = (size_t)num_headers;
 }
 
-static void parse_grpc_header(const uint8_t *data,
-                              int *length,
+static void parse_grpc_header(const uint8_t *data, int *length,
                               bool *compressed) {
   const uint8_t c = *data;
   const uint8_t *p = data + 1;
