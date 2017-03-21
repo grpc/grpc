@@ -117481,6 +117481,7 @@
     "language": "c", 
     "name": "hpack_parser_fuzzer_test_one_entry", 
     "platforms": [
+      "mac", 
       "linux"
     ], 
     "uses_polling": false
