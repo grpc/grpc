@@ -537,12 +537,11 @@ class CallOpSetCollectionInterface {
   }
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(CallOpSetCollectionInterface));
   }
   void Ref() { gpr_atm_no_barrier_fetch_add(&refs_, static_cast<gpr_atm>(1)); }
   bool Unref() {
     gpr_atm old =
-        gpr_atm_no_barrier_fetch_add(&refs_, static_cast<gpr_atm>(-1));
+        gpr_atm_full_fetch_add(&refs_, static_cast<gpr_atm>(-1));
     return (old == static_cast<gpr_atm>(1));
   }
 
