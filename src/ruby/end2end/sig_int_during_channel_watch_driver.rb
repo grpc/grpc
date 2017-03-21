@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,14 +29,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# abruptly end a process that has active calls to
+# Channel.watch_connectivity_state
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+require_relative './end2end_common'
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  STDERR.puts 'start server'
+  server_runner = ServerRunner.new
+  server_port = server_runner.run
+
+  sleep 1
+
+  STDERR.puts 'start client'
+  _, client_pid = start_client('sig_int_during_channel_watch_client.rb',
+                               server_port)
+
+  # give time for the client to get into the middle
+  # of a channel state watch call
+  sleep 1
+  Process.kill('SIGINT', client_pid)
+
+  begin
+    Timeout.timeout(10) do
+      Process.wait(client_pid)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout wait for client pid #{client_pid}"
+    Process.kill('SIGKILL', client_pid)
+    Process.wait(client_pid)
+    STDERR.puts 'killed client child'
+    raise 'Timed out waiting for client process. It likely hangs when a ' \
+      'SIGINT is sent while there is an active connectivity_state call'
+  end
+end
+
+main

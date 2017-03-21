@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +29,42 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+require_relative './end2end_common'
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+# Start polling the channel state in both the main thread
+# and a child thread. Try to get the driver to send process-ending
+# interrupt while both a child thread and the main thread are in the
+# middle of a blocking connectivity_state call.
+def main
+  server_port = ''
+  OptionParser.new do |opts|
+    opts.on('--client_control_port=P', String) do
+      STDERR.puts 'client_control_port not used'
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
+    end
+  end.parse!
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+  thd = Thread.new do
+    child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
+                                                   {},
+                                                   :this_channel_is_insecure)
+    loop do
+      state = child_thread_channel.connectivity_state(false)
+      child_thread_channel.watch_connectivity_state(state, Time.now + 360)
+    end
+  end
+
+  main_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
+                                         {},
+                                         :this_channel_is_insecure)
+  loop do
+    state = main_channel.connectivity_state(false)
+    main_channel.watch_connectivity_state(state, Time.now + 360)
+  end
+
+  thd.join
+end
+
+main
