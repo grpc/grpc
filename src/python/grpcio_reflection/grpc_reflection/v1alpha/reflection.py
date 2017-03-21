@@ -40,6 +40,21 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc
 _POOL = descriptor_pool.Default()
 
 
+def _find_file_descriptor_by_extension_hack(pool, extension):
+    if pool is None or extension is None:
+        return None
+    if not hasattr(pool, '_file_descriptors'):
+        return None
+    fds = pool._file_descriptors
+    if not type(fds) is dict:
+        return None
+    for fd in fds.values():
+        exts = fd.extensions_by_name
+        if type(exts) is dict and extension in exts.values():
+            return fd
+    return None
+
+
 def _not_found_error():
     return reflection_pb2.ServerReflectionResponse(
         error_response=reflection_pb2.ErrorResponse(
@@ -91,8 +106,15 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
             message_descriptor = pool.FindMessageTypeByName(containing_type)
             extension_descriptor = pool.FindExtensionByNumber(
                 message_descriptor, extension_number)
-            descriptor = pool.FindFileContainingSymbol(
-                extension_descriptor.full_name)
+            try:
+                descriptor = pool.FindFileContainingSymbol(
+                    extension_descriptor.full_name)
+            except KeyError:
+                file_descriptor = _find_file_descriptor_by_extension_hack(
+                    pool, extension_descriptor)
+                if file_descriptor is not None:
+                    return _file_descriptor_response(file_descriptor)
+                return _not_found_error()
         except KeyError:
             return _not_found_error()
         else:
@@ -102,9 +124,11 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
         try:
             pool = self._pool
             message_descriptor = pool.FindMessageTypeByName(containing_type)
-            extension_numbers = tuple(sorted(
-                extension.number
-                for extension in pool.FindAllExtensions(message_descriptor)))
+            extension_numbers = tuple(
+                sorted(
+                    extension.number
+                    for extension in pool.FindAllExtensions(
+                        message_descriptor)))
         except KeyError:
             return _not_found_error()
         else:
