@@ -105,6 +105,7 @@ static void free_node(grpc_trace_node* node) {
   if (node->subchannel) {
     grpc_channel_tracer_unref(node->subchannel);
   }
+  gpr_free(node);
 }
 
 static void add_trace(grpc_trace_node_list* list, const char* trace,
@@ -254,6 +255,8 @@ static void populate_subchannel_data(grpc_trace_node_list* list,
     }
     it = it->next;
   }
+
+  gpr_free(seen);
 }
 
 grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer) {
