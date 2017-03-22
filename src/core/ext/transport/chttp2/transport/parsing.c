@@ -548,7 +548,14 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
       s->seen_error = true;
       GRPC_MDELEM_UNREF(exec_ctx, md);
     } else {
-      grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
+      grpc_error *error = grpc_chttp2_incoming_metadata_buffer_add(
+          exec_ctx, &s->metadata_buffer[0], md);
+      if (error != GRPC_ERROR_NONE) {
+        grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
+        grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
+        s->seen_error = true;
+        GRPC_MDELEM_UNREF(exec_ctx, md);
+      }
     }
   }
 
@@ -598,7 +605,14 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
     s->seen_error = true;
     GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
-    grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[1], md);
+    grpc_error *error = grpc_chttp2_incoming_metadata_buffer_add(
+        exec_ctx, &s->metadata_buffer[1], md);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
+      grpc_chttp2_parsing_become_skip_parser(exec_ctx, t);
+      s->seen_error = true;
+      GRPC_MDELEM_UNREF(exec_ctx, md);
+    }
   }
 
   GPR_TIMER_END("on_trailing_header", 0);

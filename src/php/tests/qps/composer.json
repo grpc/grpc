@@ -1,0 +1,11 @@
+{
+  "minimum-stability": "dev",
+  "require": {
+    "grpc/grpc": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "": "generated_code/"
+    }
+  }
+}

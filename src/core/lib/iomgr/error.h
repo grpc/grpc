@@ -45,28 +45,9 @@ extern "C" {
 #endif
 
 /// Opaque representation of an error.
-/// Errors are refcounted objects that represent the result of an operation.
-/// Ownership laws:
-///  if a grpc_error is returned by a function, the caller owns a ref to that
-///    instance
-///  if a grpc_error is passed to a grpc_closure callback function (functions
-///    with the signature:
-///      void (*f)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error))
-///    then those functions do not own a ref to error (but are free to manually
-///    take a reference).
-///  if a grpc_error is passed to *ANY OTHER FUNCTION* then that function takes
-///    ownership of the error
-/// Errors have:
-///  a set of ints, strings, and timestamps that describe the error
-///  always present are:
-///    GRPC_ERROR_STR_FILE, GRPC_ERROR_INT_FILE_LINE - source location the error
-///      was generated
-///    GRPC_ERROR_STR_DESCRIPTION - a human readable description of the error
-///    GRPC_ERROR_TIME_CREATED - a timestamp indicating when the error happened
-///  an error can also have children; these are other errors that are believed
-///    to have contributed to this one. By accumulating children, we can begin
-///    to root cause high level failures from low level failures, without having
-///    to derive execution paths from log lines
+/// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
+/// full write up of this object.
+
 typedef struct grpc_error grpc_error;
 
 typedef enum {
@@ -102,6 +83,9 @@ typedef enum {
   GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
+
+  /// Must always be last
+  GRPC_ERROR_INT_MAX,
 } grpc_error_ints;
 
 typedef enum {
@@ -129,11 +113,17 @@ typedef enum {
   GRPC_ERROR_STR_KEY,
   /// value associated with the error
   GRPC_ERROR_STR_VALUE,
+
+  /// Must always be last
+  GRPC_ERROR_STR_MAX,
 } grpc_error_strs;
 
 typedef enum {
   /// timestamp of error creation
   GRPC_ERROR_TIME_CREATED,
+
+  /// Must always be last
+  GRPC_ERROR_TIME_MAX,
 } grpc_error_times;
 
 /// The following "special" errors can be propagated without allocating memory.
@@ -184,8 +174,6 @@ void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
-grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
-                                gpr_timespec value) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) GRPC_MUST_USE_RESULT;
 /// Returns NULL if the specified string is not set.

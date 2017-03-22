@@ -45,6 +45,7 @@ void TrackCounters::Finish(benchmark::State &state) {
 
 void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
+  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
   out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                                      mu_locks_at_start_) /
                             (double)state.iterations())
@@ -55,11 +56,10 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
       << " atm_add/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
                    atm_add_at_start_) /
-          (double)state.iterations());
-#endif
-  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
-  out << " allocs/iter:"
+          (double)state.iterations())
+      << " allocs/iter:"
       << ((double)(counters_at_end.total_allocs_absolute -
                    counters_at_start_.total_allocs_absolute) /
           (double)state.iterations());
+#endif
 }

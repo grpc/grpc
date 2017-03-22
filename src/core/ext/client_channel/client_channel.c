@@ -47,6 +47,7 @@
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/client_channel/retry_throttle.h"
 #include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -71,7 +72,8 @@
  */
 
 typedef enum {
-  WAIT_FOR_READY_UNSET,
+  /* zero so it can be default initialized */
+  WAIT_FOR_READY_UNSET = 0,
   WAIT_FOR_READY_FALSE,
   WAIT_FOR_READY_TRUE
 } wait_for_ready_value;
@@ -188,6 +190,8 @@ typedef struct client_channel_channel_data {
   grpc_combiner *combiner;
   /** currently active load balancer */
   grpc_lb_policy *lb_policy;
+  /** retry throttle data */
+  grpc_server_retry_throttle_data *retry_throttle_data;
   /** maps method names to method_parameters structs */
   grpc_slice_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
@@ -283,6 +287,65 @@ static void watch_lb_policy_locked(grpc_exec_ctx *exec_ctx, channel_data *chand,
                                                &w->on_changed);
 }
 
+typedef struct {
+  char *server_name;
+  grpc_server_retry_throttle_data *retry_throttle_data;
+} service_config_parsing_state;
+
+static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
+  service_config_parsing_state *parsing_state = arg;
+  if (strcmp(field->key, "retryThrottling") == 0) {
+    if (parsing_state->retry_throttle_data != NULL) return;  // Duplicate.
+    if (field->type != GRPC_JSON_OBJECT) return;
+    int max_milli_tokens = 0;
+    int milli_token_ratio = 0;
+    for (grpc_json *sub_field = field->child; sub_field != NULL;
+         sub_field = sub_field->next) {
+      if (sub_field->key == NULL) return;
+      if (strcmp(sub_field->key, "maxTokens") == 0) {
+        if (max_milli_tokens != 0) return;  // Duplicate.
+        if (sub_field->type != GRPC_JSON_NUMBER) return;
+        max_milli_tokens = gpr_parse_nonnegative_int(sub_field->value);
+        if (max_milli_tokens == -1) return;
+        max_milli_tokens *= 1000;
+      } else if (strcmp(sub_field->key, "tokenRatio") == 0) {
+        if (milli_token_ratio != 0) return;  // Duplicate.
+        if (sub_field->type != GRPC_JSON_NUMBER) return;
+        // We support up to 3 decimal digits.
+        size_t whole_len = strlen(sub_field->value);
+        uint32_t multiplier = 1;
+        uint32_t decimal_value = 0;
+        const char *decimal_point = strchr(sub_field->value, '.');
+        if (decimal_point != NULL) {
+          whole_len = (size_t)(decimal_point - sub_field->value);
+          multiplier = 1000;
+          size_t decimal_len = strlen(decimal_point + 1);
+          if (decimal_len > 3) decimal_len = 3;
+          if (!gpr_parse_bytes_to_uint32(decimal_point + 1, decimal_len,
+                                         &decimal_value)) {
+            return;
+          }
+          uint32_t decimal_multiplier = 1;
+          for (size_t i = 0; i < (3 - decimal_len); ++i) {
+            decimal_multiplier *= 10;
+          }
+          decimal_value *= decimal_multiplier;
+        }
+        uint32_t whole_value;
+        if (!gpr_parse_bytes_to_uint32(sub_field->value, whole_len,
+                                       &whole_value)) {
+          return;
+        }
+        milli_token_ratio = (int)((whole_value * multiplier) + decimal_value);
+        if (milli_token_ratio <= 0) return;
+      }
+    }
+    parsing_state->retry_throttle_data =
+        grpc_retry_throttle_map_get_data_for_server(
+            parsing_state->server_name, max_milli_tokens, milli_token_ratio);
+  }
+}
+
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
   channel_data *chand = arg;
@@ -294,6 +357,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
   char *service_config_json = NULL;
+  service_config_parsing_state parsing_state;
+  memset(&parsing_state, 0, sizeof(parsing_state));
 
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
@@ -354,6 +419,19 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_service_config *service_config =
           grpc_service_config_create(service_config_json);
       if (service_config != NULL) {
+        channel_arg =
+            grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
+        GPR_ASSERT(channel_arg != NULL);
+        GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+        grpc_uri *uri =
+            grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
+        GPR_ASSERT(uri->path[0] != '\0');
+        parsing_state.server_name =
+            uri->path[0] == '/' ? uri->path + 1 : uri->path;
+        grpc_service_config_parse_global_params(
+            service_config, parse_retry_throttle_params, &parsing_state);
+        parsing_state.server_name = NULL;
+        grpc_uri_destroy(uri);
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
             &method_parameters_vtable);
@@ -385,6 +463,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     chand->info_service_config_json = service_config_json;
   }
   gpr_mu_unlock(&chand->info_mu);
+
+  if (chand->retry_throttle_data != NULL) {
+    grpc_server_retry_throttle_data_unref(chand->retry_throttle_data);
+  }
+  chand->retry_throttle_data = parsing_state.retry_throttle_data;
   if (chand->method_params_table != NULL) {
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
@@ -612,6 +695,9 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   gpr_free(chand->info_lb_policy_name);
   gpr_free(chand->info_service_config_json);
+  if (chand->retry_throttle_data != NULL) {
+    grpc_server_retry_throttle_data_unref(chand->retry_throttle_data);
+  }
   if (chand->method_params_table != NULL) {
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
@@ -631,7 +717,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 #define CANCELLED_CALL ((grpc_subchannel_call *)1)
 
 typedef enum {
-  GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING,
+  /* zero so that it can be default-initialized */
+  GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING = 0,
   GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL
 } subchannel_creation_phase;
 
@@ -652,14 +739,15 @@ typedef struct client_channel_call_data {
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
+  grpc_server_retry_throttle_data *retry_throttle_data;
   method_parameters *method_params;
-  grpc_closure read_service_config;
 
   grpc_error *cancel_error;
 
   /** either 0 for no call, 1 for cancelled, or a pointer to a
       grpc_subchannel_call */
   gpr_atm subchannel_call;
+  gpr_arena *arena;
 
   subchannel_creation_phase creation_phase;
   grpc_connected_subchannel *connected_subchannel;
@@ -674,6 +762,9 @@ typedef struct client_channel_call_data {
   grpc_call_stack *owning_call;
 
   grpc_linked_mdelem lb_token_mdelem;
+
+  grpc_closure on_complete;
+  grpc_closure *original_on_complete;
 } call_data;
 
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
@@ -726,6 +817,51 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
   gpr_free(ops);
 }
 
+// Sets calld->method_params and calld->retry_throttle_data.
+// If the method params specify a timeout, populates
+// *per_method_deadline and returns true.
+static bool set_call_method_params_from_service_config_locked(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    gpr_timespec *per_method_deadline) {
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  if (chand->retry_throttle_data != NULL) {
+    calld->retry_throttle_data =
+        grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
+  }
+  if (chand->method_params_table != NULL) {
+    calld->method_params = grpc_method_config_table_get(
+        exec_ctx, chand->method_params_table, calld->path);
+    if (calld->method_params != NULL) {
+      method_parameters_ref(calld->method_params);
+      if (gpr_time_cmp(calld->method_params->timeout,
+                       gpr_time_0(GPR_TIMESPAN)) != 0) {
+        *per_method_deadline =
+            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
+                                             grpc_call_element *elem) {
+  /* apply service-config level configuration to the call (now that we're
+   * certain it exists) */
+  call_data *calld = elem->call_data;
+  gpr_timespec per_method_deadline;
+  if (set_call_method_params_from_service_config_locked(exec_ctx, elem,
+                                                        &per_method_deadline)) {
+    // If the deadline from the service config is shorter than the one
+    // from the client API, reset the deadline timer.
+    if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+      calld->deadline = per_method_deadline;
+      grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
+    }
+  }
+}
+
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   grpc_call_element *elem = arg;
@@ -754,9 +890,14 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
+    const grpc_connected_subchannel_call_args call_args = {
+        .pollent = calld->pollent,
+        .path = calld->path,
+        .start_time = calld->call_start_time,
+        .deadline = calld->deadline,
+        .arena = calld->arena};
     grpc_error *new_error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
-        calld->call_start_time, calld->deadline, &subchannel_call);
+        exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
       subchannel_call = CANCELLED_CALL;
@@ -851,6 +992,7 @@ static bool pick_subchannel_locked(
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (chand->lb_policy != NULL) {
+    apply_final_configuration_locked(exec_ctx, elem);
     grpc_lb_policy *lb_policy = chand->lb_policy;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     // If the application explicitly set wait_for_ready, use that.
@@ -982,9 +1124,14 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
+    const grpc_connected_subchannel_call_args call_args = {
+        .pollent = calld->pollent,
+        .path = calld->path,
+        .start_time = calld->call_start_time,
+        .deadline = calld->deadline,
+        .arena = calld->arena};
     grpc_error *error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
-        calld->call_start_time, calld->deadline, &subchannel_call);
+        exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
@@ -1002,6 +1149,26 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   add_waiting_locked(calld, op);
 }
 
+static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_call_element *elem = arg;
+  call_data *calld = elem->call_data;
+  if (calld->retry_throttle_data != NULL) {
+    if (error == GRPC_ERROR_NONE) {
+      grpc_server_retry_throttle_data_record_success(
+          calld->retry_throttle_data);
+    } else {
+      // TODO(roth): In a subsequent PR, check the return value here and
+      // decide whether or not to retry.  Note that we should only
+      // record failures whose statuses match the configured retryable
+      // or non-fatal status codes.
+      grpc_server_retry_throttle_data_record_failure(
+          calld->retry_throttle_data);
+    }
+  }
+  grpc_closure_run(exec_ctx, calld->original_on_complete,
+                   GRPC_ERROR_REF(error));
+}
+
 static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                              grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("start_transport_stream_op_locked", 0);
@@ -1009,6 +1176,14 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op *op = arg;
   grpc_call_element *elem = op->handler_private.args[0];
   call_data *calld = elem->call_data;
+
+  if (op->recv_trailing_metadata != NULL) {
+    GPR_ASSERT(op->on_complete != NULL);
+    calld->original_on_complete = op->on_complete;
+    grpc_closure_init(&calld->on_complete, on_complete, elem,
+                      grpc_schedule_on_exec_ctx);
+    op->on_complete = &calld->on_complete;
+  }
 
   start_transport_stream_op_locked_inner(exec_ctx, op, elem);
 
@@ -1060,114 +1235,19 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("cc_start_transport_stream_op", 0);
 }
 
-// Sets calld->method_params.
-// If the method params specify a timeout, populates
-// *per_method_deadline and returns true.
-static bool set_call_method_params_from_service_config_locked(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    gpr_timespec *per_method_deadline) {
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  if (chand->method_params_table != NULL) {
-    calld->method_params = grpc_method_config_table_get(
-        exec_ctx, chand->method_params_table, calld->path);
-    if (calld->method_params != NULL) {
-      method_parameters_ref(calld->method_params);
-      if (gpr_time_cmp(calld->method_params->timeout,
-                       gpr_time_0(GPR_TIMESPAN)) != 0) {
-        *per_method_deadline =
-            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// Gets data from the service config.  Invoked when the resolver returns
-// its initial result.
-static void read_service_config_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                       grpc_error *error) {
-  grpc_call_element *elem = arg;
-  call_data *calld = elem->call_data;
-  // If this is an error, there's no point in looking at the service config.
-  if (error == GRPC_ERROR_NONE) {
-    gpr_timespec per_method_deadline;
-    if (set_call_method_params_from_service_config_locked(
-            exec_ctx, elem, &per_method_deadline)) {
-      // If the deadline from the service config is shorter than the one
-      // from the client API, reset the deadline timer.
-      if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
-        calld->deadline = per_method_deadline;
-        grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
-      }
-    }
-  }
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
-}
-
-static void initial_read_service_config_locked(grpc_exec_ctx *exec_ctx,
-                                               void *arg,
-                                               grpc_error *error_ignored) {
-  grpc_call_element *elem = arg;
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  // If the resolver has already returned results, then we can access
-  // the service config parameters immediately.  Otherwise, we need to
-  // defer that work until the resolver returns an initial result.
-  if (chand->lb_policy != NULL) {
-    // We already have a resolver result, so check for service config.
-    gpr_timespec per_method_deadline;
-    if (set_call_method_params_from_service_config_locked(
-            exec_ctx, elem, &per_method_deadline)) {
-      calld->deadline = gpr_time_min(calld->deadline, per_method_deadline);
-    }
-  } else {
-    // We don't yet have a resolver result, so register a callback to
-    // get the service config data once the resolver returns.
-    // Take a reference to the call stack to be owned by the callback.
-    GRPC_CALL_STACK_REF(calld->owning_call, "read_service_config");
-    grpc_closure_init(&calld->read_service_config, read_service_config_locked,
-                      elem, grpc_combiner_scheduler(chand->combiner, false));
-    grpc_closure_list_append(&chand->waiting_for_config_closures,
-                             &calld->read_service_config, GRPC_ERROR_NONE);
-  }
-  // Start the deadline timer with the current deadline value.  If we
-  // do not yet have service config data, then the timer may be reset
-  // later.
-  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
-                        "initial_read_service_config");
-}
-
 /* Constructor for call_data */
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   // Initialize data members.
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
-  calld->method_params = NULL;
-  calld->cancel_error = GRPC_ERROR_NONE;
-  gpr_atm_rel_store(&calld->subchannel_call, 0);
-  calld->connected_subchannel = NULL;
-  calld->waiting_ops = NULL;
-  calld->waiting_ops_count = 0;
-  calld->waiting_ops_capacity = 0;
-  calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   calld->owning_call = args->call_stack;
-  calld->pollent = NULL;
-  GRPC_CALL_STACK_REF(calld->owning_call, "initial_read_service_config");
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&calld->read_service_config,
-                        initial_read_service_config_locked, elem,
-                        grpc_combiner_scheduler(chand->combiner, false)),
-      GRPC_ERROR_NONE);
+  calld->arena = args->arena;
+  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
   return GRPC_ERROR_NONE;
 }
 
@@ -1175,7 +1255,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
 static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
                                  const grpc_call_final_info *final_info,
-                                 void *and_free_memory) {
+                                 grpc_closure *then_schedule_closure) {
   call_data *calld = elem->call_data;
   grpc_deadline_state_destroy(exec_ctx, elem);
   grpc_slice_unref_internal(exec_ctx, calld->path);
@@ -1185,6 +1265,8 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(calld->cancel_error);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {
+    grpc_subchannel_call_set_cleanup_closure(call, then_schedule_closure);
+    then_schedule_closure = NULL;
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call, "client_channel_destroy_call");
   }
   GPR_ASSERT(calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING);
@@ -1194,7 +1276,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                     "picked");
   }
   gpr_free(calld->waiting_ops);
-  gpr_free(and_free_memory);
+  grpc_closure_sched(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,

@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.2.0-dev'
+  version = '1.3.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -196,6 +196,7 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/arena.h',
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
@@ -211,6 +212,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.c',
                       'src/core/lib/profiling/stap_timers.c',
                       'src/core/lib/support/alloc.c',
+                      'src/core/lib/support/arena.c',
+                      'src/core/lib/support/atm.c',
                       'src/core/lib/support/avl.c',
                       'src/core/lib/support/backoff.c',
                       'src/core/lib/support/cmdline.c',
@@ -309,6 +312,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_posix.h',
                       'src/core/lib/iomgr/tcp_posix.h',
                       'src/core/lib/iomgr/tcp_server.h',
+                      'src/core/lib/iomgr/tcp_server_utils_posix.h',
                       'src/core/lib/iomgr/tcp_uv.h',
                       'src/core/lib/iomgr/tcp_windows.h',
                       'src/core/lib/iomgr/time_averaged_stats.h',
@@ -408,7 +412,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/connector.h',
                       'src/core/ext/client_channel/http_connect_handshaker.h',
                       'src/core/ext/client_channel/http_proxy.h',
-                      'src/core/ext/client_channel/initial_connect_string.h',
                       'src/core/ext/client_channel/lb_policy.h',
                       'src/core/ext/client_channel/lb_policy_factory.h',
                       'src/core/ext/client_channel/lb_policy_registry.h',
@@ -418,6 +421,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/resolver.h',
                       'src/core/ext/client_channel/resolver_factory.h',
                       'src/core/ext/client_channel/resolver_registry.h',
+                      'src/core/ext/client_channel/retry_throttle.h',
                       'src/core/ext/client_channel/subchannel.h',
                       'src/core/ext/client_channel/subchannel_index.h',
                       'src/core/ext/client_channel/uri_parser.h',
@@ -508,6 +512,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_windows.c',
                       'src/core/lib/iomgr/tcp_posix.c',
                       'src/core/lib/iomgr/tcp_server_posix.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_common.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c',
                       'src/core/lib/iomgr/tcp_server_uv.c',
                       'src/core/lib/iomgr/tcp_server_windows.c',
                       'src/core/lib/iomgr/tcp_uv.c',
@@ -624,10 +631,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/client_channel_factory.c',
                       'src/core/ext/client_channel/client_channel_plugin.c',
                       'src/core/ext/client_channel/connector.c',
-                      'src/core/ext/client_channel/default_initial_connect_string.c',
                       'src/core/ext/client_channel/http_connect_handshaker.c',
                       'src/core/ext/client_channel/http_proxy.c',
-                      'src/core/ext/client_channel/initial_connect_string.c',
                       'src/core/ext/client_channel/lb_policy.c',
                       'src/core/ext/client_channel/lb_policy_factory.c',
                       'src/core/ext/client_channel/lb_policy_registry.c',
@@ -637,6 +642,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/resolver.c',
                       'src/core/ext/client_channel/resolver_factory.c',
                       'src/core/ext/client_channel/resolver_registry.c',
+                      'src/core/ext/client_channel/retry_throttle.c',
                       'src/core/ext/client_channel/subchannel.c',
                       'src/core/ext/client_channel/subchannel_index.c',
                       'src/core/ext/client_channel/uri_parser.c',
@@ -675,6 +681,7 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
+                              'src/core/lib/support/arena.h',
                               'src/core/lib/support/backoff.h',
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
@@ -744,6 +751,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',
                               'src/core/lib/iomgr/tcp_server.h',
+                              'src/core/lib/iomgr/tcp_server_utils_posix.h',
                               'src/core/lib/iomgr/tcp_uv.h',
                               'src/core/lib/iomgr/tcp_windows.h',
                               'src/core/lib/iomgr/time_averaged_stats.h',
@@ -843,7 +851,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/connector.h',
                               'src/core/ext/client_channel/http_connect_handshaker.h',
                               'src/core/ext/client_channel/http_proxy.h',
-                              'src/core/ext/client_channel/initial_connect_string.h',
                               'src/core/ext/client_channel/lb_policy.h',
                               'src/core/ext/client_channel/lb_policy_factory.h',
                               'src/core/ext/client_channel/lb_policy_registry.h',
@@ -853,6 +860,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/resolver.h',
                               'src/core/ext/client_channel/resolver_factory.h',
                               'src/core/ext/client_channel/resolver_registry.h',
+                              'src/core/ext/client_channel/retry_throttle.h',
                               'src/core/ext/client_channel/subchannel.h',
                               'src/core/ext/client_channel/subchannel_index.h',
                               'src/core/ext/client_channel/uri_parser.h',

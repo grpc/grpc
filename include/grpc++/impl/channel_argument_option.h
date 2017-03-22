@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,22 @@
  *
  */
 
-#include <grpc/slice.h>
-#include "src/core/lib/iomgr/resolve_address.h"
+#ifndef GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H
+#define GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H
 
-void grpc_set_default_initial_connect_string(grpc_resolved_address **addr,
-                                             grpc_slice *initial_str) {}
+#include <map>
+#include <memory>
+
+#include <grpc++/impl/server_builder_option.h>
+#include <grpc++/support/channel_arguments.h>
+
+namespace grpc {
+
+std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
+    const grpc::string &name, const grpc::string &value);
+std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
+    const grpc::string &name, int value);
+
+}  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H

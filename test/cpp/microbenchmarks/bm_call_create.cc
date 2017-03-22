@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sstream>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -56,9 +57,33 @@ extern "C" {
 #include "src/core/lib/transport/transport_impl.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 auto &force_library_initialization = Library::get();
+
+void BM_Zalloc(benchmark::State &state) {
+  // speed of light for call creation is zalloc, so benchmark a few interesting
+  // sizes
+  size_t sz = state.range(0);
+  while (state.KeepRunning()) {
+    gpr_free(gpr_zalloc(sz));
+  }
+}
+BENCHMARK(BM_Zalloc)
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512)
+    ->Arg(1024)
+    ->Arg(1536)
+    ->Arg(2048)
+    ->Arg(3072)
+    ->Arg(4096)
+    ->Arg(5120)
+    ->Arg(6144)
+    ->Arg(7168);
 
 class BaseChannelFixture {
  public:
@@ -104,6 +129,33 @@ static void BM_CallCreateDestroy(benchmark::State &state) {
 
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, InsecureChannel);
 BENCHMARK_TEMPLATE(BM_CallCreateDestroy, LameChannel);
+
+static void *tag(int i) {
+  return reinterpret_cast<void *>(static_cast<intptr_t>(i));
+}
+
+static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
+  TrackCounters track_counters;
+  auto stub =
+      grpc::testing::EchoTestService::NewStub(grpc::CreateChannelInternal(
+          "", grpc_lame_client_channel_create(
+                  "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah")));
+  grpc::CompletionQueue cq;
+  grpc::testing::EchoRequest send_request;
+  grpc::testing::EchoResponse recv_response;
+  grpc::Status recv_status;
+  while (state.KeepRunning()) {
+    grpc::ClientContext cli_ctx;
+    auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
+    reader->Finish(&recv_response, &recv_status, tag(0));
+    void *t;
+    bool ok;
+    GPR_ASSERT(cq.Next(&t, &ok));
+    GPR_ASSERT(ok);
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_LameChannelCallCreateCpp);
 
 static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
@@ -180,7 +232,7 @@ static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
 
 static void DestroyCallElem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
-                            void *and_free_memory) {}
+                            grpc_closure *then_sched_closure) {}
 
 grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                             grpc_channel_element_args *args) {
@@ -223,7 +275,7 @@ const char *name;
 /* implementation of grpc_transport_init_stream */
 int InitStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                grpc_stream *stream, grpc_stream_refcount *refcount,
-               const void *server_data) {
+               const void *server_data, gpr_arena *arena) {
   return 0;
 }
 
@@ -247,7 +299,7 @@ void PerformOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_destroy_stream */
 void DestroyStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                   grpc_stream *stream, void *and_free_memory) {}
+                   grpc_stream *stream, grpc_closure *then_sched_closure) {}
 
 /* implementation of grpc_transport_destroy */
 void Destroy(grpc_exec_ctx *exec_ctx, grpc_transport *self) {}
@@ -342,7 +394,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_channel_stack *channel_stack =
       static_cast<grpc_channel_stack *>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "call_stack_init",
+      "channel_stack_init",
       grpc_channel_stack_init(&exec_ctx, 1, FilterDestroy, channel_stack,
                               &filters[0], filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
@@ -357,15 +409,29 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
+  grpc_call_element_args call_args;
+  call_args.call_stack = call_stack;
+  call_args.server_transport_data = NULL;
+  call_args.context = NULL;
+  call_args.path = method;
+  call_args.start_time = start_time;
+  call_args.deadline = deadline;
+  const int kArenaSize = 4096;
+  call_args.arena = gpr_arena_create(kArenaSize);
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
-                                          DoNothing, NULL, NULL, NULL, method,
-                                          start_time, deadline, call_stack));
+                                          DoNothing, NULL, &call_args));
     typename TestOp::Op op(&exec_ctx, &test_op_data, call_stack);
     grpc_call_stack_destroy(&exec_ctx, call_stack, &final_info, NULL);
     op.Finish(&exec_ctx);
     grpc_exec_ctx_flush(&exec_ctx);
+    // recreate arena every 64k iterations to avoid oom
+    if (0 == (state.iterations() & 0xffff)) {
+      gpr_arena_destroy(call_args.arena);
+      call_args.arena = gpr_arena_create(kArenaSize);
+    }
   }
+  gpr_arena_destroy(call_args.arena);
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(channel_stack);

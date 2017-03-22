@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,48 @@
  *
  */
 
-#include "src/core/ext/client_channel/initial_connect_string.h"
+#include <grpc++/impl/channel_argument_option.h>
 
-#include <stddef.h>
+namespace grpc {
 
-extern void grpc_set_default_initial_connect_string(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
+    const grpc::string &name, const grpc::string &value) {
+  class StringOption final : public ServerBuilderOption {
+   public:
+    StringOption(const grpc::string &name, const grpc::string &value)
+        : name_(name), value_(value) {}
 
-static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
-    grpc_set_default_initial_connect_string;
+    virtual void UpdateArguments(ChannelArguments *args) override {
+      args->SetString(name_, value_);
+    }
+    virtual void UpdatePlugins(
+        std::vector<std::unique_ptr<ServerBuilderPlugin>> *plugins) override {}
 
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func) {
-  g_set_initial_connect_string_func = func;
+   private:
+    const grpc::string name_;
+    const grpc::string value_;
+  };
+  return std::unique_ptr<ServerBuilderOption>(new StringOption(name, value));
 }
 
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *initial_str) {
-  g_set_initial_connect_string_func(addr, initial_str);
+std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
+    const grpc::string &name, int value) {
+  class IntOption final : public ServerBuilderOption {
+   public:
+    IntOption(const grpc::string &name, int value)
+        : name_(name), value_(value) {}
+
+    virtual void UpdateArguments(ChannelArguments *args) override {
+      args->SetInt(name_, value_);
+    }
+    virtual void UpdatePlugins(
+        std::vector<std::unique_ptr<ServerBuilderPlugin>> *plugins) override {}
+
+   private:
+    const grpc::string name_;
+    const int value_;
+  };
+  return std::unique_ptr<ServerBuilderOption>(new IntOption(name, value));
 }
+
+}  // namespace grpc

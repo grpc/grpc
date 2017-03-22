@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
+#include <grpc/support/atm.h>
+#include <grpc/support/useful.h>
 
-#include <grpc/slice.h>
-#include "src/core/lib/iomgr/resolve_address.h"
-
-typedef void (*grpc_set_initial_connect_string_func)(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
-
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func);
-
-/** Set a string to be sent once connected. Optionally reset addr. */
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *connect_string);
-
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H */
+gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
+                                       gpr_atm min, gpr_atm max) {
+  gpr_atm current;
+  gpr_atm new;
+  do {
+    current = gpr_atm_no_barrier_load(value);
+    new = GPR_CLAMP(current + delta, min, max);
+    if (new == current) break;
+  } while (!gpr_atm_no_barrier_cas(value, current, new));
+  return new;
+}
