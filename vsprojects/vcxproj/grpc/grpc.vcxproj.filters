@@ -247,6 +247,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
+      <Filter>src\core\lib\security\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
@@ -489,9 +492,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.c">
       <Filter>src\core\lib\security\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
-      <Filter>src\core\lib\security\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.c">
       <Filter>src\core\lib\security\util</Filter>

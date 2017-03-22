@@ -939,6 +939,7 @@ add_library(grpc
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/security/util/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1020,7 +1021,6 @@ add_library(grpc
   src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
-  src/core/lib/security/util/b64.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/lib/tsi/fake_transport_security.c
@@ -1248,6 +1248,7 @@ add_library(grpc_cronet
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/security/util/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1353,7 +1354,6 @@ add_library(grpc_cronet
   src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
-  src/core/lib/security/util/b64.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/lib/tsi/fake_transport_security.c
@@ -1548,6 +1548,7 @@ add_library(grpc_test_util
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/security/util/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1794,6 +1795,7 @@ add_library(grpc_unsecure
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/security/util/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -2401,6 +2403,7 @@ add_library(grpc++_cronet
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/security/util/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c

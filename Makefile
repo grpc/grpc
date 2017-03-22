@@ -2826,6 +2826,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -2907,7 +2908,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
@@ -3138,6 +3138,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -3243,7 +3244,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
@@ -3441,6 +3441,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -3667,6 +3668,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -4276,6 +4278,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -18561,7 +18564,6 @@ src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
-src/core/lib/security/util/b64.c: $(OPENSSL_DEP)
 src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
