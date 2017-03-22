@@ -81,6 +81,7 @@ static void test_no_op(void) {
   grpc_completion_queue_attributes attr;
   LOG_TEST("test_no_op");
 
+  attr.version = 1;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(completion_types); i++) {
     for (size_t j = 0; j < GPR_ARRAY_SIZE(polling_types); j++) {
       attr.cq_completion_type = completion_types[i];
@@ -100,6 +101,7 @@ static void test_pollset_conversion(void) {
 
   LOG_TEST("test_pollset_conversion");
 
+  attr.version = 1;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(completion_types); i++) {
     for (size_t j = 0; j < GPR_ARRAY_SIZE(polling_types); j++) {
       attr.cq_completion_type = completion_types[i];
@@ -121,8 +123,8 @@ static void test_wait_empty(void) {
 
   LOG_TEST("test_wait_empty");
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
-
   for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
     attr.cq_polling_type = polling_types[i];
     cc = grpc_completion_queue_create(
@@ -149,8 +151,8 @@ static void test_cq_end_op(void) {
 
   LOG_TEST("test_cq_end_op");
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
-
   for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
     exec_ctx = init_exec_ctx;  // Reset exec_ctx
     attr.cq_polling_type = polling_types[i];
@@ -179,8 +181,8 @@ static void test_shutdown_then_next_polling(void) {
   grpc_event event;
   LOG_TEST("test_shutdown_then_next_polling");
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
-
   for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
     attr.cq_polling_type = polling_types[i];
     cc = grpc_completion_queue_create(
@@ -201,8 +203,8 @@ static void test_shutdown_then_next_with_timeout(void) {
   grpc_event event;
   LOG_TEST("test_shutdown_then_next_with_timeout");
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
-
   for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
     attr.cq_polling_type = polling_types[i];
     cc = grpc_completion_queue_create(
@@ -237,8 +239,8 @@ static void test_pluck(void) {
     }
   }
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_PLUCK;
-
   for (size_t pidx = 0; pidx < GPR_ARRAY_SIZE(polling_types); pidx++) {
     exec_ctx = init_exec_ctx;  // reset exec_ctx
     attr.cq_polling_type = polling_types[pidx];
@@ -283,8 +285,8 @@ static void test_pluck_after_shutdown(void) {
 
   LOG_TEST("test_pluck_after_shutdown");
 
+  attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_PLUCK;
-
   for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
     attr.cq_polling_type = polling_types[i];
     cc = grpc_completion_queue_create(

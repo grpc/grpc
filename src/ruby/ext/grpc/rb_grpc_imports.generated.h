@@ -233,7 +233,7 @@ extern grpc_completion_queue_create_for_next_type grpc_completion_queue_create_f
 typedef grpc_completion_queue *(*grpc_completion_queue_create_for_pluck_type)(void *reserved);
 extern grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
 #define grpc_completion_queue_create_for_pluck grpc_completion_queue_create_for_pluck_import
-typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type, void *reserved);
+typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(const grpc_completion_queue_factory *factory, const grpc_completion_queue_attributes *attributes, void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
 typedef grpc_event(*grpc_completion_queue_next_type)(grpc_completion_queue *cq, gpr_timespec deadline, void *reserved);
