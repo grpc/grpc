@@ -457,7 +457,6 @@ add_dependencies(buildtests_c secure_endpoint_test)
 add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
-add_dependencies(buildtests_c set_initial_connect_string_test)
 add_dependencies(buildtests_c slice_buffer_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
@@ -1042,10 +1041,8 @@ add_library(grpc
   src/core/ext/client_channel/client_channel_factory.c
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
@@ -1328,10 +1325,8 @@ add_library(grpc_cronet
   src/core/ext/client_channel/client_channel_factory.c
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
@@ -1883,10 +1878,8 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/client_channel_factory.c
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
@@ -2468,10 +2461,8 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/client_channel_factory.c
   src/core/ext/client_channel/client_channel_plugin.c
   src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/default_initial_connect_string.c
   src/core/ext/client_channel/http_connect_handshaker.c
   src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/initial_connect_string.c
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
@@ -6874,34 +6865,6 @@ target_include_directories(server_test
 
 target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(set_initial_connect_string_test
-  test/core/client_channel/set_initial_connect_string_test.c
-)
-
-
-target_include_directories(set_initial_connect_string_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(set_initial_connect_string_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  test_tcp_server
   grpc_test_util
   grpc
   gpr_test_util
