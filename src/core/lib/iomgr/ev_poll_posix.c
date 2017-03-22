@@ -1421,7 +1421,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     g_cvfds.pollcount++;
     opt = gpr_thd_options_default();
     gpr_thd_options_set_detached(&opt);
-    gpr_thd_new(&t_id, &run_poll, pargs, &opt);
+    GPR_ASSERT(gpr_thd_new(&t_id, &run_poll, pargs, &opt));
     // We want the poll() thread to trigger the deadline, so wait forever here
     gpr_cv_wait(pollcv, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     if (gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
