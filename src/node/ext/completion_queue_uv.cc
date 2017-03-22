@@ -92,8 +92,7 @@ void CompletionQueueNext() {
 }
 
 void CompletionQueueInit(Local<Object> exports) {
-  queue =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
+  queue = grpc_completion_queue_create_for_next(NULL);
   uv_prepare_init(uv_default_loop(), &prepare);
   pending_batches = 0;
 }

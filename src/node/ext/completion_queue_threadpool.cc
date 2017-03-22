@@ -141,8 +141,7 @@ void CompletionQueueAsyncWorker::Init(Local<Object> exports) {
   Nan::HandleScope scope;
   current_threads = 0;
   waiting_next_calls = 0;
-  queue =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
+  queue = grpc_completion_queue_create_for_next(NULL);
 }
 
 void CompletionQueueAsyncWorker::HandleOKCallback() {

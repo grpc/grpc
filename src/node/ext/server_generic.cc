@@ -44,8 +44,7 @@ namespace grpc {
 namespace node {
 
 Server::Server(grpc_server *server) : wrapped_server(server) {
-  shutdown_queue = grpc_completion_queue_create(GRPC_CQ_PLUCK,
-                                                GRPC_CQ_DEFAULT_POLLING, NULL);
+  shutdown_queue = grpc_completion_queue_create_for_pluck(NULL);
   grpc_server_register_non_listening_completion_queue(server, shutdown_queue,
                                                       NULL);
 }
