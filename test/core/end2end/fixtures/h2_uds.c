@@ -70,10 +70,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
                unique++);
 
   f.fixture_data = ffd;
-  f.cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
-  f.shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
   return f;
 }
@@ -104,9 +102,10 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_uds", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-                                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                 FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+    {"chttp2/fullstack_uds",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };

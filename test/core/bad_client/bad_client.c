@@ -125,8 +125,7 @@ void grpc_run_bad_client_test(
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
-  a.cq =
-      grpc_completion_queue_create(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL);
+  a.cq = grpc_completion_queue_create_for_next(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = server_validator;
@@ -198,8 +197,7 @@ void grpc_run_bad_client_test(
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
-  shutdown_cq =
-      grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_NON_POLLING, NULL);
+  shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
                  shutdown_cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
