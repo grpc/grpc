@@ -273,8 +273,7 @@ static char *roots_filename;
 }
 
 - (void)testCompressedPayload {
-  // NOT SUPPORTED
-  // [self testIndividualCase:"compressed_payload"];
+  [self testIndividualCase:"compressed_payload"];
 }
 
 - (void)testConnectivity {

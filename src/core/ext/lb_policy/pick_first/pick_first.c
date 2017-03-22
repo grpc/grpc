@@ -423,11 +423,13 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
               "This LB policy doesn't support user data. It will be ignored");
     }
 
+    static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     grpc_arg addr_arg =
         grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
-    grpc_channel_args *new_args =
-        grpc_channel_args_copy_and_add(args->args, &addr_arg, 1);
+    grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
+        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg,
+        1);
     gpr_free(addr_arg.value.string);
     sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
