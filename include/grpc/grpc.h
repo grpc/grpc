@@ -128,7 +128,6 @@ typedef enum {
   GRPC_CQ_NON_POLLING
 } grpc_cq_polling_type;
 
-
 #define GRPC_CQ_CURRENT_VERSION 1
 typedef struct grpc_completion_queue_attributes {
   /* The version number of this structure. More fields might be added to this
