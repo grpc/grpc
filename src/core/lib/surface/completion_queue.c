@@ -115,15 +115,17 @@ int grpc_cq_event_timeout_trace;
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
 
-grpc_completion_queue *grpc_completion_queue_create(
-    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
-    void *reserved) {
+grpc_completion_queue *grpc_completion_queue_create_internal(
+    grpc_cq_completion_type completion_type,
+    grpc_cq_polling_type polling_type) {
   grpc_completion_queue *cc;
-  GPR_ASSERT(!reserved);
 
-  GPR_TIMER_BEGIN("grpc_completion_queue_create", 0);
+  GPR_TIMER_BEGIN("grpc_completion_queue_create_internal", 0);
 
-  GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
+  GRPC_API_TRACE(
+      "grpc_completion_queue_create_internal(completion_type=%d, "
+      "polling_type=%d)",
+      2, (completion_type, polling_type));
 
   cc = gpr_zalloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
   grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
@@ -153,7 +155,7 @@ grpc_completion_queue *grpc_completion_queue_create(
   grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc,
                     grpc_schedule_on_exec_ctx);
 
-  GPR_TIMER_END("grpc_completion_queue_create", 0);
+  GPR_TIMER_END("grpc_completion_queue_create_internal", 0);
 
   return cc;
 }
@@ -381,8 +383,9 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5,
+      (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+       reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cc);
@@ -556,8 +559,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
-            (int)deadline.clock_type, reserved));
+        6,
+        (cc, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+         reserved));
   }
   GPR_ASSERT(!reserved);
 

@@ -128,7 +128,6 @@ typedef enum {
   GRPC_CQ_NON_POLLING
 } grpc_cq_polling_type;
 
-
 #define GRPC_CQ_CURRENT_VERSION 1
 typedef struct grpc_completion_queue_attributes {
   /* The version number of this structure. More fields might be added to this
@@ -161,8 +160,8 @@ GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_pluck(
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue *grpc_completion_queue_create(
-    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
-    void *reserved);
+    const grpc_completion_queue_factory *factory,
+    const grpc_completion_queue_attributes *attributes, void *reserved);
 
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
