@@ -107,8 +107,11 @@ static NSMutableDictionary *callFlags;
 
   GRPCRequestHeaders *_requestHeaders;
 
+  // In the case that the call is a unary call (i.e. the writer to GRPCCall is of type
+  // GRXImmediateSingleWriter), GRPCCall will delay sending ops (not send them to C core
+  // immediately) and buffer them into a batch _unaryOpBatch. The batch is sent to C core when
+  // the SendClose op is added.
   BOOL _unaryCall;
-
   NSMutableArray *_unaryOpBatch;
 }
 

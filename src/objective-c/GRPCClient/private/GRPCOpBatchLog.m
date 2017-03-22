@@ -31,11 +31,13 @@
  *
  */
 
+#ifdef GRPC_TEST_OBJC
+
 #import "GRPCOpBatchLog.h"
 
-@implementation GRPCOpBatchLog
+static NSMutableArray *opBatchLog = nil;
 
-NSMutableArray *opBatchLog = nil;
+@implementation GRPCOpBatchLog
 
 + (void)enableOpBatchLog:(BOOL)enabled {
   @synchronized (opBatchLog) {
@@ -66,3 +68,5 @@ NSMutableArray *opBatchLog = nil;
 }
 
 @end
+
+#endif

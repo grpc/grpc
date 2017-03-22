@@ -31,6 +31,9 @@
  *
  */
 
+
+#ifdef GRPC_TEST_OBJC
+
 /**
  * Logs the op batches of a client. Used for testing.
  */
@@ -52,3 +55,5 @@
 + (NSArray *)obtainAndCleanOpBatchLog;
 
 @end
+
+#endif

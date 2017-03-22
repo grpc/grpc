@@ -35,41 +35,40 @@
 
 @implementation GRXImmediateSingleWriter {
   id _value;
-  NSError *_errorOrNil;
   id<GRXWriteable> _writeable;
 }
 
 @synthesize state = _state;
 
-- (instancetype)initWithValue:(id)value error:(NSError *)errorOrNil {
+- (instancetype)initWithValue:(id)value {
   if (self = [super init]) {
     _value = value;
-    _errorOrNil = errorOrNil;
     _state = GRXWriterStateNotStarted;
   }
   return self;
 }
 
 + (GRXWriter *)writerWithValue:(id)value {
-  return [[self alloc] initWithValue:value error:nil];
+  return [[self alloc] initWithValue:value];
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   _state = GRXWriterStateStarted;
   _writeable = writeable;
   [writeable writeValue:_value];
-  [self finishWithError:_errorOrNil];
+  [self finish];
 }
 
-- (void)finishWithError:(NSError *)errorOrNil {
+- (void)finish {
   _state = GRXWriterStateFinished;
-  _errorOrNil = nil;
   _value = nil;
   id<GRXWriteable> writeable = _writeable;
   _writeable = nil;
-  [writeable writesFinishedWithError:errorOrNil];
+  [writeable writesFinishedWithError:nil];
 }
 
+// Overwrite the setter to disallow manual state transition. The getter
+// of _state is synthesized.
 - (void)setState:(GRXWriterState)newState {
   // Manual state transition is not allowed
   return;
