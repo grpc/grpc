@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
+#include <assert.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -124,6 +125,7 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                       grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != NULL) {
+    assert(c->cb);
     c->scheduler->vtable->run(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -135,6 +137,7 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                         grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -146,6 +149,7 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
   grpc_closure *c = list->head;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
     c = next;
   }

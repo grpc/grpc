@@ -771,6 +771,7 @@ doc/compression_cookbook.md \
 doc/connection-backoff-interop-test-description.md \
 doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
+doc/core/grpc-error.md \
 doc/core/pending_api_cleanups.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
@@ -904,13 +905,10 @@ src/core/ext/client_channel/client_channel_factory.h \
 src/core/ext/client_channel/client_channel_plugin.c \
 src/core/ext/client_channel/connector.c \
 src/core/ext/client_channel/connector.h \
-src/core/ext/client_channel/default_initial_connect_string.c \
 src/core/ext/client_channel/http_connect_handshaker.c \
 src/core/ext/client_channel/http_connect_handshaker.h \
 src/core/ext/client_channel/http_proxy.c \
 src/core/ext/client_channel/http_proxy.h \
-src/core/ext/client_channel/initial_connect_string.c \
-src/core/ext/client_channel/initial_connect_string.h \
 src/core/ext/client_channel/lb_policy.c \
 src/core/ext/client_channel/lb_policy.h \
 src/core/ext/client_channel/lb_policy_factory.c \

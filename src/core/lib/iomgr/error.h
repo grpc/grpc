@@ -45,28 +45,9 @@ extern "C" {
 #endif
 
 /// Opaque representation of an error.
-/// Errors are refcounted objects that represent the result of an operation.
-/// Ownership laws:
-///  if a grpc_error is returned by a function, the caller owns a ref to that
-///    instance
-///  if a grpc_error is passed to a grpc_closure callback function (functions
-///    with the signature:
-///      void (*f)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error))
-///    then those functions do not own a ref to error (but are free to manually
-///    take a reference).
-///  if a grpc_error is passed to *ANY OTHER FUNCTION* then that function takes
-///    ownership of the error
-/// Errors have:
-///  a set of ints, strings, and timestamps that describe the error
-///  always present are:
-///    GRPC_ERROR_STR_FILE, GRPC_ERROR_INT_FILE_LINE - source location the error
-///      was generated
-///    GRPC_ERROR_STR_DESCRIPTION - a human readable description of the error
-///    GRPC_ERROR_TIME_CREATED - a timestamp indicating when the error happened
-///  an error can also have children; these are other errors that are believed
-///    to have contributed to this one. By accumulating children, we can begin
-///    to root cause high level failures from low level failures, without having
-///    to derive execution paths from log lines
+/// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
+/// full write up of this object.
+
 typedef struct grpc_error grpc_error;
 
 typedef enum {
