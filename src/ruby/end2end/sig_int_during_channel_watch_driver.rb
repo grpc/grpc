@@ -62,6 +62,8 @@ def main
     raise 'Timed out waiting for client process. It likely hangs when a ' \
       'SIGINT is sent while there is an active connectivity_state call'
   end
+
+  server_runner.stop
 end
 
 main
