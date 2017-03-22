@@ -71,7 +71,7 @@ grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
 
 grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
   GPR_ASSERT(!reserved);
-  grpc_completion_queue_attributes attr = {1, GRPC_CQ_NEXT,
+  grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
                                            GRPC_CQ_DEFAULT_POLLING};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }

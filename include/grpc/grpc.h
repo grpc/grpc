@@ -135,7 +135,7 @@ typedef struct grpc_completion_queue_attributes {
      structure in future. */
   int version; /* Set to GRPC_CQ_CURRENT_VERSION */
 
-  grpc_cq_completion_type cq_type;
+  grpc_cq_completion_type cq_completion_type;
 
   grpc_cq_polling_type cq_polling_type;
 } grpc_completion_queue_attributes;
