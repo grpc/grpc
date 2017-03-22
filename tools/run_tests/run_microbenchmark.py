@@ -46,6 +46,8 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
                               'bm_call_create',
                               'bm_error',
                               'bm_chttp2_hpack',
+                              'bm_chttp2_transport',
+                              'bm_pollset',
                               'bm_metadata',
                               'bm_fullstack_trickle']
 

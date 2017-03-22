@@ -32,7 +32,7 @@
 set -ex
 
 # List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_metadata"
+BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
