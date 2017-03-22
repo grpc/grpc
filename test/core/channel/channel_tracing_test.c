@@ -122,6 +122,7 @@ static void test_basic_channel_tracing(size_t max_nodes) {
 }
 
 static void test_basic_channel_sizing() {
+  test_basic_channel_tracing(0);
   test_basic_channel_tracing(1);
   test_basic_channel_tracing(2);
   test_basic_channel_tracing(6);
@@ -182,6 +183,7 @@ static void test_complex_channel_tracing(size_t max_nodes) {
 }
 
 static void test_complex_channel_sizing() {
+  test_complex_channel_tracing(0);
   test_complex_channel_tracing(1);
   test_complex_channel_tracing(2);
   test_complex_channel_tracing(6);
