@@ -38,9 +38,7 @@
 grpc_completion_queue *completion_queue;
 
 void grpc_php_init_completion_queue(TSRMLS_D) {
-  completion_queue = grpc_completion_queue_create(GRPC_CQ_PLUCK,
-                                                  GRPC_CQ_DEFAULT_POLLING,
-                                                  NULL);
+  completion_queue = grpc_completion_queue_create_for_pluck(NULL);
 }
 
 void grpc_php_shutdown_completion_queue(TSRMLS_D) {
