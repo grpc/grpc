@@ -414,7 +414,6 @@ filegroups:
   - src/core/ext/client_channel/connector.h
   - src/core/ext/client_channel/http_connect_handshaker.h
   - src/core/ext/client_channel/http_proxy.h
-  - src/core/ext/client_channel/initial_connect_string.h
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
@@ -434,10 +433,8 @@ filegroups:
   - src/core/ext/client_channel/client_channel_factory.c
   - src/core/ext/client_channel/client_channel_plugin.c
   - src/core/ext/client_channel/connector.c
-  - src/core/ext/client_channel/default_initial_connect_string.c
   - src/core/ext/client_channel/http_connect_handshaker.c
   - src/core/ext/client_channel/http_proxy.c
-  - src/core/ext/client_channel/initial_connect_string.c
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
@@ -2701,20 +2698,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: set_initial_connect_string_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/client_channel/set_initial_connect_string_test.c
-  deps:
-  - test_tcp_server
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
 - name: slice_buffer_test
   build: test
   language: c
@@ -3116,6 +3099,26 @@ targets:
   language: c++
   src:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_chttp2_transport
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:
   - grpc_benchmark
   - benchmark
