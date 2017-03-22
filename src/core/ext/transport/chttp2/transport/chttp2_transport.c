@@ -1471,6 +1471,7 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 void grpc_chttp2_ping_strike(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
+  gpr_log(GPR_DEBUG, "PING strike");
   if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
       t->ping_policy.max_ping_strikes != 0) {
     send_goaway(exec_ctx, t,
