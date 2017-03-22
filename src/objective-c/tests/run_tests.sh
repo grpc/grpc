@@ -62,6 +62,18 @@ xcodebuild \
 
 xcodebuild \
     -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests \
+    -destination name="iPhone 6" \
+    test | xcpretty
+
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CronetUnitTests \
+    -destination name="iPhone 6" \
+    test | xcpretty
+
+xcodebuild \
+    -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 6" \
     test | xcpretty
