@@ -35,6 +35,7 @@
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
@@ -68,6 +69,8 @@ grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel);
 void grpc_channel_update_call_size_estimate(grpc_channel *channel, size_t size);
+
+grpc_json* grpc_channel_get_trace(grpc_channel *channel);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

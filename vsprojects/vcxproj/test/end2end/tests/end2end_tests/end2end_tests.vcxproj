@@ -175,6 +175,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_with_status.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\channel_tracing.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\compressed_payload.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\connectivity.c">
@@ -246,8 +248,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request_with_channel_tracing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\streaming_error_response.c">
     </ClCompile>

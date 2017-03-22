@@ -192,6 +192,10 @@ done:
   return channel;
 }
 
+grpc_json* grpc_channel_get_trace(grpc_channel *channel) {
+  return channel->tracer ? grpc_channel_tracer_get_trace(channel->tracer) : NULL;
+}
+
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
 #define ROUND_UP_SIZE 256
   return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
@@ -385,7 +389,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_channel_tracer_log_trace(channel->tracer);
   GRPC_CHANNEL_TRACER_UNREF(channel->tracer);
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;

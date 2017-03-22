@@ -94,6 +94,7 @@ grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes) {
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
                                              const char* file, int line,
                                              const char* func) {
+  if (!tracer) return tracer;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", tracer,
           gpr_atm_no_barrier_load(&tracer->refs.count),
           gpr_atm_no_barrier_load(&tracer->refs.count) + 1, file, line, func);
@@ -102,6 +103,7 @@ grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
 }
 #else
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer) {
+  if (!tracer) return tracer;
   gpr_ref(&tracer->refs);
   return tracer;
 }
@@ -129,6 +131,7 @@ void grpc_channel_tracer_destroy(grpc_channel_tracer* tracer) {
 #ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
 void grpc_channel_tracer_unref(grpc_channel_tracer* tracer, const char* file,
                                int line, const char* func) {
+  if (!tracer) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", tracer,
           gpr_atm_no_barrier_load(&tracer->refs.count),
           gpr_atm_no_barrier_load(&tracer->refs.count) - 1, file, line, func);
@@ -138,6 +141,7 @@ void grpc_channel_tracer_unref(grpc_channel_tracer* tracer, const char* file,
 }
 #else
 void grpc_channel_tracer_unref(grpc_channel_tracer* tracer) {
+  if (!tracer) return;
   if (gpr_unref(&tracer->refs)) {
     grpc_channel_tracer_destroy(tracer);
   }

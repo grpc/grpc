@@ -3375,6 +3375,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/util/channel_tracing_utils.c \
     test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
@@ -3579,6 +3580,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/util/channel_tracing_utils.c \
     test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
@@ -7822,6 +7824,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \
+    test/core/end2end/tests/channel_tracing.c \
     test/core/end2end/tests/compressed_payload.c \
     test/core/end2end/tests/connectivity.c \
     test/core/end2end/tests/default_host.c \
@@ -7858,7 +7861,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
-    test/core/end2end/tests/simple_request_with_channel_tracing.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
     test/core/end2end/tests/write_buffering.c \
@@ -7912,6 +7914,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \
+    test/core/end2end/tests/channel_tracing.c \
     test/core/end2end/tests/compressed_payload.c \
     test/core/end2end/tests/connectivity.c \
     test/core/end2end/tests/default_host.c \
@@ -7948,7 +7951,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
-    test/core/end2end/tests/simple_request_with_channel_tracing.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
     test/core/end2end/tests/write_buffering.c \
