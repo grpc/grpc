@@ -48,9 +48,7 @@
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _unmanagedQueue = grpc_completion_queue_create(GRPC_CQ_NEXT,
-                                                   GRPC_CQ_DEFAULT_POLLING,
-                                                   NULL);
+    _unmanagedQueue = grpc_completion_queue_create_for_next(NULL);
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
