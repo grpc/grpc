@@ -259,7 +259,6 @@ static void *watch_channel_state_without_gvl(void *arg) {
   grpc_rb_channel *wrapper = stack->wrapper;
   int last_state = stack->last_state;
   void *return_value = (void*)0;
-  gpr_timespec time_check_increment;
 
   gpr_mu_lock(&wrapper->channel_mu);
   while(wrapper->current_connectivity_state == last_state &&
@@ -267,9 +266,7 @@ static void *watch_channel_state_without_gvl(void *arg) {
         !wrapper->safe_to_destroy &&
         !wrapper->abort_watch_connectivity_state &&
         gpr_time_cmp(deadline, gpr_now(GPR_CLOCK_REALTIME)) > 0) {
-    time_check_increment = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(20, GPR_TIMESPAN));
-    gpr_cv_wait(&wrapper->channel_cv, &wrapper->channel_mu, time_check_increment);
+    gpr_cv_wait(&wrapper->channel_cv, &wrapper->channel_mu, deadline);
   }
   if (wrapper->current_connectivity_state != last_state) {
     return_value = (void*)1;
