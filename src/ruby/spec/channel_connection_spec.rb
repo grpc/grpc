@@ -92,7 +92,7 @@ describe 'channel connection behavior' do
   end
 
   it 'observably connects and reconnects to transient server' \
-    'when using the channel state API' do
+    ' when using the channel state API' do
     port = start_server
     ch = GRPC::Core::Channel.new("localhost:#{port}", {},
                                  :this_channel_is_insecure)
