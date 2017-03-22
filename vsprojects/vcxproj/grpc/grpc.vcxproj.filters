@@ -310,6 +310,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
+      <Filter>src\core\lib\surface</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
@@ -1047,6 +1050,9 @@
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h">
+      <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h">
