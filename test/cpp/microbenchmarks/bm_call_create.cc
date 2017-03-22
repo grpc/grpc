@@ -520,8 +520,8 @@ static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
 
 static void DestroyCallElem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
-                            void *and_free_memory) {
-  gpr_free(and_free_memory);
+                            grpc_closure *then_sched_closure) {
+  grpc_closure_sched(exec_ctx, then_sched_closure, GRPC_ERROR_NONE);
 }
 
 grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
