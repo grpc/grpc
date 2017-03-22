@@ -132,8 +132,7 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 
   Initializes server instances. */
 static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
-  grpc_completion_queue *cq = grpc_completion_queue_create(
-      GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING, NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
@@ -190,8 +189,8 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   request_call_stack st;
   VALUE result;
   void *tag = (void *)&st;
-  grpc_completion_queue *call_queue = grpc_completion_queue_create(
-      GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING, NULL);
+  grpc_completion_queue *call_queue =
+      grpc_completion_queue_create_for_pluck(NULL);
   gpr_timespec deadline;
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);

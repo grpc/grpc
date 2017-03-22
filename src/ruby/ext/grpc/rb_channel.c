@@ -171,8 +171,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   }
   rb_ivar_set(self, id_target, target);
   wrapper->wrapped = ch;
-  wrapper->queue = grpc_completion_queue_create(GRPC_CQ_PLUCK,
-                                                GRPC_CQ_DEFAULT_POLLING, NULL);
+  wrapper->queue = grpc_completion_queue_create_for_pluck(NULL);
   return self;
 }
 
@@ -270,8 +269,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     parent_call = grpc_rb_get_wrapped_call(parent);
   }
 
-  cq = grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
-                                    NULL);
+  cq = grpc_completion_queue_create_for_pluck(NULL);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {
