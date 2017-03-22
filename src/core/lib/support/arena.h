@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,24 @@
  *
  */
 
-#include "src/core/ext/client_channel/initial_connect_string.h"
+// \file Arena based allocator
+// Allows very fast allocation of memory, but that memory cannot be freed until
+// the arena as a whole is freed
+// Tracks the total memory allocated against it, so that future arenas can
+// pre-allocate the right amount of memory
+
+#ifndef GRPC_CORE_LIB_SUPPORT_ARENA_H
+#define GRPC_CORE_LIB_SUPPORT_ARENA_H
 
 #include <stddef.h>
 
-extern void grpc_set_default_initial_connect_string(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+typedef struct gpr_arena gpr_arena;
 
-static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
-    grpc_set_default_initial_connect_string;
+// Create an arena, with \a initial_size bytes in the first allocated buffer
+gpr_arena *gpr_arena_create(size_t initial_size);
+// Allocate \a size bytes from the arena
+void *gpr_arena_alloc(gpr_arena *arena, size_t size);
+// Destroy an arena, returning the total number of bytes allocated
+size_t gpr_arena_destroy(gpr_arena *arena);
 
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func) {
-  g_set_initial_connect_string_func = func;
-}
-
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *initial_str) {
-  g_set_initial_connect_string_func(addr, initial_str);
-}
+#endif /* GRPC_CORE_LIB_SUPPORT_ARENA_H */

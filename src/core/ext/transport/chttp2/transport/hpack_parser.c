@@ -1627,13 +1627,18 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
                                            grpc_slice slice) {
-  /* TODO(ctiller): limit the distance of end from beg, and perform multiple
-     steps in the event of a large chunk of data to limit
-     stack space usage when no tail call optimization is
-     available */
+/* max number of bytes to parse at a time... limits call stack depth on
+ * compilers without TCO */
+#define MAX_PARSE_LENGTH 1024
   p->current_slice_refcount = slice.refcount;
-  grpc_error *error = p->state(exec_ctx, p, GRPC_SLICE_START_PTR(slice),
-                               GRPC_SLICE_END_PTR(slice));
+  uint8_t *start = GRPC_SLICE_START_PTR(slice);
+  uint8_t *end = GRPC_SLICE_END_PTR(slice);
+  grpc_error *error = GRPC_ERROR_NONE;
+  while (start != end && error == GRPC_ERROR_NONE) {
+    uint8_t *target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
+    error = p->state(exec_ctx, p, start, target);
+    start = target;
+  }
   p->current_slice_refcount = NULL;
   return error;
 }

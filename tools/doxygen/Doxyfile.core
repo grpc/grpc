@@ -764,12 +764,14 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
 doc/connection-backoff-interop-test-description.md \
 doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
+doc/core/grpc-error.md \
 doc/core/pending_api_cleanups.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \

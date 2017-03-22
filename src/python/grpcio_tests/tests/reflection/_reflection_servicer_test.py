@@ -34,6 +34,7 @@ import grpc
 from grpc.framework.foundation import logging_pool
 from grpc_reflection.v1alpha import reflection
 from grpc_reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
@@ -61,12 +62,12 @@ class ReflectionServicerTest(unittest.TestCase):
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         self._server = grpc.server(server_pool)
         port = self._server.add_insecure_port('[::]:0')
-        reflection_pb2.add_ServerReflectionServicer_to_server(servicer,
-                                                              self._server)
+        reflection_pb2_grpc.add_ServerReflectionServicer_to_server(servicer,
+                                                                   self._server)
         self._server.start()
 
         channel = grpc.insecure_channel('localhost:%d' % port)
-        self._stub = reflection_pb2.ServerReflectionStub(channel)
+        self._stub = reflection_pb2_grpc.ServerReflectionStub(channel)
 
     def testFileByName(self):
         requests = (reflection_pb2.ServerReflectionRequest(
