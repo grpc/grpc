@@ -52,7 +52,7 @@ template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                          ClientContext* context, const InputMessage& request,
                          OutputMessage* result) {
-  CompletionQueue cq(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING);
+  CompletionQueue cq(true); // Pluckable completion queue
   Call call(channel->CreateCall(method, context, &cq));
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
             CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,

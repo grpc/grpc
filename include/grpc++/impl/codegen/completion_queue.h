@@ -103,7 +103,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() : CompletionQueue(GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING) {}
+  CompletionQueue() : CompletionQueue(false) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -147,8 +147,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \return true if read a regular event, false if the queue is shutting down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok, g_core_codegen_interface->gpr_inf_future(
-                                           GPR_CLOCK_REALTIME)) != SHUTDOWN);
+    return (AsyncNextInternal(tag, ok,
+                              g_core_codegen_interface->gpr_inf_future(
+                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
   /// Request the shutdown of the queue.
@@ -217,10 +218,14 @@ class CompletionQueue : private GrpcLibraryCodegen {
                                   OutputMessage* result);
 
   /// Private constructor of CompletionQueue only visible to friend classes
-  CompletionQueue(grpc_cq_completion_type completion_type,
-                  grpc_cq_polling_type polling_type) {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
-        completion_type, polling_type, nullptr);
+  CompletionQueue(bool is_pluck) {
+    if (is_pluck) {
+      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_pluck(
+          nullptr);
+    } else {
+      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_next(
+          nullptr);
+    }
     InitialAvalanching();  // reserve this for the future shutdown
   }
 

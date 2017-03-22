@@ -153,10 +153,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
-  void SetupRequest() {
-    cq_ = grpc_completion_queue_create(GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
-                                       nullptr);
-  }
+  void SetupRequest() { cq_ = grpc_completion_queue_create_for_pluck(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);

@@ -60,9 +60,10 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual grpc_completion_queue* grpc_completion_queue_create(
-      grpc_cq_completion_type completion_type,
-      grpc_cq_polling_type polling_type, void* reserved) = 0;
+  virtual grpc_completion_queue* grpc_completion_queue_create_for_next(
+      void* reserved) = 0;
+  virtual grpc_completion_queue* grpc_completion_queue_create_for_pluck(
+      void* reserved) = 0;
   virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
   virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
                                                  void* tag,
