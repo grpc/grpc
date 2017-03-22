@@ -117,14 +117,14 @@ typedef enum {
   GRPC_CQ_DEFAULT_POLLING,
 
   /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
-     not contain any 'listening file descriptors' (i.e file descriptors used to
-     listen to incoming channels) */
+      not contain any 'listening file descriptors' (i.e file descriptors used to
+      listen to incoming channels) */
   GRPC_CQ_NON_LISTENING,
 
   /** The completion queue will not have an associated pollset. Note that
-     grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still be
-     called to pop events from the completion queue; it is not required to call
-     them actively to make I/O progress */
+      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
+      be called to pop events from the completion queue; it is not required to
+      call them actively to make I/O progress */
   GRPC_CQ_NON_POLLING
 } grpc_cq_polling_type;
 
