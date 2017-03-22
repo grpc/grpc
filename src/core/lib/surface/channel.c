@@ -181,7 +181,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING)) {
       channel->tracer =
-          grpc_channel_tracer_create((uint32_t)args->args[i].value.integer);
+          GRPC_CHANNEL_TRACER_CREATE((uint32_t)args->args[i].value.integer);
     }
   }
 
@@ -386,7 +386,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 
 void grpc_channel_destroy(grpc_channel *channel) {
   grpc_channel_tracer_log_trace(channel->tracer);
-  grpc_channel_tracer_destroy(channel->tracer);
+  GRPC_CHANNEL_TRACER_UNREF(channel->tracer);
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

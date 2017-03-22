@@ -53,9 +53,23 @@ void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
                                    grpc_connectivity_state connectivity_state,
                                    grpc_channel_tracer* subchannel);
 
-// grpc_channel_tracer is refcounted
+//#define GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
+                                             const char* file, int line,
+                                             const char* func);
+void grpc_channel_tracer_unref(grpc_channel_tracer* tracer, const char* file,
+                               int line, const char* func);
+#define GRPC_CHANNEL_TRACER_REF(tracer) \
+  grpc_channel_tracer_ref(tracer, __FILE__, __LINE__, __func__)
+#define GRPC_CHANNEL_TRACER_UNREF(tracer) \
+  grpc_channel_tracer_unref(tracer, __FILE__, __LINE__, __func__)
+#else
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer);
 void grpc_channel_tracer_unref(grpc_channel_tracer* tracer);
+#define GRPC_CHANNEL_TRACER_REF(tracer) grpc_channel_tracer_ref(tracer)
+#define GRPC_CHANNEL_TRACER_UNREF(tracer) grpc_channel_tracer_unref(tracer)
+#endif
 
 /* Dumps all of the trace to stderr */
 void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer);
@@ -66,10 +80,17 @@ grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer);
 
 /* Initializes the tracing object with gpr_malloc. The caller has
    ownership over the returned tracing object */
-grpc_channel_tracer* grpc_channel_tracer_create();
-
-/* Frees all of the resources held by the tracer object */
-void grpc_channel_tracer_destroy(grpc_channel_tracer* tracer);
+#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
+                                                const char* file, int line,
+                                                const char* func);
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
+  grpc_channel_tracer_create(max_nodes, __FILE__, __LINE__, __func__)
+#else
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes);
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
+  grpc_channel_tracer_create(max_nodes)
+#endif
 
 #ifdef __cplusplus
 }
