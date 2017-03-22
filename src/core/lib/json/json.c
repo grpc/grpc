@@ -59,5 +59,8 @@ void grpc_json_destroy(grpc_json* json) {
     json->parent->child = json->next;
   }
 
+  if (json->owns_value) {
+    gpr_free((void*)json->value);
+  }
   gpr_free(json);
 }

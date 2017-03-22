@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_JSON_JSON_H
 #define GRPC_CORE_LIB_JSON_JSON_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "src/core/lib/json/json_common.h"
@@ -46,6 +47,9 @@ typedef struct grpc_json {
   struct grpc_json* prev;
   struct grpc_json* child;
   struct grpc_json* parent;
+
+  // if set, destructor will free value
+  bool owns_value;
 
   grpc_json_type type;
   const char* key;

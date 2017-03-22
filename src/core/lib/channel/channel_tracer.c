@@ -45,11 +45,9 @@
 
 // One node of tracing data
 struct grpc_trace_node {
-  const char* file;
-  int line;
   const char* data;
   grpc_error* error;
-  gpr_timespec time;
+  gpr_timespec time_created;
   grpc_connectivity_state connectivity_state;
   grpc_trace_node* next;
 
@@ -59,8 +57,8 @@ struct grpc_trace_node {
 };
 
 struct grpc_trace_node_list {
-  uint32_t size;
-  uint32_t max_size;
+  size_t size;
+  size_t max_size;
   grpc_trace_node* head_trace;
   grpc_trace_node* tail_trace;
 };
@@ -69,12 +67,12 @@ struct grpc_trace_node_list {
 struct grpc_channel_tracer {
   gpr_refcount refs;
   gpr_mu tracer_mu;
-  uint32_t num_nodes_logged;
+  int64_t num_nodes_logged;
   grpc_trace_node_list node_list;
   gpr_timespec time_created;
 };
 
-grpc_channel_tracer* grpc_channel_tracer_create(uint32_t max_nodes) {
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes) {
   grpc_channel_tracer* tracer = gpr_zalloc(sizeof(grpc_channel_tracer));
   gpr_mu_init(&tracer->tracer_mu);
   gpr_ref_init(&tracer->refs, 1);
@@ -109,16 +107,14 @@ static void free_node(grpc_trace_node* node) {
   }
 }
 
-static void add_trace(grpc_trace_node_list* list, const char* file, int line,
-                      const char* trace, grpc_error* error,
+static void add_trace(grpc_trace_node_list* list, const char* trace,
+                      grpc_error* error,
                       grpc_connectivity_state connectivity_state,
                       grpc_channel_tracer* subchannel) {
   grpc_trace_node* new_trace_node = gpr_malloc(sizeof(grpc_trace_node));
-  new_trace_node->file = file;
-  new_trace_node->line = line;
   new_trace_node->data = trace;
   new_trace_node->error = error;
-  new_trace_node->time = gpr_now(GPR_CLOCK_REALTIME);
+  new_trace_node->time_created = gpr_now(GPR_CLOCK_REALTIME);
   new_trace_node->connectivity_state = connectivity_state;
   new_trace_node->next = NULL;
   new_trace_node->subchannel = subchannel;
@@ -147,35 +143,137 @@ static void add_trace(grpc_trace_node_list* list, const char* file, int line,
   }
 }
 
-void grpc_channel_tracer_add_trace(const char* file, int line,
-                                   grpc_channel_tracer* tracer,
+void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
                                    const char* trace, grpc_error* error,
                                    grpc_connectivity_state connectivity_state,
                                    grpc_channel_tracer* subchannel) {
   if (!tracer) return;
   tracer->num_nodes_logged++;
-  add_trace(&tracer->node_list, file, line, trace, error, connectivity_state,
-            subchannel);
+  add_trace(&tracer->node_list, trace, error, connectivity_state, subchannel);
 }
 
-static void log_trace(grpc_trace_node* tn, bool is_subchannel) {
-  char* maybe_tab = is_subchannel ? "\t\t" : "";
-  while (tn) {
-    gpr_log(GPR_ERROR, "%s%s:%d - %s, %s, %lld:%d, %s", maybe_tab, tn->file,
-            tn->line, tn->data, grpc_error_string(tn->error), tn->time.tv_sec,
-            tn->time.tv_nsec,
-            grpc_connectivity_state_name(tn->connectivity_state));
-    tn = tn->next;
+// TODO(ncteisen): pull this function into a helper location
+static grpc_json* link_json(grpc_json* child, grpc_json* brother,
+                            grpc_json* parent) {
+  if (brother) brother->next = child;
+  if (!parent->child) parent->child = child;
+  return child;
+}
+
+// TODO(ncteisen): pull this function into a helper location
+static grpc_json* create_child(grpc_json* brother, grpc_json* parent,
+                               const char* key, const char* value,
+                               grpc_json_type type, bool owns_value) {
+  grpc_json* child = grpc_json_create(type);
+  link_json(child, brother, parent);
+  child->parent = parent;
+  child->value = value;
+  child->key = key;
+  return child;
+}
+
+// static const char* get_tracer_data(grpc_channel_tracer* tracer, bool
+// is_parent) {
+//   grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
+//   grpc_json *child = NULL;
+
+//   char num_nodes_logged_str[GPR_INT64TOA_MIN_BUFSIZE];
+//   int64_ttoa(tracer->num_nodes_logged, num_nodes_logged_str);
+//   child = create_child(NULL, json, "numNodesLogged", num_nodes_logged_str,
+//   GRPC_JSON_NUMBER);
+
+//   const char* json_str = grpc_json_dump_to_string(json, 0);
+//   grpc_json_destroy(json);
+//   return json_str;
+// }
+
+static void populate_node_data(grpc_trace_node* node, grpc_json* json) {
+  grpc_json* child = NULL;
+  child = create_child(child, json, "data", gpr_strdup(node->data),
+                       GRPC_JSON_STRING, true);
+  child = create_child(child, json, "error",
+                       gpr_strdup(grpc_error_string(node->error)),
+                       GRPC_JSON_STRING, true);
+  char* time_str;
+  gpr_asprintf(&time_str, "%" PRId64 ".%09d", node->time_created.tv_sec,
+               node->time_created.tv_nsec);
+  child = create_child(child, json, "time", time_str, GRPC_JSON_STRING, true);
+  child = create_child(child, json, "state",
+                       grpc_connectivity_state_name(node->connectivity_state),
+                       GRPC_JSON_STRING, false);
+}
+
+static void populate_node_list_data(grpc_trace_node_list* list,
+                                    grpc_json* json) {
+  grpc_json* child = NULL;
+  grpc_trace_node* it = list->head_trace;
+  while (it) {
+    child = create_child(child, json, NULL, NULL, GRPC_JSON_OBJECT, false);
+    populate_node_data(it, child);
+    it = it->next;
   }
 }
 
+static void populate_channel_data(grpc_channel_tracer* tracer,
+                                  grpc_json* json) {
+  grpc_json* child = NULL;
+  char* num_nodes_logged_str;
+  gpr_asprintf(&num_nodes_logged_str, "%" PRId64, tracer->num_nodes_logged);
+  child = create_child(child, json, "numNodesLogged", num_nodes_logged_str,
+                       GRPC_JSON_NUMBER, true);
+  char* time_str;
+  gpr_asprintf(&time_str, "%" PRId64 ".%09d", tracer->time_created.tv_sec,
+               tracer->time_created.tv_nsec);
+  child =
+      create_child(child, json, "startTime", time_str, GRPC_JSON_STRING, true);
+  child = create_child(child, json, "nodes", NULL, GRPC_JSON_ARRAY, false);
+  populate_node_list_data(&tracer->node_list, child);
+}
+
+static bool check_exists(grpc_channel_tracer* key, grpc_channel_tracer** arr,
+                         size_t size) {
+  for (size_t i = 0; i < size; ++i) {
+    if (key == arr[i]) return true;
+  }
+  return false;
+}
+
+static void populate_subchannel_data(grpc_trace_node_list* list,
+                                     grpc_json* json) {
+  grpc_json* child = NULL;
+  grpc_channel_tracer** seen =
+      gpr_malloc(sizeof(grpc_channel_tracer*) * list->max_size);
+  size_t insert = 0;
+
+  grpc_trace_node* it = list->head_trace;
+  while (it) {
+    if (it->subchannel && !check_exists(it->subchannel, seen, list->max_size)) {
+      seen[insert++] = it->subchannel;
+      child = create_child(child, json, NULL, NULL, GRPC_JSON_OBJECT, false);
+      populate_channel_data(it->subchannel, child);
+    }
+    it = it->next;
+  }
+}
+
+grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer) {
+  grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* child = NULL;
+
+  child =
+      create_child(child, json, "channelData", NULL, GRPC_JSON_OBJECT, false);
+  populate_channel_data(tracer, child);
+  child =
+      create_child(child, json, "subchannelData", NULL, GRPC_JSON_ARRAY, false);
+  populate_subchannel_data(&tracer->node_list, child);
+
+  return json;
+}
+
 void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer) {
-  if (!tracer) return;
-  gpr_log(GPR_ERROR, "Parent trace:");
-  log_trace(tracer->node_list.head_trace, false);
-  // while (subchannel_iterator) {
-  //   gpr_log(GPR_ERROR, "Child trace:");
-  //   log_trace(subchannel_iterator->node_list.head_trace, true);
-  //   subchannel_iterator = subchannel_iterator->next;
-  // }
+  grpc_json* json = grpc_channel_tracer_get_trace(tracer);
+  const char* json_str = grpc_json_dump_to_string(json, 1);
+  grpc_json_destroy(json);
+  gpr_log(GPR_DEBUG, "\n%s", json_str);
+  gpr_free((void*)json_str);
 }

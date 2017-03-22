@@ -187,7 +187,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 
 done:
   grpc_channel_args_destroy(exec_ctx, args);
-  GRPC_CHANNEL_TRACER_ADD_TRACE(channel->tracer, "Channel created",
+  grpc_channel_tracer_add_trace(channel->tracer, "Channel created",
                                 GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
   return channel;
 }
@@ -386,6 +386,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 
 void grpc_channel_destroy(grpc_channel *channel) {
   grpc_channel_tracer_log_trace(channel->tracer);
+  grpc_channel_tracer_destroy(channel->tracer);
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

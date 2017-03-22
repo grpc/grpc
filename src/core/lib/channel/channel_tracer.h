@@ -47,26 +47,22 @@ typedef struct grpc_channel_tracer grpc_channel_tracer;
 typedef struct grpc_trace_node grpc_trace_node;
 typedef struct grpc_trace_node_list grpc_trace_node_list;
 
-#define GRPC_CHANNEL_TRACER_ADD_TRACE(tracer, trace, error,               \
-                                      connectivity_state, subchannel)     \
-  grpc_channel_tracer_add_trace(__FILE__, __LINE__, tracer, trace, error, \
-                                connectivity_state, subchannel)
+/* Adds a new trace node to the tracing object */
+void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
+                                   const char* trace, struct grpc_error* error,
+                                   grpc_connectivity_state connectivity_state,
+                                   grpc_channel_tracer* subchannel);
 
+// grpc_channel_tracer is refcounted
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer);
 void grpc_channel_tracer_unref(grpc_channel_tracer* tracer);
 
 /* Dumps all of the trace to stderr */
 void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer);
 
-/* returns the tracing data in the form of a grpc json object */
+/* Returns the tracing data in the form of a grpc json string.
+   The string is owned by the caller and must be freed. */
 grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer);
-
-/* Adds a new trace node to the tracing object */
-void grpc_channel_tracer_add_trace(const char* file, int line,
-                                   grpc_channel_tracer* tracer,
-                                   const char* trace, struct grpc_error* error,
-                                   grpc_connectivity_state connectivity_state,
-                                   grpc_channel_tracer* subchannel);
 
 /* Initializes the tracing object with gpr_malloc. The caller has
    ownership over the returned tracing object */
