@@ -144,9 +144,10 @@ static void on_md_processing_done(
       calld->transport_op->send_message = NULL;
     }
     calld->transport_op->send_trailing_metadata = NULL;
-    grpc_closure_sched(&exec_ctx, calld->on_done_recv,
-                       grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                                          GRPC_ERROR_INT_GRPC_STATUS, status));
+    grpc_closure_sched(
+        &exec_ctx, calld->on_done_recv,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
+                           GRPC_ERROR_INT_GRPC_STATUS, status));
   }
 
   grpc_exec_ctx_finish(&exec_ctx);

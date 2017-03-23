@@ -45,7 +45,7 @@
 
 static void add_simple_trace(grpc_channel_tracer* tracer) {
   grpc_channel_tracer_add_trace(tracer, "simple trace",
-                                GRPC_ERROR_CREATE("Error"), GRPC_CHANNEL_READY,
+                                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_CHANNEL_READY,
                                 NULL);
 }
 
@@ -62,7 +62,7 @@ static void test_basic_channel_tracing(size_t max_nodes) {
   add_simple_trace(tracer);
   add_simple_trace(tracer);
   grpc_channel_tracer_add_trace(
-      tracer, "trace three", grpc_error_set_int(GRPC_ERROR_CREATE("Error"),
+      tracer, "trace three", grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
                                                 GRPC_ERROR_INT_HTTP2_ERROR, 2),
       GRPC_CHANNEL_INIT, NULL);
   grpc_channel_tracer_add_trace(tracer, "trace four", GRPC_ERROR_NONE,

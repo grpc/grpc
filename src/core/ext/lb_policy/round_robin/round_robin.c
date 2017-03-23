@@ -320,13 +320,14 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    grpc_closure_sched(exec_ctx, pp->on_complete,
-                       GRPC_ERROR_CREATE("Channel Shutdown"));
+    grpc_closure_sched(
+        exec_ctx, pp->on_complete,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
     gpr_free(pp);
   }
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE("Channel Shutdown"), "rr_shutdown");
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"), "rr_shutdown");
   for (i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
     grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, NULL, NULL,
@@ -345,9 +346,9 @@ static void rr_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_closure_sched(
-          exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1));
+      grpc_closure_sched(exec_ctx, pp->on_complete,
+                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Pick cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -371,9 +372,9 @@ static void rr_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       *pp->target = NULL;
-      grpc_closure_sched(
-          exec_ctx, pp->on_complete,
-          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1));
+      grpc_closure_sched(exec_ctx, pp->on_complete,
+                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Pick cancelled", &error, 1));
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -661,8 +662,8 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Round Robin not connected"));
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "Round Robin not connected"));
   }
 }
 

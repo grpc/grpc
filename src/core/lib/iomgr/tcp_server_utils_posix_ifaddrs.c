@@ -94,7 +94,8 @@ static grpc_error *get_unused_port(int *port) {
   }
   close(fd);
   *port = grpc_sockaddr_get_port(&wild);
-  return *port <= 0 ? GRPC_ERROR_CREATE("Bad port") : GRPC_ERROR_NONE;
+  return *port <= 0 ? GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad port")
+                    : GRPC_ERROR_NONE;
 }
 
 grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
@@ -114,7 +115,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
     if ((err = get_unused_port(&requested_port)) != GRPC_ERROR_NONE) {
       return err;
     } else if (requested_port <= 0) {
-      return GRPC_ERROR_CREATE("Bad get_unused_port()");
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad get_unused_port()");
     }
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
@@ -139,7 +140,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
     memcpy(addr.addr, ifa_it->ifa_addr, addr.len);
     if (!grpc_sockaddr_set_port(&addr, requested_port)) {
       /* Should never happen, because we check sa_family above. */
-      err = GRPC_ERROR_CREATE("Failed to set port");
+      err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set port");
       break;
     }
     if (grpc_sockaddr_to_string(&addr_str, &addr, 0) < 0) {
@@ -163,7 +164,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
       if (gpr_asprintf(&err_str, "Failed to add listener: %s", addr_str) < 0) {
         err_str = gpr_strdup("Failed to add listener");
       }
-      root_err = GRPC_ERROR_CREATE(err_str);
+      root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_str);
       gpr_free(err_str);
       gpr_free(addr_str);
       err = grpc_error_add_child(root_err, err);
@@ -183,7 +184,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
   if (err != GRPC_ERROR_NONE) {
     return err;
   } else if (sp == NULL) {
-    return GRPC_ERROR_CREATE("No local addresses");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");
   } else {
     *out_port = sp->port;
     return GRPC_ERROR_NONE;
