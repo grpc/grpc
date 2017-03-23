@@ -175,11 +175,13 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
 
 /*
   call-seq:
-    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
-    creds = ...
-    secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
+    ch.connectivity_state       -> state
+    ch.connectivity_state(true) -> state
 
-  Creates channel instances. */
+  Indicates the current state of the channel, whose value is one of the
+  constants defined in GRPC::Core::ConnectivityStates.
+
+  It also tries to connect if the chennel is idle in the second form. */
 static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
                                                     VALUE self) {
   VALUE try_to_connect = Qfalse;
@@ -195,8 +197,8 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
   }
-  return NUM2LONG(
-      grpc_channel_check_connectivity_state(ch, (int)try_to_connect));
+  return LONG2NUM(
+      grpc_channel_check_connectivity_state(ch, RTEST(try_to_connect)));
 }
 
 /* Watch for a change in connectivity state.
