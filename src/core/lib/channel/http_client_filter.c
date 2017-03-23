@@ -297,7 +297,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
         const int k_url_safe = 1;
         const int k_multi_line = 0;
         const char *k_query_separator = "?";
-        const size_t k_query_separator_len = GPR_ARRAY_SIZE(k_query_separator);
+        const size_t k_query_separator_len = 1; /* strlen(k_query_separator) */
 
         grpc_slice path_slice =
             GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md);
