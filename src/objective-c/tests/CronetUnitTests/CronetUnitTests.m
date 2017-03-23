@@ -34,6 +34,7 @@
 #import <XCTest/XCTest.h>
 #import <netinet/in.h>
 #import <sys/socket.h>
+#import <sys/fcntl.h>
 
 #import <Cronet/Cronet.h>
 #import <grpc/grpc.h>
@@ -187,6 +188,19 @@ unsigned int parse_h2_length(const char *field) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  int sl = socket(AF_INET, SOCK_STREAM, 0);
+  GPR_ASSERT(sl >= 0);
+
+  // Make an TCP endpoint to accept the connection
+  struct sockaddr_in s_addr;
+  memset(&s_addr, 0, sizeof(s_addr));
+  s_addr.sin_family = AF_INET;
+  s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  s_addr.sin_port = htons(port);
+  GPR_ASSERT(-1 != fcntl(sl, F_SETFL, fcntl(sl, F_GETFL, 0) | O_NONBLOCK));
+  GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
+  GPR_ASSERT(0 == listen(sl, 5));
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -226,17 +240,10 @@ unsigned int parse_h2_length(const char *field) {
 
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        int sl = socket(AF_INET, SOCK_STREAM, 0);
-        GPR_ASSERT(sl >= 0);
-
-        // Make and TCP endpoint to accept the connection
-        struct sockaddr_in s_addr;
-        memset(&s_addr, 0, sizeof(s_addr));
-        s_addr.sin_family = AF_INET;
-        s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        s_addr.sin_port = htons(port);
-        GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
-        GPR_ASSERT(0 == listen(sl, 5));
+        fd_set fs;
+        FD_ZERO(&fs);
+        FD_SET(sl, &fs);
+        select(sl + 1, &fs, NULL, NULL, NULL);
         int s = accept(sl, NULL, NULL);
         GPR_ASSERT(s >= 0);
 
