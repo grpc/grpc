@@ -214,7 +214,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
     /* substitute path metadata with just the path (not query) */
     grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
-        exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub_no_ref(path_slice, 0, offset));
+        exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
     grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
                                    mdelem_path_without_query);
