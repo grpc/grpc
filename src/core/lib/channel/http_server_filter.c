@@ -209,26 +209,30 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     for (offset = 0; *path_ptr != k_query_separator[0] && offset < path_length;
          path_ptr++, offset++)
       ;
-    grpc_slice query_slice =
-        grpc_slice_sub(path_slice, offset + 1, path_length);
+    if (offset < path_length) {
+      grpc_slice query_slice =
+          grpc_slice_sub(path_slice, offset + 1, path_length);
 
-    /* substitute path metadata with just the path (not query) */
-    grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
-        exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
+      /* substitute path metadata with just the path (not query) */
+      grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
+          exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-    grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
-                                   mdelem_path_without_query);
+      grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                     mdelem_path_without_query);
 
-    /* decode payload from query and add to the slice buffer to be returned */
-    const int k_url_safe = 1;
-    grpc_slice_buffer_add(
-        &calld->read_slice_buffer,
-        grpc_base64_decode(exec_ctx,
-                           (const char *)GRPC_SLICE_START_PTR(query_slice),
-                           k_url_safe));
-    grpc_slice_buffer_stream_init(&calld->read_stream,
-                                  &calld->read_slice_buffer, 0);
-    calld->seen_path_with_query = true;
+      /* decode payload from query and add to the slice buffer to be returned */
+      const int k_url_safe = 1;
+      grpc_slice_buffer_add(
+          &calld->read_slice_buffer,
+          grpc_base64_decode(exec_ctx,
+                             (const char *)GRPC_SLICE_START_PTR(query_slice),
+                             k_url_safe));
+      grpc_slice_buffer_stream_init(&calld->read_stream,
+                                    &calld->read_slice_buffer, 0);
+      calld->seen_path_with_query = true;
+    } else {
+      gpr_log(GPR_ERROR, "GET request without QUERY");
+    }
   }
 
   if (b->idx.named.host != NULL && b->idx.named.authority == NULL) {
