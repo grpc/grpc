@@ -40,8 +40,8 @@ from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
 
 from src.proto.grpc.testing import empty_pb2
-
-from src.proto.grpc.testing.proto2 import empty2_pb2
+#empty2_pb2 is imported for import-consequent side-effects.
+from src.proto.grpc.testing.proto2 import empty2_pb2  # pylint: disable=unused-import
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 
 from tests.unit.framework.common import test_constants
