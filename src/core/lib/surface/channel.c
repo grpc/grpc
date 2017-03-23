@@ -179,8 +179,9 @@ grpc_channel *grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(exec_ctx, args);
-  grpc_channel_tracer_add_trace(channel->tracer, "Channel created",
-                                GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
+  grpc_channel_tracer_add_trace(
+      channel->tracer, grpc_slice_from_static_string("Channel created"),
+      GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
   return channel;
 }
 

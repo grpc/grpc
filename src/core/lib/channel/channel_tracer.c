@@ -39,13 +39,15 @@
 #include <grpc/support/useful.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // One node of tracing data
 struct grpc_trace_node {
-  const char* data;
+  grpc_slice data;
   grpc_error* error;
   gpr_timespec time_created;
   grpc_connectivity_state connectivity_state;
@@ -112,9 +114,10 @@ grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer) {
 static void free_node(grpc_trace_node* node) {
   // no need to free string, since they are always static
   GRPC_ERROR_UNREF(node->error);
-  if (node->subchannel) {
-    GRPC_CHANNEL_TRACER_UNREF(node->subchannel);
-  }
+  GRPC_CHANNEL_TRACER_UNREF(node->subchannel);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_unref_internal(&exec_ctx, node->data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(node);
 }
 
@@ -148,7 +151,7 @@ void grpc_channel_tracer_unref(grpc_channel_tracer* tracer) {
 }
 #endif
 
-static void add_trace(grpc_trace_node_list* list, const char* trace,
+static void add_trace(grpc_trace_node_list* list, grpc_slice trace,
                       grpc_error* error,
                       grpc_connectivity_state connectivity_state,
                       grpc_channel_tracer* subchannel) {
@@ -160,9 +163,7 @@ static void add_trace(grpc_trace_node_list* list, const char* trace,
   new_trace_node->next = NULL;
   new_trace_node->subchannel = subchannel;
 
-  if (subchannel) {
-    GRPC_CHANNEL_TRACER_REF(subchannel);
-  }
+  GRPC_CHANNEL_TRACER_REF(subchannel);
 
   // first node in case
   if (!list->head_trace) {
@@ -185,7 +186,7 @@ static void add_trace(grpc_trace_node_list* list, const char* trace,
 }
 
 void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
-                                   const char* trace, grpc_error* error,
+                                   grpc_slice trace, grpc_error* error,
                                    grpc_connectivity_state connectivity_state,
                                    grpc_channel_tracer* subchannel) {
   if (!tracer) return;
@@ -217,7 +218,7 @@ static grpc_json* create_child(grpc_json* brother, grpc_json* parent,
 static void populate_node_data(grpc_trace_node* node, grpc_json* json,
                                bool is_parent) {
   grpc_json* child = NULL;
-  child = create_child(child, json, "data", gpr_strdup(node->data),
+  child = create_child(child, json, "data", grpc_slice_to_c_string(node->data),
                        GRPC_JSON_STRING, true);
   child = create_child(child, json, "error",
                        gpr_strdup(grpc_error_string(node->error)),

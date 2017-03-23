@@ -49,7 +49,7 @@ typedef struct grpc_trace_node_list grpc_trace_node_list;
 
 /* Adds a new trace node to the tracing object */
 void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
-                                   const char* trace, struct grpc_error* error,
+                                   grpc_slice trace, struct grpc_error* error,
                                    grpc_connectivity_state connectivity_state,
                                    grpc_channel_tracer* subchannel);
 

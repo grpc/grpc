@@ -94,6 +94,7 @@ END2END_TESTS = {
     'cancel_before_invoke': test_options(),
     'cancel_in_a_vacuum': test_options(),
     'cancel_with_status': test_options(),
+    'channel_tracing': test_options(),
     'compressed_payload': test_options(),
     'connectivity': test_options(needs_fullstack=True, proxyable=False),
     'default_host': test_options(needs_fullstack=True, needs_dns=True),
