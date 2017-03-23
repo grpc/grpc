@@ -329,7 +329,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
         size_t path_length = strlen(t) + 1;
         *(t + path_length) = '\0';
         path_with_query_slice =
-            grpc_slice_sub_no_ref(path_with_query_slice, 0, path_length);
+            grpc_slice_sub(path_with_query_slice, 0, path_length);
 
         /* substitute previous path with the new path+query */
         grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
