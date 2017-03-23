@@ -200,9 +200,9 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   } else if (*calld->recv_cacheable_request == true) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
-    static const char *k_query_separator = "?";
+    const char *k_query_separator = "?";
     grpc_slice path_slice = GRPC_MDVALUE(b->idx.named.path->md);
-    char *path_ptr = (char *)GRPC_SLICE_START_PTR(path_slice);
+    uint8_t *path_ptr = (uint8_t *)GRPC_SLICE_START_PTR(path_slice);
     size_t path_length = GRPC_SLICE_LENGTH(path_slice);
     /* offset of the character '?' */
     size_t offset = 0;
@@ -220,7 +220,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                                    mdelem_path_without_query);
 
     /* decode payload from query and add to the slice buffer to be returned */
-    static const int k_url_safe = 1;
+    const int k_url_safe = 1;
     grpc_slice_buffer_add(
         &calld->read_slice_buffer,
         grpc_base64_decode(exec_ctx,
