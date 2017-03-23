@@ -153,11 +153,18 @@ h1
     margin: 12px 24px 20px;
 }
 
-h2, h3
+h2, h3.subsection-title
 {
     font-size: 30px;
     font-weight: 700;
     letter-spacing: -1px;
+    margin-bottom: 12px;
+}
+
+h3
+{
+    font-size: 24px;
+    letter-spacing: -0.5px;
     margin-bottom: 12px;
 }
 
@@ -184,6 +191,32 @@ h6
     margin: 6px 0 3px 0;
     font-style: italic;
 }
+
+table
+{
+    border-spacing: 0;
+    border: 0;
+    border-collapse: collapse;
+}
+
+td, th
+{
+    border: 1px solid #ddd;
+    margin: 0px;
+    text-align: left;
+    vertical-align: top;
+    padding: 4px 6px;
+    display: table-cell;
+}
+
+thead tr
+{
+    background-color: #ddd;
+    font-weight: bold;
+}
+
+th { border-right: 1px solid #aaa; }
+tr > th:last-child { border-right: 1px solid #ddd; }
 
 .ancestors { color: #999; }
 .ancestors a
@@ -296,43 +329,11 @@ h6
   user-select: text;
 }
 
-.params, .props
-{
-    border-spacing: 0;
-    border: 0;
-    border-collapse: collapse;
-}
-
 .params .name, .props .name, .name code {
     color: #4D4E53;
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
     font-size: 100%;
 }
-
-.params td, .params th, .props td, .props th
-{
-    border: 1px solid #ddd;
-    margin: 0px;
-    text-align: left;
-    vertical-align: top;
-    padding: 4px 6px;
-    display: table-cell;
-}
-
-.params thead tr, .props thead tr
-{
-    background-color: #ddd;
-    font-weight: bold;
-}
-
-.params .params thead tr, .props .props thead tr
-{
-    background-color: #fff;
-    font-weight: bold;
-}
-
-.params th, .props th { border-right: 1px solid #aaa; }
-.params thead .last, .props thead .last { border-right: 1px solid #ddd; }
 
 .params td.description > p:first-child,
 .props td.description > p:first-child
