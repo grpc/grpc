@@ -52,7 +52,7 @@
     "poisson-process": "^0.2.1"
   },
   "engines": {
-    "node": ">=1.1.0"
+    "node": ">=4"
   },
   "binary": {
     "module_name": "grpc_node",

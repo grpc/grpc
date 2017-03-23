@@ -37,11 +37,11 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
-g_stands_for = "good"
+g_stands_for = "green"
 
-core_version = "2.0.0-dev"
+core_version = "3.0.0-dev"
 
-version = "1.1.0-dev"
+version = "1.2.0"
 
 grpc_cc_library(
     name = "gpr",
