@@ -34,10 +34,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/json/json.h"
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/json/json.h"
 
 static grpc_json* get_json_child(grpc_json* parent, const char* key) {
   grpc_json* child = parent->child;
@@ -61,9 +61,8 @@ static size_t get_json_array_size(grpc_json* arr) {
   return count;
 }
 
-void validate_channel_data(grpc_json* json,
-                                  size_t num_nodes_logged_golden,
-                                  size_t actual_num_nodes_golden) {
+void validate_channel_data(grpc_json* json, size_t num_nodes_logged_golden,
+                           size_t actual_num_nodes_golden) {
   grpc_json* channel_data = get_json_child(json, "channelData");
 
   grpc_json* num_nodes_logged_json =

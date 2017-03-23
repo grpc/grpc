@@ -40,16 +40,17 @@
 
 #include "src/core/lib/channel/channel_tracer.h"
 
-#include "test/core/util/test_config.h"
 #include "test/core/util/channel_tracing_utils.h"
+#include "test/core/util/test_config.h"
 
 static void add_simple_trace(grpc_channel_tracer* tracer) {
   grpc_channel_tracer_add_trace(tracer, "simple trace",
-                                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_CHANNEL_READY,
-                                NULL);
+                                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+                                GRPC_CHANNEL_READY, NULL);
 }
 
-static void validate_tracer(grpc_channel_tracer* tracer, size_t expected, size_t max_nodes) {
+static void validate_tracer(grpc_channel_tracer* tracer, size_t expected,
+                            size_t max_nodes) {
   grpc_json* json = grpc_channel_tracer_get_trace(tracer);
   validate_channel_data(json, expected, GPR_MIN(expected, max_nodes));
   grpc_json_destroy(json);
@@ -62,8 +63,9 @@ static void test_basic_channel_tracing(size_t max_nodes) {
   add_simple_trace(tracer);
   add_simple_trace(tracer);
   grpc_channel_tracer_add_trace(
-      tracer, "trace three", grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
-                                                GRPC_ERROR_INT_HTTP2_ERROR, 2),
+      tracer, "trace three",
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+                         GRPC_ERROR_INT_HTTP2_ERROR, 2),
       GRPC_CHANNEL_INIT, NULL);
   grpc_channel_tracer_add_trace(tracer, "trace four", GRPC_ERROR_NONE,
                                 GRPC_CHANNEL_SHUTDOWN, NULL);

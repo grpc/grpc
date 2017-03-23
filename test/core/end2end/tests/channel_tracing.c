@@ -43,11 +43,11 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/support/string.h"
-#include "test/core/end2end/cq_verifier.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/channel_tracing_utils.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -102,32 +102,30 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-
-
 static void check_channel_trace(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f, size_t max_nodes) {
-  grpc_json* json = grpc_channel_get_trace(f.client);
+  grpc_json *json = grpc_channel_get_trace(f.client);
   GPR_ASSERT(json);
   validate_channel_data(json, 1, max_nodes);
   grpc_json_destroy(json);
 }
 
-static void test_create_channel(grpc_end2end_test_config config, size_t max_nodes) {
+static void test_create_channel(grpc_end2end_test_config config,
+                                size_t max_nodes) {
   grpc_end2end_test_fixture f;
 
   // ensure ths fixture has tracing enabled
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   arg.key = GRPC_ARG_CHANNEL_TRACING;
-  arg.value.integer = (int) max_nodes;
+  arg.value.integer = (int)max_nodes;
 
   grpc_channel_args chan_args;
 
   chan_args.num_args = 1;
   chan_args.args = &arg;
 
-  f = begin_test(config, "test_channel_tracing",
-                 &chan_args, NULL);
+  f = begin_test(config, "test_channel_tracing", &chan_args, NULL);
   check_channel_trace(config, f, max_nodes);
   end_test(&f);
   config.tear_down_data(&f);
@@ -135,9 +133,8 @@ static void test_create_channel(grpc_end2end_test_config config, size_t max_node
 
 static void test_create_channel_no_tracing(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
-  f = begin_test(config, "test_channel_tracing_no_tracing",
-                 NULL, NULL);
-  grpc_json* json = grpc_channel_get_trace(f.client);
+  f = begin_test(config, "test_channel_tracing_no_tracing", NULL, NULL);
+  grpc_json *json = grpc_channel_get_trace(f.client);
   GPR_ASSERT(!json);
   end_test(&f);
   config.tear_down_data(&f);

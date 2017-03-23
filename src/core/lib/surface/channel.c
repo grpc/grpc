@@ -184,8 +184,9 @@ grpc_channel *grpc_channel_create_with_builder(
   return channel;
 }
 
-grpc_json* grpc_channel_get_trace(grpc_channel *channel) {
-  return channel->tracer ? grpc_channel_tracer_get_trace(channel->tracer) : NULL;
+grpc_json *grpc_channel_get_trace(grpc_channel *channel) {
+  return channel->tracer ? grpc_channel_tracer_get_trace(channel->tracer)
+                         : NULL;
 }
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
