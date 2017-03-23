@@ -114,8 +114,9 @@ static void dns_shutdown_locked(grpc_exec_ctx *exec_ctx,
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_closure_sched(exec_ctx, r->next_completion,
-                       GRPC_ERROR_CREATE("Resolver Shutdown"));
+    grpc_closure_sched(
+        exec_ctx, r->next_completion,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
   }
 }

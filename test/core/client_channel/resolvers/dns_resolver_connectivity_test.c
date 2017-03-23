@@ -59,7 +59,7 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
-    error = GRPC_ERROR_CREATE("Forced Failure");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
     *addrs = gpr_malloc(sizeof(**addrs));
