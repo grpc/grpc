@@ -205,8 +205,8 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     for (sp = s->head; sp; sp = sp->next) {
       GPR_ASSERT(sp->orphan_cb);
       sp->orphan_cb(exec_ctx, sp->emfd, sp->server->user_data);
-      grpc_fd_shutdown(exec_ctx, sp->emfd,
-                       GRPC_ERROR_CREATE("Server destroyed"));
+      grpc_fd_shutdown(exec_ctx, sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                               "Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {

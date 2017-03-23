@@ -79,7 +79,8 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
       *w->current = GRPC_CHANNEL_SHUTDOWN;
       error = GRPC_ERROR_NONE;
     } else {
-      error = GRPC_ERROR_CREATE("Shutdown connectivity owner");
+      error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutdown connectivity owner");
     }
     grpc_closure_sched(exec_ctx, w->notify, error);
     gpr_free(w);
