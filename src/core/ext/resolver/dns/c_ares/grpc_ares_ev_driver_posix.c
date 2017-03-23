@@ -115,7 +115,7 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
   gpr_mu_destroy(&fdn->mu);
   grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
   grpc_fd_shutdown(exec_ctx, fdn->grpc_fd,
-                   GRPC_ERROR_CREATE("fd node destroyed"));
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd node destroyed"));
   grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, "c-ares query finished");
   gpr_free(fdn);
 }
@@ -129,7 +129,7 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
     char *err_msg;
     gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
                  ares_strerror(status));
-    grpc_error *err = GRPC_ERROR_CREATE(err_msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_msg);
     gpr_free(err_msg);
     gpr_free(*ev_driver);
     return err;

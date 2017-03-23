@@ -180,7 +180,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
     char *error_msg;
     gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
                  ares_strerror(status));
-    grpc_error *error = GRPC_ERROR_CREATE(error_msg);
+    grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
     gpr_free(error_msg);
     if (r->error == GRPC_ERROR_NONE) {
       r->error = error;
@@ -208,15 +208,16 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   char *port;
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
-    grpc_error *err =
-        grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                           GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    grpc_error *err = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     grpc_closure_sched(exec_ctx, on_done, err);
     goto error_cleanup;
   } else if (port == NULL) {
     if (default_port == NULL) {
-      grpc_error *err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
-                                           GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      grpc_error *err = grpc_error_set_str(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       grpc_closure_sched(exec_ctx, on_done, err);
       goto error_cleanup;
     }
@@ -272,7 +273,7 @@ grpc_error *grpc_ares_init(void) {
     char *error_msg;
     gpr_asprintf(&error_msg, "ares_library_init failed: %s",
                  ares_strerror(status));
-    grpc_error *error = GRPC_ERROR_CREATE(error_msg);
+    grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
     gpr_free(error_msg);
     return error;
   }
