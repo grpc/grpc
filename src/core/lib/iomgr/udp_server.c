@@ -162,10 +162,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
-  if (!s->shutdown) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
+  GPR_ASSERT(s->shutdown);
 
   if (s->head) {
     grpc_udp_listener *sp;
@@ -288,7 +285,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   gpr_mu_lock(&sp->server->mu);
   if (error != GRPC_ERROR_NONE) {
-    if (0 == --sp->server->active_ports) {
+    if (0 == --sp->server->active_ports && sp->server->shutdown) {
       gpr_mu_unlock(&sp->server->mu);
       deactivated_all_ports(exec_ctx, sp->server);
     } else {
@@ -311,7 +308,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   gpr_mu_lock(&(sp->server->mu));
   if (error != GRPC_ERROR_NONE) {
-    if (0 == --sp->server->active_ports) {
+    if (0 == --sp->server->active_ports && sp->server->shutdown) {
       gpr_mu_unlock(&sp->server->mu);
       deactivated_all_ports(exec_ctx, sp->server);
     } else {
