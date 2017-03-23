@@ -34,6 +34,7 @@
 #include <ruby/ruby.h>
 #include <ruby/thread.h>
 
+#include "rb_grpc_imports.generated.h"
 #include "rb_byte_buffer.h"
 #include "rb_channel.h"
 
