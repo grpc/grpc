@@ -73,6 +73,12 @@ _SKIP_ADVANCED = ['status_code_and_message',
 
 _TEST_TIMEOUT = 3*60
 
+# Files that could be created from running interop tests.
+_DOCKER_IMG_LIST = 'docker_images'
+_CLIENT_CMDS = 'interop_client_cmds.sh'
+_SERVER_CMDS = 'interop_server_cmds.sh'
+_REPORT = 'report.xml'
+
 class CXXLanguage:
 
   def __init__(self):
@@ -1084,10 +1090,10 @@ try:
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-  write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
-  write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
+  write_cmdlog_maybe(server_manual_cmd_log, _SERVER_CMDS)
+  write_cmdlog_maybe(client_manual_cmd_log, _CLIENT_CMDS)
 
-  report_utils.render_junit_xml_report(resultset, 'report.xml')
+  report_utils.render_junit_xml_report(resultset, _REPORT)
 
   for name, job in resultset.items():
     if "http2" in name:
@@ -1111,9 +1117,12 @@ finally:
 
   dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)])
 
-  for image in six.itervalues(docker_images):
-    if not args.manual_run:
+  if args.manual_run:
+    with open(_DOCKER_IMG_LIST, 'w') as f:
+      f.writelines('\n'.join(six.itervalues(docker_images)))
+    print('Preserving docker images: %s' %
+          ','.join(six.itervalues(docker_images)))
+  else:
+    for image in six.itervalues(docker_images):
       print('Removing docker image %s' % image)
       dockerjob.remove_image(image)
-    else:
-      print('Preserving docker image: %s' % image)

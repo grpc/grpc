@@ -53,7 +53,7 @@ argp.add_argument('--with_files',
                   nargs='+',
                   help='additional files to include in the docker image')
 
-argp.add_argument('--with_file_dest',
+argp.add_argument('--with_file_path',
                   default='/var/local/image_info',
                   help='Destination directory for with_files inside docker image')
 
@@ -77,7 +77,7 @@ def upload_to_gcr(image):
 
   A docker image image_foo:tag_old will be uploaded as
      <gcr_path>/image_foo:<gcr_tag>
-  after inserting extra with_files under with_file_dest in the image.  The
+  after inserting extra with_files under with_file_path in the image.  The
   original image name will be stored as label original_name:"image_foo:tag_old".
   """
   tag_idx = image.find(':')
@@ -96,7 +96,7 @@ def upload_to_gcr(image):
   # context.
   for f in args.with_files:
     shutil.copy(f, temp_dir)
-    lines.append('COPY %s %s/' % (os.path.basename(f), args.with_file_dest))
+    lines.append('COPY %s %s/' % (os.path.basename(f), args.with_file_path))
 
   # Create a Dockerfile.
   with open(os.path.join(temp_dir, 'Dockerfile'), 'w') as f:
