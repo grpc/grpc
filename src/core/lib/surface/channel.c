@@ -103,7 +103,8 @@ grpc_channel *grpc_channel_create_with_builder(
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     gpr_free(target);
-    goto done;
+    grpc_channel_args_destroy(exec_ctx, args);
+    return channel;
   }
 
   memset(channel, 0, sizeof(*channel));
@@ -177,7 +178,6 @@ grpc_channel *grpc_channel_create_with_builder(
     }
   }
 
-done:
   grpc_channel_args_destroy(exec_ctx, args);
   grpc_channel_tracer_add_trace(channel->tracer, "Channel created",
                                 GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
