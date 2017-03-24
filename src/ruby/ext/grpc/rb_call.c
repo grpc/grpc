@@ -784,7 +784,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
    Only one operation of each type can be active at once in any given
    batch */
 static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
-  run_batch_stack *st;
+  run_batch_stack *st = NULL;
   grpc_rb_call *call = NULL;
   grpc_event ev;
   grpc_call_error err;
@@ -792,7 +792,6 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
   unsigned write_flag = 0;
   void *tag = (void*)&st;
-  st = gpr_malloc(sizeof(run_batch_stack));
 
   if (RTYPEDDATA_DATA(self) == NULL) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
@@ -808,6 +807,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   if (rb_write_flag != Qnil) {
     write_flag = NUM2UINT(rb_write_flag);
   }
+  st = gpr_malloc(sizeof(run_batch_stack));
   grpc_run_batch_stack_init(st, write_flag);
   grpc_run_batch_stack_fill_ops(st, ops_hash);
 
