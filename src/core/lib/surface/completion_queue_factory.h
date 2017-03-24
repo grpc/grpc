@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,21 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
+#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
+#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 
-#include <grpc/slice.h>
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/grpc.h>
+#include "src/core/lib/surface/completion_queue.h"
 
-typedef void (*grpc_set_initial_connect_string_func)(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+typedef struct grpc_completion_queue_factory_vtable {
+  grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,
+                                   const grpc_completion_queue_attributes*);
+} grpc_completion_queue_factory_vtable;
 
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func);
+struct grpc_completion_queue_factory {
+  const char* name;
+  void* data; /* Factory specific data */
+  grpc_completion_queue_factory_vtable* vtable;
+};
 
-/** Set a string to be sent once connected. Optionally reset addr. */
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *connect_string);
-
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H */
+#endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H */

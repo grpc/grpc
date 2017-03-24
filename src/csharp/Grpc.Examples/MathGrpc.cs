@@ -35,41 +35,41 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
+using grpc = global::Grpc.Core;
 
 namespace Math {
   public static partial class Math
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
-    static readonly Marshaller<global::Math.DivReply> __Marshaller_DivReply = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
-    static readonly Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
-    static readonly Marshaller<global::Math.Num> __Marshaller_Num = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
 
-    static readonly Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new Method<global::Math.DivArgs, global::Math.DivReply>(
-        MethodType.Unary,
+    static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
+        grpc::MethodType.Unary,
         __ServiceName,
         "Div",
         __Marshaller_DivArgs,
         __Marshaller_DivReply);
 
-    static readonly Method<global::Math.DivArgs, global::Math.DivReply> __Method_DivMany = new Method<global::Math.DivArgs, global::Math.DivReply>(
-        MethodType.DuplexStreaming,
+    static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_DivMany = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
+        grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "DivMany",
         __Marshaller_DivArgs,
         __Marshaller_DivReply);
 
-    static readonly Method<global::Math.FibArgs, global::Math.Num> __Method_Fib = new Method<global::Math.FibArgs, global::Math.Num>(
-        MethodType.ServerStreaming,
+    static readonly grpc::Method<global::Math.FibArgs, global::Math.Num> __Method_Fib = new grpc::Method<global::Math.FibArgs, global::Math.Num>(
+        grpc::MethodType.ServerStreaming,
         __ServiceName,
         "Fib",
         __Marshaller_FibArgs,
         __Marshaller_Num);
 
-    static readonly Method<global::Math.Num, global::Math.Num> __Method_Sum = new Method<global::Math.Num, global::Math.Num>(
-        MethodType.ClientStreaming,
+    static readonly grpc::Method<global::Math.Num, global::Math.Num> __Method_Sum = new grpc::Method<global::Math.Num, global::Math.Num>(
+        grpc::MethodType.ClientStreaming,
         __ServiceName,
         "Sum",
         __Marshaller_Num,
@@ -91,9 +91,9 @@ namespace Math {
       /// <param name="request">The request received from the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>The response to send back to the client (wrapped by a task).</returns>
-      public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, grpc::ServerCallContext context)
       {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
@@ -106,9 +106,9 @@ namespace Math {
       /// <param name="responseStream">Used for sending responses back to the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>A task indicating completion of the handler.</returns>
-      public virtual global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task DivMany(grpc::IAsyncStreamReader<global::Math.DivArgs> requestStream, grpc::IServerStreamWriter<global::Math.DivReply> responseStream, grpc::ServerCallContext context)
       {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
@@ -120,9 +120,9 @@ namespace Math {
       /// <param name="responseStream">Used for sending responses back to the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>A task indicating completion of the handler.</returns>
-      public virtual global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, grpc::IServerStreamWriter<global::Math.Num> responseStream, grpc::ServerCallContext context)
       {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       /// <summary>
@@ -132,24 +132,24 @@ namespace Math {
       /// <param name="requestStream">Used for reading requests from the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>The response to send back to the client (wrapped by a task).</returns>
-      public virtual global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Math.Num> Sum(grpc::IAsyncStreamReader<global::Math.Num> requestStream, grpc::ServerCallContext context)
       {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
     }
 
     /// <summary>Client for Math</summary>
-    public partial class MathClient : ClientBase<MathClient>
+    public partial class MathClient : grpc::ClientBase<MathClient>
     {
       /// <summary>Creates a new client for Math</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public MathClient(Channel channel) : base(channel)
+      public MathClient(grpc::Channel channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for Math that uses a custom <c>CallInvoker</c>.</summary>
       /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
-      public MathClient(CallInvoker callInvoker) : base(callInvoker)
+      public MathClient(grpc::CallInvoker callInvoker) : base(callInvoker)
       {
       }
       /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
@@ -171,9 +171,9 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The response received from the server.</returns>
-      public virtual global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Math.DivReply Div(global::Math.DivArgs request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return Div(request, new CallOptions(headers, deadline, cancellationToken));
+        return Div(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
@@ -182,7 +182,7 @@ namespace Math {
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
       /// <returns>The response received from the server.</returns>
-      public virtual global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
+      public virtual global::Math.DivReply Div(global::Math.DivArgs request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Div, null, options, request);
       }
@@ -195,9 +195,9 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return DivAsync(request, new CallOptions(headers, deadline, cancellationToken));
+        return DivAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
@@ -206,7 +206,7 @@ namespace Math {
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_Div, null, options, request);
       }
@@ -220,9 +220,9 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual grpc::AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return DivMany(new CallOptions(headers, deadline, cancellationToken));
+        return DivMany(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// DivMany accepts an arbitrary number of division args from the client stream
@@ -232,7 +232,7 @@ namespace Math {
       /// </summary>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
+      public virtual grpc::AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(grpc::CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_DivMany, null, options);
       }
@@ -246,9 +246,9 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return Fib(request, new CallOptions(headers, deadline, cancellationToken));
+        return Fib(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
@@ -258,7 +258,7 @@ namespace Math {
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
+      public virtual grpc::AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_Fib, null, options, request);
       }
@@ -270,9 +270,9 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return Sum(new CallOptions(headers, deadline, cancellationToken));
+        return Sum(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// Sum sums a stream of numbers, returning the final result once the stream
@@ -280,7 +280,7 @@ namespace Math {
       /// </summary>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Sum, null, options);
       }
@@ -293,9 +293,9 @@ namespace Math {
 
     /// <summary>Creates service definition that can be registered with a server</summary>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
-    public static ServerServiceDefinition BindService(MathBase serviceImpl)
+    public static grpc::ServerServiceDefinition BindService(MathBase serviceImpl)
     {
-      return ServerServiceDefinition.CreateBuilder()
+      return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Div, serviceImpl.Div)
           .AddMethod(__Method_DivMany, serviceImpl.DivMany)
           .AddMethod(__Method_Fib, serviceImpl.Fib)

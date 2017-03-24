@@ -34,7 +34,7 @@ import logging
 import time
 
 import grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import methods
 from tests.interop import resources
@@ -53,7 +53,8 @@ def serve():
     args = parser.parse_args()
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2.add_TestServiceServicer_to_server(methods.TestService(), server)
+    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+                                                    server)
     if args.use_tls:
         private_key = resources.private_key()
         certificate_chain = resources.certificate_chain()

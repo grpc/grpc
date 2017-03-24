@@ -166,6 +166,32 @@ describe('Server.prototype.addService', function() {
       server.addService(mathServiceAttrs, dummyImpls);
     });
   });
+  it('Should allow method names as originally written', function() {
+    var altDummyImpls = {
+      'Div': function() {},
+      'DivMany': function() {},
+      'Fib': function() {},
+      'Sum': function() {}
+    };
+    assert.doesNotThrow(function() {
+      server.addProtoService(mathService, altDummyImpls);
+    });
+  });
+  it('Should have a conflict between name variations', function() {
+    /* This is really testing that both name variations are actually used,
+       by checking that the method actually gets registered, for the
+       corresponding function, in both cases */
+    var altDummyImpls = {
+      'Div': function() {},
+      'DivMany': function() {},
+      'Fib': function() {},
+      'Sum': function() {}
+    };
+    server.addProtoService(mathService, altDummyImpls);
+    assert.throws(function() {
+      server.addProtoService(mathService, dummyImpls);
+    });
+  });
   it('Should fail if the server has been started', function() {
     server.start();
     assert.throws(function() {
