@@ -115,7 +115,8 @@ static gpr_timespec dbl_to_ts(double d) {
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
-             (double)ts.tv_nsec / GPR_NS_PER_MS + 1.0;
+             (double)ts.tv_nsec / GPR_NS_PER_MS +
+             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
   return (gpr_atm)x;
