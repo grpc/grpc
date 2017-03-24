@@ -2351,13 +2351,13 @@ static grpc_error *deframe_unprocessed_incoming_frames(
             break;
           default:
             gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
-            p->error = GRPC_ERROR_CREATE(msg);
+            p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           (intptr_t)s->id);
             gpr_free(msg);
             msg = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
             p->error =
-                grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, msg);
+                grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_copied_string(msg));
             gpr_free(msg);
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
@@ -2558,7 +2558,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
                        GRPC_ERROR_REF(bs->error));
   } else if (bs->push_closed) {
     if (bs->remaining_bytes != 0) {
-      bs->error = GRPC_ERROR_CREATE("Truncated message");
+      bs->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
       grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
                          GRPC_ERROR_REF(bs->error));
     } else {
@@ -2597,7 +2597,7 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       return error;
     }
   } else {
-    bs->error = GRPC_ERROR_CREATE("Truncated message");
+    bs->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
     gpr_mu_unlock(&s->buffer_mu);
     return bs->error;
   }
