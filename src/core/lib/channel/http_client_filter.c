@@ -296,28 +296,28 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
          * MDELEM by appending base64 encoded query to the path */
         const int k_url_safe = 1;
         const int k_multi_line = 0;
-        const char *k_query_separator = "?";
-        const size_t k_query_separator_len = 1; /* strlen(k_query_separator) */
+        const unsigned char k_query_separator = '?';
 
         grpc_slice path_slice =
             GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md);
         /* sum up individual component's lengths and allocate enough memory to
          * hold combined path+query */
         size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
-        estimated_len += k_query_separator_len;
+        estimated_len++; /* for the '?' */
         estimated_len += grpc_base64_estimate_encoded_size(
             op->send_message->length, k_url_safe, k_multi_line);
         estimated_len += 1; /* for the trailing 0 */
         grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
 
         /* memcopy individual pieces into this slice */
-        uint8_t *write_ptr = (uint8_t *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        uint8_t *write_ptr =
+            (uint8_t *)GRPC_SLICE_START_PTR(path_with_query_slice);
         uint8_t *original_path = (uint8_t *)GRPC_SLICE_START_PTR(path_slice);
         memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
         write_ptr += GRPC_SLICE_LENGTH(path_slice);
 
-        memcpy(write_ptr, k_query_separator, k_query_separator_len);
-        write_ptr += k_query_separator_len;
+        *write_ptr = k_query_separator;
+        write_ptr++; /* for the '?' */
 
         grpc_base64_encode_core((char *)write_ptr, calld->payload_bytes,
                                 op->send_message->length, k_url_safe,
@@ -326,6 +326,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
         /* remove trailing unused memory and add trailing 0 to terminate string
          */
         char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        /* safe to use strlen since base64_encode will always add '\0' */
         size_t path_length = strlen(t) + 1;
         *(t + path_length) = '\0';
         path_with_query_slice =

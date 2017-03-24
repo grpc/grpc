@@ -93,7 +93,7 @@ void grpc_base64_encode_core(char *result, const void *vdata, size_t data_size,
   const unsigned char *data = vdata;
   const char *base64_chars =
       url_safe ? base64_url_safe_chars : base64_url_unsafe_chars;
-  size_t result_projected_size =
+  const size_t result_projected_size =
       grpc_base64_estimate_encoded_size(data_size, url_safe, multiline);
 
   char *current = result;
