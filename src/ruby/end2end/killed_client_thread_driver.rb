@@ -32,7 +32,7 @@
 require_relative './end2end_common'
 
 # Service that sleeps for a long time upon receiving an 'echo request'
-# Also, this notified @call_started_cv once it has received a request.
+# Also, this notifies @call_started_cv once it has received a request.
 class SleepingEchoServerImpl < Echo::EchoServer::Service
   def initialize(call_started, call_started_mu, call_started_cv)
     @call_started = call_started
@@ -84,7 +84,7 @@ def main
     call_started_cv.wait(call_started_mu) until call_started.val
   end
 
-  # SIGINT the child process not that it's
+  # SIGINT the child process now that it's
   # in the middle of an RPC (happening on a non-main thread)
   Process.kill('SIGINT', client_pid)
   STDERR.puts 'sent shutdown'
