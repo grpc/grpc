@@ -567,7 +567,7 @@ class IsolatedCallFixture : public TrackCounters {
                                                   GRPC_CLIENT_CHANNEL);
       grpc_exec_ctx_finish(&exec_ctx);
     }
-    cq_ = grpc_completion_queue_create(NULL);
+    cq_ = grpc_completion_queue_create_for_next(NULL);
   }
 
   void Finish(benchmark::State &state) {
