@@ -230,6 +230,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
@@ -427,6 +428,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />

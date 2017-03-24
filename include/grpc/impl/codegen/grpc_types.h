@@ -87,6 +87,9 @@ typedef struct grpc_call grpc_call;
 /** The Socket Mutator interface allows changes on socket options */
 typedef struct grpc_socket_mutator grpc_socket_mutator;
 
+/** The Socket Factory interface creates and binds sockets */
+typedef struct grpc_socket_factory grpc_socket_factory;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -240,6 +243,8 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** The grpc_socket_factory instance to create and bind sockets. A pointer. */
+#define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames when
  * possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \

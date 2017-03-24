@@ -355,7 +355,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   grpc_slice_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
-  grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
+  grpc_error *state_error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
   char *service_config_json = NULL;
   service_config_parsing_state parsing_state;
   memset(&parsing_state, 0, sizeof(parsing_state));
@@ -475,9 +476,9 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   if (lb_policy != NULL) {
     grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
   } else if (chand->resolver == NULL /* disconnected */) {
-    grpc_closure_list_fail_all(
-        &chand->waiting_for_config_closures,
-        GRPC_ERROR_CREATE_REFERENCING("Channel disconnected", &error, 1));
+    grpc_closure_list_fail_all(&chand->waiting_for_config_closures,
+                               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                   "Channel disconnected", &error, 1));
     grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
   }
   if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
@@ -505,8 +506,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     grpc_error *refs[] = {error, state_error};
     set_channel_connectivity_state_locked(
         exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
-        GRPC_ERROR_CREATE_REFERENCING("Got config after disconnection", refs,
-                                      GPR_ARRAY_SIZE(refs)),
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Got config after disconnection", refs, GPR_ARRAY_SIZE(refs)),
         "resolver_gone");
   }
 
@@ -545,8 +546,9 @@ static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (op->send_ping != NULL) {
     if (chand->lb_policy == NULL) {
-      grpc_closure_sched(exec_ctx, op->send_ping,
-                         GRPC_ERROR_CREATE("Ping with no load balancing"));
+      grpc_closure_sched(
+          exec_ctx, op->send_ping,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
     } else {
       grpc_lb_policy_ping_one_locked(exec_ctx, chand->lb_policy, op->send_ping);
       op->bind_pollset = NULL;
@@ -661,7 +663,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   if (proxy_name != NULL) gpr_free(proxy_name);
   if (new_args != NULL) grpc_channel_args_destroy(exec_ctx, new_args);
   if (chand->resolver == NULL) {
-    return GRPC_ERROR_CREATE("resolver creation failed");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
   return GRPC_ERROR_NONE;
 }
@@ -874,12 +876,14 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
   calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (calld->connected_subchannel == NULL) {
     gpr_atm_no_barrier_store(&calld->subchannel_call, 1);
-    fail_locked(exec_ctx, calld, GRPC_ERROR_CREATE_REFERENCING(
-                                     "Failed to create subchannel", &error, 1));
+    fail_locked(exec_ctx, calld,
+                GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                    "Failed to create subchannel", &error, 1));
   } else if (GET_CALL(calld) == CANCELLED_CALL) {
     /* already cancelled before subchannel became ready */
-    grpc_error *cancellation_error = GRPC_ERROR_CREATE_REFERENCING(
-        "Cancelled before creating subchannel", &error, 1);
+    grpc_error *cancellation_error =
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Cancelled before creating subchannel", &error, 1);
     /* if due to deadline, attach the deadline exceeded status to the error */
     if (gpr_time_cmp(calld->deadline, gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
       cancellation_error =
@@ -981,9 +985,9 @@ static bool pick_subchannel_locked(
       cpa = closure->cb_arg;
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
-        grpc_closure_sched(
-            exec_ctx, cpa->on_ready,
-            GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1));
+        grpc_closure_sched(exec_ctx, cpa->on_ready,
+                           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Pick cancelled", &error, 1));
       }
     }
     GPR_TIMER_END("pick_subchannel", 0);
@@ -1040,7 +1044,8 @@ static bool pick_subchannel_locked(
     grpc_closure_list_append(&chand->waiting_for_config_closures, &cpa->closure,
                              GRPC_ERROR_NONE);
   } else {
-    grpc_closure_sched(exec_ctx, on_ready, GRPC_ERROR_CREATE("Disconnected"));
+    grpc_closure_sched(exec_ctx, on_ready,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 
   GPR_TIMER_END("pick_subchannel", 0);

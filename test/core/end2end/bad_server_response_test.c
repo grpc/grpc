@@ -303,7 +303,7 @@ static void run_test(const char *response_payload,
 
   /* clean up */
   grpc_endpoint_shutdown(&exec_ctx, state.tcp,
-                         GRPC_ERROR_CREATE("Test Shutdown"));
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
   cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
