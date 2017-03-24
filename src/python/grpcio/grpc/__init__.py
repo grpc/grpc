@@ -1273,7 +1273,10 @@ def secure_channel(target, credentials, options=None):
                             credentials._credentials)
 
 
-def server(thread_pool, handlers=None, options=None):
+def server(thread_pool,
+           handlers=None,
+           options=None,
+           maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1286,13 +1289,17 @@ def server(thread_pool, handlers=None, options=None):
       returned Server is started.
     options: A sequence of string-value pairs according to which to configure
       the created server.
+    maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
+      will service before returning status RESOURCE_EXHAUSTED, or None to
+      indicate no limit.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
     from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if options is None else options)
+                          if options is None else options,
+                          maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################
