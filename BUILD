@@ -41,7 +41,7 @@ g_stands_for = "green"
 
 core_version = "3.0.0-dev"
 
-version = "1.2.0"
+version = "1.2.1-pre2"
 
 grpc_cc_library(
     name = "gpr",
