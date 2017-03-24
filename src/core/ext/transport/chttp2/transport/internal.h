@@ -186,24 +186,24 @@ typedef struct grpc_chttp2_write_cb {
 struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
-  struct grpc_chttp2_incoming_byte_stream *next_message;
-  grpc_error *error;
-  bool push_closed;
+  struct grpc_chttp2_incoming_byte_stream *next_message; /* unused; should be removed */
+  grpc_error *error;                /* protected by slice_mu */
+  bool push_closed;                 /* protected by slice_mu */
 
-  grpc_chttp2_transport *transport;
-  grpc_chttp2_stream *stream;
-  bool is_tail;
+  grpc_chttp2_transport *transport; /* immutable */
+  grpc_chttp2_stream *stream;       /* immutable */
+  bool is_tail;                     /* immutable */
 
-  gpr_mu slice_mu;  // protects slices, on_next
-  grpc_slice_buffer slices;
-  grpc_closure *on_next;
-  uint32_t remaining_bytes;
+  gpr_mu slice_mu;
+  grpc_slice_buffer slices;  /* unused; should be removed */
+  grpc_closure *on_next;     /* protected by slice_mu */
+  uint32_t remaining_bytes;  /* guaranteed one thread access */
 
   struct {
     grpc_closure closure;
     size_t max_size_hint;
     grpc_closure *on_complete;
-  } next_action;
+  } next_action;             /* guaranteed one thread access */
   grpc_closure destroy_action;
   grpc_closure finished_action;
 };
@@ -488,10 +488,10 @@ struct grpc_chttp2_stream {
 
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
 
-  grpc_chttp2_incoming_byte_stream *incoming_frames;
+  grpc_chttp2_incoming_byte_stream *incoming_frames;    /* protected by buffer_mu */
   gpr_mu buffer_mu; /* protects unprocessed_incoming_frames_buffer and
-                       parse_data */
-  grpc_slice_buffer unprocessed_incoming_frames_buffer;
+                       data_parser */
+  grpc_slice_buffer unprocessed_incoming_frames_buffer; /* protected by buffer_mu */
 
   gpr_timespec deadline;
 
@@ -504,7 +504,7 @@ struct grpc_chttp2_stream {
    * incoming_window = incoming_window_delta + transport.initial_window_size */
   int64_t incoming_window_delta;
   /** parsing state for data frames */
-  grpc_chttp2_data_parser data_parser;
+  grpc_chttp2_data_parser data_parser;                 /* protected by buffer_mu */
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
