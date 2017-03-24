@@ -206,14 +206,13 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     'six>=1.5.2',
-    'enum34>=1.0.4',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
     'protobuf>=3.2.0',
 )
 
 if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0',)
+  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
@@ -265,6 +264,10 @@ PACKAGES = setuptools.find_packages(PYTHON_STEM)
 setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
+  description='HTTP/2-based RPC framework',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='http://www.grpc.io',
   license=LICENSE,
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,

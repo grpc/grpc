@@ -148,6 +148,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -182,6 +185,15 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
@@ -460,16 +472,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\default_initial_connect_string.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
@@ -497,6 +503,9 @@
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.c">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.c">
@@ -833,6 +842,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -855,6 +867,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h">
@@ -1082,9 +1097,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.h">
-      <Filter>src\core\ext\client_channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
@@ -1110,6 +1122,9 @@
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h">
+      <Filter>src\core\ext\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h">

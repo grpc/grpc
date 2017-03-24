@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4A48E5A5-2E69-ED6D-063C-C297180A54D0}</ProjectGuid>
+    <ProjectGuid>{D85AC722-A88F-4280-F62E-672F571787FF}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -60,14 +60,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>set_initial_connect_string_test</TargetName>
+    <TargetName>arena_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>set_initial_connect_string_test</TargetName>
+    <TargetName>arena_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -158,19 +158,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\set_initial_connect_string_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\arena_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\test_tcp_server\test_tcp_server.vcxproj">
-      <Project>{E3110C46-A148-FF65-08FD-3324829BE7FE}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
-      <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
-      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\gpr_test_util\gpr_test_util.vcxproj">
       <Project>{EAB0A629-17A9-44DB-B5FF-E91A721FE037}</Project>
     </ProjectReference>

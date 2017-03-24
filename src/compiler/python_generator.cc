@@ -647,15 +647,15 @@ bool PrivateGenerator::PrintBetaPreamble() {
              "Package", config.beta_package_root);
   out->Print("from $Package$ import interfaces as beta_interfaces\n", "Package",
              config.beta_package_root);
+  out->Print("from grpc.framework.common import cardinality\n");
+  out->Print(
+      "from grpc.framework.interfaces.face import utilities as "
+      "face_utilities\n");
   return true;
 }
 
 bool PrivateGenerator::PrintPreamble() {
   out->Print("import $Package$\n", "Package", config.grpc_package_root);
-  out->Print("from grpc.framework.common import cardinality\n");
-  out->Print(
-      "from grpc.framework.interfaces.face import utilities as "
-      "face_utilities\n");
   if (generate_in_pb2_grpc) {
     out->Print("\n");
     StringPairSet imports_set;

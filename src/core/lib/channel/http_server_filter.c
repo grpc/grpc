@@ -102,7 +102,7 @@ static void add_error(const char *error_name, grpc_error **cumulative,
                       grpc_error *new) {
   if (new == GRPC_ERROR_NONE) return;
   if (*cumulative == GRPC_ERROR_NONE) {
-    *cumulative = GRPC_ERROR_CREATE(error_name);
+    *cumulative = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_name);
   }
   *cumulative = grpc_error_add_child(*cumulative, new);
 }
@@ -126,27 +126,32 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       *calld->recv_cacheable_request = true;
     } else {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.method->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.method->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.method);
   } else {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":method"));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
   }
 
   if (b->idx.named.te != NULL) {
     if (!grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_TE_TRAILERS)) {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.te->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.te->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.te);
   } else {
     add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, "te"));
+              grpc_error_set_str(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                  GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
   }
 
   if (b->idx.named.scheme != NULL) {
@@ -154,14 +159,17 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
         !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTPS) &&
         !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_GRPC)) {
       add_error(error_name, &error,
-                grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.scheme->md));
+                grpc_attach_md_to_error(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                    b->idx.named.scheme->md));
     }
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.scheme);
   } else {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":scheme"));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
   }
 
   if (b->idx.named.content_type != NULL) {
@@ -195,8 +203,9 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
   if (b->idx.named.path == NULL) {
     add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":path"));
+              grpc_error_set_str(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                  GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
   } else if (*calld->recv_cacheable_request == true) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
@@ -249,9 +258,11 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   }
 
   if (b->idx.named.authority == NULL) {
-    add_error(error_name, &error,
-              grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
-                                 GRPC_ERROR_STR_KEY, ":authority"));
+    add_error(
+        error_name, &error,
+        grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
   return error;
@@ -385,7 +396,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   call_data *calld = elem->call_data;
   grpc_slice_buffer_destroy_internal(exec_ctx, &calld->read_slice_buffer);
 }
