@@ -31,12 +31,15 @@
 
 require_relative './end2end_common'
 
+# Service that sleeps for a long time upon receiving an 'echo request'
+# Also, this notified @call_started_cv once it has received a request.
 class SleepingEchoServerImpl < Echo::EchoServer::Service
   def initialize(call_started, call_started_mu, call_started_cv)
     @call_started = call_started
     @call_started_mu = call_started_mu
     @call_started_cv = call_started_cv
   end
+
   def echo(echo_req, _)
     @call_started_mu.synchronize do
       @call_started.set_true
@@ -47,42 +50,18 @@ class SleepingEchoServerImpl < Echo::EchoServer::Service
   end
 end
 
-class SleepingServerRunner
-  def initialize(service_impl)
-    @service_impl = service_impl
-  end
-
-  def run
-    @srv = GRPC::RpcServer.new
-    port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
-    @srv.handle(@service_impl)
-
-    @thd = Thread.new do
-      @srv.run
-    end
-    @srv.wait_till_running
-    port
-  end
-
-  def stop
-    @srv.stop
-    @thd.join
-    fail 'server not stopped' unless @srv.stopped?
-  end
-end
-
+# Mutable boolean
 class BoolHolder
+  attr_reader :val
+
   def init
     @val = false
   end
+
   def set_true
     @val = true
   end
-  def get_val
-    @val
-  end
 end
-
 
 def main
   STDERR.puts 'start server'
@@ -91,20 +70,22 @@ def main
   call_started_mu = Mutex.new
   call_started_cv = ConditionVariable.new
 
-  service_impl = SleepingEchoServerImpl.new(call_started, call_started_mu, call_started_cv)
-  server_runner = SleepingServerRunner.new(service_impl)
+  service_impl = SleepingEchoServerImpl.new(call_started,
+                                            call_started_mu,
+                                            call_started_cv)
+  server_runner = ServerRunner.new(service_impl)
   server_port = server_runner.run
 
   STDERR.puts 'start client'
   _, client_pid = start_client('killed_client_thread_client.rb',
-                                          server_port)
+                               server_port)
 
   call_started_mu.synchronize do
-    while !call_started.get_val do
-      call_started_cv.wait(call_started_mu)
-    end
+    call_started_cv.wait(call_started_mu) until call_started.val
   end
 
+  # SIGINT the child process not that it's
+  # in the middle of an RPC (happening on a non-main thread)
   Process.kill('SIGINT', client_pid)
   STDERR.puts 'sent shutdown'
 
@@ -117,13 +98,14 @@ def main
     Process.kill('SIGKILL', client_pid)
     Process.wait(client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when ' \
-      'killed while in the middle of an rpc'
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when killed while in the middle of an rpc'
   end
 
   client_exit_code = $CHILD_STATUS
   if client_exit_code.termsig != 2 # SIGINT
-    fail "expected client exit from SIGINT but got child status: #{client_exit_code}"
+    fail 'expected client exit from SIGINT ' \
+      "but got child status: #{client_exit_code}"
   end
 
   server_runner.stop

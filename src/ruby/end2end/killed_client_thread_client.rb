@@ -29,6 +29,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Attempt to reproduce
+# https://github.com/GoogleCloudPlatform/google-cloud-ruby/issues/1327
+
 require_relative './end2end_common'
 
 def main
@@ -46,7 +49,7 @@ def main
     stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
                                       :this_channel_is_insecure)
     stub.echo(Echo::EchoRequest.new(request: 'hello'))
-    raise 'the clients rpc in this test shouldnt complete. ' \
+    fail 'the clients rpc in this test shouldnt complete. ' \
       'expecting SIGINT to happen in the middle of the call'
   end
   thd.join
