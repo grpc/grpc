@@ -913,6 +913,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
   src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -1224,6 +1225,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
   src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -1526,6 +1528,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
   src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -1775,6 +1778,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
   src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -2384,6 +2388,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
   src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
