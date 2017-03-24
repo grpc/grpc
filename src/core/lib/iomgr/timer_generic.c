@@ -291,8 +291,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
      grpc_timer_check. */
   if (is_first_timer) {
     gpr_mu_lock(&g_shared_mutables.mu);
-    gpr_log(GPR_DEBUG, "  .. old shard min_deadline=%" PRIdPTR,
-            shard->min_deadline);
+    if (grpc_timer_trace) {
+      gpr_log(GPR_DEBUG, "  .. old shard min_deadline=%" PRIdPTR,
+              shard->min_deadline);
+    }
     if (timer->deadline < shard->min_deadline) {
       gpr_atm old_min_deadline = g_shard_queue[0]->min_deadline;
       shard->min_deadline = timer->deadline;
@@ -359,8 +361,10 @@ static int refill_queue(shard_type *shard, gpr_atm now) {
     next = timer->next;
 
     if (timer->deadline < shard->queue_deadline_cap) {
-      gpr_log(GPR_DEBUG, "  .. add timer with deadline %" PRIdPTR " to heap",
-              timer->deadline);
+      if (grpc_timer_check_trace) {
+        gpr_log(GPR_DEBUG, "  .. add timer with deadline %" PRIdPTR " to heap",
+                timer->deadline);
+      }
       list_remove(timer);
       grpc_timer_heap_add(&shard->heap, timer);
     }
@@ -384,9 +388,11 @@ static grpc_timer *pop_one(shard_type *shard, gpr_atm now) {
       if (!refill_queue(shard, now)) return NULL;
     }
     timer = grpc_timer_heap_top(&shard->heap);
-    gpr_log(GPR_DEBUG,
-            "  .. check top timer deadline=%" PRIdPTR " now=%" PRIdPTR,
-            timer->deadline, now);
+    if (grpc_timer_check_trace) {
+      gpr_log(GPR_DEBUG,
+              "  .. check top timer deadline=%" PRIdPTR " now=%" PRIdPTR,
+              timer->deadline, now);
+    }
     if (timer->deadline > now) return NULL;
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
