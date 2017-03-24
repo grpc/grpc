@@ -631,6 +631,15 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
       <Filter>src\core\ext\lb_policy\round_robin</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\resolver\dns\native</Filter>
     </ClCompile>
@@ -1328,6 +1337,12 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
       <Filter>src\core\ext\load_reporting</Filter>
     </ClInclude>
@@ -1447,6 +1462,9 @@
     </Filter>
     <Filter Include="src\core\ext\resolver\dns">
       <UniqueIdentifier>{e8fe6413-ab8c-48d5-2c7b-aa79e3db4ab2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver\dns\c_ares">
+      <UniqueIdentifier>{2b72688f-79b8-05dd-2896-c7d5dec07dd6}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver\dns\native">
       <UniqueIdentifier>{94e34be0-29d2-1731-3c1e-617ec4986acb}</UniqueIdentifier>

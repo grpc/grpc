@@ -29,6 +29,11 @@ bind(
 )
 
 bind(
+    name = "cares",
+    actual = "@submodule_cares//:ares",
+)
+
+bind(
     name = "gtest",
     actual = "@submodule_gtest//:gtest",
 )
@@ -65,4 +70,10 @@ new_local_repository(
 local_repository(
     name = "com_github_gflags_gflags",
     path = "third_party/gflags",
+)
+
+new_local_repository(
+    name = "submodule_cares",
+    path = "third_party/cares",
+    build_file = "third_party/cares/cares.BUILD",
 )

@@ -58,6 +58,9 @@
     'conditions': [
       ['grpc_uv=="true"', {
         'defines': [
+          'GRPC_ARES=0',
+          # Disabling this while bugs are ironed out. Uncomment this to
+          # re-enable libuv integration in C core.
           'GRPC_UV'
         ]
       }],
@@ -103,7 +106,8 @@
       }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/zlib"
+          "third_party/zlib",
+          "third_party/cares/cares"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',
@@ -126,7 +130,8 @@
           'config': '<!(echo $CONFIG)',
         },
         'include_dirs': [
-          '<(node_root_dir)/deps/zlib'
+          '<(node_root_dir)/deps/zlib',
+          '<(node_root_dir)/deps/cares/include',
         ],
         'conditions': [
           ['config=="gcov"', {
@@ -527,6 +532,7 @@
     }]
   ],
   'targets': [
+
     {
       'cflags': [
         '-std=c99',
@@ -605,6 +611,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -817,6 +824,9 @@
         'third_party/nanopb/pb_encode.c',
         'src/core/ext/lb_policy/pick_first/pick_first.c',
         'src/core/ext/lb_policy/round_robin/round_robin.c',
+        'src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c',
+        'src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
+        'src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c',
         'src/core/ext/resolver/dns/native/dns_resolver.c',
         'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/load_reporting/load_reporting.c',
@@ -907,6 +917,7 @@
       "dependencies": [
         "grpc",
         "gpr",
+        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

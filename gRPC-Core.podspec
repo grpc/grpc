@@ -104,6 +104,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
+  s.compiler_flags = '-DGRPC_ARES=0'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
@@ -436,6 +437,8 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
                       'third_party/nanopb/pb_encode.h',
+                      'src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h',
+                      'src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/load_reporting/load_reporting.h',
                       'src/core/ext/load_reporting/load_reporting_filter.h',
                       'src/core/ext/census/aggregation.h',
@@ -664,6 +667,9 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_encode.c',
                       'src/core/ext/lb_policy/pick_first/pick_first.c',
                       'src/core/ext/lb_policy/round_robin/round_robin.c',
+                      'src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c',
+                      'src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
+                      'src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c',
                       'src/core/ext/resolver/dns/native/dns_resolver.c',
                       'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
                       'src/core/ext/load_reporting/load_reporting.c',
@@ -879,6 +885,8 @@ Pod::Spec.new do |s|
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
                               'third_party/nanopb/pb_encode.h',
+                              'src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h',
+                              'src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/load_reporting/load_reporting.h',
                               'src/core/ext/load_reporting/load_reporting_filter.h',
                               'src/core/ext/census/aggregation.h',

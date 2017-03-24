@@ -1,6 +1,8 @@
-#!/bin/sh
-
-# Copyright 2015, Google Inc.
+# c-ares cmake file for gRPC
+#
+# This is currently very experimental, and unsupported.
+#
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,29 +31,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+string(TOLOWER ${CMAKE_SYSTEM_NAME} cares_system_name)
 
-set -e
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares/cares)
 
-export TEST=true
+if(${cares_system_name} MATCHES windows)
+  add_definitions(-DCARES_STATICLIB=1)
+  add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+else()
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares/config_${cares_system_name})
+  add_definitions(-DHAVE_CONFIG_H=1)
+  add_definitions(-D_GNU_SOURCE=1)
+endif()
 
-cd `dirname $0`/../../..
-
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
-
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- 44c25c892a6229b20db7cd9dc05584ea865896de third_party/benchmark (v0.1.0-343-g44c25c8)
- 78684e5b222645828ca302e56b40b9daff2b2d27 third_party/boringssl (78684e5)
- 886e7d75368e3f4fab3f4d0d3584e4abfc557755 third_party/boringssl-with-bazel (version_for_cocoapods_7.0-857-g886e7d7)
- 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- 593e917c176b5bc5aafa57bf9f6030d749d91cd5 third_party/protobuf (v3.1.0-alpha-1-326-g593e917)
- bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift (bcad917)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
- 7691f773af79bf75a62d1863fd0f13ebf9dc51b1 third_party/cares/cares (1.12.0)
-EOF
-
-diff -u $submodules $want_submodules
-
-rm $submodules $want_submodules
+file(GLOB lib_sources ../../third_party/cares/cares/*.c)
+add_library(cares ${lib_sources})
