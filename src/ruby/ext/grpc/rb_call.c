@@ -784,7 +784,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
    Only one operation of each type can be active at once in any given
    batch */
 static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
-  run_batch_stack st;
+  run_batch_stack *st = NULL;
   grpc_rb_call *call = NULL;
   grpc_event ev;
   grpc_call_error err;
@@ -792,6 +792,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
   unsigned write_flag = 0;
   void *tag = (void*)&st;
+
   if (RTYPEDDATA_DATA(self) == NULL) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
     return Qnil;
@@ -806,14 +807,16 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   if (rb_write_flag != Qnil) {
     write_flag = NUM2UINT(rb_write_flag);
   }
-  grpc_run_batch_stack_init(&st, write_flag);
-  grpc_run_batch_stack_fill_ops(&st, ops_hash);
+  st = gpr_malloc(sizeof(run_batch_stack));
+  grpc_run_batch_stack_init(st, write_flag);
+  grpc_run_batch_stack_fill_ops(st, ops_hash);
 
   /* call grpc_call_start_batch, then wait for it to complete using
    * pluck_event */
-  err = grpc_call_start_batch(call->wrapped, st.ops, st.op_num, tag, NULL);
+  err = grpc_call_start_batch(call->wrapped, st->ops, st->op_num, tag, NULL);
   if (err != GRPC_CALL_OK) {
-    grpc_run_batch_stack_cleanup(&st);
+    grpc_run_batch_stack_cleanup(st);
+    gpr_free(st);
     rb_raise(grpc_rb_eCallError,
              "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -826,8 +829,9 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   }
   /* Build and return the BatchResult struct result,
      if there is an error, it's reflected in the status */
-  result = grpc_run_batch_stack_build_result(&st);
-  grpc_run_batch_stack_cleanup(&st);
+  result = grpc_run_batch_stack_build_result(st);
+  grpc_run_batch_stack_cleanup(st);
+  gpr_free(st);
   return result;
 }
 
