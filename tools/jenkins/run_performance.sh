@@ -34,4 +34,5 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
+tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch
+
