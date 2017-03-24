@@ -1475,11 +1475,12 @@ void grpc_chttp2_ping_strike(grpc_exec_ctx *exec_ctx,
   if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
       t->ping_policy.max_ping_strikes != 0) {
     send_goaway(exec_ctx, t,
-                grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
-                                   GRPC_ERROR_INT_HTTP2_ERROR,
-                                   GRPC_HTTP2_ENHANCE_YOUR_CALM));
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
     /*The transport will be closed after the write is done */
-    close_transport_locked(exec_ctx, t, GRPC_ERROR_CREATE("Too many pings"));
+    close_transport_locked(
+        exec_ctx, t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"));
   }
 }
 
