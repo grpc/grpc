@@ -169,8 +169,9 @@ void grpc_timer_list_init(gpr_timespec now) {
 
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   int i;
-  run_some_expired_timers(exec_ctx, GPR_ATM_MAX, NULL,
-                          GRPC_ERROR_CREATE("Timer list shutdown"));
+  run_some_expired_timers(
+      exec_ctx, GPR_ATM_MAX, NULL,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -241,9 +242,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
-    grpc_closure_sched(
-        exec_ctx, timer->closure,
-        GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
+    grpc_closure_sched(exec_ctx, timer->closure,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "Attempt to create timer before initialization"));
     return;
   }
 
@@ -444,6 +445,7 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
   grpc_error *shutdown_error =
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
           ? GRPC_ERROR_NONE
+<<<<<<< HEAD
           : GRPC_ERROR_CREATE("Shutting down timer system");
   if (grpc_timer_check_trace) {
     char *next_str;
@@ -482,6 +484,9 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     gpr_free(next_str);
   }
   return r > 0;
+=======
+          : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system"));
+>>>>>>> 7e6b7df8d6bbb80c19ae1736e0c35b4eab06c541
 }
 
 #endif /* GRPC_TIMER_USE_GENERIC */

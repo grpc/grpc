@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,19 @@
  *
  */
 
-#include "src/core/ext/client_channel/initial_connect_string.h"
+#include "src/core/lib/iomgr/port.h"
 
-#include <stddef.h>
+#if defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS)
 
-extern void grpc_set_default_initial_connect_string(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
-static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
-    grpc_set_default_initial_connect_string;
-
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func) {
-  g_set_initial_connect_string_func = func;
+grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
+                                                unsigned port_index,
+                                                int requested_port,
+                                                int *out_port) {
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ifaddrs available");
 }
 
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *initial_str) {
-  g_set_initial_connect_string_func(addr, initial_str);
-}
+bool grpc_tcp_server_have_ifaddrs(void) { return false; }
+
+#endif /* defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS) */

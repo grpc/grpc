@@ -1932,24 +1932,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util", 
-      "test_tcp_server"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "set_initial_connect_string_test", 
-    "src": [
-      "test/core/client_channel/set_initial_connect_string_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2503,6 +2485,27 @@
     "name": "bm_chttp2_hpack", 
     "src": [
       "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_chttp2_transport", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_chttp2_transport.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7350,6 +7353,7 @@
       "src/core/lib/support/alloc.c", 
       "src/core/lib/support/arena.c", 
       "src/core/lib/support/arena.h", 
+      "src/core/lib/support/atm.c", 
       "src/core/lib/support/avl.c", 
       "src/core/lib/support/backoff.c", 
       "src/core/lib/support/backoff.h", 
@@ -7508,6 +7512,7 @@
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
@@ -7516,6 +7521,7 @@
       "src/core/lib/iomgr/tcp_client_posix.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
+      "src/core/lib/iomgr/tcp_server_utils_posix.h", 
       "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
@@ -7546,6 +7552,7 @@
       "src/core/lib/surface/channel_init.h", 
       "src/core/lib/surface/channel_stack_type.h", 
       "src/core/lib/surface/completion_queue.h", 
+      "src/core/lib/surface/completion_queue_factory.h", 
       "src/core/lib/surface/event_string.h", 
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
@@ -7676,6 +7683,8 @@
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.c", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.c", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
@@ -7696,6 +7705,10 @@
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
       "src/core/lib/iomgr/tcp_server_posix.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix.h", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_common.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c", 
       "src/core/lib/iomgr/tcp_server_uv.c", 
       "src/core/lib/iomgr/tcp_server_windows.c", 
       "src/core/lib/iomgr/tcp_uv.c", 
@@ -7766,6 +7779,8 @@
       "src/core/lib/surface/channel_stack_type.h", 
       "src/core/lib/surface/completion_queue.c", 
       "src/core/lib/surface/completion_queue.h", 
+      "src/core/lib/surface/completion_queue_factory.c", 
+      "src/core/lib/surface/completion_queue_factory.h", 
       "src/core/lib/surface/event_string.c", 
       "src/core/lib/surface/event_string.h", 
       "src/core/lib/surface/init.h", 
@@ -7819,7 +7834,6 @@
       "src/core/ext/client_channel/connector.h", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.h", 
       "src/core/ext/client_channel/lb_policy_registry.h", 
@@ -7829,6 +7843,7 @@
       "src/core/ext/client_channel/resolver.h", 
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/retry_throttle.h", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.h", 
       "src/core/ext/client_channel/uri_parser.h"
@@ -7845,13 +7860,10 @@
       "src/core/ext/client_channel/client_channel_plugin.c", 
       "src/core/ext/client_channel/connector.c", 
       "src/core/ext/client_channel/connector.h", 
-      "src/core/ext/client_channel/default_initial_connect_string.c", 
       "src/core/ext/client_channel/http_connect_handshaker.c", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/http_proxy.c", 
       "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/initial_connect_string.c", 
-      "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.c", 
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.c", 
@@ -7870,6 +7882,8 @@
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.c", 
       "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/retry_throttle.c", 
+      "src/core/ext/client_channel/retry_throttle.h", 
       "src/core/ext/client_channel/subchannel.c", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.c", 

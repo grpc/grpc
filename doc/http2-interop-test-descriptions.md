@@ -193,3 +193,79 @@ Server Procedure:
   1. Sets MAX_CONCURRENT_STREAMS to one after the connection is made.
 
 *The assertion that the MAX_CONCURRENT_STREAMS limit is upheld occurs in the http2 library we used.*
+
+### data_frame_padding
+
+This test verifies that the client can correctly receive padded http2 data
+frames. It also stresses the client's flow control (there is a high chance
+that the sender will deadlock if the client's flow control logic doesn't
+correctly account for padding).
+
+Client Procedure:
+(Note this is the same procedure as in the "large_unary" gRPC interop tests.
+Clients should use their "large_unary" gRPC interop test implementations.)
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+Client asserts:
+* call was successful
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+Server Procedure:
+  1. Reply to the client's request with a `SimpleResponse`, with a payload
+  body length of `SimpleRequest.response_size`. But send it across specific
+  http2 data frames as follows:
+    * Each http2 data frame contains a 5 byte payload and 255 bytes of padding.
+
+  * Note the 5 byte payload and 255 byte padding are partly arbitrary,
+  and other numbers are also ok. With 255 bytes of padding for each 5 bytes of
+  payload containing actual gRPC message, the 300KB response size will
+  multiply into around 15 megabytes of flow control debt, which should stress
+  flow control accounting.
+
+### no_df_padding_sanity_test
+
+This test verifies that the client can correctly receive a series of small
+data frames. Note that this test is intentionally a slight variation of
+"data_frame_padding", with the only difference being that this test doesn't use data
+frame padding when the response is sent. This test is primarily meant to
+prove correctness of the http2 server implementation and highlight failures
+of the "data_frame_padding" test.
+
+Client Procedure:
+(Note this is the same procedure as in the "large_unary" gRPC interop tests.
+Clients should use their "large_unary" gRPC interop test implementations.)
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+Client asserts:
+* call was successful
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+Server Procedure:
+  1. Reply to the client's request with a `SimpleResponse`, with a payload
+  body length of `SimpleRequest.response_size`. But send it across series of
+  http2 data frames that contain 5 bytes of "payload" and zero bytes of
+  "padding" (the padding flags on the data frames should not be set).
