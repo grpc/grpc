@@ -291,8 +291,6 @@ grpc_error *parse_inner_buffer(grpc_exec_ctx *exec_ctx,
       grpc_chttp2_unprocessed_frames_buffer_push(
           exec_ctx, p, s,
           grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-      grpc_chttp2_incoming_byte_stream_notify(exec_ctx, p->parsing_frame,
-                                              GRPC_ERROR_NONE);
       gpr_mu_unlock(&s->buffer_mu);
       return GRPC_ERROR_NONE;
   }

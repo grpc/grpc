@@ -2680,17 +2680,6 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_chttp2_incoming_byte_stream_notify(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
-    grpc_error *error) {
-  gpr_mu_lock(&bs->slice_mu);
-  if (bs->on_next) {
-    grpc_closure_sched(exec_ctx, bs->next_action.on_complete, error);
-    bs->on_next = NULL;
-  }
-  gpr_mu_unlock(&bs->slice_mu);
-}
-
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error) {
