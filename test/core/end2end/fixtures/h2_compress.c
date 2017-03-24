@@ -120,10 +120,9 @@ void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_compression",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_fullstack_compression,
      chttp2_init_client_fullstack_compression,
      chttp2_init_server_fullstack_compression,

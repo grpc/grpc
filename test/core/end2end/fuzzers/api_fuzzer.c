@@ -314,9 +314,8 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
       const char *access_token = read_cred_artifact(&ctx, inp, NULL, 0);
       grpc_call_credentials *out =
-          access_token == NULL
-              ? NULL
-              : grpc_access_token_credentials_create(access_token, NULL);
+          access_token == NULL ? NULL : grpc_access_token_credentials_create(
+                                            access_token, NULL);
       cred_artifact_ctx_finish(&ctx);
       return out;
     }
@@ -410,9 +409,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->on_done = on_done;
   r->addrs = addresses;
   grpc_timer_init(
-      exec_ctx, &r->timer,
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(1, GPR_TIMESPAN)),
+      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
       grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
@@ -473,9 +471,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      exec_ctx, &fc->timer,
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_millis(1, GPR_TIMESPAN)),
+      exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         gpr_time_from_millis(1, GPR_TIMESPAN)),
       grpc_closure_create(do_connect, fc, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
@@ -751,9 +748,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       if (g_server != NULL) {
         if (!server_shutdown) {
           grpc_server_shutdown_and_notify(
-              g_server, cq,
-              create_validator(assert_success_and_decrement,
-                               &pending_server_shutdowns));
+              g_server, cq, create_validator(assert_success_and_decrement,
+                                             &pending_server_shutdowns));
           server_shutdown = true;
           pending_server_shutdowns++;
         } else if (pending_server_shutdowns == 0) {
@@ -858,9 +854,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 5: {
         if (g_server != NULL) {
           grpc_server_shutdown_and_notify(
-              g_server, cq,
-              create_validator(assert_success_and_decrement,
-                               &pending_server_shutdowns));
+              g_server, cq, create_validator(assert_success_and_decrement,
+                                             &pending_server_shutdowns));
           pending_server_shutdowns++;
           server_shutdown = true;
         } else {

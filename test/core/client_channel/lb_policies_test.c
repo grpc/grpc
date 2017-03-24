@@ -65,9 +65,9 @@ typedef struct servers_fixture {
 } servers_fixture;
 
 typedef struct request_sequences {
-  size_t n;                 /* number of iterations */
-  int *connections;         /* indexed by the interation number, value is the index of
-                               the server it connected to or -1 if none */
+  size_t n;         /* number of iterations */
+  int *connections; /* indexed by the interation number, value is the index of
+                       the server it connected to or -1 if none */
   int *connectivity_states; /* indexed by the interation number, value is the
                                client connectivity state */
 } request_sequences;

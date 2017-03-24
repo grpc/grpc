@@ -383,9 +383,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5,
-      (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-       reserved));
+      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+          reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cc);
@@ -559,9 +558,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6,
-        (cc, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-         reserved));
+        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
+            (int)deadline.clock_type, reserved));
   }
   GPR_ASSERT(!reserved);
 

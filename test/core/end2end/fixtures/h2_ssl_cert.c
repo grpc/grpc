@@ -204,17 +204,15 @@ CLIENT_INIT(BAD_CERT_PAIR)
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)     \
-  {                                                   \
-    {TEST_NAME(request_type, cert_type, result),      \
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |       \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,        \
-     chttp2_create_fixture_secure_fullstack,          \
-     CLIENT_INIT_NAME(cert_type),                     \
-     SERVER_INIT_NAME(request_type),                  \
-     chttp2_tear_down_secure_fullstack},              \
-        result                                        \
+#define SSL_TEST(request_type, cert_type, result)                         \
+  {                                                                       \
+    {TEST_NAME(request_type, cert_type, result),                          \
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                           \
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                     \
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                            \
+     chttp2_create_fixture_secure_fullstack, CLIENT_INIT_NAME(cert_type), \
+     SERVER_INIT_NAME(request_type), chttp2_tear_down_secure_fullstack},  \
+        result                                                            \
   }
 
 /* All test configurations */
