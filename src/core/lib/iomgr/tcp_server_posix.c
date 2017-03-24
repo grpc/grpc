@@ -185,10 +185,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
-  if (!s->shutdown) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
+  GPR_ASSERT(s->shutdown);
 
   if (s->head) {
     grpc_tcp_listener *sp;
@@ -301,7 +298,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
 error:
   gpr_mu_lock(&sp->server->mu);
-  if (0 == --sp->server->active_ports) {
+  if (0 == --sp->server->active_ports && sp->server->shutdown) {
     gpr_mu_unlock(&sp->server->mu);
     deactivated_all_ports(exec_ctx, sp->server);
   } else {
