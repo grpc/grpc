@@ -339,6 +339,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
@@ -347,6 +348,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.h" />
@@ -377,6 +379,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
@@ -422,7 +425,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h" />
@@ -432,6 +434,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h" />
@@ -561,6 +564,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
@@ -584,6 +589,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
     </ClCompile>
@@ -664,6 +675,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
@@ -767,13 +780,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\default_initial_connect_string.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
     </ClCompile>
@@ -792,6 +801,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.c">
     </ClCompile>

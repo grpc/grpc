@@ -728,7 +728,7 @@ var defaultHandler = {
  *     method implementation for the provided service.
  */
 Server.prototype.addService = function(service, implementation) {
-  if (!_.isObjectLike(service) || !_.isObjectLike(implementation)) {
+  if (!_.isObject(service) || !_.isObject(implementation)) {
     throw new Error('addService requires two objects as arguments');
   }
   if (_.keys(service).length === 0) {
@@ -755,9 +755,16 @@ Server.prototype.addService = function(service, implementation) {
     }
     var impl;
     if (implementation[name] === undefined) {
-      common.log(grpc.logVerbosity.ERROR, 'Method handler for ' +
-          attrs.path + ' expected but not provided');
-      impl = defaultHandler[method_type];
+      /* Handle the case where the method is passed with the name exactly as
+         written in the proto file, instead of using JavaScript function
+         naming style */
+      if (implementation[attrs.originalName] === undefined) {
+        common.log(grpc.logVerbosity.ERROR, 'Method handler ' + name + ' for ' +
+            attrs.path + ' expected but not provided');
+        impl = defaultHandler[method_type];
+      } else {
+        impl = _.bind(implementation[attrs.originalName], implementation);
+      }
     } else {
       impl = _.bind(implementation[name], implementation);
     }

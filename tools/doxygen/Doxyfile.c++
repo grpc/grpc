@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.2.0-dev
+PROJECT_NUMBER         = 1.3.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -764,6 +764,7 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
@@ -779,15 +780,16 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
-doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \
 doc/service_config.md \
+doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \

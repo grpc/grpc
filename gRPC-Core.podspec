@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.2.0-dev'
+  version = '1.3.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -51,7 +51,7 @@ Pod::Spec.new do |s|
     :submodules => true,
   }
 
-  s.ios.deployment_target = '7.1'
+  s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.requires_arc = false
 
@@ -196,6 +196,7 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/arena.h',
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
@@ -211,6 +212,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.c',
                       'src/core/lib/profiling/stap_timers.c',
                       'src/core/lib/support/alloc.c',
+                      'src/core/lib/support/arena.c',
+                      'src/core/lib/support/atm.c',
                       'src/core/lib/support/avl.c',
                       'src/core/lib/support/backoff.c',
                       'src/core/lib/support/cmdline.c',
@@ -301,6 +304,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/sockaddr_posix.h',
                       'src/core/lib/iomgr/sockaddr_utils.h',
                       'src/core/lib/iomgr/sockaddr_windows.h',
+                      'src/core/lib/iomgr/socket_factory_posix.h',
                       'src/core/lib/iomgr/socket_mutator.h',
                       'src/core/lib/iomgr/socket_utils.h',
                       'src/core/lib/iomgr/socket_utils_posix.h',
@@ -309,6 +313,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_posix.h',
                       'src/core/lib/iomgr/tcp_posix.h',
                       'src/core/lib/iomgr/tcp_server.h',
+                      'src/core/lib/iomgr/tcp_server_utils_posix.h',
                       'src/core/lib/iomgr/tcp_uv.h',
                       'src/core/lib/iomgr/tcp_windows.h',
                       'src/core/lib/iomgr/time_averaged_stats.h',
@@ -339,6 +344,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/channel_init.h',
                       'src/core/lib/surface/channel_stack_type.h',
                       'src/core/lib/surface/completion_queue.h',
+                      'src/core/lib/surface/completion_queue_factory.h',
                       'src/core/lib/surface/event_string.h',
                       'src/core/lib/surface/init.h',
                       'src/core/lib/surface/lame_client.h',
@@ -408,7 +414,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/connector.h',
                       'src/core/ext/client_channel/http_connect_handshaker.h',
                       'src/core/ext/client_channel/http_proxy.h',
-                      'src/core/ext/client_channel/initial_connect_string.h',
                       'src/core/ext/client_channel/lb_policy.h',
                       'src/core/ext/client_channel/lb_policy_factory.h',
                       'src/core/ext/client_channel/lb_policy_registry.h',
@@ -418,6 +423,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/resolver.h',
                       'src/core/ext/client_channel/resolver_factory.h',
                       'src/core/ext/client_channel/resolver_registry.h',
+                      'src/core/ext/client_channel/retry_throttle.h',
                       'src/core/ext/client_channel/subchannel.h',
                       'src/core/ext/client_channel/subchannel_index.h',
                       'src/core/ext/client_channel/uri_parser.h',
@@ -496,6 +502,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resolve_address_windows.c',
                       'src/core/lib/iomgr/resource_quota.c',
                       'src/core/lib/iomgr/sockaddr_utils.c',
+                      'src/core/lib/iomgr/socket_factory_posix.c',
                       'src/core/lib/iomgr/socket_mutator.c',
                       'src/core/lib/iomgr/socket_utils_common_posix.c',
                       'src/core/lib/iomgr/socket_utils_linux.c',
@@ -508,6 +515,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_client_windows.c',
                       'src/core/lib/iomgr/tcp_posix.c',
                       'src/core/lib/iomgr/tcp_server_posix.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_common.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c',
+                      'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c',
                       'src/core/lib/iomgr/tcp_server_uv.c',
                       'src/core/lib/iomgr/tcp_server_windows.c',
                       'src/core/lib/iomgr/tcp_uv.c',
@@ -548,6 +558,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/channel_ping.c',
                       'src/core/lib/surface/channel_stack_type.c',
                       'src/core/lib/surface/completion_queue.c',
+                      'src/core/lib/surface/completion_queue_factory.c',
                       'src/core/lib/surface/event_string.c',
                       'src/core/lib/surface/lame_client.c',
                       'src/core/lib/surface/metadata_array.c',
@@ -624,10 +635,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/client_channel_factory.c',
                       'src/core/ext/client_channel/client_channel_plugin.c',
                       'src/core/ext/client_channel/connector.c',
-                      'src/core/ext/client_channel/default_initial_connect_string.c',
                       'src/core/ext/client_channel/http_connect_handshaker.c',
                       'src/core/ext/client_channel/http_proxy.c',
-                      'src/core/ext/client_channel/initial_connect_string.c',
                       'src/core/ext/client_channel/lb_policy.c',
                       'src/core/ext/client_channel/lb_policy_factory.c',
                       'src/core/ext/client_channel/lb_policy_registry.c',
@@ -637,6 +646,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/resolver.c',
                       'src/core/ext/client_channel/resolver_factory.c',
                       'src/core/ext/client_channel/resolver_registry.c',
+                      'src/core/ext/client_channel/retry_throttle.c',
                       'src/core/ext/client_channel/subchannel.c',
                       'src/core/ext/client_channel/subchannel_index.c',
                       'src/core/ext/client_channel/uri_parser.c',
@@ -675,6 +685,7 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
+                              'src/core/lib/support/arena.h',
                               'src/core/lib/support/backoff.h',
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
@@ -736,6 +747,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/sockaddr_posix.h',
                               'src/core/lib/iomgr/sockaddr_utils.h',
                               'src/core/lib/iomgr/sockaddr_windows.h',
+                              'src/core/lib/iomgr/socket_factory_posix.h',
                               'src/core/lib/iomgr/socket_mutator.h',
                               'src/core/lib/iomgr/socket_utils.h',
                               'src/core/lib/iomgr/socket_utils_posix.h',
@@ -744,6 +756,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',
                               'src/core/lib/iomgr/tcp_server.h',
+                              'src/core/lib/iomgr/tcp_server_utils_posix.h',
                               'src/core/lib/iomgr/tcp_uv.h',
                               'src/core/lib/iomgr/tcp_windows.h',
                               'src/core/lib/iomgr/time_averaged_stats.h',
@@ -774,6 +787,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
                               'src/core/lib/surface/completion_queue.h',
+                              'src/core/lib/surface/completion_queue_factory.h',
                               'src/core/lib/surface/event_string.h',
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/lame_client.h',
@@ -843,7 +857,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/connector.h',
                               'src/core/ext/client_channel/http_connect_handshaker.h',
                               'src/core/ext/client_channel/http_proxy.h',
-                              'src/core/ext/client_channel/initial_connect_string.h',
                               'src/core/ext/client_channel/lb_policy.h',
                               'src/core/ext/client_channel/lb_policy_factory.h',
                               'src/core/ext/client_channel/lb_policy_registry.h',
@@ -853,6 +866,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/resolver.h',
                               'src/core/ext/client_channel/resolver_factory.h',
                               'src/core/ext/client_channel/resolver_registry.h',
+                              'src/core/ext/client_channel/retry_throttle.h',
                               'src/core/ext/client_channel/subchannel.h',
                               'src/core/ext/client_channel/subchannel_index.h',
                               'src/core/ext/client_channel/uri_parser.h',
@@ -887,8 +901,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.h'
+    ss.source_files = 'include/grpc/grpc_cronet.h'
   end
 
   s.subspec 'Cronet-Implementation' do |ss|
@@ -899,7 +912,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Cronet-Interface", version
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.c',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
@@ -914,7 +927,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/end2end_test_utils.c',
                       'test/core/end2end/tests/*.{c,h}',
                       'test/core/end2end/data/*.{c,h}',
-                      'test/core/util/debugger_macros.c',
+                      'test/core/util/debugger_macros.{c,h}',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
                       'test/core/util/port.c',

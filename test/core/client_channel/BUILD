@@ -45,10 +45,3 @@ cc_test(
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:cq_verifier"],
     copts = ['-std=c99']
 )
-
-cc_test(
-    name = "set_initial_connect_string_test",
-    srcs = ["set_initial_connect_string_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)

@@ -193,7 +193,7 @@ LDXX_ubsan = clang++
 AR_ubsan = $(DEFAULT_AR)
 AROPTS_ubsan = $(DEFAULT_AROPTS)
 RANLIB_ubsan = $(DEFAULT_RANLIB)
-CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
 LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG
 
@@ -475,8 +475,8 @@ Q = @
 endif
 
 CORE_VERSION = 3.0.0-dev
-CPP_VERSION = 1.2.0-dev
-CSHARP_VERSION = 1.2.0-dev
+CPP_VERSION = 1.3.0-dev
+CSHARP_VERSION = 1.3.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -969,6 +969,7 @@ algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
+arena_test: $(BINDIR)/$(CONFIG)/arena_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
@@ -1080,7 +1081,6 @@ sequential_connectivity_test: $(BINDIR)/$(CONFIG)/sequential_connectivity_test
 server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
-set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
 slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
 slice_test: $(BINDIR)/$(CONFIG)/slice_test
@@ -1110,8 +1110,10 @@ wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
 bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
+bm_chttp2_transport: $(BINDIR)/$(CONFIG)/bm_chttp2_transport
 bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
 bm_cq: $(BINDIR)/$(CONFIG)/bm_cq
 bm_error: $(BINDIR)/$(CONFIG)/bm_error
@@ -1120,6 +1122,7 @@ bm_fullstack_streaming_pump: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump
 bm_fullstack_trickle: $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 bm_fullstack_unary_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong
 bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
+bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
@@ -1348,6 +1351,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
+  $(BINDIR)/$(CONFIG)/arena_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
@@ -1442,7 +1446,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sequential_connectivity_test \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
-  $(BINDIR)/$(CONFIG)/set_initial_connect_string_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
   $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
   $(BINDIR)/$(CONFIG)/slice_test \
@@ -1531,8 +1534,10 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
+  $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
   $(BINDIR)/$(CONFIG)/bm_error \
@@ -1541,6 +1546,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_trickle \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
+  $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1646,8 +1652,10 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
+  $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
   $(BINDIR)/$(CONFIG)/bm_error \
@@ -1656,6 +1664,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_trickle \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
+  $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1726,6 +1735,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alloc_test || ( echo test alloc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing arena_test"
+	$(Q) $(BINDIR)/$(CONFIG)/arena_test || ( echo test arena_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bdp_estimator_test"
@@ -1898,8 +1909,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
-	$(E) "[RUN]     Testing set_initial_connect_string_test"
-	$(Q) $(BINDIR)/$(CONFIG)/set_initial_connect_string_test || ( echo test set_initial_connect_string_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_string_helpers_test"
@@ -1986,10 +1995,14 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_arena"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_call_create || ( echo test bm_call_create failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_chttp2_hpack"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_chttp2_hpack || ( echo test bm_chttp2_hpack failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_chttp2_transport"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_chttp2_transport || ( echo test bm_chttp2_transport failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_closure"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_closure || ( echo test bm_closure failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_cq"
@@ -2006,6 +2019,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong || ( echo test bm_fullstack_unary_ping_pong failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_metadata"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_pollset"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
@@ -2657,6 +2672,8 @@ LIBGPR_SRC = \
     src/core/lib/profiling/basic_timers.c \
     src/core/lib/profiling/stap_timers.c \
     src/core/lib/support/alloc.c \
+    src/core/lib/support/arena.c \
+    src/core/lib/support/atm.c \
     src/core/lib/support/avl.c \
     src/core/lib/support/backoff.c \
     src/core/lib/support/cmdline.c \
@@ -2850,6 +2867,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -2862,6 +2880,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -2902,6 +2923,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -2978,10 +3000,8 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/client_channel_factory.c \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
@@ -2991,6 +3011,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -3162,6 +3183,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -3174,6 +3196,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -3214,6 +3239,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3263,10 +3289,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/client_channel_factory.c \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
@@ -3276,6 +3300,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -3465,6 +3490,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -3477,6 +3503,9 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -3517,6 +3546,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3691,6 +3721,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -3703,6 +3734,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -3743,6 +3777,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -3794,10 +3829,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/client_channel_factory.c \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
@@ -3807,6 +3840,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -4300,6 +4334,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -4312,6 +4347,9 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -4352,6 +4390,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -4377,10 +4416,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/client_channel_factory.c \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
@@ -4390,6 +4427,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -8157,6 +8195,38 @@ endif
 endif
 
 
+ARENA_TEST_SRC = \
+    test/core/support/arena_test.c \
+
+ARENA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ARENA_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/arena_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/arena_test: $(ARENA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(ARENA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/arena_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/arena_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_arena_test: $(ARENA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ARENA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 BAD_SERVER_RESPONSE_TEST_SRC = \
     test/core/end2end/bad_server_response_test.c \
 
@@ -11709,38 +11779,6 @@ endif
 endif
 
 
-SET_INITIAL_CONNECT_STRING_TEST_SRC = \
-    test/core/client_channel/set_initial_connect_string_test.c \
-
-SET_INITIAL_CONNECT_STRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SET_INITIAL_CONNECT_STRING_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/set_initial_connect_string_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SET_INITIAL_CONNECT_STRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/client_channel/set_initial_connect_string_test.o:  $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 SLICE_BUFFER_TEST_SRC = \
     test/core/slice/slice_buffer_test.c \
 
@@ -12702,6 +12740,49 @@ endif
 endif
 
 
+BM_ARENA_SRC = \
+    test/cpp/microbenchmarks/bm_arena.cc \
+
+BM_ARENA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_ARENA_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_arena: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_arena: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_arena: $(PROTOBUF_DEP) $(BM_ARENA_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_ARENA_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_arena
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_arena.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_arena: $(BM_ARENA_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_ARENA_OBJS:.o=.dep)
+endif
+endif
+
+
 BM_CALL_CREATE_SRC = \
     test/cpp/microbenchmarks/bm_call_create.cc \
 
@@ -12784,6 +12865,49 @@ deps_bm_chttp2_hpack: $(BM_CHTTP2_HPACK_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_CHTTP2_HPACK_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_CHTTP2_TRANSPORT_SRC = \
+    test/cpp/microbenchmarks/bm_chttp2_transport.cc \
+
+BM_CHTTP2_TRANSPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CHTTP2_TRANSPORT_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_chttp2_transport: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_chttp2_transport: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_chttp2_transport: $(PROTOBUF_DEP) $(BM_CHTTP2_TRANSPORT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CHTTP2_TRANSPORT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_chttp2_transport
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_chttp2_transport.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_chttp2_transport: $(BM_CHTTP2_TRANSPORT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_CHTTP2_TRANSPORT_OBJS:.o=.dep)
 endif
 endif
 
@@ -13128,6 +13252,49 @@ deps_bm_metadata: $(BM_METADATA_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_METADATA_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_POLLSET_SRC = \
+    test/cpp/microbenchmarks/bm_pollset.cc \
+
+BM_POLLSET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_POLLSET_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_pollset: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_pollset: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_pollset: $(PROTOBUF_DEP) $(BM_POLLSET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_POLLSET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_pollset
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_pollset.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_pollset: $(BM_POLLSET_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_POLLSET_OBJS:.o=.dep)
 endif
 endif
 

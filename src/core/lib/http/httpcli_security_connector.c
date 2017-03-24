@@ -95,7 +95,7 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
                  c->secure_peer_name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
   }
   grpc_closure_sched(exec_ctx, on_peer_checked, error);

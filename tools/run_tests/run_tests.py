@@ -54,6 +54,7 @@ import traceback
 import time
 from six.moves import urllib
 import uuid
+import six
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -692,9 +693,13 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
-                                 timeout_seconds=10*60,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
+                                  timeout_seconds=10*60,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    tests.append(self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
+                 timeout_seconds=10*60,
+                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+    return tests
 
   def pre_build_steps(self):
     return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
@@ -771,7 +776,7 @@ class CSharpLanguage(object):
         runtime_cmd = ['mono']
 
     specs = []
-    for assembly in tests_by_assembly.iterkeys():
+    for assembly in six.iterkeys(tests_by_assembly):
       assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
                                                  assembly_subdir,
                                                  assembly,

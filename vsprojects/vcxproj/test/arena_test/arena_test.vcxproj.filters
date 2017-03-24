@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\arena_test.c">
+      <Filter>test\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{130788b2-eacc-90df-a4f6-f5102a7d3370}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{5c3e1753-6fdb-9476-f98c-a3a394fac54a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\support">
+      <UniqueIdentifier>{1d3d2cc8-4e69-8b2e-6ceb-6569fcb19a86}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
