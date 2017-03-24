@@ -67,6 +67,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_secure",
@@ -847,6 +848,27 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_dns_ares",
+    srcs = [
+        "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c",
+    ],
+    hdrs = [
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+    external_deps = [
+        "cares",
     ],
 )
 

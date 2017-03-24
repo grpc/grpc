@@ -719,10 +719,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
+  grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);

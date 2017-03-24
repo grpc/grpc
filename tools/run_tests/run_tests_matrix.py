@@ -55,7 +55,8 @@ _DEFAULT_INNER_JOBS = 2
 _REPORT_SUFFIX = 'sponge_log.xml'
 
 
-def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
+def _docker_jobspec(name, runtests_args=[], runtests_envs={},
+                    inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a docker container"""
   test_job = jobset.JobSpec(
           cmdline=['python', 'tools/run_tests/run_tests.py',
@@ -64,16 +65,19 @@ def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                    '-j', str(inner_jobs),
                    '-x', 'report_%s_%s' % (name, _REPORT_SUFFIX),
                    '--report_suite_name', '%s' % name] + runtests_args,
+          environ=runtests_envs,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
   return test_job
 
 
-def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_DEFAULT_INNER_JOBS):
+def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
+                       runtests_envs={}, inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a separate workspace"""
   if not workspace_name:
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
+  env.update(runtests_envs)
   test_job = jobset.JobSpec(
           cmdline=['bash',
                    'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
@@ -89,7 +93,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
 
 def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
                   arch=None, compiler=None,
-                  labels=[], extra_args=[],
+                  labels=[], extra_args=[], extra_envs={},
                   inner_jobs=_DEFAULT_INNER_JOBS):
   result = []
   for language in languages:
@@ -103,11 +107,16 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
+        for extra_env in extra_envs:
+          name += '_%s_%s' % (extra_env, extra_envs[extra_env])
+
         runtests_args += extra_args
         if platform == 'linux':
-          job = _docker_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
+          job = _docker_jobspec(name=name, runtests_args=runtests_args,
+                                runtests_envs=extra_envs, inner_jobs=inner_jobs)
         else:
-          job = _workspace_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
+          job = _workspace_jobspec(name=name, runtests_args=runtests_args,
+                                   runtests_envs=extra_envs, inner_jobs=inner_jobs)
 
         job.labels = [platform, config, language, iomgr_platform] + labels
         result.append(job)
@@ -211,6 +220,21 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                   labels=['portability'],
                                   extra_args=extra_args,
                                   inner_jobs=inner_jobs)
+
+  # C and C++ with the c-ares DNS resolver on Linux
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
+                              configs=['dbg'], platforms=['linux'],
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
+
+  # TODO(zyc): Turn on this test after adding c-ares support on windows.
+  # C with the c-ares DNS resolver on Windonws
+  # test_jobs += _generate_jobs(languages=['c'],
+  #                             configs=['dbg'], platforms=['windows'],
+  #                             labels=['portability'],
+  #                             extra_args=extra_args,
+  #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
   # cmake build for C and C++
   # TODO(jtattermusch): some of the tests are failing, so we force --build_only
