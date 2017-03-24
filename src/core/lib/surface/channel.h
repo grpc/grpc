@@ -35,12 +35,17 @@
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport *optional_transport);
+
+grpc_channel *grpc_channel_create_with_builder(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    grpc_channel_stack_type channel_stack_type);
 
 /** Create a call given a grpc_channel, in order to call \a method.
     Progress is tied to activity on \a pollset_set. The returned call object is
@@ -65,6 +70,9 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
                                                 grpc_channel *channel,
                                                 int status_code);
+
+size_t grpc_channel_get_call_size_estimate(grpc_channel *channel);
+void grpc_channel_update_call_size_estimate(grpc_channel *channel, size_t size);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

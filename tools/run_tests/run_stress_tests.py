@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -43,6 +43,7 @@ import sys
 import tempfile
 import time
 import uuid
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -239,9 +240,8 @@ servers = set(
     for s in itertools.chain.from_iterable(_SERVERS if x == 'all' else [x]
                                            for x in args.server))
 
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(_LANGUAGES.iterkeys(
-                ) if x == 'all' else [x] for x in args.language))
+languages = set(_LANGUAGES[l] for l in itertools.chain.from_iterable(
+  six.iterkeys(_LANGUAGES) if x == 'all' else [x] for x in args.language))
 
 docker_images = {}
 # languages for which to build docker images
@@ -267,7 +267,7 @@ if build_jobs:
     jobset.message('FAILED',
                    'Failed to build interop docker images.',
                    do_newline=True)
-    for image in docker_images.itervalues():
+    for image in six.itervalues(docker_images):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
@@ -306,7 +306,7 @@ try:
 
   if not jobs:
     print('No jobs to run.')
-    for image in docker_images.itervalues():
+    for image in six.itervalues(docker_images):
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
@@ -324,8 +324,8 @@ finally:
     if not job.is_running():
       print('Server "%s" has exited prematurely.' % server)
 
-  dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
+  dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)])
 
-  for image in docker_images.itervalues():
+  for image in six.itervalues(docker_images):
     print('Removing docker image %s' % image)
     dockerjob.remove_image(image)

@@ -81,9 +81,12 @@ static void worker_thread(void *arg) {
   uint32_t cpu;
   unsigned r = 12345678;
   unsigned i, j;
-  for (i = 0; i < 1000 / grpc_test_slowdown_factor(); i++) {
+  /* Avoid repetitive division calculations */
+  int64_t max_i = 1000 / grpc_test_slowdown_factor();
+  int64_t max_j = 1000000 / grpc_test_slowdown_factor();
+  for (i = 0; i < max_i; i++) {
     /* run for a bit - just calculate something random. */
-    for (j = 0; j < 1000000 / grpc_test_slowdown_factor(); j++) {
+    for (j = 0; j < max_j; j++) {
       r = (r * 17) & ((r - i) | (r * i));
     }
     cpu = gpr_cpu_current_cpu();

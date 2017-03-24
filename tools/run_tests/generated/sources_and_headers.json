@@ -87,6 +87,21 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "arena_test", 
+    "src": [
+      "test/core/support/arena_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
@@ -417,6 +432,23 @@
     "name": "endpoint_pair_test", 
     "src": [
       "test/core/iomgr/endpoint_pair_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "error_test", 
+    "src": [
+      "test/core/iomgr/error_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1667,6 +1699,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "parse_address_test", 
+    "src": [
+      "test/core/client_channel/parse_address_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
       "test/core/slice/percent_decode_fuzzer.c"
@@ -1883,24 +1932,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util", 
-      "test_tcp_server"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "set_initial_connect_string_test", 
-    "src": [
-      "test/core/client_channel/set_initial_connect_string_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2028,6 +2059,23 @@
     "name": "status_conversion_test", 
     "src": [
       "test/core/transport/status_conversion_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "stream_owned_slice_test", 
+    "src": [
+      "test/core/transport/stream_owned_slice_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2386,6 +2434,28 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_arena", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_arena.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2406,6 +2476,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2426,6 +2497,28 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_chttp2_transport", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_chttp2_transport.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2446,6 +2539,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2466,6 +2560,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2486,14 +2581,15 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "bm_fullstack", 
+    "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2504,6 +2600,72 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_streaming_pump", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_trickle", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_trickle.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2512,6 +2674,27 @@
     "name": "bm_metadata", 
     "src": [
       "test/cpp/microbenchmarks/bm_metadata.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_pollset", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_pollset.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3451,6 +3634,30 @@
     "name": "server_builder_plugin_test", 
     "src": [
       "test/cpp/end2end/server_builder_plugin_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_builder_test", 
+    "src": [
+      "test/cpp/server/server_builder_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5709,6 +5916,30 @@
   }, 
   {
     "deps": [
+      "benchmark", 
+      "grpc", 
+      "grpc++", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
+      "test/cpp/microbenchmarks/fullstack_fixtures.h", 
+      "test/cpp/microbenchmarks/helpers.cc", 
+      "test/cpp/microbenchmarks/helpers.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
@@ -7072,6 +7303,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/arena.h", 
       "src/core/lib/support/backoff.h", 
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
@@ -7119,6 +7351,9 @@
       "src/core/lib/profiling/stap_timers.c", 
       "src/core/lib/profiling/timers.h", 
       "src/core/lib/support/alloc.c", 
+      "src/core/lib/support/arena.c", 
+      "src/core/lib/support/arena.h", 
+      "src/core/lib/support/atm.c", 
       "src/core/lib/support/avl.c", 
       "src/core/lib/support/backoff.c", 
       "src/core/lib/support/backoff.h", 
@@ -7277,6 +7512,7 @@
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
@@ -7285,6 +7521,7 @@
       "src/core/lib/iomgr/tcp_client_posix.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
+      "src/core/lib/iomgr/tcp_server_utils_posix.h", 
       "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
@@ -7445,6 +7682,8 @@
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.c", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.c", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
@@ -7465,6 +7704,10 @@
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
       "src/core/lib/iomgr/tcp_server_posix.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix.h", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_common.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c", 
+      "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c", 
       "src/core/lib/iomgr/tcp_server_uv.c", 
       "src/core/lib/iomgr/tcp_server_windows.c", 
       "src/core/lib/iomgr/tcp_uv.c", 
@@ -7588,7 +7831,6 @@
       "src/core/ext/client_channel/connector.h", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.h", 
       "src/core/ext/client_channel/lb_policy_registry.h", 
@@ -7598,6 +7840,7 @@
       "src/core/ext/client_channel/resolver.h", 
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/retry_throttle.h", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.h", 
       "src/core/ext/client_channel/uri_parser.h"
@@ -7614,13 +7857,10 @@
       "src/core/ext/client_channel/client_channel_plugin.c", 
       "src/core/ext/client_channel/connector.c", 
       "src/core/ext/client_channel/connector.h", 
-      "src/core/ext/client_channel/default_initial_connect_string.c", 
       "src/core/ext/client_channel/http_connect_handshaker.c", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/http_proxy.c", 
       "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/initial_connect_string.c", 
-      "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.c", 
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.c", 
@@ -7639,6 +7879,8 @@
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.c", 
       "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/retry_throttle.c", 
+      "src/core/ext/client_channel/retry_throttle.h", 
       "src/core/ext/client_channel/subchannel.c", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.c", 
@@ -7912,7 +8154,7 @@
     "headers": [
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -7934,8 +8176,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fake_resolver.c", 
       "test/core/end2end/fake_resolver.h", 
-      "test/core/end2end/fixtures/http_proxy.c", 
-      "test/core/end2end/fixtures/http_proxy.h", 
+      "test/core/end2end/fixtures/http_proxy_fixture.c", 
+      "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.c", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
@@ -8251,6 +8493,7 @@
       "include/grpc++/grpc++.h", 
       "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
+      "include/grpc++/impl/channel_argument_option.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
       "include/grpc++/impl/grpc_library.h", 
@@ -8307,6 +8550,7 @@
       "include/grpc++/grpc++.h", 
       "include/grpc++/health_check_service_interface.h", 
       "include/grpc++/impl/call.h", 
+      "include/grpc++/impl/channel_argument_option.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/codegen/core_codegen.h", 
       "include/grpc++/impl/grpc_library.h", 
@@ -8356,6 +8600,7 @@
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/common/version_cc.cc", 
       "src/cpp/server/async_generic_service.cc", 
+      "src/cpp/server/channel_argument_option.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 

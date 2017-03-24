@@ -24,7 +24,7 @@
     },
     "dependencies": {
       "Grpc.Core": "${settings.csharp_version}",
-      "Google.Apis.Auth": "1.16.0"
+      "Google.Apis.Auth": "1.21.0"
     },
     "frameworks": {
       "net45": { },

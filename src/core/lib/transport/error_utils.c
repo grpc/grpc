@@ -44,18 +44,18 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   }
   if (grpc_error_is_special(error)) return NULL;
   // Otherwise, search through its children.
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    grpc_error *result = recursively_find_error_with_field(child_error, which);
-    if (result != NULL) return result;
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    grpc_error *result = recursively_find_error_with_field(lerr->err, which);
+    if (result) return result;
+    slot = lerr->next;
   }
   return NULL;
 }
 
 void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
-                           grpc_status_code *code, const char **msg,
+                           grpc_status_code *code, grpc_slice *slice,
                            grpc_http2_error_code *http_error) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
@@ -97,11 +97,11 @@ void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
 
   // If the error has a status message, use it.  Otherwise, fall back to
   // the error description.
-  if (msg != NULL) {
-    *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE);
-    if (*msg == NULL && error != GRPC_ERROR_NONE) {
-      *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION);
-      if (*msg == NULL) *msg = "unknown error";  // Just in case.
+  if (slice != NULL) {
+    if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE, slice)) {
+      if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION, slice)) {
+        *slice = grpc_slice_from_static_string("unknown error");
+      }
     }
   }
 
@@ -112,13 +112,13 @@ bool grpc_error_has_clear_grpc_status(grpc_error *error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
     return true;
   }
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    if (grpc_error_has_clear_grpc_status(child_error)) {
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }
+    slot = lerr->next;
   }
   return false;
 }

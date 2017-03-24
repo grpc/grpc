@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,6 +30,8 @@
 
 """Run test matrix."""
 
+from __future__ import print_function
+
 import argparse
 import multiprocessing
 import os
@@ -49,6 +51,9 @@ _RUNTESTS_TIMEOUT = 4*60*60
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
+# report suffix is important for reports to get picked up by internal CI
+_REPORT_SUFFIX = 'sponge_log.xml'
+
 
 def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a docker container"""
@@ -57,7 +62,7 @@ def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                    '--use_docker',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', 'report_%s.xml' % name,
+                   '-x', 'report_%s_%s' % (name, _REPORT_SUFFIX),
                    '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -74,7 +79,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
                    'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', '../report_%s.xml' % name,
+                   '-x', '../report_%s_%s' % (name, _REPORT_SUFFIX),
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
@@ -92,19 +97,19 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
       for config in configs:
         name = '%s_%s_%s_%s' % (language, platform, config, iomgr_platform)
         runtests_args = ['-l', language,
-                         '-c', config]
+                         '-c', config,
+                         '--iomgr_platform', iomgr_platform]
         if arch or compiler:
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
-
         runtests_args += extra_args
         if platform == 'linux':
           job = _docker_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
         else:
           job = _workspace_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
 
-        job.labels = [platform, config, language] + labels
+        job.labels = [platform, config, language, iomgr_platform] + labels
         result.append(job)
   return result
 
@@ -412,10 +417,10 @@ if __name__ == "__main__":
                                        maxjobs=args.jobs)
   # Merge skipped tests into results to show skipped tests on report.xml
   if skipped_jobs:
-    skipped_results = jobset.run(skipped_jobs,
-                                 skip_jobs=True)
+    ignored_num_skipped_failures, skipped_results = jobset.run(
+        skipped_jobs, skip_jobs=True)
     resultset.update(skipped_results)
-  report_utils.render_junit_xml_report(resultset, 'report.xml',
+  report_utils.render_junit_xml_report(resultset, 'report_%s' % _REPORT_SUFFIX,
                                        suite_name='aggregate_tests')
 
   if num_failures == 0:

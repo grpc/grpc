@@ -37,6 +37,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
@@ -68,7 +69,7 @@ namespace Grpc.IntegrationTesting
 
             server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
+                Services = { TestService.BindService(new SslCredentialsTestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
             };
             server.Start();
@@ -94,6 +95,41 @@ namespace Grpc.IntegrationTesting
         {
             var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
             Assert.AreEqual(10, response.Payload.Body.Length);
+        }
+
+        [Test]
+        public async Task AuthContextIsPopulated()
+        {
+            var call = client.StreamingInputCall();
+            await call.RequestStream.CompleteAsync();
+            var response = await call.ResponseAsync;
+            Assert.AreEqual(12345, response.AggregatedPayloadSize);
+        }
+
+        private class SslCredentialsTestServiceImpl : TestService.TestServiceBase
+        {
+            public override async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+            {
+                return new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
+            }
+
+            public override async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
+            {
+                var authContext = context.AuthContext;
+                await requestStream.ForEachAsync(async request => {});
+
+                Assert.IsTrue(authContext.IsPeerAuthenticated);
+                Assert.AreEqual("x509_subject_alternative_name", authContext.PeerIdentityPropertyName);
+                Assert.IsTrue(authContext.PeerIdentity.Count() > 0);
+                Assert.AreEqual("ssl", authContext.FindPropertiesByName("transport_security_type").First().Value);
+
+                return new StreamingInputCallResponse { AggregatedPayloadSize = 12345 };
+            }
+
+            private static Payload CreateZerosPayload(int size)
+            {
+                return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+            }
         }
     }
 }

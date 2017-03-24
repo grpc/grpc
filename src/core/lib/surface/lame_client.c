@@ -90,7 +90,8 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     fill_metadata(exec_ctx, elem, op->recv_trailing_metadata);
   }
   grpc_transport_stream_op_finish_with_failure(
-      exec_ctx, op, GRPC_ERROR_CREATE("lame client channel"));
+      exec_ctx, op,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
 }
 
 static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
@@ -111,8 +112,9 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
                        GRPC_ERROR_NONE);
   }
   if (op->send_ping != NULL) {
-    grpc_closure_sched(exec_ctx, op->send_ping,
-                       GRPC_ERROR_CREATE("lame client channel"));
+    grpc_closure_sched(
+        exec_ctx, op->send_ping,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != NULL) {
@@ -130,8 +132,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *and_free_memory) {
-  gpr_free(and_free_memory);
+                              grpc_closure *then_schedule_closure) {
+  grpc_closure_sched(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,

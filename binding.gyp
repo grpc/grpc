@@ -39,11 +39,13 @@
 {
   'variables': {
     'runtime%': 'node',
-    # UV integration in C core is disabled by default while bugs are ironed
-    # out. It can be re-enabled for one build by setting the npm config
-    # variable grpc_uv to true, and it can be re-enabled permanently by
-    # setting it to true here.
-    'grpc_uv%': 'false'
+    # UV integration in C core is enabled by default. It can be disabled
+    # by setting this argument to anything else.
+    'grpc_uv%': 'true',
+    # Some Node installations use the system installation of OpenSSL, and on
+    # some systems, the system OpenSSL still does not have ALPN support. This
+    # will let users recompile gRPC to work without ALPN.
+    'grpc_alpn%': 'true'
   },
   'target_defaults': {
     'include_dirs': [
@@ -73,10 +75,16 @@
           'OPENSSL_NO_ASM'
         ]
       }, {
-        # As of the beginning of 2017, we only support versions of Node with
-        # embedded versions of OpenSSL that support ALPN
-        'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=1'
+        'conditions': [
+          ['grpc_alpn=="true"', {
+            'defines': [
+              'TSI_OPENSSL_ALPN_SUPPORT=1'
+            ],
+          }, {
+            'defines': [
+              'TSI_OPENSSL_ALPN_SUPPORT=0'
+            ],
+          }]
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
@@ -534,6 +542,8 @@
         'src/core/lib/profiling/basic_timers.c',
         'src/core/lib/profiling/stap_timers.c',
         'src/core/lib/support/alloc.c',
+        'src/core/lib/support/arena.c',
+        'src/core/lib/support/atm.c',
         'src/core/lib/support/avl.c',
         'src/core/lib/support/backoff.c',
         'src/core/lib/support/cmdline.c',
@@ -645,6 +655,7 @@
         'src/core/lib/iomgr/resolve_address_windows.c',
         'src/core/lib/iomgr/resource_quota.c',
         'src/core/lib/iomgr/sockaddr_utils.c',
+        'src/core/lib/iomgr/socket_factory_posix.c',
         'src/core/lib/iomgr/socket_mutator.c',
         'src/core/lib/iomgr/socket_utils_common_posix.c',
         'src/core/lib/iomgr/socket_utils_linux.c',
@@ -657,6 +668,9 @@
         'src/core/lib/iomgr/tcp_client_windows.c',
         'src/core/lib/iomgr/tcp_posix.c',
         'src/core/lib/iomgr/tcp_server_posix.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_common.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c',
         'src/core/lib/iomgr/tcp_server_uv.c',
         'src/core/lib/iomgr/tcp_server_windows.c',
         'src/core/lib/iomgr/tcp_uv.c',
@@ -773,10 +787,8 @@
         'src/core/ext/client_channel/client_channel_factory.c',
         'src/core/ext/client_channel/client_channel_plugin.c',
         'src/core/ext/client_channel/connector.c',
-        'src/core/ext/client_channel/default_initial_connect_string.c',
         'src/core/ext/client_channel/http_connect_handshaker.c',
         'src/core/ext/client_channel/http_proxy.c',
-        'src/core/ext/client_channel/initial_connect_string.c',
         'src/core/ext/client_channel/lb_policy.c',
         'src/core/ext/client_channel/lb_policy_factory.c',
         'src/core/ext/client_channel/lb_policy_registry.c',
@@ -786,6 +798,7 @@
         'src/core/ext/client_channel/resolver.c',
         'src/core/ext/client_channel/resolver_factory.c',
         'src/core/ext/client_channel/resolver_registry.c',
+        'src/core/ext/client_channel/retry_throttle.c',
         'src/core/ext/client_channel/subchannel.c',
         'src/core/ext/client_channel/subchannel_index.c',
         'src/core/ext/client_channel/uri_parser.c',
