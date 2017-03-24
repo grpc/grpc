@@ -33,6 +33,7 @@ cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
     deps = ["//external:benchmark"],
+    linkopts = ["-pthread"],
 )
 
 cc_library(
@@ -40,6 +41,7 @@ cc_library(
     srcs = ["helpers.cc"],
     hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
     deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+    linkopts = ["-pthread"],
 )
 
 cc_test(

@@ -51,14 +51,19 @@ cc_library(
         "server.h",
     ],
     deps = [
+        ":histogram",
+        ":interarrival",
+        ":usage_timer",
         "//:grpc",
         "//:grpc++",
         "//external:gtest",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:services_proto",
+        "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -73,7 +78,31 @@ cc_library(
         "report.h",
     ],
     deps = [
+        ":histogram",
+        ":parse_json",
+        ":qps_worker_impl",
         "//:grpc++",
+        "//src/proto/grpc/testing:control_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:services_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+cc_library(
+    name = "benchmark_config",
+    srcs = [
+        "benchmark_config.cc",
+    ],
+    hdrs = [
+        "benchmark_config.h",
+    ],
+    deps = [
+        ":driver_impl",
+        ":histogram",
+        "//:grpc++",
+        "//external:gflags",
         "//src/proto/grpc/testing:control_proto",
     ],
 )
@@ -117,8 +146,10 @@ cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
     deps = [
+        ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//external:gflags",
     ],
 )
 
@@ -126,6 +157,7 @@ cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
     deps = [
+        ":benchmark_config",
         ":driver_impl",
         ":qps_worker_impl",
     ],
@@ -135,6 +167,7 @@ cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
     deps = [
+        ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
     ],

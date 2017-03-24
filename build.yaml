@@ -1384,6 +1384,7 @@ libs:
   build: private
   language: c++
   headers:
+  - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
@@ -1394,13 +1395,13 @@ libs:
   - test/cpp/qps/server.h
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
-  - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/services.proto
+  - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
@@ -1410,7 +1411,6 @@ libs:
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
-  - test/cpp/util/benchmark_config.cc
   deps:
   - grpc_test_util
   - grpc++_test_util
