@@ -103,7 +103,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() : CompletionQueue(false) {}
+  CompletionQueue() : CompletionQueue(false) {
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
 
   /// Wrap \a take, taking ownership of the instance.
   ///
