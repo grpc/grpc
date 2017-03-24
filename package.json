@@ -32,9 +32,10 @@
   "dependencies": {
     "arguejs": "^0.2.3",
     "lodash": "^4.15.0",
+    "long": "^3.2.0",
     "nan": "^2.0.0",
     "node-pre-gyp": "^0.6.0",
-    "protobufjs": "^5.0.0"
+    "protobufjs": "^6.0.0"
   },
   "devDependencies": {
     "async": "^2.0.1",
@@ -48,7 +49,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "^3.0.2",
-    "mocha-jenkins-reporter": "^0.2.3",
+    "mocha-jenkins-reporter": "^0.3.0",
     "poisson-process": "^0.2.1"
   },
   "engines": {

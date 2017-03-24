@@ -110,8 +110,8 @@ function emptyUnary(client, done) {
  */
 function largeUnary(client, done) {
   var arg = {
-    response_type: 'COMPRESSABLE',
-    response_size: 314159,
+    responseType: 'COMPRESSABLE',
+    responseSize: 314159,
     payload: {
       body: zeroBuffer(271828)
     }
@@ -135,7 +135,7 @@ function largeUnary(client, done) {
 function clientStreaming(client, done) {
   var call = client.streamingInputCall(function(err, resp) {
     assert.ifError(err);
-    assert.strictEqual(resp.aggregated_payload_size, 74922);
+    assert.strictEqual(resp.aggregatedPayloadSize, 74922);
     if (done) {
       done();
     }
@@ -155,8 +155,8 @@ function clientStreaming(client, done) {
  */
 function serverStreaming(client, done) {
   var arg = {
-    response_type: 'COMPRESSABLE',
-    response_parameters: [
+    responseType: 'COMPRESSABLE',
+    responseParameters: [
       {size: 31415},
       {size: 9},
       {size: 2653},
@@ -169,7 +169,7 @@ function serverStreaming(client, done) {
     assert(resp_index < 4);
     assert.strictEqual(value.payload.type, 'COMPRESSABLE');
     assert.strictEqual(value.payload.body.length,
-                       arg.response_parameters[resp_index].size);
+                       arg.responseParameters[resp_index].size);
     resp_index += 1;
   });
   call.on('end', function() {
@@ -191,7 +191,7 @@ function serverStreaming(client, done) {
  */
 function pingPong(client, done) {
   var payload_sizes = [27182, 8, 1828, 45904];
-  var response_sizes = [31415, 9, 2653, 58979];
+  var responseSizes = [31415, 9, 2653, 58979];
   var call = client.fullDuplexCall();
   call.on('status', function(status) {
     assert.strictEqual(status.code, grpc.status.OK);
@@ -201,23 +201,23 @@ function pingPong(client, done) {
   });
   var index = 0;
   call.write({
-      response_type: 'COMPRESSABLE',
-      response_parameters: [
-        {size: response_sizes[index]}
+      responseType: 'COMPRESSABLE',
+      responseParameters: [
+        {size: responseSizes[index]}
       ],
       payload: {body: zeroBuffer(payload_sizes[index])}
   });
   call.on('data', function(response) {
     assert.strictEqual(response.payload.type, 'COMPRESSABLE');
-    assert.equal(response.payload.body.length, response_sizes[index]);
+    assert.equal(response.payload.body.length, responseSizes[index]);
     index += 1;
     if (index === 4) {
       call.end();
     } else {
       call.write({
-        response_type: 'COMPRESSABLE',
-        response_parameters: [
-          {size: response_sizes[index]}
+        responseType: 'COMPRESSABLE',
+        responseParameters: [
+          {size: responseSizes[index]}
         ],
         payload: {body: zeroBuffer(payload_sizes[index])}
       });
@@ -268,8 +268,8 @@ function cancelAfterBegin(client, done) {
 function cancelAfterFirstResponse(client, done) {
   var call = client.fullDuplexCall();
   call.write({
-      response_type: 'COMPRESSABLE',
-      response_parameters: [
+      responseType: 'COMPRESSABLE',
+      responseParameters: [
         {size: 31415}
       ],
       payload: {body: zeroBuffer(27182)}
@@ -305,8 +305,8 @@ function customMetadata(client, done) {
   metadata.set(ECHO_INITIAL_KEY, 'test_initial_metadata_value');
   metadata.set(ECHO_TRAILING_KEY, new Buffer('ababab', 'hex'));
   var arg = {
-    response_type: 'COMPRESSABLE',
-    response_size: 314159,
+    responseType: 'COMPRESSABLE',
+    responseSize: 314159,
     payload: {
       body: zeroBuffer(271828)
     }
@@ -354,7 +354,7 @@ function customMetadata(client, done) {
 function statusCodeAndMessage(client, done) {
   done = multiDone(done, 2);
   var arg = {
-    response_status: {
+    responseStatus: {
       code: 2,
       message: 'test status message'
     }
@@ -406,13 +406,13 @@ function unimplementedMethod(client, done) {
  */
 function authTest(expected_user, scope, client, done) {
   var arg = {
-    response_type: 'COMPRESSABLE',
-    response_size: 314159,
+    responseType: 'COMPRESSABLE',
+    responseSize: 314159,
     payload: {
       body: zeroBuffer(271828)
     },
-    fill_username: true,
-    fill_oauth_scope: true
+    fillUsername: true,
+    fillOauthScope: true
   };
   client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
@@ -420,7 +420,7 @@ function authTest(expected_user, scope, client, done) {
     assert.strictEqual(resp.payload.body.length, 314159);
     assert.strictEqual(resp.username, expected_user);
     if (scope) {
-      assert(scope.indexOf(resp.oauth_scope) > -1);
+      assert(scope.indexOf(resp.oauthScope) > -1);
     }
     if (done) {
       done();
@@ -433,7 +433,7 @@ function computeEngineCreds(client, done, extra) {
 }
 
 function serviceAccountCreds(client, done, extra) {
-  authTest(SERVICE_ACCOUNT_EMAIL, extra.oauth_scope, client, done);
+  authTest(SERVICE_ACCOUNT_EMAIL, extra.oauthScope, client, done);
 }
 
 function jwtTokenCreds(client, done, extra) {
@@ -442,13 +442,13 @@ function jwtTokenCreds(client, done, extra) {
 
 function oauth2Test(client, done, extra) {
   var arg = {
-    fill_username: true,
-    fill_oauth_scope: true
+    fillUsername: true,
+    fillOauthScope: true
   };
   client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
     assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
-    assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
+    assert(extra.oauthScope.indexOf(resp.oauthScope) > -1);
     if (done) {
       done();
     }
@@ -459,10 +459,10 @@ function perRpcAuthTest(client, done, extra) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
     var arg = {
-      fill_username: true,
-      fill_oauth_scope: true
+      fillUsername: true,
+      fillOauthScope: true
     };
-    var scope = extra.oauth_scope;
+    var scope = extra.oauthScope;
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
@@ -470,7 +470,7 @@ function perRpcAuthTest(client, done, extra) {
     client.unaryCall(arg, {credentials: creds}, function(err, resp) {
       assert.ifError(err);
       assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
-      assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
+      assert(extra.oauthScope.indexOf(resp.oauthScope) > -1);
       if (done) {
         done();
       }
@@ -602,7 +602,7 @@ function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
   };
 
   if (test.getCreds) {
-    test.getCreds(extra.oauth_scope, function(err, new_creds) {
+    test.getCreds(extra.oauthScope, function(err, new_creds) {
       assert.ifError(err);
       execute(err, grpc.credentials.combineChannelCredentials(
           creds, new_creds));
@@ -621,7 +621,7 @@ if (require.main === module) {
   });
   var extra_args = {
     service_account: argv.default_service_account,
-    oauth_scope: argv.oauth_scope
+    oauthScope: argv.oauth_scope
   };
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
           argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',

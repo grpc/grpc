@@ -110,13 +110,13 @@ function handleEmpty(call, callback) {
 function handleUnary(call, callback) {
   echoHeader(call);
   var req = call.request;
-  if (req.response_status) {
-    var status = req.response_status;
+  if (req.responseStatus) {
+    var status = req.responseStatus;
     status.metadata = getEchoTrailer(call);
     callback(status);
     return;
   }
-  var payload = getPayload(req.response_type, req.response_size);
+  var payload = getPayload(req.responseType, req.responseSize);
   callback(null, {payload: payload},
            getEchoTrailer(call));
 }
@@ -134,7 +134,7 @@ function handleStreamingInput(call, callback) {
     aggregate_size += value.payload.body.length;
   });
   call.on('end', function() {
-    callback(null, {aggregated_payload_size: aggregate_size},
+    callback(null, {aggregatedPayloadSize: aggregate_size},
              getEchoTrailer(call));
   });
 }
@@ -153,11 +153,11 @@ function handleStreamingOutput(call) {
     call.emit('error', status);
     return;
   }
-  _.each(req.response_parameters, function(resp_param) {
+  _.each(req.responseParameters, function(resp_param) {
     delay_queue.add(function(next) {
-      call.write({payload: getPayload(req.response_type, resp_param.size)});
+      call.write({payload: getPayload(req.responseType, resp_param.size)});
       next();
-    }, resp_param.interval_us);
+    }, resp_param.intervalUs);
   });
   delay_queue.add(function(next) {
     call.end(getEchoTrailer(call));
@@ -174,17 +174,17 @@ function handleFullDuplex(call) {
   echoHeader(call);
   var delay_queue = new AsyncDelayQueue();
   call.on('data', function(value) {
-    if (value.response_status) {
-      var status = value.response_status;
+    if (value.responseStatus) {
+      var status = value.responseStatus;
       status.metadata = getEchoTrailer(call);
       call.emit('error', status);
       return;
     }
-    _.each(value.response_parameters, function(resp_param) {
+    _.each(value.responseParameters, function(resp_param) {
       delay_queue.add(function(next) {
-        call.write({payload: getPayload(value.response_type, resp_param.size)});
+        call.write({payload: getPayload(value.responseType, resp_param.size)});
         next();
-      }, resp_param.interval_us);
+      }, resp_param.intervalUs);
     });
   });
   call.on('end', function() {

@@ -22,6 +22,9 @@ py34/
 node_modules
 src/node/extension_binary/
 
+# NPM debug
+npm-debug.log
+
 # gcov coverage data
 reports
 coverage
