@@ -49,9 +49,37 @@
       # Some Node installations use the system installation of OpenSSL, and on
       # some systems, the system OpenSSL still does not have ALPN support. This
       # will let users recompile gRPC to work without ALPN.
-      'grpc_alpn%': 'true'
+      'grpc_alpn%': 'true',
+      # Indicates that the library should be built with gcov.
+      'grpc_gcov%': 'false'
     },
     'target_defaults': {
+      'configurations': {
+        % for name, args in configs.iteritems():
+        %  if name in ['dbg', 'opt']:
+        '${{'dbg':'Debug', 'opt': 'Release'}[name]}': {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines')]:
+          %  if args.get(arg, None) is not None:
+          '${prop}': [
+            % for item in args.get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
+        },
+        %  endif
+        % endfor
+      },
+      % for arg, prop in [('CPPFLAGS', 'cflags'), ('LDFLAGS', 'ldflags')]:
+      %  if defaults['global'].get(arg, None) is not None:
+      '${prop}': [
+        % for item in defaults['global'].get(arg).split():
+          '${item}',
+        % endfor
+      ],
+      %  endif
+      % endfor
       'include_dirs': [
         '.',
         'include'
@@ -64,6 +92,17 @@
           'defines': [
             'GRPC_UV'
           ]
+        }],
+        ['grpc_gcov=="true"', {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
+          %  if configs['gcov'].get(arg, None) is not None:
+          '${prop}': [
+            % for item in configs['gcov'].get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
         }],
         ['OS!="win" and runtime=="electron"', {
           "defines": [
@@ -126,25 +165,8 @@
             "ws2_32"
           ]
         }, { # OS != "win"
-          'variables': {
-            'config': '<!(echo $CONFIG)',
-          },
           'include_dirs': [
             '<(node_root_dir)/deps/zlib'
-          ],
-          'conditions': [
-            ['config=="gcov"', {
-              'cflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs',
-                '-O0'
-              ],
-              'ldflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs'
-              ]
-            }
-           ]
           ]
         }]
       ]
@@ -274,15 +296,9 @@
         ],
         'cflags': [
           '-std=c++11',
-          '-Wall',
           '-pthread',
-          '-g',
           '-zdefs',
-          '-Werror',
           '-Wno-error=deprecated-declarations'
-        ],
-        'ldflags': [
-          '-g'
         ],
         "conditions": [
           ['OS=="win" or runtime=="electron"', {
