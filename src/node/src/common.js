@@ -87,5 +87,6 @@ exports.defaultGrpcOptions = {
   convertFieldsToCamelCase: false,
   binaryAsBase64: false,
   longsAsStrings: true,
+  enumsAsStrings: true,
   deprecatedArgumentOrder: false
 };

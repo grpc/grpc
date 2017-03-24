@@ -179,3 +179,25 @@ describe('Proto message oneof serialize and deserialize', function() {
     assert.equal(deserialized2.oneof_choice, 'int_choice');
   });
 });
+describe('Proto message enum serialize and deserialize', function() {
+  var enumSerialize = serializeCls(messages_proto.EnumValues);
+  var enumDeserialize = deserializeCls(
+      messages_proto.EnumValues, default_options);
+  var enumIntOptions = _.defaults({enumsAsStrings: false}, default_options);
+  var enumIntDeserialize = deserializeCls(
+      messages_proto.EnumValues, enumIntOptions);
+  it('Should accept both names and numbers', function() {
+    var nameSerialized = enumSerialize({enum_value: 'ONE'});
+    var numberSerialized = enumSerialize({enum_value: 1});
+    assert.strictEqual(messages_proto.TestEnum.ONE, 1);
+    assert.deepEqual(enumDeserialize(nameSerialized),
+                     enumDeserialize(numberSerialized));
+  });
+  it('Should deserialize as a string the enumsAsStrings option', function() {
+    var serialized = enumSerialize({enum_value: 'TWO'});
+    var nameDeserialized = enumDeserialize(serialized);
+    var numberDeserialized = enumIntDeserialize(serialized);
+    assert.deepEqual(nameDeserialized, {enum_value: 'TWO'});
+    assert.deepEqual(numberDeserialized, {enum_value: 2});
+  });
+});

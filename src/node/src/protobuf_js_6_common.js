@@ -50,7 +50,7 @@ exports.deserializeCls = function deserializeCls(cls, options) {
     defaults: true,
     bytes: options.binaryAsBase64 ? String : Buffer,
     longs: options.longsAsStrings ? String : null,
-    enums: String,
+    enums: options.enumsAsStrings ? String : null,
     oneofs: true
   };
   /**

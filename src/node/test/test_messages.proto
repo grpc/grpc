@@ -48,3 +48,13 @@ message OneOfValues {
     string string_choice = 2;
   }
 }
+
+enum TestEnum {
+  ZERO = 0;
+  ONE = 1;
+  TWO = 2;
+}
+
+message EnumValues {
+  TestEnum enum_value = 1;
+}
