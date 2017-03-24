@@ -284,6 +284,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
@@ -550,6 +551,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
