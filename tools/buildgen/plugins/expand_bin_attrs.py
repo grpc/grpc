@@ -52,9 +52,11 @@ def mako_plugin(dictionary):
     tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))
     tgt['boringssl'] = tgt.get('boringssl', False)
     tgt['zlib'] = tgt.get('zlib', False)
+    tgt['ares'] = tgt.get('ares', False)
     tgt['gtest'] = tgt.get('gtest', False)
 
   libs = dictionary.get('libs')
   for lib in libs:
     lib['boringssl'] = lib.get('boringssl', False)
     lib['zlib'] = lib.get('zlib', False)
+    lib['ares'] = lib.get('ares', False)

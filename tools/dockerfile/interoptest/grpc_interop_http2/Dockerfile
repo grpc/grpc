@@ -47,7 +47,7 @@ RUN pip install pip --upgrade
 RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
-RUN pip install twisted h2
+RUN pip install twisted h2 hyper
 
 # Define the default command.
 CMD ["bash"]

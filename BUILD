@@ -37,11 +37,11 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
-g_stands_for = "good"
+g_stands_for = "green"
 
-core_version = "2.0.0-dev"
+core_version = "3.0.0-dev"
 
-version = "1.1.0-dev"
+version = "1.2.0"
 
 grpc_cc_library(
     name = "gpr",
@@ -67,6 +67,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_secure",
@@ -308,8 +309,9 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/profiling/basic_timers.c",
         "src/core/lib/profiling/stap_timers.c",
-        "src/core/lib/support/arena.c",
         "src/core/lib/support/alloc.c",
+        "src/core/lib/support/arena.c",
+        "src/core/lib/support/atm.c",
         "src/core/lib/support/avl.c",
         "src/core/lib/support/backoff.c",
         "src/core/lib/support/cmdline.c",
@@ -353,8 +355,8 @@ grpc_cc_library(
         "src/core/lib/support/wrap_memcpy.c",
     ],
     hdrs = [
-        "src/core/lib/support/arena.h",
         "src/core/lib/profiling/timers.h",
+        "src/core/lib/support/arena.h",
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
@@ -471,6 +473,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_windows.c",
         "src/core/lib/iomgr/resource_quota.c",
         "src/core/lib/iomgr/sockaddr_utils.c",
+        "src/core/lib/iomgr/socket_factory_posix.c",
         "src/core/lib/iomgr/socket_mutator.c",
         "src/core/lib/iomgr/socket_utils_common_posix.c",
         "src/core/lib/iomgr/socket_utils_linux.c",
@@ -483,6 +486,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_client_windows.c",
         "src/core/lib/iomgr/tcp_posix.c",
         "src/core/lib/iomgr/tcp_server_posix.c",
+        "src/core/lib/iomgr/tcp_server_utils_posix_common.c",
+        "src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c",
+        "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c",
         "src/core/lib/iomgr/tcp_server_uv.c",
         "src/core/lib/iomgr/tcp_server_windows.c",
         "src/core/lib/iomgr/tcp_uv.c",
@@ -523,6 +529,7 @@ grpc_cc_library(
         "src/core/lib/surface/channel_ping.c",
         "src/core/lib/surface/channel_stack_type.c",
         "src/core/lib/surface/completion_queue.c",
+        "src/core/lib/surface/completion_queue_factory.c",
         "src/core/lib/surface/event_string.c",
         "src/core/lib/surface/lame_client.c",
         "src/core/lib/surface/metadata_array.c",
@@ -593,6 +600,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_utils.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
+        "src/core/lib/iomgr/socket_factory_posix.h",
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
@@ -601,6 +609,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
         "src/core/lib/iomgr/tcp_server.h",
+        "src/core/lib/iomgr/tcp_server_utils_posix.h",
         "src/core/lib/iomgr/tcp_uv.h",
         "src/core/lib/iomgr/tcp_windows.h",
         "src/core/lib/iomgr/time_averaged_stats.h",
@@ -631,6 +640,7 @@ grpc_cc_library(
         "src/core/lib/surface/channel_init.h",
         "src/core/lib/surface/channel_stack_type.h",
         "src/core/lib/surface/completion_queue.h",
+        "src/core/lib/surface/completion_queue_factory.h",
         "src/core/lib/surface/event_string.h",
         "src/core/lib/surface/init.h",
         "src/core/lib/surface/lame_client.h",
@@ -681,10 +691,8 @@ grpc_cc_library(
         "src/core/ext/client_channel/client_channel_factory.c",
         "src/core/ext/client_channel/client_channel_plugin.c",
         "src/core/ext/client_channel/connector.c",
-        "src/core/ext/client_channel/default_initial_connect_string.c",
         "src/core/ext/client_channel/http_connect_handshaker.c",
         "src/core/ext/client_channel/http_proxy.c",
-        "src/core/ext/client_channel/initial_connect_string.c",
         "src/core/ext/client_channel/lb_policy.c",
         "src/core/ext/client_channel/lb_policy_factory.c",
         "src/core/ext/client_channel/lb_policy_registry.c",
@@ -694,6 +702,7 @@ grpc_cc_library(
         "src/core/ext/client_channel/resolver.c",
         "src/core/ext/client_channel/resolver_factory.c",
         "src/core/ext/client_channel/resolver_registry.c",
+        "src/core/ext/client_channel/retry_throttle.c",
         "src/core/ext/client_channel/subchannel.c",
         "src/core/ext/client_channel/subchannel_index.c",
         "src/core/ext/client_channel/uri_parser.c",
@@ -704,7 +713,6 @@ grpc_cc_library(
         "src/core/ext/client_channel/connector.h",
         "src/core/ext/client_channel/http_connect_handshaker.h",
         "src/core/ext/client_channel/http_proxy.h",
-        "src/core/ext/client_channel/initial_connect_string.h",
         "src/core/ext/client_channel/lb_policy.h",
         "src/core/ext/client_channel/lb_policy_factory.h",
         "src/core/ext/client_channel/lb_policy_registry.h",
@@ -714,6 +722,7 @@ grpc_cc_library(
         "src/core/ext/client_channel/resolver.h",
         "src/core/ext/client_channel/resolver_factory.h",
         "src/core/ext/client_channel/resolver_registry.h",
+        "src/core/ext/client_channel/retry_throttle.h",
         "src/core/ext/client_channel/subchannel.h",
         "src/core/ext/client_channel/subchannel_index.h",
         "src/core/ext/client_channel/uri_parser.h",
@@ -839,6 +848,27 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_dns_ares",
+    srcs = [
+        "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c",
+    ],
+    hdrs = [
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+    external_deps = [
+        "cares",
     ],
 )
 

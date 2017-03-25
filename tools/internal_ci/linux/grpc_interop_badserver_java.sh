@@ -37,5 +37,5 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_badserver_interop $@
+tools/run_tests/run_interop_tests.py -l java --use_docker --http2_server_interop $@
 
