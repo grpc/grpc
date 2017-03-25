@@ -37,6 +37,6 @@ BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_c
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-# tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
+tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
 # todo(mattkwong): Change performance test to use microbenchmarking
-tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+# tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN

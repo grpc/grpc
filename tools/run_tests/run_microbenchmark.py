@@ -245,8 +245,7 @@ try:
         run_summary(bm_name, 'opt', bm_name)
         run_summary(bm_name, 'counters', bm_name)
     where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-    # todo(mattkwong): uncomment this before merging
-    # subprocess.check_call(['git', 'checkout', args.diff_perf])
+    subprocess.check_call(['git', 'checkout', args.diff_perf])
     comparables = []
     subprocess.check_call(['make', 'clean'])
     try:
