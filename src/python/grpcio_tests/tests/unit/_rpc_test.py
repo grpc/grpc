@@ -157,6 +157,38 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+class _ClientInterceptor(grpc.UnaryClientInterceptor,
+                         grpc.StreamClientInterceptor):
+
+    def __init__(self):
+        self.intercepted = False
+
+    def intercept_unary(self, request, metadata, client_info, invoker):
+        self.intercepted = True
+        return invoker(request, metadata)
+
+    def intercept_stream(self, request_or_iterator, metadata, client_info,
+                         invoker):
+        self.intercepted = True
+        return invoker(request_or_iterator, metadata)
+
+
+class _ServerInterceptor(grpc.UnaryServerInterceptor,
+                         grpc.StreamServerInterceptor):
+
+    def __init__(self):
+        self.intercepted = False
+
+    def intercept_unary(self, request, servicer_context, server_info, handler):
+        self.intercepted = True
+        return handler(request, servicer_context)
+
+    def intercept_stream(self, request_or_iterator, servicer_context,
+                         server_info, handler):
+        self.intercepted = True
+        return handler(request_or_iterator, servicer_context)
+
+
 def _unary_unary_multi_callable(channel):
     return channel.unary_unary(_UNARY_UNARY)
 
@@ -186,12 +218,17 @@ class RPCTest(unittest.TestCase):
         self._handler = _Handler(self._control)
         self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-        self._server = grpc.server(self._server_pool)
+        self._server_interceptor = _ServerInterceptor()
+        self._client_interceptor = _ClientInterceptor()
+        self._server = grpc.intercept_server(
+            grpc.server(self._server_pool), self._server_interceptor)
         port = self._server.add_insecure_port('[::]:0')
         self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
         self._server.start()
 
-        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._channel = grpc.intercept_channel(
+            grpc.insecure_channel('localhost:%d' % port),
+            self._client_interceptor)
 
     def tearDown(self):
         self._server.stop(None)
@@ -363,6 +400,112 @@ class RPCTest(unittest.TestCase):
 
         pool.shutdown(wait=True)
         self.assertSequenceEqual(expected_responses, responses)
+
+    def testInterceptedUnaryRequestBlockingUnaryResponse(self):
+        request = b'\x07\x08'
+
+        multi_callable = _unary_unary_multi_callable(self._channel)
+        multi_callable(
+            request,
+            metadata=(
+                ('test', 'InterceptedUnaryRequestBlockingUnaryResponse'),))
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedUnaryRequestBlockingUnaryResponseWithCall(self):
+        request = b'\x07\x08'
+
+        multi_callable = _unary_unary_multi_callable(self._channel)
+        multi_callable.with_call(
+            request,
+            metadata=(
+                ('test',
+                 'InterceptedUnaryRequestBlockingUnaryResponseWithCall'),))
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedUnaryRequestFutureUnaryResponse(self):
+        request = b'\x07\x08'
+
+        multi_callable = _unary_unary_multi_callable(self._channel)
+        response_future = multi_callable.future(
+            request,
+            metadata=(('test', 'InterceptedUnaryRequestFutureUnaryResponse'),))
+        response_future.result()
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedUnaryRequestStreamResponse(self):
+        request = b'\x37\x58'
+
+        multi_callable = _unary_stream_multi_callable(self._channel)
+        response_iterator = multi_callable(
+            request,
+            metadata=(('test', 'InterceptedUnaryRequestStreamResponse'),))
+        tuple(response_iterator)
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedStreamRequestBlockingUnaryResponse(self):
+        requests = tuple(b'\x07\x08'
+                         for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = iter(requests)
+
+        multi_callable = _stream_unary_multi_callable(self._channel)
+        multi_callable(
+            request_iterator,
+            metadata=(
+                ('test', 'InterceptedStreamRequestBlockingUnaryResponse'),))
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedStreamRequestBlockingUnaryResponseWithCall(self):
+        requests = tuple(b'\x07\x08'
+                         for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = iter(requests)
+
+        multi_callable = _stream_unary_multi_callable(self._channel)
+        multi_callable.with_call(
+            request_iterator,
+            metadata=(
+                ('test',
+                 'InterceptedStreamRequestBlockingUnaryResponseWithCall'),))
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedStreamRequestFutureUnaryResponse(self):
+        requests = tuple(b'\x07\x08'
+                         for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = iter(requests)
+
+        multi_callable = _stream_unary_multi_callable(self._channel)
+        response_future = multi_callable.future(
+            request_iterator,
+            metadata=(('test', 'InterceptedStreamRequestFutureUnaryResponse'),))
+        response_future.result()
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
+
+    def testInterceptedStreamRequestStreamResponse(self):
+        requests = tuple(b'\x77\x58'
+                         for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = iter(requests)
+
+        multi_callable = _stream_stream_multi_callable(self._channel)
+        response_iterator = multi_callable(
+            request_iterator,
+            metadata=(('test', 'InterceptedStreamRequestStreamResponse'),))
+        tuple(response_iterator)
+
+        self.assertTrue(self._server_interceptor.intercepted)
+        self.assertTrue(self._client_interceptor.intercepted)
 
     def testConcurrentFutureInvocations(self):
         requests = tuple(b'\x07\x08'
