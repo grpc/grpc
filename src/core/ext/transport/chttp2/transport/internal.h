@@ -411,6 +411,29 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+
+  /* connection max age support */
+  /** Closure to run when the idle transport should be closed */
+  grpc_closure shutdown_idle_transport_locked;
+  /** Closure to run when the transport reaches its max age and should be
+      closed */
+  grpc_closure shutdown_max_age_transport_locked;
+  bool is_idle_state_timer_set;
+  /** timer to check if the idleness duration of the connection is too long */
+  grpc_timer idle_state_timer;
+  /** timer to check if the connection has reached its max age */
+  grpc_timer max_age_timer;
+  /** watchdow to forcibly kill the transport after max_connection_age_timer
+      alarms */
+  grpc_timer max_connection_age_grace_timer;
+  /** allowed max time duration since the most recent time the number of
+      outstanding RPCs became zero or the connection establishment */
+  gpr_timespec max_connection_idle;
+  /** allowed max time a connection may exist */
+  gpr_timespec max_connection_age;
+  /** grace period before the connection is forcibly closed after the connection
+      reached its max age */
+  gpr_timespec max_connection_age_grace;
 };
 
 typedef enum {
