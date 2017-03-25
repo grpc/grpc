@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by Jenkins and runs performance smoke test.
-set -ex
+# This script is invoked by Jenkins to comment $1 on pull requests
+# when triggered by a build
 
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+set -e
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+if [ -z "$1" ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
+  echo "Insufficient arguments or environment variables provided."
+  exit 1
+fi
 
-tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
-# todo(mattkwong): Change performance test to use microbenchmarking
-# tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+# Format the comment message to JSON
+COMMENT_MESSAGE="{\"body\":\"$1\"}"
+
+curl -k -H "Authorization: token $JENKINS_OAUTH_TOKEN" -H "Content-Type: application/json" \
+  -d "$COMMENT_MESSAGE" https://api.github.com/repos/grpc/grpc/issues/$ghprbPullId/comments
