@@ -541,9 +541,11 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
         grpc_closure_sched(exec_ctx, c.get(), GRPC_ERROR_NONE);
         return;
       }
-    } while (grpc_byte_stream_next(exec_ctx, recv_stream, &recv_slice,
+    } while (grpc_byte_stream_next(exec_ctx, recv_stream,
                                    recv_stream->length - received,
-                                   drain_continue.get()));
+                                   drain_continue.get()) &&
+             GRPC_ERROR_NONE == grpc_byte_stream_pull(exec_ctx, recv_stream,
+                                                      &recv_slice));
   });
 
   drain_continue = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
