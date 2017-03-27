@@ -642,6 +642,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
