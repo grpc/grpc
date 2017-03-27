@@ -75,7 +75,7 @@ grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel);
 void grpc_channel_update_call_size_estimate(grpc_channel *channel, size_t size);
 
-grpc_json *grpc_channel_get_trace(grpc_channel *channel);
+char *grpc_channel_get_trace(grpc_channel *channel);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

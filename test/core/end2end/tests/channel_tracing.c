@@ -104,10 +104,14 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void check_channel_trace(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f, size_t max_nodes) {
-  grpc_json *json = grpc_channel_get_trace(f.client);
+  char *json_str = grpc_channel_get_trace(f.client);
+  GPR_ASSERT(json_str);
+  gpr_log(GPR_DEBUG, "\n%s", json_str);
+  grpc_json *json = grpc_json_parse_string(json_str);
   GPR_ASSERT(json);
   validate_channel_data(json, 1, max_nodes);
   grpc_json_destroy(json);
+  gpr_free(json_str);
 }
 
 static void test_create_channel(grpc_end2end_test_config config,
@@ -117,7 +121,7 @@ static void test_create_channel(grpc_end2end_test_config config,
   // ensure ths fixture has tracing enabled
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
-  arg.key = GRPC_ARG_CHANNEL_TRACING;
+  arg.key = GRPC_ARG_CHANNEL_TRACING_MAX_NODES;
   arg.value.integer = (int)max_nodes;
 
   grpc_channel_args chan_args;
@@ -134,8 +138,8 @@ static void test_create_channel(grpc_end2end_test_config config,
 static void test_create_channel_no_tracing(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
   f = begin_test(config, "test_channel_tracing_no_tracing", NULL, NULL);
-  grpc_json *json = grpc_channel_get_trace(f.client);
-  GPR_ASSERT(!json);
+  char *json_str = grpc_channel_get_trace(f.client);
+  GPR_ASSERT(!json_str);
   end_test(&f);
   config.tear_down_data(&f);
 }

@@ -36,7 +36,7 @@
 
 #include "src/core/lib/channel/channel_tracer.h"
 
-void validate_channel_data(grpc_json* json, size_t num_nodes_logged_golden,
-                           size_t actual_num_nodes_golden);
+void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
+                           size_t actual_num_nodes_expected);
 
 #endif /* GRPC_TEST_CORE_UTIL_CHANNEL_TRACING_UTILS_H */

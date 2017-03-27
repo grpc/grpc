@@ -172,20 +172,25 @@ grpc_channel *grpc_channel_create_with_builder(
       channel->compression_options.enabled_algorithms_bitset =
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
-    } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING)) {
-      channel->tracer =
-          GRPC_CHANNEL_TRACER_CREATE((uint32_t)args->args[i].value.integer);
+    } else if (0 ==
+               strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
+      // max_nodes defaults to 10, clamped between 0 and 100.
+      grpc_integer_options options = {10, 0, 100};
+      channel->tracer = GRPC_CHANNEL_TRACER_CREATE(
+          (size_t)grpc_channel_arg_get_integer(&args->args[i], options),
+          target);
     }
   }
 
   grpc_channel_args_destroy(exec_ctx, args);
   grpc_channel_tracer_add_trace(
-      channel->tracer, grpc_slice_from_static_string("Channel created"),
-      GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, NULL);
+      exec_ctx, channel->tracer,
+      grpc_slice_from_static_string("Channel created"), GRPC_ERROR_NONE,
+      GRPC_CHANNEL_INIT, NULL);
   return channel;
 }
 
-grpc_json *grpc_channel_get_trace(grpc_channel *channel) {
+char *grpc_channel_get_trace(grpc_channel *channel) {
   return channel->tracer ? grpc_channel_tracer_get_trace(channel->tracer)
                          : NULL;
 }
@@ -400,11 +405,11 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
-  GRPC_CHANNEL_TRACER_UNREF(channel->tracer);
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
+  GRPC_CHANNEL_TRACER_UNREF(&exec_ctx, channel->tracer);
   op->disconnect_with_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);

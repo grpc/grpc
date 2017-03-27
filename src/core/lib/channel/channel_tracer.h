@@ -38,62 +38,59 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward declaration */
 typedef struct grpc_channel_tracer grpc_channel_tracer;
-typedef struct grpc_trace_node grpc_trace_node;
-typedef struct grpc_trace_node_list grpc_trace_node_list;
 
 /* Adds a new trace node to the tracing object */
-void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer,
-                                   grpc_slice trace, struct grpc_error* error,
+void grpc_channel_tracer_add_trace(grpc_exec_ctx* exec_ctx,
+                                   grpc_channel_tracer* tracer, grpc_slice data,
+                                   grpc_error* error,
                                    grpc_connectivity_state connectivity_state,
                                    grpc_channel_tracer* subchannel);
 
-//#define GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+// #define GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+
+/* Creates a new tracer. The caller owns a reference to the returned tracer. */
+#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
+                                                const char* id,
+                                                const char* file, int line,
+                                                const char* func);
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes, id) \
+  grpc_channel_tracer_create(max_nodes, id, __FILE__, __LINE__, __func__)
+#else
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
+                                                const char* id);
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes, id) \
+  grpc_channel_tracer_create(max_nodes, id)
+#endif
+
 #ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
                                              const char* file, int line,
                                              const char* func);
-void grpc_channel_tracer_unref(grpc_channel_tracer* tracer, const char* file,
+void grpc_channel_tracer_unref(grpc_exec_ctx* exec_ctx,
+                               grpc_channel_tracer* tracer, const char* file,
                                int line, const char* func);
 #define GRPC_CHANNEL_TRACER_REF(tracer) \
   grpc_channel_tracer_ref(tracer, __FILE__, __LINE__, __func__)
-#define GRPC_CHANNEL_TRACER_UNREF(tracer) \
-  grpc_channel_tracer_unref(tracer, __FILE__, __LINE__, __func__)
+#define GRPC_CHANNEL_TRACER_UNREF(exec_ctx, tracer) \
+  grpc_channel_tracer_unref(exec_ctx, tracer, __FILE__, __LINE__, __func__)
 #else
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer);
-void grpc_channel_tracer_unref(grpc_channel_tracer* tracer);
+void grpc_channel_tracer_unref(grpc_exec_ctx* exec_ctx,
+                               grpc_channel_tracer* tracer);
 #define GRPC_CHANNEL_TRACER_REF(tracer) grpc_channel_tracer_ref(tracer)
-#define GRPC_CHANNEL_TRACER_UNREF(tracer) grpc_channel_tracer_unref(tracer)
+#define GRPC_CHANNEL_TRACER_UNREF(exec_ctx, tracer) \
+  grpc_channel_tracer_unref(exec_ctx, tracer)
 #endif
 
-/* Dumps all of the trace to stderr */
+#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
 void grpc_channel_tracer_log_trace(grpc_channel_tracer* tracer);
+#endif
 
 /* Returns the tracing data in the form of a grpc json string.
    The string is owned by the caller and must be freed. */
-grpc_json* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer);
-
-/* Initializes the tracing object with gpr_malloc. The caller has
-   ownership over the returned tracing object */
-#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
-                                                const char* file, int line,
-                                                const char* func);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
-  grpc_channel_tracer_create(max_nodes, __FILE__, __LINE__, __func__)
-#else
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
-  grpc_channel_tracer_create(max_nodes)
-#endif
-
-#ifdef __cplusplus
-}
-#endif
+char* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H */

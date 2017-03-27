@@ -157,27 +157,17 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
 
 /* --- jwt encoding and signature. --- */
 
-static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
-                               const char *key, const char *value,
-                               grpc_json_type type) {
-  grpc_json *child = grpc_json_create(type);
-  if (brother) brother->next = child;
-  if (!parent->child) parent->child = child;
-  child->parent = parent;
-  child->value = value;
-  child->key = key;
-  return child;
-}
-
 static char *encoded_jwt_header(const char *key_id, const char *algorithm) {
   grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
 
-  child = create_child(NULL, json, "alg", algorithm, GRPC_JSON_STRING);
-  child = create_child(child, json, "typ", GRPC_JWT_TYPE, GRPC_JSON_STRING);
-  create_child(child, json, "kid", key_id, GRPC_JSON_STRING);
+  child = grpc_json_create_child(NULL, json, "alg", algorithm, GRPC_JSON_STRING,
+                                 false);
+  child = grpc_json_create_child(child, json, "typ", GRPC_JWT_TYPE,
+                                 GRPC_JSON_STRING, false);
+  grpc_json_create_child(child, json, "kid", key_id, GRPC_JSON_STRING, false);
 
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
@@ -204,19 +194,23 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   int64_ttoa(now.tv_sec, now_str);
   int64_ttoa(expiration.tv_sec, expiration_str);
 
-  child =
-      create_child(NULL, json, "iss", json_key->client_email, GRPC_JSON_STRING);
+  child = grpc_json_create_child(NULL, json, "iss", json_key->client_email,
+                                 GRPC_JSON_STRING, false);
   if (scope != NULL) {
-    child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
+    child = grpc_json_create_child(child, json, "scope", scope,
+                                   GRPC_JSON_STRING, false);
   } else {
     /* Unscoped JWTs need a sub field. */
-    child = create_child(child, json, "sub", json_key->client_email,
-                         GRPC_JSON_STRING);
+    child = grpc_json_create_child(child, json, "sub", json_key->client_email,
+                                   GRPC_JSON_STRING, false);
   }
 
-  child = create_child(child, json, "aud", audience, GRPC_JSON_STRING);
-  child = create_child(child, json, "iat", now_str, GRPC_JSON_NUMBER);
-  create_child(child, json, "exp", expiration_str, GRPC_JSON_NUMBER);
+  child = grpc_json_create_child(child, json, "aud", audience, GRPC_JSON_STRING,
+                                 false);
+  child = grpc_json_create_child(child, json, "iat", now_str, GRPC_JSON_NUMBER,
+                                 false);
+  grpc_json_create_child(child, json, "exp", expiration_str, GRPC_JSON_NUMBER,
+                         false);
 
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);

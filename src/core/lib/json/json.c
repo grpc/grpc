@@ -64,3 +64,22 @@ void grpc_json_destroy(grpc_json* json) {
   }
   gpr_free(json);
 }
+
+grpc_json* grpc_json_link_child(grpc_json* child, grpc_json* brother,
+                                grpc_json* parent) {
+  if (brother != NULL) brother->next = child;
+  if (parent->child == NULL) parent->child = child;
+  return child;
+}
+
+grpc_json* grpc_json_create_child(grpc_json* brother, grpc_json* parent,
+                                  const char* key, const char* value,
+                                  grpc_json_type type, bool owns_value) {
+  grpc_json* child = grpc_json_create(type);
+  grpc_json_link_child(child, brother, parent);
+  child->owns_value = owns_value;
+  child->parent = parent;
+  child->value = value;
+  child->key = key;
+  return child;
+}

@@ -48,7 +48,7 @@ typedef struct grpc_json {
   struct grpc_json* child;
   struct grpc_json* parent;
 
-  // if set, destructor will free value
+  /* if set, destructor will free value */
   bool owns_value;
 
   grpc_json_type type;
@@ -84,9 +84,22 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
 
 /* Use these to create or delete a grpc_json object.
  * Deletion is recursive. We will not attempt to free any of the strings
- * in any of the objects of that tree.
+ * in any of the objects of that tree, unless the boolean, owns_value,
+ * is true.
  */
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
+
+/* Links the child json object into the parent's json tree. If the parent
+ * already has children, then pass in the most recently added child as the
+ * brother parameter.
+ */
+grpc_json* grpc_json_link_child(grpc_json* child, grpc_json* brother,
+                                grpc_json* parent);
+
+/* Creates and links a new child json object. */
+grpc_json* grpc_json_create_child(grpc_json* brother, grpc_json* parent,
+                                  const char* key, const char* value,
+                                  grpc_json_type type, bool owns_value);
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_H */
