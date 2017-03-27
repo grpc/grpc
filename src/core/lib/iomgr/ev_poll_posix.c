@@ -134,7 +134,8 @@ static grpc_wakeup_fd global_wakeup_fd;
    Polling strategies that do not need to alter their behavior depending on the
    fd's current interest (such as epoll) do not need to call this function.
    MUST NOT be called with a pollset lock taken */
-static uint32_t fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+static uint32_t fd_begin_poll(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                              grpc_pollset *pollset,
                               grpc_pollset_worker *worker, uint32_t read_mask,
                               uint32_t write_mask, grpc_fd_watcher *rec);
 /* Complete polling previously started with fd_begin_poll
@@ -147,6 +148,9 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd *fd);
+
+static void pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_fd *fd);
 
 /* Reference counting for fds */
 //#define GRPC_FD_REF_COUNT_DEBUG
@@ -536,7 +540,8 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd->mu);
 }
 
-static uint32_t fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+static uint32_t fd_begin_poll(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                              grpc_pollset *pollset,
                               grpc_pollset_worker *worker, uint32_t read_mask,
                               uint32_t write_mask, grpc_fd_watcher *watcher) {
   uint32_t mask = 0;
@@ -554,6 +559,7 @@ static uint32_t fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
     watcher->pollset = NULL;
     watcher->worker = NULL;
     gpr_mu_unlock(&fd->mu);
+    pollset_del_fd(exec_ctx, pollset, fd);
     GRPC_FD_UNREF(fd, "poll");
     return 0;
   }
@@ -846,6 +852,22 @@ exit:
   gpr_mu_unlock(&pollset->mu);
 }
 
+static void pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_fd *fd) {
+  gpr_mu_lock(&pollset->mu);
+  size_t i;
+  /* TODO(ctiller): this is O(num_fds^2); maybe switch to a hash set here */
+  for (i = 0; i < pollset->fd_count; i++) {
+    if (pollset->fds[i] == fd) {
+      pollset->fd_count--;
+      GPR_SWAP(grpc_fd *, pollset->fds[i], pollset->fds[pollset->fd_count]);
+      GRPC_FD_UNREF(fd, "multipoller");
+      break;
+    }
+  }
+  gpr_mu_unlock(&pollset->mu);
+}
+
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   size_t i;
@@ -973,8 +995,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
       for (i = 2; i < pfd_count; i++) {
         grpc_fd *fd = watchers[i].fd;
-        pfds[i].events = (short)fd_begin_poll(fd, pollset, &worker, POLLIN,
-                                              POLLOUT, &watchers[i]);
+        pfds[i].events = (short)fd_begin_poll(exec_ctx, fd, pollset, &worker,
+                                              POLLIN, POLLOUT, &watchers[i]);
         GRPC_FD_UNREF(fd, "multipoller_start");
       }
 
