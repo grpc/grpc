@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,33 +27,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l objc
+licenses(["notice"])  # 3-clause BSD
 
-set -ev
+package(default_visibility = ["//visibility:public"])
 
-# Params:
-# EXAMPLE_PATH - directory of the example
-# SCHEME - scheme of the example, used by xcodebuild
+load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
 
-# CocoaPods requires the terminal to be using UTF-8 encoding.
-export LANG=en_US.UTF-8
+grpc_proto_library (
+    name = "monitoring_proto",
+    srcs = [
+        "monitoring.proto",
+    ],
+    deps = [
+        ":census_proto",
+    ],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
+)
 
-cd `dirname $0`/../../..
+grpc_proto_library (
+    name = "census_proto",
+    srcs = [
+        "census.proto",
+    ],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
+)
 
-cd $EXAMPLE_PATH
-
-# clean the directory
-rm -rf Pods
-rm -rf $SCHEME.xcworkspace
-rm -f Podfile.lock
-
-pod install
-
-set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
-xcodebuild \
-    build \
-    -workspace *.xcworkspace \
-    -scheme $SCHEME \
-    -destination name="iPhone 6" | xcpretty
+cc_binary(
+    name = "grpcz_client",
+    srcs = ["grpcz_client.cc",],
+    deps = [
+        "//external:gflags",
+        "monitoring_proto",
+        "@mongoose_repo//:mongoose_lib",
+    ],
+)

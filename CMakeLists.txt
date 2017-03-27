@@ -11363,7 +11363,6 @@ add_executable(stress_test
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
-  test/cpp/util/create_test_channel.cc
   test/cpp/util/metrics_server.cc
   third_party/googletest/src/gtest-all.cc
 )
