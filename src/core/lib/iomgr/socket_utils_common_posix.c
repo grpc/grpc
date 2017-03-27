@@ -278,11 +278,25 @@ static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
 grpc_error *grpc_create_dualstack_socket(
     const grpc_resolved_address *resolved_addr, int type, int protocol,
     grpc_dualstack_mode *dsmode, int *newfd) {
+  return grpc_create_dualstack_socket_using_factory(NULL, resolved_addr, type,
+                                                    protocol, dsmode, newfd);
+}
+
+static int create_socket(grpc_socket_factory *factory, int domain, int type,
+                         int protocol) {
+  return (factory != NULL)
+             ? grpc_socket_factory_socket(factory, domain, type, protocol)
+             : socket(domain, type, protocol);
+}
+
+grpc_error *grpc_create_dualstack_socket_using_factory(
+    grpc_socket_factory *factory, const grpc_resolved_address *resolved_addr,
+    int type, int protocol, grpc_dualstack_mode *dsmode, int *newfd) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
-      *newfd = socket(family, type, protocol);
+      *newfd = create_socket(factory, family, type, protocol);
     } else {
       *newfd = -1;
       errno = EAFNOSUPPORT;
@@ -304,7 +318,7 @@ grpc_error *grpc_create_dualstack_socket(
     family = AF_INET;
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
-  *newfd = socket(family, type, protocol);
+  *newfd = create_socket(factory, family, type, protocol);
   return error_for_fd(*newfd, resolved_addr);
 }
 

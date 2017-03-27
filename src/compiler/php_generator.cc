@@ -118,7 +118,7 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   out->Print(
       "/**\n * @param string $$hostname hostname\n"
       " * @param array $$opts channel options\n"
-      " * @param Grpc\\Channel $$channel (optional) re-use channel "
+      " * @param \\Grpc\\Channel $$channel (optional) re-use channel "
       "object\n */\n"
       "public function __construct($$hostname, $$opts, "
       "$$channel = null) {\n");

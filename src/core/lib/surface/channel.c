@@ -194,8 +194,14 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
 #define ROUND_UP_SIZE 256
+  /* We round up our current estimate to the NEXT value of ROUND_UP_SIZE.
+     This ensures:
+      1. a consistent size allocation when our estimate is drifting slowly
+         (which is common) - which tends to help most allocators reuse memory
+      2. a small amount of allowed growth over the estimate without hitting
+         the arena size doubling case, reducing overall memory usage */
   return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
-          ROUND_UP_SIZE) &
+          2 * ROUND_UP_SIZE) &
          ~(size_t)(ROUND_UP_SIZE - 1);
 }
 
