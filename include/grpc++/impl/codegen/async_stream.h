@@ -496,19 +496,6 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void EnsureInitialMetadataSent(CallOpSetInterface* ops_in) {
-    CallOpSet<CallOpSendInitialMetadata>* ops =
-        static_cast<CallOpSet<CallOpSendInitialMetadata>*>(ops_in);
-    if (!ctx_->sent_initial_metadata_) {
-      ops->SendInitialMetadata(ctx_->initial_metadata_,
-                               ctx_->initial_metadata_flags());
-      if (ctx_->compression_level_set()) {
-        ops->set_compression_level(ctx_->compression_level());
-      }
-      ctx_->sent_initial_metadata_ = true;
-    }
-  }
-
   void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
@@ -548,6 +535,18 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
 
  private:
   void BindCall(Call* call) override { call_ = *call; }
+
+  template <class T>
+  void EnsureInitialMetadataSent(T* ops) {
+    if (!ctx_->sent_initial_metadata_) {
+      ops->SendInitialMetadata(ctx_->initial_metadata_,
+                               ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        ops->set_compression_level(ctx_->compression_level());
+      }
+      ctx_->sent_initial_metadata_ = true;
+    }
+  }
 
   Call call_;
   ServerContext* ctx_;
@@ -601,19 +600,6 @@ class ServerAsyncReaderWriter final
     call_.PerformOps(&meta_ops_);
   }
 
-  void EnsureInitialMetadataSent(CallOpSetInterface* ops_in) {
-    CallOpSet<CallOpSendInitialMetadata>* ops =
-        static_cast<CallOpSet<CallOpSendInitialMetadata>*>(ops_in);
-    if (!ctx_->sent_initial_metadata_) {
-      ops->SendInitialMetadata(ctx_->initial_metadata_,
-                               ctx_->initial_metadata_flags());
-      if (ctx_->compression_level_set()) {
-        ops->set_compression_level(ctx_->compression_level());
-      }
-      ctx_->sent_initial_metadata_ = true;
-    }
-  }
-
   void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
@@ -660,6 +646,18 @@ class ServerAsyncReaderWriter final
   friend class ::grpc::Server;
 
   void BindCall(Call* call) override { call_ = *call; }
+
+  template <class T>
+  void EnsureInitialMetadataSent(T* ops) {
+    if (!ctx_->sent_initial_metadata_) {
+      ops->SendInitialMetadata(ctx_->initial_metadata_,
+                               ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        ops->set_compression_level(ctx_->compression_level());
+      }
+      ctx_->sent_initial_metadata_ = true;
+    }
+  }
 
   Call call_;
   ServerContext* ctx_;
