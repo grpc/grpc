@@ -87,7 +87,7 @@ class BaseStub
                                  'ChannelCredentials::create methods');
         }
         if ($channel) {
-            if (!is_a($channel, 'Channel')) {
+            if (!is_a($channel, 'Grpc\Channel')) {
                 throw new \Exception('The channel argument is not a'.
                                      'Channel object');
             }
@@ -249,7 +249,7 @@ class BaseStub
         if (is_callable($this->update_metadata)) {
             $metadata = call_user_func($this->update_metadata,
                                         $metadata,
-                                        $jwt_aud_uri,
+                                        $method,
                                         $argument);
         }
         $metadata = $this->_validate_and_normalize_metadata(
