@@ -40,10 +40,10 @@
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
+#include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/report.h"
-#include "test/cpp/qps/benchmark_config.h"
 
 DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
