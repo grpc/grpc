@@ -214,7 +214,8 @@ static void track_tracer(tracer_tracker* tracker, grpc_channel_tracer* tracer) {
   tracker->tracers[tracker->size++] = tracer;
 }
 
-static bool check_tracer_tracked(tracer_tracker* tracker, grpc_channel_tracer* tracer) {
+static bool check_tracer_tracked(tracer_tracker* tracker,
+                                 grpc_channel_tracer* tracer) {
   for (size_t i = 0; i < tracker->size; ++i) {
     if (tracker->tracers[i] == tracer) return true;
   }
@@ -234,11 +235,11 @@ static grpc_json* create_child_find_brother(grpc_json* parent, const char* key,
   return grpc_json_create_child(child, parent, key, value, type, owns_value);
 }
 
-static void recursively_populate_json(grpc_channel_tracer* tracer, tracer_tracker* tracker,
-                                      grpc_json* json);
+static void recursively_populate_json(grpc_channel_tracer* tracer,
+                                      tracer_tracker* tracker, grpc_json* json);
 
-static void populate_node_data(grpc_trace_node* node, tracer_tracker* tracker, grpc_json* json,
-                               grpc_json* children) {
+static void populate_node_data(grpc_trace_node* node, tracer_tracker* tracker,
+                               grpc_json* json, grpc_json* children) {
   grpc_json* child = NULL;
   child = grpc_json_create_child(child, json, "data",
                                  grpc_slice_to_c_string(node->data),
@@ -262,13 +263,15 @@ static void populate_node_data(grpc_trace_node* node, tracer_tracker* tracker, g
     if (!check_tracer_tracked(tracker, node->referenced_tracer)) {
       grpc_json* referenced_tracer = create_child_find_brother(
           children, NULL, NULL, GRPC_JSON_OBJECT, false);
-      recursively_populate_json(node->referenced_tracer, tracker, referenced_tracer);
+      recursively_populate_json(node->referenced_tracer, tracker,
+                                referenced_tracer);
     }
   }
 }
 
-static void populate_node_list_data(grpc_channel_tracer* tracer, tracer_tracker* tracker,
-                                    grpc_json* nodes, grpc_json* children) {
+static void populate_node_list_data(grpc_channel_tracer* tracer,
+                                    tracer_tracker* tracker, grpc_json* nodes,
+                                    grpc_json* children) {
   grpc_json* child = NULL;
   grpc_trace_node* it = tracer->head_trace;
   while (it != NULL) {
@@ -279,7 +282,8 @@ static void populate_node_list_data(grpc_channel_tracer* tracer, tracer_tracker*
   }
 }
 
-static void populate_tracer_data(grpc_channel_tracer* tracer, tracer_tracker* tracker,
+static void populate_tracer_data(grpc_channel_tracer* tracer,
+                                 tracer_tracker* tracker,
                                  grpc_json* channel_data, grpc_json* children) {
   grpc_json* child = NULL;
 
@@ -298,61 +302,8 @@ static void populate_tracer_data(grpc_channel_tracer* tracer, tracer_tracker* tr
   populate_node_list_data(tracer, tracker, child, children);
 }
 
-// static bool check_exists(grpc_channel_tracer* key, grpc_channel_tracer** arr,
-//                          size_t size) {
-//   for (size_t i = 0; i < size; ++i) {
-//     if (key == arr[i]) return true;
-//   }
-//   return false;
-// }
-
-// static void populate_subchannel_data(grpc_channel_tracer* tracer,
-// tracer_tracker* tracker,
-//                                      grpc_json* json) {
-//   grpc_json* child = NULL;
-//   grpc_channel_tracer** seen =
-//       gpr_zalloc(sizeof(grpc_channel_tracer*) * tracer->max_list_size);
-//   size_t insert = 0;
-
-//   grpc_trace_node* it = tracer->head_trace;
-//   while (it != NULL) {
-//     if (it->referenced_tracer != NULL &&
-//         !check_exists(it->referenced_tracer, seen, tracer->max_list_size)) {
-//       seen[insert++] = it->referenced_tracer;
-//       child = grpc_json_create_child(child, json, NULL, NULL,
-//       GRPC_JSON_OBJECT, false);
-//       populate_channel_data(it->referenced_tracer, tracker, child, false);
-//     }
-//     it = it->next;
-//   }
-
-//   gpr_free(seen);
-// }
-
-// char* grpc_channel_tracer_get_trace(grpc_channel_tracer* tracer) {
-//   grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
-//   grpc_json* child = NULL;
-
-//   tracer_tracker tracker;
-//   memset(&tracker, sizeof(tracker), 0);
-
-//   child =
-//       grpc_json_create_child(child, json, "channelData", NULL,
-//       GRPC_JSON_OBJECT, false);
-//   populate_channel_data(tracer, &tracker, child, true);
-//   child =
-//       grpc_json_create_child(child, json, "subchannelData", NULL,
-//       GRPC_JSON_ARRAY, false);
-//   populate_subchannel_data(tracer, &tracker, child);
-
-//   gpr_free(tracker.tracers);
-
-//   char* json_str = grpc_json_dump_to_string(json, 0);
-//   grpc_json_destroy(json);
-//   return json_str;
-// }
-
-static void recursively_populate_json(grpc_channel_tracer* tracer, tracer_tracker* tracker,
+static void recursively_populate_json(grpc_channel_tracer* tracer,
+                                      tracer_tracker* tracker,
                                       grpc_json* json) {
   grpc_json* channel_data = grpc_json_create_child(
       NULL, json, "channelData", NULL, GRPC_JSON_OBJECT, false);

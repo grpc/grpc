@@ -63,8 +63,7 @@ static void validate_tracer(grpc_channel_tracer* tracer,
 }
 
 static void test_basic_channel_tracing(size_t max_nodes) {
-  grpc_channel_tracer* tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes,
-  "target");
+  grpc_channel_tracer* tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes, "target");
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -79,8 +78,7 @@ static void test_basic_channel_tracing(size_t max_nodes) {
       GRPC_CHANNEL_INIT, NULL);
   grpc_channel_tracer_add_trace(&exec_ctx, tracer,
                                 grpc_slice_from_static_string("trace four"),
-                                GRPC_ERROR_NONE, GRPC_CHANNEL_SHUTDOWN,
-                                NULL);
+                                GRPC_ERROR_NONE, GRPC_CHANNEL_SHUTDOWN, NULL);
 
   validate_tracer(tracer, 4, max_nodes);
 
@@ -111,8 +109,7 @@ static void test_basic_channel_sizing() {
 }
 
 static void test_complex_channel_tracing(size_t max_nodes) {
-  grpc_channel_tracer* tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes,
-  "target");
+  grpc_channel_tracer* tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes, "target");
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -123,8 +120,7 @@ static void test_complex_channel_tracing(size_t max_nodes) {
 
   grpc_channel_tracer_add_trace(
       &exec_ctx, tracer,
-      grpc_slice_from_static_string("subchannel one created"),
-      GRPC_ERROR_NONE,
+      grpc_slice_from_static_string("subchannel one created"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_INIT, sc1);
 
   validate_tracer(tracer, 3, max_nodes);
@@ -150,14 +146,12 @@ static void test_complex_channel_tracing(size_t max_nodes) {
 
   grpc_channel_tracer_add_trace(
       &exec_ctx, tracer,
-      grpc_slice_from_static_string("subchannel two created"),
-      GRPC_ERROR_NONE,
+      grpc_slice_from_static_string("subchannel two created"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_INIT, sc2);
 
   grpc_channel_tracer_add_trace(
       &exec_ctx, tracer,
-      grpc_slice_from_static_string("subchannel one inactive"),
-      GRPC_ERROR_NONE,
+      grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_INIT, sc1);
 
   validate_tracer(tracer, 7, max_nodes);
@@ -197,8 +191,7 @@ static void test_delete_parent_first() {
 
   grpc_channel_tracer_add_trace(
       &exec_ctx, tracer,
-      grpc_slice_from_static_string("subchannel one created"),
-      GRPC_ERROR_NONE,
+      grpc_slice_from_static_string("subchannel one created"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_INIT, sc1);
 
   GRPC_CHANNEL_TRACER_UNREF(&exec_ctx, tracer);
@@ -227,11 +220,10 @@ static void test_nesting() {
   grpc_channel_tracer* conn1 = GRPC_CHANNEL_TRACER_CREATE(5, "conn 1");
 
   grpc_channel_tracer_add_trace(
-      &exec_ctx, sc1,
-      grpc_slice_from_static_string("connection one created"), GRPC_ERROR_NONE,
-      GRPC_CHANNEL_INIT, conn1);
+      &exec_ctx, sc1, grpc_slice_from_static_string("connection one created"),
+      GRPC_ERROR_NONE, GRPC_CHANNEL_INIT, conn1);
 
-  add_simple_trace(&exec_ctx, conn1);  
+  add_simple_trace(&exec_ctx, conn1);
 
   add_simple_trace(&exec_ctx, tracer);
   add_simple_trace(&exec_ctx, tracer);
