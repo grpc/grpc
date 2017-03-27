@@ -208,7 +208,7 @@ struct tracer_tracker {
 
 static void track_tracer(tracer_tracker* tracker, grpc_channel_tracer* tracer) {
   if (tracker->size >= tracker->cap) {
-    tracker->cap = GPR_MAX(5, 3 * tracker->cap / 2);
+    tracker->cap = GPR_MAX(5 * sizeof(tracer), 3 * tracker->cap / 2);
     tracker->tracers = gpr_realloc(tracker->tracers, tracker->cap);
   }
   tracker->tracers[tracker->size++] = tracer;
