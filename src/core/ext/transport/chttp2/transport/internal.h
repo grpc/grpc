@@ -425,7 +425,7 @@ struct grpc_chttp2_stream {
   grpc_stream_refcount *refcount;
 
   grpc_closure destroy_stream;
-  void *destroy_stream_arg;
+  grpc_closure *destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   uint8_t included[STREAM_LIST_COUNT];

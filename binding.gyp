@@ -39,11 +39,9 @@
 {
   'variables': {
     'runtime%': 'node',
-    # UV integration in C core is disabled by default while bugs are ironed
-    # out. It can be re-enabled for one build by setting the npm config
-    # variable grpc_uv to true, and it can be re-enabled permanently by
-    # setting it to true here.
-    'grpc_uv%': 'false',
+    # UV integration in C core is enabled by default. It can be disabled
+    # by setting this argument to anything else.
+    'grpc_uv%': 'true',
     # Some Node installations use the system installation of OpenSSL, and on
     # some systems, the system OpenSSL still does not have ALPN support. This
     # will let users recompile gRPC to work without ALPN.
@@ -60,6 +58,9 @@
     'conditions': [
       ['grpc_uv=="true"', {
         'defines': [
+          'GRPC_ARES=0',
+          # Disabling this while bugs are ironed out. Uncomment this to
+          # re-enable libuv integration in C core.
           'GRPC_UV'
         ]
       }],
@@ -105,7 +106,8 @@
       }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/zlib"
+          "third_party/zlib",
+          "third_party/cares/cares"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',
@@ -128,7 +130,8 @@
           'config': '<!(echo $CONFIG)',
         },
         'include_dirs': [
-          '<(node_root_dir)/deps/zlib'
+          '<(node_root_dir)/deps/zlib',
+          '<(node_root_dir)/deps/cares/include',
         ],
         'conditions': [
           ['config=="gcov"', {
@@ -529,6 +532,7 @@
     }]
   ],
   'targets': [
+
     {
       'cflags': [
         '-std=c99',
@@ -545,6 +549,7 @@
         'src/core/lib/profiling/stap_timers.c',
         'src/core/lib/support/alloc.c',
         'src/core/lib/support/arena.c',
+        'src/core/lib/support/atm.c',
         'src/core/lib/support/avl.c',
         'src/core/lib/support/backoff.c',
         'src/core/lib/support/cmdline.c',
@@ -606,6 +611,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -656,6 +662,7 @@
         'src/core/lib/iomgr/resolve_address_windows.c',
         'src/core/lib/iomgr/resource_quota.c',
         'src/core/lib/iomgr/sockaddr_utils.c',
+        'src/core/lib/iomgr/socket_factory_posix.c',
         'src/core/lib/iomgr/socket_mutator.c',
         'src/core/lib/iomgr/socket_utils_common_posix.c',
         'src/core/lib/iomgr/socket_utils_linux.c',
@@ -668,6 +675,9 @@
         'src/core/lib/iomgr/tcp_client_windows.c',
         'src/core/lib/iomgr/tcp_posix.c',
         'src/core/lib/iomgr/tcp_server_posix.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_common.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c',
+        'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c',
         'src/core/lib/iomgr/tcp_server_uv.c',
         'src/core/lib/iomgr/tcp_server_windows.c',
         'src/core/lib/iomgr/tcp_uv.c',
@@ -690,6 +700,7 @@
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
         'src/core/lib/json/json_writer.c',
+        'src/core/lib/security/util/b64.c',
         'src/core/lib/slice/percent_encoding.c',
         'src/core/lib/slice/slice.c',
         'src/core/lib/slice/slice_buffer.c',
@@ -708,6 +719,7 @@
         'src/core/lib/surface/channel_ping.c',
         'src/core/lib/surface/channel_stack_type.c',
         'src/core/lib/surface/completion_queue.c',
+        'src/core/lib/surface/completion_queue_factory.c',
         'src/core/lib/surface/event_string.c',
         'src/core/lib/surface/lame_client.c',
         'src/core/lib/surface/metadata_array.c',
@@ -771,7 +783,6 @@
         'src/core/lib/security/transport/security_handshaker.c',
         'src/core/lib/security/transport/server_auth_filter.c',
         'src/core/lib/security/transport/tsi_error.c',
-        'src/core/lib/security/util/b64.c',
         'src/core/lib/security/util/json_util.c',
         'src/core/lib/surface/init_secure.c',
         'src/core/lib/tsi/fake_transport_security.c',
@@ -784,10 +795,8 @@
         'src/core/ext/client_channel/client_channel_factory.c',
         'src/core/ext/client_channel/client_channel_plugin.c',
         'src/core/ext/client_channel/connector.c',
-        'src/core/ext/client_channel/default_initial_connect_string.c',
         'src/core/ext/client_channel/http_connect_handshaker.c',
         'src/core/ext/client_channel/http_proxy.c',
-        'src/core/ext/client_channel/initial_connect_string.c',
         'src/core/ext/client_channel/lb_policy.c',
         'src/core/ext/client_channel/lb_policy_factory.c',
         'src/core/ext/client_channel/lb_policy_registry.c',
@@ -797,6 +806,7 @@
         'src/core/ext/client_channel/resolver.c',
         'src/core/ext/client_channel/resolver_factory.c',
         'src/core/ext/client_channel/resolver_registry.c',
+        'src/core/ext/client_channel/retry_throttle.c',
         'src/core/ext/client_channel/subchannel.c',
         'src/core/ext/client_channel/subchannel_index.c',
         'src/core/ext/client_channel/uri_parser.c',
@@ -814,6 +824,9 @@
         'third_party/nanopb/pb_encode.c',
         'src/core/ext/lb_policy/pick_first/pick_first.c',
         'src/core/ext/lb_policy/round_robin/round_robin.c',
+        'src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c',
+        'src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
+        'src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c',
         'src/core/ext/resolver/dns/native/dns_resolver.c',
         'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/load_reporting/load_reporting.c',
@@ -904,6 +917,7 @@
       "dependencies": [
         "grpc",
         "gpr",
+        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

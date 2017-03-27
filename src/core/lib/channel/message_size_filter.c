@@ -121,8 +121,8 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                  "Received message larger than max (%u vs. %d)",
                  (*calld->recv_message)->length, calld->max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(message_string), GRPC_ERROR_INT_GRPC_STATUS,
-        GRPC_STATUS_INVALID_ARGUMENT);
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
     if (error == GRPC_ERROR_NONE) {
       error = new_error;
     } else {
@@ -147,9 +147,10 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->send_message->length, calld->max_send_size);
     grpc_transport_stream_op_finish_with_failure(
-        exec_ctx, op, grpc_error_set_int(GRPC_ERROR_CREATE(message_string),
-                                         GRPC_ERROR_INT_GRPC_STATUS,
-                                         GRPC_STATUS_INVALID_ARGUMENT));
+        exec_ctx, op,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_INVALID_ARGUMENT));
     gpr_free(message_string);
     return;
   }
@@ -200,7 +201,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              void* ignored) {}
+                              grpc_closure* ignored) {}
 
 // Constructor for channel_data.
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,

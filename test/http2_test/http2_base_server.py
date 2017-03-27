@@ -39,6 +39,7 @@ import twisted.internet.protocol
 
 _READ_CHUNK_SIZE = 16384
 _GRPC_HEADER_SIZE = 5
+_MIN_SETTINGS_MAX_FRAME_SIZE = 16384
 
 class H2ProtocolBaseServer(twisted.internet.protocol.Protocol):
   def __init__(self):
@@ -121,38 +122,46 @@ class H2ProtocolBaseServer(twisted.internet.protocol.Protocol):
     )
     self.transport.write(self._conn.data_to_send())
 
-  def on_window_update_default(self, event):
-    # send pending data, if any
-    self.default_send(event.stream_id)
+  def on_window_update_default(self, _, pad_length=None, read_chunk_size=_READ_CHUNK_SIZE):
+    # try to resume sending on all active streams (update might be for connection)
+    for stream_id in self._send_remaining:
+      self.default_send(stream_id, pad_length=pad_length, read_chunk_size=read_chunk_size)
 
   def send_reset_stream(self):
     self._conn.reset_stream(self._stream_id)
     self.transport.write(self._conn.data_to_send())
 
-  def setup_send(self, data_to_send, stream_id):
+  def setup_send(self, data_to_send, stream_id, pad_length=None, read_chunk_size=_READ_CHUNK_SIZE):
     logging.info('Setting up data to send for stream_id: %d' % stream_id)
     self._send_remaining[stream_id] = len(data_to_send)
     self._send_offset = 0
     self._data_to_send = data_to_send
-    self.default_send(stream_id)
+    self.default_send(stream_id, pad_length=pad_length, read_chunk_size=read_chunk_size)
 
-  def default_send(self, stream_id):
+  def default_send(self, stream_id, pad_length=None, read_chunk_size=_READ_CHUNK_SIZE):
     if not self._send_remaining.has_key(stream_id):
       # not setup to send data yet
       return
 
     while self._send_remaining[stream_id] > 0:
       lfcw = self._conn.local_flow_control_window(stream_id)
-      if lfcw == 0:
+      padding_bytes = pad_length + 1 if pad_length is not None else 0
+      if lfcw - padding_bytes <= 0:
+        logging.info('Stream %d. lfcw: %d. padding bytes: %d. not enough quota yet' % (stream_id, lfcw, padding_bytes))
         break
-      chunk_size = min(lfcw, _READ_CHUNK_SIZE)
+      chunk_size = min(lfcw - padding_bytes, read_chunk_size)
       bytes_to_send = min(chunk_size, self._send_remaining[stream_id])
-      logging.info('flow_control_window = %d. sending [%d:%d] stream_id %d' %
-                    (lfcw, self._send_offset, self._send_offset + bytes_to_send,
-                    stream_id))
+      logging.info('flow_control_window = %d. sending [%d:%d] stream_id %d. includes %d total padding bytes' %
+                    (lfcw, self._send_offset, self._send_offset + bytes_to_send + padding_bytes,
+                    stream_id, padding_bytes))
+      # The receiver might allow sending frames larger than the http2 minimum
+      # max frame size (16384), but this test should never send more than 16384
+      # for simplicity (which is always legal).
+      if bytes_to_send + padding_bytes > _MIN_SETTINGS_MAX_FRAME_SIZE:
+        raise ValueError("overload: sending %d" % (bytes_to_send + padding_bytes))
       data = self._data_to_send[self._send_offset : self._send_offset + bytes_to_send]
       try:
-        self._conn.send_data(stream_id, data, False)
+        self._conn.send_data(stream_id, data, end_stream=False, pad_length=pad_length)
       except h2.exceptions.ProtocolError:
         logging.info('Stream %d is closed' % stream_id)
         break
@@ -200,5 +209,5 @@ class H2ProtocolBaseServer(twisted.internet.protocol.Protocol):
     req_proto_str = recv_buffer[5:5+grpc_msg_size]
     sr = messages_pb2.SimpleRequest()
     sr.ParseFromString(req_proto_str)
-    logging.info('Parsed request for stream %d: response_size=%s' % (stream_id, sr.response_size))
+    logging.info('Parsed simple request for stream %d' % stream_id)
     return sr
