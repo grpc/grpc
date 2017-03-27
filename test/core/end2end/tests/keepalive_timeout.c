@@ -111,10 +111,10 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   gpr_timespec deadline = five_seconds_time();
 
   grpc_arg keepalive_args[] = {{.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_KEEPALIVE_TIME_S,
+                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIME_S,
                                 .value.integer = 2},
                                {.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_KEEPALIVE_TIMEOUT_S,
+                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S,
                                 .value.integer = 0},
                                {.type = GRPC_ARG_INTEGER,
                                 .key = GRPC_ARG_HTTP2_BDP_PROBE,
