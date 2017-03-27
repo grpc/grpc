@@ -40,6 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+static bool g_disable_ping_ack = false;
+
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = grpc_slice_malloc(9 + 8);
   uint8_t *p = GRPC_SLICE_START_PTR(slice);
@@ -99,7 +101,9 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
+      if (!g_disable_ping_ack) {
+        grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
+      }
     } else {
       if (t->ping_ack_count == t->ping_ack_capacity) {
         t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
@@ -112,4 +116,8 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   }
 
   return GRPC_ERROR_NONE;
+}
+
+void grpc_set_disable_ping_ack(bool disable_ping_ack) {
+  g_disable_ping_ack = disable_ping_ack;
 }

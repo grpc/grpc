@@ -198,14 +198,14 @@ typedef struct {
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** After a duration of this time the client pings the server to see if the
     transport is still alive. Int valued, seconds. */
-#define GRPC_ARG_HTTP2_KEEPALIVE_TIME "grpc.http2.keepalive_time"
+#define GRPC_ARG_KEEPALIVE_TIME_S "grpc.keepalive_time"
 /** After waiting for a duration of this time, if the client does not receive
     the ping ack, it will close the transport. Int valued, seconds. */
-#define GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT "grpc.http2.keepalive_timeout"
+#define GRPC_ARG_KEEPALIVE_TIMEOUT_S "grpc.keepalive_timeout"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
-#define GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS \
-  "grpc.http2.keepalive_permit_without_calls"
+#define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
+  "grpc.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
