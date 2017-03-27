@@ -5594,6 +5594,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
+      "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
@@ -5695,6 +5696,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
+      "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_transport_chttp2_client_insecure", 
@@ -7040,6 +7042,41 @@
     "type": "lib"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "third_party/cares/ares_build.h", 
+      "third_party/cares/cares/ares.h", 
+      "third_party/cares/cares/ares_data.h", 
+      "third_party/cares/cares/ares_dns.h", 
+      "third_party/cares/cares/ares_getenv.h", 
+      "third_party/cares/cares/ares_getopt.h", 
+      "third_party/cares/cares/ares_inet_net_pton.h", 
+      "third_party/cares/cares/ares_iphlpapi.h", 
+      "third_party/cares/cares/ares_ipv6.h", 
+      "third_party/cares/cares/ares_library_init.h", 
+      "third_party/cares/cares/ares_llist.h", 
+      "third_party/cares/cares/ares_nowarn.h", 
+      "third_party/cares/cares/ares_platform.h", 
+      "third_party/cares/cares/ares_private.h", 
+      "third_party/cares/cares/ares_rules.h", 
+      "third_party/cares/cares/ares_setup.h", 
+      "third_party/cares/cares/ares_strcasecmp.h", 
+      "third_party/cares/cares/ares_strdup.h", 
+      "third_party/cares/cares/ares_version.h", 
+      "third_party/cares/cares/bitncmp.h", 
+      "third_party/cares/cares/config-win32.h", 
+      "third_party/cares/cares/setup_once.h", 
+      "third_party/cares/config_darwin/ares_config.h", 
+      "third_party/cares/config_linux/ares_config.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "ares", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "gpr", 
       "gpr_test_util", 
@@ -7532,6 +7569,7 @@
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
@@ -7571,6 +7609,7 @@
       "src/core/lib/surface/channel_init.h", 
       "src/core/lib/surface/channel_stack_type.h", 
       "src/core/lib/surface/completion_queue.h", 
+      "src/core/lib/surface/completion_queue_factory.h", 
       "src/core/lib/surface/event_string.h", 
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
@@ -7703,6 +7742,8 @@
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_factory_posix.c", 
+      "src/core/lib/iomgr/socket_factory_posix.h", 
       "src/core/lib/iomgr/socket_mutator.c", 
       "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
@@ -7797,6 +7838,8 @@
       "src/core/lib/surface/channel_stack_type.h", 
       "src/core/lib/surface/completion_queue.c", 
       "src/core/lib/surface/completion_queue.h", 
+      "src/core/lib/surface/completion_queue_factory.c", 
+      "src/core/lib/surface/completion_queue_factory.h", 
       "src/core/lib/surface/event_string.c", 
       "src/core/lib/surface/event_string.h", 
       "src/core/lib/surface/init.h", 
@@ -8045,6 +8088,29 @@
       "src/core/ext/load_reporting/load_reporting.h", 
       "src/core/ext/load_reporting/load_reporting_filter.c", 
       "src/core/ext/load_reporting/load_reporting_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_dns_ares", 
+    "src": [
+      "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

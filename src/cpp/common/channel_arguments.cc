@@ -133,14 +133,19 @@ void ChannelArguments::SetUserAgentPrefix(
     return;
   }
   bool replaced = false;
+  auto strings_it = strings_.begin();
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     const grpc_arg& arg = *it;
-    if (arg.type == GRPC_ARG_STRING &&
-        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
-      strings_.push_back(user_agent_prefix + " " + arg.value.string);
-      it->value.string = const_cast<char*>(strings_.back().c_str());
-      replaced = true;
-      break;
+    ++strings_it;
+    if (arg.type == GRPC_ARG_STRING) {
+      if (grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+        GPR_ASSERT(arg.value.string == strings_it->c_str());
+        *(strings_it) = user_agent_prefix + " " + arg.value.string;
+        it->value.string = const_cast<char*>(strings_it->c_str());
+        replaced = true;
+        break;
+      }
+      ++strings_it;
     }
   }
   if (!replaced) {

@@ -87,6 +87,9 @@ typedef struct grpc_call grpc_call;
 /** The Socket Mutator interface allows changes on socket options */
 typedef struct grpc_socket_mutator grpc_socket_mutator;
 
+/** The Socket Factory interface creates and binds sockets */
+typedef struct grpc_socket_factory grpc_socket_factory;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -243,6 +246,8 @@ typedef struct {
 /** If set, channel tracing will be turned on. The integer value will set the
     maximum trace nodes each tracer will track. The default is 10. */
 #define GRPC_ARG_CHANNEL_TRACING_MAX_NODES "grpc.channel_tracing_max_nodes"
+/** The grpc_socket_factory instance to create and bind sockets. A pointer. */
+#define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames when
  * possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
