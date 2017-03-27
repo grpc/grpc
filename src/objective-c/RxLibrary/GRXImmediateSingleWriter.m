@@ -76,6 +76,9 @@
 
 // Overrides [requestWriter(Transformations):map:] for Protocol Buffers
 // encoding.
+// We need the return value of this map to be a GRXImmediateSingleWriter but
+// the original \a map function returns a new Writer of another type. So we
+// need to override this function here.
 - (GRXWriter *)map:(id (^)(id))map {
   // Since _value is available when creating the object, we can simply
   // apply the map and store the output.
