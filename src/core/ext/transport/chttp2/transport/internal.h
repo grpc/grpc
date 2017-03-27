@@ -413,16 +413,22 @@ struct grpc_chttp2_transport {
   grpc_chttp2_keepalive_state keepalive_state;
 
   /* connection max age support */
-  /** Closure to run when the idle transport should be closed */
+  /** Closure to run when the idle transport should be shutdown gracefully*/
   grpc_closure shutdown_idle_transport_locked;
   /** Closure to run when the transport reaches its max age and should be
-      closed */
+      shutdown gracefully */
   grpc_closure shutdown_max_age_transport_locked;
+  /** Closure to run when the transport uses up its max age grace time and
+      should be closed forcibly */
+  grpc_closrue force_close_max_age_transport_locked;
   bool is_idle_state_timer_set;
-  /** timer to check if the idleness duration of the connection is too long */
+  /** timer to check if the idleness duration of the transport is too long */
   grpc_timer idle_state_timer;
-  /** timer to check if the connection has reached its max age */
+  /** timer to check if the transport has reached its max age */
   grpc_timer max_age_timer;
+  /** timer to check if the transport has used up its grace time after reaching
+      its max age */
+  grpc_timer max_age_grace_timer;
   /** watchdow to forcibly kill the transport after max_connection_age_timer
       alarms */
   grpc_timer max_connection_age_grace_timer;
