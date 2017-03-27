@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,16 +26,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs performance smoke test.
-set -ex
 
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+licenses(["notice"])  # 3-clause BSD
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+package(default_visibility = ["//visibility:public"])
 
-tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
-# todo(mattkwong): Change performance test to use microbenchmarking
-# tools/run_tests/run_microbenchmark.py -c summary --diff_perf origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
+
+grpc_proto_library (
+    name = "monitoring_proto",
+    srcs = [
+        "monitoring.proto",
+    ],
+    deps = [
+        ":census_proto",
+    ],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
+)
+
+grpc_proto_library (
+    name = "census_proto",
+    srcs = [
+        "census.proto",
+    ],
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
+)
+
+cc_binary(
+    name = "grpcz_client",
+    srcs = ["grpcz_client.cc",],
+    deps = [
+        "//external:gflags",
+        "monitoring_proto",
+        "@mongoose_repo//:mongoose_lib",
+    ],
+)
