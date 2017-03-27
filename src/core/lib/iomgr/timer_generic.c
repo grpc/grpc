@@ -95,8 +95,8 @@ static gpr_timespec g_start_time;
 GPR_TLS_DECL(g_last_seen_min_timer);
 
 static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
-  if (a > GPR_ATM_MAX - b) {
-    return GPR_ATM_MAX;
+  if (a > GPR_ATM_MAX - 1 - b) {
+    return GPR_ATM_MAX - 1;
   }
   return a + b;
 }
@@ -117,7 +117,10 @@ static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
              (double)ts.tv_nsec / GPR_NS_PER_MS + 1.0;
   if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
+  // when rounding up (for deadlines) we clamp at 1ms before 'infinity', so that
+  // when executing with now=infinity (at shutdown) all timers are guaranteed to
+  // fire
+  if (x > GPR_ATM_MAX - 1) return GPR_ATM_MAX - 1;
   return (gpr_atm)x;
 }
 
@@ -321,6 +324,10 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
 
   shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   gpr_mu_lock(&shard->mu);
+  if (grpc_timer_trace) {
+    gpr_log(GPR_DEBUG, "TIMER %p: CANCEL pending=%s", timer,
+            timer->pending ? "true" : "false");
+  }
   if (timer->pending) {
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     timer->pending = false;
@@ -394,6 +401,10 @@ static grpc_timer *pop_one(shard_type *shard, gpr_atm now) {
               timer->deadline, now);
     }
     if (timer->deadline > now) return NULL;
+    if (grpc_timer_trace) {
+      gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late", timer,
+              now - timer->deadline);
+    }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
@@ -444,7 +455,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
               g_shard_queue[0]->min_deadline);
     }
 
-    while (g_shard_queue[0]->min_deadline < now) {
+    while (g_shard_queue[0]->min_deadline <= now) {
       gpr_atm new_min_deadline;
 
       /* For efficiency, we pop as many available timers as we can from the
@@ -454,11 +465,11 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
           pop_timers(exec_ctx, g_shard_queue[0], now, &new_min_deadline, error);
 
       if (grpc_timer_check_trace) {
-        gpr_log(GPR_DEBUG,
-                "  .. popped --> %" PRIdPTR
-                ", shard[%d]->min_deadline %" PRIdPTR " --> %" PRIdPTR,
+        gpr_log(GPR_DEBUG, "  .. popped --> %" PRIdPTR
+                           ", shard[%d]->min_deadline %" PRIdPTR
+                           " --> %" PRIdPTR ", now=%" PRIdPTR,
                 n, (int)(g_shard_queue[0] - g_shards),
-                g_shard_queue[0]->min_deadline, new_min_deadline);
+                g_shard_queue[0]->min_deadline, new_min_deadline, now);
       }
 
       /* An grpc_timer_init() on the shard could intervene here, adding a new
