@@ -36,6 +36,9 @@
 
 #include "src/core/lib/channel/channel_tracer.h"
 
+void validate_json_array_size(grpc_json* json, const char* key,
+                              size_t expected_size);
+
 void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
                            size_t actual_num_nodes_expected);
 

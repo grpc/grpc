@@ -47,29 +47,29 @@ static grpc_json* get_json_child(grpc_json* parent, const char* key) {
   return NULL;
 }
 
-static size_t get_json_array_size(grpc_json* arr) {
+void validate_json_array_size(grpc_json* json, const char* key,
+                              size_t expected_size) {
+  grpc_json* arr = get_json_child(json, key);
+  GPR_ASSERT(arr);
   GPR_ASSERT(arr->type == GRPC_JSON_ARRAY);
   size_t count = 0;
   for (grpc_json* child = arr->child; child != NULL; child = child->next) {
     ++count;
   }
-  return count;
+  GPR_ASSERT(count == expected_size);
 }
 
 void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
                            size_t actual_num_nodes_expected) {
   GPR_ASSERT(json);
   grpc_json* channel_data = get_json_child(json, "channelData");
-
   grpc_json* num_nodes_logged_json =
       get_json_child(channel_data, "numNodesLogged");
   GPR_ASSERT(num_nodes_logged_json);
+  grpc_json* start_time = get_json_child(channel_data, "startTime");
+  GPR_ASSERT(start_time);
   size_t num_nodes_logged =
       (size_t)strtol(num_nodes_logged_json->value, NULL, 0);
   GPR_ASSERT(num_nodes_logged == num_nodes_logged_expected);
-
-  grpc_json* nodes = get_json_child(channel_data, "nodes");
-  GPR_ASSERT(nodes);
-  size_t actual_num_nodes = get_json_array_size(nodes);
-  GPR_ASSERT(actual_num_nodes == actual_num_nodes_expected);
+  validate_json_array_size(channel_data, "nodes", actual_num_nodes_expected);
 }
