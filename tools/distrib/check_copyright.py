@@ -125,7 +125,9 @@ RE_LICENSE = dict(
 if args.precommit:
   FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
 else:
-  FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | grep -v ^third_party/'
+  FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | ' \
+                      'grep -v ^third_party/ |' \
+                      'grep -v "\(ares_config.h\|ares_build.h\)"'
 
 def load(name):
   with open(name) as f:

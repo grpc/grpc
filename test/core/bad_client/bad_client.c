@@ -163,8 +163,9 @@ void grpc_run_bad_client_test(
       gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
-                           GRPC_ERROR_CREATE("Forced Disconnect"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, sfd.client,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
     sfd.client = NULL;
@@ -190,8 +191,9 @@ void grpc_run_bad_client_test(
       grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
     }
     // Shutdown.
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
-                           GRPC_ERROR_CREATE("Test Shutdown"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, sfd.client,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
   }

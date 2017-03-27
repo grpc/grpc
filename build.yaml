@@ -223,6 +223,7 @@ filegroups:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_factory_posix.h
   - src/core/lib/iomgr/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
@@ -262,6 +263,7 @@ filegroups:
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
@@ -329,6 +331,7 @@ filegroups:
   - src/core/lib/iomgr/resolve_address_windows.c
   - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
+  - src/core/lib/iomgr/socket_factory_posix.c
   - src/core/lib/iomgr/socket_mutator.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
@@ -366,6 +369,7 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/security/util/b64.c
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
@@ -384,6 +388,7 @@ filegroups:
   - src/core/lib/surface/channel_ping.c
   - src/core/lib/surface/channel_stack_type.c
   - src/core/lib/surface/completion_queue.c
+  - src/core/lib/surface/completion_queue_factory.c
   - src/core/lib/surface/event_string.c
   - src/core/lib/surface/lame_client.c
   - src/core/lib/surface/metadata_array.c
@@ -518,6 +523,18 @@ filegroups:
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -962,6 +979,7 @@ libs:
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1055,6 +1073,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -4311,6 +4330,11 @@ configs:
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
+  ares:
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
+      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4401,11 +4425,13 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z

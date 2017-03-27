@@ -47,14 +47,14 @@ include "_cygrpc/server.pyx.pxi"
 #
 # initialize gRPC
 #
-
-
 cdef extern from "Python.h":
 
-  int Py_AtExit(void(*func)())
+  int PyEval_InitThreads()
 
-
-def _initialize():
+cdef _initialize():
+  # We have Python callbacks called by c-core threads, this ensures the GIL
+  # is initialized.
+  PyEval_InitThreads()
   grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 

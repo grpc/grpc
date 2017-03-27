@@ -78,8 +78,8 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
           GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
       calld->have_service_method = true;
     } else {
-      err =
-          grpc_error_add_child(err, GRPC_ERROR_CREATE("Missing :path header"));
+      err = grpc_error_add_child(
+          err, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing :path header"));
     }
     if (calld->recv_initial_metadata->idx.named.lb_token != NULL) {
       calld->initial_md_string = grpc_slice_ref_internal(

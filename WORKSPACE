@@ -29,6 +29,11 @@ bind(
 )
 
 bind(
+    name = "cares",
+    actual = "@submodule_cares//:ares",
+)
+
+bind(
     name = "gtest",
     actual = "@submodule_gtest//:gtest",
 )
@@ -76,4 +81,10 @@ new_local_repository(
     name = "submodule_benchmark",
     path = "third_party/benchmark",
     build_file = "third_party/benchmark.BUILD",
+)
+
+new_local_repository(
+    name = "submodule_cares",
+    path = "third_party/cares",
+    build_file = "third_party/cares/cares.BUILD",
 )
