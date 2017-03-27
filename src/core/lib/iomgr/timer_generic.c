@@ -95,8 +95,8 @@ static gpr_timespec g_start_time;
 GPR_TLS_DECL(g_last_seen_min_timer);
 
 static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
-  if (a > GPR_ATM_MAX - 1 - b) {
-    return GPR_ATM_MAX - 1;
+  if (a > GPR_ATM_MAX - b) {
+    return GPR_ATM_MAX;
   }
   return a + b;
 }
@@ -117,10 +117,7 @@ static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
              (double)ts.tv_nsec / GPR_NS_PER_MS + 1.0;
   if (x < 0) return 0;
-  // when rounding up (for deadlines) we clamp at 1ms before 'infinity', so that
-  // when executing with now=infinity (at shutdown) all timers are guaranteed to
-  // fire
-  if (x > GPR_ATM_MAX - 1) return GPR_ATM_MAX - 1;
+  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
   return (gpr_atm)x;
 }
 
@@ -455,7 +452,8 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
               g_shard_queue[0]->min_deadline);
     }
 
-    while (g_shard_queue[0]->min_deadline <= now) {
+    while (g_shard_queue[0]->min_deadline < now ||
+           (now != GPR_ATM_MAX && g_shard_queue[0]->min_deadline == now)) {
       gpr_atm new_min_deadline;
 
       /* For efficiency, we pop as many available timers as we can from the
