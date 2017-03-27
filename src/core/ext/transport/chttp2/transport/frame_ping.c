@@ -111,16 +111,16 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-          /* The “2 hours” restricts the number of PINGS to an implementation
-             equivalent to TCP Keep-Alive, whose interval is specified to
-             default to no less than two hours in RFC1122. */
+          /* According to RFC1122, the interval of TCP Keep-Alive is default to
+             no less than two hours. When there is no outstanding streams, we
+             restrict the number of PINGS equivalent to TCP Keep-Alive. */
           next_allowed_ping =
               gpr_time_add(t->ping_recv_state.last_ping_recv_time,
                            gpr_time_from_seconds(7200, GPR_TIMESPAN));
         }
 
         if (gpr_time_cmp(next_allowed_ping, now) > 0) {
-          grpc_chttp2_ping_strike(exec_ctx, t);
+          grpc_chttp2_add_ping_strike(exec_ctx, t);
         }
 
         t->ping_recv_state.last_ping_recv_time = now;
