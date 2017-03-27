@@ -236,8 +236,9 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
 static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_handshake_manager* mgr = arg;
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
-    grpc_handshake_manager_shutdown(exec_ctx, mgr,
-                                    GRPC_ERROR_CREATE("Handshake timed out"));
+    grpc_handshake_manager_shutdown(
+        exec_ctx, mgr,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
   }
   grpc_handshake_manager_unref(exec_ctx, mgr);
 }

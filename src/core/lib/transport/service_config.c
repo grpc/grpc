@@ -93,6 +93,18 @@ void grpc_service_config_destroy(grpc_service_config* service_config) {
   gpr_free(service_config);
 }
 
+void grpc_service_config_parse_global_params(
+    const grpc_service_config* service_config,
+    void (*process_json)(const grpc_json* json, void* arg), void* arg) {
+  const grpc_json* json = service_config->json_tree;
+  if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key == NULL) return;
+    if (strcmp(field->key, "methodConfig") == 0) continue;
+    process_json(field, arg);
+  }
+}
+
 const char* grpc_service_config_get_lb_policy_name(
     const grpc_service_config* service_config) {
   const grpc_json* json = service_config->json_tree;
