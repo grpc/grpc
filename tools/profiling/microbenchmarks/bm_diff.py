@@ -148,8 +148,9 @@ class Benchmark:
       old = self.samples[False][f]
       if not new or not old: continue
       p = stats.ttest_ind(new, old)[1]
-      if p < args.p_threshold:
-        self.final[f] = avg(new) - avg(old)
+      delta = avg(new) - avg(old)
+      if p < args.p_threshold and abs(delta) > 0.1:
+        self.final[f] = delta
     return self.final.keys()
 
   def skip(self):
