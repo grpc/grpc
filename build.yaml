@@ -1255,6 +1255,7 @@ libs:
   - grpc++
   - grpc_test_util
   - grpc
+  defaults: benchmark
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -3089,6 +3090,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3130,6 +3132,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3150,6 +3153,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3212,6 +3216,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3232,6 +3237,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3256,6 +3262,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3280,6 +3287,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3329,6 +3337,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3349,6 +3358,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
