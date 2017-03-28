@@ -49,12 +49,21 @@
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+   each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_min_read_chunk_size"
+#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_max_read_chunk_size"
+
 extern int grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_fd *fd, grpc_resource_quota *resource_quota,
-                               size_t read_slice_size, const char *peer_string);
+grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                               const grpc_channel_args *args,
+                               const char *peer_string);
 
 /* Return the tcp endpoint's fd, or -1 if this is not available. Does not
    release the fd.

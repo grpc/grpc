@@ -54,6 +54,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
@@ -86,6 +87,9 @@ typedef struct {
   gpr_refcount refcount;
   gpr_atm shutdown_count;
 
+  int min_read_chunk_size;
+  int max_read_chunk_size;
+
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
@@ -111,12 +115,16 @@ typedef struct {
 } grpc_tcp;
 
 static void add_to_estimate(grpc_tcp *tcp, size_t bytes) {
-  tcp->bytes_read_this_round += bytes;
+  tcp->bytes_read_this_round += (double)bytes;
 }
 
 static void finish_estimate(grpc_tcp *tcp) {
-  if (tcp->bytes_read_this_round > tcp->target_length) {
-    tcp->target_length = 1.5 * tcp->bytes_read_this_round;
+  /* If we read >80% of the target buffer in one read loop, increase the size
+     of the target buffer to either the amount read, or twice its previous
+     value */
+  if (tcp->bytes_read_this_round > tcp->target_length * 0.8) {
+    tcp->target_length =
+        GPR_MAX(2 * tcp->target_length, tcp->bytes_read_this_round);
   } else {
     tcp->target_length =
         0.99 * tcp->target_length + 0.01 * tcp->bytes_read_this_round;
@@ -129,7 +137,9 @@ static size_t get_target_read_size(grpc_tcp *tcp) {
       grpc_resource_user_quota(tcp->resource_user));
   double target =
       tcp->target_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
-  return (((size_t)GPR_CLAMP(target, 1024, 4 * 1024 * 1024)) + 255) &
+  return (((size_t)GPR_CLAMP(target, tcp->min_read_chunk_size,
+                             tcp->max_read_chunk_size)) +
+          255) &
          ~(size_t)255;
 }
 
@@ -562,9 +572,50 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_peer,
                                             tcp_get_fd};
 
-grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
-                               grpc_resource_quota *resource_quota,
-                               size_t slice_size, const char *peer_string) {
+#define MAX_CHUNK_SIZE 32 * 1024 * 1024
+
+grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
+                               const grpc_channel_args *channel_args,
+                               const char *peer_string) {
+  int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
+  int tcp_max_read_chunk_size = 4 * 1024 * 1024;
+  int tcp_min_read_chunk_size = 256;
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 ==
+          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
+        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
+                                        MAX_CHUNK_SIZE};
+        tcp_read_chunk_size =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE)) {
+        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
+                                        MAX_CHUNK_SIZE};
+        tcp_min_read_chunk_size =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE)) {
+        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
+                                        MAX_CHUNK_SIZE};
+        tcp_max_read_chunk_size =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+      } else if (0 ==
+                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
+
+  if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
+    tcp_min_read_chunk_size = tcp_max_read_chunk_size;
+  }
+  tcp_read_chunk_size = GPR_CLAMP(tcp_read_chunk_size, tcp_min_read_chunk_size,
+                                  tcp_max_read_chunk_size);
+
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
   tcp->peer_string = gpr_strdup(peer_string);
@@ -574,7 +625,9 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   tcp->release_fd_cb = NULL;
   tcp->release_fd = NULL;
   tcp->incoming_buffer = NULL;
-  tcp->target_length = slice_size;
+  tcp->target_length = (double)tcp_read_chunk_size;
+  tcp->min_read_chunk_size = tcp_min_read_chunk_size;
+  tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
   tcp->iov_size = 1;
   tcp->finished_edge = true;
@@ -592,6 +645,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
       &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 
   return &tcp->base;
 }
