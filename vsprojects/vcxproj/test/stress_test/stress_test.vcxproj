@@ -205,8 +205,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\stress_test.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\metrics_server.cc">
     </ClCompile>
   </ItemGroup>

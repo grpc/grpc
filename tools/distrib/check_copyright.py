@@ -111,6 +111,8 @@ _EXEMPT = frozenset((
 
   # An older file originally from outside gRPC.
   'src/php/tests/bootstrap.php',
+  # census.proto copied from github
+  'tools/grpcz/census.proto',
 ))
 
 
