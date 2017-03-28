@@ -48,12 +48,11 @@ typedef struct grpc_json {
   struct grpc_json* child;
   struct grpc_json* parent;
 
-  /* if set, destructor will free value */
-  bool owns_value;
-
   grpc_json_type type;
   const char* key;
   const char* value;
+  /* if set, destructor will free value */
+  bool owns_value;
 } grpc_json;
 
 /* The next two functions are going to parse the input string, and

@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -67,8 +68,20 @@ void grpc_json_destroy(grpc_json* json) {
 
 grpc_json* grpc_json_link_child(grpc_json* child, grpc_json* brother,
                                 grpc_json* parent) {
-  if (brother != NULL) brother->next = child;
-  if (parent->child == NULL) parent->child = child;
+  // first child case.
+  if (parent->child == NULL) {
+    GPR_ASSERT(brother == NULL);
+    parent->child = child;
+    return child;
+  }
+  if (brother == NULL) {
+    brother = parent->child;
+  }
+  // always find the right most brother.
+  while (brother->next != NULL) {
+    brother = brother->next;
+  }
+  brother->next = child;
   return child;
 }
 
