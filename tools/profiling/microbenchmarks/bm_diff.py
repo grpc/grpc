@@ -86,7 +86,7 @@ assert args.diff_base
 def collect1(bm, cfg, ver):
   subprocess.check_call(['make', 'clean'])
   subprocess.check_call(
-      ['make', bm_name,
+      ['make', bm,
        'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
   cmd = ['bins/%s/%s' % (cfg, bm),
          '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
