@@ -160,11 +160,11 @@ for bm in comparables:
 
   for row in bm_json.expand_json(js_new_ctr, js_new_opt):
     name = row['cpp_name']
-    if name.endswith('_mean') or nme.endswith('_stddev'): continue
+    if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, True)
   for row in bm_json.expand_json(js_old_ctr, js_old_opt):
     name = row['cpp_name']
-    if name.endswith('_mean') or nme.endswith('_stddev'): continue
+    if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, False)
 
 really_interesting = set()
