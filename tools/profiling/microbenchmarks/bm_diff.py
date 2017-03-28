@@ -33,7 +33,7 @@ import json
 import bm_json
 import tabulate
 import argparse
-import scipy
+from scipy import stats
 import subprocess
 import multiprocessing
 import collections
@@ -137,7 +137,7 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      p = scipy.stats.ttest_ind(new, old)
+      p = stats.ttest_ind(new, old)
       if p < args.p_threshold:
         self.final[f] = avg(new) - avg(old)
     return self.final.keys()
