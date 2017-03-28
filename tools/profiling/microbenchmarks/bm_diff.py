@@ -33,6 +33,7 @@ import json
 import bm_json
 import tabulate
 import argparse
+import scipy
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -44,15 +45,28 @@ def changed_ratio(n, o):
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
-_INTERESTING = {
-  'cpu_time': min_change(10),
-  'real_time': min_change(10),
-  'locks_per_iteration': min_change(5),
-  'allocs_per_iteration': min_change(5),
-  'writes_per_iteration': min_change(5),
-  'atm_cas_per_iteration': min_change(1),
-  'atm_add_per_iteration': min_change(5),
-}
+_INTERESTING = [
+  'cpu_time',
+  'real_time',
+  'locks_per_iteration',
+  'allocs_per_iteration',
+  'writes_per_iteration',
+  'atm_cas_per_iteration',
+  'atm_add_per_iteration',
+]
+
+_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
+                              'bm_fullstack_streaming_ping_pong',
+                              'bm_fullstack_streaming_pump',
+                              'bm_closure',
+                              'bm_cq',
+                              'bm_call_create',
+                              'bm_error',
+                              'bm_chttp2_hpack',
+                              'bm_chttp2_transport',
+                              'bm_pollset',
+                              'bm_metadata',
+                              'bm_fullstack_trickle']
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
@@ -60,59 +74,104 @@ argp.add_argument('-t', '--track',
                   nargs='+',
                   default=sorted(_INTERESTING.keys()),
                   help='Which metrics to track')
-argp.add_argument('files', metavar='bm_file.json', type=str, nargs=4,
-                    help='files to diff. ')
+argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_error'])
+argp.add_argument('-d', '--diff_base', type=str)
+argp.add_argument('-r', '--repetitions', type=int, default=5)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
 args = argp.parse_args()
 
-with open(args.files[0]) as f:
-  js_new_ctr = json.loads(f.read())
-with open(args.files[1]) as f:
-  js_new_opt = json.loads(f.read())
-with open(args.files[2]) as f:
-  js_old_ctr = json.loads(f.read())
-with open(args.files[3]) as f:
-  js_old_opt = json.loads(f.read())
+assert args.diff_base
 
-new = {}
-old = {}
+def collect1(bm, cfg, ver):
+  subprocess.check_call(['make', 'clean'])
+  subprocess.check_call(
+      ['make', bm_name,
+       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  cmd = ['bins/%s/%s' % (cfg, bm),
+         '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
+         '--benchmark_out_format=json',
+         '--benchmark_repetitions=%d' % (args.repetitions)
+         ]
+  subprocess.check_call(cmd)
 
-for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-  new[row['cpp_name']] = row
-for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-  old[row['cpp_name']] = row
+for bm in args.benchmarks:
+  collect1(bm, 'opt', 'new')
+  collect1(bm, 'counters', 'new')
 
-changed = []
-for fld in args.track:
-  chk = _INTERESTING[fld]
-  for bm in new.keys():
-    if bm not in old: continue
-    n = new[bm]
-    o = old[bm]
-    if fld not in n or fld not in o: continue
-    if chk(n[fld], o[fld]):
-      changed.append((fld, chk))
-      break
+git_comment = 'Performance differences between this PR and %s\\n' % args.diff_perf
 
-headers = ['Benchmark'] + [c[0] for c in changed] + ['Details']
+where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+subprocess.check_call(['git', 'checkout', args.diff_base])
+
+try:
+  comparables = []
+  for bm in args.benchmarks:
+    try:
+      collect1(bm, 'opt', 'old')
+      collect1(bm, 'counters', 'old')
+      comparables.append(bm_name)
+    except subprocess.CalledProcessError, e:
+      pass
+finally:
+  subprocess.check_call(['git', 'checkout', where_am_i])
+
+
+class Benchmark:
+
+  def __init__(self):
+    self.samples = {
+      True: collections.defaultdict(list),
+      False: collections.defaultdict(list)
+    }
+    self.final = {}
+
+  def add_sample(self, data, new):
+    for f in _INTERESTING:
+      if f in data:
+        self.samples[new][f].append(data[f])
+
+  def process(self):
+    for f in _INTERESTING:
+      new = self.samples[True][f]
+      old = self.samples[False][f]
+      if not new or not old: continue
+      p = scipy.stats.ttest_ind(new, old)
+      if p < args.p_threshold:
+        self.final[f] = avg(new) - avg(old)
+    return self.final.keys()
+
+  def row(self, flds):
+    return [self.final[f] if f in self.final else '' for f in flds]
+
+
+benchmarks = collections.defaultdict(Benchmark)
+
+for bm in comparables:
+  with open('%s.counters.new.json' % bm) as f:
+    js_new_ctr = json.loads(f.read())
+  with open('%s.opt.new.json' % bm) as f:
+    js_new_opt = json.loads(f.read())
+  with open('%s.counters.old.json' % bm) as f:
+    js_old_ctr = json.loads(f.read())
+  with open('%s.opt.old.json' % bm) as f:
+    js_old_opt = json.loads(f.read())
+
+  for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+    name = row['cpp_name']
+    if name.endswith('_mean') or nme.endswith('_stddev'): continue
+    benchmarks[name].add_sample(row, True)
+  for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+    name = row['cpp_name']
+    if name.endswith('_mean') or nme.endswith('_stddev'): continue
+    benchmarks[name].add_sample(row, False)
+
+really_interesting = set()
+for bm in benchmarks:
+  really_interesting.update(bm.process())
+fields = [f for f in _INTERESTING if f in really_interesting]
+
+headers = ['Benchmark'] + fields
 rows = []
-for bm in sorted(new.keys()):
-  if bm not in old: continue
-  row = [bm]
-  any_changed = False
-  n = new[bm]
-  o = old[bm]
-  details = ''
-  for fld in args.track:
-    chk = _INTERESTING[fld]
-    if fld not in n or fld not in o: continue
-    if chk(n[fld], o[fld]):
-      row.append(changed_ratio(n[fld], o[fld]))
-      if details: details += ', '
-      details += '%s:%r-->%r' % (fld, float(o[fld]), float(n[fld]))
-      any_changed = True
-    else:
-      row.append('')
-  if any_changed:
-    row.append(details)
-    rows.append(row)
+for name in sorted(benchmarks.keys()):
+  rows.append([name] + benchmarks[name].row(fields))
 print tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')

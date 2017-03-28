@@ -215,10 +215,6 @@ argp.add_argument('-b', '--benchmarks',
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
-argp.add_argument('--diff_perf',
-                  default=None,
-                  type=str,
-                  help='Diff microbenchmarks against this git revision')
 argp.add_argument('--bigquery_upload',
                   default=False,
                   action='store_const',
@@ -234,34 +230,6 @@ try:
   for collect in args.collect:
     for bm_name in args.benchmarks:
       collectors[collect](bm_name, args)
-  if args.diff_perf:
-    if 'summary' not in args.collect:
-      for bm_name in args.benchmarks:
-        run_summary(bm_name, 'opt', bm_name)
-        run_summary(bm_name, 'counters', bm_name)
-    where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-    subprocess.check_call(['git', 'checkout', args.diff_perf])
-    comparables = []
-    subprocess.check_call(['make', 'clean'])
-    try:
-      for bm_name in args.benchmarks:
-        try:
-          run_summary(bm_name, 'opt', '%s.old' % bm_name)
-          run_summary(bm_name, 'counters', '%s.old' % bm_name)
-          comparables.append(bm_name)
-        except subprocess.CalledProcessError, e:
-          pass
-    finally:
-      subprocess.check_call(['git', 'checkout', where_am_i])
-    for bm_name in comparables:
-      diff = subprocess.check_output(['tools/profiling/microbenchmarks/bm_diff.py',
-                                      '%s.counters.json' % bm_name,
-                                      '%s.opt.json' % bm_name,
-                                      '%s.old.counters.json' % bm_name,
-                                      '%s.old.opt.json' % bm_name]).strip()
-      if diff:
-        heading('Performance diff: %s' % bm_name)
-        text(diff)
 finally:
   index_html += "</body>\n</html>\n"
   with open('reports/index.html', 'w') as f:
