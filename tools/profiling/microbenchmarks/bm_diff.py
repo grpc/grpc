@@ -137,11 +137,13 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      print f, new, old
-      p = stats.ttest_ind(new, old)
+      p = stats.ttest_ind(new, old)[1]
       if p < args.p_threshold:
         self.final[f] = avg(new) - avg(old)
     return self.final.keys()
+
+  def skip(self):
+    return not self.final
 
   def row(self, flds):
     return [self.final[f] if f in self.final else '' for f in flds]
@@ -176,5 +178,6 @@ fields = [f for f in _INTERESTING if f in really_interesting]
 headers = ['Benchmark'] + fields
 rows = []
 for name in sorted(benchmarks.keys()):
+  if benchmarks[name].skip(): continue
   rows.append([name] + benchmarks[name].row(fields))
 print tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
