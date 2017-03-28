@@ -2768,6 +2768,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3084,6 +3085,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3391,6 +3393,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3622,6 +3625,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -4235,6 +4239,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
