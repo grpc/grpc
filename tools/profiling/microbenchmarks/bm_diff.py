@@ -76,7 +76,7 @@ argp.add_argument('-t', '--track',
                   nargs='+',
                   default=sorted(_INTERESTING),
                   help='Which metrics to track')
-argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_error'])
+argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=5)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
@@ -100,8 +100,6 @@ def collect1(bm, cfg, ver):
 for bm in args.benchmarks:
   collect1(bm, 'opt', 'new')
   collect1(bm, 'counters', 'new')
-
-git_comment = 'Performance differences between this PR and %s\\n' % args.diff_perf
 
 where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
 subprocess.check_call(['git', 'checkout', args.diff_base])
