@@ -137,6 +137,7 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
+      print f, new, old
       p = stats.ttest_ind(new, old)
       if p < args.p_threshold:
         self.final[f] = avg(new) - avg(old)
