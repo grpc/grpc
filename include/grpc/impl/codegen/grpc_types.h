@@ -206,6 +206,14 @@ typedef struct {
     Int valued, 0(false)/1(true). */
 #define GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS \
   "grpc.http2.keepalive_permit_without_calls"
+
+#define GRPC_AGG_HTTP2_MAX_CONNECTION_IDLE_S "grpc.http2.max_connection_idle"
+
+#define GRPC_AGG_HTTP2_MAX_CONNECTION_AGE_S "grpc.http2.max_connection_age"
+
+#define GRPC_AGG_HTTP2_MAX_CONNECTION_AGE_GRACE_S \
+  "grpc.http2.max_connection_age_grace"
+
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"

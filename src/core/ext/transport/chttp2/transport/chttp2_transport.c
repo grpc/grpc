@@ -73,6 +73,10 @@
 #define DEFAULT_KEEPALIVE_TIMEOUT_SECOND 20
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 
+#define DEFAULT_MAX_CONNECTION_IDLE_S INT_MAX
+#define DEFAULT_MAX_CONNECTION_AGE_S INT_MAX
+#define DEFAULT_MAX_CONNECTION_AGE_GRACE_S INT_MAX
+
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 int grpc_http_trace = 0;
 int grpc_flowctl_trace = 0;
@@ -155,6 +159,12 @@ static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                          grpc_error *error);
 static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                             grpc_error *error);
+
+/** max-age-relevant functions */
+static void shutdown_idle_transport_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                           grpc_error *error);
+static void shutdown_max_age_transport_locked(grpc_exec_ctx *exec_ctx,
+                                              void *arg, grpc_error *error);
 
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -282,6 +292,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->keepalive_watchdog_fired_locked,
                     keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->shutdown_idle_transport_locked,
+                    shutdown_idle_transport_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->shutdown_max_age_transport_locked,
+                    shutdown_max_age_transport_locked, t,
+                    grpc_combiner_scheduler(t->combiner, false));
 
   grpc_bdp_estimator_init(&t->bdp_estimator, t->peer_string);
   t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -355,6 +371,21 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                   GPR_TIMESPAN);
   t->keepalive_permit_without_calls = DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
+  /* connection max age settings */
+  t->max_connection_idle =
+      DEFAULT_MAX_CONNECTION_IDLE_S == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_IDLE_S, GPR_TIMESPAN);
+  t->max_connection_age =
+      DEFAULT_MAX_CONNECTION_AGE_S == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_S, GPR_TIMESPAN);
+  t->max_connection_age_grace =
+      DEFAULT_MAX_CONNECTION_AGE_GRACE_S == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_GRACE_S,
+                                  GPR_TIMESPAN);
+
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key,
@@ -424,6 +455,31 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         t->keepalive_permit_without_calls =
             (uint32_t)grpc_channel_arg_get_integer(
                 &channel_args->args[i], (grpc_integer_options){0, 0, 1});
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_AGG_HTTP2_MAX_CONNECTION_IDLE_S)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_S, 1, INT_MAX});
+        t->max_connection_idle =
+            value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
+                             : gpr_time_from_seconds(value, GPR_TIMESPAN);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_AGG_HTTP2_MAX_CONNECTION_AGE_S)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_S, 1, INT_MAX});
+        t->max_connection_age =
+            value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
+                             : gpr_time_from_seconds(value, GPR_TIMESPAN);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_AGG_HTTP2_MAX_CONNECTION_AGE_GRACE_S)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_S, 1,
+                                   INT_MAX});
+        t->max_connection_age_grace =
+            value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
+                             : gpr_time_from_seconds(value, GPR_TIMESPAN);
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -474,6 +530,19 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
+
+  GRPC_CHTTP2_REF_TRANSPORT(t, "idle state");
+  grpc_timer_init(
+      exec_ctx, &t->idle_state_timer,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->max_connection_idle),
+      &t->shutdown_idle_transport_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+  t->is_idle_state_timer_set = true;
+
+  GRPC_CHTTP2_REF_TRANSPORT(t, "max age");
+  grpc_timer_init(
+      exec_ctx, &t->max_age_timer,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->max_connection_age),
+      &t->shutdown_max_age_transport_locked, gpr_now(GPR_CLOCK_MONOTONIC));
 
   /** Start client-side keepalive pings */
   if (t->is_client) {
@@ -547,6 +616,8 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
         }
       }
     }
+    grpc_timer_cancel(exec_ctx, &t->idle_state_timer);
+    grpc_timer_cancel(exec_ctx, &t->max_age_timer);
 
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;
@@ -605,6 +676,9 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     s->id = (uint32_t)(uintptr_t)server_data;
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
+    if (grpc_chttp2_stream_map_size(&t->stream_map) == 1) {
+      grpc_timer_cancel(exec_ctx, &t->idle_state_timer);
+    }
     post_destructive_reclaimer(exec_ctx, t);
   }
 
@@ -944,6 +1018,9 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
     }
 
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
+    if (grpc_chttp2_stream_map_size(&t->stream_map) == 1) {
+      grpc_timer_cancel(exec_ctx, &t->idle_state_timer);
+    }
     post_destructive_reclaimer(exec_ctx, t);
     grpc_chttp2_become_writable(exec_ctx, t, s,
                                 GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
@@ -1422,8 +1499,13 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_slice slice;
   grpc_error_get_status(error, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL,
                         &slice, &http_error);
-  grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
-                            grpc_slice_ref_internal(slice), &t->qbuf);
+  if (http_error == GRPC_HTTP2_NO_ERROR) {
+    grpc_chttp2_goaway_append(MAX_CLIENT_STREAM_ID, (uint32_t)http_error,
+                              grpc_slice_ref_internal(slice), &t->qbuf);
+  } else {
+    grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
+                              grpc_slice_ref_internal(slice), &t->qbuf);
+  }
   grpc_chttp2_initiate_write(exec_ctx, t, false, "goaway_sent");
   GRPC_ERROR_UNREF(error);
 }
@@ -1585,6 +1667,11 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           exec_ctx, t,
           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
               "Last stream closed after sending GOAWAY", &error, 1));
+    } else {
+      grpc_timer_init(
+          exec_ctx, &t->idle_state_timer,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->max_connection_idle),
+          &t->shutdown_idle_transport_locked, gpr_now(GPR_CLOCK_MONOTONIC));
     }
   }
   if (grpc_chttp2_list_remove_writable_stream(t, s)) {
@@ -2177,6 +2264,34 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
     }
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive watchdog");
+}
+
+static void shutdown_idle_transport_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                           grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  if (error == GRPC_ERROR_NONE) {
+    send_goaway(
+        exec_ctx, t,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
+                           GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR));
+  } else if (error != GRPC_ERROR_CANCELLED) {
+    GRPC_LOG_IF_ERROR("shutdown_idle_transport_locked", error);
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "idle state");
+}
+
+static void shutdown_max_age_transport_locked(grpc_exec_ctx *exec_ctx,
+                                              void *arg, grpc_error *error) {
+  grpc_chttp2_transport *t = arg;
+  if (error == GRPC_ERROR_NONE) {
+    send_goaway(
+        exec_ctx, t,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
+                           GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR));
+  } else {
+    GRPC_LOG_IF_ERROR("shutdown_max_age_transport_locked", error);
+  }
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "max age");
 }
 
 /*******************************************************************************
