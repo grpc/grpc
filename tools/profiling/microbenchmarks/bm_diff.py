@@ -86,6 +86,7 @@ assert args.diff_base
 
 def collect1(bm, cfg, ver):
   subprocess.check_call(['make', 'clean'])
+  subprocess.check_call(['git', 'submodule', 'update'])
   subprocess.check_call(
       ['make', bm,
        'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
