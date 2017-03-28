@@ -152,7 +152,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
   // TODO(murgatroid99): figure out what the return value here means
   uv_read_stop(stream);
   if (nread == UV_EOF) {
-    error = GRPC_ERROR_CREATE("EOF");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF");
   } else if (nread > 0) {
     // Successful read
     sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, (size_t)nread);
@@ -173,7 +173,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     }
   } else {
     // nread < 0: Error
-    error = GRPC_ERROR_CREATE("TCP Read failed");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
   }
   grpc_closure_sched(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -193,9 +193,10 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   status =
       uv_read_start((uv_stream_t *)tcp->handle, alloc_uv_buf, read_callback);
   if (status != 0) {
-    error = GRPC_ERROR_CREATE("TCP Read failed at start");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start");
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
     grpc_closure_sched(exec_ctx, cb, error);
   }
   if (grpc_tcp_trace) {
@@ -214,7 +215,7 @@ static void write_callback(uv_write_t *req, int status) {
   if (status == 0) {
     error = GRPC_ERROR_NONE;
   } else {
-    error = GRPC_ERROR_CREATE("TCP Write failed");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Write failed");
   }
   if (grpc_tcp_trace) {
     const char *str = grpc_error_string(error);
@@ -249,8 +250,8 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb,
-                       GRPC_ERROR_CREATE("TCP socket is shutting down"));
+    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                         "TCP socket is shutting down"));
     return;
   }
 

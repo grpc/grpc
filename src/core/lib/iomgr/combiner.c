@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -216,6 +217,7 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
       GPR_DEBUG, "C:%p grpc_combiner_execute c=%p cov=%d last=%" PRIdPTR, lock,
       cl, covered_by_poller, last));
   GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
+  assert(cl->cb);
   cl->error_data.scratch =
       pack_error_data((error_data){error, covered_by_poller});
   if (covered_by_poller) {

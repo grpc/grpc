@@ -764,6 +764,7 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
@@ -779,11 +780,11 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
-doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \

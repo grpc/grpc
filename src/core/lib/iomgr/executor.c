@@ -115,8 +115,8 @@ static void maybe_spawn_locked() {
   /* All previous instances of the thread should have been joined at this point.
    * Spawn time! */
   g_executor.busy = 1;
-  gpr_thd_new(&g_executor.tid, closure_exec_thread_func, NULL,
-              &g_executor.options);
+  GPR_ASSERT(gpr_thd_new(&g_executor.tid, closure_exec_thread_func, NULL,
+                         &g_executor.options));
   g_executor.pending_join = 1;
 }
 

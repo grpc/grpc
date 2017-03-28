@@ -57,6 +57,7 @@ FILEGROUP_DEFAULTS = {
   'language': 'c',
   'boringssl': False,
   'zlib': False,
+  'ares': False,
 }
 
 

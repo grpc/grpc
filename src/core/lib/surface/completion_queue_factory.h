@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,21 @@
  *
  */
 
-#include "src/core/ext/client_channel/initial_connect_string.h"
+#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
+#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 
-#include <stddef.h>
+#include <grpc/grpc.h>
+#include "src/core/lib/surface/completion_queue.h"
 
-extern void grpc_set_default_initial_connect_string(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+typedef struct grpc_completion_queue_factory_vtable {
+  grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,
+                                   const grpc_completion_queue_attributes*);
+} grpc_completion_queue_factory_vtable;
 
-static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
-    grpc_set_default_initial_connect_string;
+struct grpc_completion_queue_factory {
+  const char* name;
+  void* data; /* Factory specific data */
+  grpc_completion_queue_factory_vtable* vtable;
+};
 
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func) {
-  g_set_initial_connect_string_func = func;
-}
-
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *initial_str) {
-  g_set_initial_connect_string_func(addr, initial_str);
-}
+#endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H */

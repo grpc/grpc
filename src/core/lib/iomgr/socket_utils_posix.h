@@ -41,6 +41,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 /* a wrapper for accept or accept4 */
@@ -136,5 +137,11 @@ grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *addr,
                                          int type, int protocol,
                                          grpc_dualstack_mode *dsmode,
                                          int *newfd);
+
+/* Same as grpc_create_dualstack_socket(), but use the given socket factory (if
+   non-null) to create the socket, rather than calling socket() directly. */
+grpc_error *grpc_create_dualstack_socket_using_factory(
+    grpc_socket_factory *factory, const grpc_resolved_address *addr, int type,
+    int protocol, grpc_dualstack_mode *dsmode, int *newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

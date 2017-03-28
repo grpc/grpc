@@ -41,7 +41,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/client_channel/initial_connect_string.h"
 #include "src/core/ext/client_channel/parse_address.h"
 #include "src/core/ext/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/client_channel/subchannel_index.h"
@@ -102,9 +101,6 @@ struct grpc_subchannel {
   grpc_channel_args *args;
 
   grpc_subchannel_key *key;
-
-  /** initial string to send to peer */
-  grpc_slice initial_connect_string;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -215,7 +211,6 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_subchannel *c = arg;
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(exec_ctx, c->args);
-  grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(exec_ctx, c->pollset_set);
@@ -274,8 +269,9 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
-  grpc_connector_shutdown(exec_ctx, c->connector,
-                          GRPC_ERROR_CREATE("Subchannel disconnected"));
+  grpc_connector_shutdown(
+      exec_ctx, c->connector,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));
   con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
   if (con != NULL) {
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, con, "connection");
@@ -333,7 +329,6 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   c->pollset_set = grpc_pollset_set_create();
   grpc_resolved_address *addr = gpr_malloc(sizeof(*addr));
   grpc_get_subchannel_address_arg(exec_ctx, args->args, addr);
-  grpc_set_initial_connect_string(&addr, &c->initial_connect_string);
   grpc_resolved_address *new_address = NULL;
   grpc_channel_args *new_args = NULL;
   if (grpc_proxy_mappers_map_address(exec_ctx, addr, args->args, &new_address,
@@ -404,7 +399,6 @@ static void continue_connect_locked(grpc_exec_ctx *exec_ctx,
   args.interested_parties = c->pollset_set;
   args.deadline = c->next_attempt;
   args.channel_args = c->args;
-  args.initial_connect_string = c->initial_connect_string;
 
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                               GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
@@ -444,7 +438,8 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_mu_lock(&c->mu);
   c->have_alarm = false;
   if (c->disconnected) {
-    error = GRPC_ERROR_CREATE_REFERENCING("Disconnected", &error, 1);
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
+                                                             &error, 1);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -695,9 +690,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Connect Failed", &error, 1),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         "connect_failed");
 
     const char *errmsg = grpc_error_string(error);
