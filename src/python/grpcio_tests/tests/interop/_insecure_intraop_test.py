@@ -32,7 +32,7 @@ from concurrent import futures
 import unittest
 
 import grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import _intraop_test_case
 from tests.interop import methods
@@ -44,11 +44,11 @@ class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
 
     def setUp(self):
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        test_pb2.add_TestServiceServicer_to_server(methods.TestService(),
-                                                   self.server)
+        test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+                                                        self.server)
         port = self.server.add_insecure_port('[::]:0')
         self.server.start()
-        self.stub = test_pb2.TestServiceStub(
+        self.stub = test_pb2_grpc.TestServiceStub(
             grpc.insecure_channel('localhost:{}'.format(port)))
 
 

@@ -55,9 +55,9 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   if (error != GRPC_ERROR_CANCELLED) {
     grpc_call_element_signal_error(
         exec_ctx, elem,
-        grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_DEADLINE_EXCEEDED));
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED));
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }

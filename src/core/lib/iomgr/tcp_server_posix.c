@@ -100,8 +100,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
-                                 " must be an integer");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
+                                                    " must be an integer");
       }
     } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
@@ -111,8 +111,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
-                                 " must be a pointer to a buffer pool");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
       }
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
@@ -120,8 +120,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_EXPAND_WILDCARD_ADDRS
-                                 " must be an integer");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
       }
     }
   }
@@ -185,10 +185,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
-  if (!s->shutdown) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
+  GPR_ASSERT(s->shutdown);
 
   if (s->head) {
     grpc_tcp_listener *sp;
@@ -216,8 +213,8 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->active_ports) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(exec_ctx, sp->emfd,
-                       GRPC_ERROR_CREATE("Server destroyed"));
+      grpc_fd_shutdown(exec_ctx, sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                               "Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -301,7 +298,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
 error:
   gpr_mu_lock(&sp->server->mu);
-  if (0 == --sp->server->active_ports) {
+  if (0 == --sp->server->active_ports && sp->server->shutdown) {
     gpr_mu_unlock(&sp->server->mu);
     deactivated_all_ports(exec_ctx, sp->server);
   } else {
@@ -350,12 +347,24 @@ static grpc_error *add_wildcard_addrs_to_server(grpc_tcp_server *s,
     }
   }
   if (*out_port > 0) {
-    GRPC_LOG_IF_ERROR("Failed to add :: listener", v6_err);
-    GRPC_LOG_IF_ERROR("Failed to add 0.0.0.0 listener", v4_err);
+    if (v6_err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_INFO,
+              "Failed to add :: listener, "
+              "the environment may not support IPv6: %s",
+              grpc_error_string(v6_err));
+      GRPC_ERROR_UNREF(v6_err);
+    }
+    if (v4_err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_INFO,
+              "Failed to add 0.0.0.0 listener, "
+              "the environment may not support IPv4: %s",
+              grpc_error_string(v4_err));
+      GRPC_ERROR_UNREF(v4_err);
+    }
     return GRPC_ERROR_NONE;
   } else {
-    grpc_error *root_err =
-        GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
+    grpc_error *root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to add any wildcard listeners");
     GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
@@ -575,7 +584,7 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_fd_shutdown(exec_ctx, sp->emfd,
-                       GRPC_ERROR_CREATE("Server shutdown"));
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
     }
   }
   gpr_mu_unlock(&s->mu);

@@ -202,6 +202,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -313,6 +316,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
+      <Filter>src\core\lib\security\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
@@ -365,6 +371,9 @@
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+      <Filter>src\core\lib\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
@@ -713,6 +722,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -830,6 +842,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h">
+      <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
@@ -928,6 +943,12 @@
     </Filter>
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{89bc8f83-e29a-ddab-8f6b-22df11cdc867}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security">
+      <UniqueIdentifier>{83d9c8a0-c579-769e-e2df-270c67b8c159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\util">
+      <UniqueIdentifier>{d55417ff-35a3-ef69-80c4-e6a95673728b}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\slice">
       <UniqueIdentifier>{4d172bbc-20c4-6e7d-872a-2d287b589aa0}</UniqueIdentifier>

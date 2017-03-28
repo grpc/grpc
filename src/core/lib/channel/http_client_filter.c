@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -56,7 +57,6 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
-  grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -108,11 +108,11 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       grpc_error *e = grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_set_str(
-                  GRPC_ERROR_CREATE(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, val),
+                  GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
-          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+          GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
       gpr_free(val);
       gpr_free(msg);
       return e;
@@ -252,18 +252,13 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   }
 }
 
-typedef struct hc_mutate_op_result {
-  grpc_error *error;
-  bool op_stalled;
-} hc_mutate_op_result;
-
-static hc_mutate_op_result hc_mutate_op(grpc_exec_ctx *exec_ctx,
-                                        grpc_call_element *elem,
-                                        grpc_transport_stream_op *op) {
+static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
+                                grpc_call_element *elem,
+                                grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
-  hc_mutate_op_result result = {.error = GRPC_ERROR_NONE, .op_stalled = false};
+  grpc_error *error;
 
   if (op->send_initial_metadata) {
     /* Decide which HTTP VERB to use. We use GET if the request is marked
@@ -298,23 +293,63 @@ static hc_mutate_op_result hc_mutate_op(grpc_exec_ctx *exec_ctx,
       calld->send_length = op->payload->send_message.send_message->length;
       calld->send_flags = op->payload->send_message.send_message->flags;
       continue_send_message(exec_ctx, elem);
-      result.op_stalled = true;
 
       if (calld->send_message_blocked == false) {
-        /* when all the send_message data is available, then create a MDELEM and
-        append to headers */
-        grpc_mdelem payload_bin = grpc_mdelem_from_slices(
-            exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_slice_from_copied_buffer(
-                (const char *)calld->payload_bytes,
-                op->payload->send_message.send_message->length));
-        result.error = grpc_metadata_batch_add_tail(
-            exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
-            &calld->payload_bin, payload_bin);
-        if (result.error != GRPC_ERROR_NONE) return result;
+        /* when all the send_message data is available, then modify the path
+         * MDELEM by appending base64 encoded query to the path */
+        const int k_url_safe = 1;
+        const int k_multi_line = 0;
+        const unsigned char k_query_separator = '?';
+
+        grpc_slice path_slice =
+            GRPC_MDVALUE(op->payload->send_initial_metadata
+                             .send_initial_metadata->idx.named.path->md);
+        /* sum up individual component's lengths and allocate enough memory to
+         * hold combined path+query */
+        size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
+        estimated_len++; /* for the '?' */
+        estimated_len += grpc_base64_estimate_encoded_size(
+            op->payload->send_message.send_message->length, k_url_safe,
+            k_multi_line);
+        estimated_len += 1; /* for the trailing 0 */
+        grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
+
+        /* memcopy individual pieces into this slice */
+        uint8_t *write_ptr =
+            (uint8_t *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        uint8_t *original_path = (uint8_t *)GRPC_SLICE_START_PTR(path_slice);
+        memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
+        write_ptr += GRPC_SLICE_LENGTH(path_slice);
+
+        *write_ptr = k_query_separator;
+        write_ptr++; /* for the '?' */
+
+        grpc_base64_encode_core((char *)write_ptr, calld->payload_bytes,
+                                op->payload->send_message.send_message->length,
+                                k_url_safe, k_multi_line);
+
+        /* remove trailing unused memory and add trailing 0 to terminate string
+         */
+        char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        /* safe to use strlen since base64_encode will always add '\0' */
+        size_t path_length = strlen(t) + 1;
+        *(t + path_length) = '\0';
+        path_with_query_slice =
+            grpc_slice_sub(path_with_query_slice, 0, path_length);
+
+        /* substitute previous path with the new path+query */
+        grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH, path_with_query_slice);
+        grpc_metadata_batch *b =
+            op->payload->send_initial_metadata.send_initial_metadata;
+        error = grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                               mdelem_path_and_query);
+        if (error != GRPC_ERROR_NONE) return error;
+
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
         op->send_message = NULL;
+        grpc_slice_unref_internal(exec_ctx, path_with_query_slice);
       } else {
         /* Not all data is available. Fall back to POST. */
         gpr_log(GPR_DEBUG,
@@ -342,26 +377,26 @@ static hc_mutate_op_result hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    result.error = grpc_metadata_batch_add_head(
+    error = grpc_metadata_batch_add_head(
         exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
         &calld->method, method);
-    if (result.error != GRPC_ERROR_NONE) return result;
-    result.error = grpc_metadata_batch_add_head(
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_head(
         exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
         &calld->scheme, channeld->static_scheme);
-    if (result.error != GRPC_ERROR_NONE) return result;
-    result.error = grpc_metadata_batch_add_tail(
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(
         exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
         &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
-    if (result.error != GRPC_ERROR_NONE) return result;
-    result.error = grpc_metadata_batch_add_tail(
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(
         exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
         &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
-    if (result.error != GRPC_ERROR_NONE) return result;
-    result.error = grpc_metadata_batch_add_tail(
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(
         exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
         &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
-    if (result.error != GRPC_ERROR_NONE) return result;
+    if (error != GRPC_ERROR_NONE) return error;
   }
 
   if (op->recv_initial_metadata) {
@@ -382,7 +417,7 @@ static hc_mutate_op_result hc_mutate_op(grpc_exec_ctx *exec_ctx,
     op->on_complete = &calld->hc_on_recv_trailing_metadata;
   }
 
-  return result;
+  return GRPC_ERROR_NONE;
 }
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -390,14 +425,18 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GPR_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  hc_mutate_op_result result = hc_mutate_op(exec_ctx, elem, op);
-  if (result.error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, result.error);
-  } else if (result.op_stalled) {
-    /* Don't forward the op. send_message contains slices that aren't ready yet.
-       The call will be forwarded by the op_complete of slice read call. */
+  grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
   } else {
-    grpc_call_next_op(exec_ctx, elem, op);
+    call_data *calld = elem->call_data;
+    if (op->send_message && calld->send_message_blocked) {
+      /* Don't forward the op. send_message contains slices that aren't ready
+         yet. The call will be forwarded by the op_complete of slice read call.
+      */
+    } else {
+      grpc_call_next_op(exec_ctx, elem, op);
+    }
   }
   GPR_TIMER_END("hc_start_transport_op", 0);
 }

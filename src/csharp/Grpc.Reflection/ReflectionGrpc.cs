@@ -37,18 +37,18 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
+using grpc = global::Grpc.Core;
 
 namespace Grpc.Reflection.V1Alpha {
   public static partial class ServerReflection
   {
     static readonly string __ServiceName = "grpc.reflection.v1alpha.ServerReflection";
 
-    static readonly Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_ServerReflectionRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom);
-    static readonly Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_ServerReflectionResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> __Marshaller_ServerReflectionRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Marshaller_ServerReflectionResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser.ParseFrom);
 
-    static readonly Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Method_ServerReflectionInfo = new Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse>(
-        MethodType.DuplexStreaming,
+    static readonly grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> __Method_ServerReflectionInfo = new grpc::Method<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse>(
+        grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "ServerReflectionInfo",
         __Marshaller_ServerReflectionRequest,
@@ -71,24 +71,24 @@ namespace Grpc.Reflection.V1Alpha {
       /// <param name="responseStream">Used for sending responses back to the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>A task indicating completion of the handler.</returns>
-      public virtual global::System.Threading.Tasks.Task ServerReflectionInfo(IAsyncStreamReader<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> requestStream, IServerStreamWriter<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task ServerReflectionInfo(grpc::IAsyncStreamReader<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest> requestStream, grpc::IServerStreamWriter<global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> responseStream, grpc::ServerCallContext context)
       {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
     }
 
     /// <summary>Client for ServerReflection</summary>
-    public partial class ServerReflectionClient : ClientBase<ServerReflectionClient>
+    public partial class ServerReflectionClient : grpc::ClientBase<ServerReflectionClient>
     {
       /// <summary>Creates a new client for ServerReflection</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public ServerReflectionClient(Channel channel) : base(channel)
+      public ServerReflectionClient(grpc::Channel channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for ServerReflection that uses a custom <c>CallInvoker</c>.</summary>
       /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
-      public ServerReflectionClient(CallInvoker callInvoker) : base(callInvoker)
+      public ServerReflectionClient(grpc::CallInvoker callInvoker) : base(callInvoker)
       {
       }
       /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
@@ -109,9 +109,9 @@ namespace Grpc.Reflection.V1Alpha {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return ServerReflectionInfo(new CallOptions(headers, deadline, cancellationToken));
+        return ServerReflectionInfo(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
       /// The reflection service is structured as a bidirectional stream, ensuring
@@ -119,7 +119,7 @@ namespace Grpc.Reflection.V1Alpha {
       /// </summary>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(CallOptions options)
+      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(grpc::CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_ServerReflectionInfo, null, options);
       }
@@ -132,9 +132,9 @@ namespace Grpc.Reflection.V1Alpha {
 
     /// <summary>Creates service definition that can be registered with a server</summary>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
-    public static ServerServiceDefinition BindService(ServerReflectionBase serviceImpl)
+    public static grpc::ServerServiceDefinition BindService(ServerReflectionBase serviceImpl)
     {
-      return ServerServiceDefinition.CreateBuilder()
+      return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_ServerReflectionInfo, serviceImpl.ServerReflectionInfo).Build();
     }
 

@@ -287,10 +287,10 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
   grpc_channel_element *elem;
 
   op->goaway_error =
-      send_goaway
-          ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
-                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
-          : GRPC_ERROR_NONE;
+      send_goaway ? grpc_error_set_int(
+                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
+                        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
+                  : GRPC_ERROR_NONE;
   op->set_accept_stream = true;
   sc->slice = grpc_slice_from_copied_string("Server shutdown");
   op->disconnect_with_error = send_disconnect;
@@ -707,8 +707,9 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
     return;
   }
 
-  kill_pending_work_locked(exec_ctx, server,
-                           GRPC_ERROR_CREATE("Server Shutdown"));
+  kill_pending_work_locked(
+      exec_ctx, server,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
@@ -766,8 +767,8 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
     /* do nothing */
   } else {
     grpc_error *src_error = error;
-    error =
-        GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path", &error, 1);
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Missing :authority or :path", &error, 1);
     GRPC_ERROR_UNREF(src_error);
   }
 
@@ -1217,7 +1218,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   op->on_connectivity_state_change = &chand->channel_connectivity_changed;
   op->connectivity_state = &chand->connectivity_state;
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
-    op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
+    op->disconnect_with_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
   }
   grpc_transport_perform_op(exec_ctx, transport, op);
 }
@@ -1275,8 +1277,9 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
-  kill_pending_work_locked(&exec_ctx, server,
-                           GRPC_ERROR_CREATE("Server Shutdown"));
+  kill_pending_work_locked(
+      &exec_ctx, server,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
   gpr_mu_unlock(&server->mu_call);
 
   maybe_finish_shutdown(&exec_ctx, server);
@@ -1306,8 +1309,9 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
   channel_broadcaster_init(server, &broadcaster);
   gpr_mu_unlock(&server->mu_global);
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, false /* send_goaway */,
-                               GRPC_ERROR_CREATE("Cancelling all calls"));
+  channel_broadcaster_shutdown(
+      &exec_ctx, &broadcaster, false /* send_goaway */,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -1355,16 +1359,16 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
   int request_id;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
     fail_call(exec_ctx, server, cq_idx, rc,
-              GRPC_ERROR_CREATE("Server Shutdown"));
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     return GRPC_CALL_OK;
   }
   request_id = gpr_stack_lockfree_pop(server->request_freelist_per_cq[cq_idx]);
   if (request_id == -1) {
     /* out of request ids: just fail this one */
     fail_call(exec_ctx, server, cq_idx, rc,
-              grpc_error_set_int(GRPC_ERROR_CREATE("Out of request ids"),
-                                 GRPC_ERROR_INT_LIMIT,
-                                 server->max_requested_calls_per_cq));
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Out of request ids"),
+                  GRPC_ERROR_INT_LIMIT, server->max_requested_calls_per_cq));
     return GRPC_CALL_OK;
   }
   switch (rc->type) {

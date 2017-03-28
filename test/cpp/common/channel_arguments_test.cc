@@ -243,6 +243,22 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 
   channel_args_.SetUserAgentPrefix(prefix);
   EXPECT_TRUE(HasArg(arg0));
+
+  // Test if the user agent string is copied correctly
+  ChannelArguments new_channel_args(channel_args_);
+  grpc_channel_args args;
+  SetChannelArgs(new_channel_args, &args);
+  bool found = false;
+  for (size_t i = 0; i < args.num_args; i++) {
+    const grpc_arg& arg = args.args[i];
+    if (arg.type == GRPC_ARG_STRING &&
+        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+      EXPECT_FALSE(found);
+      EXPECT_EQ(0, strcmp(arg.value.string, arg0.value.string));
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
 }
 
 }  // namespace testing
