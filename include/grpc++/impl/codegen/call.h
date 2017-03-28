@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_H
 #define GRPCXX_IMPL_CODEGEN_CALL_H
 
+#include <assert.h>
 #include <cstring>
 #include <functional>
 #include <map>
@@ -50,6 +51,7 @@
 #include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
+#include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -523,14 +525,29 @@ class CallOpClientRecvStatus {
 
 /// An abstract collection of CallOpSet's, to be used whenever
 /// CallOpSet objects must be thought of as a group. Each member
-/// of the group should have a shared_ptr back to the collection,
-/// as will the object that instantiates the collection, allowing
-/// for automatic ref-counting. In practice, any actual use should
-/// derive from this base class. This is specifically necessary if
-/// some of the CallOpSet's in the collection are "Sneaky" and don't
-/// report back to the C++ layer CQ operations
-class CallOpSetCollectionInterface
-    : public std::enable_shared_from_this<CallOpSetCollectionInterface> {};
+/// of the group should reference the collection, as will the object
+/// that instantiates the collection, allowing for ref-counting.
+/// Any actual use should derive from this base class. This is specifically
+/// necessary if some of the CallOpSet's in the collection are "Sneaky" and
+/// don't report back to the C++ layer CQ operations
+class CallOpSetCollectionInterface {
+ public:
+  CallOpSetCollectionInterface() {
+    gpr_atm_rel_store(&refs_, static_cast<gpr_atm>(1));
+  }
+  // always allocated against a call arena, no memory free required
+  static void operator delete(void* ptr, std::size_t size) {
+  }
+  void Ref() { gpr_atm_no_barrier_fetch_add(&refs_, static_cast<gpr_atm>(1)); }
+  bool Unref() {
+    gpr_atm old =
+        gpr_atm_full_fetch_add(&refs_, static_cast<gpr_atm>(-1));
+    return (old == static_cast<gpr_atm>(1));
+  }
+
+ private:
+  gpr_atm refs_;
+};
 
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
@@ -539,18 +556,26 @@ class CallOpSetCollectionInterface
 /// API.
 class CallOpSetInterface : public CompletionQueueTag {
  public:
-  CallOpSetInterface() {}
+  CallOpSetInterface() : collection_(nullptr) {}
+  ~CallOpSetInterface() { ResetCollection(); }
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_op* ops, size_t* nops) = 0;
 
   /// Mark this as belonging to a collection if needed
-  void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
+  void SetCollection(CallOpSetCollectionInterface* collection) {
     collection_ = collection;
+    collection->Ref();
+  }
+  void ResetCollection() {
+    if (collection_ != nullptr && collection_->Unref()) {
+      delete collection_;
+    }
+    collection_ = nullptr;
   }
 
  protected:
-  std::shared_ptr<CallOpSetCollectionInterface> collection_;
+  CallOpSetCollectionInterface* collection_;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -588,7 +613,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
-    collection_.reset();  // drop the ref at this point
+    ResetCollection();  // drop the ref at this point
     return true;
   }
 
