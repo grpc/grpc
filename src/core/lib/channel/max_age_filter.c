@@ -41,6 +41,7 @@
 #include "src/core/lib/transport/service_config.h"
 
 #define DEFAULT_MAX_CONNECTION_AGE_S INT_MAX
+#define DEFAULT_MAX_CONNECTION_AGE_GRACE_S INT_MAX
 
 typedef struct channel_data {
   // We take a reference to the channel stack for the timer callback
@@ -49,19 +50,31 @@ typedef struct channel_data {
   gpr_mu max_age_timer_mu;
   // True if the max_age timer callback is currently pending
   bool max_age_timer_pending;
+  // True if the max_age timer callback is currently pending
+  bool max_age_grace_timer_pending;
   // The timer for checking if the channel has reached its max age
   grpc_timer max_age_timer;
+  // The timer for checking if the channel has reached its max age
+  grpc_timer max_age_grace_timer;
   // Allowed max time a channel may exist
   gpr_timespec max_connection_age;
+  // Allowed grace period after the channel reaches its max age
+  gpr_timespec max_connection_age_grace;
   // Closure to run when the channel reaches its max age and should be closed
+  // gracefully
   grpc_closure close_max_age_channel;
-  // Closure to run when the init fo channel stack is done and the timer should
-  // be started
-  grpc_closure start_timer_after_init;
+  // Closure to run the channel uses up its max age grace time and should be
+  // closed forcibly
+  grpc_closure force_close_max_age_channel;
+  // Closure to run when the init fo channel stack is done and the max_age timer
+  // should be started
+  grpc_closure start_max_age_timer_after_init;
+  // Closure to run when the goaway op is finished and the max_age_timer
+  grpc_closure start_max_age_grace_timer_after_goaway_op;
 } channel_data;
 
-static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
-                                   grpc_error* error) {
+static void start_max_age_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
+                                           grpc_error* error) {
   channel_data* chand = arg;
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = true;
@@ -71,7 +84,23 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
       &chand->close_max_age_channel, gpr_now(GPR_CLOCK_MONOTONIC));
   gpr_mu_unlock(&chand->max_age_timer_mu);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->channel_stack,
-                           "max_age start_timer_after_init");
+                           "max_age start_max_age_timer_after_init");
+}
+
+static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
+                                                      void* arg,
+                                                      grpc_error* error) {
+  channel_data* chand = arg;
+  gpr_mu_lock(&chand->max_age_timer_mu);
+  chand->max_age_grace_timer_pending = true;
+  grpc_timer_init(exec_ctx, &chand->max_age_grace_timer,
+                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               chand->max_connection_age_grace),
+                  &chand->force_close_max_age_channel,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_mu_unlock(&chand->max_age_timer_mu);
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->channel_stack,
+                           "max_age start_max_age_grace_timer_after_goaway_op");
 }
 
 static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
@@ -81,7 +110,10 @@ static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
   chand->max_age_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
-    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    GRPC_CHANNEL_STACK_REF(chand->channel_stack,
+                           "max_age start_max_age_grace_timer_after_goaway_op");
+    grpc_transport_op* op = grpc_make_transport_op(
+        &chand->start_max_age_grace_timer_after_goaway_op);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
                            GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
@@ -90,6 +122,24 @@ static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
     elem->filter->start_transport_op(exec_ctx, elem, op);
   } else if (error != GRPC_ERROR_CANCELLED) {
     GRPC_LOG_IF_ERROR("close_max_age_channel", error);
+  }
+}
+
+static void force_close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
+                                        grpc_error* error) {
+  channel_data* chand = arg;
+  gpr_mu_lock(&chand->max_age_timer_mu);
+  chand->max_age_grace_timer_pending = false;
+  gpr_mu_unlock(&chand->max_age_timer_mu);
+  if (error == GRPC_ERROR_NONE) {
+    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    op->disconnect_with_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel reaches max age");
+    grpc_channel_element* elem =
+        grpc_channel_stack_element(chand->channel_stack, 0);
+    elem->filter->start_transport_op(exec_ctx, elem, op);
+  } else if (error != GRPC_ERROR_CANCELLED) {
+    GRPC_LOG_IF_ERROR("force_close_max_age_channel", error);
   }
 }
 
@@ -115,11 +165,17 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   channel_data* chand = elem->channel_data;
   gpr_mu_init(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = false;
+  chand->max_age_grace_timer_pending = false;
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
       DEFAULT_MAX_CONNECTION_AGE_S == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
           : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_S, GPR_TIMESPAN);
+  chand->max_connection_age =
+      DEFAULT_MAX_CONNECTION_AGE_GRACE_S == INT_MAX
+          ? gpr_inf_future(GPR_TIMESPAN)
+          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_GRACE_S,
+                                  GPR_TIMESPAN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (0 ==
         strcmp(args->channel_args->args[i].key, GPRC_ARG_MAX_CONNECION_AGE_S)) {
@@ -129,9 +185,27 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       chand->max_connection_age =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_seconds(value, GPR_TIMESPAN);
+    } else if (0 == strcmp(args->channel_args->args[i].key,
+                           GPRC_ARG_MAX_CONNECION_AGE_GRACE_S)) {
+      const int value = grpc_channel_arg_get_integer(
+          &args->channel_args->args[i],
+          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_S, 1,
+                                 INT_MAX});
+      chand->max_connection_age_grace =
+          value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
+                           : gpr_time_from_seconds(value, GPR_TIMESPAN);
     }
   }
   grpc_closure_init(&chand->close_max_age_channel, close_max_age_channel, chand,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&chand->force_close_max_age_channel,
+                    force_close_max_age_channel, chand,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&chand->start_max_age_timer_after_init,
+                    start_max_age_timer_after_init, chand,
+                    grpc_schedule_on_exec_ctx);
+  grpc_closure_init(&chand->start_max_age_grace_timer_after_goaway_op,
+                    start_max_age_grace_timer_after_goaway_op, chand,
                     grpc_schedule_on_exec_ctx);
 
   if (gpr_time_cmp(chand->max_connection_age, gpr_inf_future(GPR_TIMESPAN)) !=
@@ -144,10 +218,8 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     // timer, and we schedule that closure to be run after call stack
     // initialization is done.
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
-                           "max_age start_timer_after_init");
-    grpc_closure_init(&chand->start_timer_after_init, start_timer_after_init,
-                      chand, grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &chand->start_timer_after_init,
+                           "max_age start_max_age_timer_after_init");
+    grpc_closure_sched(exec_ctx, &chand->start_max_age_timer_after_init,
                        GRPC_ERROR_NONE);
   }
 
@@ -161,6 +233,9 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
   gpr_mu_lock(&chand->max_age_timer_mu);
   if (chand->max_age_timer_pending) {
     grpc_timer_cancel(exec_ctx, &chand->max_age_timer);
+  }
+  if (chand->max_age_grace_timer_pending) {
+    grpc_timer_cancel(exec_ctx, &chand->max_age_grace_timer);
   }
   gpr_mu_unlock(&chand->max_age_timer_mu);
 }
