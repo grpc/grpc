@@ -163,6 +163,9 @@ typedef struct {
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
+/** Maximum time that a channel may have no outstanding rpcs. Int valued,
+    seconds. INT_MAX means unlimited. */
+#define GPRC_ARG_MAX_CONNECION_IDLE_S "grpc.max_connection_idle"
 /** Maximum time that a channel may exist. Int valued, seconds. INT_MAX means
     unlimited. */
 #define GPRC_ARG_MAX_CONNECION_AGE_S "grpc.max_connection_age"
