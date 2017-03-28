@@ -1185,7 +1185,7 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = op->handler_private.extra_arg;
   call_data *calld = elem->call_data;
 
-  if (op->recv_trailing_metadata != NULL) {
+  if (op->recv_trailing_metadata) {
     GPR_ASSERT(op->on_complete != NULL);
     calld->original_on_complete = op->on_complete;
     grpc_closure_init(&calld->on_complete, on_complete, elem,

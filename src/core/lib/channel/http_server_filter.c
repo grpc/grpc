@@ -212,7 +212,8 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
               grpc_error_set_str(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
                   GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
-  } else if (*calld->recv_cacheable_request == true) {
+  } else if (*calld->recv_initial_metadata_flags &
+             GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
     const char k_query_separator = '?';
