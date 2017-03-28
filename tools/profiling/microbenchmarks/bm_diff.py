@@ -198,6 +198,5 @@ else:
 print text
 
 if args.git_comment:
-  subprocess.call(['tools/jenkins/comment_on_pr.sh %s' % pipes.quote(text),
-                  stdout=subprocess.PIPE,
-                  shell=True)
+  subprocess.call(['tools/jenkins/comment_on_pr.sh', text],
+                  stdout=subprocess.PIPE)
