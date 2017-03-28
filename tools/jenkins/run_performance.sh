@@ -38,6 +38,6 @@ BENCHMARKS_TO_RUN="bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_c
 cd $(dirname $0)/../..
 
 # todo(mattkwong): Change performance test to use microbenchmarking
-tools/profiling/microbenchmarks/bm_diff.py -g --diff_base origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+tools/profiling/microbenchmarks/bm_diff.py -g -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
 
 tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python --netperf --category smoketest
