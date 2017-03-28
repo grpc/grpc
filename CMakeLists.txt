@@ -909,6 +909,7 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_registry.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/compress_filter.c
@@ -1230,6 +1231,7 @@ endif()
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_registry.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/compress_filter.c
@@ -1538,6 +1540,7 @@ add_library(grpc_test_util
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
   src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_registry.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/compress_filter.c
@@ -1798,6 +1801,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
   src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_registry.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/compress_filter.c
@@ -2429,6 +2433,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_registry.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/compress_filter.c

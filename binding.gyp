@@ -616,6 +616,7 @@
       'sources': [
         'src/core/lib/surface/init.c',
         'src/core/lib/channel/channel_args.c',
+        'src/core/lib/channel/channel_registry.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',
         'src/core/lib/channel/compress_filter.c',

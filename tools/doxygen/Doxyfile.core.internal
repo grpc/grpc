@@ -1020,6 +1020,8 @@ src/core/lib/README.md \
 src/core/lib/channel/README.md \
 src/core/lib/channel/channel_args.c \
 src/core/lib/channel/channel_args.h \
+src/core/lib/channel/channel_registry.c \
+src/core/lib/channel/channel_registry.h \
 src/core/lib/channel/channel_stack.c \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.c \

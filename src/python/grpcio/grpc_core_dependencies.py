@@ -78,6 +78,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/support/wrap_memcpy.c',
   'src/core/lib/surface/init.c',
   'src/core/lib/channel/channel_args.c',
+  'src/core/lib/channel/channel_registry.c',
   'src/core/lib/channel/channel_stack.c',
   'src/core/lib/channel/channel_stack_builder.c',
   'src/core/lib/channel/compress_filter.c',

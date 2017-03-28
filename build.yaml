@@ -175,6 +175,7 @@ filegroups:
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_registry.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/compress_filter.h
@@ -285,6 +286,7 @@ filegroups:
   - src/core/lib/transport/transport_impl.h
   src:
   - src/core/lib/channel/channel_args.c
+  - src/core/lib/channel/channel_registry.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c

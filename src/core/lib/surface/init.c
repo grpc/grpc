@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_registry.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/deadline_filter.h"
@@ -183,6 +184,7 @@ void grpc_init(void) {
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
+    grpc_channel_registry_init();
     grpc_register_tracer("api", &grpc_api_trace);
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
@@ -246,6 +248,7 @@ void grpc_shutdown(void) {
     grpc_mdctx_global_shutdown(&exec_ctx);
     grpc_handshaker_factory_registry_shutdown(&exec_ctx);
     grpc_slice_intern_shutdown();
+    grpc_channel_registry_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
   grpc_exec_ctx_finish(&exec_ctx);

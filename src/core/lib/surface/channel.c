@@ -42,6 +42,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_registry.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
@@ -64,6 +65,7 @@ typedef struct registered_call {
 } registered_call;
 
 struct grpc_channel {
+  intptr_t uuid;
   int is_client;
   grpc_compression_options compression_options;
   grpc_mdelem default_authority;
@@ -104,6 +106,7 @@ grpc_channel *grpc_channel_create_with_builder(
   }
 
   memset(channel, 0, sizeof(*channel));
+  channel->uuid = grpc_channel_registry_register_channel(channel);
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
@@ -376,6 +379,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
   grpc_channel *channel = arg;
+  grpc_channel_registry_unregister_channel(channel->uuid);
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call *rc = channel->registered_calls;
