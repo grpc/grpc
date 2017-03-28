@@ -101,17 +101,17 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      if (!g_disable_ping_ack) {
-        grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
-      }
+      grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
-      if (t->ping_ack_count == t->ping_ack_capacity) {
-        t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-        t->ping_acks = gpr_realloc(
-            t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
+      if (!g_disable_ping_ack) {
+        if (t->ping_ack_count == t->ping_ack_capacity) {
+          t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
+          t->ping_acks = gpr_realloc(
+              t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
+        }
+        t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
+        grpc_chttp2_initiate_write(exec_ctx, t, false, "ping response");
       }
-      t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
-      grpc_chttp2_initiate_write(exec_ctx, t, false, "ping response");
     }
   }
 

@@ -2125,7 +2125,6 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args) {
             &args->args[i],
             (grpc_integer_options){g_default_client_keepalive_timeout_s, 0,
                                    INT_MAX});
-        ;
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
         g_default_keepalive_permit_without_calls =
