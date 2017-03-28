@@ -168,7 +168,7 @@ for bm in comparables:
     benchmarks[name].add_sample(row, False)
 
 really_interesting = set()
-for bm in benchmarks:
+for bm in benchmarks.values():
   really_interesting.update(bm.process())
 fields = [f for f in _INTERESTING if f in really_interesting]
 
