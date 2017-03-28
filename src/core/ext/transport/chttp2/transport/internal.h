@@ -827,4 +827,8 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
 
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
 
+/** Set the default keepalive configurations, must only be called at
+    initialization */
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args);
+
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
