@@ -130,7 +130,7 @@ class Benchmark:
   def add_sample(self, data, new):
     for f in _INTERESTING:
       if f in data:
-        self.samples[new][f].append(data[f])
+        self.samples[new][f].append(float(data[f]))
 
   def process(self):
     for f in _INTERESTING:
