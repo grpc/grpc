@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,20 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#import <Foundation/Foundation.h>
 
-#import "InteropTests.h"
+#import "GRXImmediateWriter.h"
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+/**
+ * Utility to construct GRXWriter instances from values that are immediately available when
+ * required.
+ */
+@interface GRXImmediateSingleWriter : GRXImmediateWriter
 
-// The Protocol Buffers encoding overhead of local interop server. Acquired
-// by experiment. Adjust this when server's proto file changes.
-static int32_t kLocalInteropServerOverhead = 10;
-
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
-
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
-}
-
-- (int32_t)encodingOverhead {
-  return kLocalInteropServerOverhead; // bytes
-}
-
-- (void)setUp {
-  [super setUp];
-
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-}
+/**
+ * Returns a writer that sends the passed value to its writeable and then finishes (releasing the
+ * value).
+ */
++ (GRXWriter *)writerWithValue:(id)value;
 
 @end

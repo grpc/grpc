@@ -1210,8 +1210,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           }
         } else {
           GPR_ASSERT(s->id != 0);
-          grpc_chttp2_become_writable(exec_ctx, t, s,
-                                      GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
+          grpc_chttp2_stream_write_type write_type =
+              GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
+          if (op->send_message != NULL &&
+              (op->send_message->flags & GRPC_WRITE_BUFFER_HINT)) {
+            write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
+          }
+          grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
                                       "op.send_initial_metadata");
         }
       } else {

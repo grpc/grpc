@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,42 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#ifdef GRPC_TEST_OBJC
 
-#import "InteropTests.h"
+#import "GRPCOpBatchLog.h"
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+static NSMutableArray *opBatchLog = nil;
 
-// The Protocol Buffers encoding overhead of local interop server. Acquired
-// by experiment. Adjust this when server's proto file changes.
-static int32_t kLocalInteropServerOverhead = 10;
+@implementation GRPCOpBatchLog
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
-
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
++ (void)enableOpBatchLog:(BOOL)enabled {
+  @synchronized (opBatchLog) {
+    if (enabled) {
+      if (!opBatchLog) {
+        opBatchLog = [NSMutableArray array];
+      }
+    } else {
+      if (opBatchLog) {
+        opBatchLog = nil;
+      }
+    }
+  }
 }
 
-- (int32_t)encodingOverhead {
-  return kLocalInteropServerOverhead; // bytes
++ (void)addOpBatchToLog:(NSArray *)batch {
+  @synchronized (opBatchLog) {
+    [opBatchLog addObject:batch];
+  }
 }
 
-- (void)setUp {
-  [super setUp];
-
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
++ (NSArray *)obtainAndCleanOpBatchLog {
+  @synchronized (opBatchLog) {
+    NSArray *out = opBatchLog;
+    opBatchLog = [NSMutableArray array];
+    return out;
   }
 }
 
 @end
+
+#endif
