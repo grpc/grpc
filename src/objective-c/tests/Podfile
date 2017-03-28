@@ -97,15 +97,20 @@ post_install do |installer|
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
       end
     end
 
     # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
     # the test target 'InteropTestsRemoteWithCronet'
+    # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
+    # be used by all test targets using it.
     if target.name == 'gRPC'
       target.build_configurations.each do |config|
         if config.name == 'Cronet'
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
+        elsif config.name == 'Test'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC=1'
         end
       end
     end

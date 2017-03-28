@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,29 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
-#import "InteropTests.h"
+#ifdef GRPC_TEST_OBJC
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+/**
+ * Logs the op batches of a client. Used for testing.
+ */
+@interface GRPCOpBatchLog : NSObject
 
-// The Protocol Buffers encoding overhead of local interop server. Acquired
-// by experiment. Adjust this when server's proto file changes.
-static int32_t kLocalInteropServerOverhead = 10;
+/**
+ * Enables logging of op batches. Memory consumption increases as more ops are logged.
+ */
++ (void)enableOpBatchLog:(BOOL)enabled;
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
+/**
+ * Add an op batch to log.
+ */
++ (void)addOpBatchToLog:(NSArray *)batch;
 
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
-}
-
-- (int32_t)encodingOverhead {
-  return kLocalInteropServerOverhead; // bytes
-}
-
-- (void)setUp {
-  [super setUp];
-
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-}
+/**
+ * Obtain the logged op batches. Invoking this method will clean the log.
+ */
++ (NSArray *)obtainAndCleanOpBatchLog;
 
 @end
+
+#endif

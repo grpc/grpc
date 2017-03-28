@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,59 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#import "GRXImmediateSingleWriter.h"
 
-#import "InteropTests.h"
-
-static NSString * const kLocalSSLHost = @"localhost:5051";
-
-// The Protocol Buffers encoding overhead of local interop server. Acquired
-// by experiment. Adjust this when server's proto file changes.
-static int32_t kLocalInteropServerOverhead = 10;
-
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
-
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
+@implementation GRXImmediateSingleWriter {
+  id _value;
+  id<GRXWriteable> _writeable;
 }
 
-- (int32_t)encodingOverhead {
-  return kLocalInteropServerOverhead; // bytes
-}
+@synthesize state = _state;
 
-- (void)setUp {
-  [super setUp];
-
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
+- (instancetype)initWithValue:(id)value {
+  if (self = [super init]) {
+    _value = value;
+    _state = GRXWriterStateNotStarted;
   }
+  return self;
+}
+
++ (GRXWriter *)writerWithValue:(id)value {
+  return [[self alloc] initWithValue:value];
+}
+
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  _state = GRXWriterStateStarted;
+  _writeable = writeable;
+  [writeable writeValue:_value];
+  [self finish];
+}
+
+- (void)finish {
+  _state = GRXWriterStateFinished;
+  _value = nil;
+  id<GRXWriteable> writeable = _writeable;
+  _writeable = nil;
+  [writeable writesFinishedWithError:nil];
+}
+
+// Overwrite the setter to disallow manual state transition. The getter
+// of _state is synthesized.
+- (void)setState:(GRXWriterState)newState {
+  // Manual state transition is not allowed
+  return;
+}
+
+// Overrides [requestWriter(Transformations):map:] for Protocol Buffers
+// encoding.
+// We need the return value of this map to be a GRXImmediateSingleWriter but
+// the original \a map function returns a new Writer of another type. So we
+// need to override this function here.
+- (GRXWriter *)map:(id (^)(id))map {
+  // Since _value is available when creating the object, we can simply
+  // apply the map and store the output.
+  _value = map(_value);
+  return self;
 }
 
 @end
