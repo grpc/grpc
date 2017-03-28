@@ -37,6 +37,7 @@ from scipy import stats
 import subprocess
 import multiprocessing
 import collections
+import pipes
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -81,6 +82,7 @@ argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=5)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
+args.add_argument('-g', '--git_comment', action='store_const', const=True, default=False)
 args = argp.parse_args()
 
 assert args.diff_base
@@ -188,4 +190,13 @@ rows = []
 for name in sorted(benchmarks.keys()):
   if benchmarks[name].skip(): continue
   rows.append([name] + benchmarks[name].row(fields))
-print tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+if rows:
+  text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+else:
+  text = 'No significant performance differences'
+print text
+
+if args.git_comment:
+  subprocess.call(['tools/jenkins/comment_on_pr.sh %s' % pipes.quote(text),
+                  stdout=subprocess.PIPE,
+                  shell=True)

@@ -44,6 +44,7 @@ import test_ping
 import test_rst_after_data
 import test_rst_after_header
 import test_rst_during_data
+import test_data_frame_padding
 
 _TEST_CASE_MAPPING = {
   'rst_after_header': test_rst_after_header.TestcaseRstStreamAfterHeader,
@@ -52,6 +53,10 @@ _TEST_CASE_MAPPING = {
   'goaway': test_goaway.TestcaseGoaway,
   'ping': test_ping.TestcasePing,
   'max_streams': test_max_streams.TestcaseSettingsMaxStreams,
+
+  # Positive tests below:
+  'data_frame_padding': test_data_frame_padding.TestDataFramePadding,
+  'no_df_padding_sanity_test': test_data_frame_padding.TestDataFramePadding,
 }
 
 _exit_code = 0
@@ -73,6 +78,8 @@ class H2Factory(twisted.internet.protocol.Factory):
 
     if self._testcase == 'goaway':
       return t(self._num_streams).get_base_server()
+    elif self._testcase == 'no_df_padding_sanity_test':
+      return t(use_padding=False).get_base_server()
     else:
       return t().get_base_server()
 
@@ -81,7 +88,8 @@ def parse_arguments():
   parser.add_argument('--base_port', type=int, default=8080,
     help='base port to run the servers (default: 8080). One test server is '
     'started on each incrementing port, beginning with base_port, in the '
-    'following order: goaway,max_streams,ping,rst_after_data,rst_after_header,'
+    'following order: data_frame_padding,goaway,max_streams,'
+    'no_df_padding_sanity_test,ping,rst_after_data,rst_after_header,'
     'rst_during_data'
     )
   return parser.parse_args()

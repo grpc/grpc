@@ -116,7 +116,7 @@ static void handshake_failed_locked(grpc_exec_ctx* exec_ctx,
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
     // own error.
-    error = GRPC_ERROR_CREATE("Handshaker shutdown");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
   }
   if (!handshaker->shutdown) {
     // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -226,7 +226,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     char* msg;
     gpr_asprintf(&msg, "HTTP proxy returned response code %d",
                  handshaker->http_response.status);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     handshake_failed_locked(exec_ctx, handshaker, error);
     goto done;

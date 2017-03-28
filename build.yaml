@@ -103,6 +103,7 @@ filegroups:
   - src/core/lib/profiling/stap_timers.c
   - src/core/lib/support/alloc.c
   - src/core/lib/support/arena.c
+  - src/core/lib/support/atm.c
   - src/core/lib/support/avl.c
   - src/core/lib/support/backoff.c
   - src/core/lib/support/cmdline.c
@@ -222,6 +223,7 @@ filegroups:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_factory_posix.h
   - src/core/lib/iomgr/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
@@ -230,6 +232,7 @@ filegroups:
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_uv.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
@@ -260,6 +263,7 @@ filegroups:
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
@@ -327,6 +331,7 @@ filegroups:
   - src/core/lib/iomgr/resolve_address_windows.c
   - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
+  - src/core/lib/iomgr/socket_factory_posix.c
   - src/core/lib/iomgr/socket_mutator.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
@@ -339,6 +344,9 @@ filegroups:
   - src/core/lib/iomgr/tcp_client_windows.c
   - src/core/lib/iomgr/tcp_posix.c
   - src/core/lib/iomgr/tcp_server_posix.c
+  - src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
   - src/core/lib/iomgr/tcp_server_uv.c
   - src/core/lib/iomgr/tcp_server_windows.c
   - src/core/lib/iomgr/tcp_uv.c
@@ -361,6 +369,7 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/security/util/b64.c
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
@@ -379,6 +388,7 @@ filegroups:
   - src/core/lib/surface/channel_ping.c
   - src/core/lib/surface/channel_stack_type.c
   - src/core/lib/surface/completion_queue.c
+  - src/core/lib/surface/completion_queue_factory.c
   - src/core/lib/surface/event_string.c
   - src/core/lib/surface/lame_client.c
   - src/core/lib/surface/metadata_array.c
@@ -409,7 +419,6 @@ filegroups:
   - src/core/ext/client_channel/connector.h
   - src/core/ext/client_channel/http_connect_handshaker.h
   - src/core/ext/client_channel/http_proxy.h
-  - src/core/ext/client_channel/initial_connect_string.h
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
@@ -419,6 +428,7 @@ filegroups:
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
   - src/core/ext/client_channel/resolver_registry.h
+  - src/core/ext/client_channel/retry_throttle.h
   - src/core/ext/client_channel/subchannel.h
   - src/core/ext/client_channel/subchannel_index.h
   - src/core/ext/client_channel/uri_parser.h
@@ -428,10 +438,8 @@ filegroups:
   - src/core/ext/client_channel/client_channel_factory.c
   - src/core/ext/client_channel/client_channel_plugin.c
   - src/core/ext/client_channel/connector.c
-  - src/core/ext/client_channel/default_initial_connect_string.c
   - src/core/ext/client_channel/http_connect_handshaker.c
   - src/core/ext/client_channel/http_proxy.c
-  - src/core/ext/client_channel/initial_connect_string.c
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
@@ -441,6 +449,7 @@ filegroups:
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
   - src/core/ext/client_channel/resolver_registry.c
+  - src/core/ext/client_channel/retry_throttle.c
   - src/core/ext/client_channel/subchannel.c
   - src/core/ext/client_channel/subchannel_index.c
   - src/core/ext/client_channel/uri_parser.c
@@ -514,6 +523,18 @@ filegroups:
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -958,6 +979,7 @@ libs:
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1051,6 +1073,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -2694,20 +2717,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: set_initial_connect_string_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/client_channel/set_initial_connect_string_test.c
-  deps:
-  - test_tcp_server
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
 - name: slice_buffer_test
   build: test
   language: c
@@ -3109,6 +3118,26 @@ targets:
   language: c++
   src:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_chttp2_transport
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:
   - grpc_benchmark
   - benchmark
@@ -4107,7 +4136,6 @@ targets:
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
-  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
@@ -4296,6 +4324,11 @@ configs:
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
+  ares:
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
+      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4386,11 +4419,13 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z

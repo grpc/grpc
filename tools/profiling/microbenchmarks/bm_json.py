@@ -101,6 +101,18 @@ _BM_SPECS = {
   'BM_PollEmptyPollset_SpeedOfLight': {
     'tpl': [],
     'dyn': ['request_size', 'request_count'],
+  },
+  'BM_StreamCreateSendInitialMetadataDestroy': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_TransportStreamSend': {
+    'tpl': [],
+    'dyn': ['request_size'],
+  },
+  'BM_TransportStreamRecv': {
+    'tpl': [],
+    'dyn': ['request_size'],
   }
 }
 

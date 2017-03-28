@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,17 @@
  *
  */
 
-#include <grpc/slice.h>
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/support/atm.h>
+#include <grpc/support/useful.h>
 
-void grpc_set_default_initial_connect_string(grpc_resolved_address **addr,
-                                             grpc_slice *initial_str) {}
+gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
+                                       gpr_atm min, gpr_atm max) {
+  gpr_atm current;
+  gpr_atm new;
+  do {
+    current = gpr_atm_no_barrier_load(value);
+    new = GPR_CLAMP(current + delta, min, max);
+    if (new == current) break;
+  } while (!gpr_atm_no_barrier_cas(value, current, new));
+  return new;
+}
