@@ -70,9 +70,9 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
-                  choices=sorted(_INTERESTING.keys()),
+                  choices=sorted(_INTERESTING),
                   nargs='+',
-                  default=sorted(_INTERESTING.keys()),
+                  default=sorted(_INTERESTING),
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_error'])
 argp.add_argument('-d', '--diff_base', type=str)
