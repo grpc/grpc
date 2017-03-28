@@ -36,6 +36,7 @@ import argparse
 import scipy
 import subprocess
 import multiprocessing
+import collections
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
