@@ -330,7 +330,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
       : context_(context),
-        cq_(true), // Pluckable cq
+        cq_(true),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     if (!context_->initial_metadata_corked_) {
       CallOpSet<CallOpSendInitialMetadata> ops;
