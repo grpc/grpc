@@ -110,7 +110,7 @@ try:
     try:
       collect1(bm, 'opt', 'old')
       collect1(bm, 'counters', 'old')
-      comparables.append(bm_name)
+      comparables.append(bm)
     except subprocess.CalledProcessError, e:
       pass
 finally:
