@@ -85,6 +85,14 @@ args = argp.parse_args()
 
 assert args.diff_base
 
+def avg(lst):
+  sum = 0
+  n = 0
+  for el in lst:
+    sum += el
+    n += 1
+  return sum / n
+
 def collect1(bm, cfg, ver):
   subprocess.check_call(['make', 'clean'])
   subprocess.check_call(['git', 'submodule', 'update'])
