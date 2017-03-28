@@ -316,13 +316,16 @@ typedef enum grpc_call_error {
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
+/** Signal that the initial metadata should be corked */
+#define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+#define GRPC_INITIAL_METADATA_USED_MASK                  \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+   GRPC_INITIAL_METADATA_CORKED)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
