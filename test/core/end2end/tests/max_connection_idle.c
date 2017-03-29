@@ -36,17 +36,15 @@
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "test/core/end2end/cq_verifier.h"
 
-#define MAX_CONNECTION_IDLE_S 1
-#define MAX_CONNECTION_AGE_S 99
+#define MAX_CONNECTION_IDLE_MS 500
+#define MAX_CONNECTION_AGE_MS 9999
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -59,11 +57,11 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
                           .key = "grpc.testing.fixed_reconnect_backoff_ms",
                           .value.integer = 1000}};
   grpc_arg server_a[] = {{.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_S,
-                          .value.integer = MAX_CONNECTION_IDLE_S},
+                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                          .value.integer = MAX_CONNECTION_IDLE_MS},
                          {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_AGE_S,
-                          .value.integer = MAX_CONNECTION_AGE_S}};
+                          .key = GRPC_ARG_MAX_CONNECTION_AGE_MS,
+                          .value.integer = MAX_CONNECTION_AGE_MS}};
   grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(client_a),
                                    .args = client_a};
   grpc_channel_args server_args = {.num_args = GPR_ARRAY_SIZE(server_a),
@@ -91,7 +89,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   /* wait for the channel to reach its maximum idle time */
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
-      grpc_timeout_seconds_to_deadline(MAX_CONNECTION_IDLE_S + 1), f.cq,
+      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 500), f.cq,
       tag(99));
   CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
   cq_verify(cqv);

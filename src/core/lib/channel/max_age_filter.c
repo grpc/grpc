@@ -1,104 +1,109 @@
-//
-// Copyright 2017, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+/*
+ *
+ * Copyright 2017, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 
 #include "src/core/lib/channel/message_size_filter.h"
 
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/service_config.h"
 
-#define DEFAULT_MAX_CONNECTION_AGE_S INT_MAX
-#define DEFAULT_MAX_CONNECTION_AGE_GRACE_S INT_MAX
-#define DEFAULT_MAX_CONNECTION_IDLE_S INT_MAX
+#define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
+#define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
+#define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
 
 typedef struct channel_data {
-  // We take a reference to the channel stack for the timer callback
+  /* We take a reference to the channel stack for the timer callback */
   grpc_channel_stack* channel_stack;
-  // Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
-  // and max_age_grace_timer_pending
+  /* Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
+     and max_age_grace_timer_pending */
   gpr_mu max_age_timer_mu;
-  // True if the max_age timer callback is currently pending
+  /* True if the max_age timer callback is currently pending */
   bool max_age_timer_pending;
-  // True if the max_age_grace timer callback is currently pending
+  /* True if the max_age_grace timer callback is currently pending */
   bool max_age_grace_timer_pending;
-  // The timer for checking if the channel has reached its max age
+  /* The timer for checking if the channel has reached its max age */
   grpc_timer max_age_timer;
-  // The timer for checking if the max-aged channel has uesed up the grace
-  // period
+  /* The timer for checking if the max-aged channel has uesed up the grace
+     period */
   grpc_timer max_age_grace_timer;
-  // The timer for checking if the channel's idle duration reaches
-  // max_connection_idle
+  /* The timer for checking if the channel's idle duration reaches
+     max_connection_idle */
   grpc_timer max_idle_timer;
-  // Allowed max time a channel may have no outstanding rpcs
+  /* Allowed max time a channel may have no outstanding rpcs */
   gpr_timespec max_connection_idle;
-  // Allowed max time a channel may exist
+  /* Allowed max time a channel may exist */
   gpr_timespec max_connection_age;
-  // Allowed grace period after the channel reaches its max age
+  /* Allowed grace period after the channel reaches its max age */
   gpr_timespec max_connection_age_grace;
-  // Closure to run when the channel's idle duration reaches max_connection_idle
-  // and should be closed gracefully
+  /* Closure to run when the channel's idle duration reaches max_connection_idle
+     and should be closed gracefully */
   grpc_closure close_max_idle_channel;
-  // Closure to run when the channel reaches its max age and should be closed
-  // gracefully
+  /* Closure to run when the channel reaches its max age and should be closed
+     gracefully */
   grpc_closure close_max_age_channel;
-  // Closure to run the channel uses up its max age grace time and should be
-  // closed forcibly
+  /* Closure to run the channel uses up its max age grace time and should be
+     closed forcibly */
   grpc_closure force_close_max_age_channel;
-  // Closure to run when the init fo channel stack is done and the max_idle
-  // timer should be started
+  /* Closure to run when the init fo channel stack is done and the max_idle
+     timer should be started */
   grpc_closure start_max_idle_timer_after_init;
-  // Closure to run when the init fo channel stack is done and the max_age timer
-  // should be started
+  /* Closure to run when the init fo channel stack is done and the max_age timer
+     should be started */
   grpc_closure start_max_age_timer_after_init;
-  // Closure to run when the goaway op is finished and the max_age_timer
+  /* Closure to run when the goaway op is finished and the max_age_timer */
   grpc_closure start_max_age_grace_timer_after_goaway_op;
-  // Closure to run when the channel connectivity state changes
+  /* Closure to run when the channel connectivity state changes */
   grpc_closure channel_connectivity_changed;
-  // Records the current connectivity state
+  /* Records the current connectivity state */
   grpc_connectivity_state connectivity_state;
-  // Number of active calls
+  /* Number of active calls */
   gpr_atm call_count;
 } channel_data;
 
+/* Increase the nubmer of active calls. Before the increasement, if there are no
+   calls, the max_idle_timer should be cancelled. */
 static void increase_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, 1) == 0) {
     grpc_timer_cancel(exec_ctx, &chand->max_idle_timer);
   }
 }
 
+/* Decrease the nubmer of active calls. After the decrement, if there are no
+   calls, the max_idle_timer should be started. */
 static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_idle_timer");
@@ -112,6 +117,9 @@ static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
 static void start_max_idle_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
   channel_data* chand = arg;
+  /* Decrease call_count. If there are no active calls at this time,
+     max_idle_timer will start here. If the number of active calls is not 0,
+     max_idle_timer will start after all the active calls end. */
   decrease_call_count(exec_ctx, chand);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
@@ -180,7 +188,6 @@ static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
   chand->max_age_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_DEBUG, "close_max_age_channel");
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_grace_timer_after_goaway_op");
     grpc_transport_op* op = grpc_make_transport_op(
@@ -205,7 +212,6 @@ static void force_close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
   chand->max_age_grace_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_DEBUG, "force_close_max_age_channel");
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel reaches max age");
@@ -239,11 +245,14 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
       chand->max_age_grace_timer_pending = false;
     }
     gpr_mu_unlock(&chand->max_age_timer_mu);
+    /* If there are no active calls, this increasement will cancel
+       max_idle_timer, and prevent max_idle_timer from being started in the
+       future. */
     increase_call_count(exec_ctx, chand);
   }
 }
 
-// Constructor for call_data.
+/* Constructor for call_data. */
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
@@ -252,7 +261,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-// Destructor for call_data.
+/* Destructor for call_data. */
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
@@ -260,7 +269,7 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   decrease_call_count(exec_ctx, chand);
 }
 
-// Constructor for channel_data.
+/* Constructor for channel_data. */
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
@@ -270,44 +279,44 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   chand->max_age_grace_timer_pending = false;
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
-      DEFAULT_MAX_CONNECTION_AGE_S == INT_MAX
+      DEFAULT_MAX_CONNECTION_AGE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_S, GPR_TIMESPAN);
+          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_AGE_MS, GPR_TIMESPAN);
   chand->max_connection_age_grace =
-      DEFAULT_MAX_CONNECTION_AGE_GRACE_S == INT_MAX
+      DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_AGE_GRACE_S,
-                                  GPR_TIMESPAN);
+          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_AGE_GRACE_MS,
+                                 GPR_TIMESPAN);
   chand->max_connection_idle =
-      DEFAULT_MAX_CONNECTION_IDLE_S == INT_MAX
+      DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_IDLE_S, GPR_TIMESPAN);
+          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (0 == strcmp(args->channel_args->args[i].key,
-                    GRPC_ARG_MAX_CONNECTION_AGE_S)) {
+                    GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_S, 1, INT_MAX});
+          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX});
       chand->max_connection_age =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_seconds(value, GPR_TIMESPAN);
+                           : gpr_time_from_millis(value, GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
-                           GRPC_ARG_MAX_CONNECTION_AGE_GRACE_S)) {
+                           GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_S, 0,
+          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0,
                                  INT_MAX});
       chand->max_connection_age_grace =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_seconds(value, GPR_TIMESPAN);
+                           : gpr_time_from_millis(value, GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
-                           GRPC_ARG_MAX_CONNECTION_IDLE_S)) {
+                           GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_S, 1, INT_MAX});
+          (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX});
       chand->max_connection_idle =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_seconds(value, GPR_TIMESPAN);
+                           : gpr_time_from_millis(value, GPR_TIMESPAN);
     }
   }
   grpc_closure_init(&chand->close_max_idle_channel, close_max_idle_channel,
@@ -332,19 +341,21 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
 
   if (gpr_time_cmp(chand->max_connection_age, gpr_inf_future(GPR_TIMESPAN)) !=
       0) {
-    // When the channel reaches its max age, we send down an op with
-    // goaway_error set.  However, we can't send down any ops until after the
-    // channel stack is fully initialized.  If we start the timer here, we have
-    // no guarantee that the timer won't pop before channel stack initialization
-    // is finished.  To avoid that problem, we create a closure to start the
-    // timer, and we schedule that closure to be run after call stack
-    // initialization is done.
+    /* When the channel reaches its max age, we send down an op with
+       goaway_error set.  However, we can't send down any ops until after the
+       channel stack is fully initialized.  If we start the timer here, we have
+       no guarantee that the timer won't pop before channel stack initialization
+       is finished.  To avoid that problem, we create a closure to start the
+       timer, and we schedule that closure to be run after call stack
+       initialization is done. */
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_timer_after_init");
     grpc_closure_sched(exec_ctx, &chand->start_max_age_timer_after_init,
                        GRPC_ERROR_NONE);
   }
 
+  /* Initialize the number of calls as 1, so that the max_idle_timer will not
+     start until start_max_idle_timer_after_init is invoked. */
   gpr_atm_rel_store(&chand->call_count, 1);
   if (gpr_time_cmp(chand->max_connection_idle, gpr_inf_future(GPR_TIMESPAN)) !=
       0) {
@@ -356,14 +367,14 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-// Destructor for channel_data.
+/* Destructor for channel_data. */
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_op,
     grpc_channel_next_op,
-    0,  // sizeof_call_data
+    0, /* sizeof_call_data */
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,

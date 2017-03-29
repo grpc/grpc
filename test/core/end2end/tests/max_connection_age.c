@@ -36,18 +36,16 @@
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "test/core/end2end/cq_verifier.h"
 
-#define MAX_CONNECTION_AGE_S 1
-#define MAX_CONNECTION_AGE_GRACE_S 2
-#define MAX_CONNECTION_IDLE_S 99
+#define MAX_CONNECTION_AGE_MS 500
+#define MAX_CONNECTION_AGE_GRACE_MS 1000
+#define MAX_CONNECTION_IDLE_MS 9999
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -84,14 +82,14 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[] = {{.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_AGE_S,
-                          .value.integer = MAX_CONNECTION_AGE_S},
+                          .key = GRPC_ARG_MAX_CONNECTION_AGE_MS,
+                          .value.integer = MAX_CONNECTION_AGE_MS},
                          {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_AGE_GRACE_S,
-                          .value.integer = MAX_CONNECTION_AGE_GRACE_S},
+                          .key = GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
+                          .value.integer = MAX_CONNECTION_AGE_GRACE_MS},
                          {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_S,
-                          .value.integer = MAX_CONNECTION_IDLE_S}};
+                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                          .value.integer = MAX_CONNECTION_IDLE_MS}};
   grpc_channel_args server_args = {.num_args = GPR_ARRAY_SIZE(server_a),
                                    .args = server_a};
 
@@ -159,7 +157,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   /* Wait for the channel to reach its max age */
-  cq_verify_empty_timeout(cqv, MAX_CONNECTION_AGE_S + 1);
+  cq_verify_empty_timeout(cqv, 1);
 
   /* After the channel reaches its max age, we still do nothing here. And wait
      for it to use up its max age grace period. */
@@ -221,14 +219,14 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[] = {{.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_AGE_S,
-                          .value.integer = MAX_CONNECTION_AGE_S},
+                          .key = GRPC_ARG_MAX_CONNECTION_AGE_MS,
+                          .value.integer = MAX_CONNECTION_AGE_MS},
                          {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_AGE_GRACE_S,
+                          .key = GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
                           .value.integer = INT_MAX},
                          {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_S,
-                          .value.integer = MAX_CONNECTION_IDLE_S}};
+                          .key = GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                          .value.integer = MAX_CONNECTION_IDLE_MS}};
   grpc_channel_args server_args = {.num_args = GPR_ARRAY_SIZE(server_a),
                                    .args = server_a};
 
@@ -296,7 +294,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   /* Wait for the channel to reach its max age */
-  cq_verify_empty_timeout(cqv, MAX_CONNECTION_AGE_S + 1);
+  cq_verify_empty_timeout(cqv, 1);
 
   /* The connection is shutting down gracefully. In-progress rpc should not be
      closed, hence the completion queue should see nothing here. */
