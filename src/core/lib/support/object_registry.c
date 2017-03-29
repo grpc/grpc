@@ -49,24 +49,23 @@ typedef struct {
 
 // avl vtable for uuid (intptr_t) -> object_tracker
 // this table is only looking, it does not own anything.
-static void destroy_intptr(void* not_used) { }
+static void destroy_intptr(void* not_used) {}
 static void* copy_intptr(void* key) { return key; }
 static long compare_intptr(void* key1, void* key2) { return key1 > key2; }
 
-static void destroy_tracker(void* tracker) { 
-  gpr_free((object_tracker*)tracker); 
+static void destroy_tracker(void* tracker) {
+  gpr_free((object_tracker*)tracker);
 }
 
-static void* copy_tracker(void* value) { 
-  object_tracker *old = value;
-  object_tracker *new = gpr_malloc(sizeof(object_tracker));
+static void* copy_tracker(void* value) {
+  object_tracker* old = value;
+  object_tracker* new = gpr_malloc(sizeof(object_tracker));
   new->object = old->object;
   new->type = old->type;
   return new;
 }
 static const gpr_avl_vtable avl_vtable = {
-    destroy_intptr, copy_intptr, compare_intptr,
-    destroy_tracker, copy_tracker};
+    destroy_intptr, copy_intptr, compare_intptr, destroy_tracker, copy_tracker};
 
 void grpc_object_registry_init() {
   gpr_mu_init(&g_mu);
@@ -78,8 +77,9 @@ void grpc_object_registry_shutdown() {
   gpr_mu_destroy(&g_mu);
 }
 
-intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry_type type) {
-  object_tracker *tracker = gpr_malloc(sizeof(object_tracker));
+intptr_t grpc_object_registry_register_object(void* object,
+                                              grpc_object_registry_type type) {
+  object_tracker* tracker = gpr_malloc(sizeof(object_tracker));
   tracker->object = object;
   tracker->type = type;
   intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
@@ -95,10 +95,11 @@ void grpc_object_registry_unregister_object(intptr_t uuid) {
   gpr_mu_unlock(&g_mu);
 }
 
-grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid, void** object) {
+grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
+                                                          void** object) {
   GPR_ASSERT(object);
   gpr_mu_lock(&g_mu);
-  object_tracker *tracker = gpr_avl_get(g_avl, (void*)uuid);
+  object_tracker* tracker = gpr_avl_get(g_avl, (void*)uuid);
   gpr_mu_unlock(&g_mu);
   GPR_ASSERT(tracker);
   *object = tracker->object;

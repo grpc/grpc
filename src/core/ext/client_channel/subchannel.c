@@ -317,7 +317,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   }
 
   c = gpr_zalloc(sizeof(*c));
-  c->uuid = grpc_object_registry_register_object(c, GPRC_OBJECT_REGISTRY_SUBCHANNEL);
+  c->uuid =
+      grpc_object_registry_register_object(c, GPRC_OBJECT_REGISTRY_SUBCHANNEL);
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;

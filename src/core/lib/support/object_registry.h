@@ -44,9 +44,10 @@ typedef enum {
 void grpc_object_registry_init();
 void grpc_object_registry_shutdown();
 
-intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry_type type);
+intptr_t grpc_object_registry_register_object(void* object,
+                                              grpc_object_registry_type type);
 void grpc_object_registry_unregister_object(intptr_t uuid);
-grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid, void** object);
-
+grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
+                                                          void** object);
 
 #endif /* GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H */

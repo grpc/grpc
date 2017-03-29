@@ -106,7 +106,8 @@ grpc_channel *grpc_channel_create_with_builder(
   }
 
   memset(channel, 0, sizeof(*channel));
-  channel->uuid = grpc_object_registry_register_object(channel, GRPC_OBJECT_REGISTRY_CHANNEL);
+  channel->uuid = grpc_object_registry_register_object(
+      channel, GRPC_OBJECT_REGISTRY_CHANNEL);
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
