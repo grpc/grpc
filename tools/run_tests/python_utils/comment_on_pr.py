@@ -46,5 +46,4 @@ def comment_on_pr(text):
         'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
         'Content-Type': 'application/json',
       })
-  with urllib2.urlopen(req) as rsp:
-    print rsp.read()
+  print urllib2.urlopen(req).read()
