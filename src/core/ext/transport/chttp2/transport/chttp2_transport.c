@@ -148,6 +148,8 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_chttp2_ping_type ping_type,
                              grpc_closure *on_initiate,
                              grpc_closure *on_complete);
+static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                       grpc_error *error);
 
 #define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
@@ -273,6 +275,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->destructive_reclaimer_locked,
                     destructive_reclaimer_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
+  grpc_closure_init(&t->retry_initiate_ping_locked, retry_initiate_ping_locked,
+                    t, grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->start_bdp_ping_locked, start_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner, false));
   grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
@@ -482,6 +486,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
+  t->ping_state.is_delayed_ping_timer_set = false;
 
   /** Start client-side keepalive pings */
   if (t->is_client) {
@@ -1407,6 +1412,13 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                       grpc_error *error) {
+  grpc_chttp2_transport *t = tp;
+  t->ping_state.is_delayed_ping_timer_set = false;
+  grpc_chttp2_initiate_write(exec_ctx, t, false, "retry_send_ping");
+}
+
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id) {
   grpc_chttp2_ping_queue *pq =
@@ -2185,9 +2197,7 @@ static void finish_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_timer_init(
           exec_ctx, &t->keepalive_ping_timer,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
-          grpc_closure_create(init_keepalive_ping_locked, t,
-                              grpc_combiner_scheduler(t->combiner, false)),
-          gpr_now(GPR_CLOCK_MONOTONIC));
+          &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
     }
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keepalive ping end");
