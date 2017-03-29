@@ -7839,6 +7839,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/load_reporting_hook.c \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_connection_age.c \
+    test/core/end2end/tests/max_connection_idle.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/network_status_change.c \
@@ -7929,6 +7930,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/load_reporting_hook.c \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_connection_age.c \
+    test/core/end2end/tests/max_connection_idle.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/network_status_change.c \
