@@ -622,7 +622,7 @@ static bool get_final_status_from(
     void (*set_value)(grpc_status_code code, void *user_data),
     void *set_value_user_data, grpc_slice *details) {
   grpc_status_code code;
-  grpc_slice slice;
+  grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(error, call->send_deadline, &code, &slice, NULL);
   if (code == GRPC_STATUS_OK && !allow_ok_status) {
     return false;

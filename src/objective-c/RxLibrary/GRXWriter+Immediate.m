@@ -34,6 +34,7 @@
 #import "GRXWriter+Immediate.h"
 
 #import "GRXImmediateWriter.h"
+#import "GRXImmediateSingleWriter.h"
 
 @implementation GRXWriter (Immediate)
 
@@ -50,7 +51,7 @@
 }
 
 + (instancetype)writerWithValue:(id)value {
-  return [GRXImmediateWriter writerWithValue:value];
+  return [GRXImmediateSingleWriter writerWithValue:value];
 }
 
 + (instancetype)writerWithError:(NSError *)error {
