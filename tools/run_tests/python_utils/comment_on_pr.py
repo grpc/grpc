@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import json
 import urllib2
 
 def comment_on_pr(text):
@@ -39,12 +40,10 @@ def comment_on_pr(text):
     return
   req = urllib2.Request(
       url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
-          os.environ('ghprbPullId'),
+          os.environ['ghprbPullId'],
       data = json.dumps({'body': text}),
       headers = {
         'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
         'Content-Type': 'application/json',
       })
-  with urllib2.urlopen(req) as rsp:
-    print rsp.read()
-
+  print urllib2.urlopen(req).read()
