@@ -31,6 +31,6 @@
 set -ex
 
 cloc --vcs=git --by-file --yaml --out=cloc.yaml .
-tools/line_count/yaml2csv -i cloc.yaml -d `date +%Y-%m-%d` -o cloc.csv
+tools/line_count/yaml2csv.py -i cloc.yaml -d `date +%Y-%m-%d` -o cloc.csv
 bq load line_counts.grpc cloc.csv
 

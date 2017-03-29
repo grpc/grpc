@@ -31,6 +31,9 @@
 import subprocess
 import datetime
 
+# this script is only of historical interest: it's the script that was used to
+# bootstrap the dataset
+
 def daterange(start, end):
   for n in range(int((end - start).days)):
     yield start + datetime.timedelta(n)
