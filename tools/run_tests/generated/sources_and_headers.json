@@ -3827,7 +3827,6 @@
       "test/cpp/interop/stress_interop_client.cc", 
       "test/cpp/interop/stress_interop_client.h", 
       "test/cpp/interop/stress_test.cc", 
-      "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
@@ -7809,6 +7808,7 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/security/util/b64.c", 
       "src/core/lib/slice/percent_encoding.c", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
