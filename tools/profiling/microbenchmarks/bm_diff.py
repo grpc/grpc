@@ -83,8 +83,8 @@ argp.add_argument('-t', '--track',
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=5)
-argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
+argp.add_argument('-r', '--repetitions', type=int, default=10)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
 args = argp.parse_args()
 
 assert args.diff_base
