@@ -95,12 +95,17 @@ def avg(lst):
     n += 1
   return sum / n
 
-def collect1(bm, cfg, ver):
-  subprocess.check_call(['make', 'clean'])
+def build():
   subprocess.check_call(['git', 'submodule', 'update'])
-  subprocess.check_call(
-      ['make', bm,
-       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  make = ['make'] + args.benchmarks + [
+      'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
+  try:
+    subprocess.check_call(make)
+  except subprocess.CalledProcessError, e:
+    subprocess.check_call(['make', 'clean'])
+    subprocess.check_call(make)
+
+def collect1(bm, cfg, ver):
   cmd = ['bins/%s/%s' % (cfg, bm),
          '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
          '--benchmark_out_format=json',
@@ -108,6 +113,7 @@ def collect1(bm, cfg, ver):
          ]
   subprocess.check_call(cmd)
 
+build()
 for bm in args.benchmarks:
   collect1(bm, 'opt', 'new')
   collect1(bm, 'counters', 'new')
@@ -116,6 +122,7 @@ where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'
 subprocess.check_call(['git', 'checkout', args.diff_base])
 
 try:
+  build()
   comparables = []
   for bm in args.benchmarks:
     try:
