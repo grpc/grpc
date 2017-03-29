@@ -175,7 +175,7 @@ struct grpc_call {
   /* have we received initial metadata */
   bool has_initial_md_been_received;
 
-  batch_control active_batches[MAX_CONCURRENT_BATCHES];
+  batch_control *active_batches[MAX_CONCURRENT_BATCHES];
   grpc_transport_stream_op_payload stream_op_payload;
 
   /* first idx: is_receiving, second idx: is_trailing */
@@ -1052,7 +1052,11 @@ static batch_control *allocate_batch_control(grpc_call *call,
                                              const grpc_op *ops,
                                              size_t num_ops) {
   int slot = batch_slot_for_op(ops[0].op);
-  batch_control *bctl = &call->active_batches[slot];
+  batch_control **pslot = &call->active_batches[slot];
+  if (*pslot == NULL) {
+    *pslot = gpr_arena_alloc(call->arena, sizeof(batch_control));
+  }
+  batch_control *bctl = *pslot;
   if (bctl->call != NULL) {
     return NULL;
   }
