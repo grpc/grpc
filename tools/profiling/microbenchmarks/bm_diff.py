@@ -96,7 +96,7 @@ def avg(lst):
   return sum / n
 
 def make_cmd(cfg):
-  make = ['make'] + args.benchmarks + [
+  return ['make'] + args.benchmarks + [
       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
 
 def build():
