@@ -1487,8 +1487,9 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  int millis = gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  return millis >= 1 ? millis : 1;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,

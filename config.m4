@@ -168,6 +168,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -250,7 +251,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
@@ -292,6 +292,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/nanopb/pb_encode.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
@@ -631,6 +634,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/load_reporting)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
