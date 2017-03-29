@@ -212,5 +212,5 @@ if rows:
   text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
 else:
   text = 'No significant performance differences'
-comment_on_pr.comment_on_pr(text)
+comment_on_pr.comment_on_pr('```%s```' % text)
 print text
