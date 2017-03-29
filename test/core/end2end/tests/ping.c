@@ -41,9 +41,12 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
+#define PING_NUM 5
+
 static void *tag(intptr_t t) { return (void *)t; }
 
-static void test_ping(grpc_end2end_test_config config) {
+static void test_ping(grpc_end2end_test_config config,
+                      int min_time_between_pings_ms) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
@@ -51,7 +54,7 @@ static void test_ping(grpc_end2end_test_config config) {
 
   grpc_arg a[] = {{.type = GRPC_ARG_INTEGER,
                    .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
-                   .value.integer = 0},
+                   .value.integer = min_time_between_pings_ms},
                   {.type = GRPC_ARG_INTEGER,
                    .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
                    .value.integer = 20}};
@@ -70,7 +73,11 @@ static void test_ping(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
+        f.client, state,
+        gpr_time_add(grpc_timeout_seconds_to_deadline(3),
+                     gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
+                                          GPR_TIMESPAN)),
+        f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
@@ -79,7 +86,7 @@ static void test_ping(grpc_end2end_test_config config) {
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 
-  for (i = 1; i <= 5; i++) {
+  for (i = 1; i <= PING_NUM; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), NULL);
     CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
     cq_verify(cqv);
@@ -105,7 +112,8 @@ static void test_ping(grpc_end2end_test_config config) {
 
 void ping(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
-  test_ping(config);
+  test_ping(config, 0);
+  test_ping(config, 100);
 }
 
 void ping_pre_init(void) {}

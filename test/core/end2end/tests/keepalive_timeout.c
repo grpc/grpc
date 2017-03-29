@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/env.h"
@@ -110,13 +111,15 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
 
-  grpc_arg keepalive_args[2];
-  keepalive_args[0].type = GRPC_ARG_INTEGER;
-  keepalive_args[0].key = GRPC_ARG_HTTP2_KEEPALIVE_TIME;
-  keepalive_args[0].value.integer = 2;
-  keepalive_args[1].type = GRPC_ARG_INTEGER;
-  keepalive_args[1].key = GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT;
-  keepalive_args[1].value.integer = 0;
+  grpc_arg keepalive_args[] = {{.type = GRPC_ARG_INTEGER,
+                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIME_S,
+                                .value.integer = 2},
+                               {.type = GRPC_ARG_INTEGER,
+                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S,
+                                .value.integer = 0},
+                               {.type = GRPC_ARG_INTEGER,
+                                .key = GRPC_ARG_HTTP2_BDP_PROBE,
+                                .value.integer = 1}};
 
   grpc_channel_args *client_args = NULL;
   client_args = grpc_channel_args_copy_and_add(client_args, keepalive_args, 2);
@@ -134,6 +137,9 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
+
+  /* Disable ping ack to trigger the keepalive timeout */
+  grpc_set_disable_ping_ack(true);
 
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
