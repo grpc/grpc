@@ -95,15 +95,19 @@ def avg(lst):
     n += 1
   return sum / n
 
-def build():
-  subprocess.check_call(['git', 'submodule', 'update'])
+def make_cmd(cfg):
   make = ['make'] + args.benchmarks + [
       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
+
+def build():
+  subprocess.check_call(['git', 'submodule', 'update'])
   try:
-    subprocess.check_call(make)
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
   except subprocess.CalledProcessError, e:
     subprocess.check_call(['make', 'clean'])
-    subprocess.check_call(make)
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
 
 def collect1(bm, cfg, ver):
   cmd = ['bins/%s/%s' % (cfg, bm),
