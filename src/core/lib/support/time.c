@@ -244,15 +244,9 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
     return t;
   }
 
-  if (t.tv_nsec == 0) {
-    if (t.tv_sec == INT64_MAX) {
-      t.clock_type = clock_type;
-      return t;
-    }
-    if (t.tv_sec == INT64_MIN) {
-      t.clock_type = clock_type;
-      return t;
-    }
+  if (t.tv_sec == INT64_MAX || t.tv_sec == INT64_MIN) {
+    t.clock_type = clock_type;
+    return t;
   }
 
   if (clock_type == GPR_TIMESPAN) {
