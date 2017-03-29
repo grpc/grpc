@@ -147,9 +147,12 @@ template <int kLength>
 class SingleInternedBinaryElem {
  public:
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
-    return {grpc_mdelem_from_slices(
+    grpc_slice bytes = MakeBytes();
+    std::vector<grpc_mdelem> out = {grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
-        grpc_slice_intern(MakeBytes()))};
+        grpc_slice_intern(bytes))};
+    grpc_slice_unref(bytes);
+    return out;
   }
 
  private:
@@ -325,6 +328,8 @@ static void BM_HpackParserParseHeader(benchmark::State &state) {
     }
     grpc_exec_ctx_flush(&exec_ctx);
   }
+  for (auto slice : init_slices) grpc_slice_unref(slice);
+  for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   grpc_chttp2_hpack_parser_destroy(&exec_ctx, &p);
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
