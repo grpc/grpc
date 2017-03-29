@@ -123,7 +123,8 @@ END2END_TESTS = {
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
     'max_connection_age': default_test_options,
-    'max_connection_idle': default_test_options,
+    'max_connection_idle': connectivity_test_options._replace(
+        proxyable=False, exclude_iomgrs=['uv']),
     'max_message_length': default_test_options,
     'negative_deadline': default_test_options,
     'network_status_change': default_test_options,

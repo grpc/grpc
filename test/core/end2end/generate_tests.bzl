@@ -110,7 +110,7 @@ END2END_TESTS = {
     'large_metadata': test_options(),
     'max_concurrent_streams': test_options(proxyable=False),
     'max_connection_age': test_options(),
-    'max_connection_idle': test_options(),
+    'max_connection_idle': test_options(needs_fullstack=True, proxyable=False),
     'max_message_length': test_options(),
     'negative_deadline': test_options(),
     'network_status_change': test_options(),
