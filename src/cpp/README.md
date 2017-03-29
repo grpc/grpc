@@ -1,17 +1,17 @@
 
-#Overview
+# Overview
 
 This directory contains source code for C++ implementation of gRPC.
 
-#Pre-requisites
+# Pre-requisites
 
-##Linux
+## Linux
 
 ```sh
  $ [sudo] apt-get install build-essential autoconf libtool
 ```
 
-##Mac OSX
+## Mac OSX
 
 For a Mac system, git is not available by default. You will first need to
 install Xcode from the Mac AppStore and then run the following command from a
@@ -21,7 +21,7 @@ terminal:
  $ [sudo] xcode-select --install
 ```
 
-##Protoc
+## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
@@ -39,12 +39,12 @@ $ sudo make install   # 'make' should have been run by core grpc
 Alternatively, you can download `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
 
-#Installation
+# Installation
 
 Currently to install gRPC for C++, you need to build from source as described
 below.
 
-#Build from Source
+# Build from Source
 
 ```sh
  $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
@@ -54,7 +54,7 @@ below.
  $ [sudo] make install
 ```
 
-#Documentation
+# Documentation
 
 You can find out how to build and run our simplest gRPC C++ example in our
 [C++ quick start](../../examples/cpp).
