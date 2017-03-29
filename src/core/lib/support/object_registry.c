@@ -32,7 +32,7 @@
  */
 
 #include "src/core/ext/client_channel/subchannel.h"
-#include "src/core/lib/channel/channel_registry.h"
+#include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/surface/channel.h"
 
 #include <grpc/support/alloc.h>
@@ -43,37 +43,57 @@
 static gpr_avl g_avl;
 static intptr_t g_uuid = 0;
 
-// avl vtable for uuid (intptr_t) -> channel/subchannel ptr.
+typedef struct {
+  void* object;
+  grpc_object_registry_type type;
+} object_tracker;
+
+// avl vtable for uuid (intptr_t) -> object_tracker
 // this table is only looking, it does not own anything.
 static void destroy_intptr(void* not_used) { }
 static void* copy_intptr(void* key) { return key; }
 static long compare_intptr(void* key1, void* key2) { return key1 > key2; }
-static void destroy_cptr(void* not_used) { }
-static void* copy_cptr(void* value) { return value; }
+
+static void destroy_tracker(void* tracker) { 
+  gpr_free((object_tracker*)tracker); 
+}
+
+static void* copy_tracker(void* value) { 
+  object_tracker *old = value;
+  object_tracker *new = gpr_malloc(sizeof(object_tracker));
+  new->object = old->object;
+  new->type = old->type;
+  return new;
+}
 static const gpr_avl_vtable avl_vtable = {
     destroy_intptr, copy_intptr, compare_intptr,
-    destroy_cptr, copy_cptr};
+    destroy_tracker, copy_tracker};
 
-void grpc_channel_registry_init() {
+void grpc_object_registry_init() {
   g_avl = gpr_avl_create(&avl_vtable);
 }
 
-void grpc_channel_registry_shutdown() {
+void grpc_object_registry_shutdown() {
   gpr_avl_unref(g_avl);
 }
 
-intptr_t grpc_channel_registry_register_channel(void* channel) {
+intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry_type type) {
+  object_tracker *tracker = gpr_malloc(sizeof(object_tracker));
+  tracker->object = object;
+  tracker->type = type;
   intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
-  g_avl = gpr_avl_add(g_avl, (void*)prior, channel);
+  g_avl = gpr_avl_add(g_avl, (void*)prior, object);
   return prior;
 }
 
-void grpc_channel_registry_unregister_channel(intptr_t uuid) {
+void grpc_object_registry_unregister_object(intptr_t uuid) {
   g_avl = gpr_avl_remove(g_avl, (void*)uuid);
 }
 
-void* grpc_channel_registry_get_channel(intptr_t uuid) {
-  void* channel = gpr_avl_get(g_avl, (void*)uuid);
-  GPR_ASSERT(channel);
-  return channel;
+grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid, void** object) {
+  GPR_ASSERT(object);
+  object_tracker *tracker = gpr_avl_get(g_avl, (void*)uuid);
+  GPR_ASSERT(tracker);
+  *object = tracker->object;
+  return tracker->type;
 }

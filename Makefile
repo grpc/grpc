@@ -2675,6 +2675,7 @@ LIBGPR_SRC = \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
+    src/core/lib/support/object_registry.c \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
@@ -2803,7 +2804,6 @@ endif
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_registry.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
@@ -3123,7 +3123,6 @@ endif
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_registry.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
@@ -3431,7 +3430,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
     src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_registry.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
@@ -3664,7 +3662,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
     src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_registry.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
@@ -4282,7 +4279,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_registry.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \

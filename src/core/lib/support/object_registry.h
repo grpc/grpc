@@ -31,15 +31,20 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_REGISTRY_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_REGISTRY_H
+#ifndef GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
+#define GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
 
-void grpc_channel_registry_init();
-void grpc_channel_registry_shutdown();
+typedef enum {
+  GRPC_OBJECT_REGISTRY_CHANNEL,
+  GPRC_OBJECT_REGISTRY_SUBCHANNEL,
+} grpc_object_registry_type;
 
-intptr_t grpc_channel_registry_register_channel(void* channel);
-void grpc_channel_registry_unregister_channel(intptr_t uuid);
-void* grpc_channel_registry_get_channel(intptr_t uuid);
+void grpc_object_registry_init();
+void grpc_object_registry_shutdown();
+
+intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry_type type);
+void grpc_object_registry_unregister_object(intptr_t uuid);
+grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid, void** object);
 
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_REGISTRY_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H */

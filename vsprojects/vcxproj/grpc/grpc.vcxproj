@@ -301,7 +301,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
@@ -507,8 +506,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.c">
     </ClCompile>

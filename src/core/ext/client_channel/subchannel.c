@@ -46,13 +46,13 @@
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -211,7 +211,7 @@ void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
 static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_subchannel *c = arg;
-  grpc_channel_registry_unregister_channel(c->uuid);
+  grpc_object_registry_unregister_object(c->uuid);
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(exec_ctx, c->args);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
@@ -317,7 +317,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   }
 
   c = gpr_zalloc(sizeof(*c));
-  c->uuid = grpc_channel_registry_register_channel(c);
+  c->uuid = grpc_object_registry_register_object(c, GPRC_OBJECT_REGISTRY_SUBCHANNEL);
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
