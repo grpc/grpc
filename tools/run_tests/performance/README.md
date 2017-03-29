@@ -24,6 +24,43 @@ GCE "worker" machines that are in the same zone.
   * For example, to start the grpc-go benchmark worker:
   [grpc-go worker main.go](https://github.com/grpc/grpc-go/blob/master/benchmark/worker/main.go) --driver_port <driver_port>
 
+#### Comands to start workers in different languages:
+ * Note that these commands are what the top-level
+   [run_performance_test.py](../run_performance_tests.py) script uses to
+   build and run different workers through the
+   [build_performance.sh](./build_performance.sh) script and "run worker"
+   scripts (such as the [run_worker_java.sh](./run_worker_java.sh)).
+
+##### Running benchmark workers for C-core wrapped languages (C++, Python, C#, Node, Ruby):
+   * These are more simple since they all live in the main grpc repo.
+
+```
+$ cd <grpc_repo_root>
+$ tools/run_tests/performance/build_performance.sh
+$ tools/run_tests/performance/run_worker_<language>.sh
+```
+
+   * Note that there is one "run_worker" script per language, e.g.,
+     [run_worker_csharp.sh](./run_worker_csharp.sh) for c#.
+
+##### Running benchmark workers for gRPC-Java:
+   * You'll need the [grpc-java](https://github.com/grpc/grpc-java) repo.
+
+```
+$ cd <grpc-java-repo>
+$ ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist
+$ benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker --driver_port <driver_port>
+```
+
+##### Running benchmark workers for gRPC-Go:
+   * You'll need the [grpc-go repo](https://github.com/grpc/grpc-go)
+
+```
+$ cd <grpc-go-repo>/benchmark/worker && go install
+$ # if profiling, it might be helpful to turn off inlining by building with "-gcflags=-l"
+$ $GOPATH/bin/worker --driver_port <driver_port>
+```
+
 #### Build the driver:
 * Connect to the driver machine (if using a remote driver) and from the grpc repo root:
 ```
@@ -40,7 +77,7 @@ $ tools/run_tests/performance/build_performance.sh
 
 2. From the grpc repo root:
 
-* Set `QPS_WORKERS` environment variable to a commaa separated list of worker
+* Set `QPS_WORKERS` environment variable to a comma separated list of worker
 machines. Note that the driver will start the "benchmark server" on the first
 entry in the list, and the rest will be told to run as clients against the
 benchmark server.
@@ -48,8 +85,7 @@ benchmark server.
 Example running and profiling of go benchmark server:
 ```
 $ export QPS_WORKERS=<host1>:<10000>,<host2>,10000,<host3>:10000
-$ bins/opt/qps_json_driver
---scenario_json='<scenario_json_scenario_config_string>'
+$ bins/opt/qps_json_driver --scenario_json='<scenario_json_scenario_config_string>'
 ```
 
 ### Example profiling commands
