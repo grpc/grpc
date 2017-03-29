@@ -42,7 +42,7 @@
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);
-  if (cmp == 0) {
+  if (cmp == 0 && a.tv_sec != INT64_MAX && a.tv_sec != INT64_MIN) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
   return cmp;
