@@ -38,6 +38,9 @@ import subprocess
 import multiprocessing
 import collections
 import pipes
+import os
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+import comment_on_pr
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -82,7 +85,6 @@ argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=5)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
-argp.add_argument('-g', '--git_comment', action='store_const', const=True, default=False)
 args = argp.parse_args()
 
 assert args.diff_base
@@ -206,8 +208,6 @@ if rows:
   text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
 else:
   text = 'No significant performance differences'
+comment_on_pr.comment_on_pr(text)
 print text
 
-if args.git_comment:
-  subprocess.call(['tools/jenkins/comment_on_pr.sh', text],
-                  stdout=subprocess.PIPE)
