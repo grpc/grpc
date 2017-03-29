@@ -60,10 +60,10 @@ static void test_ping(grpc_end2end_test_config config,
                           .value.integer = 20}};
   grpc_arg server_a[] = {
       {.type = GRPC_ARG_INTEGER,
-       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_S,
+       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
        .value.integer = 0},
       {.type = GRPC_ARG_INTEGER,
-       .key = GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS,
+       .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,
        .value.integer = 1}};
   grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(client_a),
                                    .args = client_a};

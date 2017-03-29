@@ -91,8 +91,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
                           .value.integer = 0}};
   grpc_arg server_a[] = {
       {.type = GRPC_ARG_INTEGER,
-       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_S,
-       .value.integer = 300},
+       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
+       .value.integer = 300000 /* 5 minutes */},
       {.type = GRPC_ARG_INTEGER,
        .key = GRPC_ARG_HTTP2_MAX_PING_STRIKES,
        .value.integer = MAX_PING_STRIKES}};
