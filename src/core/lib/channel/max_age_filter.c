@@ -166,6 +166,7 @@ static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
   chand->max_age_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "close_max_age_channel");
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_grace_timer_after_goaway_op");
     grpc_transport_op* op = grpc_make_transport_op(
@@ -188,6 +189,7 @@ static void force_close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
   chand->max_age_grace_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "force_close_max_age_channel");
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel reaches max age");
@@ -239,8 +241,8 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
           ? gpr_inf_future(GPR_TIMESPAN)
           : gpr_time_from_seconds(DEFAULT_MAX_CONNECTION_IDLE_S, GPR_TIMESPAN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
-    if (0 ==
-        strcmp(args->channel_args->args[i].key, GPRC_ARG_MAX_CONNECION_AGE_S)) {
+    if (0 == strcmp(args->channel_args->args[i].key,
+                    GRPC_ARG_MAX_CONNECTION_AGE_S)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_S, 1, INT_MAX});
@@ -248,7 +250,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_seconds(value, GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
-                           GPRC_ARG_MAX_CONNECION_AGE_GRACE_S)) {
+                           GRPC_ARG_MAX_CONNECTION_AGE_GRACE_S)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_S, 0,
@@ -257,7 +259,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_seconds(value, GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
-                           GPRC_ARG_MAX_CONNECION_IDLE_S)) {
+                           GRPC_ARG_MAX_CONNECTION_IDLE_S)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_S, 1, INT_MAX});

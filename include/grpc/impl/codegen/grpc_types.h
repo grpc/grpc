@@ -165,13 +165,13 @@ typedef struct {
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
 /** Maximum time that a channel may have no outstanding rpcs. Int valued,
     seconds. INT_MAX means unlimited. */
-#define GPRC_ARG_MAX_CONNECION_IDLE_S "grpc.max_connection_idle"
+#define GRPC_ARG_MAX_CONNECTION_IDLE_S "grpc.max_connection_idle"
 /** Maximum time that a channel may exist. Int valued, seconds. INT_MAX means
     unlimited. */
-#define GPRC_ARG_MAX_CONNECION_AGE_S "grpc.max_connection_age"
+#define GRPC_ARG_MAX_CONNECTION_AGE_S "grpc.max_connection_age"
 /** Grace period after the chennel reaches its max age. Int valued, seconds.
     INT_MAX means unlimited. */
-#define GPRC_ARG_MAX_CONNECION_AGE_GRACE_S "grpc.max_connection_age_grace"
+#define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_S "grpc.max_connection_age_grace"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"

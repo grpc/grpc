@@ -3892,6 +3892,7 @@ add_library(end2end_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/load_reporting_hook.c
   test/core/end2end/tests/max_concurrent_streams.c
+  test/core/end2end/tests/max_connection_age.c
   test/core/end2end/tests/max_message_length.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/network_status_change.c
@@ -3982,6 +3983,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/load_reporting_hook.c
   test/core/end2end/tests/max_concurrent_streams.c
+  test/core/end2end/tests/max_connection_age.c
   test/core/end2end/tests/max_message_length.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/network_status_change.c

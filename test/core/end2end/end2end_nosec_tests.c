@@ -97,6 +97,8 @@ extern void load_reporting_hook(grpc_end2end_test_config config);
 extern void load_reporting_hook_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
+extern void max_connection_age(grpc_end2end_test_config config);
+extern void max_connection_age_pre_init(void);
 extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
@@ -174,6 +176,7 @@ void grpc_end2end_tests_pre_init(void) {
   large_metadata_pre_init();
   load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
+  max_connection_age_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
@@ -232,6 +235,7 @@ void grpc_end2end_tests(int argc, char **argv,
     large_metadata(config);
     load_reporting_hook(config);
     max_concurrent_streams(config);
+    max_connection_age(config);
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
@@ -361,6 +365,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("max_concurrent_streams", argv[i])) {
       max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("max_connection_age", argv[i])) {
+      max_connection_age(config);
       continue;
     }
     if (0 == strcmp("max_message_length", argv[i])) {
