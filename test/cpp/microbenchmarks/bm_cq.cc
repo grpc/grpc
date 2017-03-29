@@ -59,6 +59,17 @@ static void BM_CreateDestroyCpp(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCpp);
 
+/* Create cq using a different constructor */
+static void BM_CreateDestroyCpp2(benchmark::State& state) {
+  TrackCounters track_counters;
+  while (state.KeepRunning()) {
+    grpc_completion_queue* core_cq = grpc_completion_queue_create(NULL);
+    CompletionQueue cq(core_cq);
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_CreateDestroyCpp2);
+
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
