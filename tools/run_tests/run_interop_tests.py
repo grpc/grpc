@@ -728,7 +728,8 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
     ]
 
   else:
-    docker_args += ['-p', str(_DEFAULT_SERVER_PORT)]
+    portstr = str(_DEFAULT_SERVER_PORT)
+    docker_args += ['-p', '%s:%s'%(portstr, portstr)]
 
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
