@@ -393,6 +393,7 @@ static void test_threading(void) {
                                               grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }
+  gpr_free(shared.pollset);
 }
 
 int main(int argc, char **argv) {
