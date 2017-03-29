@@ -139,6 +139,7 @@ try:
       pass
 finally:
   subprocess.check_call(['git', 'checkout', where_am_i])
+  subprocess.check_call(['git', 'submodule', 'update'])
 
 
 class Benchmark:
