@@ -196,9 +196,6 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   /* The connection should be closed immediately after the max age grace period,
      the in-progress RPC should fail. */
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  char *details_str = grpc_slice_to_c_string(details);
-  gpr_log(GPR_DEBUG, "status: %d, details: %s", status, details_str);
-  gpr_free(details_str);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "Endpoint read failed"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
