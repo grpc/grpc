@@ -82,7 +82,7 @@ argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=5)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
-args.add_argument('-g', '--git_comment', action='store_const', const=True, default=False)
+argp.add_argument('-g', '--git_comment', action='store_const', const=True, default=False)
 args = argp.parse_args()
 
 assert args.diff_base
@@ -95,12 +95,21 @@ def avg(lst):
     n += 1
   return sum / n
 
-def collect1(bm, cfg, ver):
-  subprocess.check_call(['make', 'clean'])
+def make_cmd(cfg):
+  return ['make'] + args.benchmarks + [
+      'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
+
+def build():
   subprocess.check_call(['git', 'submodule', 'update'])
-  subprocess.check_call(
-      ['make', bm,
-       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  try:
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
+  except subprocess.CalledProcessError, e:
+    subprocess.check_call(['make', 'clean'])
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
+
+def collect1(bm, cfg, ver):
   cmd = ['bins/%s/%s' % (cfg, bm),
          '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
          '--benchmark_out_format=json',
@@ -108,6 +117,7 @@ def collect1(bm, cfg, ver):
          ]
   subprocess.check_call(cmd)
 
+build()
 for bm in args.benchmarks:
   collect1(bm, 'opt', 'new')
   collect1(bm, 'counters', 'new')
@@ -116,6 +126,7 @@ where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'
 subprocess.check_call(['git', 'checkout', args.diff_base])
 
 try:
+  build()
   comparables = []
   for bm in args.benchmarks:
     try:
