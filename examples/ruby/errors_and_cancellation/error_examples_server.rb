@@ -1,4 +1,7 @@
-# Copyright 2016, Google Inc.
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,30 +30,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM golang:latest
+# Error-throwing implementation of Route Guide service.
+#
+# Usage: $ path/to/route_guide_server.rb
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+this_dir = File.expand_path(File.dirname(__FILE__))
+lib_dir = File.join(File.dirname(this_dir), 'lib')
+$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
+require 'grpc'
+require 'route_guide_services_pb'
 
-#====================
-# Python dependencies
+include Routeguide
 
-# Install dependencies
+include GRPC::Core::StatusCodes
 
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
+# CanellingandErrorReturningServiceImpl provides an implementation of the RouteGuide service.
+class CancellingAndErrorReturningServerImpl < RouteGuide::Service
+  # def get_feature
+  #   Note get_feature isn't implemented in this subclass, so the server
+  #   will get a gRPC UNIMPLEMENTED error when it's called.
 
-# Install Python packages from PyPI
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+  def list_features(rectangle, _call)
+    raise "string appears on the client in the 'details' field of a 'GRPC::Unknown' exception"
+  end
 
-# Using login shell removes Go from path, so we add it.
-RUN ln -s /usr/local/go/bin/go /usr/local/bin
+  def record_route(call)
+    raise GRPC::BadStatus.new_status_exception(CANCELLED)
+  end
 
-# Define the default command.
-CMD ["bash"]
+  def route_chat(notes)
+    raise GRPC::BadStatus.new_status_exception(ABORTED, details = 'arbitrary', metadata = {somekey: 'val'})
+  end
+end
+
+def main
+  port = '0.0.0.0:50051'
+  s = GRPC::RpcServer.new
+  s.add_http2_port(port, :this_port_is_insecure)
+  GRPC.logger.info("... running insecurely on #{port}")
+  s.handle(CancellingAndErrorReturningServerImpl.new)
+  s.run_till_terminated
+end
+
+main
