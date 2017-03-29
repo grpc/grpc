@@ -39,7 +39,7 @@ def comment_on_pr(text):
     return
   req = urllib2.Request(
       url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
-          os.environ('ghprbPullId'),
+          os.environ['ghprbPullId'],
       data = json.dumps({'body': text}),
       headers = {
         'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
@@ -47,4 +47,3 @@ def comment_on_pr(text):
       })
   with urllib2.urlopen(req) as rsp:
     print rsp.read()
-
