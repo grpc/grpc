@@ -1135,7 +1135,7 @@ static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
           grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
-          return; /* Slow-path successful. Return */
+          return; /* Successful. Return */
         }
 
         break; /* retry */
@@ -1169,8 +1169,6 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
   gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
 
   while (true) {
-    /* Fallback to slowpath. This 'acquire' load matches the 'release' cas in
-       notify_on and set_ready */
     gpr_atm curr = gpr_atm_no_barrier_load(state);
     switch (curr) {
       case CLOSURE_READY:
