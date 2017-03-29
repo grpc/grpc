@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 // file global lock and avl.
+static gpr_mu g_mu;
 static gpr_avl g_avl;
 static intptr_t g_uuid = 0;
 
@@ -70,11 +71,13 @@ static const gpr_avl_vtable avl_vtable = {
     destroy_tracker, copy_tracker};
 
 void grpc_object_registry_init() {
+  gpr_mu_init(&g_mu);
   g_avl = gpr_avl_create(&avl_vtable);
 }
 
 void grpc_object_registry_shutdown() {
   gpr_avl_unref(g_avl);
+  gpr_mu_destroy(&g_mu);
 }
 
 intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry_type type) {
@@ -82,17 +85,23 @@ intptr_t grpc_object_registry_register_object(void* object, grpc_object_registry
   tracker->object = object;
   tracker->type = type;
   intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
-  g_avl = gpr_avl_add(g_avl, (void*)prior, object);
+  gpr_mu_lock(&g_mu);
+  g_avl = gpr_avl_add(g_avl, (void*)prior, tracker);
+  gpr_mu_unlock(&g_mu);
   return prior;
 }
 
 void grpc_object_registry_unregister_object(intptr_t uuid) {
+  gpr_mu_lock(&g_mu);
   g_avl = gpr_avl_remove(g_avl, (void*)uuid);
+  gpr_mu_unlock(&g_mu);
 }
 
 grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid, void** object) {
   GPR_ASSERT(object);
+  gpr_mu_lock(&g_mu);
   object_tracker *tracker = gpr_avl_get(g_avl, (void*)uuid);
+  gpr_mu_unlock(&g_mu);
   GPR_ASSERT(tracker);
   *object = tracker->object;
   return tracker->type;
