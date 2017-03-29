@@ -246,8 +246,7 @@ static void rulist_remove(grpc_resource_user *resource_user, grpc_rulist list) {
  */
 
 static bool rq_alloc(grpc_exec_ctx *exec_ctx,
-                     grpc_resource_quota *resource_quota,
-                     bool check_memory_usage);
+                     grpc_resource_quota *resource_quota);
 static bool rq_reclaim_from_per_user_free_pool(
     grpc_exec_ctx *exec_ctx, grpc_resource_quota *resource_quota);
 static bool rq_reclaim(grpc_exec_ctx *exec_ctx,
@@ -257,20 +256,11 @@ static void rq_step(grpc_exec_ctx *exec_ctx, void *rq, grpc_error *error) {
   grpc_resource_quota *resource_quota = rq;
   resource_quota->step_scheduled = false;
   do {
-    if (rq_alloc(exec_ctx, resource_quota, false)) goto done;
+    if (rq_alloc(exec_ctx, resource_quota)) goto done;
   } while (rq_reclaim_from_per_user_free_pool(exec_ctx, resource_quota));
 
   if (!rq_reclaim(exec_ctx, resource_quota, false)) {
-    if (!rq_reclaim(exec_ctx, resource_quota, true)) {
-      /* no reclaimation possible, but we've still got allocation requests:
-         start satisfying them without regard to memory utilization to avoid
-         infinitely stuck requests */
-      gpr_log(GPR_DEBUG,
-              "ResourceQuota WARNING: allocating requests without free pool "
-              "available");
-      while (!rq_alloc(exec_ctx, resource_quota, true))
-        ;
-    }
+    rq_reclaim(exec_ctx, resource_quota, true);
   }
 
 done:
@@ -296,22 +286,15 @@ static void rq_update_estimate(grpc_resource_quota *resource_quota) {
                                      MEMORY_USAGE_ESTIMATION_MAX));
 }
 
-static bool fits_pool(int64_t want, int64_t have, bool check) {
-  if (!check) return true;
-  return want <= have;
-}
-
 /* returns true if all allocations are completed */
 static bool rq_alloc(grpc_exec_ctx *exec_ctx,
-                     grpc_resource_quota *resource_quota,
-                     bool check_memory_usage) {
+                     grpc_resource_quota *resource_quota) {
   grpc_resource_user *resource_user;
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&resource_user->mu);
     if (resource_user->free_pool < 0 &&
-        fits_pool(-resource_user->free_pool, resource_quota->free_pool,
-                  check_memory_usage)) {
+        -resource_user->free_pool <= resource_quota->free_pool) {
       int64_t amt = -resource_user->free_pool;
       resource_user->free_pool = 0;
       resource_quota->free_pool -= amt;
@@ -331,11 +314,6 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
       grpc_closure_list_sched(exec_ctx, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
-      gpr_log(GPR_DEBUG, "RQ %s %s: delay alloc %" PRId64
-                         " bytes; rq_free_pool = %" PRId64,
-              resource_quota->name, resource_user->name,
-              -resource_user->free_pool, resource_quota->free_pool);
-      GPR_ASSERT(check_memory_usage);
       rulist_add_head(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);
       gpr_mu_unlock(&resource_user->mu);
       return false;
@@ -355,9 +333,6 @@ static bool rq_reclaim_from_per_user_free_pool(
       int64_t amt = resource_user->free_pool;
       resource_user->free_pool = 0;
       resource_quota->free_pool += amt;
-      if (resource_quota->free_pool > resource_quota->size) {
-        resource_quota->free_pool = resource_quota->size;
-      }
       rq_update_estimate(resource_quota);
       if (grpc_resource_quota_trace) {
         gpr_log(GPR_DEBUG, "RQ %s %s: reclaim_from_per_user_free_pool %" PRId64
