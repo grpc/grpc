@@ -500,7 +500,7 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     }
     if (grpc_timer_check_trace) {
       gpr_log(GPR_DEBUG,
-              "TIMER CHECK SKIP: now_atm=%" PRId64 " min_timer=%" PRId64,
+              "TIMER CHECK SKIP: now_atm=%" PRIdPTR " min_timer=%" PRIdPTR,
               now_atm, min_timer);
     }
     return 0;
