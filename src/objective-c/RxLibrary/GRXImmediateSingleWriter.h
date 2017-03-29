@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,20 @@
  *
  */
 
-#include "src/core/ext/client_channel/initial_connect_string.h"
+#import <Foundation/Foundation.h>
 
-#include <stddef.h>
+#import "GRXImmediateWriter.h"
 
-extern void grpc_set_default_initial_connect_string(
-    grpc_resolved_address **addr, grpc_slice *initial_str);
+/**
+ * Utility to construct GRXWriter instances from values that are immediately available when
+ * required.
+ */
+@interface GRXImmediateSingleWriter : GRXImmediateWriter
 
-static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
-    grpc_set_default_initial_connect_string;
+/**
+ * Returns a writer that sends the passed value to its writeable and then finishes (releasing the
+ * value).
+ */
++ (GRXWriter *)writerWithValue:(id)value;
 
-void grpc_test_set_initial_connect_string_function(
-    grpc_set_initial_connect_string_func func) {
-  g_set_initial_connect_string_func = func;
-}
-
-void grpc_set_initial_connect_string(grpc_resolved_address **addr,
-                                     grpc_slice *initial_str) {
-  g_set_initial_connect_string_func(addr, initial_str);
-}
+@end

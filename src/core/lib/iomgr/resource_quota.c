@@ -279,11 +279,17 @@ static void rq_step_sched(grpc_exec_ctx *exec_ctx,
 /* update the atomically available resource estimate - use no barriers since
    timeliness of delivery really doesn't matter much */
 static void rq_update_estimate(grpc_resource_quota *resource_quota) {
+  gpr_atm memory_usage_estimation = MEMORY_USAGE_ESTIMATION_MAX;
+  if (resource_quota->size != 0) {
+    memory_usage_estimation =
+        GPR_CLAMP((gpr_atm)((1.0 -
+                             ((double)resource_quota->free_pool) /
+                                 ((double)resource_quota->size)) *
+                            MEMORY_USAGE_ESTIMATION_MAX),
+                  0, MEMORY_USAGE_ESTIMATION_MAX);
+  }
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation,
-                           (gpr_atm)((1.0 -
-                                      ((double)resource_quota->free_pool) /
-                                          ((double)resource_quota->size)) *
-                                     MEMORY_USAGE_ESTIMATION_MAX));
+                           memory_usage_estimation);
 }
 
 /* returns true if all allocations are completed */

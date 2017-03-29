@@ -22,9 +22,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\stress_test.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\metrics_server.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>

@@ -73,14 +73,16 @@ static grpc_error *blocking_resolve_address_impl(
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
-    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                             GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    err = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
   if (port == NULL) {
     if (default_port == NULL) {
-      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
-                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      err = grpc_error_set_str(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto done;
     }
     port = gpr_strdup(default_port);
@@ -112,11 +114,15 @@ static grpc_error *blocking_resolve_address_impl(
   if (s != 0) {
     err = grpc_error_set_str(
         grpc_error_set_str(
-            grpc_error_set_str(grpc_error_set_int(GRPC_ERROR_CREATE("OS Error"),
-                                                  GRPC_ERROR_INT_ERRNO, s),
-                               GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
-            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+            grpc_error_set_str(
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("OS Error"),
+                    GRPC_ERROR_INT_ERRNO, s),
+                GRPC_ERROR_STR_OS_ERROR,
+                grpc_slice_from_static_string(gai_strerror(s))),
+            GRPC_ERROR_STR_SYSCALL,
+            grpc_slice_from_static_string("getaddrinfo")),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 

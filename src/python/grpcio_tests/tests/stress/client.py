@@ -34,7 +34,7 @@ import threading
 
 import grpc
 from six.moves import queue
-from src.proto.grpc.testing import metrics_pb2
+from src.proto.grpc.testing import metrics_pb2_grpc
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
@@ -139,7 +139,7 @@ def run_test(args):
     runners = []
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=25))
-    metrics_pb2.add_MetricsServiceServicer_to_server(
+    metrics_pb2_grpc.add_MetricsServiceServicer_to_server(
         metrics_server.MetricsServer(hist), server)
     server.add_insecure_port('[::]:{}'.format(args.metrics_port))
     server.start()

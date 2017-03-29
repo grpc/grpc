@@ -47,12 +47,12 @@ namespace grpc {
 namespace node {
 
 using Nan::Callback;
+using Nan::MaybeLocal;
 
 using v8::External;
 using v8::Function;
 using v8::FunctionTemplate;
 using v8::Local;
-using v8::MaybeLocal;
 using v8::Object;
 using v8::Value;
 
