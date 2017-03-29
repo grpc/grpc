@@ -31,9 +31,7 @@
  *
  */
 
-#include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/support/object_registry.h"
-#include "src/core/lib/surface/channel.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
