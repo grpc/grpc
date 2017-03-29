@@ -161,8 +161,11 @@ class Benchmark:
       old = self.samples[False][f]
       if not new or not old: continue
       p = stats.ttest_ind(new, old)[1]
-      delta = avg(new) - avg(old)
-      if p < args.p_threshold and abs(delta) > 0.1:
+      new_avg = avg(new)
+      old_avg = avg(old)
+      delta = new_avg - old_avg
+      ratio = changed_ratio(new_avg, old_avg)
+      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.05:
         self.final[f] = delta
     return self.final.keys()
 
@@ -210,4 +213,3 @@ else:
   text = 'No significant performance differences'
 comment_on_pr.comment_on_pr(text)
 print text
-
