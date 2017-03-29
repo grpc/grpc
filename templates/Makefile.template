@@ -1477,7 +1477,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
