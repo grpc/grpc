@@ -187,7 +187,6 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
   struct grpc_chttp2_incoming_byte_stream *next_message; /* unused; should be removed */
-  grpc_error *error;                /* protected by slice_mu */
   bool push_closed;                 /* protected by slice_mu */
 
   grpc_chttp2_transport *transport; /* immutable */
@@ -196,7 +195,6 @@ struct grpc_chttp2_incoming_byte_stream {
 
   gpr_mu slice_mu;
   grpc_slice_buffer slices;  /* unused; should be removed */
-  grpc_closure *on_next;     /* protected by slice_mu */
   uint32_t remaining_bytes;  /* guaranteed one thread access */
 
   struct {
@@ -462,9 +460,6 @@ struct grpc_chttp2_stream {
   grpc_transport_stream_stats *collecting_stats;
   grpc_transport_stream_stats stats;
 
-  /** number of streams that are currently being read */
-  gpr_refcount active_streams;
-
   /** Is this stream closed for writing. */
   bool write_closed;
   /** Is this stream reading half-closed. */
@@ -488,10 +483,13 @@ struct grpc_chttp2_stream {
 
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
 
-  grpc_chttp2_incoming_byte_stream *incoming_frames;    /* protected by buffer_mu */
-  gpr_mu buffer_mu; /* protects unprocessed_incoming_frames_buffer and
-                       data_parser */
-  grpc_slice_buffer unprocessed_incoming_frames_buffer; /* protected by buffer_mu */
+  grpc_slice_buffer frame_storage; /* protected by t combiner */
+  grpc_slice_buffer unprocessed_incoming_frames_buffer; /* guaranteed one thread access */
+  grpc_closure *on_next;  /* protected by t combiner */
+  bool pending_byte_stream;  /* protected by t combiner */
+  grpc_closure reset_byte_stream;
+  grpc_error *byte_stream_error; /* protected by t combiner */
+  bool received_last_frame;  /* proected by t combiner */
 
   gpr_timespec deadline;
 
@@ -504,7 +502,7 @@ struct grpc_chttp2_stream {
    * incoming_window = incoming_window_delta + transport.initial_window_size */
   int64_t incoming_window_delta;
   /** parsing state for data frames */
-  grpc_chttp2_data_parser data_parser;                 /* protected by buffer_mu */
+  grpc_chttp2_data_parser data_parser;                 /* guaranteed one thread access */
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
@@ -782,11 +780,11 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport *t);
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     uint32_t frame_size, uint32_t flags);
-void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
-                                           grpc_chttp2_incoming_byte_stream *bs,
-                                           grpc_slice slice,
-                                           grpc_slice *slice_out);
-void grpc_chttp2_incoming_byte_stream_finished(
+grpc_error *grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
+                                                  grpc_chttp2_incoming_byte_stream *bs,
+                                                  grpc_slice slice,
+                                                  grpc_slice *slice_out);
+grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error);
 void grpc_chttp2_incoming_byte_stream_notify(

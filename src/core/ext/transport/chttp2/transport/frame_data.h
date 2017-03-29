@@ -63,7 +63,6 @@ typedef struct grpc_chttp2_incoming_frame_queue {
 
 typedef struct {
   grpc_chttp2_stream_state state;
-  uint8_t is_last_frame;
   uint8_t frame_type;
   uint32_t frame_size;
   grpc_error *error;
@@ -87,7 +86,8 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
 /* start processing a new data frame */
 grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
                                                 uint8_t flags,
-                                                uint32_t stream_id);
+                                                uint32_t stream_id,
+                                                grpc_chttp2_stream *s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
