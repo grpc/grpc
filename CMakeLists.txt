@@ -1078,9 +1078,9 @@ add_library(grpc
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
-  src/core/lib/tsi/fake_transport_security.c
-  src/core/lib/tsi/ssl_transport_security.c
-  src/core/lib/tsi/transport_security.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/client_channel/channel_connectivity.c
@@ -1422,9 +1422,9 @@ add_library(grpc_cronet
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
-  src/core/lib/tsi/fake_transport_security.c
-  src/core/lib/tsi/ssl_transport_security.c
-  src/core/lib/tsi/transport_security.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
