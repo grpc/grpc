@@ -133,14 +133,21 @@ static void finish_estimate(grpc_tcp *tcp) {
 }
 
 static size_t get_target_read_size(grpc_tcp *tcp) {
-  double pressure = grpc_resource_quota_get_memory_pressure(
-      grpc_resource_user_quota(tcp->resource_user));
+  grpc_resource_quota *rq = grpc_resource_user_quota(tcp->resource_user);
+  double pressure = grpc_resource_quota_get_memory_pressure(rq);
   double target =
       tcp->target_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
-  return (((size_t)GPR_CLAMP(target, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size)) +
-          255) &
-         ~(size_t)255;
+  size_t sz = (((size_t)GPR_CLAMP(target, tcp->min_read_chunk_size,
+                                  tcp->max_read_chunk_size)) +
+               255) &
+              ~(size_t)255;
+  /* don't use more than 1/16th of the overall resource quota for a single read
+   * alloc */
+  size_t rqmax = grpc_resource_quota_peek_size(rq);
+  if (sz > rqmax / 16 && rqmax > 1024) {
+    sz = rqmax / 16;
+  }
+  return sz;
 }
 
 static grpc_error *tcp_annotate_error(grpc_error *src_error, grpc_tcp *tcp) {
