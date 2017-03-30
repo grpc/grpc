@@ -34,12 +34,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
+#include <benchmark/benchmark.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
-
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 extern "C" {
 #include "src/core/lib/surface/completion_queue.h"

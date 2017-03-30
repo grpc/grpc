@@ -1773,6 +1773,11 @@
   endif
   % endif
 
+  % if tgt.get('defaults', None):
+  %  for name, value in defaults.get(tgt.defaults).iteritems():
+  $(${tgt.name.upper()}_OBJS): ${name} += ${value}
+  %  endfor
+  % endif
   % for src in tgt.src:
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
   % for dep in tgt.deps:

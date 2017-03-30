@@ -501,9 +501,9 @@ void grpc_call_destroy(grpc_call *c) {
       if (c == parent->first_child) {
         parent->first_child = NULL;
       }
-      c->sibling_prev->sibling_next = c->sibling_next;
-      c->sibling_next->sibling_prev = c->sibling_prev;
     }
+    c->sibling_prev->sibling_next = c->sibling_next;
+    c->sibling_next->sibling_prev = c->sibling_prev;
     gpr_mu_unlock(&parent->child_list_mu);
     GRPC_CALL_INTERNAL_UNREF(&exec_ctx, parent, "child");
   }

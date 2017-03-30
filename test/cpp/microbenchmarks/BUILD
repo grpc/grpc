@@ -29,62 +29,65 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "test_config.c",
-        "memory_counters.c",
-    ],
-    hdrs = [
-        "test_config.h",
-        "memory_counters.h",
-    ],
-    deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
+cc_test(
+    name = "noop-benchmark",
+    srcs = ["noop-benchmark.cc"],
+    deps = ["//external:benchmark"],
+    linkopts = ["-pthread"],
 )
 
 cc_library(
-    name = "grpc_test_util",
-    srcs = [
-        "debugger_macros.c",
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-        "trickle_endpoint.c",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-        "trickle_endpoint.h",
-        "grpc_profiler.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
-        "slice_splitter.h",
-        "test_tcp_server.h",
-    ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
+    name = "helpers",
+    srcs = ["helpers.cc"],
+    hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
+    deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+    linkopts = ["-pthread"],
 )
 
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
+cc_test(
+    name = "bm_closure",
+    srcs = ["bm_closure.cc"],
+    deps = [":helpers"],
 )
 
-sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
+cc_test(
+    name = "bm_cq",
+    srcs = ["bm_cq.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_error",
+    srcs = ["bm_error.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_streaming_ping_pong",
+    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    deps = [":helpers"],
+
+    )
+cc_test(
+    name = "bm_fullstack_streaming_pump",
+    srcs = ["bm_fullstack_streaming_pump.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_trickle",
+    srcs = ["bm_fullstack_trickle.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_unary_ping_pong",
+    srcs = ["bm_fullstack_unary_ping_pong.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
 )
