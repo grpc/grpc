@@ -912,7 +912,7 @@
     "language": "c", 
     "name": "grpc_b64_test", 
     "src": [
-      "test/core/security/b64_test.c"
+      "test/core/slice/b64_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5738,6 +5738,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -7577,6 +7578,7 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
@@ -7786,7 +7788,8 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/security/util/b64.c", 
+      "src/core/lib/slice/b64.c", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.c", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
@@ -7993,6 +7996,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_secure", 
       "nanopb"
     ], 
     "headers": [
@@ -8152,7 +8156,6 @@
       "src/core/lib/security/transport/security_connector.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.h"
     ], 
     "is_filegroup": true, 
@@ -8200,8 +8203,6 @@
       "src/core/lib/security/transport/server_auth_filter.c", 
       "src/core/lib/security/transport/tsi_error.c", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.c", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.c", 
       "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
@@ -8362,6 +8363,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_client_channel", 
       "grpc_transport_chttp2"
     ], 
     "headers": [
@@ -8541,7 +8543,10 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base", 
+      "nanopb"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

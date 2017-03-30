@@ -77,7 +77,7 @@ for target in js:
       for line in src:
         m = re_inc1.match(line)
         if m:
-          if not target_has_header(target, m.group(1)) and not target['is_filegroup']:
+          if not target_has_header(target, m.group(1)):
             print (
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))

@@ -252,6 +252,7 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
@@ -369,7 +370,7 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
-  - src/core/lib/security/util/b64.c
+  - src/core/lib/slice/b64.c
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
@@ -497,6 +498,7 @@ filegroups:
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
+  - grpc_secure
   - grpc_client_channel
   - nanopb
 - name: grpc_lb_policy_pick_first
@@ -571,7 +573,6 @@ filegroups:
   - src/core/lib/security/transport/security_connector.h
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
-  - src/core/lib/security/util/b64.h
   - src/core/lib/security/util/json_util.h
   src:
   - src/core/lib/http/httpcli_security_connector.c
@@ -596,7 +597,6 @@ filegroups:
   - src/core/lib/security/transport/security_handshaker.c
   - src/core/lib/security/transport/server_auth_filter.c
   - src/core/lib/security/transport/tsi_error.c
-  - src/core/lib/security/util/b64.c
   - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
   secure: true
@@ -701,6 +701,7 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
+  - grpc_client_channel
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -874,6 +875,8 @@ filegroups:
   - src/cpp/util/time_cc.cc
   uses:
   - grpc++_codegen_base
+  - grpc_base
+  - nanopb
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -2036,7 +2039,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/b64_test.c
+  - test/core/slice/b64_test.c
   deps:
   - grpc_test_util
   - grpc
