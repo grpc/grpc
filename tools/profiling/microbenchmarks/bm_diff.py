@@ -174,7 +174,10 @@ class Benchmark:
       old_mdn = median(old)
       delta = new_mdn - old_mdn
       ratio = changed_ratio(new_mdn, old_mdn)
-      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.1:
+      print 'new=%r old=%r new_mdn=%f old_mdn=%f delta=%f ratio=%f p=%f' % (
+      new, old, new_mdn, old_mdn, delta, ratio, p
+      )
+      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.03:
         self.final[f] = delta
     return self.final.keys()
 
@@ -207,7 +210,8 @@ for bm in comparables:
     benchmarks[name].add_sample(row, False)
 
 really_interesting = set()
-for bm in benchmarks.values():
+for name, bm in benchmarks.items():
+  print name
   really_interesting.update(bm.process())
 fields = [f for f in _INTERESTING if f in really_interesting]
 
