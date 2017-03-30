@@ -1173,9 +1173,9 @@ static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
     switch (curr) {
       case CLOSURE_READY:
       case CLOSURE_NOT_READY:
-        /* Release cas to pair with a set_ready performing a load of the
-           shutdown state later */
-        if (gpr_atm_rel_cas(state, curr, new_state)) {
+        /* Need a full barrier here so that the initial load in notify_on
+           doesn't need a barrier */
+        if (gpr_atm_full_cas(state, curr, new_state)) {
           return; /* early out */
         }
         break; /* retry */
