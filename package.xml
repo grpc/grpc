@@ -85,7 +85,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
@@ -166,6 +165,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/exec_ctx_fwd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
@@ -174,7 +174,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
@@ -259,6 +258,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
@@ -327,7 +327,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
