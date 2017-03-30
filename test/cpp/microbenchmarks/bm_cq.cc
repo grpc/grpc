@@ -62,7 +62,8 @@ BENCHMARK(BM_CreateDestroyCpp);
 static void BM_CreateDestroyCpp2(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    grpc_completion_queue* core_cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue* core_cq =
+        grpc_completion_queue_create_for_next(NULL);
     CompletionQueue cq(core_cq);
   }
   track_counters.Finish(state);
