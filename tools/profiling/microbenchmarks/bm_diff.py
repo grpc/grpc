@@ -125,6 +125,7 @@ def collect1(bm, cfg, ver):
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
+  print cmd
   subprocess.check_call(cmd)
 
 build()
