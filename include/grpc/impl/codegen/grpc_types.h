@@ -390,6 +390,8 @@ typedef struct {
   void *reserved;
 } grpc_call_details;
 
+/** NOTE: we serialize these op codes into our fuzzer corpora: please add new
+    values at the end */
 typedef enum {
   /** Send initial metadata: one and only one instance MUST be sent for each
       call, unless the call was cancelled - in which case this can be skipped.
@@ -400,7 +402,6 @@ typedef enum {
       This op completes after all bytes for the message have been accepted by
       outgoing flow control. */
   GRPC_OP_SEND_BYTE_BUFFER_MESSAGE,
-  GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
       skipped.
@@ -422,7 +423,6 @@ typedef enum {
       This op completes after all bytes of the received message have been
       read, or after a half-close has been received on this call. */
   GRPC_OP_RECV_BYTE_BUFFER_MESSAGE,
-  GRPC_OP_RECV_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. In that case
@@ -434,7 +434,9 @@ typedef enum {
       This op completes after the close has been received by the server.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. */
-  GRPC_OP_RECV_CLOSE_ON_SERVER
+  GRPC_OP_RECV_CLOSE_ON_SERVER,
+  GRPC_OP_SEND_MESSAGE,
+  GRPC_OP_RECV_MESSAGE
 } grpc_op_type;
 
 struct grpc_byte_buffer;
