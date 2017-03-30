@@ -179,7 +179,7 @@ def parse_name(name):
 
 def expand_json(js, js2 = None):
   for bm in js['benchmarks']:
-    if bm['name'].endswith('_stddev') or bm['name'].endswith('mean'): continue
+    if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'): continue
     context = js['context']
     if 'label' in bm:
       labels_list = [s.split(':') for s in bm['label'].strip().split(' ') if len(s) and s[0] != '#']

@@ -60,14 +60,23 @@ def median(ary):
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
+nanos = {
+  'abs_diff': 10,
+  'pct_diff': 10,
+}
+counter = {
+  'abs_diff': 1,
+  'pct_diff': 1,
+}
+
 _INTERESTING = [
-  'cpu_time',
-  'real_time',
-  'locks_per_iteration',
-  'allocs_per_iteration',
-  'writes_per_iteration',
-  'atm_cas_per_iteration',
-  'atm_add_per_iteration',
+  'cpu_time': nanos,
+  'real_time': nanos,
+  'locks_per_iteration': counter,
+  'allocs_per_iteration': counter,
+  'writes_per_iteration': counter,
+  'atm_cas_per_iteration': counter,
+  'atm_add_per_iteration': counter,
 ]
 
 _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
@@ -85,9 +94,9 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
-                  choices=sorted(_INTERESTING),
+                  choices=sorted(_INTERESTING.keys()),
                   nargs='+',
-                  default=sorted(_INTERESTING),
+                  default=sorted(_INTERESTING.keys()),
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
@@ -161,12 +170,12 @@ class Benchmark:
     self.final = {}
 
   def add_sample(self, data, new):
-    for f in _INTERESTING:
+    for f in args.track:
       if f in data:
         self.samples[new][f].append(float(data[f]))
 
   def process(self):
-    for f in _INTERESTING:
+    for f in args.track:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
@@ -178,7 +187,7 @@ class Benchmark:
       print 'new=%r old=%r new_mdn=%f old_mdn=%f delta=%f ratio=%f p=%f' % (
       new, old, new_mdn, old_mdn, delta, ratio, p
       )
-      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.03:
+      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']:
         self.final[f] = delta
     return self.final.keys()
 
@@ -202,10 +211,12 @@ for bm in comparables:
     js_old_opt = json.loads(f.read())
 
   for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+    print row
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, True)
   for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+    print row
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, False)
@@ -214,7 +225,7 @@ really_interesting = set()
 for name, bm in benchmarks.items():
   print name
   really_interesting.update(bm.process())
-fields = [f for f in _INTERESTING if f in really_interesting]
+fields = [f for f in args.track if f in args.track]
 
 headers = ['Benchmark'] + fields
 rows = []
