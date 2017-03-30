@@ -218,6 +218,12 @@ struct grpc_call {
 
   grpc_closure release_call;
 
+  /* backwards compatibility fields for receiving byte buffers */
+  struct {
+    grpc_byte_buffer **byte_buffer;
+    uint32_t length;
+  } recv_byte_buffer;
+
   union {
     struct {
       grpc_status_code *status;
@@ -1186,7 +1192,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
     size_t remaining = call->receiving_stream->length -
                        (*call->receiving_buffer)->data.raw.slice_buffer.length;
     if (remaining == 0) {
-      call->receiving_message = 0;
+      call->recv_state = RECV_IDLE;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
       finish_batch_step(exec_ctx, bctl);
@@ -1229,7 +1235,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     *call->receiving_buffer = NULL;
-    call->receiving_message = 0;
+    call->recv_state = RECV_IDLE;
     finish_batch_step(exec_ctx, bctl);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
@@ -1494,13 +1500,18 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
+        if (op->data.send_byte_buffer_message.send_message->data.raw
+                .slice_buffer.length > UINT32_MAX) {
+          error = GRPC_CALL_ERROR_INVALID_MESSAGE;
+          goto done_with_error;
+        }
         /* Translate from old-style byte-buffer message to new style incremental
            message */
         translated_op.op = GRPC_OP_SEND_MESSAGE;
         translated_op.flags = op->flags;
         translated_op.reserved = NULL;
         translated_op.data.send_message.length =
-            op->data.send_byte_buffer_message.send_message->data.raw
+            (uint32_t)op->data.send_byte_buffer_message.send_message->data.raw
                 .slice_buffer.length;
         translated_op.data.send_message.slices =
             &op->data.send_byte_buffer_message.send_message->data.raw
@@ -1637,17 +1648,36 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         num_completion_callbacks_needed++;
         break;
       case GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
+        if (op->flags != 0) {
+          /* Flag validation: currently allow no flags */
+          error = GRPC_CALL_ERROR_INVALID_FLAGS;
+          goto done_with_error;
+        }
+        /* Translate from old-style byte-buffer message to new style incremental
+           message */
+        call->recv_byte_buffer.byte_buffer =
+            op->data.recv_byte_buffer_message.recv_message;
+        *call->recv_byte_buffer.byte_buffer =
+            grpc_raw_byte_buffer_create(NULL, 0);
+        translated_op.op = GRPC_OP_RECV_MESSAGE;
+        translated_op.flags = op->flags;
+        translated_op.reserved = NULL;
+        translated_op.data.recv_message.length = &call->recv_byte_buffer.length;
+        translated_op.data.recv_message.slices =
+            &(*call->recv_byte_buffer.byte_buffer)->data.raw.slice_buffer;
+        op = &translated_op;
+      /* fall through */
+      case GRPC_OP_RECV_MESSAGE:
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        case GRPC_OP_RECV_MESSAGE:
         if (call->recv_state != RECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->receiving_message = true;
+        call->recv_state = RECV_REQUESTED;
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_byte_buffer_message.recv_message;
         stream_op_payload->recv_message.recv_message = &call->receiving_stream;
@@ -1746,7 +1776,7 @@ done_with_error:
     call->received_initial_metadata = 0;
   }
   if (stream_op->recv_message) {
-    call->receiving_message = 0;
+    call->recv_state = RECV_IDLE;
   }
   if (stream_op->recv_trailing_metadata) {
     call->requested_final_op = 0;
