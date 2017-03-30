@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,59 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#import "GRXImmediateSingleWriter.h"
 
-#include <grpc/slice.h>
-#include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+@implementation GRXImmediateSingleWriter {
+  id _value;
+  id<GRXWriteable> _writeable;
+}
 
-typedef struct {
-  uint8_t byte;
-  uint8_t is_ack;
-  uint64_t opaque_8bytes;
-} grpc_chttp2_ping_parser;
+@synthesize state = _state;
 
-grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes);
+- (instancetype)initWithValue:(id)value {
+  if (self = [super init]) {
+    _value = value;
+    _state = GRXWriterStateNotStarted;
+  }
+  return self;
+}
 
-grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
-                                                uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s,
-                                          grpc_slice slice, int is_last);
++ (GRXWriter *)writerWithValue:(id)value {
+  return [[self alloc] initWithValue:value];
+}
 
-/* Test-only function for disabling ping ack */
-void grpc_set_disable_ping_ack(bool disable_ping_ack);
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  _state = GRXWriterStateStarted;
+  _writeable = writeable;
+  [writeable writeValue:_value];
+  [self finish];
+}
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H */
+- (void)finish {
+  _state = GRXWriterStateFinished;
+  _value = nil;
+  id<GRXWriteable> writeable = _writeable;
+  _writeable = nil;
+  [writeable writesFinishedWithError:nil];
+}
+
+// Overwrite the setter to disallow manual state transition. The getter
+// of _state is synthesized.
+- (void)setState:(GRXWriterState)newState {
+  // Manual state transition is not allowed
+  return;
+}
+
+// Overrides [requestWriter(Transformations):map:] for Protocol Buffers
+// encoding.
+// We need the return value of this map to be a GRXImmediateSingleWriter but
+// the original \a map function returns a new Writer of another type. So we
+// need to override this function here.
+- (GRXWriter *)map:(id (^)(id))map {
+  // Since _value is available when creating the object, we can simply
+  // apply the map and store the output.
+  _value = map(_value);
+  return self;
+}
+
+@end

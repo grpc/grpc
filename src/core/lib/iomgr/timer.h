@@ -101,6 +101,9 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 void grpc_timer_list_init(gpr_timespec now);
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
 
+/* Consume a kick issued by grpc_kick_poller */
+void grpc_timer_consume_kick(void);
+
 /* the following must be implemented by each iomgr implementation */
 
 void grpc_kick_poller(void);

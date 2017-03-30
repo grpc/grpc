@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,20 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#import <Foundation/Foundation.h>
 
-#include <grpc/slice.h>
-#include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#import "GRXImmediateWriter.h"
 
-typedef struct {
-  uint8_t byte;
-  uint8_t is_ack;
-  uint64_t opaque_8bytes;
-} grpc_chttp2_ping_parser;
+/**
+ * Utility to construct GRXWriter instances from values that are immediately available when
+ * required.
+ */
+@interface GRXImmediateSingleWriter : GRXImmediateWriter
 
-grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes);
+/**
+ * Returns a writer that sends the passed value to its writeable and then finishes (releasing the
+ * value).
+ */
++ (GRXWriter *)writerWithValue:(id)value;
 
-grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
-                                                uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s,
-                                          grpc_slice slice, int is_last);
-
-/* Test-only function for disabling ping ack */
-void grpc_set_disable_ping_ack(bool disable_ping_ack);
-
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H */
+@end
