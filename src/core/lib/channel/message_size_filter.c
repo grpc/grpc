@@ -132,7 +132,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_free(message_string);
   }
   // Invoke the next callback.
-  grpc_closure_sched(exec_ctx, calld->next_recv_message_ready, error);
+  grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
@@ -157,7 +157,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     return;
   }
   // Inject callback for receiving a message.
-  if (op->payload->recv_message.recv_message_ready != NULL) {
+  if (op->recv_message) {
     calld->next_recv_message_ready =
         op->payload->recv_message.recv_message_ready;
     calld->recv_message = op->payload->recv_message.recv_message;
