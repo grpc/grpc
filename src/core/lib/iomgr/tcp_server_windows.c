@@ -122,8 +122,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
-                                 " must be a pointer to a buffer pool");
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
       }
     }
   }
@@ -248,9 +248,10 @@ failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *tgtaddr = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(tgtaddr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);
@@ -533,7 +534,7 @@ done:
   gpr_free(allocated_addr);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING(
+    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;

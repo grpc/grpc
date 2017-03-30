@@ -92,9 +92,10 @@ static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
   if (status != 0) {
     grpc_error *error;
     *addresses = NULL;
-    error = GRPC_ERROR_CREATE("getaddrinfo failed");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("getaddrinfo failed");
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
     return error;
   }
   (*addresses) = gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -153,7 +154,7 @@ static grpc_error *try_split_host_port(const char *name,
   if (*host == NULL) {
     char *msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }
@@ -162,7 +163,7 @@ static grpc_error *try_split_host_port(const char *name,
     if (default_port == NULL) {
       char *msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);
-      error = GRPC_ERROR_CREATE(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return error;
     }
@@ -262,8 +263,9 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
 
   if (s != 0) {
     *addrs = NULL;
-    err = GRPC_ERROR_CREATE("getaddrinfo failed");
-    err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR, uv_strerror(s));
+    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("getaddrinfo failed");
+    err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR,
+                             grpc_slice_from_static_string(uv_strerror(s)));
     grpc_closure_sched(exec_ctx, on_done, err);
     gpr_free(r);
     gpr_free(req);

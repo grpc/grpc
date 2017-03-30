@@ -84,8 +84,9 @@ inline grpc_metadata* FillMetadataArray(
 /// Per-message write options.
 class WriteOptions {
  public:
-  WriteOptions() : flags_(0) {}
-  WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
+  WriteOptions() : flags_(0), last_message_(false) {}
+  WriteOptions(const WriteOptions& other)
+      : flags_(other.flags_), last_message_(other.last_message_) {}
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -141,6 +142,43 @@ class WriteOptions {
   /// \sa GRPC_WRITE_BUFFER_HINT
   inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
 
+  /// corked bit: aliases set_buffer_hint currently, with the intent that
+  /// set_buffer_hint will be removed in the future
+  inline WriteOptions& set_corked() {
+    SetBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline WriteOptions& clear_corked() {
+    ClearBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline bool is_corked() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
+
+  /// last-message bit: indicates this is the last message in a stream
+  /// client-side:  makes Write the equivalent of performing Write, WritesDone
+  /// in a single step
+  /// server-side:  hold the Write until the service handler returns (sync api)
+  /// or until Finish is called (async api)
+  inline WriteOptions& set_last_message() {
+    last_message_ = true;
+    return *this;
+  }
+
+  /// Clears flag indicating that this is the last message in a stream,
+  /// disabling coalescing.
+  inline WriteOptions& clear_last_messsage() {
+    last_message_ = false;
+    return *this;
+  }
+
+  /// Get value for the flag indicating that this is the last message, and
+  /// should be coalesced with trailing metadata.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  bool is_last_message() const { return last_message_; }
+
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
     return *this;
@@ -154,6 +192,7 @@ class WriteOptions {
   bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
 
   uint32_t flags_;
+  bool last_message_;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be
@@ -224,7 +263,7 @@ class CallOpSendMessage {
   /// after use.
   template <class M>
   Status SendMessage(const M& message,
-                     const WriteOptions& options) GRPC_MUST_USE_RESULT;
+                     WriteOptions options) GRPC_MUST_USE_RESULT;
 
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
@@ -252,8 +291,7 @@ class CallOpSendMessage {
 };
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message,
-                                      const WriteOptions& options) {
+Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
 }

@@ -121,8 +121,8 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                  "Received message larger than max (%u vs. %d)",
                  (*calld->recv_message)->length, calld->max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(message_string), GRPC_ERROR_INT_GRPC_STATUS,
-        GRPC_STATUS_INVALID_ARGUMENT);
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
     if (error == GRPC_ERROR_NONE) {
       error = new_error;
     } else {
@@ -132,7 +132,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_free(message_string);
   }
   // Invoke the next callback.
-  grpc_closure_sched(exec_ctx, calld->next_recv_message_ready, error);
+  grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
@@ -149,14 +149,15 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                  op->payload->send_message.send_message->length,
                  calld->max_send_size);
     grpc_transport_stream_op_finish_with_failure(
-        exec_ctx, op, grpc_error_set_int(GRPC_ERROR_CREATE(message_string),
-                                         GRPC_ERROR_INT_GRPC_STATUS,
-                                         GRPC_STATUS_INVALID_ARGUMENT));
+        exec_ctx, op,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_INVALID_ARGUMENT));
     gpr_free(message_string);
     return;
   }
   // Inject callback for receiving a message.
-  if (op->payload->recv_message.recv_message_ready != NULL) {
+  if (op->recv_message) {
     calld->next_recv_message_ready =
         op->payload->recv_message.recv_message_ready;
     calld->recv_message = op->payload->recv_message.recv_message;

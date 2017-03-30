@@ -81,6 +81,16 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   }
 }
 
+ChannelArguments::~ChannelArguments() {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    if (it->type == GRPC_ARG_POINTER) {
+      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
+    }
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 void ChannelArguments::Swap(ChannelArguments& other) {
   args_.swap(other.args_);
   strings_.swap(other.strings_);
@@ -101,8 +111,10 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == mutator_arg.type &&
         grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+      GPR_ASSERT(!replaced);
       it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
       it->value.pointer = mutator_arg.value.pointer;
+      replaced = true;
     }
   }
   grpc_exec_ctx_finish(&exec_ctx);
@@ -121,14 +133,19 @@ void ChannelArguments::SetUserAgentPrefix(
     return;
   }
   bool replaced = false;
+  auto strings_it = strings_.begin();
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     const grpc_arg& arg = *it;
-    if (arg.type == GRPC_ARG_STRING &&
-        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
-      strings_.push_back(user_agent_prefix + " " + arg.value.string);
-      it->value.string = const_cast<char*>(strings_.back().c_str());
-      replaced = true;
-      break;
+    ++strings_it;
+    if (arg.type == GRPC_ARG_STRING) {
+      if (grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+        GPR_ASSERT(arg.value.string == strings_it->c_str());
+        *(strings_it) = user_agent_prefix + " " + arg.value.string;
+        it->value.string = const_cast<char*>(strings_it->c_str());
+        replaced = true;
+        break;
+      }
+      ++strings_it;
     }
   }
   if (!replaced) {
@@ -185,7 +202,7 @@ void ChannelArguments::SetPointerWithVtable(
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
-  arg.value.pointer.p = value;
+  arg.value.pointer.p = vtable->copy(value);
   arg.value.pointer.vtable = vtable;
   args_.push_back(arg);
 }

@@ -32,6 +32,7 @@
  */
 
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "InteropTests.h"
 

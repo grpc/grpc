@@ -41,11 +41,9 @@
   {
     'variables': {
       'runtime%': 'node',
-      # UV integration in C core is disabled by default while bugs are ironed
-      # out. It can be re-enabled for one build by setting the npm config
-      # variable grpc_uv to true, and it can be re-enabled permanently by
-      # setting it to true here.
-      'grpc_uv%': 'false',
+      # UV integration in C core is enabled by default. It can be disabled
+      # by setting this argument to anything else.
+      'grpc_uv%': 'true',
       # Some Node installations use the system installation of OpenSSL, and on
       # some systems, the system OpenSSL still does not have ALPN support. This
       # will let users recompile gRPC to work without ALPN.
@@ -62,6 +60,9 @@
       'conditions': [
         ['grpc_uv=="true"', {
           'defines': [
+            'GRPC_ARES=0',
+            # Disabling this while bugs are ironed out. Uncomment this to
+            # re-enable libuv integration in C core.
             'GRPC_UV'
           ]
         }],
@@ -107,7 +108,8 @@
         }],
         ['OS == "win"', {
           "include_dirs": [
-            "third_party/zlib"
+            "third_party/zlib",
+            "third_party/cares/cares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -130,7 +132,8 @@
             'config': '<!(echo $CONFIG)',
           },
           'include_dirs': [
-            '<(node_root_dir)/deps/zlib'
+            '<(node_root_dir)/deps/zlib',
+            '<(node_root_dir)/deps/cares/include',
           ],
           'conditions': [
             ['config=="gcov"', {
@@ -236,6 +239,13 @@
       }]
     ],
     'targets': [
+  <%
+      for lib in libs:
+        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
+          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+      for module in node_modules:
+        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):

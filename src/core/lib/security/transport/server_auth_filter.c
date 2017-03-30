@@ -145,9 +145,10 @@ static void on_md_processing_done(
       calld->transport_op->send_message = false;
     }
     calld->transport_op->send_trailing_metadata = NULL;
-    grpc_closure_sched(&exec_ctx, calld->on_done_recv,
-                       grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                                          GRPC_ERROR_INT_GRPC_STATUS, status));
+    grpc_closure_sched(
+        &exec_ctx, calld->on_done_recv,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
+                           GRPC_ERROR_INT_GRPC_STATUS, status));
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -159,7 +160,7 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (error == GRPC_ERROR_NONE) {
-    if (chand->creds->processor.process != NULL) {
+    if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
@@ -246,7 +247,6 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(auth_context != NULL);
-  GPR_ASSERT(creds != NULL);
 
   /* initialize members */
   chand->auth_context =
