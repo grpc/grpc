@@ -48,7 +48,7 @@
 #include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/ssl_types.h"
+#include "src/core/tsi/ssl_types.h"
 
 /* --- Utils. --- */
 
