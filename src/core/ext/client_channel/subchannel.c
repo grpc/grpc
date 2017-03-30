@@ -46,6 +46,7 @@
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -142,6 +143,8 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
+  /* tracer object */
+  grpc_channel_tracer *tracer;
 };
 
 struct grpc_subchannel_call {
@@ -395,6 +398,15 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(exec_ctx, key, c);
+}
+
+char *grpc_subchannel_get_trace(grpc_subchannel *subchannel, bool recursive) {
+  return subchannel->tracer != NULL
+             ? grpc_channel_tracer_render_trace(subchannel->tracer, recursive)
+             : NULL;
+}
+intptr_t grpc_subchannel_get_uuid(grpc_subchannel *subchannel) {
+  return subchannel->uuid;
 }
 
 static void continue_connect_locked(grpc_exec_ctx *exec_ctx,

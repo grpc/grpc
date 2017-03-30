@@ -40,7 +40,7 @@
 #include "src/core/lib/json/json.h"
 
 static grpc_json* get_json_child(grpc_json* parent, const char* key) {
-  GPR_ASSERT(parent && parent->child);
+  GPR_ASSERT(parent != NULL);
   for (grpc_json* child = parent->child; child != NULL; child = child->next) {
     if (child->key != NULL && strcmp(child->key, key) == 0) return child;
   }

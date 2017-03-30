@@ -101,7 +101,10 @@ grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
   gpr_mu_lock(&g_mu);
   object_tracker* tracker = gpr_avl_get(g_avl, (void*)uuid);
   gpr_mu_unlock(&g_mu);
-  GPR_ASSERT(tracker);
+  if (tracker == NULL) {
+    *object = NULL;
+    return GRPC_OBJECT_REGISTRY_UNKNOWN;
+  }
   *object = tracker->object;
   return tracker->type;
 }

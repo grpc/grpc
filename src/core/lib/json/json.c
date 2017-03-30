@@ -66,30 +66,29 @@ void grpc_json_destroy(grpc_json* json) {
   gpr_free(json);
 }
 
-grpc_json* grpc_json_link_child(grpc_json* child, grpc_json* brother,
-                                grpc_json* parent) {
+grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child, grpc_json* sibling) {
   // first child case.
   if (parent->child == NULL) {
-    GPR_ASSERT(brother == NULL);
+    GPR_ASSERT(sibling == NULL);
     parent->child = child;
     return child;
   }
-  if (brother == NULL) {
-    brother = parent->child;
+  if (sibling == NULL) {
+    sibling = parent->child;
   }
-  // always find the right most brother.
-  while (brother->next != NULL) {
-    brother = brother->next;
+  // always find the right most sibling.
+  while (sibling->next != NULL) {
+    sibling = sibling->next;
   }
-  brother->next = child;
+  sibling->next = child;
   return child;
 }
 
-grpc_json* grpc_json_create_child(grpc_json* brother, grpc_json* parent,
+grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
                                   const char* key, const char* value,
                                   grpc_json_type type, bool owns_value) {
   grpc_json* child = grpc_json_create(type);
-  grpc_json_link_child(child, brother, parent);
+  grpc_json_link_child(parent, child, sibling);
   child->owns_value = owns_value;
   child->parent = parent;
   child->value = value;

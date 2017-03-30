@@ -310,8 +310,6 @@ grpc_json *grpc_json_parse_string_with_len(char *input, size_t size) {
   json = state.top;
 
   if ((status != GRPC_JSON_DONE) && json) {
-    gpr_log(GPR_DEBUG, "%d, %d", GRPC_JSON_DONE, status);
-
     grpc_json_destroy(json);
     json = NULL;
   }

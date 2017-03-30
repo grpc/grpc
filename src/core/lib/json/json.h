@@ -90,14 +90,15 @@ grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
 
 /* Links the child json object into the parent's json tree. If the parent
- * already has children, then pass in the most recently added child as the
- * brother parameter.
+ * already has children, then passing in the most recently added child as the
+ * sibling parameter is an optimization. For if sibling is NULL, this function 
+ * will manually traverse the tree in order to find the right most sibling.
  */
-grpc_json* grpc_json_link_child(grpc_json* child, grpc_json* brother,
-                                grpc_json* parent);
+grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child, grpc_json* sibling);
 
-/* Creates and links a new child json object. */
-grpc_json* grpc_json_create_child(grpc_json* brother, grpc_json* parent,
+/* Creates a child json object into the parent's json tree then links it in
+ * as described above. */
+grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
                                   const char* key, const char* value,
                                   grpc_json_type type, bool owns_value);
 
