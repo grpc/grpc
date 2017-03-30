@@ -564,7 +564,6 @@ grpc_cc_library(
         "src/core/lib/channel/http_client_filter.h",
         "src/core/lib/channel/http_server_filter.h",
         "src/core/lib/channel/message_size_filter.h",
-        "src/core/lib/slice/b64.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/debug/trace.h",
