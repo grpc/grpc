@@ -47,6 +47,18 @@
 #define MAX_CONNECTION_AGE_GRACE_MS 1000
 #define MAX_CONNECTION_IDLE_MS 9999
 
+#define CALL_DEADLINE_S 10
+/* The amount of time we wait for the connection to time out, but after it the
+   connection should not use up its grace period. It should be a number between
+   MAX_CONNECTION_AGE_MS and MAX_CONNECTION_AGE_MS +
+   MAX_CONNECTION_AGE_GRACE_MS */
+#define CQ_MAX_CONNECTION_AGE_WAIT_TIME_S 1
+/* The amount of time we wait after the connection reaches its max age, it
+   should be shorter than CALL_DEADLINE_S - CQ_MAX_CONNECTION_AGE_WAIT_TIME_S */
+#define CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S 2
+/* The grace period for the test to observe the channel shutdown process */
+#define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 300
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -98,7 +110,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -153,16 +165,26 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
+  gpr_timespec channel_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec expect_shutdown_time = gpr_time_add(
+      channel_start_time,
+      gpr_time_from_millis(MAX_CONNECTION_AGE_MS + MAX_CONNECTION_AGE_GRACE_MS +
+                               IMMEDIATE_SHUTDOWN_GRACE_TIME_MS,
+                           GPR_TIMESPAN));
+
   /* Wait for the channel to reach its max age */
-  cq_verify_empty_timeout(cqv, 1);
+  cq_verify_empty_timeout(cqv, CQ_MAX_CONNECTION_AGE_WAIT_TIME_S);
 
   /* After the channel reaches its max age, we still do nothing here. And wait
      for it to use up its max age grace period. */
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
+
+  gpr_timespec channel_shutdown_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  GPR_ASSERT(gpr_time_cmp(channel_shutdown_time, expect_shutdown_time) < 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -186,11 +208,11 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   cq_verify(cqv);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), true);
   cq_verify(cqv);
 
   grpc_call_destroy(s);
@@ -235,7 +257,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
 
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -290,15 +312,15 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
   /* Wait for the channel to reach its max age */
-  cq_verify_empty_timeout(cqv, 1);
+  cq_verify_empty_timeout(cqv, CQ_MAX_CONNECTION_AGE_WAIT_TIME_S);
 
   /* The connection is shutting down gracefully. In-progress rpc should not be
      closed, hence the completion queue should see nothing here. */
-  cq_verify_empty_timeout(cqv, 2);
+  cq_verify_empty_timeout(cqv, CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -323,12 +345,12 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), true);
   cq_verify(cqv);
 
   grpc_call_destroy(s);
