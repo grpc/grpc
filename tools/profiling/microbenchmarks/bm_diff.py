@@ -49,6 +49,14 @@ def changed_ratio(n, o):
   if o == 0: return 100
   return (float(n)-float(o))/float(o)
 
+def median(ary):
+  ary = sorted(ary)
+  n = len(ary)
+  if n%2 == 0:
+    return (ary[n/2] + ary[n/2+1]) / 2.0
+  else:
+    return ary[n/2]
+
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
@@ -90,8 +98,8 @@ args = argp.parse_args()
 assert args.diff_base
 
 def avg(lst):
-  sum = 0
-  n = 0
+  sum = 0.0
+  n = 0.0
   for el in lst:
     sum += el
     n += 1
@@ -162,11 +170,11 @@ class Benchmark:
       old = self.samples[False][f]
       if not new or not old: continue
       p = stats.ttest_ind(new, old)[1]
-      new_avg = avg(new)
-      old_avg = avg(old)
-      delta = new_avg - old_avg
-      ratio = changed_ratio(new_avg, old_avg)
-      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.05:
+      new_mdn = median(new)
+      old_mdn = median(old)
+      delta = new_mdn - old_mdn
+      ratio = changed_ratio(new_mdn, old_mdn)
+      if p < args.p_threshold and abs(delta) > 0.1 and abs(ratio) > 0.1:
         self.final[f] = delta
     return self.final.keys()
 
