@@ -122,11 +122,11 @@ def make_cmd(cfg):
 def build():
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
-    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('lto'))
     subprocess.check_call(make_cmd('counters'))
   except subprocess.CalledProcessError, e:
     subprocess.check_call(['make', 'clean'])
-    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('lto'))
     subprocess.check_call(make_cmd('counters'))
 
 def collect1(bm, cfg, ver):
@@ -140,7 +140,7 @@ def collect1(bm, cfg, ver):
 
 build()
 for bm in args.benchmarks:
-  collect1(bm, 'opt', 'new')
+  collect1(bm, 'lto', 'new')
   collect1(bm, 'counters', 'new')
 
 where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
@@ -151,7 +151,7 @@ try:
   comparables = []
   for bm in args.benchmarks:
     try:
-      collect1(bm, 'opt', 'old')
+      collect1(bm, 'lto', 'old')
       collect1(bm, 'counters', 'old')
       comparables.append(bm)
     except subprocess.CalledProcessError, e:
@@ -201,18 +201,18 @@ benchmarks = collections.defaultdict(Benchmark)
 for bm in comparables:
   with open('%s.counters.new.json' % bm) as f:
     js_new_ctr = json.loads(f.read())
-  with open('%s.opt.new.json' % bm) as f:
-    js_new_opt = json.loads(f.read())
+  with open('%s.lto.new.json' % bm) as f:
+    js_new_lto = json.loads(f.read())
   with open('%s.counters.old.json' % bm) as f:
     js_old_ctr = json.loads(f.read())
-  with open('%s.opt.old.json' % bm) as f:
-    js_old_opt = json.loads(f.read())
+  with open('%s.lto.old.json' % bm) as f:
+    js_old_lto = json.loads(f.read())
 
-  for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+  for row in bm_json.expand_json(js_new_ctr, js_new_lto):
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, True)
-  for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+  for row in bm_json.expand_json(js_old_ctr, js_old_lto):
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, False)
