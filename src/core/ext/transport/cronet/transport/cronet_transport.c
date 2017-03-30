@@ -1037,18 +1037,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
           GRPC_ERROR_NONE);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-<<<<<<< HEAD
       grpc_closure_sched(
           exec_ctx,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
           GRPC_ERROR_NONE);
-=======
-      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
-                         GRPC_ERROR_NONE);
     } else if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
-      grpc_closure_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
-                         GRPC_ERROR_NONE);
->>>>>>> 739cecb0bc1f1ba3b2e0b390795cbaf429ec81c2
+      grpc_closure_sched(
+          exec_ctx,
+          stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+          GRPC_ERROR_NONE);
     } else {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &oas->s->state.rs.initial_metadata,
