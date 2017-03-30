@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,7 +104,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void check_channel_trace(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f, size_t max_nodes) {
-  char *json_str = grpc_channel_get_trace(f.client);
+  char *json_str = grpc_channel_get_trace(f.client, true);
   GPR_ASSERT(json_str);
   gpr_log(GPR_DEBUG, "\n%s", json_str);
   grpc_json *json = grpc_json_parse_string(json_str);
@@ -138,14 +138,13 @@ static void test_create_channel(grpc_end2end_test_config config,
 static void test_create_channel_no_tracing(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
   f = begin_test(config, "test_channel_tracing_no_tracing", NULL, NULL);
-  char *json_str = grpc_channel_get_trace(f.client);
+  char *json_str = grpc_channel_get_trace(f.client, true);
   GPR_ASSERT(!json_str);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void channel_tracing(grpc_end2end_test_config config) {
-  test_create_channel(config, 0);
   test_create_channel(config, 1);
   test_create_channel_no_tracing(config);
 }

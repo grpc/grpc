@@ -178,11 +178,13 @@ grpc_channel *grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
+      GPR_ASSERT(channel->tracer == NULL);
       // max_nodes defaults to 10, clamped between 0 and 100.
-      grpc_integer_options options = {10, 0, 100};
-      channel->tracer = GRPC_CHANNEL_TRACER_CREATE(
-          (size_t)grpc_channel_arg_get_integer(&args->args[i], options),
-          target);
+      const grpc_integer_options options = {10, 0, 100};
+      size_t max_nodes = (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
+      if (max_nodes > 0) {
+        channel->tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes ,channel->uuid);
+      }
     }
   }
 
@@ -194,10 +196,13 @@ grpc_channel *grpc_channel_create_with_builder(
   return channel;
 }
 
-char *grpc_channel_get_trace(grpc_channel *channel) {
-  return channel->tracer ? grpc_channel_tracer_get_trace(channel->tracer)
-                         : NULL;
+char *grpc_channel_get_trace(grpc_channel *channel, bool recursive) {
+  return channel->tracer
+             ? grpc_channel_tracer_render_trace(channel->tracer, recursive)
+             : NULL;
 }
+
+intptr_t grpc_channel_get_uuid(grpc_channel *channel) { return channel->uuid; }
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *input_args,
