@@ -177,6 +177,8 @@ def parse_name(name):
   out.update(dict(zip(_BM_SPECS[name]['tpl'], tpl_args)))
   return out
 
+used_poison = {}
+
 def expand_json(js, js2 = None):
   for bm in js['benchmarks']:
     if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'): continue
@@ -198,8 +200,9 @@ def expand_json(js, js2 = None):
     row.update(labels)
     if js2:
       for bm2 in js2['benchmarks']:
-        if bm['name'] == bm2['name']:
+        if bm['name'] == bm2['name'] and used_poison not in bm2:
           row['cpu_time'] = bm2['cpu_time']
           row['real_time'] = bm2['real_time']
           row['iterations'] = bm2['iterations']
+          bm2[used_poison] = True
     yield row
