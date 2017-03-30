@@ -69,7 +69,7 @@ counter = {
   'pct_diff': 1,
 }
 
-_INTERESTING = [
+_INTERESTING = {
   'cpu_time': nanos,
   'real_time': nanos,
   'locks_per_iteration': counter,
@@ -77,7 +77,8 @@ _INTERESTING = [
   'writes_per_iteration': counter,
   'atm_cas_per_iteration': counter,
   'atm_add_per_iteration': counter,
-]
+}
+
 
 _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
                               'bm_fullstack_streaming_ping_pong',
