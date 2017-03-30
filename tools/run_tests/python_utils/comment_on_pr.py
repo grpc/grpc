@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +26,24 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins to comment $1 on pull requests
-# when triggered by a build
 
-set -e
+import os
+import json
+import urllib2
 
-if [ -z "$1" ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
-  echo "Insufficient arguments or environment variables provided."
-  exit 1
-fi
-
-# Format the comment message to JSON
-COMMENT_MESSAGE="{\"body\":\"$1\"}"
-
-curl -k -H "Authorization: token $JENKINS_OAUTH_TOKEN" -H "Content-Type: application/json" \
-  -d "$COMMENT_MESSAGE" https://api.github.com/repos/grpc/grpc/issues/$ghprbPullId/comments
+def comment_on_pr(text):
+  if 'JENKINS_OAUTH_TOKEN' not in os.environ:
+    print 'Missing JENKINS_OAUTH_TOKEN env var: not commenting'
+    return
+  if 'ghprbPullId' not in os.environ:
+    print 'Missing ghprbPullId env var: not commenting'
+    return
+  req = urllib2.Request(
+      url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
+          os.environ['ghprbPullId'],
+      data = json.dumps({'body': text}),
+      headers = {
+        'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
+        'Content-Type': 'application/json',
+      })
+  print urllib2.urlopen(req).read()
