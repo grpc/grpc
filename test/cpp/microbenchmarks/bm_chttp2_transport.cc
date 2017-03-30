@@ -326,12 +326,14 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
     s.Init(state);
     memset(&op, 0, sizeof(op));
     op.on_complete = done.get();
-    op.send_initial_metadata = &b;
+    op.send_initial_metadata = true;
+    op.payload->send_initial_metadata.send_initial_metadata = &b;
     s.Op(&op);
   });
   done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     memset(&op, 0, sizeof(op));
-    op.cancel_error = GRPC_ERROR_CANCELLED;
+    op.cancel_stream = true;
+    op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
     s.Op(&op);
     s.DestroyThen(start.get());
   });
@@ -399,18 +401,21 @@ static void BM_TransportStreamSend(benchmark::State &state) {
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         memset(&op, 0, sizeof(op));
         op.on_complete = c.get();
-        op.send_message = &send_stream.base;
+        op.send_message = true;
+        op.payload->send_message.send_message = &send_stream.base;
         s.Op(&op);
       });
 
   memset(&op, 0, sizeof(op));
-  op.send_initial_metadata = &b;
+  op.send_initial_metadata = true;
+  op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.on_complete = c.get();
   s.Op(&op);
 
   f.FlushExecCtx();
   memset(&op, 0, sizeof(op));
-  op.cancel_error = GRPC_ERROR_CANCELLED;
+  op.cancel_stream = true;
+  op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   s.Op(&op);
   s.DestroyThen(
       MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
@@ -520,8 +525,9 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
         received = 0;
         memset(&op, 0, sizeof(op));
         op.on_complete = do_nothing.get();
-        op.recv_message = &recv_stream;
-        op.recv_message_ready = drain_start.get();
+        op.recv_message = true;
+        op.payload->recv_message.recv_message = &recv_stream;
+        op.payload->recv_message.recv_message_ready = drain_start.get();
         s.Op(&op);
         f.PushInput(grpc_slice_ref(incoming_data));
       });
@@ -553,8 +559,10 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   });
 
   memset(&op, 0, sizeof(op));
-  op.send_initial_metadata = &b;
-  op.recv_initial_metadata = &b_recv;
+  op.send_initial_metadata = true;
+  op.payload->send_initial_metadata.send_initial_metadata = &b;
+  op.recv_initial_metadata = true;
+  op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
   op.on_complete = c.get();
   s.Op(&op);
   f.PushInput(SLICE_FROM_BUFFER(
@@ -572,7 +580,8 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
 
   f.FlushExecCtx();
   memset(&op, 0, sizeof(op));
-  op.cancel_error = GRPC_ERROR_CANCELLED;
+  op.cancel_stream = true;
+  op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   s.Op(&op);
   s.DestroyThen(
       MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));

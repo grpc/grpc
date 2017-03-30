@@ -493,11 +493,14 @@ static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op *op) {
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
-                       GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE);
   }
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_NONE);
   }
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
