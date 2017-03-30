@@ -247,9 +247,12 @@ class CLanguage(object):
         polling_strategies = ['all']
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                 _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
+                 _ROOT + '/src/core/tsi/test_creds/ca.pem',
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
+        resolver = os.environ.get('GRPC_DNS_RESOLVER', None);
+        if resolver:
+          env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':

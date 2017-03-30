@@ -31,31 +31,25 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TSI_FAKE_TRANSPORT_SECURITY_H
-#define GRPC_CORE_LIB_TSI_FAKE_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_SSL_TYPES_H
+#define GRPC_CORE_TSI_SSL_TYPES_H
 
-#include "src/core/lib/tsi/transport_security_interface.h"
+/* A collection of macros to cast between various integer types that are
+ * used differently between BoringSSL and OpenSSL:
+ * TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an OpenSSL
+ *                      function
+ * TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length parameter for an OpenSSL
+ *                      function
+ */
 
-#ifdef __cplusplus
-extern "C" {
+#include <openssl/ssl.h>
+
+#ifdef OPENSSL_IS_BORINGSSL
+#define TSI_INT_AS_SIZE(x) ((size_t)(x))
+#define TSI_SIZE_AS_SIZE(x) (x)
+#else
+#define TSI_INT_AS_SIZE(x) (x)
+#define TSI_SIZE_AS_SIZE(x) ((int)(x))
 #endif
 
-/* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */
-#define TSI_FAKE_CERTIFICATE_TYPE "FAKE"
-
-/* Creates a fake handshaker that will create a fake frame protector.
-
-   No cryptography is performed in these objects. They just simulate handshake
-   messages going back and forth for the handshaker and do some framing on
-   cleartext data for the protector.  */
-tsi_handshaker *tsi_create_fake_handshaker(int is_client);
-
-/* Creates a protector directly without going through the handshake phase. */
-tsi_frame_protector *tsi_create_fake_protector(
-    size_t *max_protected_frame_size);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_CORE_LIB_TSI_FAKE_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_SSL_TYPES_H */

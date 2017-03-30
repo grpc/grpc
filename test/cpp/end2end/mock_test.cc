@@ -89,7 +89,7 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> final
     return true;
   }
 
-  bool Write(const EchoRequest& msg, const WriteOptions& options) override {
+  bool Write(const EchoRequest& msg, WriteOptions options) override {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
     return true;

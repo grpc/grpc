@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,59 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TSI_SSL_TYPES_H
-#define GRPC_CORE_LIB_TSI_SSL_TYPES_H
+#import "GRXImmediateSingleWriter.h"
 
-/* A collection of macros to cast between various integer types that are
- * used differently between BoringSSL and OpenSSL:
- * TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an OpenSSL
- *                      function
- * TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length parameter for an OpenSSL
- *                      function
- */
+@implementation GRXImmediateSingleWriter {
+  id _value;
+  id<GRXWriteable> _writeable;
+}
 
-#include <openssl/ssl.h>
+@synthesize state = _state;
 
-#ifdef OPENSSL_IS_BORINGSSL
-#define TSI_INT_AS_SIZE(x) ((size_t)(x))
-#define TSI_SIZE_AS_SIZE(x) (x)
-#else
-#define TSI_INT_AS_SIZE(x) (x)
-#define TSI_SIZE_AS_SIZE(x) ((int)(x))
-#endif
+- (instancetype)initWithValue:(id)value {
+  if (self = [super init]) {
+    _value = value;
+    _state = GRXWriterStateNotStarted;
+  }
+  return self;
+}
 
-#endif /* GRPC_CORE_LIB_TSI_SSL_TYPES_H */
++ (GRXWriter *)writerWithValue:(id)value {
+  return [[self alloc] initWithValue:value];
+}
+
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  _state = GRXWriterStateStarted;
+  _writeable = writeable;
+  [writeable writeValue:_value];
+  [self finish];
+}
+
+- (void)finish {
+  _state = GRXWriterStateFinished;
+  _value = nil;
+  id<GRXWriteable> writeable = _writeable;
+  _writeable = nil;
+  [writeable writesFinishedWithError:nil];
+}
+
+// Overwrite the setter to disallow manual state transition. The getter
+// of _state is synthesized.
+- (void)setState:(GRXWriterState)newState {
+  // Manual state transition is not allowed
+  return;
+}
+
+// Overrides [requestWriter(Transformations):map:] for Protocol Buffers
+// encoding.
+// We need the return value of this map to be a GRXImmediateSingleWriter but
+// the original \a map function returns a new Writer of another type. So we
+// need to override this function here.
+- (GRXWriter *)map:(id (^)(id))map {
+  // Since _value is available when creating the object, we can simply
+  // apply the map and store the output.
+  _value = map(_value);
+  return self;
+}
+
+@end

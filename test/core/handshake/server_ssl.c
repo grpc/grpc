@@ -49,9 +49,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 // Handshake completed signal to server thread.
 static gpr_event client_handshake_complete;
@@ -174,7 +174,7 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/lib/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.c.
   const char *cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";

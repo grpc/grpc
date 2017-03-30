@@ -369,6 +369,7 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/security/util/b64.c
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
@@ -522,6 +523,18 @@ filegroups:
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -757,15 +770,15 @@ filegroups:
   - third_party/nanopb/pb_encode.c
 - name: tsi
   headers:
-  - src/core/lib/tsi/fake_transport_security.h
-  - src/core/lib/tsi/ssl_transport_security.h
-  - src/core/lib/tsi/ssl_types.h
-  - src/core/lib/tsi/transport_security.h
-  - src/core/lib/tsi/transport_security_interface.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_interface.h
   src:
-  - src/core/lib/tsi/fake_transport_security.c
-  - src/core/lib/tsi/ssl_transport_security.c
-  - src/core/lib/tsi/transport_security.c
+  - src/core/tsi/fake_transport_security.c
+  - src/core/tsi/ssl_transport_security.c
+  - src/core/tsi/transport_security.c
   deps:
   - gpr
   secure: true
@@ -966,6 +979,7 @@ libs:
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1059,6 +1073,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1240,6 +1255,7 @@ libs:
   - grpc++
   - grpc_test_util
   - grpc
+  defaults: benchmark
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -1388,6 +1404,7 @@ libs:
   build: private
   language: c++
   headers:
+  - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
@@ -1398,13 +1415,13 @@ libs:
   - test/cpp/qps/server.h
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
-  - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/services.proto
+  - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
@@ -1414,7 +1431,6 @@ libs:
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
-  - test/cpp/util/benchmark_config.cc
   deps:
   - grpc_test_util
   - grpc++_test_util
@@ -3074,6 +3090,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3094,6 +3111,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3114,6 +3132,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3134,6 +3153,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3154,6 +3174,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3174,6 +3195,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3194,6 +3216,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3214,6 +3237,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3238,6 +3262,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3262,6 +3287,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3286,6 +3312,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3310,6 +3337,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3330,6 +3358,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3813,6 +3842,7 @@ targets:
   - test/cpp/microbenchmarks/noop-benchmark.cc
   deps:
   - benchmark
+  defaults: benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -4121,7 +4151,6 @@ targets:
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
-  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
@@ -4323,6 +4352,11 @@ configs:
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
+  ares:
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
+      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4413,11 +4447,13 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z

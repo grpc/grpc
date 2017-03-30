@@ -67,6 +67,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_secure",
@@ -510,6 +511,7 @@ grpc_cc_library(
         "src/core/lib/json/json_reader.c",
         "src/core/lib/json/json_string.c",
         "src/core/lib/json/json_writer.c",
+        "src/core/lib/security/util/b64.c",
         "src/core/lib/slice/percent_encoding.c",
         "src/core/lib/slice/slice.c",
         "src/core/lib/slice/slice_buffer.c",
@@ -628,6 +630,7 @@ grpc_cc_library(
         "src/core/lib/json/json_common.h",
         "src/core/lib/json/json_reader.h",
         "src/core/lib/json/json_writer.h",
+        "src/core/lib/security/util/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
@@ -847,6 +850,27 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_dns_ares",
+    srcs = [
+        "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c",
+    ],
+    hdrs = [
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+    external_deps = [
+        "cares",
     ],
 )
 
@@ -1104,16 +1128,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi",
     srcs = [
-        "src/core/lib/tsi/fake_transport_security.c",
-        "src/core/lib/tsi/ssl_transport_security.c",
-        "src/core/lib/tsi/transport_security.c",
+        "src/core/tsi/fake_transport_security.c",
+        "src/core/tsi/ssl_transport_security.c",
+        "src/core/tsi/transport_security.c",
     ],
     hdrs = [
-        "src/core/lib/tsi/fake_transport_security.h",
-        "src/core/lib/tsi/ssl_transport_security.h",
-        "src/core/lib/tsi/ssl_types.h",
-        "src/core/lib/tsi/transport_security.h",
-        "src/core/lib/tsi/transport_security_interface.h",
+        "src/core/tsi/fake_transport_security.h",
+        "src/core/tsi/ssl_transport_security.h",
+        "src/core/tsi/ssl_types.h",
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
         "libssl",
