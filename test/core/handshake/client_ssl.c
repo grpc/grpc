@@ -54,9 +54,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 // Arguments for TLS server thread.
 typedef struct {
@@ -146,7 +146,7 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
 
 // Minimal TLS server. This is largely based on the example at
 // https://wiki.openssl.org/index.php/Simple_TLS_Server and the gRPC core
-// internals in src/core/lib/tsi/ssl_transport_security.c.
+// internals in src/core/tsi/ssl_transport_security.c.
 static void server_thread(void *arg) {
   const server_args *args = (server_args *)arg;
 
@@ -172,7 +172,7 @@ static void server_thread(void *arg) {
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/lib/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.c.
   const char *cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";

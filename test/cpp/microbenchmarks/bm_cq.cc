@@ -34,12 +34,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
+#include <benchmark/benchmark.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
-
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 extern "C" {
 #include "src/core/lib/surface/completion_queue.h"
@@ -58,6 +57,17 @@ static void BM_CreateDestroyCpp(benchmark::State& state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_CreateDestroyCpp);
+
+/* Create cq using a different constructor */
+static void BM_CreateDestroyCpp2(benchmark::State& state) {
+  TrackCounters track_counters;
+  while (state.KeepRunning()) {
+    grpc_completion_queue* core_cq = grpc_completion_queue_create(NULL);
+    CompletionQueue cq(core_cq);
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_CreateDestroyCpp2);
 
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;

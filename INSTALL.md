@@ -22,6 +22,12 @@ refer to these documents
  $ [sudo] apt-get install build-essential autoconf libtool
 ```
 
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ [sudo] apt-get install libgflags-dev libgtest-dev
+ $ [sudo] apt-get install clang libc++-dev
+```
+
 ## Mac OSX
 
 For a Mac system, git is not available by default. You will first need to

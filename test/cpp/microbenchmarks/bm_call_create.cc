@@ -34,6 +34,7 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
+#include <benchmark/benchmark.h>
 #include <string.h>
 #include <sstream>
 
@@ -60,7 +61,6 @@ extern "C" {
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 auto &force_library_initialization = Library::get();
 

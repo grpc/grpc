@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
