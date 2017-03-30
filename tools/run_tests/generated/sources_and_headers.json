@@ -6189,6 +6189,7 @@
       "src/proto/grpc/testing/services.pb.h", 
       "src/proto/grpc/testing/stats.grpc.pb.h", 
       "src/proto/grpc/testing/stats.pb.h", 
+      "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
@@ -6198,13 +6199,14 @@
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/stats.h", 
-      "test/cpp/qps/usage_timer.h", 
-      "test/cpp/util/benchmark_config.h"
+      "test/cpp/qps/usage_timer.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "qps", 
     "src": [
+      "test/cpp/qps/benchmark_config.cc", 
+      "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/client_async.cc", 
       "test/cpp/qps/client_sync.cc", 
@@ -6223,9 +6225,7 @@
       "test/cpp/qps/server_sync.cc", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/usage_timer.cc", 
-      "test/cpp/qps/usage_timer.h", 
-      "test/cpp/util/benchmark_config.cc", 
-      "test/cpp/util/benchmark_config.h"
+      "test/cpp/qps/usage_timer.h"
     ], 
     "third_party": false, 
     "type": "lib"
