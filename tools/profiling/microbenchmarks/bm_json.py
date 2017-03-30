@@ -113,6 +113,10 @@ _BM_SPECS = {
   'BM_TransportStreamRecv': {
     'tpl': [],
     'dyn': ['request_size'],
+  },
+  'BM_StreamingPingPongWithCoalescingApi': {
+    'tpl': ['fixture', 'client_mutator', 'server_mutator'],
+    'dyn': ['request_size', 'request_count', 'end_of_stream'],
   }
 }
 
