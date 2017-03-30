@@ -31,7 +31,7 @@
  *
  */
 
-#include "test/cpp/util/benchmark_config.h"
+#include "test/cpp/qps/benchmark_config.h"
 #include <gflags/gflags.h>
 
 DEFINE_bool(enable_log_reporter, true,

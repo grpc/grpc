@@ -3814,6 +3814,7 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
@@ -3823,7 +3824,6 @@ add_library(qps
   test/cpp/qps/server_async.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
-  test/cpp/util/benchmark_config.cc
 )
 
 if(WIN32 AND MSVC)
