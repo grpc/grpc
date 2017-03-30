@@ -4311,6 +4311,9 @@ configs:
   opt:
     CPPFLAGS: -O2
     DEFINES: NDEBUG
+  lto:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
     DEFINES: NDEBUG
