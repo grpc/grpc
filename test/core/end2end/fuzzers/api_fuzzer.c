@@ -680,7 +680,7 @@ static void finished_request_call(void *csp, bool success) {
 
 typedef struct {
   call_state *cs;
-  uint8_t has_ops;
+  uint32_t has_ops;
 } batch_info;
 
 static void finished_batch(void *p, bool success) {
@@ -708,7 +708,7 @@ static void finished_batch(void *p, bool success) {
 }
 
 static validator *make_finished_batch_validator(call_state *cs,
-                                                uint8_t has_ops) {
+                                                uint32_t has_ops) {
   batch_info *bi = gpr_malloc(sizeof(*bi));
   bi->cs = cs;
   bi->has_ops = has_ops;
