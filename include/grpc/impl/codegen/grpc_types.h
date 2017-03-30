@@ -214,12 +214,13 @@ typedef struct {
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
-/** After a duration of this time the client pings the server to see if the
-    transport is still alive. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIME_MS "grpc.client_keepalive_time_ms"
-/** After waiting for a duration of this time, if the client does not receive
-    the ping ack, it will close the transport. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_MS "grpc.client_keepalive_timeout_ms"
+/** After a duration of this time the client/server pings its peer to see if the
+    transport is still alive. Int valued, milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIME_MS "grpc.keepalive_time_ms"
+/** After waiting for a duration of this time, if the keepalive ping sender does
+    not receive the ping ack, it will close the transport. Int valued,
+    milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
 #define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
