@@ -197,8 +197,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 }
@@ -429,10 +429,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   cq_verifier_destroy(cqv);
 
-  grpc_call_destroy(c1);
-  grpc_call_destroy(s1);
-  grpc_call_destroy(c2);
-  grpc_call_destroy(s2);
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
+  grpc_call_unref(c2);
+  grpc_call_unref(s2);
 
   grpc_slice_unref(details1);
   grpc_slice_unref(details2);
@@ -624,10 +624,10 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   cq_verifier_destroy(cqv);
 
-  grpc_call_destroy(c1);
-  grpc_call_destroy(s1);
-  grpc_call_destroy(c2);
-  grpc_call_destroy(s2);
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
+  grpc_call_unref(c2);
+  grpc_call_unref(s2);
 
   grpc_slice_unref(details1);
   grpc_slice_unref(details2);
@@ -785,7 +785,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   /* second request is finished because of time out, so destroy the second call
    */
-  grpc_call_destroy(c2);
+  grpc_call_unref(c2);
 
   /* now reply the first call */
   memset(ops, 0, sizeof(ops));
@@ -817,8 +817,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   cq_verifier_destroy(cqv);
 
-  grpc_call_destroy(c1);
-  grpc_call_destroy(s1);
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
 
   grpc_slice_unref(details1);
   grpc_slice_unref(details2);

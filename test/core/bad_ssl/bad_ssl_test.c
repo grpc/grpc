@@ -115,7 +115,7 @@ static void run_test(const char *target, size_t nops) {
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

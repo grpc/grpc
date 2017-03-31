@@ -139,6 +139,7 @@ typedef struct batch_control {
 } batch_control;
 
 struct grpc_call {
+  gpr_refcount ext_ref;
   gpr_arena *arena;
   grpc_completion_queue *cq;
   grpc_polling_entity pollent;
@@ -151,7 +152,7 @@ struct grpc_call {
 
   /* client or server call */
   bool is_client;
-  /** has grpc_call_destroy been called */
+  /** has grpc_call_unref been called */
   bool destroy_called;
   /** flag indicating that cancellation is inherited */
   bool cancellation_is_inherited;
@@ -285,6 +286,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       gpr_arena_create(grpc_channel_get_call_size_estimate(args->channel));
   call = gpr_arena_alloc(arena,
                          sizeof(grpc_call) + channel_stack->call_stack_size);
+  gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
   *out_call = call;
   gpr_mu_init(&call->child_list_mu);
@@ -375,7 +377,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   call->send_deadline = send_deadline;
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
-  /* initial refcount dropped by grpc_call_destroy */
+  /* initial refcount dropped by grpc_call_unref */
   grpc_call_element_args call_args = {
       .call_stack = CALL_STACK_FROM_CALL(call),
       .server_transport_data = args->server_transport_data,
@@ -493,13 +495,17 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   GPR_TIMER_END("destroy_call", 0);
 }
 
-void grpc_call_destroy(grpc_call *c) {
+void grpc_call_ref(grpc_call *c) { gpr_ref(&c->ext_ref); }
+
+void grpc_call_unref(grpc_call *c) {
+  if (!gpr_unref(&c->ext_ref)) return;
+
   int cancel;
   grpc_call *parent = c->parent;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  GPR_TIMER_BEGIN("grpc_call_destroy", 0);
-  GRPC_API_TRACE("grpc_call_destroy(c=%p)", 1, (c));
+  GPR_TIMER_BEGIN("grpc_call_unref", 0);
+  GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (c));
 
   if (parent) {
     gpr_mu_lock(&parent->child_list_mu);
@@ -525,7 +531,7 @@ void grpc_call_destroy(grpc_call *c) {
   }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
-  GPR_TIMER_END("grpc_call_destroy", 0);
+  GPR_TIMER_END("grpc_call_unref", 0);
 }
 
 grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {

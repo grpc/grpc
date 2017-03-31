@@ -99,7 +99,7 @@ static void step_ping_pong_request(void) {
                                                    (size_t)(op - ops),
                                                    (void *)1, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
   GPR_TIMER_END("ping_pong", 1);
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
   grpc_profiler_stop();
 
   if (call) {
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
   }
 
   grpc_channel_destroy(channel);

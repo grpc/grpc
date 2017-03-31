@@ -236,7 +236,7 @@ static void cleanup_rpc(grpc_exec_ctx *exec_ctx) {
   grpc_event ev;
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
-  grpc_call_destroy(state.call);
+  grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
     ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);

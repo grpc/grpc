@@ -151,7 +151,7 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
 
 ServerContext::~ServerContext() {
   if (call_) {
-    grpc_call_destroy(call_);
+    grpc_call_unref(call_);
   }
   if (completion_op_) {
     completion_op_->Unref();

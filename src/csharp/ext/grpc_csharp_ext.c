@@ -517,7 +517,7 @@ GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void *p) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE

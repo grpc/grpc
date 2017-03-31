@@ -109,7 +109,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
 
 done:
-  if (call1 != NULL) grpc_call_destroy(call1);
+  if (call1 != NULL) grpc_call_unref(call1);
   grpc_call_details_destroy(&call_details1);
   grpc_metadata_array_destroy(&request_metadata1);
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));

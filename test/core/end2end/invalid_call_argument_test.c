@@ -123,7 +123,7 @@ static void prepare_test(int is_client) {
 }
 
 static void cleanup_test() {
-  grpc_call_destroy(g_state.call);
+  grpc_call_unref(g_state.call);
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
   grpc_slice_unref(g_state.details);
@@ -131,7 +131,7 @@ static void cleanup_test() {
   grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
   if (!g_state.is_client) {
-    grpc_call_destroy(g_state.server_call);
+    grpc_call_unref(g_state.server_call);
     grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
     GPR_ASSERT(grpc_completion_queue_pluck(g_state.cq, tag(1000),
                                            grpc_timeout_seconds_to_deadline(5),

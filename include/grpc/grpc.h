@@ -349,7 +349,7 @@ GRPCAPI void grpc_channel_destroy(grpc_channel *channel);
 /** Called by clients to cancel an RPC on the server.
     Can be called multiple times, from any thread.
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
-    are thread-safe, and can be called at any point before grpc_call_destroy
+    are thread-safe, and can be called at any point before grpc_call_unref
     is called.*/
 GRPCAPI grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
 
@@ -364,9 +364,13 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                      const char *description,
                                                      void *reserved);
 
-/** Destroy a call.
-    THREAD SAFETY: grpc_call_destroy is thread-compatible */
-GRPCAPI void grpc_call_destroy(grpc_call *call);
+/** Ref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_ref(grpc_call *call);
+
+/** Unref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_unref(grpc_call *call);
 
 /** Request notification of a new call.
     Once a call is received, a notification tagged with \a tag_new is added to

@@ -520,7 +520,7 @@ Call::Call(grpc_call *call) : wrapped_call(call),
 
 Call::~Call() {
   if (wrapped_call != NULL) {
-    grpc_call_destroy(wrapped_call);
+    grpc_call_unref(wrapped_call);
   }
 }
 
@@ -568,7 +568,7 @@ void Call::CompleteBatch(bool is_final_op) {
   }
   this->pending_batches--;
   if (this->has_final_op_completed && this->pending_batches == 0) {
-    grpc_call_destroy(this->wrapped_call);
+    grpc_call_unref(this->wrapped_call);
     this->wrapped_call = NULL;
   }
 }

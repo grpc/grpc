@@ -151,7 +151,7 @@ done:
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   }
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_completion_queue_destroy(cq);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

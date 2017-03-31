@@ -314,9 +314,9 @@ extern grpc_call_cancel_type grpc_call_cancel_import;
 typedef grpc_call_error(*grpc_call_cancel_with_status_type)(grpc_call *call, grpc_status_code status, const char *description, void *reserved);
 extern grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 #define grpc_call_cancel_with_status grpc_call_cancel_with_status_import
-typedef void(*grpc_call_destroy_type)(grpc_call *call);
-extern grpc_call_destroy_type grpc_call_destroy_import;
-#define grpc_call_destroy grpc_call_destroy_import
+typedef void(*grpc_call_unref_type)(grpc_call *call);
+extern grpc_call_unref_type grpc_call_unref_import;
+#define grpc_call_unref grpc_call_unref_import
 typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *request_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
