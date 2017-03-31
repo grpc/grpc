@@ -176,7 +176,7 @@ class Benchmark:
         self.samples[new][f].append(float(data[f]))
 
   def process(self):
-    for f in args.track:
+    for f in sorted(args.track):
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
@@ -185,10 +185,10 @@ class Benchmark:
       old_mdn = median(old)
       delta = new_mdn - old_mdn
       ratio = changed_ratio(new_mdn, old_mdn)
-      print 'new=%r old=%r new_mdn=%f old_mdn=%f delta=%f ratio=%f p=%f' % (
-      new, old, new_mdn, old_mdn, delta, ratio, p
+      print '%s: new=%r old=%r new_mdn=%f old_mdn=%f delta=%f(%f:%f) ratio=%f(%f:%f) p=%f' % (
+      f, new, old, new_mdn, old_mdn, delta, abs(delta), _INTERESTING[f]['abs_diff'], ratio, abs(ratio), _INTERESTING[f]['pct_diff']/100.0, p
       )
-      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']:
+      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']/100.0:
         self.final[f] = delta
     return self.final.keys()
 
