@@ -32,8 +32,6 @@ set -ex
 
 cd $(dirname $0)/../..
 
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
-
 # try to use pypy for generating reports
 # each trace dumps 7-8gig of text to disk, and processing this into a report is
 # heavyweight - so any speed boost is worthwhile
@@ -45,4 +43,3 @@ else
 fi
 
 $PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency
-
