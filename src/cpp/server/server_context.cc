@@ -42,6 +42,7 @@
 #include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

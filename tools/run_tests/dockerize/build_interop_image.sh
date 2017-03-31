@@ -71,7 +71,13 @@ then
 fi
 
 # Use image name based on Dockerfile checksum
-BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+# on OSX use md5 instead of sha1sum
+if which sha1sum > /dev/null;
+then
+  BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+else
+  BASE_IMAGE=${BASE_NAME}_base:`md5 -r tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+fi
 
 # Make sure base docker image has been built. Should be instantaneous if so.
 docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?

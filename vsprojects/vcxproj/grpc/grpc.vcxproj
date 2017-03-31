@@ -448,11 +448,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h" />
@@ -845,11 +845,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
     </ClCompile>
