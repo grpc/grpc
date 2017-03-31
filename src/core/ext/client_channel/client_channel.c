@@ -374,7 +374,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     // resolver actually specified.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-    if (channel_arg != NULL && channel_arg->type != GRPC_ARG_POINTER) {
+    if (channel_arg != NULL && channel_arg->type == GRPC_ARG_POINTER) {
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
       bool found_backend_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
