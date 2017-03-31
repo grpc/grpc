@@ -21,11 +21,6 @@
                BlueprintName = "CronetUnitTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "CronetUnitTests/testPacketCoalescing">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
       <AdditionalOptions>
