@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +27,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+FROM alpine:3.3
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+# Install Git and basic packages.
+RUN apk update && apk add \
+  autoconf \
+  automake \
+  bzip2 \
+  build-base \
+  cmake \
+  ccache \
+  curl \
+  gcc \
+  git \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  py-pip \
+  unzip \
+  wget \
+  zip
 
-PYTHON=`realpath "${1:-py27/bin/python}"`
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
-ROOT=`pwd`
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 
-$PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
+RUN mkdir -p /var/local/jenkins
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
-
+# Define the default command.
+CMD ["bash"]
