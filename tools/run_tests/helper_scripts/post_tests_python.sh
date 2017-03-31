@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,15 +32,8 @@ set -ex
 
 if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-root=$(readlink -f $(dirname $0)/../../..)
-out=$root/reports/php_ext_coverage
-tmp1=$(mktemp)
-tmp2=$(mktemp)
-cd $root
-lcov --capture --directory . --output-file $tmp1
-lcov --extract $tmp1 "$root/src/php/ext/grpc/*" --output-file $tmp2
-genhtml $tmp2 --output-directory $out
-rm $tmp2
-rm $tmp1
+# change to directory of Python coverage files
+cd $(dirname $0)/../../../src/python/grpcio_tests/
 
-# todo(mattkwong): generate coverage report for php and copy to reports/php
+coverage combine .
+coverage html -i -d ./../../../reports/python
