@@ -168,12 +168,9 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  gpr_timespec channel_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec expect_shutdown_time = gpr_time_add(
-      channel_start_time,
-      gpr_time_from_millis(MAX_CONNECTION_AGE_MS + MAX_CONNECTION_AGE_GRACE_MS +
-                               IMMEDIATE_SHUTDOWN_GRACE_TIME_MS,
-                           GPR_TIMESPAN));
+  gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
+      MAX_CONNECTION_AGE_MS + MAX_CONNECTION_AGE_GRACE_MS +
+      IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
 
   /* Wait for the channel to reach its max age */
   cq_verify_empty_timeout(cqv, CQ_MAX_CONNECTION_AGE_WAIT_TIME_S);
