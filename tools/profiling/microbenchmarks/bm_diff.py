@@ -65,8 +65,8 @@ nanos = {
   'pct_diff': 5,
 }
 counter = {
-  'abs_diff': 1,
-  'pct_diff': 1,
+  'abs_diff': 0.5,
+  'pct_diff': 0.5,
 }
 
 _INTERESTING = {
@@ -176,7 +176,7 @@ class Benchmark:
         self.samples[new][f].append(float(data[f]))
 
   def process(self):
-    for f in args.track:
+    for f in sorted(args.track):
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
@@ -185,7 +185,10 @@ class Benchmark:
       old_mdn = median(old)
       delta = new_mdn - old_mdn
       ratio = changed_ratio(new_mdn, old_mdn)
-      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']:
+      print '%s: new=%r old=%r new_mdn=%f old_mdn=%f delta=%f(%f:%f) ratio=%f(%f:%f) p=%f' % (
+      f, new, old, new_mdn, old_mdn, delta, abs(delta), _INTERESTING[f]['abs_diff'], ratio, abs(ratio), _INTERESTING[f]['pct_diff']/100.0, p
+      )
+      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']/100.0:
         self.final[f] = delta
     return self.final.keys()
 
@@ -209,16 +212,19 @@ for bm in comparables:
     js_old_opt = json.loads(f.read())
 
   for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+    print row
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, True)
   for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+    print row
     name = row['cpp_name']
     if name.endswith('_mean') or name.endswith('_stddev'): continue
     benchmarks[name].add_sample(row, False)
 
 really_interesting = set()
 for name, bm in benchmarks.items():
+  print name
   really_interesting.update(bm.process())
 fields = [f for f in args.track if f in args.track]
 
