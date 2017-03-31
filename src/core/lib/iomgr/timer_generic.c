@@ -477,6 +477,8 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
                              g_shard_queue[0]->min_deadline);
     gpr_mu_unlock(&g_shared_mutables.mu);
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
+  } else {
+    if (next != NULL) *next = GPR_MIN(*next, min_timer);
   }
 
   GRPC_ERROR_UNREF(error);
