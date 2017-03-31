@@ -150,17 +150,20 @@ grpc_channel *grpc_channel_create_with_builder(
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
       channel->compression_options.default_level.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
       channel->compression_options.default_level.level =
-          (grpc_compression_level)args->args[i].value.integer;
+          (grpc_compression_level)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_COUNT - 1});
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_ALGORITHMS_COUNT);
       channel->compression_options.default_algorithm.algorithm =
-          (grpc_compression_algorithm)args->args[i].value.integer;
+          (grpc_compression_algorithm)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
+                                     GRPC_COMPRESS_ALGORITHMS_COUNT - 1});
     } else if (0 ==
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {

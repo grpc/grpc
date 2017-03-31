@@ -374,8 +374,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     // resolver actually specified.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-    if (channel_arg != NULL) {
-      GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+    if (channel_arg != NULL && channel_arg->type != GRPC_ARG_POINTER) {
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
       bool found_backend_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -643,14 +642,26 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   // Record client channel factory.
   const grpc_arg *arg = grpc_channel_args_find(args->channel_args,
                                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
-  GPR_ASSERT(arg != NULL);
-  GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
+  if (arg == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Missing client channel factory in args for client channel filter");
+  }
+  if (arg->type != GRPC_ARG_POINTER) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "client channel factory arg must be a pointer");
+  }
   grpc_client_channel_factory_ref(arg->value.pointer.p);
   chand->client_channel_factory = arg->value.pointer.p;
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(arg != NULL);
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
+  if (arg == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Missing server uri in args for client channel filter");
+  }
+  if (arg->type != GRPC_ARG_STRING) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "server uri arg must be a string");
+  }
   char *proxy_name = NULL;
   grpc_channel_args *new_args = NULL;
   grpc_proxy_mappers_map_name(exec_ctx, arg->value.string, args->channel_args,
