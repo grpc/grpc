@@ -30,18 +30,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
 
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload
 
-# try to use pypy for generating reports
-# each trace dumps 7-8gig of text to disk, and processing this into a report is
-# heavyweight - so any speed boost is worthwhile
-# TODO(ctiller): consider rewriting report generation in C++ for performance
-if which pypy >/dev/null; then
-  PYTHON=pypy
-else
-  PYTHON=python2.7
-fi
-
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
