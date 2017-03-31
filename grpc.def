@@ -83,6 +83,7 @@ EXPORTS
     grpc_channel_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
+    grpc_call_ref
     grpc_call_unref
     grpc_server_request_call
     grpc_server_register_method
