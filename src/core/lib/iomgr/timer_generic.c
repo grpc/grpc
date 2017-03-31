@@ -477,8 +477,17 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
                              g_shard_queue[0]->min_deadline);
     gpr_mu_unlock(&g_shared_mutables.mu);
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
-  } else {
-    if (next != NULL) *next = GPR_MIN(*next, min_timer);
+  } else if (next != NULL) {
+    /* TODO(ctiller): this forces calling code to do an short poll, and
+       then retry the timer check (because this time through the timer list was
+       contended).
+
+       We could reduce the cost here dramatically by keeping a count of how
+       many currently active pollers got through the uncontended case above
+       successfully, and waking up other pollers IFF that count drops to zero.
+
+       Once that count is in place, this entire else branch could disappear. */
+    *next = GPR_MIN(*next, now + 1);
   }
 
   GRPC_ERROR_UNREF(error);
