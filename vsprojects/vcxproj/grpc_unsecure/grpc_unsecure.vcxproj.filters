@@ -523,38 +523,38 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
-      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
-      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
-      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
-      <Filter>src\core\ext\resolver\dns\native</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\native</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
-      <Filter>src\core\ext\resolver\sockaddr</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\sockaddr\sockaddr_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\sockaddr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
-      <Filter>src\core\ext\load_reporting</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.c">
+      <Filter>src\core\ext\filters\load_reporting</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
-      <Filter>src\core\ext\load_reporting</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\filters\load_reporting</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.c">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
       <Filter>third_party\nanopb</Filter>
@@ -565,11 +565,11 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
-      <Filter>src\core\ext\lb_policy\pick_first</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\pick_first</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
-      <Filter>src\core\ext\lb_policy\round_robin</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\round_robin\round_robin.c">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\round_robin</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\base_resources.c">
       <Filter>src\core\ext\census</Filter>
@@ -1160,29 +1160,29 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h">
-      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h">
-      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
-      <Filter>src\core\ext\load_reporting</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.h">
+      <Filter>src\core\ext\filters\load_reporting</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
-      <Filter>src\core\ext\load_reporting</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\filters\load_reporting</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.h">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.h">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.h">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.h">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h">
+      <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
       <Filter>third_party\nanopb</Filter>
@@ -1277,47 +1277,53 @@
     <Filter Include="src\core\ext\client_channel">
       <UniqueIdentifier>{2edd1aad-34cf-0c66-e03e-b1b2dd81d9a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy">
-      <UniqueIdentifier>{a23781d2-27e4-7cb0-12cd-59782ecb21ce}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters">
+      <UniqueIdentifier>{5e37012e-a374-e285-bbda-b0dbe6327663}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb">
-      <UniqueIdentifier>{25a465c8-d1e8-6248-c005-bb2062206472}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel">
+      <UniqueIdentifier>{bb0de45a-745e-8822-7ad5-453f9e060f8c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto">
-      <UniqueIdentifier>{40fc2615-d244-0d36-4486-ba6f0fa468bb}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy">
+      <UniqueIdentifier>{2ac0872e-12dc-0b08-68e0-66829ce8c268}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc">
-      <UniqueIdentifier>{1d129f24-a399-12ef-68de-023aff7dde52}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\grpclb">
+      <UniqueIdentifier>{6cc603b0-7272-0a9f-59c2-5561c1856a6a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb">
-      <UniqueIdentifier>{21858d9d-30b5-8847-5882-6b47df0fa293}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\grpclb\proto">
+      <UniqueIdentifier>{0d3bc4ed-1eea-8b17-c26f-7d87c3dd2220}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1">
-      <UniqueIdentifier>{e9256e96-ea3d-c1fd-6426-9d53d9f08f66}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc">
+      <UniqueIdentifier>{32d37957-d122-e649-b9c1-3f13f6674479}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\pick_first">
-      <UniqueIdentifier>{e27f9ecf-97bb-1a2e-3135-a41f732dcf55}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb">
+      <UniqueIdentifier>{153a159f-1ba7-aea7-ebed-4f2d9e2e7bb9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\round_robin">
-      <UniqueIdentifier>{e5fc1091-5d60-404f-775b-686ef4b3266f}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1">
+      <UniqueIdentifier>{f8747b87-02f9-df6c-0eeb-27ab1d037d0c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\load_reporting">
-      <UniqueIdentifier>{2d6e3879-24c7-06e2-b415-40ab18a3b918}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\pick_first">
+      <UniqueIdentifier>{4df776ac-ebeb-4933-554e-749a0399ff51}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\resolver">
-      <UniqueIdentifier>{88c78e27-267a-95df-07c5-50e5fbc2f40c}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\lb_policy\round_robin">
+      <UniqueIdentifier>{5244539b-6cec-80c7-61dc-df51e531bedd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\resolver\dns">
-      <UniqueIdentifier>{2e0a9b4f-6394-7c0e-6e5a-0f8b3ee29b41}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\resolver">
+      <UniqueIdentifier>{663be499-ce6c-8afd-db98-674f26be1149}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\resolver\dns\c_ares">
-      <UniqueIdentifier>{932d8afd-e042-46d0-30c5-1c45386165d9}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\dns">
+      <UniqueIdentifier>{f6bf03da-fa0d-0c24-bba2-17dc5a3c8fe0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\resolver\dns\native">
-      <UniqueIdentifier>{3d5398c8-928b-9096-8eb7-f8c40ee68c4d}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\dns\c_ares">
+      <UniqueIdentifier>{54bc0ac2-39c8-dbfd-c5dd-b9fb597dd820}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\resolver\sockaddr">
-      <UniqueIdentifier>{71686ed0-fbf9-02a4-d65a-a73f7dc4e2be}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\dns\native">
+      <UniqueIdentifier>{55f499bd-ae18-5210-81e1-385c85e60875}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\sockaddr">
+      <UniqueIdentifier>{99210f5e-b2a0-ecd1-024f-fc152db68a11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\load_reporting">
+      <UniqueIdentifier>{0aef07b4-39d2-f862-15ac-65b4bf00dabb}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{967c89fe-c97c-27e2-aac0-9ba5854cb5fa}</UniqueIdentifier>
