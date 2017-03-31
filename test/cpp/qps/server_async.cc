@@ -103,24 +103,25 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     server_ = builder.BuildAndStart();
 
-    using namespace std::placeholders;
-
     auto process_rpc_bound =
-        std::bind(process_rpc, config.payload_config(), _1, _2);
+        std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
+                  std::placeholders::_2);
 
     for (int i = 0; i < 15000; i++) {
       for (int j = 0; j < num_threads; j++) {
         if (request_unary_function) {
-          auto request_unary =
-              std::bind(request_unary_function, &async_service_, _1, _2, _3,
-                        srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
+          auto request_unary = std::bind(
+              request_unary_function, &async_service_, std::placeholders::_1,
+              std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
+              srv_cqs_[j].get(), std::placeholders::_4);
           contexts_.emplace_back(
               new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
         }
         if (request_streaming_function) {
-          auto request_streaming =
-              std::bind(request_streaming_function, &async_service_, _1, _2,
-                        srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
+          auto request_streaming = std::bind(
+              request_streaming_function, &async_service_,
+              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
+              srv_cqs_[j].get(), std::placeholders::_3);
           contexts_.emplace_back(new ServerRpcContextStreamingImpl(
               request_streaming, process_rpc_bound));
         }
@@ -234,18 +235,17 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
         return false;
       }
 
-      ResponseType response;
-
       // Call the RPC processing function
-      grpc::Status status = invoke_method_(&req_, &response);
+      grpc::Status status = invoke_method_(&req_, &response_);
 
       // Have the response writer work and invoke on_finish when done
       next_state_ = &ServerRpcContextUnaryImpl::finisher;
-      response_writer_.Finish(response, status, AsyncQpsServerTest::tag(this));
+      response_writer_.Finish(response_, status, AsyncQpsServerTest::tag(this));
       return true;
     }
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
+    ResponseType response_;
     bool (ServerRpcContextUnaryImpl::*next_state_)(bool);
     std::function<void(ServerContextType *, RequestType *,
                        grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
@@ -297,11 +297,10 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     bool read_done(bool ok) {
       if (ok) {
         // invoke the method
-        ResponseType response;
         // Call the RPC processing function
-        grpc::Status status = invoke_method_(&req_, &response);
+        grpc::Status status = invoke_method_(&req_, &response_);
         // initiate the write
-        stream_.Write(response, AsyncQpsServerTest::tag(this));
+        stream_.Write(response_, AsyncQpsServerTest::tag(this));
         next_state_ = &ServerRpcContextStreamingImpl::write_done;
       } else {  // client has sent writes done
         // finish the stream
@@ -325,6 +324,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
+    ResponseType response_;
     bool (ServerRpcContextStreamingImpl::*next_state_)(bool);
     std::function<void(
         ServerContextType *,

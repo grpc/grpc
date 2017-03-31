@@ -42,6 +42,12 @@ typedef struct grpc_service_config grpc_service_config;
 grpc_service_config* grpc_service_config_create(const char* json_string);
 void grpc_service_config_destroy(grpc_service_config* service_config);
 
+/// Invokes \a process_json() for each global parameter in the service
+/// config.  \a arg is passed as the second argument to \a process_json().
+void grpc_service_config_parse_global_params(
+    const grpc_service_config* service_config,
+    void (*process_json)(const grpc_json* json, void* arg), void* arg);
+
 /// Gets the LB policy name from \a service_config.
 /// Returns NULL if no LB policy name was specified.
 /// Caller does NOT take ownership.

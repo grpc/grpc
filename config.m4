@@ -39,6 +39,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/basic_timers.c \
     src/core/lib/profiling/stap_timers.c \
     src/core/lib/support/alloc.c \
+    src/core/lib/support/arena.c \
+    src/core/lib/support/atm.c \
     src/core/lib/support/avl.c \
     src/core/lib/support/backoff.c \
     src/core/lib/support/cmdline.c \
@@ -92,6 +94,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -128,6 +131,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_factory_posix.c \
     src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -140,6 +144,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
     src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
     src/core/lib/iomgr/tcp_uv.c \
@@ -162,6 +169,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/security/util/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -180,6 +188,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
@@ -243,12 +252,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/security_handshaker.c \
     src/core/lib/security/transport/server_auth_filter.c \
     src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
-    src/core/lib/tsi/fake_transport_security.c \
-    src/core/lib/tsi/ssl_transport_security.c \
-    src/core/lib/tsi/transport_security.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_channel/channel_connectivity.c \
@@ -256,10 +264,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/client_channel_factory.c \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/default_initial_connect_string.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
@@ -269,6 +275,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/retry_throttle.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
@@ -286,6 +293,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/nanopb/pb_encode.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
@@ -625,6 +635,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/load_reporting)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
@@ -658,8 +669,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)

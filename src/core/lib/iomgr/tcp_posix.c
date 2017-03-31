@@ -111,7 +111,8 @@ typedef struct {
 static grpc_error *tcp_annotate_error(grpc_error *src_error, grpc_tcp *tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_slice_from_copied_string(tcp->peer_string));
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -246,8 +247,10 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
-    call_read_cb(exec_ctx, tcp,
-                 tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp));
+    call_read_cb(
+        exec_ctx, tcp,
+        tcp_annotate_error(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
@@ -464,10 +467,12 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_closure_sched(exec_ctx, cb,
-                       grpc_fd_is_shutdown(tcp->em_fd)
-                           ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
-                           : GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx, cb,
+        grpc_fd_is_shutdown(tcp->em_fd)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
+                                 tcp)
+            : GRPC_ERROR_NONE);
     return;
   }
   tcp->outgoing_buffer = buf;

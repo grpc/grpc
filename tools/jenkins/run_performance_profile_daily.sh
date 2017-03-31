@@ -45,3 +45,4 @@ else
 fi
 
 $PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency
+

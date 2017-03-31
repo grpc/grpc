@@ -102,6 +102,8 @@ typedef struct {
 typedef struct {
   gpr_timespec last_ping_sent_time;
   int pings_before_data_required;
+  grpc_timer delayed_ping_timer;
+  bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
 
 /* deframer state for the overall http2 stream of bytes */
@@ -308,6 +310,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
+  grpc_closure retry_initiate_ping_locked;
 
   /** ping acks */
   size_t ping_ack_count;
@@ -425,7 +428,7 @@ struct grpc_chttp2_stream {
   grpc_stream_refcount *refcount;
 
   grpc_closure destroy_stream;
-  void *destroy_stream_arg;
+  grpc_closure *destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   uint8_t included[STREAM_LIST_COUNT];
@@ -826,5 +829,9 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_stream *s, grpc_error *error);
 
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
+
+/** Set the default keepalive configurations, must only be called at
+    initialization */
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

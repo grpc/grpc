@@ -34,6 +34,7 @@ import grpc
 from grpc.framework.foundation import logging_pool
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 
 from tests.unit.framework.common import test_constants
 
@@ -52,11 +53,11 @@ class HealthServicerTest(unittest.TestCase):
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         self._server = grpc.server(server_pool)
         port = self._server.add_insecure_port('[::]:0')
-        health_pb2.add_HealthServicer_to_server(servicer, self._server)
+        health_pb2_grpc.add_HealthServicer_to_server(servicer, self._server)
         self._server.start()
 
         channel = grpc.insecure_channel('localhost:%d' % port)
-        self._stub = health_pb2.HealthStub(channel)
+        self._stub = health_pb2_grpc.HealthStub(channel)
 
     def test_empty_service(self):
         request = health_pb2.HealthCheckRequest()

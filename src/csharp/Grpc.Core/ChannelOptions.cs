@@ -151,7 +151,14 @@ namespace Grpc.Core
         public const string MaxConcurrentStreams = "grpc.max_concurrent_streams";
 
         /// <summary>Maximum message length that the channel can receive</summary>
-        public const string MaxMessageLength = "grpc.max_message_length";
+        public const string MaxReceiveMessageLength = "grpc.max_receive_message_length";
+
+        /// <summary>Maximum message length that the channel can send</summary>
+        public const string MaxSendMessageLength = "grpc.max_send_message_length";
+
+        /// <summary>Obsolete, for backward compatibility only.</summary>
+        [Obsolete("Use MaxReceiveMessageLength instead.")]
+        public const string MaxMessageLength = MaxReceiveMessageLength;
 
         /// <summary>Initial sequence number for http2 transports</summary>
         public const string Http2InitialSequenceNumber = "grpc.http2.initial_sequence_number";

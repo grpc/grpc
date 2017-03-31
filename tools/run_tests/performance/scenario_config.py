@@ -215,6 +215,29 @@ class CXXLanguage:
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_1channel_1MBmsg_%s' % secstr,
+          rpc_type='STREAMING',
+          req_size=1024*1024,
+          resp_size=1024*1024,
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE],
+          channels=1, outstanding=100)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_64KBmsg_%s' % secstr,
+          rpc_type='STREAMING',
+          req_size=64*1024,
+          resp_size=64*1024,
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
@@ -233,6 +256,19 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories + [SCALABLE],
           excluded_poll_engines = ['poll-cv'])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_%s' %
+          (secstr),
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          channels=1,
+          outstanding=64,
+          req_size=128,
+          resp_size=8*1024*1024,
+          secure=secure,
+          categories=smoketest_categories + [SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
@@ -275,15 +311,18 @@ class CXXLanguage:
               secure=secure,
               categories=smoketest_categories+[SCALABLE])
 
-          yield _ping_pong_scenario(
-              'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
-              rpc_type=rpc_type.upper(),
-              client_type='%s_CLIENT' % synchronicity.upper(),
-              server_type='%s_SERVER' % synchronicity.upper(),
-              unconstrained_client=synchronicity,
-              secure=secure,
-              categories=smoketest_categories+[SCALABLE],
-              resource_quota_size=500*1024)
+          # TODO(vjpai): Re-enable this test. It has a lot of timeouts
+          # and hasn't yet been conclusively identified as a test failure
+          # or race in the library
+          # yield _ping_pong_scenario(
+          #     'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_resource_quota' % (synchronicity, rpc_type, secstr),
+          #     rpc_type=rpc_type.upper(),
+          #     client_type='%s_CLIENT' % synchronicity.upper(),
+          #     server_type='%s_SERVER' % synchronicity.upper(),
+          #     unconstrained_client=synchronicity,
+          #     secure=secure,
+          #     categories=smoketest_categories+[SCALABLE],
+          #     resource_quota_size=500*1024)
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):

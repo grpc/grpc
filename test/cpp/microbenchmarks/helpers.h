@@ -41,8 +41,8 @@ extern "C" {
 #include "test/core/util/memory_counters.h"
 }
 
+#include <benchmark/benchmark.h>
 #include <grpc++/impl/grpc_library.h>
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 class Library {
  public:
@@ -55,7 +55,9 @@ class Library {
 
  private:
   Library() {
+#ifdef GPR_LOW_LEVEL_COUNTERS
     grpc_memory_counters_init();
+#endif
     init_lib_.init();
     rq_ = grpc_resource_quota_create("bm");
   }

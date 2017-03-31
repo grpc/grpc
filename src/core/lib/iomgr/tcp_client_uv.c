@@ -76,7 +76,6 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name, str);
-    grpc_error_free_string(str);
   }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
@@ -101,17 +100,21 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
     *connect->endpoint = grpc_tcp_create(
         connect->tcp_handle, connect->resource_quota, connect->addr_name);
   } else {
-    error = GRPC_ERROR_CREATE("Failed to connect to remote host");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to connect to remote host");
     error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, -status);
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
     if (status == UV_ECANCELED) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                                 "Timeout occurred");
+      error =
+          grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                             grpc_slice_from_static_string("Timeout occurred"));
       // This should only happen if the handle is already closed
     } else {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                                 uv_strerror(status));
+      error = grpc_error_set_str(
+          error, GRPC_ERROR_STR_OS_ERROR,
+          grpc_slice_from_static_string(uv_strerror(status)));
       uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
     }
   }

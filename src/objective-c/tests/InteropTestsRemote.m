@@ -32,10 +32,15 @@
  */
 
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "InteropTests.h"
 
 static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
+
+// The Protocol Buffers encoding overhead of remote interop server. Acquired
+// by experiment. Adjust this when server's proto file changes.
+static int32_t kRemoteInteropServerOverhead = 12;
 
 /** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
 @interface InteropTestsRemote : InteropTests
@@ -48,7 +53,7 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 }
 
 - (int32_t)encodingOverhead {
-  return 12; // bytes
+  return kRemoteInteropServerOverhead; // bytes
 }
 
 @end

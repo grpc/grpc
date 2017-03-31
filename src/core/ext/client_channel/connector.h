@@ -48,8 +48,6 @@ struct grpc_connector {
 typedef struct {
   /** set of pollsets interested in this connection */
   grpc_pollset_set *interested_parties;
-  /** initial connect string to send */
-  grpc_slice initial_connect_string;
   /** deadline for connection */
   gpr_timespec deadline;
   /** channel arguments (to be passed to transport) */

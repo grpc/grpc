@@ -101,18 +101,20 @@ class IndentScope {
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleName(const grpc::string& filename) {
+grpc::string ModuleName(const grpc::string& filename,
+                        const grpc::string& import_prefix) {
   grpc::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
-  return basename + "_pb2";
+  return import_prefix + basename + "_pb2";
 }
 
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleAlias(const grpc::string& filename) {
-  grpc::string module_name = ModuleName(filename);
+grpc::string ModuleAlias(const grpc::string& filename,
+                         const grpc::string& import_prefix) {
+  grpc::string module_name = ModuleName(filename, import_prefix);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
   // duplicate each underscore.
@@ -189,7 +191,7 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
   grpc::string generator_file_name = file->name();
   grpc::string module;
   if (generator_file_name != file_name || generate_in_pb2_grpc) {
-    module = ModuleAlias(file_name) + ".";
+    module = ModuleAlias(file_name, config.import_prefix) + ".";
   } else {
     module = "";
   }
@@ -645,15 +647,15 @@ bool PrivateGenerator::PrintBetaPreamble() {
              "Package", config.beta_package_root);
   out->Print("from $Package$ import interfaces as beta_interfaces\n", "Package",
              config.beta_package_root);
+  out->Print("from grpc.framework.common import cardinality\n");
+  out->Print(
+      "from grpc.framework.interfaces.face import utilities as "
+      "face_utilities\n");
   return true;
 }
 
 bool PrivateGenerator::PrintPreamble() {
   out->Print("import $Package$\n", "Package", config.grpc_package_root);
-  out->Print("from grpc.framework.common import cardinality\n");
-  out->Print(
-      "from grpc.framework.interfaces.face import utilities as "
-      "face_utilities\n");
   if (generate_in_pb2_grpc) {
     out->Print("\n");
     StringPairSet imports_set;
@@ -666,8 +668,10 @@ bool PrivateGenerator::PrintPreamble() {
         for (int k = 0; k < 2; ++k) {
           const Descriptor* type = types[k];
           grpc::string type_file_name = type->file()->name();
-          grpc::string module_name = ModuleName(type_file_name);
-          grpc::string module_alias = ModuleAlias(type_file_name);
+          grpc::string module_name =
+              ModuleName(type_file_name, config.import_prefix);
+          grpc::string module_alias =
+              ModuleAlias(type_file_name, config.import_prefix);
           imports_set.insert(std::make_tuple(module_name, module_alias));
         }
       }
@@ -766,7 +770,9 @@ pair<bool, grpc::string> PrivateGenerator::GetGrpcServices() {
 }  // namespace
 
 GeneratorConfiguration::GeneratorConfiguration()
-    : grpc_package_root("grpc"), beta_package_root("grpc.beta") {}
+    : grpc_package_root("grpc"),
+      beta_package_root("grpc.beta"),
+      import_prefix("") {}
 
 PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
     : config_(config) {}

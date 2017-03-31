@@ -46,14 +46,25 @@ struct grpc_linked_error {
   uint8_t next;
 };
 
+// c core representation of an error. See error.h for high level description of
+// this object.
 struct grpc_error {
-  gpr_refcount refs;
+  // All atomics in grpc_error must be stored in this nested struct. The rest of
+  // the object is memcpy-ed in bulk in copy_and_unref.
+  struct atomics {
+    gpr_refcount refs;
+    gpr_atm error_string;
+  } atomics;
+  // These arrays index into dynamic arena at the bottom of the struct.
+  // UINT8_MAX is used as a sentinel value.
   uint8_t ints[GRPC_ERROR_INT_MAX];
   uint8_t strs[GRPC_ERROR_STR_MAX];
   uint8_t times[GRPC_ERROR_TIME_MAX];
+  // The child errors are stored in the arena, but are effectively a linked list
+  // structure, since they are contained withing grpc_linked_error objects.
   uint8_t first_err;
   uint8_t last_err;
-  gpr_atm error_string;
+  // The arena is dynamically reallocated with a grow factor of 1.5.
   uint8_t arena_size;
   uint8_t arena_capacity;
   intptr_t arena[0];

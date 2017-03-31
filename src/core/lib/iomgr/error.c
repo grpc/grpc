@@ -35,7 +35,6 @@
 
 #include <string.h>
 
-#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -140,14 +139,16 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (grpc_error_is_special(err)) return err;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->refs.count, err->refs.count + 1, file, line, func);
-  gpr_ref(&err->refs);
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
+          func);
+  gpr_ref(&err->atomics.refs);
   return err;
 }
 #else
 grpc_error *grpc_error_ref(grpc_error *err) {
   if (grpc_error_is_special(err)) return err;
-  gpr_ref(&err->refs);
+  gpr_ref(&err->atomics.refs);
   return err;
 }
 #endif
@@ -182,7 +183,7 @@ static void error_destroy(grpc_error *err) {
   GPR_ASSERT(!grpc_error_is_special(err));
   unref_errs(err);
   unref_strs(err);
-  gpr_free((void *)gpr_atm_acq_load(&err->error_string));
+  gpr_free((void *)gpr_atm_acq_load(&err->atomics.error_string));
   gpr_free(err);
 }
 
@@ -191,15 +192,17 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (grpc_error_is_special(err)) return;
   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          err->refs.count, err->refs.count - 1, file, line, func);
-  if (gpr_unref(&err->refs)) {
+          gpr_atm_no_barrier_load(&err->atomics.refs.count),
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
+          func);
+  if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
 #else
 void grpc_error_unref(grpc_error *err) {
   if (grpc_error_is_special(err)) return;
-  if (gpr_unref(&err->refs)) {
+  if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
@@ -283,7 +286,7 @@ static void internal_add_error(grpc_error **err, grpc_error *new) {
 // It is very common to include and extra int and string in an error
 #define SURPLUS_CAPACITY (2 * SLOTS_PER_INT + SLOTS_PER_TIME)
 
-grpc_error *grpc_error_create(const char *file, int line, const char *desc,
+grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
                               grpc_error **referencing,
                               size_t num_referencing) {
   GPR_TIMER_BEGIN("grpc_error_create", 0);
@@ -309,14 +312,8 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   memset(err->times, UINT8_MAX, GRPC_ERROR_TIME_MAX);
 
   internal_set_int(&err, GRPC_ERROR_INT_FILE_LINE, line);
-  internal_set_str(&err, GRPC_ERROR_STR_FILE,
-                   grpc_slice_from_static_string(file));
-  internal_set_str(
-      &err, GRPC_ERROR_STR_DESCRIPTION,
-      grpc_slice_from_copied_buffer(
-          desc,
-          strlen(desc) +
-              1));  // TODO, pull this up.  // TODO(ncteisen), pull this up.
+  internal_set_str(&err, GRPC_ERROR_STR_FILE, file);
+  internal_set_str(&err, GRPC_ERROR_STR_DESCRIPTION, desc);
 
   for (size_t i = 0; i < num_referencing; ++i) {
     if (referencing[i] == GRPC_ERROR_NONE) continue;
@@ -328,8 +325,8 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 
   internal_set_time(&err, GRPC_ERROR_TIME_CREATED, gpr_now(GPR_CLOCK_REALTIME));
 
-  gpr_atm_no_barrier_store(&err->error_string, 0);
-  gpr_ref_init(&err->refs, 1);
+  gpr_atm_no_barrier_store(&err->atomics.error_string, 0);
+  gpr_ref_init(&err->atomics.refs, 1);
   GPR_TIMER_END("grpc_error_create", 0);
   return err;
 }
@@ -356,7 +353,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   GPR_TIMER_BEGIN("copy_error_and_unref", 0);
   grpc_error *out;
   if (grpc_error_is_special(in)) {
-    out = GRPC_ERROR_CREATE("unknown");
+    out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
     if (in == GRPC_ERROR_NONE) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
                        grpc_slice_from_static_string("no error"));
@@ -369,7 +366,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
                        grpc_slice_from_static_string("cancelled"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
     }
-  } else if (gpr_ref_is_unique(&in->refs)) {
+  } else if (gpr_ref_is_unique(&in->atomics.refs)) {
     out = in;
   } else {
     uint8_t new_arena_capacity = in->arena_capacity;
@@ -382,10 +379,14 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
     gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
-    memcpy(out, in, sizeof(*in) + in->arena_size * sizeof(intptr_t));
+    // bulk memcpy of the rest of the struct.
+    size_t skip = sizeof(&out->atomics);
+    memcpy((void *)((uintptr_t)out + skip), (void *)((uintptr_t)in + skip),
+           sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
+    // manually set the atomics and the new capacity
+    gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
+    gpr_ref_init(&out->atomics.refs, 1);
     out->arena_capacity = new_arena_capacity;
-    gpr_atm_no_barrier_store(&out->error_string, 0);
-    gpr_ref_init(&out->refs, 1);
     ref_strs(out);
     ref_errs(out);
     GRPC_ERROR_UNREF(in);
@@ -409,7 +410,7 @@ typedef struct {
   const char *msg;
 } special_error_status_map;
 static special_error_status_map error_status_map[] = {
-    {GRPC_ERROR_NONE, GRPC_STATUS_OK, NULL},
+    {GRPC_ERROR_NONE, GRPC_STATUS_OK, ""},
     {GRPC_ERROR_CANCELLED, GRPC_STATUS_CANCELLED, "Cancelled"},
     {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
 };
@@ -440,33 +441,33 @@ bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
 }
 
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
-                               const char *value) {
+                               grpc_slice str) {
   GPR_TIMER_BEGIN("grpc_error_set_str", 0);
   grpc_error *new = copy_error_and_unref(src);
-  internal_set_str(&new, which,
-                   grpc_slice_from_copied_buffer(
-                       value, strlen(value) + 1));  // TODO, pull this up.
+  internal_set_str(&new, which, str);
   GPR_TIMER_END("grpc_error_set_str", 0);
   return new;
 }
 
-const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
+bool grpc_error_get_str(grpc_error *err, grpc_error_strs which,
+                        grpc_slice *str) {
   if (grpc_error_is_special(err)) {
     if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
       for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
         if (error_status_map[i].error == err) {
-          return error_status_map[i].msg;
+          *str = grpc_slice_from_static_string(error_status_map[i].msg);
+          return true;
         }
       }
     }
-    return NULL;
+    return false;
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {
-    return (const char *)GRPC_SLICE_START_PTR(
-        *(grpc_slice *)(err->arena + slot));
+    *str = *(grpc_slice *)(err->arena + slot);
+    return true;
   } else {
-    return NULL;
+    return false;
   }
 }
 
@@ -507,13 +508,14 @@ static void append_str(const char *str, char **s, size_t *sz, size_t *cap) {
   }
 }
 
-static void append_esc_str(const char *str, char **s, size_t *sz, size_t *cap) {
+static void append_esc_str(const uint8_t *str, size_t len, char **s, size_t *sz,
+                           size_t *cap) {
   static const char *hex = "0123456789abcdef";
   append_chr('"', s, sz, cap);
-  for (const uint8_t *c = (const uint8_t *)str; *c; c++) {
-    if (*c < 32 || *c >= 127) {
+  for (size_t i = 0; i < len; i++, str++) {
+    if (*str < 32 || *str >= 127) {
       append_chr('\\', s, sz, cap);
-      switch (*c) {
+      switch (*str) {
         case '\b':
           append_chr('b', s, sz, cap);
           break;
@@ -533,12 +535,12 @@ static void append_esc_str(const char *str, char **s, size_t *sz, size_t *cap) {
           append_chr('u', s, sz, cap);
           append_chr('0', s, sz, cap);
           append_chr('0', s, sz, cap);
-          append_chr(hex[*c >> 4], s, sz, cap);
-          append_chr(hex[*c & 0x0f], s, sz, cap);
+          append_chr(hex[*str >> 4], s, sz, cap);
+          append_chr(hex[*str & 0x0f], s, sz, cap);
           break;
       }
     } else {
-      append_chr((char)*c, s, sz, cap);
+      append_chr((char)*str, s, sz, cap);
     }
   }
   append_chr('"', s, sz, cap);
@@ -578,11 +580,12 @@ static char *key_str(grpc_error_strs which) {
   return gpr_strdup(error_str_name(which));
 }
 
-static char *fmt_str(void *p) {
+static char *fmt_str(grpc_slice slice) {
   char *s = NULL;
   size_t sz = 0;
   size_t cap = 0;
-  append_esc_str(p, &s, &sz, &cap);
+  append_esc_str((const uint8_t *)GRPC_SLICE_START_PTR(slice),
+                 GRPC_SLICE_LENGTH(slice), &s, &sz, &cap);
   append_chr(0, &s, &sz, &cap);
   return s;
 }
@@ -591,9 +594,8 @@ static void collect_strs_kvs(grpc_error *err, kv_pairs *kvs) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {
     uint8_t slot = err->strs[which];
     if (slot != UINT8_MAX) {
-      append_kv(
-          kvs, key_str((grpc_error_strs)which),
-          fmt_str(GRPC_SLICE_START_PTR(*(grpc_slice *)(err->arena + slot))));
+      append_kv(kvs, key_str((grpc_error_strs)which),
+                fmt_str(*(grpc_slice *)(err->arena + slot)));
     }
   }
 }
@@ -673,7 +675,8 @@ static char *finish_kvs(kv_pairs *kvs) {
   append_chr('{', &s, &sz, &cap);
   for (size_t i = 0; i < kvs->num_kvs; i++) {
     if (i != 0) append_chr(',', &s, &sz, &cap);
-    append_esc_str(kvs->kvs[i].key, &s, &sz, &cap);
+    append_esc_str((const uint8_t *)kvs->kvs[i].key, strlen(kvs->kvs[i].key),
+                   &s, &sz, &cap);
     gpr_free(kvs->kvs[i].key);
     append_chr(':', &s, &sz, &cap);
     append_str(kvs->kvs[i].value, &s, &sz, &cap);
@@ -692,7 +695,7 @@ const char *grpc_error_string(grpc_error *err) {
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
-  void *p = (void *)gpr_atm_acq_load(&err->error_string);
+  void *p = (void *)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != NULL) {
     GPR_TIMER_END("grpc_error_string", 0);
     return p;
@@ -712,9 +715,9 @@ const char *grpc_error_string(grpc_error *err) {
 
   char *out = finish_kvs(&kvs);
 
-  if (!gpr_atm_rel_cas(&err->error_string, 0, (gpr_atm)out)) {
+  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
     gpr_free(out);
-    out = (char *)gpr_atm_no_barrier_load(&err->error_string);
+    out = (char *)gpr_atm_no_barrier_load(&err->atomics.error_string);
   }
 
   GPR_TIMER_END("grpc_error_string", 0);
@@ -725,10 +728,14 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name) {
   return grpc_error_set_str(
       grpc_error_set_str(
-          grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
-                             GRPC_ERROR_INT_ERRNO, err),
-          GRPC_ERROR_STR_OS_ERROR, strerror(err)),
-      GRPC_ERROR_STR_SYSCALL, call_name);
+          grpc_error_set_int(
+              grpc_error_create(grpc_slice_from_static_string(file), line,
+                                grpc_slice_from_static_string("OS Error"), NULL,
+                                0),
+              GRPC_ERROR_INT_ERRNO, err),
+          GRPC_ERROR_STR_OS_ERROR,
+          grpc_slice_from_static_string(strerror(err))),
+      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
 }
 
 #ifdef GPR_WINDOWS
@@ -737,10 +744,13 @@ grpc_error *grpc_wsa_error(const char *file, int line, int err,
   char *utf8_message = gpr_format_message(err);
   grpc_error *error = grpc_error_set_str(
       grpc_error_set_str(
-          grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
-                             GRPC_ERROR_INT_WSA_ERROR, err),
-          GRPC_ERROR_STR_OS_ERROR, utf8_message),
-      GRPC_ERROR_STR_SYSCALL, call_name);
+          grpc_error_set_int(
+              grpc_error_create(grpc_slice_from_static_string(file), line,
+                                grpc_slice_from_static_string("OS Error"), NULL,
+                                0),
+              GRPC_ERROR_INT_WSA_ERROR, err),
+          GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_copied_string(utf8_message)),
+      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
   gpr_free(utf8_message);
   return error;
 }
