@@ -56,24 +56,6 @@ set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme AllTests \
-    -destination name="iPhone 6" \
-    test | xcpretty
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests \
-    -destination name="iPhone 6" \
-    test | xcpretty
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 6" \
-    test | xcpretty
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 6" \
-    test | xcpretty
+    test 
