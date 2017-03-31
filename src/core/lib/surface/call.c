@@ -117,9 +117,17 @@ static received_status unpack_received_status(gpr_atm atm) {
 
 typedef struct batch_control {
   grpc_call *call;
+  /* Share memory for cq_completion and notify_tag as they are never needed
+     simultaneously. Each byte used in this data structure count as six bytes
+     per call, so any savings we can make are worthwhile */
   union {
     grpc_cq_completion cq_completion;
     struct {
+      /* Any given op indicates completion by either (a) calling a closure or
+         (b) sending a notification on the call's completion queue.  If
+         \a is_closure is true, \a tag indicates a closure to be invoked;
+         otherwise, \a tag indicates the tag to be used in the notification to
+         be sent to the completion queue. */
       void *tag;
       bool is_closure;
     } notify_tag;
@@ -1489,7 +1497,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         stream_op->send_trailing_metadata = true;
-        call->sent_final_op = 1;
+        call->sent_final_op = true;
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
@@ -1513,7 +1521,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         stream_op->send_trailing_metadata = true;
-        call->sent_final_op = 1;
+        call->sent_final_op = true;
         GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
@@ -1569,7 +1577,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
            from server.c. In that case, it's coming from accept_stream, and in
            that case we're not necessarily covered by a poller. */
         stream_op->covered_by_poller = call->is_client;
-        call->received_initial_metadata = 1;
+        call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
         grpc_closure_init(&call->receiving_initial_metadata_ready,
@@ -1616,7 +1624,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->requested_final_op = 1;
+        call->requested_final_op = true;
         call->buffered_metadata[1] =
             op->data.recv_status_on_client.trailing_metadata;
         call->final_op.client.status = op->data.recv_status_on_client.status;
@@ -1643,7 +1651,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->requested_final_op = 1;
+        call->requested_final_op = true;
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
@@ -1676,25 +1684,25 @@ done:
 done_with_error:
   /* reverse any mutations that occured */
   if (stream_op->send_initial_metadata) {
-    call->sent_initial_metadata = 0;
+    call->sent_initial_metadata = false;
     grpc_metadata_batch_clear(exec_ctx, &call->metadata_batch[0][0]);
   }
   if (stream_op->send_message) {
-    call->sending_message = 0;
+    call->sending_message = false;
     grpc_byte_stream_destroy(exec_ctx, &call->sending_stream.base);
   }
   if (stream_op->send_trailing_metadata) {
-    call->sent_final_op = 0;
+    call->sent_final_op = false;
     grpc_metadata_batch_clear(exec_ctx, &call->metadata_batch[0][1]);
   }
   if (stream_op->recv_initial_metadata) {
-    call->received_initial_metadata = 0;
+    call->received_initial_metadata = false;
   }
   if (stream_op->recv_message) {
-    call->receiving_message = 0;
+    call->receiving_message = false;
   }
   if (stream_op->recv_trailing_metadata) {
-    call->requested_final_op = 0;
+    call->requested_final_op = false;
   }
   goto done;
 }
