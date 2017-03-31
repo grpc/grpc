@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,64 +28,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+import subprocess
+import datetime
 
-cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "test_config.c",
-        "memory_counters.c",
-    ],
-    hdrs = [
-        "test_config.h",
-        "memory_counters.h",
-    ],
-    deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
-)
+# this script is only of historical interest: it's the script that was used to
+# bootstrap the dataset
 
-cc_library(
-    name = "grpc_test_util",
-    srcs = [
-        "debugger_macros.c",
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-        "trickle_endpoint.c",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-        "trickle_endpoint.h",
-        "grpc_profiler.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
-        "slice_splitter.h",
-        "test_tcp_server.h",
-    ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
-)
+def daterange(start, end):
+  for n in range(int((end - start).days)):
+    yield start + datetime.timedelta(n)
 
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
-)
+start_date = datetime.date(2017, 3, 26)
+end_date = datetime.date(2017, 3, 29)
 
-sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
-)
+for dt in daterange(start_date, end_date):
+  dmy = dt.strftime('%Y-%m-%d')
+  sha1 = subprocess.check_output(['git', 'rev-list', '-n', '1',
+                                  '--before=%s' % dmy,
+                                  'master']).strip()
+  subprocess.check_call(['git', 'checkout', sha1])
+  subprocess.check_call(['git', 'submodule', 'update'])
+  subprocess.check_call(['git', 'clean', '-f', '-x', '-d'])
+  subprocess.check_call(['cloc', '--vcs=git', '--by-file', '--yaml', '--out=../count/%s.yaml' % dmy, '.'])
+

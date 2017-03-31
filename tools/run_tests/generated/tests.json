@@ -39576,6 +39576,56 @@
   {
     "args": [
       "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_1channel_1MBmsg_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"client_channels\": 1, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "tsan", 
+      "asan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_1channel_1MBmsg_secure", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_64KBmsg_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "tsan", 
+      "asan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_64KBmsg_secure", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
       "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
@@ -39905,6 +39955,56 @@
   {
     "args": [
       "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_1channel_1MBmsg_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"client_channels\": 1, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "tsan", 
+      "asan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_1channel_1MBmsg_insecure", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_64KBmsg_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "tsan", 
+      "asan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_64KBmsg_insecure", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
       "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_one_server_core_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 1, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 0, \"req_size\": 0}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
     ], 
     "boringssl": true, 
@@ -40200,6 +40300,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40236,6 +40337,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40251,6 +40353,80 @@
       "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_secure_low_thread_count", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_1channel_1MBmsg_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"client_channels\": 1, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan-noleaks", 
+      "asan-trace-cmp", 
+      "basicprof", 
+      "counters", 
+      "dbg", 
+      "gcov", 
+      "helgrind", 
+      "lto", 
+      "memcheck", 
+      "msan", 
+      "mutrace", 
+      "opt", 
+      "stapprof", 
+      "ubsan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_1channel_1MBmsg_secure_low_thread_count", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_64KBmsg_secure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": {\"use_test_ca\": true, \"server_host_override\": \"foo.test.google.fr\"}, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan-noleaks", 
+      "asan-trace-cmp", 
+      "basicprof", 
+      "counters", 
+      "dbg", 
+      "gcov", 
+      "helgrind", 
+      "lto", 
+      "memcheck", 
+      "msan", 
+      "mutrace", 
+      "opt", 
+      "stapprof", 
+      "ubsan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_64KBmsg_secure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -40272,6 +40448,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40308,6 +40485,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40346,6 +40524,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40384,6 +40563,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40420,6 +40600,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40456,6 +40637,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40492,6 +40674,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40528,6 +40711,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40564,6 +40748,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40600,6 +40785,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40636,6 +40822,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40672,6 +40859,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40708,6 +40896,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40723,6 +40912,80 @@
       "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_insecure_low_thread_count", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_1channel_1MBmsg_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 1048576, \"req_size\": 1048576}}, \"client_channels\": 1, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan-noleaks", 
+      "asan-trace-cmp", 
+      "basicprof", 
+      "counters", 
+      "dbg", 
+      "gcov", 
+      "helgrind", 
+      "lto", 
+      "memcheck", 
+      "msan", 
+      "mutrace", 
+      "opt", 
+      "stapprof", 
+      "ubsan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_1channel_1MBmsg_insecure_low_thread_count", 
+    "timeout_seconds": 360
+  }, 
+  {
+    "args": [
+      "--scenarios_json", 
+      "{\"scenarios\": [{\"name\": \"cpp_generic_async_streaming_qps_unconstrained_64KBmsg_insecure\", \"warmup_seconds\": 0, \"benchmark_seconds\": 1, \"num_servers\": 1, \"server_config\": {\"async_server_threads\": 0, \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"server_type\": \"ASYNC_GENERIC_SERVER\"}, \"num_clients\": 0, \"client_config\": {\"client_type\": \"ASYNC_CLIENT\", \"security_params\": null, \"payload_config\": {\"bytebuf_params\": {\"resp_size\": 65536, \"req_size\": 65536}}, \"client_channels\": 64, \"async_client_threads\": 0, \"outstanding_rpcs_per_channel\": 100, \"rpc_type\": \"STREAMING\", \"load_params\": {\"closed_loop\": {}}, \"histogram_params\": {\"max_possible\": 60000000000.0, \"resolution\": 0.01}}}]}"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": "capacity", 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan-noleaks", 
+      "asan-trace-cmp", 
+      "basicprof", 
+      "counters", 
+      "dbg", 
+      "gcov", 
+      "helgrind", 
+      "lto", 
+      "memcheck", 
+      "msan", 
+      "mutrace", 
+      "opt", 
+      "stapprof", 
+      "ubsan"
+    ], 
+    "excluded_poll_engines": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ], 
+    "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_64KBmsg_insecure_low_thread_count", 
     "timeout_seconds": 360
   }, 
   {
@@ -40744,6 +41007,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40780,6 +41044,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40818,6 +41083,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40856,6 +41122,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40892,6 +41159,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40928,6 +41196,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -40964,6 +41233,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -41000,6 +41270,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -41036,6 +41307,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -41072,6 +41344,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -41108,6 +41381,7 @@
       "dbg", 
       "gcov", 
       "helgrind", 
+      "lto", 
       "memcheck", 
       "msan", 
       "mutrace", 
@@ -82068,6 +82342,29 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-5834320218423296"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-5965570207907840"
     ], 
     "ci_platforms": [
       "linux"

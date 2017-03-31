@@ -86,6 +86,11 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
       p, &o, n, 0, __ATOMIC_RELEASE, __ATOMIC_RELAXED));
 }
 
+static __inline int gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
+  return GPR_ATM_INC_CAS_THEN(__atomic_compare_exchange_n(
+      p, &o, n, 0, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED));
+}
+
 #define gpr_atm_full_xchg(p, n) \
   GPR_ATM_INC_CAS_THEN(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))
 

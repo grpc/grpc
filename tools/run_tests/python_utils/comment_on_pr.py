@@ -27,64 +27,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+import os
+import json
+import urllib2
 
-cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "test_config.c",
-        "memory_counters.c",
-    ],
-    hdrs = [
-        "test_config.h",
-        "memory_counters.h",
-    ],
-    deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
-)
-
-cc_library(
-    name = "grpc_test_util",
-    srcs = [
-        "debugger_macros.c",
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-        "trickle_endpoint.c",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-        "trickle_endpoint.h",
-        "grpc_profiler.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
-        "slice_splitter.h",
-        "test_tcp_server.h",
-    ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
-)
-
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
-)
-
-sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
-)
+def comment_on_pr(text):
+  if 'JENKINS_OAUTH_TOKEN' not in os.environ:
+    print 'Missing JENKINS_OAUTH_TOKEN env var: not commenting'
+    return
+  if 'ghprbPullId' not in os.environ:
+    print 'Missing ghprbPullId env var: not commenting'
+    return
+  req = urllib2.Request(
+      url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
+          os.environ['ghprbPullId'],
+      data = json.dumps({'body': text}),
+      headers = {
+        'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
+        'Content-Type': 'application/json',
+      })
+  print urllib2.urlopen(req).read()

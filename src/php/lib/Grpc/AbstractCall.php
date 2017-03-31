@@ -131,7 +131,7 @@ abstract class AbstractCall
         // Proto3 implementation
         if (method_exists($data, 'encode')) {
             return $data->encode();
-        } else if (method_exists($data, 'serializeToString')) {
+        } elseif (method_exists($data, 'serializeToString')) {
             return $data->serializeToString();
         }
 
