@@ -172,7 +172,7 @@ struct op_state {
 };
 
 struct op_and_state {
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch op;
   struct op_state state;
   bool done;
   struct stream_obj *s;      /* Pointer back to the stream object */
@@ -187,7 +187,7 @@ struct op_storage {
 struct stream_obj {
   gpr_arena *arena;
   struct op_and_state *oas;
-  grpc_transport_stream_op *curr_op;
+  grpc_transport_stream_op_batch *curr_op;
   grpc_cronet_transport *curr_ct;
   grpc_stream *curr_gs;
   bidirectional_stream *cbs;
@@ -298,12 +298,12 @@ static grpc_error *make_error_with_desc(int error_code, const char *desc) {
 /*
   Add a new stream op to op storage.
 */
-static void add_to_storage(struct stream_obj *s, grpc_transport_stream_op *op) {
+static void add_to_storage(struct stream_obj *s, grpc_transport_stream_op_batch *op) {
   struct op_storage *storage = &s->storage;
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
   struct op_and_state *new_op = gpr_malloc(sizeof(struct op_and_state));
-  memcpy(&new_op->op, op, sizeof(grpc_transport_stream_op));
+  memcpy(&new_op->op, op, sizeof(grpc_transport_stream_op_batch));
   memset(&new_op->state, 0, sizeof(new_op->state));
   new_op->s = s;
   new_op->done = false;
@@ -768,7 +768,7 @@ static bool header_has_authority(grpc_linked_mdelem *head) {
   Op Execution: Decide if one of the actions contained in the stream op can be
   executed. This is the heart of the state machine.
 */
-static bool op_can_be_run(grpc_transport_stream_op *curr_op,
+static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
                           struct stream_obj *s, struct op_state *op_state,
                           enum e_op_id op_id) {
   struct op_state *stream_state = &s->state;
@@ -919,7 +919,7 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
 */
 static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                           struct op_and_state *oas) {
-  grpc_transport_stream_op *stream_op = &oas->op;
+  grpc_transport_stream_op_batch *stream_op = &oas->op;
   struct stream_obj *s = oas->s;
   grpc_cronet_transport *t = (grpc_cronet_transport *)s->curr_ct;
   struct op_state *stream_state = &s->state;
@@ -1301,7 +1301,7 @@ static void set_pollset_set_do_nothing(grpc_exec_ctx *exec_ctx,
                                        grpc_pollset_set *pollset_set) {}
 
 static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                              grpc_stream *gs, grpc_transport_stream_op *op) {
+                              grpc_stream *gs, grpc_transport_stream_op_batch *op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
   if (op->send_initial_metadata &&
       header_has_authority(op->payload->send_initial_metadata

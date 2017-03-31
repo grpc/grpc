@@ -113,19 +113,19 @@ typedef struct {
   grpc_closure closure;
 } grpc_handler_private_op_data;
 
-typedef struct grpc_transport_stream_op_payload
-    grpc_transport_stream_op_payload;
+typedef struct grpc_transport_stream_op_batch_payload
+    grpc_transport_stream_op_batch_payload;
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
-typedef struct grpc_transport_stream_op {
+typedef struct grpc_transport_stream_op_batch {
   /** Should be enqueued when all requested operations (excluding recv_message
       and recv_initial_metadata which have their own closures) in a given batch
       have been completed. */
   grpc_closure *on_complete;
 
   /** Values for the stream op (fields set are determined by flags above) */
-  grpc_transport_stream_op_payload *payload;
+  grpc_transport_stream_op_batch_payload *payload;
 
   /** Is the completion of this op covered by a poller (if false: the op should
       complete independently of some pollset being polled) */
@@ -161,9 +161,9 @@ typedef struct grpc_transport_stream_op {
    * current handler of the op */
 
   grpc_handler_private_op_data handler_private;
-} grpc_transport_stream_op;
+} grpc_transport_stream_op_batch;
 
-struct grpc_transport_stream_op_payload {
+struct grpc_transport_stream_op_batch_payload {
   struct {
     grpc_metadata_batch *send_initial_metadata;
     /** Iff send_initial_metadata != NULL, flags associated with
@@ -289,11 +289,11 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_stream *stream,
                                    grpc_closure *then_schedule_closure);
 
-void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op,
-                                                  grpc_error *error);
+void grpc_transport_stream_op_batch_finish_with_failure(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
+    grpc_error *error);
 
-char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
+char *grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
@@ -304,11 +304,12 @@ char *grpc_transport_op_string(grpc_transport_op *op);
      transport - the transport on which to initiate the stream
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
-     op        - a grpc_transport_stream_op specifying the op to perform */
+     op        - a grpc_transport_stream_op_batch specifying the op to perform
+   */
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
                                       grpc_transport *transport,
                                       grpc_stream *stream,
-                                      grpc_transport_stream_op *op);
+                                      grpc_transport_stream_op_batch *op);
 
 void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport,
@@ -340,9 +341,10 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_consumed);
-/* Allocate a grpc_transport_stream_op, and preconfigure the on_consumed closure
+/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_consumed
+   closure
    to \a on_consumed and then delete the returned transport op */
-grpc_transport_stream_op *grpc_make_transport_stream_op(
+grpc_transport_stream_op_batch *grpc_make_transport_stream_op(
     grpc_closure *on_consumed);
 
 #ifdef __cplusplus

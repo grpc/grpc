@@ -64,7 +64,7 @@ typedef struct {
      pollset_set so that work can progress when this call wants work to progress
   */
   grpc_polling_entity *pollent;
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch op;
   uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
@@ -108,7 +108,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     const char *error_details) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
-  grpc_transport_stream_op *op = &calld->op;
+  grpc_transport_stream_op_batch *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
   reset_auth_metadata_context(&calld->auth_md_context);
@@ -136,7 +136,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(exec_ctx, elem, op);
   } else {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
   }
 }
 
@@ -172,7 +172,7 @@ void build_auth_metadata_context(grpc_security_connector *sc,
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {
+                                   grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
@@ -193,7 +193,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-      grpc_transport_stream_op_finish_with_failure(
+      grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, op,
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -244,7 +244,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
    that is being sent or received. */
 static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
-                                    grpc_transport_stream_op *op) {
+                                    grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("auth_start_transport_op", 0);
 
   /* grab pointers to our data from the call element */

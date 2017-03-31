@@ -318,7 +318,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                         grpc_transport_stream_op *op) {
+                         grpc_transport_stream_op_batch *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
@@ -341,7 +341,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                   exec_ctx, elem,
                   op->payload->send_initial_metadata.send_initial_metadata));
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
       return;
     }
   }
@@ -377,7 +377,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         exec_ctx, elem,
         op->payload->send_trailing_metadata.send_trailing_metadata);
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
       return;
     }
   }
@@ -385,7 +385,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_transport_stream_op *op) {
+                                  grpc_transport_stream_op_batch *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   GPR_TIMER_BEGIN("hs_start_transport_op", 0);
   hs_mutate_op(exec_ctx, elem, op);

@@ -62,7 +62,7 @@ typedef struct call_data {
   /** If true, contents of \a compression_algorithm are authoritative */
   int has_compression_algorithm;
 
-  grpc_transport_stream_op *send_op;
+  grpc_transport_stream_op_batch *send_op;
   uint32_t send_length;
   uint32_t send_flags;
   grpc_slice incoming_slice;
@@ -243,19 +243,19 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+static void compress_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
                                                grpc_call_element *elem,
-                                               grpc_transport_stream_op *op) {
+                                               grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
-  GPR_TIMER_BEGIN("compress_start_transport_stream_op", 0);
+  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
 
   if (op->send_initial_metadata) {
     grpc_error *error = process_send_initial_metadata(
         exec_ctx, elem,
         op->payload->send_initial_metadata.send_initial_metadata);
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
       return;
     }
   }
@@ -270,7 +270,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     grpc_call_next_op(exec_ctx, elem, op);
   }
 
-  GPR_TIMER_END("compress_start_transport_stream_op", 0);
+  GPR_TIMER_END("compress_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
@@ -339,7 +339,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_compress_filter = {
-    compress_start_transport_stream_op,
+    compress_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

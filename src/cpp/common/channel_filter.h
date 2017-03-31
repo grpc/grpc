@@ -141,13 +141,13 @@ class TransportOp {
   grpc_transport_op *op_;  // Not owned.
 };
 
-/// A C++ wrapper for the \c grpc_transport_stream_op struct.
+/// A C++ wrapper for the \c grpc_transport_stream_op_batch struct.
 class TransportStreamOp {
  public:
   /// Borrows a pointer to \a op, but does NOT take ownership.
   /// The caller must ensure that \a op continues to exist for as
   /// long as the TransportStreamOp object does.
-  explicit TransportStreamOp(grpc_transport_stream_op *op)
+  explicit TransportStreamOp(grpc_transport_stream_op_batch *op)
       : op_(op),
         send_initial_metadata_(
             op->send_initial_metadata
@@ -166,7 +166,7 @@ class TransportStreamOp {
                 ? op->payload->recv_trailing_metadata.recv_trailing_metadata
                 : nullptr) {}
 
-  grpc_transport_stream_op *op() const { return op_; }
+  grpc_transport_stream_op_batch *op() const { return op_; }
 
   grpc_closure *on_complete() const { return op_->on_complete; }
   void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
@@ -226,7 +226,7 @@ class TransportStreamOp {
   }
 
  private:
-  grpc_transport_stream_op *op_;  // Not owned.
+  grpc_transport_stream_op_batch *op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
   MetadataBatch recv_initial_metadata_;
@@ -344,7 +344,7 @@ class ChannelFilter final {
 
   static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     grpc_transport_stream_op *op) {
+                                     grpc_transport_stream_op_batch *op) {
     CallDataType *call_data = (CallDataType *)elem->call_data;
     TransportStreamOp op_wrapper(op);
     call_data->StartTransportStreamOp(exec_ctx, elem, &op_wrapper);

@@ -63,7 +63,7 @@ typedef struct call_data {
   uint8_t *payload_bytes;
 
   /* Vars to read data off of send_message */
-  grpc_transport_stream_op *send_op;
+  grpc_transport_stream_op_batch *send_op;
   uint32_t send_length;
   uint32_t send_flags;
   grpc_slice incoming_slice;
@@ -254,7 +254,7 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 
 static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_transport_stream_op *op) {
+                                grpc_transport_stream_op_batch *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -422,12 +422,12 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_transport_stream_op *op) {
+                                  grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
   } else {
     call_data *calld = elem->call_data;
     if (op->send_message && calld->send_message_blocked) {

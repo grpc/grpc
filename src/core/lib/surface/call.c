@@ -138,7 +138,7 @@ typedef struct batch_control {
   grpc_error *errors[MAX_ERRORS_PER_BATCH];
   gpr_atm num_errors;
 
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch op;
 } batch_control;
 
 struct grpc_call {
@@ -172,7 +172,7 @@ struct grpc_call {
   bool has_initial_md_been_received;
 
   batch_control active_batches[MAX_CONCURRENT_BATCHES];
-  grpc_transport_stream_op_payload stream_op_payload;
+  grpc_transport_stream_op_batch_payload stream_op_payload;
 
   /* first idx: is_receiving, second idx: is_trailing */
   grpc_metadata_batch metadata_batch[2][2];
@@ -243,7 +243,7 @@ int grpc_call_error_trace = 0;
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                       grpc_transport_stream_op *op);
+                       grpc_transport_stream_op_batch *op);
 static void cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                status_source source, grpc_status_code status,
                                const char *description);
@@ -540,12 +540,12 @@ grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
 }
 
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                       grpc_transport_stream_op *op) {
+                       grpc_transport_stream_op_batch *op) {
   grpc_call_element *elem;
 
   GPR_TIMER_BEGIN("execute_op", 0);
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, op);
   GPR_TIMER_END("execute_op", 0);
 }
 
@@ -598,7 +598,7 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
                               status_source source, grpc_error *error) {
   GRPC_CALL_INTERNAL_REF(c, "termination");
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
-  grpc_transport_stream_op *op = grpc_make_transport_stream_op(
+  grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(
       grpc_closure_create(done_termination, c, grpc_schedule_on_exec_ctx));
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
@@ -1381,8 +1381,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   bctl->completion_data.notify_tag.is_closure =
       (uint8_t)(is_notify_tag_closure != 0);
 
-  grpc_transport_stream_op *stream_op = &bctl->op;
-  grpc_transport_stream_op_payload *stream_op_payload =
+  grpc_transport_stream_op_batch *stream_op = &bctl->op;
+  grpc_transport_stream_op_batch_payload *stream_op_payload =
       &call->stream_op_payload;
   stream_op->covered_by_poller = true;
 

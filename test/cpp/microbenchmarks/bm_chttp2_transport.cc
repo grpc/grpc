@@ -207,7 +207,7 @@ class Stream {
                                   static_cast<grpc_stream *>(stream_), closure);
   }
 
-  void Op(grpc_transport_stream_op *op) {
+  void Op(grpc_transport_stream_op_batch *op) {
     grpc_transport_perform_stream_op(f_->exec_ctx(), f_->transport(),
                                      static_cast<grpc_stream *>(stream_), op);
   }
@@ -305,8 +305,8 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
-  grpc_transport_stream_op op;
-  grpc_transport_stream_op_payload op_payload;
+  grpc_transport_stream_op_batch op;
+  grpc_transport_stream_op_batch_payload op_payload;
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
 
@@ -356,8 +356,8 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
-  grpc_transport_stream_op op;
-  grpc_transport_stream_op_payload op_payload;
+  grpc_transport_stream_op_batch op;
+  grpc_transport_stream_op_batch_payload op_payload;
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -383,8 +383,8 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
-  grpc_transport_stream_op op;
-  grpc_transport_stream_op_payload op_payload;
+  grpc_transport_stream_op_batch op;
+  grpc_transport_stream_op_batch_payload op_payload;
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -504,8 +504,8 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
-  grpc_transport_stream_op_payload op_payload;
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch_payload op_payload;
+  grpc_transport_stream_op_batch op;
   grpc_byte_stream *recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
 

@@ -80,9 +80,9 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   mdb->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
-static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+static void lame_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
                                            grpc_call_element *elem,
-                                           grpc_transport_stream_op *op) {
+                                           grpc_transport_stream_op_batch *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->recv_initial_metadata) {
     fill_metadata(exec_ctx, elem,
@@ -91,7 +91,7 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }
-  grpc_transport_stream_op_finish_with_failure(
+  grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx, op,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
 }
@@ -150,7 +150,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_lame_filter = {
-    lame_start_transport_stream_op,
+    lame_start_transport_stream_op_batch,
     lame_start_transport_op,
     sizeof(call_data),
     init_call_elem,

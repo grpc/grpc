@@ -221,7 +221,7 @@ namespace dummy_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {}
+                                   grpc_transport_stream_op_batch *op) {}
 
 static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
@@ -296,7 +296,7 @@ void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_transport_stream_op *op) {
+                     grpc_stream *stream, grpc_transport_stream_op_batch *op) {
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
 
@@ -368,8 +368,8 @@ class SendEmptyMetadata {
   const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_slice method_ = grpc_slice_from_static_string("/foo/bar");
-  grpc_transport_stream_op op_;
-  grpc_transport_stream_op_payload op_payload_;
+  grpc_transport_stream_op_batch op_;
+  grpc_transport_stream_op_batch_payload op_payload_;
   grpc_closure closure_;
 };
 
@@ -491,7 +491,7 @@ namespace isolated_call_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {
+                                   grpc_transport_stream_op_batch *op) {
   if (op->recv_initial_metadata) {
     grpc_closure_sched(
         exec_ctx,

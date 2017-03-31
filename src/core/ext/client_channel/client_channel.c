@@ -755,7 +755,7 @@ typedef struct client_channel_call_data {
   grpc_connected_subchannel *connected_subchannel;
   grpc_polling_entity *pollent;
 
-  grpc_transport_stream_op **waiting_ops;
+  grpc_transport_stream_op_batch **waiting_ops;
   size_t waiting_ops_count;
   size_t waiting_ops_capacity;
 
@@ -775,7 +775,7 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
   return scc == CANCELLED_CALL ? NULL : scc;
 }
 
-static void add_waiting_locked(call_data *calld, grpc_transport_stream_op *op) {
+static void add_waiting_locked(call_data *calld, grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("add_waiting_locked", 0);
   if (calld->waiting_ops_count == calld->waiting_ops_capacity) {
     calld->waiting_ops_capacity = GPR_MAX(3, 2 * calld->waiting_ops_capacity);
@@ -791,7 +791,7 @@ static void fail_locked(grpc_exec_ctx *exec_ctx, call_data *calld,
                         grpc_error *error) {
   size_t i;
   for (i = 0; i < calld->waiting_ops_count; i++) {
-    grpc_transport_stream_op_finish_with_failure(
+    grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->waiting_ops[i], GRPC_ERROR_REF(error));
   }
   calld->waiting_ops_count = 0;
@@ -804,7 +804,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
   }
 
   grpc_subchannel_call *call = GET_CALL(calld);
-  grpc_transport_stream_op **ops = calld->waiting_ops;
+  grpc_transport_stream_op_batch **ops = calld->waiting_ops;
   size_t nops = calld->waiting_ops_count;
   if (call == CANCELLED_CALL) {
     fail_locked(exec_ctx, calld, GRPC_ERROR_CANCELLED);
@@ -1052,8 +1052,8 @@ static bool pick_subchannel_locked(
   return false;
 }
 
-static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
-                                                   grpc_transport_stream_op *op,
+static void start_transport_stream_op_batch_locked_inner(grpc_exec_ctx *exec_ctx,
+                                                   grpc_transport_stream_op_batch *op,
                                                    grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -1062,7 +1062,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
   /* need to recheck that another thread hasn't set the call */
   call = GET_CALL(calld);
   if (call == CANCELLED_CALL) {
-    grpc_transport_stream_op_finish_with_failure(
+    grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
     /* early out */
     return;
@@ -1077,7 +1077,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
     if (!gpr_atm_rel_cas(&calld->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       /* recurse to retry */
-      start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+      start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
       /* early out */
       return;
     } else {
@@ -1099,7 +1099,7 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
               GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error));
           break;
       }
-      grpc_transport_stream_op_finish_with_failure(
+      grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, op,
           GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error));
       /* early out */
@@ -1143,13 +1143,13 @@ static void start_transport_stream_op_locked_inner(grpc_exec_ctx *exec_ctx,
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
     }
     gpr_atm_rel_store(&calld->subchannel_call,
                       (gpr_atm)(uintptr_t)subchannel_call);
     retry_waiting_locked(exec_ctx, calld);
     /* recurse to retry */
-    start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+    start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
     /* early out */
     return;
   }
@@ -1177,11 +1177,11 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
                    GRPC_ERROR_REF(error));
 }
 
-static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
+static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                              grpc_error *error_ignored) {
-  GPR_TIMER_BEGIN("start_transport_stream_op_locked", 0);
+  GPR_TIMER_BEGIN("start_transport_stream_op_batch_locked", 0);
 
-  grpc_transport_stream_op *op = arg;
+  grpc_transport_stream_op_batch *op = arg;
   grpc_call_element *elem = op->handler_private.extra_arg;
   call_data *calld = elem->call_data;
 
@@ -1193,11 +1193,11 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
     op->on_complete = &calld->on_complete;
   }
 
-  start_transport_stream_op_locked_inner(exec_ctx, op, elem);
+  start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
 
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call,
-                        "start_transport_stream_op");
-  GPR_TIMER_END("start_transport_stream_op_locked", 0);
+                        "start_transport_stream_op_batch");
+  GPR_TIMER_END("start_transport_stream_op_batch_locked", 0);
 }
 
 /* The logic here is fairly complicated, due to (a) the fact that we
@@ -1208,39 +1208,39 @@ static void start_transport_stream_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
    We use double-checked locking to initially see if initialization has been
    performed. If it has not, we acquire the combiner and perform initialization.
    If it has, we proceed on the fast path. */
-static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+static void cc_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
-                                         grpc_transport_stream_op *op) {
+                                         grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
+  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem, op);
   /* try to (atomically) get the call */
   grpc_subchannel_call *call = GET_CALL(calld);
-  GPR_TIMER_BEGIN("cc_start_transport_stream_op", 0);
+  GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   if (call == CANCELLED_CALL) {
-    grpc_transport_stream_op_finish_with_failure(
+    grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
-    GPR_TIMER_END("cc_start_transport_stream_op", 0);
+    GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
     /* early out */
     return;
   }
   if (call != NULL) {
     grpc_subchannel_call_process_op(exec_ctx, call, op);
-    GPR_TIMER_END("cc_start_transport_stream_op", 0);
+    GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
     /* early out */
     return;
   }
   /* we failed; lock and figure out what to do */
-  GRPC_CALL_STACK_REF(calld->owning_call, "start_transport_stream_op");
+  GRPC_CALL_STACK_REF(calld->owning_call, "start_transport_stream_op_batch");
   op->handler_private.extra_arg = elem;
   grpc_closure_sched(
       exec_ctx,
       grpc_closure_init(&op->handler_private.closure,
-                        start_transport_stream_op_locked, op,
+                        start_transport_stream_op_batch_locked, op,
                         grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
-  GPR_TIMER_END("cc_start_transport_stream_op", 0);
+  GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
@@ -1299,7 +1299,7 @@ static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
  */
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    cc_start_transport_stream_op,
+    cc_start_transport_stream_op_batch,
     cc_start_transport_op,
     sizeof(call_data),
     cc_init_call_elem,
