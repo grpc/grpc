@@ -65,8 +65,8 @@ nanos = {
   'pct_diff': 5,
 }
 counter = {
-  'abs_diff': 1,
-  'pct_diff': 1,
+  'abs_diff': 0.5,
+  'pct_diff': 0.5,
 }
 
 _INTERESTING = {
