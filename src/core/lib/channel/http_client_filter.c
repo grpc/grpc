@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -56,7 +57,6 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
-  grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -108,11 +108,11 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       grpc_error *e = grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_set_str(
-                  GRPC_ERROR_CREATE(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, val),
+                  GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
-          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+          GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
       gpr_free(val);
       gpr_free(msg);
       return e;
@@ -292,19 +292,58 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
       continue_send_message(exec_ctx, elem);
 
       if (calld->send_message_blocked == false) {
-        /* when all the send_message data is available, then create a MDELEM and
-        append to headers */
-        grpc_mdelem payload_bin = grpc_mdelem_from_slices(
-            exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
-                                          op->send_message->length));
-        error =
-            grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
-                                         &calld->payload_bin, payload_bin);
+        /* when all the send_message data is available, then modify the path
+         * MDELEM by appending base64 encoded query to the path */
+        const int k_url_safe = 1;
+        const int k_multi_line = 0;
+        const unsigned char k_query_separator = '?';
+
+        grpc_slice path_slice =
+            GRPC_MDVALUE(op->send_initial_metadata->idx.named.path->md);
+        /* sum up individual component's lengths and allocate enough memory to
+         * hold combined path+query */
+        size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
+        estimated_len++; /* for the '?' */
+        estimated_len += grpc_base64_estimate_encoded_size(
+            op->send_message->length, k_url_safe, k_multi_line);
+        estimated_len += 1; /* for the trailing 0 */
+        grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
+
+        /* memcopy individual pieces into this slice */
+        uint8_t *write_ptr =
+            (uint8_t *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        uint8_t *original_path = (uint8_t *)GRPC_SLICE_START_PTR(path_slice);
+        memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
+        write_ptr += GRPC_SLICE_LENGTH(path_slice);
+
+        *write_ptr = k_query_separator;
+        write_ptr++; /* for the '?' */
+
+        grpc_base64_encode_core((char *)write_ptr, calld->payload_bytes,
+                                op->send_message->length, k_url_safe,
+                                k_multi_line);
+
+        /* remove trailing unused memory and add trailing 0 to terminate string
+         */
+        char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        /* safe to use strlen since base64_encode will always add '\0' */
+        size_t path_length = strlen(t) + 1;
+        *(t + path_length) = '\0';
+        path_with_query_slice =
+            grpc_slice_sub(path_with_query_slice, 0, path_length);
+
+        /* substitute previous path with the new path+query */
+        grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH, path_with_query_slice);
+        grpc_metadata_batch *b = op->send_initial_metadata;
+        error = grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                               mdelem_path_and_query);
         if (error != GRPC_ERROR_NONE) return error;
+
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
         op->send_message = NULL;
+        grpc_slice_unref_internal(exec_ctx, path_with_query_slice);
       } else {
         /* Not all data is available. Fall back to POST. */
         gpr_log(GPR_DEBUG,

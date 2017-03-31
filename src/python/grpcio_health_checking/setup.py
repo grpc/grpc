@@ -59,6 +59,10 @@ COMMAND_CLASS = {
 setuptools.setup(
     name='grpcio-health-checking',
     version=grpc_version.VERSION,
+    description='Standard Health Checking Service for gRPC',
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='http://www.grpc.io',
     license='3-clause BSD',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),

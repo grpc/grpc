@@ -54,8 +54,8 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
 
@@ -137,9 +137,9 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    grpc_closure_sched(
-        exec_ctx, on_peer_checked,
-        GRPC_ERROR_CREATE("cannot check peer -- no security connector"));
+    grpc_closure_sched(exec_ctx, on_peer_checked,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
   } else {
     sc->vtable->check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
@@ -330,7 +330,8 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
   grpc_error *error = GRPC_ERROR_NONE;
   *auth_context = NULL;
   if (peer.property_count != 1) {
-    error = GRPC_ERROR_CREATE("Fake peers should only have 1 property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Fake peers should only have 1 property.");
     goto end;
   }
   prop_name = peer.properties[0].name;
@@ -339,13 +340,14 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
                  prop_name == NULL ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
               peer.properties[0].value.length)) {
-    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid value for cert type property.");
     goto end;
   }
   *auth_context = grpc_auth_context_create(NULL);
@@ -586,18 +588,19 @@ static grpc_error *ssl_check_peer(grpc_security_connector *sc,
   const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == NULL) {
-    return GRPC_ERROR_CREATE(
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: invalid ALPN value.");
   }
 
   /* Check the peer name if specified. */
   if (peer_name != NULL && !ssl_host_matches_name(peer, peer_name)) {
     char *msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error *error = GRPC_ERROR_CREATE(msg);
+    grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }

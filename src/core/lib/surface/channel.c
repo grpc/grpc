@@ -85,19 +85,10 @@ struct grpc_channel {
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error);
 
-grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                  const grpc_channel_args *input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport *optional_transport) {
-  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                   input_args);
-  grpc_channel_stack_builder_set_target(builder, target);
-  grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
-    grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    return NULL;
-  }
+grpc_channel *grpc_channel_create_with_builder(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    grpc_channel_stack_type channel_stack_type) {
+  char *target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
   grpc_channel_args *args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_channel *channel;
@@ -108,18 +99,19 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
+    gpr_free(target);
     goto done;
   }
 
   memset(channel, 0, sizeof(*channel));
-  channel->target = gpr_strdup(target);
+  channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
-      CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
+      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
@@ -183,10 +175,33 @@ done:
   return channel;
 }
 
+grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                  const grpc_channel_args *input_args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport *optional_transport) {
+  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
+                                                   input_args);
+  grpc_channel_stack_builder_set_target(builder, target);
+  grpc_channel_stack_builder_set_transport(builder, optional_transport);
+  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
+    grpc_channel_stack_builder_destroy(exec_ctx, builder);
+    return NULL;
+  }
+  return grpc_channel_create_with_builder(exec_ctx, builder,
+                                          channel_stack_type);
+}
+
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
 #define ROUND_UP_SIZE 256
+  /* We round up our current estimate to the NEXT value of ROUND_UP_SIZE.
+     This ensures:
+      1. a consistent size allocation when our estimate is drifting slowly
+         (which is common) - which tends to help most allocators reuse memory
+      2. a small amount of allowed growth over the estimate without hitting
+         the arena size doubling case, reducing overall memory usage */
   return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
-          ROUND_UP_SIZE) &
+          2 * ROUND_UP_SIZE) &
          ~(size_t)(ROUND_UP_SIZE - 1);
 }
 
@@ -380,7 +395,8 @@ void grpc_channel_destroy(grpc_channel *channel) {
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
-  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
+  op->disconnect_with_error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
 

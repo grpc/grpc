@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;
@@ -166,10 +166,12 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   GPR_ASSERT(incoming.count == 1);
   GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(&exec_ctx, f.server_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.server_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);
