@@ -143,8 +143,8 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
+  op->data.send_byte_buffer_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -220,9 +220,10 @@ static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
-  if (op->recv_initial_metadata != NULL) {
-    calld->recv_im_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready =
+  if (op->recv_initial_metadata) {
+    calld->recv_im_ready =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         grpc_closure_create(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
   }
   grpc_call_next_op(exec_ctx, elem, op);

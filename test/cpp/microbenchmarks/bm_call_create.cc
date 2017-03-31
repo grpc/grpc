@@ -346,13 +346,15 @@ class SendEmptyMetadata {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = grpc_closure_init(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
+    op_.send_initial_metadata = true;
+    op_.payload = &op_payload_;
   }
 
   class Op {
    public:
     Op(grpc_exec_ctx *exec_ctx, SendEmptyMetadata *p, grpc_call_stack *s) {
       grpc_metadata_batch_init(&batch_);
-      p->op_.send_initial_metadata = &batch_;
+      p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
     void Finish(grpc_exec_ctx *exec_ctx) {
       grpc_metadata_batch_destroy(exec_ctx, &batch_);
@@ -367,6 +369,7 @@ class SendEmptyMetadata {
   const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_slice method_ = grpc_slice_from_static_string("/foo/bar");
   grpc_transport_stream_op op_;
+  grpc_transport_stream_op_payload op_payload_;
   grpc_closure closure_;
 };
 
@@ -490,11 +493,14 @@ static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op *op) {
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
-                       GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE);
   }
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_NONE);
   }
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }

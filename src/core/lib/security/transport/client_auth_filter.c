@@ -122,8 +122,8 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
   } else {
     GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
-    GPR_ASSERT(op->send_initial_metadata != NULL);
-    mdb = op->send_initial_metadata;
+    GPR_ASSERT(op->send_initial_metadata);
+    mdb = op->payload->send_initial_metadata.send_initial_metadata;
     for (i = 0; i < num_md; i++) {
       add_error(&error,
                 grpc_metadata_batch_add_tail(
@@ -176,7 +176,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
-      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
+      (grpc_client_security_context *)op->payload
+          ->context[GRPC_CONTEXT_SECURITY]
+          .value;
   grpc_call_credentials *channel_call_creds =
       chand->security_connector->request_metadata_creds;
   int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL);
@@ -251,23 +253,25 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0 && op->cancel_error == GRPC_ERROR_NONE) {
+  if (calld->security_context_set == 0 && !op->cancel_stream) {
     calld->security_context_set = 1;
-    GPR_ASSERT(op->context);
-    if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {
-      op->context[GRPC_CONTEXT_SECURITY].value =
+    GPR_ASSERT(op->payload->context != NULL);
+    if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+      op->payload->context[GRPC_CONTEXT_SECURITY].value =
           grpc_client_security_context_create();
-      op->context[GRPC_CONTEXT_SECURITY].destroy =
+      op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
           grpc_client_security_context_destroy;
     }
-    sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
+    sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
     sec_ctx->auth_context =
         GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
-  if (op->send_initial_metadata != NULL) {
-    for (l = op->send_initial_metadata->list.head; l != NULL; l = l->next) {
+  if (op->send_initial_metadata) {
+    for (l = op->payload->send_initial_metadata.send_initial_metadata->list
+                 .head;
+         l != NULL; l = l->next) {
       grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */

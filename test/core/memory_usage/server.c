@@ -129,14 +129,14 @@ static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &terminal_buffer;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+  op->data.recv_byte_buffer_message.recv_message = &terminal_buffer;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
-  op->data.send_message.send_message = payload_buffer;
+  op->data.send_byte_buffer_message.send_message = payload_buffer;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;

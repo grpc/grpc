@@ -154,8 +154,7 @@ struct call_data {
   grpc_completion_queue *cq_new;
 
   grpc_metadata_batch *recv_initial_metadata;
-  bool recv_idempotent_request;
-  bool recv_cacheable_request;
+  uint32_t recv_initial_metadata_flags;
   grpc_metadata_array initial_metadata;
 
   request_matcher *request_matcher;
@@ -498,13 +497,7 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
       rc->data.batch.details->host = grpc_slice_ref_internal(calld->host);
       rc->data.batch.details->method = grpc_slice_ref_internal(calld->path);
       rc->data.batch.details->deadline = calld->deadline;
-      rc->data.batch.details->flags =
-          (calld->recv_idempotent_request
-               ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-               : 0) |
-          (calld->recv_cacheable_request
-               ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
-               : 0);
+      rc->data.batch.details->flags = calld->recv_initial_metadata_flags;
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline = calld->deadline;
@@ -600,8 +593,8 @@ static void finish_start_new_rpc(
     case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
       grpc_op op;
       memset(&op, 0, sizeof(op));
-      op.op = GRPC_OP_RECV_MESSAGE;
-      op.data.recv_message.recv_message = &calld->payload;
+      op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+      op.data.recv_byte_buffer_message.recv_message = &calld->payload;
       grpc_closure_init(&calld->publish, publish_new_rpc, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_start_batch_and_execute(exec_ctx, calld->call, &op, 1,
@@ -632,7 +625,8 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (!grpc_slice_eq(rm->host, calld->host)) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request) {
+          0 == (calld->recv_initial_metadata_flags &
+                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
@@ -649,7 +643,8 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (rm->has_host) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request) {
+          0 == (calld->recv_initial_metadata_flags &
+                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
@@ -784,13 +779,16 @@ static void server_mutate_op(grpc_call_element *elem,
                              grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata != NULL) {
-    GPR_ASSERT(op->recv_idempotent_request == NULL);
-    calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
-    op->recv_idempotent_request = &calld->recv_idempotent_request;
-    op->recv_cacheable_request = &calld->recv_cacheable_request;
+  if (op->recv_initial_metadata) {
+    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == NULL);
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->on_done_recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->server_on_recv_initial_metadata;
+    op->payload->recv_initial_metadata.recv_flags =
+        &calld->recv_initial_metadata_flags;
   }
 }
 

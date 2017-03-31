@@ -315,6 +315,14 @@ typedef enum grpc_call_error {
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
+/* Read flags: */
+/** Don't finish a read until all bytes from the message are present */
+#define GRPC_READ_ENTIRE_MESSAGE (0x00000100u)
+/** Read into the provided slices (don't append to the slice buffer) */
+#define GRPC_READ_INTO_SLICES (0x00000200u)
+/** Mask of all valid flags. */
+#define GRPC_READ_USED_MASK (GRPC_READ_ENTIRE_MESSAGE | GRPC_READ_INTO_SLICES)
+
 /* Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
@@ -391,6 +399,8 @@ typedef struct {
   void *reserved;
 } grpc_call_details;
 
+/** NOTE: we serialize these op codes into our fuzzer corpora: please add new
+    values at the end */
 typedef enum {
   /** Send initial metadata: one and only one instance MUST be sent for each
       call, unless the call was cancelled - in which case this can be skipped.
@@ -400,7 +410,7 @@ typedef enum {
   /** Send a message: 0 or more of these operations can occur for each call.
       This op completes after all bytes for the message have been accepted by
       outgoing flow control. */
-  GRPC_OP_SEND_MESSAGE,
+  GRPC_OP_SEND_BYTE_BUFFER_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
       skipped.
@@ -421,7 +431,7 @@ typedef enum {
   /** Receive a message: 0 or more of these operations can occur for each call.
       This op completes after all bytes of the received message have been
       read, or after a half-close has been received on this call. */
-  GRPC_OP_RECV_MESSAGE,
+  GRPC_OP_RECV_BYTE_BUFFER_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. In that case
@@ -433,7 +443,9 @@ typedef enum {
       This op completes after the close has been received by the server.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. */
-  GRPC_OP_RECV_CLOSE_ON_SERVER
+  GRPC_OP_RECV_CLOSE_ON_SERVER,
+  GRPC_OP_SEND_MESSAGE,
+  GRPC_OP_RECV_MESSAGE
 } grpc_op_type;
 
 struct grpc_byte_buffer;
@@ -464,6 +476,10 @@ typedef struct grpc_op {
     } send_initial_metadata;
     struct {
       struct grpc_byte_buffer *send_message;
+    } send_byte_buffer_message;
+    struct {
+      uint32_t length;
+      grpc_slice_buffer *slices;
     } send_message;
     struct {
       size_t trailing_metadata_count;
@@ -487,6 +503,10 @@ typedef struct grpc_op {
        */
     struct {
       struct grpc_byte_buffer **recv_message;
+    } recv_byte_buffer_message;
+    struct {
+      uint32_t *length;
+      grpc_slice_buffer *slices;
     } recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the

@@ -1195,8 +1195,8 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op++;
 
   GPR_ASSERT(glb_policy->lb_request_payload != NULL);
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = glb_policy->lb_request_payload;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
+  op->data.send_byte_buffer_message.send_message = glb_policy->lb_request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -1219,8 +1219,8 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &glb_policy->lb_response_payload;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+  op->data.recv_byte_buffer_message.recv_message = &glb_policy->lb_response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -1300,8 +1300,8 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
     if (!glb_policy->shutting_down) {
       /* keep listening for serverlist updates */
-      op->op = GRPC_OP_RECV_MESSAGE;
-      op->data.recv_message.recv_message = &glb_policy->lb_response_payload;
+      op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+      op->data.recv_byte_buffer_message.recv_message = &glb_policy->lb_response_payload;
       op->flags = 0;
       op->reserved = NULL;
       op++;

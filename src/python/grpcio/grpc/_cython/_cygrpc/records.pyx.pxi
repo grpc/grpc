@@ -116,11 +116,11 @@ class CompletionType:
 
 class OperationType:
   send_initial_metadata = GRPC_OP_SEND_INITIAL_METADATA
-  send_message = GRPC_OP_SEND_MESSAGE
+  send_message = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE
   send_close_from_client = GRPC_OP_SEND_CLOSE_FROM_CLIENT
   send_status_from_server = GRPC_OP_SEND_STATUS_FROM_SERVER
   receive_initial_metadata = GRPC_OP_RECV_INITIAL_METADATA
-  receive_message = GRPC_OP_RECV_MESSAGE
+  receive_message = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE
   receive_status_on_client = GRPC_OP_RECV_STATUS_ON_CLIENT
   receive_close_on_server = GRPC_OP_RECV_CLOSE_ON_SERVER
 
@@ -547,13 +547,13 @@ cdef class Operation:
 
   @property
   def received_message(self):
-    if self.c_op.type != GRPC_OP_RECV_MESSAGE:
+    if self.c_op.type != GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       raise TypeError("self must be an operation receiving a message")
     return self._received_message
 
   @property
   def received_message_or_none(self):
-    if self.c_op.type != GRPC_OP_RECV_MESSAGE:
+    if self.c_op.type != GRPC_OP_RECV_BYTE_BUFFER_MESSAGE:
       return None
     return self._received_message
 
@@ -625,10 +625,10 @@ def operation_send_initial_metadata(Metadata metadata, int flags):
 
 def operation_send_message(data, int flags):
   cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_SEND_MESSAGE
+  op.c_op.type = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE
   op.c_op.flags = flags
   byte_buffer = ByteBuffer(data)
-  op.c_op.data.send_message.send_message = byte_buffer.c_byte_buffer
+  op.c_op.data.send_byte_buffer_message.send_message = byte_buffer.c_byte_buffer
   op.references.append(byte_buffer)
   op.is_valid = True
   return op
@@ -669,7 +669,7 @@ def operation_receive_initial_metadata(int flags):
 
 def operation_receive_message(int flags):
   cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_RECV_MESSAGE
+  op.c_op.type = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE
   op.c_op.flags = flags
   op._received_message = ByteBuffer(None)
   # n.b. the c_op.data.receive_message field needs to be deleted by us,

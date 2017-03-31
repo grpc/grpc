@@ -84,10 +84,12 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                            grpc_call_element *elem,
                                            grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  if (op->recv_initial_metadata != NULL) {
-    fill_metadata(exec_ctx, elem, op->recv_initial_metadata);
-  } else if (op->recv_trailing_metadata != NULL) {
-    fill_metadata(exec_ctx, elem, op->recv_trailing_metadata);
+  if (op->recv_initial_metadata) {
+    fill_metadata(exec_ctx, elem,
+                  op->payload->recv_initial_metadata.recv_initial_metadata);
+  } else if (op->recv_trailing_metadata) {
+    fill_metadata(exec_ctx, elem,
+                  op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }
   grpc_transport_stream_op_finish_with_failure(
       exec_ctx, op,

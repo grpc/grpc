@@ -162,8 +162,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload1;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
+  op->data.send_byte_buffer_message.send_message = request_payload1;
   op->flags = GRPC_WRITE_BUFFER_HINT;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
@@ -180,8 +180,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* recv message should not succeed yet - it's buffered at the client still */
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv1;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+  op->data.recv_byte_buffer_message.recv_message = &request_payload_recv1;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -194,8 +194,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* send another message, this time not buffered */
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload2;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
+  op->data.send_byte_buffer_message.send_message = request_payload2;
   op->flags = 0;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
@@ -209,8 +209,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* and the next recv should be ready immediately also */
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv2;
+  op->op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
+  op->data.recv_byte_buffer_message.recv_message = &request_payload_recv2;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);

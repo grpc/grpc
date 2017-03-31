@@ -139,8 +139,8 @@ static void test_invoke_request_with_flags(
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
+  op->op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
+  op->data.send_byte_buffer_message.send_message = request_payload;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
@@ -193,7 +193,7 @@ void request_with_flags(grpc_end2end_test_config config) {
   {
     /* check that all grpc_op_types fail when their flag value is set to an
      * invalid value */
-    int indices[] = {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_SEND_MESSAGE,
+    int indices[] = {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_SEND_BYTE_BUFFER_MESSAGE,
                      GRPC_OP_SEND_CLOSE_FROM_CLIENT,
                      GRPC_OP_RECV_INITIAL_METADATA,
                      GRPC_OP_RECV_STATUS_ON_CLIENT};
@@ -210,7 +210,7 @@ void request_with_flags(grpc_end2end_test_config config) {
                         GRPC_WRITE_INTERNAL_COMPRESS};
     for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {
       memset(flags_for_op, 0, sizeof(flags_for_op));
-      flags_for_op[GRPC_OP_SEND_MESSAGE] = flags[i];
+      flags_for_op[GRPC_OP_SEND_BYTE_BUFFER_MESSAGE] = flags[i];
       test_invoke_request_with_flags(config, flags_for_op, GRPC_CALL_OK);
     }
   }

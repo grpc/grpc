@@ -190,10 +190,13 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata) {
-    calld->recv_initial_metadata = op->recv_initial_metadata;
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
     /* substitute our callback for the higher callback */
-    calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
+    calld->ops_recv_initial_metadata_ready =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->on_initial_md_ready;
   }
   grpc_call_next_op(exec_ctx, elem, op);
 

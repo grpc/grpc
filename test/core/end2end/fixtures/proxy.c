@@ -200,10 +200,10 @@ static void on_p2s_sent_message(void *arg, int success) {
 
   grpc_byte_buffer_destroy(pc->c2p_msg);
   if (!pc->proxy->shutdown && success) {
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message.recv_message = &pc->c2p_msg;
+    op.data.recv_byte_buffer_message.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
@@ -225,10 +225,10 @@ static void on_c2p_recv_msg(void *arg, int success) {
 
   if (!pc->proxy->shutdown && success) {
     if (pc->c2p_msg != NULL) {
-      op.op = GRPC_OP_SEND_MESSAGE;
+      op.op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
       op.flags = 0;
       op.reserved = NULL;
-      op.data.send_message.send_message = pc->c2p_msg;
+      op.data.send_byte_buffer_message.send_message = pc->c2p_msg;
       refpc(pc, "on_p2s_sent_message");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
                                   new_closure(on_p2s_sent_message, pc), NULL);
@@ -256,10 +256,10 @@ static void on_c2p_sent_message(void *arg, int success) {
 
   grpc_byte_buffer_destroy(pc->p2s_msg);
   if (!pc->proxy->shutdown && success) {
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.recv_message.recv_message = &pc->p2s_msg;
+    op.data.recv_byte_buffer_message.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);
@@ -275,10 +275,10 @@ static void on_p2s_recv_msg(void *arg, int success) {
   grpc_call_error err;
 
   if (!pc->proxy->shutdown && success && pc->p2s_msg) {
-    op.op = GRPC_OP_SEND_MESSAGE;
+    op.op = GRPC_OP_SEND_BYTE_BUFFER_MESSAGE;
     op.flags = 0;
     op.reserved = NULL;
-    op.data.send_message.send_message = pc->p2s_msg;
+    op.data.send_byte_buffer_message.send_message = pc->p2s_msg;
     refpc(pc, "on_c2p_sent_message");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), NULL);
@@ -363,17 +363,17 @@ static void on_new_call(void *arg, int success) {
         pc->p2s, &op, 1, new_closure(on_p2s_sent_initial_metadata, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op.flags = 0;
-    op.data.recv_message.recv_message = &pc->c2p_msg;
+    op.data.recv_byte_buffer_message.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
-    op.op = GRPC_OP_RECV_MESSAGE;
+    op.op = GRPC_OP_RECV_BYTE_BUFFER_MESSAGE;
     op.flags = 0;
-    op.data.recv_message.recv_message = &pc->p2s_msg;
+    op.data.recv_byte_buffer_message.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), NULL);

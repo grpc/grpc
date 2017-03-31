@@ -1141,8 +1141,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
   grpc_transport_stream_op *op = stream_op;
-  grpc_chttp2_transport *t = op->handler_private.args[0];
-  grpc_chttp2_stream *s = op->handler_private.args[1];
+  grpc_chttp2_stream *s = op->handler_private.extra_arg;
+  grpc_transport_stream_op_payload *op_payload = op->payload;
+  grpc_chttp2_transport *t = s->t;
 
   if (grpc_http_trace) {
     char *str = grpc_transport_stream_op_string(op);
@@ -1150,10 +1151,12 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             op->on_complete);
     gpr_free(str);
     if (op->send_initial_metadata) {
-      log_metadata(op->send_initial_metadata, s->id, t->is_client, true);
+      log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
+                   s->id, t->is_client, true);
     }
     if (op->send_trailing_metadata) {
-      log_metadata(op->send_trailing_metadata, s->id, t->is_client, false);
+      log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
+                   s->id, t->is_client, false);
     }
   }
 
@@ -1168,23 +1171,25 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
   on_complete->error_data.error = GRPC_ERROR_NONE;
 
-  if (op->collect_stats != NULL) {
+  if (op->collect_stats) {
     GPR_ASSERT(s->collecting_stats == NULL);
-    s->collecting_stats = op->collect_stats;
+    s->collecting_stats = op_payload->collect_stats.collect_stats;
     on_complete->next_data.scratch |= CLOSURE_BARRIER_STATS_BIT;
   }
 
-  if (op->cancel_error != GRPC_ERROR_NONE) {
-    grpc_chttp2_cancel_stream(exec_ctx, t, s, op->cancel_error);
+  if (op->cancel_stream) {
+    grpc_chttp2_cancel_stream(exec_ctx, t, s,
+                              op_payload->cancel_stream.cancel_error);
   }
 
-  if (op->send_initial_metadata != NULL) {
+  if (op->send_initial_metadata) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
-    s->send_initial_metadata = op->send_initial_metadata;
+    s->send_initial_metadata =
+        op_payload->send_initial_metadata.send_initial_metadata;
     const size_t metadata_size =
-        grpc_metadata_batch_size(op->send_initial_metadata);
+        grpc_metadata_batch_size(s->send_initial_metadata);
     const size_t metadata_peer_limit =
         t->settings[GRPC_PEER_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -1205,7 +1210,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                   GRPC_ERROR_INT_LIMIT, (intptr_t)metadata_peer_limit),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
     } else {
-      if (contains_non_ok_status(op->send_initial_metadata)) {
+      if (contains_non_ok_status(s->send_initial_metadata)) {
         s->seen_error = true;
       }
       if (!s->write_closed) {
@@ -1225,8 +1230,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           GPR_ASSERT(s->id != 0);
           grpc_chttp2_stream_write_type write_type =
               GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-          if (op->send_message != NULL &&
-              (op->send_message->flags & GRPC_WRITE_BUFFER_HINT)) {
+          if (op->send_message &&
+              (op->payload->send_message.send_message->flags &
+               GRPC_WRITE_BUFFER_HINT)) {
             write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
           }
           grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
@@ -1244,7 +1250,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->send_message != NULL) {
+  if (op->send_message) {
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
@@ -1258,14 +1264,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       GPR_ASSERT(s->fetching_send_message == NULL);
       uint8_t *frame_hdr =
           grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
-      uint32_t flags = op->send_message->flags;
+      uint32_t flags = op_payload->send_message.send_message->flags;
       frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
-      size_t len = op->send_message->length;
+      size_t len = op_payload->send_message.send_message->length;
       frame_hdr[1] = (uint8_t)(len >> 24);
       frame_hdr[2] = (uint8_t)(len >> 16);
       frame_hdr[3] = (uint8_t)(len >> 8);
       frame_hdr[4] = (uint8_t)(len);
-      s->fetching_send_message = op->send_message;
+      s->fetching_send_message = op_payload->send_message.send_message;
       s->fetched_send_message_length = 0;
       s->next_message_end_offset = s->flow_controlled_bytes_written +
                                    (int64_t)s->flow_controlled_buffer.length +
@@ -1282,14 +1288,15 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->send_trailing_metadata != NULL) {
+  if (op->send_trailing_metadata) {
     GPR_ASSERT(s->send_trailing_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
-    s->send_trailing_metadata = op->send_trailing_metadata;
+    s->send_trailing_metadata =
+        op_payload->send_trailing_metadata.send_trailing_metadata;
     s->write_buffering = false;
     const size_t metadata_size =
-        grpc_metadata_batch_size(op->send_trailing_metadata);
+        grpc_metadata_batch_size(s->send_trailing_metadata);
     const size_t metadata_peer_limit =
         t->settings[GRPC_PEER_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -1306,14 +1313,15 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                   GRPC_ERROR_INT_LIMIT, (intptr_t)metadata_peer_limit),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
     } else {
-      if (contains_non_ok_status(op->send_trailing_metadata)) {
+      if (contains_non_ok_status(s->send_trailing_metadata)) {
         s->seen_error = true;
       }
       if (s->write_closed) {
         s->send_trailing_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_trailing_metadata_finished,
-            grpc_metadata_batch_is_empty(op->send_trailing_metadata)
+            grpc_metadata_batch_is_empty(
+                op->payload->send_trailing_metadata.send_trailing_metadata)
                 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Attempt to send trailing metadata after "
@@ -1329,17 +1337,19 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->recv_initial_metadata != NULL) {
+  if (op->recv_initial_metadata) {
     GPR_ASSERT(s->recv_initial_metadata_ready == NULL);
-    s->recv_initial_metadata_ready = op->recv_initial_metadata_ready;
-    s->recv_initial_metadata = op->recv_initial_metadata;
+    s->recv_initial_metadata_ready =
+        op_payload->recv_initial_metadata.recv_initial_metadata_ready;
+    s->recv_initial_metadata =
+        op_payload->recv_initial_metadata.recv_initial_metadata;
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 
-  if (op->recv_message != NULL) {
+  if (op->recv_message) {
     GPR_ASSERT(s->recv_message_ready == NULL);
-    s->recv_message_ready = op->recv_message_ready;
-    s->recv_message = op->recv_message;
+    s->recv_message_ready = op_payload->recv_message.recv_message_ready;
+    s->recv_message = op_payload->recv_message.recv_message;
     if (s->id != 0 &&
         (s->incoming_frames.head == NULL || s->incoming_frames.head->is_tail)) {
       incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5, 0);
@@ -1347,10 +1357,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
 
-  if (op->recv_trailing_metadata != NULL) {
+  if (op->recv_trailing_metadata) {
     GPR_ASSERT(s->recv_trailing_metadata_finished == NULL);
     s->recv_trailing_metadata_finished = add_closure_barrier(on_complete);
-    s->recv_trailing_metadata = op->recv_trailing_metadata;
+    s->recv_trailing_metadata =
+        op_payload->recv_trailing_metadata.recv_trailing_metadata;
     s->final_metadata_requested = true;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
@@ -1374,8 +1385,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     gpr_free(str);
   }
 
-  op->handler_private.args[0] = gt;
-  op->handler_private.args[1] = gs;
+  op->handler_private.extra_arg = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   grpc_closure_sched(
       exec_ctx,
@@ -1452,7 +1462,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
                                         void *stream_op,
                                         grpc_error *error_ignored) {
   grpc_transport_op *op = stream_op;
-  grpc_chttp2_transport *t = op->transport_private.args[0];
+  grpc_chttp2_transport *t = op->handler_private.extra_arg;
   grpc_error *close_transport = op->disconnect_with_error;
 
   if (op->on_connectivity_state_change != NULL) {
@@ -1498,10 +1508,10 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   char *msg = grpc_transport_op_string(op);
   gpr_free(msg);
-  op->transport_private.args[0] = gt;
+  op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_closure_sched(
-      exec_ctx, grpc_closure_init(&op->transport_private.closure,
+      exec_ctx, grpc_closure_init(&op->handler_private.closure,
                                   perform_transport_op_locked, op,
                                   grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
