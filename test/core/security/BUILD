@@ -55,13 +55,6 @@ cc_test(
 )
 
 cc_test(
-    name = "b64_test",
-    srcs = ["b64_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
