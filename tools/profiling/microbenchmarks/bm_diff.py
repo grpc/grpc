@@ -33,6 +33,14 @@ import json
 import bm_json
 import tabulate
 import argparse
+from scipy import stats
+import subprocess
+import multiprocessing
+import collections
+import pipes
+import os
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+import comment_on_pr
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -41,18 +49,49 @@ def changed_ratio(n, o):
   if o == 0: return 100
   return (float(n)-float(o))/float(o)
 
+def median(ary):
+  ary = sorted(ary)
+  n = len(ary)
+  if n%2 == 0:
+    return (ary[n/2] + ary[n/2+1]) / 2.0
+  else:
+    return ary[n/2]
+
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
-_INTERESTING = {
-  'cpu_time': min_change(10),
-  'real_time': min_change(10),
-  'locks_per_iteration': min_change(5),
-  'allocs_per_iteration': min_change(5),
-  'writes_per_iteration': min_change(5),
-  'atm_cas_per_iteration': min_change(1),
-  'atm_add_per_iteration': min_change(5),
+nanos = {
+  'abs_diff': 5,
+  'pct_diff': 10,
 }
+counter = {
+  'abs_diff': 0.5,
+  'pct_diff': 10,
+}
+
+_INTERESTING = {
+  'cpu_time': nanos,
+  'real_time': nanos,
+  'locks_per_iteration': counter,
+  'allocs_per_iteration': counter,
+  'writes_per_iteration': counter,
+  'atm_cas_per_iteration': counter,
+  'atm_add_per_iteration': counter,
+}
+
+
+_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
+                              'bm_fullstack_streaming_ping_pong',
+                              'bm_fullstack_streaming_pump',
+                              'bm_closure',
+                              'bm_cq',
+                              'bm_call_create',
+                              'bm_error',
+                              'bm_chttp2_hpack',
+                              'bm_chttp2_transport',
+                              'bm_pollset',
+                              'bm_metadata',
+                              'bm_fullstack_trickle']
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
@@ -60,59 +99,143 @@ argp.add_argument('-t', '--track',
                   nargs='+',
                   default=sorted(_INTERESTING.keys()),
                   help='Which metrics to track')
-argp.add_argument('files', metavar='bm_file.json', type=str, nargs=4,
-                    help='files to diff. ')
+argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
+argp.add_argument('-d', '--diff_base', type=str)
+argp.add_argument('-r', '--repetitions', type=int, default=4)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.03)
 args = argp.parse_args()
 
-with open(args.files[0]) as f:
-  js_new_ctr = json.loads(f.read())
-with open(args.files[1]) as f:
-  js_new_opt = json.loads(f.read())
-with open(args.files[2]) as f:
-  js_old_ctr = json.loads(f.read())
-with open(args.files[3]) as f:
-  js_old_opt = json.loads(f.read())
+assert args.diff_base
 
-new = {}
-old = {}
+def avg(lst):
+  sum = 0.0
+  n = 0.0
+  for el in lst:
+    sum += el
+    n += 1
+  return sum / n
 
-for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-  new[row['cpp_name']] = row
-for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-  old[row['cpp_name']] = row
+def make_cmd(cfg):
+  return ['make'] + args.benchmarks + [
+      'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
 
-changed = []
-for fld in args.track:
-  chk = _INTERESTING[fld]
-  for bm in new.keys():
-    if bm not in old: continue
-    n = new[bm]
-    o = old[bm]
-    if fld not in n or fld not in o: continue
-    if chk(n[fld], o[fld]):
-      changed.append((fld, chk))
-      break
+def build():
+  subprocess.check_call(['git', 'submodule', 'update'])
+  try:
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
+  except subprocess.CalledProcessError, e:
+    subprocess.check_call(['make', 'clean'])
+    subprocess.check_call(make_cmd('opt'))
+    subprocess.check_call(make_cmd('counters'))
 
-headers = ['Benchmark'] + [c[0] for c in changed] + ['Details']
+def collect1(bm, cfg, ver):
+  cmd = ['bins/%s/%s' % (cfg, bm),
+         '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
+         '--benchmark_out_format=json',
+         '--benchmark_repetitions=%d' % (args.repetitions)
+         ]
+  print cmd
+  subprocess.check_call(cmd)
+
+build()
+for bm in args.benchmarks:
+  collect1(bm, 'opt', 'new')
+  collect1(bm, 'counters', 'new')
+
+where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+subprocess.check_call(['git', 'checkout', args.diff_base])
+
+try:
+  build()
+  comparables = []
+  for bm in args.benchmarks:
+    try:
+      collect1(bm, 'opt', 'old')
+      collect1(bm, 'counters', 'old')
+      comparables.append(bm)
+    except subprocess.CalledProcessError, e:
+      pass
+finally:
+  subprocess.check_call(['git', 'checkout', where_am_i])
+  subprocess.check_call(['git', 'submodule', 'update'])
+
+
+class Benchmark:
+
+  def __init__(self):
+    self.samples = {
+      True: collections.defaultdict(list),
+      False: collections.defaultdict(list)
+    }
+    self.final = {}
+
+  def add_sample(self, data, new):
+    for f in args.track:
+      if f in data:
+        self.samples[new][f].append(float(data[f]))
+
+  def process(self):
+    for f in sorted(args.track):
+      new = self.samples[True][f]
+      old = self.samples[False][f]
+      if not new or not old: continue
+      p = stats.ttest_ind(new, old)[1]
+      new_mdn = median(new)
+      old_mdn = median(old)
+      delta = new_mdn - old_mdn
+      ratio = changed_ratio(new_mdn, old_mdn)
+      print '%s: new=%r old=%r new_mdn=%f old_mdn=%f delta=%f(%f:%f) ratio=%f(%f:%f) p=%f' % (
+      f, new, old, new_mdn, old_mdn, delta, abs(delta), _INTERESTING[f]['abs_diff'], ratio, abs(ratio), _INTERESTING[f]['pct_diff']/100.0, p
+      )
+      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']/100.0:
+        self.final[f] = delta
+    return self.final.keys()
+
+  def skip(self):
+    return not self.final
+
+  def row(self, flds):
+    return [self.final[f] if f in self.final else '' for f in flds]
+
+
+benchmarks = collections.defaultdict(Benchmark)
+
+for bm in comparables:
+  with open('%s.counters.new.json' % bm) as f:
+    js_new_ctr = json.loads(f.read())
+  with open('%s.opt.new.json' % bm) as f:
+    js_new_opt = json.loads(f.read())
+  with open('%s.counters.old.json' % bm) as f:
+    js_old_ctr = json.loads(f.read())
+  with open('%s.opt.old.json' % bm) as f:
+    js_old_opt = json.loads(f.read())
+
+  for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+    print row
+    name = row['cpp_name']
+    if name.endswith('_mean') or name.endswith('_stddev'): continue
+    benchmarks[name].add_sample(row, True)
+  for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+    print row
+    name = row['cpp_name']
+    if name.endswith('_mean') or name.endswith('_stddev'): continue
+    benchmarks[name].add_sample(row, False)
+
+really_interesting = set()
+for name, bm in benchmarks.items():
+  print name
+  really_interesting.update(bm.process())
+fields = [f for f in args.track if f in args.track]
+
+headers = ['Benchmark'] + fields
 rows = []
-for bm in sorted(new.keys()):
-  if bm not in old: continue
-  row = [bm]
-  any_changed = False
-  n = new[bm]
-  o = old[bm]
-  details = ''
-  for fld in args.track:
-    chk = _INTERESTING[fld]
-    if fld not in n or fld not in o: continue
-    if chk(n[fld], o[fld]):
-      row.append(changed_ratio(n[fld], o[fld]))
-      if details: details += ', '
-      details += '%s:%r-->%r' % (fld, float(o[fld]), float(n[fld]))
-      any_changed = True
-    else:
-      row.append('')
-  if any_changed:
-    row.append(details)
-    rows.append(row)
-print tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+for name in sorted(benchmarks.keys()):
+  if benchmarks[name].skip(): continue
+  rows.append([name] + benchmarks[name].row(fields))
+if rows:
+  text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+else:
+  text = 'No significant performance differences'
+comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+print text

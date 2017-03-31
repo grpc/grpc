@@ -215,6 +215,29 @@ class CXXLanguage:
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_1channel_1MBmsg_%s' % secstr,
+          rpc_type='STREAMING',
+          req_size=1024*1024,
+          resp_size=1024*1024,
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE],
+          channels=1, outstanding=100)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_64KBmsg_%s' % secstr,
+          rpc_type='STREAMING',
+          req_size=64*1024,
+          resp_size=64*1024,
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',

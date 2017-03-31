@@ -35,29 +35,38 @@ set -evo pipefail
 
 cd `dirname $0`
 
+trap 'echo "EXIT TIME:  $(date)"' EXIT
+
+echo "TIME:  $(date)"
 SCHEME=HelloWorld                              \
   EXAMPLE_PATH=examples/objective-c/helloworld \
   ./build_one_example.sh
 
+echo "TIME:  $(date)"
 SCHEME=RouteGuideClient                         \
   EXAMPLE_PATH=examples/objective-c/route_guide \
   ./build_one_example.sh
 
+echo "TIME:  $(date)"
 SCHEME=AuthSample                               \
   EXAMPLE_PATH=examples/objective-c/auth_sample \
   ./build_one_example.sh
 
 rm -f ../examples/RemoteTestClient/*.{h,m}
 
+echo "TIME:  $(date)"
 SCHEME=Sample                                  \
   EXAMPLE_PATH=src/objective-c/examples/Sample \
   ./build_one_example.sh
 
+echo "TIME:  $(date)"
 SCHEME=Sample                                  \
   EXAMPLE_PATH=src/objective-c/examples/Sample \
   FRAMEWORKS=YES                               \
   ./build_one_example.sh
 
+echo "TIME:  $(date)"
 SCHEME=SwiftSample                                  \
   EXAMPLE_PATH=src/objective-c/examples/SwiftSample \
   ./build_one_example.sh
+
