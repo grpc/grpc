@@ -80,9 +80,9 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   mdb->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
-static void lame_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                           grpc_call_element *elem,
-                                           grpc_transport_stream_op_batch *op) {
+static void lame_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->recv_initial_metadata) {
     fill_metadata(exec_ctx, elem,

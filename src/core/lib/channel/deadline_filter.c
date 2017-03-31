@@ -261,10 +261,11 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 }
 
 // Method for starting a call op for client filter.
-static void client_start_transport_stream_op_batch(grpc_exec_ctx* exec_ctx,
-                                             grpc_call_element* elem,
-                                             grpc_transport_stream_op_batch* op) {
-  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem, op);
+static void client_start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
+  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem,
+                                                             op);
   // Chain to next filter.
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -282,9 +283,9 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 // Method for starting a call op for server filter.
-static void server_start_transport_stream_op_batch(grpc_exec_ctx* exec_ctx,
-                                             grpc_call_element* elem,
-                                             grpc_transport_stream_op_batch* op) {
+static void server_start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   server_call_data* calld = elem->call_data;
   if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);

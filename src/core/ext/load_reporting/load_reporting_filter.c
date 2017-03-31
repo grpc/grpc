@@ -183,9 +183,9 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
-static void lr_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                         grpc_call_element *elem,
-                                         grpc_transport_stream_op_batch *op) {
+static void lr_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
   call_data *calld = elem->call_data;
 

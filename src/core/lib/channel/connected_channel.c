@@ -62,9 +62,9 @@ typedef struct connected_channel_call_data { void *unused; } call_data;
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void con_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                          grpc_call_element *elem,
-                                          grpc_transport_stream_op_batch *op) {
+static void con_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);

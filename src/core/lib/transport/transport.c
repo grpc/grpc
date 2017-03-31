@@ -213,9 +213,9 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_endpoint(exec_ctx, transport);
 }
 
-void grpc_transport_stream_op_batch_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op_batch *op,
-                                                  grpc_error *error) {
+void grpc_transport_stream_op_batch_finish_with_failure(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
+    grpc_error *error) {
   if (op->recv_message) {
     grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
                        GRPC_ERROR_REF(error));

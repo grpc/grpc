@@ -243,9 +243,9 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void compress_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                               grpc_call_element *elem,
-                                               grpc_transport_stream_op_batch *op) {
+static void compress_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
   GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);

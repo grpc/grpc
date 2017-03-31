@@ -298,7 +298,8 @@ static grpc_error *make_error_with_desc(int error_code, const char *desc) {
 /*
   Add a new stream op to op storage.
 */
-static void add_to_storage(struct stream_obj *s, grpc_transport_stream_op_batch *op) {
+static void add_to_storage(struct stream_obj *s,
+                           grpc_transport_stream_op_batch *op) {
   struct op_storage *storage = &s->storage;
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
@@ -1301,7 +1302,8 @@ static void set_pollset_set_do_nothing(grpc_exec_ctx *exec_ctx,
                                        grpc_pollset_set *pollset_set) {}
 
 static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                              grpc_stream *gs, grpc_transport_stream_op_batch *op) {
+                              grpc_stream *gs,
+                              grpc_transport_stream_op_batch *op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
   if (op->send_initial_metadata &&
       header_has_authority(op->payload->send_initial_metadata

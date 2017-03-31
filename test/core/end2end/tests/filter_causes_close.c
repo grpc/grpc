@@ -216,9 +216,9 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                          GRPC_STATUS_PERMISSION_DENIED));
 }
 
-static void start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      grpc_transport_stream_op_batch *op) {
+static void start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   if (op->recv_initial_metadata) {
     calld->recv_im_ready =

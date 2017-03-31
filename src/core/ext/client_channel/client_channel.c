@@ -775,7 +775,8 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
   return scc == CANCELLED_CALL ? NULL : scc;
 }
 
-static void add_waiting_locked(call_data *calld, grpc_transport_stream_op_batch *op) {
+static void add_waiting_locked(call_data *calld,
+                               grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("add_waiting_locked", 0);
   if (calld->waiting_ops_count == calld->waiting_ops_capacity) {
     calld->waiting_ops_capacity = GPR_MAX(3, 2 * calld->waiting_ops_capacity);
@@ -1052,9 +1053,9 @@ static bool pick_subchannel_locked(
   return false;
 }
 
-static void start_transport_stream_op_batch_locked_inner(grpc_exec_ctx *exec_ctx,
-                                                   grpc_transport_stream_op_batch *op,
-                                                   grpc_call_element *elem) {
+static void start_transport_stream_op_batch_locked_inner(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
+    grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   grpc_subchannel_call *call;
@@ -1177,8 +1178,9 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
                    GRPC_ERROR_REF(error));
 }
 
-static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                             grpc_error *error_ignored) {
+static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
+                                                   void *arg,
+                                                   grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("start_transport_stream_op_batch_locked", 0);
 
   grpc_transport_stream_op_batch *op = arg;
@@ -1208,13 +1210,14 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx, void
    We use double-checked locking to initially see if initialization has been
    performed. If it has not, we acquire the combiner and perform initialization.
    If it has, we proceed on the fast path. */
-static void cc_start_transport_stream_op_batch(grpc_exec_ctx *exec_ctx,
-                                         grpc_call_element *elem,
-                                         grpc_transport_stream_op_batch *op) {
+static void cc_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem, op);
+  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem,
+                                                             op);
   /* try to (atomically) get the call */
   grpc_subchannel_call *call = GET_CALL(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);

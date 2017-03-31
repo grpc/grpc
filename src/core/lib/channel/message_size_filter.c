@@ -136,9 +136,9 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
 }
 
 // Start transport stream op.
-static void start_transport_stream_op_batch(grpc_exec_ctx* exec_ctx,
-                                      grpc_call_element* elem,
-                                      grpc_transport_stream_op_batch* op) {
+static void start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   call_data* calld = elem->call_data;
   // Check max send message size.
   if (op->send_message && calld->max_send_size >= 0 &&

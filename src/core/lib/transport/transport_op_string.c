@@ -71,7 +71,8 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
 }
 
-char *grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch *op) {
+char *grpc_transport_stream_op_batch_string(
+    grpc_transport_stream_op_batch *op) {
   char *tmp;
   char *out;
 
@@ -208,7 +209,8 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 }
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_stream_op_batch *op) {
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op) {
   char *str = grpc_transport_stream_op_batch_string(op);
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
   gpr_free(str);
