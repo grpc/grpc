@@ -62,7 +62,7 @@ def min_change(pct):
 
 nanos = {
   'abs_diff': 5,
-  'pct_diff': 5,
+  'pct_diff': 10,
 }
 counter = {
   'abs_diff': 0.5,
