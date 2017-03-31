@@ -964,6 +964,25 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   // GRPC_CHTTP2_IF_TRACING(
   //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   t->seen_goaway = 1;
+
+  /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
+   * data equal to “too_many_pings”, it should log the occurrence at a log level
+   * that is enabled by default and double the configured KEEPALIVE_TIME used
+   * for new connections on that channel. */
+  if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
+      grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0) {
+    gpr_log(GPR_ERROR,
+            "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug data"
+            "equal to \"too_many_pings\"");
+    double current_keepalive_time_ms =
+        gpr_timespec_to_micros(t->keepalive_time) / 1000;
+    t->keepalive_time =
+        current_keepalive_time_ms > INT_MAX / 2
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis((int64_t)(current_keepalive_time_ms * 2),
+                                   GPR_TIMESPAN);
+  }
+
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
   connectivity_state_set(
