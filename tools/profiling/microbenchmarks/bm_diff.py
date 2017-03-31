@@ -62,11 +62,11 @@ def min_change(pct):
 
 nanos = {
   'abs_diff': 5,
-  'pct_diff': 5,
+  'pct_diff': 10,
 }
 counter = {
   'abs_diff': 0.5,
-  'pct_diff': 0.5,
+  'pct_diff': 10,
 }
 
 _INTERESTING = {
@@ -102,7 +102,7 @@ argp.add_argument('-t', '--track',
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=4)
-argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.03)
 args = argp.parse_args()
 
 assert args.diff_base
