@@ -788,6 +788,7 @@ static char *get_lb_uri_target_addresses(grpc_exec_ctx *exec_ctx,
 
   grpc_slice_hash_table_entry *targets_info_entries =
       gpr_malloc(sizeof(*targets_info_entries) * num_grpclb_addrs);
+  size_t targets_info_entries_size = 0;
 
   /* construct a target ipvX://ip1:port1,ip2:port2,... from the addresses in \a
    * addresses */
@@ -804,8 +805,11 @@ static char *get_lb_uri_target_addresses(grpc_exec_ctx *exec_ctx,
       char *addr_str;
       GPR_ASSERT(grpc_sockaddr_to_string(
                      &addr_str, &addresses->addresses[i].address, true) > 0);
-      targets_info_entries[addr_index] = targets_info_entry_create(
-          addr_str, addresses->addresses[i].balancer_name);
+      if (addresses->addresses[i].balancer_name != NULL) {
+        targets_info_entries[addr_index] = targets_info_entry_create(
+            addr_str, addresses->addresses[i].balancer_name);
+        ++targets_info_entries_size;
+      }
       addr_strs[addr_index++] = addr_str;
     }
   }
@@ -825,9 +829,9 @@ static char *get_lb_uri_target_addresses(grpc_exec_ctx *exec_ctx,
                uri_path);
   gpr_free(uri_path);
 
-  *targets_info =
-      grpc_slice_hash_table_create(num_grpclb_addrs, targets_info_entries);
-  for (size_t i = 0; i < num_grpclb_addrs; i++) {
+  *targets_info = grpc_slice_hash_table_create(targets_info_entries_size,
+                                               targets_info_entries);
+  for (size_t i = 0; i < targets_info_entries_size; i++) {
     grpc_slice_unref_internal(exec_ctx, targets_info_entries[i].key);
   }
   gpr_free(targets_info_entries);
