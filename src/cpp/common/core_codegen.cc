@@ -91,6 +91,9 @@ void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
 }
 
+void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
+void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
+
 int CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                               grpc_byte_buffer* buffer) {
   return ::grpc_byte_buffer_reader_init(reader, buffer);

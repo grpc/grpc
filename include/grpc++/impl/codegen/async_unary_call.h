@@ -68,10 +68,9 @@ class ClientAsyncResponseReader final
                                            ClientContext* context,
                                            const W& request) {
     Call call = channel->CreateCall(method, context, cq);
-    ClientAsyncResponseReader* reader = static_cast<ClientAsyncResponseReader*>(
-        grpc_call_arena_alloc(call.call(), sizeof(*reader)));
-    new (&reader->call_) Call(std::move(call));
-    reader->context_ = context;
+    ClientAsyncResponseReader* reader =
+        new (grpc_call_arena_alloc(call.call(), sizeof(*reader)))
+            ClientAsyncResponseReader(call, context);
 
     reader->init_buf_.SendInitialMetadata(context->send_initial_metadata_,
                                           context->initial_metadata_flags());
@@ -107,11 +106,15 @@ class ClientAsyncResponseReader final
   }
 
  private:
-  ClientContext* context_;
+  ClientContext* const context_;
   Call call_;
+
+  ClientAsyncResponseReader(Call call, ClientContext* context)
+      : context_(context), call_(call) {}
 
   // disable operator new
   static void* operator new(std::size_t size);
+  static void* operator new(std::size_t size, void* p) { return p; };
 
   SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                   CallOpClientSendClose>

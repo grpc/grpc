@@ -64,6 +64,9 @@ class CoreCodegen : public CoreCodegenInterface {
   void gpr_cv_signal(gpr_cv* cv) override;
   void gpr_cv_broadcast(gpr_cv* cv) override;
 
+  void grpc_call_ref(grpc_call* call) override;
+  void grpc_call_unref(grpc_call* call) override;
+
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
 
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,

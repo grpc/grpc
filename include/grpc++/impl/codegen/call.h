@@ -570,7 +570,7 @@ class CallOpSetInterface : public CompletionQueueTag {
  public:
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
-  virtual void FillOps(grpc_op* ops, size_t* nops) = 0;
+  virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -598,10 +598,11 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::AddOp(ops, nops);
     this->Op5::AddOp(ops, nops);
     this->Op6::AddOp(ops, nops);
-    grpc_call_ref(call);
+    g_core_codegen_interface->grpc_call_ref(call);
+    call_ = call;
   }
 
-  bool FinalizeResult(grpc_call* call, void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* status) override {
     this->Op1::FinishOp(status);
     this->Op2::FinishOp(status);
     this->Op3::FinishOp(status);
@@ -609,7 +610,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
-    grpc_call_unref(call);
+    g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }
 
@@ -617,6 +618,7 @@ class CallOpSet : public CallOpSetInterface,
 
  private:
   void* return_tag_;
+  grpc_call* call_;
 };
 
 /// A CallOpSet that does not post completions to the completion queue.
