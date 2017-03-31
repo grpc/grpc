@@ -128,7 +128,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                               GRPC_MDELEM_METHOD_GET)) {
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      *calld->recv_initial_metadata_flags |=
+      *calld->recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
     } else {
       add_error(error_name, &error,
