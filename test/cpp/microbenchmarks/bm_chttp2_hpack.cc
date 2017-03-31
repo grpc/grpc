@@ -97,7 +97,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
         char *s = grpc_dump_slice(outbuf.slices[i], GPR_DUMP_HEX);
-        gpr_log(GPR_DEBUG, "%" PRId64 ": %s", i, s);
+        gpr_log(GPR_DEBUG, "%" PRIdPTR ": %s", i, s);
         gpr_free(s);
       }
     }
