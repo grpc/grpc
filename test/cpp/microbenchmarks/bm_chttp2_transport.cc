@@ -306,8 +306,14 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op op;
+  grpc_transport_stream_op_payload op_payload;
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
+
+  auto reset_op = [&]() {
+    memset(&op, 0, sizeof(op));
+    op.payload = &op_payload;
+  };
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -324,14 +330,14 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (!state.KeepRunning()) return;
     s.Init(state);
-    memset(&op, 0, sizeof(op));
+    reset_op();
     op.on_complete = done.get();
     op.send_initial_metadata = true;
     op.payload->send_initial_metadata.send_initial_metadata = &b;
     s.Op(&op);
   });
   done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    memset(&op, 0, sizeof(op));
+    reset_op();
     op.cancel_stream = true;
     op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
     s.Op(&op);
@@ -351,10 +357,15 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op op;
+  grpc_transport_stream_op_payload op_payload;
+  auto reset_op = [&]() {
+    memset(&op, 0, sizeof(op));
+    op.payload = &op_payload;
+  };
   std::unique_ptr<Closure> c =
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
-        memset(&op, 0, sizeof(op));
+        reset_op();
         op.on_complete = c.get();
         s.Op(&op);
       });
@@ -373,6 +384,11 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op op;
+  grpc_transport_stream_op_payload op_payload;
+  auto reset_op = [&]() {
+    memset(&op, 0, sizeof(op));
+    op.payload = &op_payload;
+  };
   grpc_slice_buffer_stream send_stream;
   grpc_slice_buffer send_buffer;
   grpc_slice_buffer_init(&send_buffer);
@@ -399,21 +415,21 @@ static void BM_TransportStreamSend(benchmark::State &state) {
         s.chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
         f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
-        memset(&op, 0, sizeof(op));
+        reset_op();
         op.on_complete = c.get();
         op.send_message = true;
         op.payload->send_message.send_message = &send_stream.base;
         s.Op(&op);
       });
 
-  memset(&op, 0, sizeof(op));
+  reset_op();
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.on_complete = c.get();
   s.Op(&op);
 
   f.FlushExecCtx();
-  memset(&op, 0, sizeof(op));
+  reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   s.Op(&op);
@@ -488,9 +504,15 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
+  grpc_transport_stream_op_payload op_payload;
   grpc_transport_stream_op op;
   grpc_byte_stream *recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
+
+  auto reset_op = [&]() {
+    memset(&op, 0, sizeof(op));
+    op.payload = &op_payload;
+  };
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -523,7 +545,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
         s.chttp2_stream()->incoming_window_delta = 1024 * 1024 * 1024;
         f.chttp2_transport()->incoming_window = 1024 * 1024 * 1024;
         received = 0;
-        memset(&op, 0, sizeof(op));
+        reset_op();
         op.on_complete = do_nothing.get();
         op.recv_message = true;
         op.payload->recv_message.recv_message = &recv_stream;
@@ -558,11 +580,13 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
     grpc_closure_run(exec_ctx, drain.get(), GRPC_ERROR_NONE);
   });
 
-  memset(&op, 0, sizeof(op));
+  reset_op();
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;
   op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
+  op.payload->recv_initial_metadata.recv_initial_metadata_ready =
+      do_nothing.get();
   op.on_complete = c.get();
   s.Op(&op);
   f.PushInput(SLICE_FROM_BUFFER(
@@ -579,7 +603,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
       "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"));
 
   f.FlushExecCtx();
-  memset(&op, 0, sizeof(op));
+  reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   s.Op(&op);
