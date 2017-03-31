@@ -4287,6 +4287,9 @@ configs:
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
+  lto:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -4309,9 +4312,6 @@ configs:
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   opt:
-    CPPFLAGS: -O2
-    DEFINES: NDEBUG
-  lto:
     CPPFLAGS: -O2
     DEFINES: NDEBUG
   stapprof:
