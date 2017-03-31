@@ -61,12 +61,12 @@ def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
 nanos = {
-  'abs_diff': 10,
-  'pct_diff': 10,
+  'abs_diff': 5,
+  'pct_diff': 5,
 }
 counter = {
-  'abs_diff': 1,
-  'pct_diff': 1,
+  'abs_diff': 0.5,
+  'pct_diff': 0.5,
 }
 
 _INTERESTING = {
@@ -101,8 +101,8 @@ argp.add_argument('-t', '--track',
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=7)
-argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
+argp.add_argument('-r', '--repetitions', type=int, default=4)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.05)
 args = argp.parse_args()
 
 assert args.diff_base
