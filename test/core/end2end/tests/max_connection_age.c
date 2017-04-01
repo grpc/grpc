@@ -212,7 +212,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), true);
   cq_verify(cqv);
 
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
 
   /* The connection should be closed immediately after the max age grace period,
      the in-progress RPC should fail. */
@@ -228,7 +228,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
   cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
@@ -350,7 +350,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), true);
   cq_verify(cqv);
 
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
 
   /* The connection is closed gracefully with goaway, the rpc should still be
      completed. */
@@ -366,7 +366,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
   cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
