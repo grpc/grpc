@@ -37,7 +37,9 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -384,3 +386,34 @@ const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "max_age"};
+
+static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_stack_builder* builder,
+                                     void* arg) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_arg* a =
+      grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS);
+  bool enable = false;
+  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
+    enable = true;
+  }
+  a = grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS);
+  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
+    enable = true;
+  }
+  if (enable) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_max_age_filter, NULL, NULL);
+  } else {
+    return true;
+  }
+}
+
+void grpc_max_age_filter_init(void) {
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_max_age_filter, NULL);
+}
+
+void grpc_max_age_filter_shutdown(void) {}

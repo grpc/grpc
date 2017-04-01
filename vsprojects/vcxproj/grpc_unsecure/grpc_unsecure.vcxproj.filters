@@ -40,9 +40,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -463,65 +460,65 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
       <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\channel_connectivity.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\channel_connectivity.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_plugin.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_plugin.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -612,6 +609,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
       <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
+      <Filter>src\core\ext\filters\max_age</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_unsecure_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
@@ -744,9 +744,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
@@ -1106,59 +1103,59 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h">
       <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
-      <Filter>src\core\ext\client_channel</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h">
+      <Filter>src\core\ext\filters\client_channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -1244,6 +1241,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h">
+      <Filter>src\core\ext\filters\max_age</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1273,9 +1273,6 @@
     </Filter>
     <Filter Include="src\core\ext\census\gen">
       <UniqueIdentifier>{dfe53168-57b0-3ac4-d8ba-07fd958cc8f5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\client_channel">
-      <UniqueIdentifier>{2edd1aad-34cf-0c66-e03e-b1b2dd81d9a8}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters">
       <UniqueIdentifier>{5e37012e-a374-e285-bbda-b0dbe6327663}</UniqueIdentifier>
@@ -1324,6 +1321,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\load_reporting">
       <UniqueIdentifier>{0aef07b4-39d2-f862-15ac-65b4bf00dabb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\max_age">
+      <UniqueIdentifier>{d3bc80c1-5f2d-e842-42ac-43d8a6ada8de}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{967c89fe-c97c-27e2-aac0-9ba5854cb5fa}</UniqueIdentifier>

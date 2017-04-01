@@ -267,7 +267,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker_registry.h',
                       'src/core/lib/channel/http_client_filter.h',
                       'src/core/lib/channel/http_server_filter.h',
-                      'src/core/lib/channel/max_age_filter.h',
                       'src/core/lib/channel/message_size_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
@@ -457,6 +456,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/trace_status.h',
                       'src/core/ext/census/trace_string.h',
                       'src/core/ext/census/tracing.h',
+                      'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -469,7 +469,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker_registry.c',
                       'src/core/lib/channel/http_client_filter.c',
                       'src/core/lib/channel/http_server_filter.c',
-                      'src/core/lib/channel/max_age_filter.c',
                       'src/core/lib/channel/message_size_filter.c',
                       'src/core/lib/compression/compression.c',
                       'src/core/lib/compression/message_compress.c',
@@ -689,6 +688,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/resource.c',
                       'src/core/ext/census/trace_context.c',
                       'src/core/ext/census/tracing.c',
+                      'src/core/ext/filters/max_age/max_age_filter.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
@@ -717,7 +717,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker_registry.h',
                               'src/core/lib/channel/http_client_filter.h',
                               'src/core/lib/channel/http_server_filter.h',
-                              'src/core/lib/channel/max_age_filter.h',
                               'src/core/lib/channel/message_size_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
@@ -906,7 +905,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/trace_propagation.h',
                               'src/core/ext/census/trace_status.h',
                               'src/core/ext/census/trace_string.h',
-                              'src/core/ext/census/tracing.h'
+                              'src/core/ext/census/tracing.h',
+                              'src/core/ext/filters/max_age/max_age_filter.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|
