@@ -822,7 +822,6 @@ include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
-include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync.h \
@@ -1041,6 +1040,8 @@ src/core/lib/channel/http_client_filter.c \
 src/core/lib/channel/http_client_filter.h \
 src/core/lib/channel/http_server_filter.c \
 src/core/lib/channel/http_server_filter.h \
+src/core/lib/channel/max_age_filter.c \
+src/core/lib/channel/max_age_filter.h \
 src/core/lib/channel/message_size_filter.c \
 src/core/lib/channel/message_size_filter.h \
 src/core/lib/compression/algorithm_metadata.h \
@@ -1225,10 +1226,10 @@ src/core/lib/security/transport/security_handshaker.h \
 src/core/lib/security/transport/server_auth_filter.c \
 src/core/lib/security/transport/tsi_error.c \
 src/core/lib/security/transport/tsi_error.h \
-src/core/lib/security/util/b64.c \
-src/core/lib/security/util/b64.h \
 src/core/lib/security/util/json_util.c \
 src/core/lib/security/util/json_util.h \
+src/core/lib/slice/b64.c \
+src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.c \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.c \
