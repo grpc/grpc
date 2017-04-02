@@ -66,6 +66,19 @@ TEST(MemoryTest, MakeUniqueWithArgTest) {
   EXPECT_EQ(42, *i);
 }
 
+TEST(MemoryTest, UniquePtrWithCustomDeleter) {
+  int n = 0;
+  class IncrementingDeleter {
+   public:
+    void operator()(int* p) { ++*p; }
+  };
+  {
+    UniquePtr<int, IncrementingDeleter> p(&n);
+    EXPECT_EQ(0, n);
+  }
+  EXPECT_EQ(1, n);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

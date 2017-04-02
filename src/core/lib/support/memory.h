@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_MEMORY_H
-#define GRPC_SUPPORT_MEMORY_H
+#ifndef GRPC_CORE_LIB_SUPPORT_MEMORY_H
+#define GRPC_CORE_LIB_SUPPORT_MEMORY_H
 
 #include <grpc/support/alloc.h>
 
@@ -61,8 +61,8 @@ class DefaultDelete {
   void operator()(T* p) { Delete(p); }
 };
 
-template <typename T>
-using UniquePtr = std::unique_ptr<T, DefaultDelete<T>>;
+template <typename T, typename Deleter = DefaultDelete<T>>
+using UniquePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
 inline UniquePtr<T> MakeUnique(Args&&... args) {
@@ -71,4 +71,4 @@ inline UniquePtr<T> MakeUnique(Args&&... args) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_SUPPORT_NEW_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_MEMORY_H */
