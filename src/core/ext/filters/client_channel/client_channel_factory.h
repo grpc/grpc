@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -89,4 +89,4 @@ grpc_channel *grpc_client_channel_factory_create_channel(
 grpc_arg grpc_client_channel_factory_create_channel_arg(
     grpc_client_channel_factory *factory);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */

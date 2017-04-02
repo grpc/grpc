@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 
 /// Channel arg indicating the server in HTTP CONNECT request (string).
 /// The presence of this arg triggers the use of HTTP CONNECT.
@@ -46,4 +46,4 @@
 /// Registers handshaker factory.
 void grpc_http_connect_register_handshaker_factory();
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */

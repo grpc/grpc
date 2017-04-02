@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
-#define GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
 
 #include "src/core/ext/filters/load_reporting/load_reporting.h"
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_load_reporting_filter;
 
-#endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H */

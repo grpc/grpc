@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -98,4 +98,4 @@ void grpc_resolver_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                                grpc_channel_args **result,
                                grpc_closure *on_complete);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

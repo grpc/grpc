@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -200,4 +200,4 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args);
 /// Caller is responsible for freeing the string.
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H */

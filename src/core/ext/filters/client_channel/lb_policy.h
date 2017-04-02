@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -206,4 +206,4 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_error **connectivity_error);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -61,4 +61,4 @@ void grpc_client_channel_watch_connectivity_state(
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
     grpc_call_element *elem);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H */

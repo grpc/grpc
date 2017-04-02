@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
 
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
 
@@ -56,4 +56,4 @@ bool grpc_proxy_mappers_map_address(grpc_exec_ctx* exec_ctx,
                                     grpc_resolved_address** new_address,
                                     grpc_channel_args** new_args);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */

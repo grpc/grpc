@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_FACTORY_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_FACTORY_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -82,4 +82,4 @@ grpc_resolver *grpc_resolver_factory_create_resolver(
 char *grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory *factory, grpc_uri *uri);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_FACTORY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H */

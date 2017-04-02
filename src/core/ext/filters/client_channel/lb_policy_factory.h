@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -131,4 +131,4 @@ grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy_factory *factory,
     grpc_lb_policy_args *args);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_FACTORY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H */

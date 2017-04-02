@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_RETRY_THROTTLE_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_RETRY_THROTTLE_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
 #include <stdbool.h>
 
@@ -62,4 +62,4 @@ void grpc_retry_throttle_map_shutdown();
 grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RETRY_THROTTLE_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H */

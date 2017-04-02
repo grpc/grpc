@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_CONNECTOR_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_CONNECTOR_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -85,4 +85,4 @@ void grpc_connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
 void grpc_connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
                              grpc_error *why);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CONNECTOR_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */

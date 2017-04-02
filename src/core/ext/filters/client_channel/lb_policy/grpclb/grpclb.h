@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
-#define GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
@@ -41,4 +41,4 @@
  * subchannel to pick. */
 grpc_lb_policy_factory *grpc_glb_lb_factory_create();
 
-#endif /* GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H */

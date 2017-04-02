@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_PARSE_ADDRESS_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_PARSE_ADDRESS_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
 
 #include <stddef.h>
 
@@ -51,4 +51,4 @@ int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr);
  * host:port pair. Returns true upon success. */
 int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PARSE_ADDRESS_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
-#define GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
+#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_H
+#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_H
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -70,4 +70,4 @@ typedef struct grpc_load_reporting_call_data {
 /** Return a \a grpc_arg enabling load reporting */
 grpc_arg grpc_load_reporting_enable_arg();
 
-#endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H */
+#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_H */

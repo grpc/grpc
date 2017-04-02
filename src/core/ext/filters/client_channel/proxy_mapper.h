@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_H
 
 #include <stdbool.h>
 
@@ -86,4 +86,4 @@ bool grpc_proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,
 
 void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_PROXY_MAPPER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_H */
