@@ -52,7 +52,6 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/atm.h>
 
 struct grpc_completion_queue;

@@ -36,7 +36,6 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
