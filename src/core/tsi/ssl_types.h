@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TSI_SSL_TYPES_H
-#define GRPC_CORE_LIB_TSI_SSL_TYPES_H
+#ifndef GRPC_CORE_TSI_SSL_TYPES_H
+#define GRPC_CORE_TSI_SSL_TYPES_H
 
 /* A collection of macros to cast between various integer types that are
  * used differently between BoringSSL and OpenSSL:
@@ -52,4 +52,4 @@
 #define TSI_SIZE_AS_SIZE(x) ((int)(x))
 #endif
 
-#endif /* GRPC_CORE_LIB_TSI_SSL_TYPES_H */
+#endif /* GRPC_CORE_TSI_SSL_TYPES_H */

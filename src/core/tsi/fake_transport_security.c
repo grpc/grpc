@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/fake_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 /* --- Constants. ---*/
 #define TSI_FAKE_FRAME_HEADER_SIZE 4

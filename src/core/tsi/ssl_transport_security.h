@@ -31,10 +31,10 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_LIB_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -188,4 +188,4 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

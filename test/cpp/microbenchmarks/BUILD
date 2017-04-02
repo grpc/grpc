@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +26,68 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins to comment $1 on pull requests
-# when triggered by a build
 
-set -e
+licenses(["notice"])  # 3-clause BSD
 
-if [ -z "$1" ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
-  echo "Insufficient arguments or environment variables provided."
-  exit 1
-fi
+cc_test(
+    name = "noop-benchmark",
+    srcs = ["noop-benchmark.cc"],
+    deps = ["//external:benchmark"],
+    linkopts = ["-pthread"],
+)
 
-# Format the comment message to JSON
-COMMENT_MESSAGE="{\"body\":\"$1\"}"
+cc_library(
+    name = "helpers",
+    srcs = ["helpers.cc"],
+    hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
+    deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+    linkopts = ["-pthread"],
+)
 
-curl -k -H "Authorization: token $JENKINS_OAUTH_TOKEN" -H "Content-Type: application/json" \
-  -d "$COMMENT_MESSAGE" https://api.github.com/repos/grpc/grpc/issues/$ghprbPullId/comments
+cc_test(
+    name = "bm_closure",
+    srcs = ["bm_closure.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_cq",
+    srcs = ["bm_cq.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_error",
+    srcs = ["bm_error.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_streaming_ping_pong",
+    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    deps = [":helpers"],
+
+    )
+cc_test(
+    name = "bm_fullstack_streaming_pump",
+    srcs = ["bm_fullstack_streaming_pump.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_trickle",
+    srcs = ["bm_fullstack_trickle.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_unary_ping_pong",
+    srcs = ["bm_fullstack_unary_ping_pong.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
+)
