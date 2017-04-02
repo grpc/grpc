@@ -61,8 +61,8 @@ class DefaultDelete {
   void operator()(T* p) { Delete(p); }
 };
 
-template <typename T>
-using UniquePtr = std::unique_ptr<T, DefaultDelete<T>>;
+template <typename T, typename Deleter = DefaultDelete<T>>
+using UniquePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
 inline UniquePtr<T> MakeUnique(Args&&... args) {
