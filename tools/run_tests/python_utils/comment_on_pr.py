@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,19 +27,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import os
+import json
+import urllib2
 
-if [ "$CONFIG" != "gcov" ] ; then exit ; fi
-
-root=$(readlink -f $(dirname $0)/../../..)
-out=$root/reports/php_ext_coverage
-tmp1=$(mktemp)
-tmp2=$(mktemp)
-cd $root
-lcov --capture --directory . --output-file $tmp1
-lcov --extract $tmp1 "$root/src/php/ext/grpc/*" --output-file $tmp2
-genhtml $tmp2 --output-directory $out
-rm $tmp2
-rm $tmp1
-
-# todo(mattkwong): generate coverage report for php and copy to reports/php
+def comment_on_pr(text):
+  if 'JENKINS_OAUTH_TOKEN' not in os.environ:
+    print 'Missing JENKINS_OAUTH_TOKEN env var: not commenting'
+    return
+  if 'ghprbPullId' not in os.environ:
+    print 'Missing ghprbPullId env var: not commenting'
+    return
+  req = urllib2.Request(
+      url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
+          os.environ['ghprbPullId'],
+      data = json.dumps({'body': text}),
+      headers = {
+        'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
+        'Content-Type': 'application/json',
+      })
+  print urllib2.urlopen(req).read()

@@ -115,3 +115,6 @@ bazel-testlogs
 
 # Debug output
 gdb.txt
+
+# ctags file
+tags

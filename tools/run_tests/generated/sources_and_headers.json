@@ -912,7 +912,7 @@
     "language": "c", 
     "name": "grpc_b64_test", 
     "src": [
-      "test/core/security/b64_test.c"
+      "test/core/slice/b64_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5738,6 +5738,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -7144,6 +7145,8 @@
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/load_reporting_hook.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
+      "test/core/end2end/tests/max_connection_age.c", 
+      "test/core/end2end/tests/max_connection_idle.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/network_status_change.c", 
@@ -7216,6 +7219,8 @@
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/load_reporting_hook.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
+      "test/core/end2end/tests/max_connection_age.c", 
+      "test/core/end2end/tests/max_connection_idle.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/network_status_change.c", 
@@ -7457,7 +7462,6 @@
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
@@ -7474,7 +7478,6 @@
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
@@ -7511,6 +7514,7 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.h", 
+      "src/core/lib/channel/max_age_filter.h", 
       "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
@@ -7577,6 +7581,7 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
@@ -7646,6 +7651,8 @@
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.c", 
       "src/core/lib/channel/http_server_filter.h", 
+      "src/core/lib/channel/max_age_filter.c", 
+      "src/core/lib/channel/max_age_filter.h", 
       "src/core/lib/channel/message_size_filter.c", 
       "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
@@ -7786,7 +7793,8 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/security/util/b64.c", 
+      "src/core/lib/slice/b64.c", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.c", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
@@ -7942,6 +7950,7 @@
       "include/grpc/impl/codegen/exec_ctx_fwd.h", 
       "include/grpc/impl/codegen/grpc_types.h", 
       "include/grpc/impl/codegen/propagation_bits.h", 
+      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
     ], 
     "is_filegroup": true, 
@@ -7954,6 +7963,7 @@
       "include/grpc/impl/codegen/exec_ctx_fwd.h", 
       "include/grpc/impl/codegen/grpc_types.h", 
       "include/grpc/impl/codegen/propagation_bits.h", 
+      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
     ], 
     "third_party": false, 
@@ -7993,6 +8003,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_secure", 
       "nanopb"
     ], 
     "headers": [
@@ -8152,7 +8163,6 @@
       "src/core/lib/security/transport/security_connector.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.h"
     ], 
     "is_filegroup": true, 
@@ -8200,8 +8210,6 @@
       "src/core/lib/security/transport/server_auth_filter.c", 
       "src/core/lib/security/transport/tsi_error.c", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.c", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.c", 
       "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
@@ -8362,6 +8370,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_client_channel", 
       "grpc_transport_chttp2"
     ], 
     "headers": [
@@ -8541,7 +8550,10 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base", 
+      "nanopb"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +27,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins to comment $1 on pull requests
-# when triggered by a build
 
-set -e
+set -ex
 
-if [ -z "$1" ] || [ -z $JENKINS_OAUTH_TOKEN ] || [ -z $ghprbPullId ]; then
-  echo "Insufficient arguments or environment variables provided."
-  exit 1
-fi
+if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-# Format the comment message to JSON
-COMMENT_MESSAGE="{\"body\":\"$1\"}"
+# change to directory of Python coverage files
+cd $(dirname $0)/../../../src/python/grpcio_tests/
 
-curl -k -H "Authorization: token $JENKINS_OAUTH_TOKEN" -H "Content-Type: application/json" \
-  -d "$COMMENT_MESSAGE" https://api.github.com/repos/grpc/grpc/issues/$ghprbPullId/comments
+coverage combine .
+coverage html -i -d ./../../../reports/python

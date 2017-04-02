@@ -39,7 +39,6 @@
 #include <vector>
 
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/load_reporting.h>
 
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/config.h>
