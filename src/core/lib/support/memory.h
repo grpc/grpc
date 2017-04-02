@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_MEMORY_H
-#define GRPC_SUPPORT_MEMORY_H
+#ifndef GRPC_CORE_LIB_SUPPORT_MEMORY_H
+#define GRPC_CORE_LIB_SUPPORT_MEMORY_H
 
 #include <grpc/support/alloc.h>
 
@@ -71,4 +71,4 @@ inline UniquePtr<T> MakeUnique(Args&&... args) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_SUPPORT_NEW_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_MEMORY_H */
