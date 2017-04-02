@@ -4072,7 +4072,6 @@ LIBGRPC++_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -5101,7 +5100,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \

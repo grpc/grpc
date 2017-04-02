@@ -2224,7 +2224,6 @@ add_library(grpc++
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -3253,7 +3252,6 @@ add_library(grpc++_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
