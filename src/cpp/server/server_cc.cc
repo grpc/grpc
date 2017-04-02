@@ -227,7 +227,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
       CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
       cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
-     /* Ensure the cq_ is shutdown */
+      /* Ensure the cq_ is shutdown */
       DummyTag ignored_tag;
       GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
