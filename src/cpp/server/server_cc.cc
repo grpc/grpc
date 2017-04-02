@@ -221,9 +221,14 @@ class Server::SyncRequest final : public CompletionQueueTag {
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
-      DummyTag ignored_tag;
+
       cq_.Shutdown();
-      /* Ensure the cq_ is shutdown (else this will hang indefinitely) */
+
+      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+
+     /* Ensure the cq_ is shutdown */
+      DummyTag ignored_tag;
       GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
 
