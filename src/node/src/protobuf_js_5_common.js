@@ -120,6 +120,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
     return _.camelCase(method.name);
   }), _.map(service.children, function(method) {
     return {
+      originalName: method.name,
       path: prefix + method.name,
       requestStream: method.requestStream,
       responseStream: method.responseStream,
