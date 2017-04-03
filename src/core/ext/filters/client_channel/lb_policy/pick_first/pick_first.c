@@ -402,7 +402,9 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
    * addresses, since we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    return NULL;
+  }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {

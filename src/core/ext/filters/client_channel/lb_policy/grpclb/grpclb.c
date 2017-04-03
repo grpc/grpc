@@ -847,7 +847,9 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * this is the right LB policy to use. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    return NULL;
+  }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_grpclb_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
