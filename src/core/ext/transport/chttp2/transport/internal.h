@@ -186,22 +186,23 @@ typedef struct grpc_chttp2_write_cb {
 struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
-  struct grpc_chttp2_incoming_byte_stream *next_message; /* unused; should be removed */
-  bool push_closed;                 /* protected by slice_mu */
+  struct grpc_chttp2_incoming_byte_stream
+      *next_message; /* unused; should be removed */
+  bool push_closed;  /* protected by slice_mu */
 
   grpc_chttp2_transport *transport; /* immutable */
   grpc_chttp2_stream *stream;       /* immutable */
   bool is_tail;                     /* immutable */
 
   gpr_mu slice_mu;
-  grpc_slice_buffer slices;  /* unused; should be removed */
-  uint32_t remaining_bytes;  /* guaranteed one thread access */
+  grpc_slice_buffer slices; /* unused; should be removed */
+  uint32_t remaining_bytes; /* guaranteed one thread access */
 
   struct {
     grpc_closure closure;
     size_t max_size_hint;
     grpc_closure *on_complete;
-  } next_action;             /* guaranteed one thread access */
+  } next_action; /* guaranteed one thread access */
   grpc_closure destroy_action;
   grpc_closure finished_action;
 };
@@ -431,8 +432,8 @@ struct grpc_chttp2_stream {
   uint32_t id;
 
   /** window available for us to send to peer, over or under the initial window
-    * size of the transport... ie:
-    * outgoing_window = outgoing_window_delta + transport.initial_window_size */
+   * size of the transport... ie:
+   * outgoing_window = outgoing_window_delta + transport.initial_window_size */
   int64_t outgoing_window_delta;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
@@ -484,12 +485,13 @@ struct grpc_chttp2_stream {
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
-  grpc_slice_buffer unprocessed_incoming_frames_buffer; /* guaranteed one thread access */
-  grpc_closure *on_next;  /* protected by t combiner */
-  bool pending_byte_stream;  /* protected by t combiner */
+  grpc_slice_buffer
+      unprocessed_incoming_frames_buffer; /* guaranteed one thread access */
+  grpc_closure *on_next;                  /* protected by t combiner */
+  bool pending_byte_stream;               /* protected by t combiner */
   grpc_closure reset_byte_stream;
   grpc_error *byte_stream_error; /* protected by t combiner */
-  bool received_last_frame;  /* proected by t combiner */
+  bool received_last_frame;      /* proected by t combiner */
 
   gpr_timespec deadline;
 
@@ -502,7 +504,7 @@ struct grpc_chttp2_stream {
    * incoming_window = incoming_window_delta + transport.initial_window_size */
   int64_t incoming_window_delta;
   /** parsing state for data frames */
-  grpc_chttp2_data_parser data_parser;                 /* guaranteed one thread access */
+  grpc_chttp2_data_parser data_parser; /* guaranteed one thread access */
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
@@ -617,7 +619,7 @@ extern int grpc_flowctl_trace;
   if (!(grpc_http_trace))            \
     ;                                \
   else                               \
-  stmt
+    stmt
 
 typedef enum {
   GRPC_CHTTP2_FLOWCTL_MOVE,
@@ -780,10 +782,9 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport *t);
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     uint32_t frame_size, uint32_t flags);
-grpc_error *grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
-                                                  grpc_chttp2_incoming_byte_stream *bs,
-                                                  grpc_slice slice,
-                                                  grpc_slice *slice_out);
+grpc_error *grpc_chttp2_incoming_byte_stream_push(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_slice slice, grpc_slice *slice_out);
 grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error, int reset_on_error);

@@ -1158,7 +1158,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream, remaining,
                               &call->receiving_slice_ready)) {
       error = grpc_byte_stream_pull(exec_ctx, call->receiving_stream,
-                            &call->receiving_slice);
+                                    &call->receiving_slice);
       if (error == GRPC_ERROR_NONE) {
         grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                               call->receiving_slice);
