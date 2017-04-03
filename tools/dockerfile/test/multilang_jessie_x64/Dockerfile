@@ -135,6 +135,10 @@ RUN pip install pip --upgrade
 RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
+# Install coverage for Python test coverage reporting
+RUN pip install coverage
+ENV PATH ~/.local/bin:$PATH
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

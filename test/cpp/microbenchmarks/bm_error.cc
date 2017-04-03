@@ -33,6 +33,7 @@
 
 /* Test various operations on grpc_error */
 
+#include <benchmark/benchmark.h>
 #include <memory>
 
 extern "C" {
@@ -41,7 +42,6 @@ extern "C" {
 }
 
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 auto& force_library_initialization = Library::get();
 

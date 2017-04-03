@@ -150,17 +150,20 @@ grpc_channel *grpc_channel_create_with_builder(
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
       channel->compression_options.default_level.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
       channel->compression_options.default_level.level =
-          (grpc_compression_level)args->args[i].value.integer;
+          (grpc_compression_level)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_COUNT - 1});
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_ALGORITHMS_COUNT);
       channel->compression_options.default_algorithm.algorithm =
-          (grpc_compression_algorithm)args->args[i].value.integer;
+          (grpc_compression_algorithm)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
+                                     GRPC_COMPRESS_ALGORITHMS_COUNT - 1});
     } else if (0 ==
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
@@ -194,8 +197,14 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
 #define ROUND_UP_SIZE 256
+  /* We round up our current estimate to the NEXT value of ROUND_UP_SIZE.
+     This ensures:
+      1. a consistent size allocation when our estimate is drifting slowly
+         (which is common) - which tends to help most allocators reuse memory
+      2. a small amount of allowed growth over the estimate without hitting
+         the arena size doubling case, reducing overall memory usage */
   return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
-          ROUND_UP_SIZE) &
+          2 * ROUND_UP_SIZE) &
          ~(size_t)(ROUND_UP_SIZE - 1);
 }
 

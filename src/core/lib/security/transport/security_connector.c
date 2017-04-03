@@ -54,8 +54,8 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
 

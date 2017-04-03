@@ -235,18 +235,17 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
         return false;
       }
 
-      ResponseType response;
-
       // Call the RPC processing function
-      grpc::Status status = invoke_method_(&req_, &response);
+      grpc::Status status = invoke_method_(&req_, &response_);
 
       // Have the response writer work and invoke on_finish when done
       next_state_ = &ServerRpcContextUnaryImpl::finisher;
-      response_writer_.Finish(response, status, AsyncQpsServerTest::tag(this));
+      response_writer_.Finish(response_, status, AsyncQpsServerTest::tag(this));
       return true;
     }
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
+    ResponseType response_;
     bool (ServerRpcContextUnaryImpl::*next_state_)(bool);
     std::function<void(ServerContextType *, RequestType *,
                        grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
@@ -298,11 +297,10 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     bool read_done(bool ok) {
       if (ok) {
         // invoke the method
-        ResponseType response;
         // Call the RPC processing function
-        grpc::Status status = invoke_method_(&req_, &response);
+        grpc::Status status = invoke_method_(&req_, &response_);
         // initiate the write
-        stream_.Write(response, AsyncQpsServerTest::tag(this));
+        stream_.Write(response_, AsyncQpsServerTest::tag(this));
         next_state_ = &ServerRpcContextStreamingImpl::write_done;
       } else {  // client has sent writes done
         // finish the stream
@@ -326,6 +324,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
+    ResponseType response_;
     bool (ServerRpcContextStreamingImpl::*next_state_)(bool);
     std::function<void(
         ServerContextType *,

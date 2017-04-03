@@ -166,3 +166,5 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 # on benchmarks
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
+# Install scipy and numpy for benchmarking scripts
+sudo apt-get install python-scipy python-numpy

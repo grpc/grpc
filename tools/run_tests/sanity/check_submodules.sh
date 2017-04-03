@@ -49,6 +49,7 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  593e917c176b5bc5aafa57bf9f6030d749d91cd5 third_party/protobuf (v3.1.0-alpha-1-326-g593e917)
  bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift (bcad917)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
+ 7691f773af79bf75a62d1863fd0f13ebf9dc51b1 third_party/cares/cares (1.12.0)
 EOF
 
 diff -u $submodules $want_submodules

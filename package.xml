@@ -85,7 +85,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
@@ -166,6 +165,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/exec_ctx_fwd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
@@ -174,7 +174,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
@@ -193,6 +192,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
@@ -230,6 +230,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
@@ -258,6 +259,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
@@ -269,6 +271,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
@@ -325,13 +328,12 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/util/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_types.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.h" role="src" />
@@ -360,6 +362,8 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
@@ -390,6 +394,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/max_age_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
@@ -426,6 +431,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
@@ -463,6 +469,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.c" role="src" />
@@ -481,6 +488,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />
@@ -544,12 +552,11 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/util/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/channel_connectivity.c" role="src" />
@@ -586,6 +593,9 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/pick_first/pick_first.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/round_robin/round_robin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/dns/native/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.c" role="src" />

@@ -247,9 +247,12 @@ class CLanguage(object):
         polling_strategies = ['all']
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                 _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
+                 _ROOT + '/src/core/tsi/test_creds/ca.pem',
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
+        resolver = os.environ.get('GRPC_DNS_RESOLVER', None);
+        if resolver:
+          env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
@@ -611,7 +614,10 @@ class PythonLanguage(object):
     return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
-    return []
+    if self.config != 'gcov':
+      return []
+    else:
+      return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -693,9 +699,13 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
-                                 timeout_seconds=10*60,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
+                                  timeout_seconds=10*60,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    tests.append(self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
+                 timeout_seconds=10*60,
+                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+    return tests
 
   def pre_build_steps(self):
     return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
@@ -1263,7 +1273,9 @@ if any(language.make_options() for language in languages):
     print('languages with custom make options cannot be built simultaneously with other languages')
     sys.exit(1)
   else:
-    language_make_options = next(iter(languages)).make_options()
+    # Combining make options is not clean and just happens to work. It allows C/C++ and C# to build
+    # together, and is only used under gcov. All other configs should build languages individually.
+    language_make_options = list(set([make_option for lang in languages for make_option in lang.make_options()]))
 
 if args.use_docker:
   if not args.travis:
