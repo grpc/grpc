@@ -153,8 +153,8 @@ subprocess.check_call(['git', 'checkout', args.diff_base])
 try:
   build()
   jobset.run(itertools.chain(
-    (collect1(bm, 'opt', 'new') for bm in args.benchmarks),
-    (collect1(bm, 'counters', 'new') for bm in args.benchmarks),
+    (collect1(bm, 'opt', 'old') for bm in args.benchmarks),
+    (collect1(bm, 'counters', 'old') for bm in args.benchmarks),
   ), maxjobs=args.jobs)
 finally:
   subprocess.check_call(['git', 'checkout', where_am_i])
