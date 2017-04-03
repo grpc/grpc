@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

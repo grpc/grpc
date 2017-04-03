@@ -911,14 +911,11 @@ add_library(grpc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1053,6 +1050,10 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/compress/compress_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1233,14 +1234,11 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1378,6 +1376,10 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/compress/compress_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
@@ -1540,14 +1542,11 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1799,14 +1798,11 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1942,6 +1938,10 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/compress/compress_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
@@ -2215,14 +2215,11 @@ add_library(grpc++
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -2544,14 +2541,11 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -2692,6 +2686,10 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/compress/compress_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
@@ -3241,14 +3239,11 @@ add_library(grpc++_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
   src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c

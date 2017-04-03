@@ -176,15 +176,12 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
-  - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
-  - src/core/lib/channel/http_client_filter.h
-  - src/core/lib/channel/http_server_filter.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -286,14 +283,11 @@ filegroups:
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
-  - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/handshaker_factory.c
   - src/core/lib/channel/handshaker_registry.c
-  - src/core/lib/channel/http_client_filter.c
-  - src/core/lib/channel/http_server_filter.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/debug/trace.c
@@ -466,6 +460,17 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_http_filters
+  headers:
+  - src/core/ext/filters/http/client/http_client_filter.h
+  - src/core/ext/filters/http/compress/compress_filter.h
+  - src/core/ext/filters/http/server/http_server_filter.h
+  src:
+  - src/core/ext/filters/http/client/http_client_filter.c
+  - src/core/ext/filters/http/compress/compress_filter.c
+  - src/core/ext/filters/http/http_filters_plugin.c
+  - src/core/ext/filters/http/server/http_server_filter.c
+  plugin: grpc_http_filters
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
@@ -700,6 +705,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - grpc_http_filters
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -773,6 +779,7 @@ filegroups:
   filegroups:
   - grpc_base
   - grpc_transport_chttp2
+  - grpc_http_filters
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h

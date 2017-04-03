@@ -7526,15 +7526,12 @@
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
-      "src/core/lib/channel/compress_filter.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
       "src/core/lib/channel/deadline_filter.h", 
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/handshaker_factory.h", 
       "src/core/lib/channel/handshaker_registry.h", 
-      "src/core/lib/channel/http_client_filter.h", 
-      "src/core/lib/channel/http_server_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.h", 
@@ -7653,8 +7650,6 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.c", 
       "src/core/lib/channel/channel_stack_builder.h", 
-      "src/core/lib/channel/compress_filter.c", 
-      "src/core/lib/channel/compress_filter.h", 
       "src/core/lib/channel/connected_channel.c", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -7666,10 +7661,6 @@
       "src/core/lib/channel/handshaker_factory.h", 
       "src/core/lib/channel/handshaker_registry.c", 
       "src/core/lib/channel/handshaker_registry.h", 
-      "src/core/lib/channel/http_client_filter.c", 
-      "src/core/lib/channel/http_client_filter.h", 
-      "src/core/lib/channel/http_server_filter.c", 
-      "src/core/lib/channel/http_server_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
@@ -7980,6 +7971,28 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/filters/http/client/http_client_filter.h", 
+      "src/core/ext/filters/http/compress/compress_filter.h", 
+      "src/core/ext/filters/http/server/http_server_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_http_filters", 
+    "src": [
+      "src/core/ext/filters/http/client/http_client_filter.c", 
+      "src/core/ext/filters/http/client/http_client_filter.h", 
+      "src/core/ext/filters/http/compress/compress_filter.c", 
+      "src/core/ext/filters/http/compress/compress_filter.h", 
+      "src/core/ext/filters/http/http_filters_plugin.c", 
+      "src/core/ext/filters/http/server/http_server_filter.c", 
+      "src/core/ext/filters/http/server/http_server_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8332,6 +8345,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_http_filters", 
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
@@ -8533,6 +8547,7 @@
   {
     "deps": [
       "grpc_base", 
+      "grpc_http_filters", 
       "grpc_transport_chttp2"
     ], 
     "headers": [
