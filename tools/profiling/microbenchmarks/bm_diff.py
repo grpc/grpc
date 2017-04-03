@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+args.benchmarks#!/usr/bin/env python2.7
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -41,6 +41,7 @@ import pipes
 import os
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
 import comment_on_pr
+import jobset
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -101,8 +102,9 @@ argp.add_argument('-t', '--track',
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=7)
+argp.add_argument('-r', '--repetitions', type=int, default=30)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
+argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
 assert args.diff_base
@@ -117,7 +119,7 @@ def avg(lst):
 
 def make_cmd(cfg):
   return ['make'] + args.benchmarks + [
-      'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
+      'CONFIG=%s' % cfg, '-j', '%d' % args.jobs]
 
 def build():
   subprocess.check_call(['git', 'submodule', 'update'])
@@ -135,27 +137,24 @@ def collect1(bm, cfg, ver):
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
-  print cmd
-  subprocess.check_call(cmd)
+  return jobset.JobSpec(cmd, shortname='%s %s %s' % (bm, cfg, ver),
+                             verbose_success=True)
 
 build()
-for bm in args.benchmarks:
-  collect1(bm, 'opt', 'new')
-  collect1(bm, 'counters', 'new')
+jobset.run(itertools.chain(
+  (collect1(bm, 'opt', 'new') for bm in args.benchmarks),
+  (collect1(bm, 'counters', 'new') for bm in args.benchmarks),
+), maxjobs=args.jobs)
 
 where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
 subprocess.check_call(['git', 'checkout', args.diff_base])
 
 try:
   build()
-  comparables = []
-  for bm in args.benchmarks:
-    try:
-      collect1(bm, 'opt', 'old')
-      collect1(bm, 'counters', 'old')
-      comparables.append(bm)
-    except subprocess.CalledProcessError, e:
-      pass
+  jobset.run(itertools.chain(
+    (collect1(bm, 'opt', 'new') for bm in args.benchmarks),
+    (collect1(bm, 'counters', 'new') for bm in args.benchmarks),
+  ), maxjobs=args.jobs)
 finally:
   subprocess.check_call(['git', 'checkout', where_am_i])
   subprocess.check_call(['git', 'submodule', 'update'])
@@ -201,7 +200,7 @@ class Benchmark:
 
 benchmarks = collections.defaultdict(Benchmark)
 
-for bm in comparables:
+for bm in args.benchmarks:
   with open('%s.counters.new.json' % bm) as f:
     js_new_ctr = json.loads(f.read())
   with open('%s.opt.new.json' % bm) as f:
