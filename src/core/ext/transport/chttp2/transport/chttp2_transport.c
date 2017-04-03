@@ -74,6 +74,7 @@
 #define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000  /* 2 hours */
 #define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
+#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
 static int g_default_client_keepalive_time_ms =
     DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
@@ -972,14 +973,15 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
       grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0) {
     gpr_log(GPR_ERROR,
-            "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug data"
-            "equal to \"too_many_pings\"");
+            "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
+            "data equal to \"too_many_pings\"");
     double current_keepalive_time_ms =
         gpr_timespec_to_micros(t->keepalive_time) / 1000;
     t->keepalive_time =
-        current_keepalive_time_ms > INT_MAX / 2
+        current_keepalive_time_ms > INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER
             ? gpr_inf_future(GPR_TIMESPAN)
-            : gpr_time_from_millis((int64_t)(current_keepalive_time_ms * 2),
+            : gpr_time_from_millis((int64_t)(current_keepalive_time_ms *
+                                             KEEPALIVE_TIME_BACKOFF_MULTIPLIER),
                                    GPR_TIMESPAN);
   }
 
