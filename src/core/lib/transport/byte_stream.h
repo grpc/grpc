@@ -71,7 +71,8 @@ int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream);
 
-/* grpc_byte_stream that wraps a slice buffer */
+/* grpc_slice_buffer_stream -- a grpc_byte_stream that wraps a slice buffer */
+
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
   grpc_slice_buffer *backing_buffer;
@@ -81,5 +82,26 @@ typedef struct grpc_slice_buffer_stream {
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
                                    grpc_slice_buffer *slice_buffer,
                                    uint32_t flags);
+
+/* grpc_tee_byte_stream -- a grpc_byte_stream that wraps an underlying byte
+ * stream, but invokes a callback for each slice returned via next(). */
+
+/* Callback does NOT take ownership of \a slice. */
+typedef void (*tee_byte_stream_cb)(grpc_exec_ctx *exec_ctx, void *arg,
+                                   grpc_slice slice);
+
+typedef struct {
+  grpc_byte_stream base;
+  grpc_byte_stream *underlying_stream;
+  tee_byte_stream_cb cb;
+  void *cb_arg;
+  grpc_slice *slice;
+  grpc_closure on_complete;
+  grpc_closure *original_on_complete;
+} grpc_tee_byte_stream;
+
+void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
+                               grpc_byte_stream *underlying_stream,
+                               tee_byte_stream_cb cb, void *cb_arg);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */
