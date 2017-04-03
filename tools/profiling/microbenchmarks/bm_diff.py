@@ -42,6 +42,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
 import comment_on_pr
 import jobset
+import itertools
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
