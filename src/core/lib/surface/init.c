@@ -105,6 +105,22 @@ static bool maybe_add_http_filter(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
+typedef struct {
+  const grpc_channel_filter *filter;
+  const char *controlling_channel_arg;
+  bool default_on;
+} maybe_prepend_filter_args;
+
+static const maybe_prepend_filter_args message_size_args = {
+    &grpc_message_size_filter, NULL, true};
+
+static bool maybe_prepend_filter(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack_builder *builder,
+                                 void *arg) {
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+}
+
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
@@ -113,6 +129,18 @@ static void register_builtin_channel_init() {
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
       (void *)&grpc_server_deadline_filter);
   grpc_channel_init_register_stage(
+<<<<<<< HEAD
+=======
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_prepend_filter, (void *)&message_size_args);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_message_size_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_message_size_filter);
+  grpc_channel_init_register_stage(
+>>>>>>> 6b97e5344f4dddcdad1e0525b733162c0025b770
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
       (void *)&grpc_compress_filter);
   grpc_channel_init_register_stage(
