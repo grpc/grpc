@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 
@@ -44,4 +44,4 @@ extern const grpc_channel_filter grpc_http_client_filter;
 /* Channel arg to determine maximum size of payload eligable for GET request */
 #define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */

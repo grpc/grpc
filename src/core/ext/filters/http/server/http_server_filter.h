@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

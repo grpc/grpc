@@ -29,8 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -102,4 +102,4 @@ bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
-#endif /* GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */
