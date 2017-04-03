@@ -1517,9 +1517,9 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
   if (s->recv_initial_metadata_ready != NULL &&
       s->published_metadata[0] != GRPC_METADATA_NOT_PUBLISHED) {
     if (s->seen_error) {
-      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
       if (!s->pending_byte_stream) {
-        grpc_slice_buffer_reset_and_unref(
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
             &s->unprocessed_incoming_frames_buffer);
       }
     }
@@ -1537,9 +1537,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
   if (s->recv_message_ready != NULL) {
     *s->recv_message = NULL;
     if (s->final_metadata_requested && s->seen_error) {
-      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
       if (!s->pending_byte_stream) {
-        grpc_slice_buffer_reset_and_unref(
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
             &s->unprocessed_incoming_frames_buffer);
       }
     }
@@ -1556,8 +1556,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
             &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
-          grpc_slice_buffer_reset_and_unref(&s->frame_storage);
-          grpc_slice_buffer_reset_and_unref(
+          grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
+          grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
               &s->unprocessed_incoming_frames_buffer);
           break;
         } else if (*s->recv_message != NULL) {
@@ -1581,9 +1581,9 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
   if (s->recv_trailing_metadata_finished != NULL && s->read_closed &&
       s->write_closed) {
     if (s->seen_error) {
-      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
       if (!s->pending_byte_stream) {
-        grpc_slice_buffer_reset_and_unref(
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
             &s->unprocessed_incoming_frames_buffer);
       }
     }
@@ -2678,6 +2678,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
   if (error != GRPC_ERROR_NONE && reset_on_error) {
     grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
   }
+  GRPC_ERROR_UNREF(error);
   incoming_byte_stream_unref(exec_ctx, bs);
   return error;
 }
