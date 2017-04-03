@@ -141,12 +141,12 @@ class TransportOp {
 };
 
 /// A C++ wrapper for the \c grpc_transport_stream_op_batch struct.
-class TransportStreamOp {
+class TransportStreamOpBatch {
  public:
   /// Borrows a pointer to \a op, but does NOT take ownership.
   /// The caller must ensure that \a op continues to exist for as
-  /// long as the TransportStreamOp object does.
-  explicit TransportStreamOp(grpc_transport_stream_op_batch *op)
+  /// long as the TransportStreamOpBatch object does.
+  explicit TransportStreamOpBatch(grpc_transport_stream_op_batch *op)
       : op_(op),
         send_initial_metadata_(
             op->send_initial_metadata
@@ -257,9 +257,9 @@ class CallData {
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
   /// Starts a new stream operation.
-  virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      TransportStreamOp *op);
+  virtual void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                           grpc_call_element *elem,
+                                           TransportStreamOpBatch *op);
 
   /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
@@ -329,12 +329,12 @@ class ChannelFilter final {
     reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
   }
 
-  static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem,
-                                     grpc_transport_stream_op_batch *op) {
+  static void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op) {
     CallDataType *call_data = (CallDataType *)elem->call_data;
-    TransportStreamOp op_wrapper(op);
-    call_data->StartTransportStreamOp(exec_ctx, elem, &op_wrapper);
+    TransportStreamOpBatch op_wrapper(op);
+    call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
   }
 
   static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
@@ -386,7 +386,7 @@ void RegisterChannelFilter(
       stack_type,
       priority,
       include_filter,
-      {FilterType::StartTransportStreamOp, FilterType::StartTransportOp,
+      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,

@@ -119,7 +119,11 @@ typedef struct batch_control {
   grpc_call *call;
   /* Share memory for cq_completion and notify_tag as they are never needed
      simultaneously. Each byte used in this data structure count as six bytes
-     per call, so any savings we can make are worthwhile */
+     per call, so any savings we can make are worthwhile,
+
+     We use notify_tag to determine whether or not to send notification to the
+     completion queue. Once we've made that determination, we can reuse the
+     memory for cq_completion. */
   union {
     grpc_cq_completion cq_completion;
     struct {
