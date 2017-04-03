@@ -348,7 +348,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
-        op->send_message = NULL;
+        op->send_message = false;
         grpc_slice_unref_internal(exec_ctx, path_with_query_slice);
       } else {
         /* Not all data is available. Fall back to POST. */
