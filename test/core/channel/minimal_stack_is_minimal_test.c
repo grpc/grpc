@@ -31,6 +31,19 @@
  *
  */
 
+/*******************************************************************************
+ * This test verifies that various stack configurations result in the set of
+ * filters that we expect.
+ *
+ * This is akin to a golden-file test, and suffers the same disadvantages and
+ * advantages: it reflects that the code as written has not been modified - and
+ * valid code modifications WILL break this test and it will need updating.
+ *
+ * The intent therefore is to allow code reviewers to more easily catch changes
+ * that perturb the generated list of channel filters in different
+ * configurations and assess whether such a change is correct and desirable.
+ */
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -43,10 +56,18 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
+// use CHECK_STACK instead
 static int check_stack(const char *file, int line, const char *transport_name,
                        grpc_channel_args *init_args,
                        grpc_channel_stack_type channel_stack_type, ...);
 
+// arguments: const char *transport_name   - the name of the transport type to
+//                                           simulate
+//            grpc_channel_args *init_args - channel args to pass down
+//            grpc_channel_stack_type channel_stack_type - the archetype of
+//                                           channel stack to create
+//            variadic arguments - the (in-order) expected list of channel
+//                                 filters to instantiate, terminated with NULL
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
 int main(int argc, char **argv) {
@@ -98,6 +119,10 @@ int main(int argc, char **argv) {
   grpc_shutdown();
   return 0;
 }
+
+/*******************************************************************************
+ * End of tests definitions, start of test infrastructure
+ */
 
 static int check_stack(const char *file, int line, const char *transport_name,
                        grpc_channel_args *init_args,
