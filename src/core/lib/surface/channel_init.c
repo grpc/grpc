@@ -104,30 +104,13 @@ void grpc_channel_init_shutdown(void) {
   }
 }
 
-static const char *name_for_type(grpc_channel_stack_type type) {
-  switch (type) {
-    case GRPC_CLIENT_CHANNEL:
-      return "CLIENT_CHANNEL";
-    case GRPC_CLIENT_SUBCHANNEL:
-      return "CLIENT_SUBCHANNEL";
-    case GRPC_SERVER_CHANNEL:
-      return "SERVER_CHANNEL";
-    case GRPC_CLIENT_LAME_CHANNEL:
-      return "CLIENT_LAME_CHANNEL";
-    case GRPC_CLIENT_DIRECT_CHANNEL:
-      return "CLIENT_DIRECT_CHANNEL";
-    case GRPC_NUM_CHANNEL_STACK_TYPES:
-      break;
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
-}
-
 bool grpc_channel_init_create_stack(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_stack_builder *builder,
                                     grpc_channel_stack_type type) {
   GPR_ASSERT(g_finalized);
 
-  grpc_channel_stack_builder_set_name(builder, name_for_type(type));
+  grpc_channel_stack_builder_set_name(builder,
+                                      grpc_channel_stack_type_string(type));
 
   for (size_t i = 0; i < g_slots[type].num_slots; i++) {
     const stage_slot *slot = &g_slots[type].slots[i];

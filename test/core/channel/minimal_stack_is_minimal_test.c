@@ -43,18 +43,15 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
-static int check_stack(const char *transport_name, grpc_channel_args *init_args,
+static int check_stack(const char *file, int line, const char *transport_name,
+                       grpc_channel_args *init_args,
                        grpc_channel_stack_type channel_stack_type, ...) {
   // create dummy channel stack
   grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_transport_vtable fake_transport_vtable = {.name = transport_name};
   grpc_transport fake_transport = {.vtable = &fake_transport_vtable};
-  grpc_arg arg = {.type = GRPC_ARG_INTEGER,
-                  .key = GRPC_ARG_MINIMAL_STACK,
-                  .value.integer = 1};
   grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
-  grpc_channel_args *channel_args =
-      grpc_channel_args_copy_and_add(init_args, &arg, 1);
+  grpc_channel_args *channel_args = grpc_channel_args_copy(init_args);
   if (transport_name != NULL) {
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
@@ -98,10 +95,41 @@ static int check_stack(const char *transport_name, grpc_channel_args *init_args,
   // figure out result, log if there's an error
   int result = 0;
   if (0 != strcmp(got, expect)) {
-    gpr_log(GPR_ERROR,
-            "FAILED transport=%s; stack_type=%d: expected '%s'; got '%s'",
-            transport_name, channel_stack_type, expect, got);
+    gpr_strvec_init(&v);
+    gpr_strvec_add(&v, gpr_strdup("{"));
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (i > 0) gpr_strvec_add(&v, gpr_strdup(", "));
+      gpr_strvec_add(&v, gpr_strdup(channel_args->args[i].key));
+      gpr_strvec_add(&v, gpr_strdup("="));
+      switch (channel_args->args[i].type) {
+        case GRPC_ARG_INTEGER: {
+          char *tmp;
+          gpr_asprintf(&tmp, "%d", channel_args->args[i].value.integer);
+          gpr_strvec_add(&v, tmp);
+          break;
+        }
+        case GRPC_ARG_STRING:
+          gpr_strvec_add(&v, gpr_strdup(channel_args->args[i].value.string));
+          break;
+        case GRPC_ARG_POINTER: {
+          char *tmp;
+          gpr_asprintf(&tmp, "%p", channel_args->args[i].value.pointer.p);
+          gpr_strvec_add(&v, tmp);
+          break;
+        }
+      }
+    }
+    gpr_strvec_add(&v, gpr_strdup("}"));
+    char *args_str = gpr_strvec_flatten(&v, NULL);
+    gpr_strvec_destroy(&v);
+
+    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
+            "FAILED transport=%s; stack_type=%s; %s: expected '%s'; got '%s'",
+            transport_name, grpc_channel_stack_type_string(channel_stack_type),
+            args_str, expect, got);
     result = 1;
+
+    gpr_free(args_str);
   }
 
   gpr_free(got);
@@ -110,30 +138,60 @@ static int check_stack(const char *transport_name, grpc_channel_args *init_args,
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_stack_builder_destroy(&exec_ctx, builder);
+    grpc_channel_args_destroy(&exec_ctx, channel_args);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
   return result;
 }
 
+#define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   int errors = 0;
-  errors += check_stack("unknown", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
+
+  // tests with a minimal stack
+  grpc_arg minimal_stack_arg = {.type = GRPC_ARG_INTEGER,
+                                .key = GRPC_ARG_MINIMAL_STACK,
+                                .value.integer = 1};
+  grpc_channel_args minimal_stack_args = {.num_args = 1,
+                                          .args = &minimal_stack_arg};
+  errors += CHECK_STACK("unknown", &minimal_stack_args,
+                        GRPC_CLIENT_DIRECT_CHANNEL, "connected", NULL);
+  errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
+                        "connected", NULL);
+  errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL,
+                        "server", "connected", NULL);
+  errors +=
+      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                  "http-client", "connected", NULL);
+  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
+                        "connected", NULL);
+  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL,
+                        "server", "http-server", "connected", NULL);
+  errors += CHECK_STACK(NULL, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
+                        "client-channel", NULL);
+
+  // tests with a default stack
+  errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "compress",
+                        "deadline", "connected", NULL);
+  errors +=
+      CHECK_STACK("unknown", NULL, GRPC_CLIENT_SUBCHANNEL, "connected", NULL);
+  errors += CHECK_STACK("unknown", NULL, GRPC_SERVER_CHANNEL, "server",
+                        "compress", "deadline", "connected", NULL);
+  errors +=
+      CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "http-client",
+                  "compress", "deadline", "connected", NULL);
+  errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_SUBCHANNEL, "http-client",
                         "connected", NULL);
   errors +=
-      check_stack("unknown", NULL, GRPC_CLIENT_SUBCHANNEL, "connected", NULL);
-  errors += check_stack("unknown", NULL, GRPC_SERVER_CHANNEL, "server",
-                        "connected", NULL);
-  errors += check_stack("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
-                        "http-client", "connected", NULL);
-  errors +=
-      check_stack("chttp2", NULL, GRPC_CLIENT_SUBCHANNEL, "connected", NULL);
-  errors += check_stack("chttp2", NULL, GRPC_SERVER_CHANNEL, "server",
-                        "http-server", "connected", NULL);
-  errors +=
-      check_stack(NULL, NULL, GRPC_CLIENT_CHANNEL, "client-channel", NULL);
+      CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server", "http-server",
+                  "compress", "deadline", "connected", NULL);
+  errors += CHECK_STACK(NULL, NULL, GRPC_CLIENT_CHANNEL, "compress",
+                        "client-channel", NULL);
+
   GPR_ASSERT(errors == 0);
   grpc_shutdown();
   return 0;
