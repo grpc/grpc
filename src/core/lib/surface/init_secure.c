@@ -43,7 +43,7 @@
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);

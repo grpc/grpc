@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 #include <string.h>
 
@@ -43,8 +43,8 @@
 #include <openssl/crypto.h>
 
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 
 typedef struct {

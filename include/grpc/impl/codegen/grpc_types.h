@@ -163,6 +163,15 @@ typedef struct {
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
+/** Maximum time that a channel may have no outstanding rpcs. Int valued,
+    milliseconds. INT_MAX means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
+/** Maximum time that a channel may exist. Int valued, milliseconds. INT_MAX
+   means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
+/** Grace period after the chennel reaches its max age. Int valued,
+   milliseconds. INT_MAX means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -198,14 +207,14 @@ typedef struct {
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** After a duration of this time the client pings the server to see if the
     transport is still alive. Int valued, seconds. */
-#define GRPC_ARG_HTTP2_KEEPALIVE_TIME "grpc.http2.keepalive_time"
+#define GRPC_ARG_CLIENT_KEEPALIVE_TIME_S "grpc.client_keepalive_time"
 /** After waiting for a duration of this time, if the client does not receive
     the ping ack, it will close the transport. Int valued, seconds. */
-#define GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT "grpc.http2.keepalive_timeout"
+#define GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S "grpc.client_keepalive_timeout"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
-#define GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS \
-  "grpc.http2.keepalive_permit_without_calls"
+#define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
+  "grpc.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -316,13 +325,16 @@ typedef enum grpc_call_error {
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
+/** Signal that the initial metadata should be corked */
+#define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+#define GRPC_INITIAL_METADATA_USED_MASK                  \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+   GRPC_INITIAL_METADATA_CORKED)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

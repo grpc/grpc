@@ -60,6 +60,9 @@ endif()
 set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
 set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_CARES_PROVIDER "module" CACHE STRING "Provider of c-ares library")
+set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
 set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -124,6 +127,37 @@ elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
     set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
   endif()
   set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
+endif()
+
+if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
+  if(NOT CARES_ROOT_DIR)
+    set(CARES_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/c-ares)
+  endif()
+  string(TOLOWER ${CMAKE_SYSTEM_NAME} CARES_SYSTEM_NAME)
+  set(CARES_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/cares")
+  set(CARES_BUILD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares")
+  set(CARES_PLATFORM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/config_${CARES_SYSTEM_NAME}")
+  if(EXISTS "${CARES_ROOT_DIR}/CMakeLists.txt")
+    if("${CARES_SYSTEM_NAME}" MATCHES "windows")
+      add_definitions(-DCARES_STATICLIB=1)
+      add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+    else()
+      add_definitions(-DHAVE_CONFIG_H=1)
+      add_definitions(-D_GNU_SOURCE=1)
+    endif()
+    add_subdirectory(src/c-ares third_party/cares)
+    if(TARGET cares)
+        set(_gRPC_CARES_LIBRARIES cares)
+    endif()
+  else()
+    message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
+  find_package(CARES)
+  if(TARGET CARES::CARES)
+    set(_gRPC_CARES_LIBRARIES CARES::CARES)
+  endif()
+  set(_gRPC_FIND_CARES "if(NOT CARES_FOUND)\n  find_package(CARES)\nendif()")
 endif()
 
 if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
@@ -277,7 +311,7 @@ function(protobuf_generate_grpc_cpp)
     file(RELATIVE_PATH REL_FIL ${CMAKE_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
-    
+
     add_custom_command(
       OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
@@ -293,7 +327,7 @@ function(protobuf_generate_grpc_cpp)
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
       COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
       VERBATIM)
-      
+
       set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
   endforeach()
 endfunction()
@@ -764,6 +798,10 @@ target_include_directories(gpr
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -805,7 +843,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -853,6 +890,10 @@ target_include_directories(gpr_test_util
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -877,6 +918,7 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -951,6 +993,7 @@ add_library(grpc
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1033,12 +1076,11 @@ add_library(grpc
   src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
-  src/core/lib/security/util/b64.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
-  src/core/lib/tsi/fake_transport_security.c
-  src/core/lib/tsi/ssl_transport_security.c
-  src/core/lib/tsi/transport_security.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/client_channel/channel_connectivity.c
@@ -1075,6 +1117,9 @@ add_library(grpc
   third_party/nanopb/pb_encode.c
   src/core/ext/lb_policy/pick_first/pick_first.c
   src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
@@ -1116,6 +1161,10 @@ target_include_directories(grpc
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -1123,6 +1172,7 @@ target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -1144,6 +1194,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1152,7 +1203,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1190,6 +1240,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1264,6 +1315,7 @@ add_library(grpc_cronet
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1369,12 +1421,11 @@ add_library(grpc_cronet
   src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
-  src/core/lib/security/util/b64.c
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
-  src/core/lib/tsi/fake_transport_security.c
-  src/core/lib/tsi/ssl_transport_security.c
-  src/core/lib/tsi/transport_security.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
@@ -1401,6 +1452,10 @@ target_include_directories(grpc_cronet
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -1428,6 +1483,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1436,7 +1492,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1494,6 +1549,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1568,6 +1624,7 @@ add_library(grpc_test_util
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1628,6 +1685,10 @@ target_include_directories(grpc_test_util
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -1655,6 +1716,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1663,7 +1725,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -1717,6 +1778,10 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -1745,6 +1810,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1819,6 +1885,7 @@ add_library(grpc_unsecure
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -1904,6 +1971,9 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
+  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
@@ -1954,6 +2024,10 @@ target_include_directories(grpc_unsecure
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -1980,6 +2054,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1988,7 +2063,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2037,6 +2111,10 @@ target_include_directories(reconnect_server
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -2077,6 +2155,10 @@ target_include_directories(test_tcp_server
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -2133,6 +2215,134 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_stack.c
+  src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
+  src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
+  src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
+  src/core/lib/channel/message_size_filter.c
+  src/core/lib/compression/compression.c
+  src/core/lib/compression/message_compress.c
+  src/core/lib/debug/trace.c
+  src/core/lib/http/format_request.c
+  src/core/lib/http/httpcli.c
+  src/core/lib/http/parser.c
+  src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
+  src/core/lib/iomgr/endpoint.c
+  src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
+  src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/error.c
+  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_poll_posix.c
+  src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/exec_ctx.c
+  src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/iocp_windows.c
+  src/core/lib/iomgr/iomgr.c
+  src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_uv.c
+  src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/network_status_tracker.c
+  src/core/lib/iomgr/polling_entity.c
+  src/core/lib/iomgr/pollset_set_uv.c
+  src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_uv.c
+  src/core/lib/iomgr/pollset_windows.c
+  src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_uv.c
+  src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
+  src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
+  src/core/lib/iomgr/socket_mutator.c
+  src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_linux.c
+  src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_uv.c
+  src/core/lib/iomgr/socket_utils_windows.c
+  src/core/lib/iomgr/socket_windows.c
+  src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_uv.c
+  src/core/lib/iomgr/tcp_client_windows.c
+  src/core/lib/iomgr/tcp_posix.c
+  src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
+  src/core/lib/iomgr/tcp_server_uv.c
+  src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_uv.c
+  src/core/lib/iomgr/tcp_windows.c
+  src/core/lib/iomgr/time_averaged_stats.c
+  src/core/lib/iomgr/timer_generic.c
+  src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_uv.c
+  src/core/lib/iomgr/udp_server.c
+  src/core/lib/iomgr/unix_sockets_posix.c
+  src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
+  src/core/lib/iomgr/wakeup_fd_eventfd.c
+  src/core/lib/iomgr/wakeup_fd_nospecial.c
+  src/core/lib/iomgr/wakeup_fd_pipe.c
+  src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_uv.c
+  src/core/lib/iomgr/workqueue_windows.c
+  src/core/lib/json/json.c
+  src/core/lib/json/json_reader.c
+  src/core/lib/json/json_string.c
+  src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
+  src/core/lib/slice/percent_encoding.c
+  src/core/lib/slice/slice.c
+  src/core/lib/slice/slice_buffer.c
+  src/core/lib/slice/slice_hash_table.c
+  src/core/lib/slice/slice_intern.c
+  src/core/lib/slice/slice_string_helpers.c
+  src/core/lib/surface/alarm.c
+  src/core/lib/surface/api_trace.c
+  src/core/lib/surface/byte_buffer.c
+  src/core/lib/surface/byte_buffer_reader.c
+  src/core/lib/surface/call.c
+  src/core/lib/surface/call_details.c
+  src/core/lib/surface/call_log_batch.c
+  src/core/lib/surface/channel.c
+  src/core/lib/surface/channel_init.c
+  src/core/lib/surface/channel_ping.c
+  src/core/lib/surface/channel_stack_type.c
+  src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
+  src/core/lib/surface/event_string.c
+  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/metadata_array.c
+  src/core/lib/surface/server.c
+  src/core/lib/surface/validate_metadata.c
+  src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
+  src/core/lib/transport/byte_stream.c
+  src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/metadata.c
+  src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/pid_controller.c
+  src/core/lib/transport/service_config.c
+  src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/timeout_encoding.c
+  src/core/lib/transport/transport.c
+  src/core/lib/transport/transport_op_string.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -2156,6 +2366,10 @@ target_include_directories(grpc++
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -2166,6 +2380,7 @@ target_link_libraries(grpc++
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+  gpr
 )
 
 foreach(_hdr
@@ -2250,6 +2465,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2258,11 +2474,20 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
@@ -2321,30 +2546,6 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  src/cpp/codegen/codegen_init.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.c
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/transport/chttp2/transport/bin_decoder.c
-  src/core/ext/transport/chttp2/transport/bin_encoder.c
-  src/core/ext/transport/chttp2/transport/chttp2_plugin.c
-  src/core/ext/transport/chttp2/transport/chttp2_transport.c
-  src/core/ext/transport/chttp2/transport/frame_data.c
-  src/core/ext/transport/chttp2/transport/frame_goaway.c
-  src/core/ext/transport/chttp2/transport/frame_ping.c
-  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
-  src/core/ext/transport/chttp2/transport/frame_settings.c
-  src/core/ext/transport/chttp2/transport/frame_window_update.c
-  src/core/ext/transport/chttp2/transport/hpack_encoder.c
-  src/core/ext/transport/chttp2/transport/hpack_parser.c
-  src/core/ext/transport/chttp2/transport/hpack_table.c
-  src/core/ext/transport/chttp2/transport/huffsyms.c
-  src/core/ext/transport/chttp2/transport/incoming_metadata.c
-  src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_lists.c
-  src/core/ext/transport/chttp2/transport/stream_map.c
-  src/core/ext/transport/chttp2/transport/varint.c
-  src/core/ext/transport/chttp2/transport/writing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -2356,6 +2557,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -2430,6 +2632,7 @@ add_library(grpc++_cronet
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
   src/core/lib/slice/percent_encoding.c
   src/core/lib/slice/slice.c
   src/core/lib/slice/slice_buffer.c
@@ -2468,6 +2671,33 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
+  src/cpp/codegen/codegen_init.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
+  src/core/ext/transport/chttp2/transport/bin_decoder.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_plugin.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
@@ -2506,9 +2736,6 @@ add_library(grpc++_cronet
   src/core/ext/census/resource.c
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
 )
 
 if(WIN32 AND MSVC)
@@ -2531,6 +2758,10 @@ target_include_directories(grpc++_cronet
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -2626,6 +2857,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2634,7 +2866,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2700,6 +2931,10 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -2756,6 +2991,10 @@ target_include_directories(grpc++_reflection
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -2811,6 +3050,10 @@ target_include_directories(grpc++_test_config
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -2884,6 +3127,10 @@ target_include_directories(grpc++_test_util
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -2934,6 +3181,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2942,7 +3190,6 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
@@ -2998,6 +3245,134 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_stack.c
+  src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
+  src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
+  src/core/lib/channel/handshaker.c
+  src/core/lib/channel/handshaker_factory.c
+  src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/max_age_filter.c
+  src/core/lib/channel/message_size_filter.c
+  src/core/lib/compression/compression.c
+  src/core/lib/compression/message_compress.c
+  src/core/lib/debug/trace.c
+  src/core/lib/http/format_request.c
+  src/core/lib/http/httpcli.c
+  src/core/lib/http/parser.c
+  src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
+  src/core/lib/iomgr/endpoint.c
+  src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
+  src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/error.c
+  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_poll_posix.c
+  src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/exec_ctx.c
+  src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/iocp_windows.c
+  src/core/lib/iomgr/iomgr.c
+  src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_uv.c
+  src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/network_status_tracker.c
+  src/core/lib/iomgr/polling_entity.c
+  src/core/lib/iomgr/pollset_set_uv.c
+  src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_uv.c
+  src/core/lib/iomgr/pollset_windows.c
+  src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_uv.c
+  src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
+  src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_factory_posix.c
+  src/core/lib/iomgr/socket_mutator.c
+  src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_linux.c
+  src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_uv.c
+  src/core/lib/iomgr/socket_utils_windows.c
+  src/core/lib/iomgr/socket_windows.c
+  src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_uv.c
+  src/core/lib/iomgr/tcp_client_windows.c
+  src/core/lib/iomgr/tcp_posix.c
+  src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_utils_posix_common.c
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
+  src/core/lib/iomgr/tcp_server_uv.c
+  src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_uv.c
+  src/core/lib/iomgr/tcp_windows.c
+  src/core/lib/iomgr/time_averaged_stats.c
+  src/core/lib/iomgr/timer_generic.c
+  src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_uv.c
+  src/core/lib/iomgr/udp_server.c
+  src/core/lib/iomgr/unix_sockets_posix.c
+  src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
+  src/core/lib/iomgr/wakeup_fd_eventfd.c
+  src/core/lib/iomgr/wakeup_fd_nospecial.c
+  src/core/lib/iomgr/wakeup_fd_pipe.c
+  src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_uv.c
+  src/core/lib/iomgr/workqueue_windows.c
+  src/core/lib/json/json.c
+  src/core/lib/json/json_reader.c
+  src/core/lib/json/json_string.c
+  src/core/lib/json/json_writer.c
+  src/core/lib/slice/b64.c
+  src/core/lib/slice/percent_encoding.c
+  src/core/lib/slice/slice.c
+  src/core/lib/slice/slice_buffer.c
+  src/core/lib/slice/slice_hash_table.c
+  src/core/lib/slice/slice_intern.c
+  src/core/lib/slice/slice_string_helpers.c
+  src/core/lib/surface/alarm.c
+  src/core/lib/surface/api_trace.c
+  src/core/lib/surface/byte_buffer.c
+  src/core/lib/surface/byte_buffer_reader.c
+  src/core/lib/surface/call.c
+  src/core/lib/surface/call_details.c
+  src/core/lib/surface/call_log_batch.c
+  src/core/lib/surface/channel.c
+  src/core/lib/surface/channel_init.c
+  src/core/lib/surface/channel_ping.c
+  src/core/lib/surface/channel_stack_type.c
+  src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/completion_queue_factory.c
+  src/core/lib/surface/event_string.c
+  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/metadata_array.c
+  src/core/lib/surface/server.c
+  src/core/lib/surface/validate_metadata.c
+  src/core/lib/surface/version.c
+  src/core/lib/transport/bdp_estimator.c
+  src/core/lib/transport/byte_stream.c
+  src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/error_utils.c
+  src/core/lib/transport/metadata.c
+  src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/pid_controller.c
+  src/core/lib/transport/service_config.c
+  src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/timeout_encoding.c
+  src/core/lib/transport/transport.c
+  src/core/lib/transport/transport_op_string.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -3021,6 +3396,10 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3115,6 +3494,7 @@ foreach(_hdr
   include/grpc/impl/codegen/exec_ctx_fwd.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -3123,11 +3503,20 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3171,6 +3560,10 @@ target_include_directories(grpc_benchmark
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3226,6 +3619,10 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3281,6 +3678,10 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3357,6 +3758,10 @@ target_include_directories(http2_client_main
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3408,6 +3813,10 @@ target_include_directories(interop_client_helper
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3474,6 +3883,10 @@ target_include_directories(interop_client_main
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3521,6 +3934,10 @@ target_include_directories(interop_server_helper
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3586,6 +4003,10 @@ target_include_directories(interop_server_lib
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3633,6 +4054,10 @@ target_include_directories(interop_server_main
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3670,6 +4095,7 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
@@ -3679,7 +4105,6 @@ add_library(qps
   test/cpp/qps/server_async.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
-  test/cpp/util/benchmark_config.cc
 )
 
 if(WIN32 AND MSVC)
@@ -3717,6 +4142,10 @@ target_include_directories(qps
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -3758,6 +4187,10 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -3777,6 +4210,94 @@ if (gRPC_INSTALL)
   )
 endif()
 
+if (gRPC_BUILD_TESTS)
+
+add_library(ares
+  third_party/cares/cares/ares__close_sockets.c
+  third_party/cares/cares/ares__get_hostent.c
+  third_party/cares/cares/ares__read_line.c
+  third_party/cares/cares/ares__timeval.c
+  third_party/cares/cares/ares_cancel.c
+  third_party/cares/cares/ares_create_query.c
+  third_party/cares/cares/ares_data.c
+  third_party/cares/cares/ares_destroy.c
+  third_party/cares/cares/ares_expand_name.c
+  third_party/cares/cares/ares_expand_string.c
+  third_party/cares/cares/ares_fds.c
+  third_party/cares/cares/ares_free_hostent.c
+  third_party/cares/cares/ares_free_string.c
+  third_party/cares/cares/ares_getenv.c
+  third_party/cares/cares/ares_gethostbyaddr.c
+  third_party/cares/cares/ares_gethostbyname.c
+  third_party/cares/cares/ares_getnameinfo.c
+  third_party/cares/cares/ares_getopt.c
+  third_party/cares/cares/ares_getsock.c
+  third_party/cares/cares/ares_init.c
+  third_party/cares/cares/ares_library_init.c
+  third_party/cares/cares/ares_llist.c
+  third_party/cares/cares/ares_mkquery.c
+  third_party/cares/cares/ares_nowarn.c
+  third_party/cares/cares/ares_options.c
+  third_party/cares/cares/ares_parse_a_reply.c
+  third_party/cares/cares/ares_parse_aaaa_reply.c
+  third_party/cares/cares/ares_parse_mx_reply.c
+  third_party/cares/cares/ares_parse_naptr_reply.c
+  third_party/cares/cares/ares_parse_ns_reply.c
+  third_party/cares/cares/ares_parse_ptr_reply.c
+  third_party/cares/cares/ares_parse_soa_reply.c
+  third_party/cares/cares/ares_parse_srv_reply.c
+  third_party/cares/cares/ares_parse_txt_reply.c
+  third_party/cares/cares/ares_platform.c
+  third_party/cares/cares/ares_process.c
+  third_party/cares/cares/ares_query.c
+  third_party/cares/cares/ares_search.c
+  third_party/cares/cares/ares_send.c
+  third_party/cares/cares/ares_strcasecmp.c
+  third_party/cares/cares/ares_strdup.c
+  third_party/cares/cares/ares_strerror.c
+  third_party/cares/cares/ares_timeout.c
+  third_party/cares/cares/ares_version.c
+  third_party/cares/cares/ares_writev.c
+  third_party/cares/cares/bitncmp.c
+  third_party/cares/cares/inet_net_pton.c
+  third_party/cares/cares/inet_ntop.c
+  third_party/cares/cares/windows_port.c
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(ares PROPERTIES COMPILE_PDB_NAME "ares"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ares.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(ares
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(ares
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -3803,6 +4324,10 @@ target_include_directories(bad_client_test
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -3842,6 +4367,10 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -3887,6 +4416,8 @@ add_library(end2end_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/load_reporting_hook.c
   test/core/end2end/tests/max_concurrent_streams.c
+  test/core/end2end/tests/max_connection_age.c
+  test/core/end2end/tests/max_connection_idle.c
   test/core/end2end/tests/max_message_length.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/network_status_change.c
@@ -3932,6 +4463,10 @@ target_include_directories(end2end_tests
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -3977,6 +4512,8 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/load_reporting_hook.c
   test/core/end2end/tests/max_concurrent_streams.c
+  test/core/end2end/tests/max_connection_age.c
+  test/core/end2end/tests/max_connection_idle.c
   test/core/end2end/tests/max_message_length.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/network_status_change.c
@@ -4022,6 +4559,10 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4051,6 +4592,10 @@ target_include_directories(alarm_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4078,6 +4623,10 @@ target_include_directories(algorithm_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4105,6 +4654,10 @@ target_include_directories(alloc_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4130,6 +4683,10 @@ target_include_directories(alpn_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4157,6 +4714,10 @@ target_include_directories(arena_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4182,6 +4743,10 @@ target_include_directories(bad_server_response_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4210,6 +4775,10 @@ target_include_directories(bdp_estimator_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4237,6 +4806,10 @@ target_include_directories(bin_decoder_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4262,6 +4835,10 @@ target_include_directories(bin_encoder_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4287,6 +4864,10 @@ target_include_directories(census_context_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4314,6 +4895,10 @@ target_include_directories(census_resource_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4341,6 +4926,10 @@ target_include_directories(census_trace_context_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4368,6 +4957,10 @@ target_include_directories(channel_create_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4395,6 +4988,10 @@ target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4422,6 +5019,10 @@ target_include_directories(chttp2_stream_map_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4449,6 +5050,10 @@ target_include_directories(chttp2_varint_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4476,6 +5081,10 @@ target_include_directories(combiner_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4503,6 +5112,10 @@ target_include_directories(compression_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4530,6 +5143,10 @@ target_include_directories(concurrent_connectivity_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4557,6 +5174,10 @@ target_include_directories(connection_refused_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4584,6 +5205,10 @@ target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4611,6 +5236,10 @@ target_include_directories(dns_resolver_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4639,6 +5268,10 @@ target_include_directories(dualstack_socket_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4667,6 +5300,10 @@ target_include_directories(endpoint_pair_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4694,6 +5331,10 @@ target_include_directories(error_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4722,6 +5363,10 @@ target_include_directories(ev_epoll_linux_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4751,6 +5396,10 @@ target_include_directories(fd_conservation_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4780,6 +5429,10 @@ target_include_directories(fd_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4808,6 +5461,10 @@ target_include_directories(fling_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4835,6 +5492,10 @@ target_include_directories(fling_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4863,6 +5524,10 @@ target_include_directories(fling_stream_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4892,6 +5557,10 @@ target_include_directories(fling_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4919,6 +5588,10 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4951,6 +5624,10 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -4981,6 +5658,10 @@ target_include_directories(gen_percent_encoding_tables
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5013,6 +5694,10 @@ target_include_directories(goaway_server_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5041,6 +5726,10 @@ target_include_directories(gpr_avl_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5066,6 +5755,10 @@ target_include_directories(gpr_backoff_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5091,6 +5784,10 @@ target_include_directories(gpr_cmdline_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5116,6 +5813,10 @@ target_include_directories(gpr_cpu_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5141,6 +5842,10 @@ target_include_directories(gpr_env_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5166,6 +5871,10 @@ target_include_directories(gpr_histogram_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5191,6 +5900,10 @@ target_include_directories(gpr_host_port_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5216,6 +5929,10 @@ target_include_directories(gpr_log_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5241,6 +5958,10 @@ target_include_directories(gpr_mpscq_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5266,6 +5987,10 @@ target_include_directories(gpr_spinlock_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5291,6 +6016,10 @@ target_include_directories(gpr_stack_lockfree_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5316,6 +6045,10 @@ target_include_directories(gpr_string_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5341,6 +6074,10 @@ target_include_directories(gpr_sync_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5366,6 +6103,10 @@ target_include_directories(gpr_thd_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5391,6 +6132,10 @@ target_include_directories(gpr_time_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5416,6 +6161,10 @@ target_include_directories(gpr_tls_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5441,6 +6190,10 @@ target_include_directories(gpr_useful_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5466,6 +6219,10 @@ target_include_directories(grpc_auth_context_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5481,7 +6238,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_b64_test
-  test/core/security/b64_test.c
+  test/core/slice/b64_test.c
 )
 
 
@@ -5493,6 +6250,10 @@ target_include_directories(grpc_b64_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5520,6 +6281,10 @@ target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5547,6 +6312,10 @@ target_include_directories(grpc_channel_args_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5574,6 +6343,10 @@ target_include_directories(grpc_channel_stack_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5601,6 +6374,10 @@ target_include_directories(grpc_completion_queue_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5628,6 +6405,10 @@ target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5654,6 +6435,10 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5688,6 +6473,10 @@ target_include_directories(grpc_credentials_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5715,6 +6504,10 @@ target_include_directories(grpc_fetch_oauth2
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5742,6 +6535,10 @@ target_include_directories(grpc_invalid_channel_args_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5770,6 +6567,10 @@ target_include_directories(grpc_json_token_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5798,6 +6599,10 @@ target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5824,6 +6629,10 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5857,6 +6666,10 @@ target_include_directories(grpc_security_connector_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5883,6 +6696,10 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5917,6 +6734,10 @@ target_include_directories(handshake_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5947,6 +6768,10 @@ target_include_directories(handshake_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -5976,6 +6801,10 @@ target_include_directories(hpack_parser_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6003,6 +6832,10 @@ target_include_directories(hpack_table_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6030,6 +6863,10 @@ target_include_directories(http_parser_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6057,6 +6894,10 @@ target_include_directories(httpcli_format_request_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6085,6 +6926,10 @@ target_include_directories(httpcli_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6114,6 +6959,10 @@ target_include_directories(httpscli_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6142,6 +6991,10 @@ target_include_directories(init_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6169,6 +7022,10 @@ target_include_directories(invalid_call_argument_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6196,6 +7053,10 @@ target_include_directories(json_rewrite
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6221,6 +7082,10 @@ target_include_directories(json_rewrite_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6248,6 +7113,10 @@ target_include_directories(json_stream_error_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6275,6 +7144,10 @@ target_include_directories(json_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6302,6 +7175,10 @@ target_include_directories(lame_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6329,6 +7206,10 @@ target_include_directories(lb_policies_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6356,6 +7237,10 @@ target_include_directories(load_file_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6383,6 +7268,10 @@ target_include_directories(memory_profile_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6410,6 +7299,10 @@ target_include_directories(memory_profile_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6438,6 +7331,10 @@ target_include_directories(memory_profile_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6466,6 +7363,10 @@ target_include_directories(message_compress_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6493,6 +7394,10 @@ target_include_directories(mlog_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6520,6 +7425,10 @@ target_include_directories(multiple_server_queues_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6547,6 +7456,10 @@ target_include_directories(murmur_hash_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6572,6 +7485,10 @@ target_include_directories(no_server_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6599,6 +7516,10 @@ target_include_directories(parse_address_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6626,6 +7547,10 @@ target_include_directories(percent_encoding_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6654,6 +7579,10 @@ target_include_directories(pollset_set_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6683,6 +7612,10 @@ target_include_directories(resolve_address_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6711,6 +7644,10 @@ target_include_directories(resolve_address_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6738,6 +7675,10 @@ target_include_directories(resource_quota_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6765,6 +7706,10 @@ target_include_directories(secure_channel_create_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6792,6 +7737,10 @@ target_include_directories(secure_endpoint_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6819,6 +7768,10 @@ target_include_directories(sequential_connectivity_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6846,6 +7799,10 @@ target_include_directories(server_chttp2_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6873,6 +7830,10 @@ target_include_directories(server_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6900,6 +7861,10 @@ target_include_directories(slice_buffer_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6927,6 +7892,10 @@ target_include_directories(slice_string_helpers_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6954,6 +7923,10 @@ target_include_directories(slice_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -6981,6 +7954,10 @@ target_include_directories(sockaddr_resolver_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7008,6 +7985,10 @@ target_include_directories(sockaddr_utils_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7036,6 +8017,10 @@ target_include_directories(socket_utils_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7064,6 +8049,10 @@ target_include_directories(status_conversion_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7091,6 +8080,10 @@ target_include_directories(stream_owned_slice_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7119,6 +8112,10 @@ target_include_directories(tcp_client_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7147,6 +8144,10 @@ target_include_directories(tcp_client_uv_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7175,6 +8176,10 @@ target_include_directories(tcp_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7204,6 +8209,10 @@ target_include_directories(tcp_server_posix_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7232,6 +8241,10 @@ target_include_directories(tcp_server_uv_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7259,6 +8272,10 @@ target_include_directories(time_averaged_stats_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7286,6 +8303,10 @@ target_include_directories(timeout_encoding_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7313,6 +8334,10 @@ target_include_directories(timer_heap_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7340,6 +8365,10 @@ target_include_directories(timer_list_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7367,6 +8396,10 @@ target_include_directories(transport_connectivity_state_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7394,6 +8427,10 @@ target_include_directories(transport_metadata_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7421,6 +8458,10 @@ target_include_directories(transport_pid_controller_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7449,6 +8490,10 @@ target_include_directories(transport_security_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7478,6 +8523,10 @@ target_include_directories(udp_server_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7506,6 +8555,10 @@ target_include_directories(uri_parser_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7534,6 +8587,10 @@ target_include_directories(wakeup_fd_cv_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -7563,6 +8620,10 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7598,6 +8659,10 @@ target_include_directories(async_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7633,6 +8698,10 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7669,6 +8738,10 @@ target_include_directories(bm_arena
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7708,6 +8781,10 @@ target_include_directories(bm_call_create
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7747,6 +8824,10 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7786,6 +8867,10 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7825,6 +8910,10 @@ target_include_directories(bm_closure
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7864,6 +8953,10 @@ target_include_directories(bm_cq
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7903,6 +8996,10 @@ target_include_directories(bm_error
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7942,6 +9039,10 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -7981,6 +9082,10 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8020,6 +9125,10 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8059,6 +9168,10 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8098,6 +9211,10 @@ target_include_directories(bm_metadata
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8137,6 +9254,10 @@ target_include_directories(bm_pollset
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8175,6 +9296,10 @@ target_include_directories(channel_arguments_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8207,6 +9332,10 @@ target_include_directories(channel_filter_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8239,6 +9368,10 @@ target_include_directories(cli_call_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8276,6 +9409,10 @@ target_include_directories(client_crash_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8312,6 +9449,10 @@ target_include_directories(client_crash_test_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8382,6 +9523,10 @@ target_include_directories(codegen_test_full
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8450,6 +9595,10 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8479,6 +9628,10 @@ target_include_directories(credentials_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8511,6 +9664,10 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8545,6 +9702,10 @@ target_include_directories(cxx_slice_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8579,6 +9740,10 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8609,6 +9774,10 @@ target_include_directories(cxx_time_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8643,6 +9812,10 @@ target_include_directories(end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8678,6 +9851,10 @@ target_include_directories(filter_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8713,6 +9890,10 @@ target_include_directories(generic_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8755,6 +9936,10 @@ target_include_directories(golden_file_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8787,6 +9972,10 @@ target_include_directories(grpc_cli
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -8820,6 +10009,10 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -8854,6 +10047,10 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -8888,6 +10085,10 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -8922,6 +10123,10 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -8956,6 +10161,10 @@ target_include_directories(grpc_php_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -8990,6 +10199,10 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -9024,6 +10237,10 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
@@ -9074,6 +10291,10 @@ target_include_directories(grpc_tool_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9119,6 +10340,10 @@ target_include_directories(grpclb_api_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9159,6 +10384,10 @@ target_include_directories(grpclb_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9194,6 +10423,10 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9229,6 +10462,10 @@ target_include_directories(http2_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9265,6 +10502,10 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9300,6 +10541,10 @@ target_include_directories(interop_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9339,6 +10584,10 @@ target_include_directories(interop_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9380,6 +10629,10 @@ target_include_directories(interop_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9416,6 +10669,10 @@ target_include_directories(json_run_localhost
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9460,6 +10717,10 @@ target_include_directories(metrics_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9493,6 +10754,10 @@ target_include_directories(mock_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9528,6 +10793,10 @@ target_include_directories(noop-benchmark
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9558,6 +10827,10 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9595,6 +10868,10 @@ target_include_directories(proto_utils_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9627,6 +10904,10 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9664,6 +10945,10 @@ target_include_directories(qps_json_driver
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9702,6 +10987,10 @@ target_include_directories(qps_openloop_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9740,6 +11029,10 @@ target_include_directories(qps_worker
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9798,6 +11091,10 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9855,6 +11152,10 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9893,6 +11194,10 @@ target_include_directories(round_robin_end2end_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9928,6 +11233,10 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -9964,6 +11273,10 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10001,6 +11314,10 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10050,6 +11367,10 @@ target_include_directories(server_builder_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10085,6 +11406,10 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10120,6 +11445,10 @@ target_include_directories(server_crash_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10156,6 +11485,10 @@ target_include_directories(server_crash_test_client
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10191,6 +11524,10 @@ target_include_directories(shutdown_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10226,6 +11563,10 @@ target_include_directories(status_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10261,6 +11602,10 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10303,7 +11648,6 @@ add_executable(stress_test
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
-  test/cpp/util/create_test_channel.cc
   test/cpp/util/metrics_server.cc
   third_party/googletest/src/gtest-all.cc
 )
@@ -10329,6 +11673,10 @@ target_include_directories(stress_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10365,6 +11713,10 @@ target_include_directories(thread_manager_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10398,6 +11750,10 @@ target_include_directories(thread_stress_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10434,6 +11790,10 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/include
   PRIVATE third_party/googletest
@@ -10469,6 +11829,10 @@ target_include_directories(public_headers_must_be_c89
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10494,6 +11858,10 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10523,6 +11891,10 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10552,6 +11924,10 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10581,6 +11957,10 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10610,6 +11990,10 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10639,6 +12023,10 @@ target_include_directories(large_metadata_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10668,6 +12056,10 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10697,6 +12089,10 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10726,6 +12122,10 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10755,6 +12155,10 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10785,6 +12189,10 @@ target_include_directories(bad_ssl_cert_server
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10815,6 +12223,10 @@ target_include_directories(bad_ssl_cert_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10843,6 +12255,10 @@ target_include_directories(h2_census_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10871,6 +12287,10 @@ target_include_directories(h2_compress_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10899,6 +12319,10 @@ target_include_directories(h2_fakesec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10928,6 +12352,10 @@ target_include_directories(h2_fd_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10957,6 +12385,10 @@ target_include_directories(h2_full_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -10986,6 +12418,10 @@ target_include_directories(h2_full+pipe_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11015,6 +12451,10 @@ target_include_directories(h2_full+trace_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11043,6 +12483,10 @@ target_include_directories(h2_http_proxy_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11071,6 +12515,10 @@ target_include_directories(h2_load_reporting_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11099,6 +12547,10 @@ target_include_directories(h2_oauth2_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11127,6 +12579,10 @@ target_include_directories(h2_proxy_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11155,6 +12611,10 @@ target_include_directories(h2_sockpair_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11183,6 +12643,10 @@ target_include_directories(h2_sockpair+trace_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11211,6 +12675,10 @@ target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11239,6 +12707,10 @@ target_include_directories(h2_ssl_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11267,6 +12739,10 @@ target_include_directories(h2_ssl_cert_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11295,6 +12771,10 @@ target_include_directories(h2_ssl_proxy_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11324,6 +12804,10 @@ target_include_directories(h2_uds_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11353,6 +12837,10 @@ target_include_directories(h2_census_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11381,6 +12869,10 @@ target_include_directories(h2_compress_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11410,6 +12902,10 @@ target_include_directories(h2_fd_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11439,6 +12935,10 @@ target_include_directories(h2_full_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11468,6 +12968,10 @@ target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11497,6 +13001,10 @@ target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11525,6 +13033,10 @@ target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11553,6 +13065,10 @@ target_include_directories(h2_load_reporting_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11581,6 +13097,10 @@ target_include_directories(h2_proxy_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11609,6 +13129,10 @@ target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11637,6 +13161,10 @@ target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11665,6 +13193,10 @@ target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11694,6 +13226,10 @@ target_include_directories(h2_uds_nosec_test
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11724,6 +13260,10 @@ target_include_directories(api_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11752,6 +13292,10 @@ target_include_directories(client_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11780,6 +13324,10 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11808,6 +13356,10 @@ target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11836,6 +13388,10 @@ target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11864,6 +13420,10 @@ target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11892,6 +13452,10 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11920,6 +13484,10 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11948,6 +13516,10 @@ target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -11976,6 +13548,10 @@ target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -12004,6 +13580,10 @@ target_include_directories(server_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -12032,6 +13612,10 @@ target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
@@ -12060,6 +13644,10 @@ target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 

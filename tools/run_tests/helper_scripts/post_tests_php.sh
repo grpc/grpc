@@ -43,4 +43,4 @@ genhtml $tmp2 --output-directory $out
 rm $tmp2
 rm $tmp1
 
-cp -rv $root/src/php/coverage $root/reports/php
+# todo(mattkwong): generate coverage report for php and copy to reports/php

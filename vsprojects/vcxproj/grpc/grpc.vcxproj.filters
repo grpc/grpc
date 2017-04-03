@@ -37,6 +37,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -258,6 +261,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+      <Filter>src\core\lib\slice</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
@@ -505,23 +511,20 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
-      <Filter>src\core\lib\security\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.c">
       <Filter>src\core\lib\security\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.c">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
@@ -631,6 +634,15 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
       <Filter>src\core\ext\lb_policy\round_robin</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\resolver\dns\native</Filter>
     </ClCompile>
@@ -738,6 +750,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -760,9 +775,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -819,6 +831,9 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
@@ -1018,6 +1033,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h">
+      <Filter>src\core\lib\slice</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
@@ -1223,26 +1241,23 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h">
-      <Filter>src\core\lib\security\util</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h">
       <Filter>src\core\lib\security\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.h">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.h">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_types.h">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.h">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h">
-      <Filter>src\core\lib\tsi</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
@@ -1327,6 +1342,12 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
       <Filter>src\core\ext\load_reporting</Filter>
@@ -1448,6 +1469,9 @@
     <Filter Include="src\core\ext\resolver\dns">
       <UniqueIdentifier>{e8fe6413-ab8c-48d5-2c7b-aa79e3db4ab2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\resolver\dns\c_ares">
+      <UniqueIdentifier>{2b72688f-79b8-05dd-2896-c7d5dec07dd6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\resolver\dns\native">
       <UniqueIdentifier>{94e34be0-29d2-1731-3c1e-617ec4986acb}</UniqueIdentifier>
     </Filter>
@@ -1553,11 +1577,11 @@
     <Filter Include="src\core\lib\transport">
       <UniqueIdentifier>{e9d0d3fc-c100-f3e6-89b8-649f241155bf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\tsi">
-      <UniqueIdentifier>{95ad2811-c8d0-7a42-2a73-baf03fcbf699}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\plugin_registry">
       <UniqueIdentifier>{02bec99b-ff39-88d7-9dea-e0ff9f4a2701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\tsi">
+      <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party">
       <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>

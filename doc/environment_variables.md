@@ -69,3 +69,11 @@ some configuration as environment variables that can be set.
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
+
+* GRPC_DNS_RESOLVER
+  Declares which DNS resolver to use. The default is ares if gRPC is built with
+  c-ares support. Otherwise, the value of this environment variable is ignored.
+  Available DNS resolver include:
+  - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
+    perform name resolution
+  - ares - a DNS resolver based around the c-ares library

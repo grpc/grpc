@@ -40,6 +40,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -261,6 +264,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+      <Filter>src\core\lib\slice</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
@@ -517,6 +523,15 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
       <Filter>src\core\ext\client_channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\resolver\dns\native</Filter>
     </ClCompile>
@@ -651,6 +666,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -673,9 +691,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -729,6 +744,9 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
@@ -928,6 +946,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h">
+      <Filter>src\core\lib\slice</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
@@ -1139,6 +1160,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
       <Filter>src\core\ext\client_channel</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
       <Filter>src\core\ext\load_reporting</Filter>
     </ClInclude>
@@ -1282,6 +1309,9 @@
     </Filter>
     <Filter Include="src\core\ext\resolver\dns">
       <UniqueIdentifier>{2e0a9b4f-6394-7c0e-6e5a-0f8b3ee29b41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver\dns\c_ares">
+      <UniqueIdentifier>{932d8afd-e042-46d0-30c5-1c45386165d9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver\dns\native">
       <UniqueIdentifier>{3d5398c8-928b-9096-8eb7-f8c40ee68c4d}</UniqueIdentifier>

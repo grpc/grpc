@@ -18,8 +18,10 @@
     <Language>en-US</Language>
     <DocumentationSources>
       <DocumentationSource sourceFile="..\Grpc.Auth\Grpc.Auth.csproj" />
-      <DocumentationSource sourceFile="..\Grpc.Core\Grpc.Core.csproj" />
-    </DocumentationSources>
+<DocumentationSource sourceFile="..\Grpc.Core\Grpc.Core.csproj" />
+<DocumentationSource sourceFile="..\Grpc.HealthCheck\Grpc.HealthCheck.csproj" />
+<DocumentationSource sourceFile="..\Grpc.Reflection\Grpc.Reflection.csproj" />
+<DocumentationSource sourceFile="..\Grpc.Core.Testing\Grpc.Core.Testing.csproj" /></DocumentationSources>
     <BuildAssemblerVerbosity>OnlyWarningsAndErrors</BuildAssemblerVerbosity>
     <HelpFileFormat>Website</HelpFileFormat>
     <IndentHtml>False</IndentHtml>
@@ -40,12 +42,13 @@
     <HtmlHelpName>Documentation</HtmlHelpName>
     <NamespaceSummaries>
       <NamespaceSummaryItem name="Grpc.Auth" isDocumented="True">Provides OAuth2 based authentication for gRPC. &lt;c&gt;Grpc.Auth&lt;/c&gt; currently consists of a set of very lightweight wrappers and uses C# &lt;a href="https://www.nuget.org/packages/Google.Apis.Auth/"&gt;Google.Apis.Auth&lt;/a&gt; library.</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Grpc.Core" isDocumented="True">Main namespace for gRPC C# functionality. Contains concepts representing both client side and server side gRPC logic.
+      <NamespaceSummaryItem name="Grpc.Core" isDocumented="True">Main namespace for gRPC C# functionality. Contains concepts representing both client side and server side gRPC logic.
 
 &lt;seealso cref="Grpc.Core.Channel"/&gt; 
 &lt;seealso cref="Grpc.Core.Server"/&gt;</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Grpc.Core.Logging" isDocumented="True">Provides functionality to redirect gRPC logs to application-specified destination.</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Grpc.Core.Utils" isDocumented="True">Various utilities for gRPC C#.</NamespaceSummaryItem></NamespaceSummaries>
+      <NamespaceSummaryItem name="Grpc.Core.Logging" isDocumented="True">Provides functionality to redirect gRPC logs to application-specified destination.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Grpc.Core.Utils" isDocumented="True">Various utilities for gRPC C#.</NamespaceSummaryItem>
+    </NamespaceSummaries>
     <MissingTags>Summary, Parameter, AutoDocumentCtors, Namespace, TypeParameter, AutoDocumentDispose</MissingTags>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform

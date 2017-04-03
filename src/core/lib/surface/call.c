@@ -504,9 +504,9 @@ void grpc_call_destroy(grpc_call *c) {
       if (c == parent->first_child) {
         parent->first_child = NULL;
       }
-      c->sibling_prev->sibling_next = c->sibling_next;
-      c->sibling_next->sibling_prev = c->sibling_prev;
     }
+    c->sibling_prev->sibling_next = c->sibling_next;
+    c->sibling_next->sibling_prev = c->sibling_prev;
     gpr_mu_unlock(&parent->child_list_mu);
     GRPC_CALL_INTERNAL_UNREF(&exec_ctx, parent, "child");
   }
@@ -625,7 +625,7 @@ static bool get_final_status_from(
     void (*set_value)(grpc_status_code code, void *user_data),
     void *set_value_user_data, grpc_slice *details) {
   grpc_status_code code;
-  grpc_slice slice;
+  grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(error, call->send_deadline, &code, &slice, NULL);
   if (code == GRPC_STATUS_OK && !allow_ok_status) {
     return false;

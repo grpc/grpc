@@ -67,6 +67,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_secure",
@@ -414,7 +415,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/gpr_slice.h",
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
-        "include/grpc/impl/codegen/slice.h",
         "include/grpc/impl/codegen/sync.h",
         "include/grpc/impl/codegen/sync_generic.h",
         "include/grpc/impl/codegen/sync_posix.h",
@@ -436,6 +436,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.c",
         "src/core/lib/channel/http_client_filter.c",
         "src/core/lib/channel/http_server_filter.c",
+        "src/core/lib/channel/max_age_filter.c",
         "src/core/lib/channel/message_size_filter.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
@@ -510,6 +511,7 @@ grpc_cc_library(
         "src/core/lib/json/json_reader.c",
         "src/core/lib/json/json_string.c",
         "src/core/lib/json/json_writer.c",
+        "src/core/lib/slice/b64.c",
         "src/core/lib/slice/percent_encoding.c",
         "src/core/lib/slice/slice.c",
         "src/core/lib/slice/slice_buffer.c",
@@ -562,6 +564,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/http_client_filter.h",
         "src/core/lib/channel/http_server_filter.h",
+        "src/core/lib/channel/max_age_filter.h",
         "src/core/lib/channel/message_size_filter.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
@@ -628,6 +631,7 @@ grpc_cc_library(
         "src/core/lib/json/json_common.h",
         "src/core/lib/json/json_reader.h",
         "src/core/lib/json/json_writer.h",
+        "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
@@ -743,6 +747,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/grpc_types.h",
         "include/grpc/impl/codegen/propagation_bits.h",
         "include/grpc/impl/codegen/status.h",
+        "include/grpc/impl/codegen/slice.h",
     ],
     deps = [
         "gpr_codegen",
@@ -851,6 +856,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_ares",
+    srcs = [
+        "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c",
+    ],
+    hdrs = [
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+    external_deps = [
+        "cares",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/resolver/sockaddr/sockaddr_resolver.c",
@@ -887,7 +913,6 @@ grpc_cc_library(
         "src/core/lib/security/transport/security_handshaker.c",
         "src/core/lib/security/transport/server_auth_filter.c",
         "src/core/lib/security/transport/tsi_error.c",
-        "src/core/lib/security/util/b64.c",
         "src/core/lib/security/util/json_util.c",
         "src/core/lib/surface/init_secure.c",
     ],
@@ -910,7 +935,6 @@ grpc_cc_library(
         "src/core/lib/security/transport/security_connector.h",
         "src/core/lib/security/transport/security_handshaker.h",
         "src/core/lib/security/transport/tsi_error.h",
-        "src/core/lib/security/util/b64.h",
         "src/core/lib/security/util/json_util.h",
     ],
     language = "c",
@@ -1104,16 +1128,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi",
     srcs = [
-        "src/core/lib/tsi/fake_transport_security.c",
-        "src/core/lib/tsi/ssl_transport_security.c",
-        "src/core/lib/tsi/transport_security.c",
+        "src/core/tsi/fake_transport_security.c",
+        "src/core/tsi/ssl_transport_security.c",
+        "src/core/tsi/transport_security.c",
     ],
     hdrs = [
-        "src/core/lib/tsi/fake_transport_security.h",
-        "src/core/lib/tsi/ssl_transport_security.h",
-        "src/core/lib/tsi/ssl_types.h",
-        "src/core/lib/tsi/transport_security.h",
-        "src/core/lib/tsi/transport_security_interface.h",
+        "src/core/tsi/fake_transport_security.h",
+        "src/core/tsi/ssl_transport_security.h",
+        "src/core/tsi/ssl_types.h",
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
         "libssl",
