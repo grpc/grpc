@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/max_age/max_age_filter.h"
 
 #include <limits.h>
 #include <string.h>

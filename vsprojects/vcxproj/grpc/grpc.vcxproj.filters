@@ -37,9 +37,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
@@ -697,6 +694,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
       <Filter>src\core\ext\filters\max_age</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
+      <Filter>src\core\ext\filters\message_size</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
     </ClCompile>
@@ -831,9 +831,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h">
@@ -1403,6 +1400,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h">
       <Filter>src\core\ext\filters\max_age</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h">
+      <Filter>src\core\ext\filters\message_size</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1483,6 +1483,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\max_age">
       <UniqueIdentifier>{5369e83c-4625-fc14-cc40-9db5da3a7af4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\message_size">
+      <UniqueIdentifier>{5ca3f38c-539f-3c4f-b68c-38b31ba339ba}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>

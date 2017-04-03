@@ -960,6 +960,8 @@ src/core/ext/filters/load_reporting/load_reporting_filter.c \
 src/core/ext/filters/load_reporting/load_reporting_filter.h \
 src/core/ext/filters/max_age/max_age_filter.c \
 src/core/ext/filters/max_age/max_age_filter.h \
+src/core/ext/filters/message_size/message_size_filter.c \
+src/core/ext/filters/message_size/message_size_filter.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.c \
@@ -1042,8 +1044,6 @@ src/core/lib/channel/http_client_filter.c \
 src/core/lib/channel/http_client_filter.h \
 src/core/lib/channel/http_server_filter.c \
 src/core/lib/channel/http_server_filter.h \
-src/core/lib/channel/message_size_filter.c \
-src/core/lib/channel/message_size_filter.h \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression.c \
 src/core/lib/compression/message_compress.c \

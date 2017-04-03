@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 
 #include <limits.h>
 #include <string.h>
@@ -40,7 +40,9 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/service_config.h"
 
 typedef struct message_size_limits {
@@ -203,30 +205,55 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
+static int default_size(const grpc_channel_args* args,
+                        int without_minimal_stack) {
+  if (grpc_channel_args_want_minimal_stack(args)) {
+    return INT_MAX;
+  }
+  return without_minimal_stack;
+}
+
+typedef struct {
+  int max_recv_size;
+  int max_send_size;
+} channel_limits;
+
+channel_limits get_channel_limits(const grpc_channel_args* channel_args) {
+  channel_limits lim;
+  lim.max_send_size =
+      default_size(channel_args, GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
+  lim.max_recv_size =
+      default_size(channel_args, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+  for (size_t i = 0; i < channel_args->num_args; ++i) {
+    if (strcmp(channel_args->args[i].key, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) ==
+        0) {
+      const grpc_integer_options options = {
+          default_size(channel_args, GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH), 0,
+          INT_MAX};
+      lim.max_send_size =
+          grpc_channel_arg_get_integer(&channel_args->args[i], options);
+    }
+    if (strcmp(channel_args->args[i].key,
+               GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
+      const grpc_integer_options options = {
+          default_size(channel_args, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH), 0,
+          INT_MAX};
+      lim.max_recv_size =
+          grpc_channel_arg_get_integer(&channel_args->args[i], options);
+    }
+  }
+  return lim;
+}
+
 // Constructor for channel_data.
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
-  chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
-  for (size_t i = 0; i < args->channel_args->num_args; ++i) {
-    if (strcmp(args->channel_args->args[i].key,
-               GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0, INT_MAX};
-      chand->max_send_size =
-          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
-    }
-    if (strcmp(args->channel_args->args[i].key,
-               GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0, INT_MAX};
-      chand->max_recv_size =
-          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
-    }
-  }
+  channel_limits lim = get_channel_limits(args->channel_args);
+  chand->max_send_size = lim.max_send_size;
+  chand->max_recv_size = lim.max_recv_size;
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
@@ -265,3 +292,40 @@ const grpc_channel_filter grpc_message_size_filter = {
     grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "message_size"};
+
+static bool maybe_add_message_size_filter(grpc_exec_ctx* exec_ctx,
+                                          grpc_channel_stack_builder* builder,
+                                          void* arg) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  bool enable = false;
+  channel_limits lim = get_channel_limits(channel_args);
+  if (lim.max_send_size != INT_MAX || lim.max_recv_size != INT_MAX) {
+    enable = true;
+  }
+  const grpc_arg* a =
+      grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
+  if (a != NULL) {
+    enable = true;
+  }
+  if (enable) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_message_size_filter, NULL, NULL);
+  } else {
+    return true;
+  }
+}
+
+void grpc_message_size_filter_init(void) {
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_message_size_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_message_size_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_message_size_filter, NULL);
+}
+
+void grpc_message_size_filter_shutdown(void) {}
