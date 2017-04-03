@@ -2500,6 +2500,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: mlog_test
   flaky: true
   build: test

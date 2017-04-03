@@ -1599,6 +1599,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "minimal_stack_is_minimal_test", 
+    "src": [
+      "test/core/channel/minimal_stack_is_minimal_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "mlog_test", 
     "src": [
       "test/core/census/mlog_test.c"

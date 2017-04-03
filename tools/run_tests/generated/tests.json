@@ -1686,6 +1686,28 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "minimal_stack_is_minimal_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
     "flaky": true, 
     "gtest": false, 
     "language": "c", 

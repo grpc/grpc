@@ -472,6 +472,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c memory_profile_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
+add_dependencies(buildtests_c minimal_stack_is_minimal_test)
 add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
@@ -7366,6 +7367,37 @@ target_include_directories(message_compress_test
 )
 
 target_link_libraries(message_compress_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(minimal_stack_is_minimal_test
+  test/core/channel/minimal_stack_is_minimal_test.c
+)
+
+
+target_include_directories(minimal_stack_is_minimal_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

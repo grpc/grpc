@@ -1050,6 +1050,7 @@ memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
 memory_profile_server: $(BINDIR)/$(CONFIG)/memory_profile_server
 memory_profile_test: $(BINDIR)/$(CONFIG)/memory_profile_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
+minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
 mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
@@ -1421,6 +1422,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
   $(BINDIR)/$(CONFIG)/memory_profile_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
+  $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
   $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
@@ -1871,6 +1873,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/memory_profile_test || ( echo test memory_profile_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing minimal_stack_is_minimal_test"
+	$(Q) $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test || ( echo test minimal_stack_is_minimal_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
 	$(Q) $(BINDIR)/$(CONFIG)/multiple_server_queues_test || ( echo test multiple_server_queues_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
@@ -11489,6 +11493,38 @@ deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MINIMAL_STACK_IS_MINIMAL_TEST_SRC = \
+    test/core/channel/minimal_stack_is_minimal_test.c \
+
+MINIMAL_STACK_IS_MINIMAL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MINIMAL_STACK_IS_MINIMAL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/minimal_stack_is_minimal_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
 endif
 endif
 
