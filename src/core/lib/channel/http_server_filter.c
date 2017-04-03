@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -215,7 +215,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     size_t path_length = GRPC_SLICE_LENGTH(path_slice);
     /* offset of the character '?' */
     size_t offset = 0;
-    for (offset = 0; *path_ptr != k_query_separator && offset < path_length;
+    for (offset = 0; offset < path_length && *path_ptr != k_query_separator;
          path_ptr++, offset++)
       ;
     if (offset < path_length) {

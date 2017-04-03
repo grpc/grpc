@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,10 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
+# change to directory of Python coverage files
+cd $(dirname $0)/../../../src/python/grpcio_tests/
 
-# try to use pypy for generating reports
-# each trace dumps 7-8gig of text to disk, and processing this into a report is
-# heavyweight - so any speed boost is worthwhile
-# TODO(ctiller): consider rewriting report generation in C++ for performance
-if which pypy >/dev/null; then
-  PYTHON=pypy
-else
-  PYTHON=python2.7
-fi
-
-make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server
-bins/opt/memory_profile_test
-bq load microbenchmarks.memory memory_usage.csv
-
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
-
+coverage combine .
+coverage html -i -d ./../../../reports/python

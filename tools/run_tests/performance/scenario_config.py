@@ -258,6 +258,19 @@ class CXXLanguage:
           excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_%s' %
+          (secstr),
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          channels=1,
+          outstanding=64,
+          req_size=128,
+          resp_size=8*1024*1024,
+          secure=secure,
+          categories=smoketest_categories + [SCALABLE])
+
+      yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
@@ -266,6 +279,13 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories+[SCALABLE],
           excluded_poll_engines = ['poll-cv'])
+
+      yield _ping_pong_scenario(
+        'cpp_protobuf_async_unary_ping_pong_%s_1mb' % secstr, rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        secure=secure,
+        categories=smoketest_categories)
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
@@ -399,6 +419,12 @@ class CSharpLanguage:
         unconstrained_client='async', client_language='c++',
         categories=[SCALABLE])
 
+    yield _ping_pong_scenario(
+        'csharp_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        categories=[SMOKETEST])
+
 
   def __str__(self):
     return 'csharp'
@@ -436,8 +462,14 @@ class NodeLanguage:
 
     yield _ping_pong_scenario(
         'cpp_to_node_unary_ping_pong', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='async_server',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         client_language='c++')
+
+    yield _ping_pong_scenario(
+        'node_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        categories=[SMOKETEST])
 
     # TODO(murgatroid99): fix bugs with this scenario and re-enable it
     # yield _ping_pong_scenario(
@@ -519,6 +551,12 @@ class PythonLanguage:
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
+    yield _ping_pong_scenario(
+        'python_protobuf_sync_unary_ping_pong_1mb', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        categories=[SMOKETEST])
+
   def __str__(self):
     return 'python'
 
@@ -564,6 +602,12 @@ class RubyLanguage:
         'ruby_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'ruby_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        categories=[SMOKETEST])
 
   def __str__(self):
     return 'ruby'

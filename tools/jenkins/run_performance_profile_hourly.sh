@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,17 +30,12 @@
 
 set -ex
 
-if [ "$CONFIG" != "gcov" ] ; then exit ; fi
+cd $(dirname $0)/../..
 
-root=$(readlink -f $(dirname $0)/../../..)
-out=$root/reports/php_ext_coverage
-tmp1=$(mktemp)
-tmp2=$(mktemp)
-cd $root
-lcov --capture --directory . --output-file $tmp1
-lcov --extract $tmp1 "$root/src/php/ext/grpc/*" --output-file $tmp2
-genhtml $tmp2 --output-directory $out
-rm $tmp2
-rm $tmp1
+CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
-# todo(mattkwong): generate coverage report for php and copy to reports/php
+make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
+bins/opt/memory_profile_test
+bq load microbenchmarks.memory memory_usage.csv
+
+tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload
