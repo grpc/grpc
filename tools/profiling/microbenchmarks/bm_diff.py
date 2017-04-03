@@ -139,7 +139,7 @@ def collect1(bm, cfg, ver):
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
   return jobset.JobSpec(cmd, shortname='%s %s %s' % (bm, cfg, ver),
-                             verbose_success=True)
+                             verbose_success=True, timeout_seconds=None)
 
 build()
 jobset.run(itertools.chain(
