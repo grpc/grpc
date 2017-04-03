@@ -163,7 +163,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/json/json_reader.c',
   'src/core/lib/json/json_string.c',
   'src/core/lib/json/json_writer.c',
-  'src/core/lib/security/util/b64.c',
+  'src/core/lib/slice/b64.c',
   'src/core/lib/slice/percent_encoding.c',
   'src/core/lib/slice/slice.c',
   'src/core/lib/slice/slice_buffer.c',

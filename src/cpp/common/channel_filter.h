@@ -42,7 +42,6 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -207,18 +206,6 @@ class TransportStreamOp {
   void set_send_message(grpc_byte_stream *send_message) {
     op_->send_message = true;
     op_->payload->send_message.send_message = send_message;
-  }
-
-  /// To be called only on clients and servers, respectively.
-  grpc_client_security_context *client_security_context() const {
-    return (grpc_client_security_context *)op_->payload
-        ->context[GRPC_CONTEXT_SECURITY]
-        .value;
-  }
-  grpc_server_security_context *server_security_context() const {
-    return (grpc_server_security_context *)op_->payload
-        ->context[GRPC_CONTEXT_SECURITY]
-        .value;
   }
 
   census_context *get_census_context() const {
