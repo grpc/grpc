@@ -258,6 +258,19 @@ class CXXLanguage:
           excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_%s' %
+          (secstr),
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          channels=1,
+          outstanding=64,
+          req_size=128,
+          resp_size=8*1024*1024,
+          secure=secure,
+          categories=smoketest_categories + [SCALABLE])
+
+      yield _ping_pong_scenario(
           'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',

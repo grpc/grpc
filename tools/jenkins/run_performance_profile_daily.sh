@@ -1,4 +1,5 @@
-# Copyright 2017, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,35 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+set -ex
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+cd $(dirname $0)/../..
 
-grpc_fuzzer(
-  name = "percent_decode_fuzzer",
-  srcs = ["percent_decode_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "response_corpus",
-  copts = ["-std=c99"],
-)
+# try to use pypy for generating reports
+# each trace dumps 7-8gig of text to disk, and processing this into a report is
+# heavyweight - so any speed boost is worthwhile
+# TODO(ctiller): consider rewriting report generation in C++ for performance
+if which pypy >/dev/null; then
+  PYTHON=pypy
+else
+  PYTHON=python2.7
+fi
 
-cc_test(
-    name = "percent_encoding_test",
-    srcs = ["percent_encoding_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_buffer_test",
-    srcs = ["slice_string_helpers_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "b64_test",
-    srcs = ["b64_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency

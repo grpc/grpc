@@ -360,7 +360,6 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     for (size_t i = 0; i < c->args->num_args; i++) {
       if (0 == strcmp(c->args->args[i].key,
                       "grpc.testing.fixed_reconnect_backoff_ms")) {
-        GPR_ASSERT(c->args->args[i].type == GRPC_ARG_INTEGER);
         fixed_reconnect_backoff = true;
         initial_backoff_ms = min_backoff_ms = max_backoff_ms =
             grpc_channel_arg_get_integer(

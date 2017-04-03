@@ -30,23 +30,12 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
 
 CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
-# try to use pypy for generating reports
-# each trace dumps 7-8gig of text to disk, and processing this into a report is
-# heavyweight - so any speed boost is worthwhile
-# TODO(ctiller): consider rewriting report generation in C++ for performance
-if which pypy >/dev/null; then
-  PYTHON=pypy
-else
-  PYTHON=python2.7
-fi
-
-make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server
+make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
 bins/opt/memory_profile_test
 bq load microbenchmarks.memory memory_usage.csv
 
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
-
+tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload
