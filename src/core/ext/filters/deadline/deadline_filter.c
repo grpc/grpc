@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/lib/channel/deadline_filter.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -39,9 +39,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel_init.h"
 
 //
 // grpc_deadline_state
@@ -342,3 +344,34 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     grpc_channel_next_get_info,
     "deadline",
 };
+
+bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
+  bool enable = !grpc_channel_args_want_minimal_stack(channel_args);
+  const grpc_arg* a =
+      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS);
+  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != 0) {
+    enable = true;
+  }
+  return enable;
+}
+
+static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
+                                      grpc_channel_stack_builder* builder,
+                                      void* arg) {
+  return grpc_deadline_checking_enabled(
+             grpc_channel_stack_builder_get_channel_arguments(builder))
+             ? grpc_channel_stack_builder_prepend_filter(builder, arg, NULL,
+                                                         NULL)
+             : true;
+}
+
+void grpc_deadline_filter_init(void) {
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_deadline_filter, (void*)&grpc_client_deadline_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_deadline_filter, (void*)&grpc_server_deadline_filter);
+}
+
+void grpc_deadline_filter_shutdown(void) {}

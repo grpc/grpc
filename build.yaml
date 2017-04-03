@@ -173,12 +173,12 @@ filegroups:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   headers:
+  - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
@@ -280,11 +280,11 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
+  - src/core/ext/filters/deadline/deadline_filter.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/connected_channel.c
-  - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/handshaker_factory.c
   - src/core/lib/channel/handshaker_registry.c
@@ -448,6 +448,7 @@ filegroups:
   plugin: grpc_client_channel
   uses:
   - grpc_base
+  - grpc_deadline_filter
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer_reader.h
@@ -460,6 +461,14 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_deadline_filter
+  headers:
+  - src/core/ext/filters/deadline/deadline_filter.h
+  src:
+  - src/core/ext/filters/deadline/deadline_filter.c
+  plugin: grpc_deadline_filter
+  uses:
+  - grpc_base
 - name: grpc_http_filters
   headers:
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -1011,6 +1020,7 @@ libs:
   - census
   - grpc_max_age_filter
   - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1109,6 +1119,7 @@ libs:
   - census
   - grpc_max_age_filter
   - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'

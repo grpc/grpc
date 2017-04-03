@@ -42,7 +42,6 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
@@ -92,12 +91,6 @@ static bool prepend_filter(grpc_exec_ctx *exec_ctx,
 }
 
 static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      prepend_filter, (void *)&grpc_client_deadline_filter);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_server_deadline_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);

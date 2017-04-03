@@ -49,9 +49,9 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -183,6 +183,8 @@ typedef struct client_channel_channel_data {
   grpc_resolver *resolver;
   /** have we started resolving this channel */
   bool started_resolving;
+  /** is deadline checking enabled? */
+  bool deadline_checking_enabled;
   /** client channel factory */
   grpc_client_channel_factory *client_channel_factory;
 
@@ -676,6 +678,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->resolver == NULL) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
+  chand->deadline_checking_enabled =
+      grpc_deadline_checking_enabled(args->channel_args);
   return GRPC_ERROR_NONE;
 }
 
@@ -863,12 +867,14 @@ static void apply_final_configuration_locked(grpc_exec_ctx *exec_ctx,
   /* apply service-config level configuration to the call (now that we're
    * certain it exists) */
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   gpr_timespec per_method_deadline;
   if (set_call_method_params_from_service_config_locked(exec_ctx, elem,
                                                         &per_method_deadline)) {
     // If the deadline from the service config is shorter than the one
     // from the client API, reset the deadline timer.
-    if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+    if (chand->deadline_checking_enabled &&
+        gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
       calld->deadline = per_method_deadline;
       grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
     }
@@ -1222,7 +1228,9 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
+  if (chand->deadline_checking_enabled) {
+    grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
+  }
   /* try to (atomically) get the call */
   grpc_subchannel_call *call = GET_CALL(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op", 0);
@@ -1256,14 +1264,17 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   // Initialize data members.
-  grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->owning_call = args->call_stack;
   calld->arena = args->arena;
-  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
+  if (chand->deadline_checking_enabled) {
+    grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
+    grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -1273,7 +1284,10 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  const grpc_call_final_info *final_info,
                                  grpc_closure *then_schedule_closure) {
   call_data *calld = elem->call_data;
-  grpc_deadline_state_destroy(exec_ctx, elem);
+  channel_data *chand = elem->channel_data;
+  if (chand->deadline_checking_enabled) {
+    grpc_deadline_state_destroy(exec_ctx, elem);
+  }
   grpc_slice_unref_internal(exec_ctx, calld->path);
   if (calld->method_params != NULL) {
     method_parameters_unref(calld->method_params);

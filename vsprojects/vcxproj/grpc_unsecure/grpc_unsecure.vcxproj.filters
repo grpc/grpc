@@ -7,6 +7,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -17,9 +20,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
@@ -713,6 +713,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -726,9 +729,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
@@ -1321,6 +1321,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\client_channel\resolver\sockaddr">
       <UniqueIdentifier>{99210f5e-b2a0-ecd1-024f-fc152db68a11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\deadline">
+      <UniqueIdentifier>{ac374be1-7a3f-14a8-69fe-badac2d9f9ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\http">
       <UniqueIdentifier>{33287f7d-739b-d30d-a9f3-b338103456b0}</UniqueIdentifier>

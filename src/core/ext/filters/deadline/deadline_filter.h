@@ -93,6 +93,9 @@ void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op);
 
+// Should deadline checking be performed (according to channel args)
+bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
+
 // Deadline filters for direct client channels and server channels.
 // Note: Deadlines for non-direct client channels are handled by the
 // client_channel filter.

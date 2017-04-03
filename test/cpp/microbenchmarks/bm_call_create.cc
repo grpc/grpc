@@ -50,7 +50,7 @@ extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/ext/filters/http/compress/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"

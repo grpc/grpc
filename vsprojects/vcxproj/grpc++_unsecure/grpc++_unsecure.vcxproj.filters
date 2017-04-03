@@ -109,6 +109,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -119,9 +122,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
@@ -818,6 +818,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h">
       <Filter>src\cpp\thread_manager</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -831,9 +834,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
@@ -1192,6 +1192,15 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{595f2ea0-aafb-87e5-c938-db3ff0b0c69a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext">
+      <UniqueIdentifier>{52eca76b-9502-3d96-9064-6415226a860f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters">
+      <UniqueIdentifier>{d2564ab1-6815-d425-3f8a-31693cc2ac81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\deadline">
+      <UniqueIdentifier>{0cc70f19-99bb-5e9e-99d9-b103398c0e76}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{cf8fd5d8-ff54-331d-2d20-36d6cae0e14b}</UniqueIdentifier>

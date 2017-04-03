@@ -5589,6 +5589,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -5693,6 +5694,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -7523,12 +7525,12 @@
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
+      "src/core/ext/filters/deadline/deadline_filter.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
-      "src/core/lib/channel/deadline_filter.h", 
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/handshaker_factory.h", 
       "src/core/lib/channel/handshaker_registry.h", 
@@ -7644,6 +7646,8 @@
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
+      "src/core/ext/filters/deadline/deadline_filter.c", 
+      "src/core/ext/filters/deadline/deadline_filter.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.c", 
@@ -7653,8 +7657,6 @@
       "src/core/lib/channel/connected_channel.c", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
-      "src/core/lib/channel/deadline_filter.c", 
-      "src/core/lib/channel/deadline_filter.h", 
       "src/core/lib/channel/handshaker.c", 
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/handshaker_factory.c", 
@@ -7877,7 +7879,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "grpc_deadline_filter"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/client_channel.h", 
@@ -7971,6 +7974,24 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/deadline/deadline_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_deadline_filter", 
+    "src": [
+      "src/core/ext/filters/deadline/deadline_filter.c", 
+      "src/core/ext/filters/deadline/deadline_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

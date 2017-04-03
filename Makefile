@@ -2813,11 +2813,11 @@ endif
 
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -3134,11 +3134,11 @@ endif
 
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -3441,11 +3441,11 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_server_client.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -3669,11 +3669,11 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -4063,11 +4063,11 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -4397,11 +4397,11 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -5087,11 +5087,11 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \

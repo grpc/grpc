@@ -77,20 +77,20 @@ int main(int argc, char **argv) {
                         "client-channel", NULL);
 
   // tests with a default stack
-  errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "deadline",
-                        "message_size", "connected", NULL);
+  errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
+                        "message_size", "deadline", "connected", NULL);
   errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_SUBCHANNEL, "message_size",
                         "connected", NULL);
   errors += CHECK_STACK("unknown", NULL, GRPC_SERVER_CHANNEL, "server",
-                        "deadline", "message_size", "connected", NULL);
+                        "message_size", "deadline", "connected", NULL);
   errors +=
-      CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "deadline",
-                  "message_size", "http-client", "compress", "connected", NULL);
+      CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "message_size",
+                  "deadline", "http-client", "compress", "connected", NULL);
   errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_SUBCHANNEL, "message_size",
                         "http-client", "compress", "connected", NULL);
   errors +=
-      CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server", "deadline",
-                  "message_size", "http-server", "compress", "connected", NULL);
+      CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server", "message_size",
+                  "deadline", "http-server", "compress", "connected", NULL);
   errors +=
       CHECK_STACK(NULL, NULL, GRPC_CLIENT_CHANNEL, "client-channel", NULL);
 
@@ -147,6 +147,7 @@ static int check_stack(const char *file, int line, const char *transport_name,
   }
   char *got = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
+  grpc_channel_stack_builder_iterator_destroy(it);
 
   // figure out result, log if there's an error
   int result = 0;

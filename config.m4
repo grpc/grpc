@@ -83,11 +83,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
     src/core/lib/surface/init.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
@@ -638,6 +638,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/compress)

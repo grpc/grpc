@@ -908,11 +908,11 @@ endif (gRPC_BUILD_TESTS)
 
 add_library(grpc
   src/core/lib/surface/init.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -1231,11 +1231,11 @@ endif()
 
 add_library(grpc_cronet
   src/core/lib/surface/init.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -1539,11 +1539,11 @@ add_library(grpc_test_util
   test/core/util/port_server_client.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -1795,11 +1795,11 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -2212,11 +2212,11 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -2538,11 +2538,11 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
@@ -3236,11 +3236,11 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c

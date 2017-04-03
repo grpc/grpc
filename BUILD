@@ -77,6 +77,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_secure",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_deadline_filter",
     ],
 )
 
@@ -117,6 +118,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_insecure",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_deadline_filter",
     ],
 )
 
@@ -434,7 +436,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack.c",
         "src/core/lib/channel/channel_stack_builder.c",
         "src/core/lib/channel/connected_channel.c",
-        "src/core/lib/channel/deadline_filter.c",
+        "src/core/ext/filters/deadline/deadline_filter.c",
         "src/core/lib/channel/handshaker.c",
         "src/core/lib/channel/handshaker_factory.c",
         "src/core/lib/channel/handshaker_registry.c",
@@ -557,7 +559,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
-        "src/core/lib/channel/deadline_filter.h",
+        "src/core/ext/filters/deadline/deadline_filter.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/handshaker_factory.h",
         "src/core/lib/channel/handshaker_registry.h",
@@ -738,6 +740,20 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/max_age/max_age_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_deadline_filter",
+    srcs = [
+        "src/core/ext/filters/deadline/deadline_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/deadline/deadline_filter.h",
     ],
     language = "c",
     deps = [

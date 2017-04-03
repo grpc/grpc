@@ -615,11 +615,11 @@
       ],
       'sources': [
         'src/core/lib/surface/init.c',
+        'src/core/ext/filters/deadline/deadline_filter.c',
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',
         'src/core/lib/channel/connected_channel.c',
-        'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
         'src/core/lib/channel/handshaker_factory.c',
         'src/core/lib/channel/handshaker_registry.c',
