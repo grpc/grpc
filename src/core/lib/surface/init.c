@@ -47,7 +47,6 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/channel/max_age_filter.h"
 #include "src/core/lib/channel/message_size_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
@@ -130,9 +129,6 @@ static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
       (void *)&grpc_server_deadline_filter);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_max_age_filter);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_prepend_filter, (void *)&message_size_args);
