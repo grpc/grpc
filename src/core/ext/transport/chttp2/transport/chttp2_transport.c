@@ -2364,7 +2364,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
             exec_ctx, t, s, p->frame_size, message_flags);
         *stream_out = &p->parsing_frame->base;
         if (p->parsing_frame->remaining_bytes == 0) {
-          grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame, GRPC_ERROR_NONE);
+          grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame, GRPC_ERROR_NONE, 1);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
         } else {
@@ -2393,7 +2393,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
             return error;
           }
           grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                    GRPC_ERROR_NONE);
+                                                    GRPC_ERROR_NONE, 1);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_NONE);
@@ -2416,7 +2416,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
             return error;
           }
           grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                    GRPC_ERROR_NONE);
+                                                    GRPC_ERROR_NONE, 1);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           cur += p->frame_size;
@@ -2616,7 +2616,7 @@ static void incoming_byte_stream_publish_error(
   GRPC_ERROR_UNREF(s->byte_stream_error);
   grpc_chttp2_cancel_stream(exec_ctx, bs->transport, bs->stream,
                             GRPC_ERROR_REF(error));
-  s->byte_stream_error = error;
+  s->byte_stream_error = GRPC_ERROR_REF(error);
 }
 
 grpc_error *grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
@@ -2643,7 +2643,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
 
 grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
-    grpc_error *error) {
+    grpc_error *error, int reset_on_error) {
   grpc_chttp2_stream *s = bs->stream;
 
   if (error == GRPC_ERROR_NONE) {
@@ -2653,7 +2653,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     }
     gpr_mu_unlock(&bs->slice_mu);
   }
-  if (error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE && reset_on_error) {
     grpc_closure_sched(exec_ctx,
                        &s->reset_byte_stream, GRPC_ERROR_REF(error));
   }

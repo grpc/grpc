@@ -56,7 +56,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
   if (parser->parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, parser->parsing_frame,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Parser destroyed"));
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Parser destroyed"), 0);
   }
   GRPC_ERROR_UNREF(parser->error);
 }
