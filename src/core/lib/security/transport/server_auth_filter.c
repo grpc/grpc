@@ -138,13 +138,13 @@ static void on_md_processing_done(
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    calld->transport_op->send_initial_metadata = NULL;
+    calld->transport_op->send_initial_metadata = false;
     if (calld->transport_op->send_message) {
       grpc_byte_stream_destroy(
           &exec_ctx, calld->transport_op->payload->send_message.send_message);
       calld->transport_op->send_message = false;
     }
-    calld->transport_op->send_trailing_metadata = NULL;
+    calld->transport_op->send_trailing_metadata = false;
     grpc_closure_sched(
         &exec_ctx, calld->on_done_recv,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
