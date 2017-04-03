@@ -86,7 +86,7 @@ static void test(const char *name, size_t init_size, const size_t *allocs,
 #define CONCURRENT_TEST_THREADS 100
 
 size_t concurrent_test_iterations() {
-  if (sizeof(void*) < 8) return 1000;
+  if (sizeof(void *) < 8) return 1000;
   return 100000;
 }
 
