@@ -80,7 +80,7 @@ exports.serializeCls = function serializeCls(cls) {
     var message = cls.fromObject(arg);
     var errMsg = cls.verify(message);
     if (errMsg) {
-      throw errMsg;
+      throw Error(errMsg);
     }
     return cls.encode(message).finish();
   };
