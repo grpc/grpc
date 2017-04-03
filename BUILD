@@ -75,6 +75,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_chttp2_server_secure",
+        "grpc_max_age_filter",
     ],
 )
 
@@ -112,6 +113,7 @@ grpc_cc_library(
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
+        "grpc_max_age_filter",
     ],
 )
 
@@ -436,7 +438,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.c",
         "src/core/lib/channel/http_client_filter.c",
         "src/core/lib/channel/http_server_filter.c",
-        "src/core/ext/filters/max_age/max_age_filter.c",
         "src/core/lib/channel/message_size_filter.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
@@ -564,7 +565,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/http_client_filter.h",
         "src/core/lib/channel/http_server_filter.h",
-        "src/core/ext/filters/max_age/max_age_filter.h",
         "src/core/lib/channel/message_size_filter.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
@@ -729,6 +729,20 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
         "src/core/ext/filters/client_channel/uri_parser.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_max_age_filter",
+    srcs = [
+        "src/core/ext/filters/max_age/max_age_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/max_age/max_age_filter.h",
     ],
     language = "c",
     deps = [
