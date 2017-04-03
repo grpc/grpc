@@ -53,4 +53,5 @@ grpc_channel_args *get_lb_channel_args(grpc_exec_ctx *exec_ctx,
                                        grpc_slice_hash_table *targets_info,
                                        const grpc_channel_args *args);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H \
+          */
