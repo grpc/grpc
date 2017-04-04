@@ -265,7 +265,9 @@ static int add_random_max_connection_age_jitter(int value) {
   double multiplier = rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX +
                       1.0 - MAX_CONNECTION_AGE_JITTER;
   double result = multiplier * value;
-  return result > INT_MAX ? INT_MAX : (int)result;
+  /* INT_MAX - 0.5 converts the value to float, so that result will not be
+     cast to int implicitly before the comparison. */
+  return result > INT_MAX - 0.5 ? INT_MAX : (int)result;
 }
 
 /* Constructor for call_data. */
