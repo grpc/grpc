@@ -127,18 +127,16 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   if (state.thread_index == 0) {
     grpc_completion_queue_shutdown(g_cq);
     grpc_completion_queue_destroy(g_cq);
-
-    state.SetItemsProcessed(state.iterations());
   }
 
   track_counters.Finish(state);
 }
 
-BENCHMARK(BM_Cq_Throughput)->Threads(1);
-BENCHMARK(BM_Cq_Throughput)->Threads(2);
-BENCHMARK(BM_Cq_Throughput)->Threads(4);
-BENCHMARK(BM_Cq_Throughput)->Threads(8);
-BENCHMARK(BM_Cq_Throughput)->Threads(16);
+BENCHMARK(BM_Cq_Throughput)->Threads(1)->UseRealTime();
+BENCHMARK(BM_Cq_Throughput)->Threads(2)->UseRealTime();
+BENCHMARK(BM_Cq_Throughput)->Threads(4)->UseRealTime();
+BENCHMARK(BM_Cq_Throughput)->Threads(8)->UseRealTime();
+BENCHMARK(BM_Cq_Throughput)->Threads(16)->UseRealTime();
 
 }  // namespace testing
 }  // namespace grpc
