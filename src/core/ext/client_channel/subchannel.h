@@ -157,7 +157,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *subchannel_call,
-                                     grpc_transport_stream_op *op);
+                                     grpc_transport_stream_op_batch *op);
 
 /** continue querying for peer */
 char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
