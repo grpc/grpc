@@ -528,7 +528,7 @@ class CallOpClientRecvStatus {
   void ClientRecvStatus(ClientContext* context, Status* status) {
     metadata_map_ = &context->trailing_metadata_;
     recv_status_ = status;
-    status_details_ = grpc_empty_slice();
+    status_details_ = g_core_codegen_interface->grpc_empty_slice();
   }
 
  protected:
