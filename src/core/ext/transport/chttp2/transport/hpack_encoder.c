@@ -595,23 +595,21 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 
 void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_hpack_compressor *c,
-                               uint32_t stream_id,
-                               grpc_metadata_batch *metadata, int is_eof,
-                               size_t max_frame_size,
-                               grpc_transport_one_way_stats *stats,
+                               grpc_metadata_batch *metadata,
+                               const grpc_encode_header_options *options,
                                grpc_slice_buffer *outbuf) {
   framer_state st;
   grpc_linked_mdelem *l;
   gpr_timespec deadline;
 
-  GPR_ASSERT(stream_id != 0);
+  GPR_ASSERT(options->stream_id != 0);
 
   st.seen_regular_header = 0;
-  st.stream_id = stream_id;
+  st.stream_id = options->stream_id;
   st.output = outbuf;
   st.is_first_frame = 1;
-  st.stats = stats;
-  st.max_frame_size = max_frame_size;
+  st.stats = options->stats;
+  st.max_frame_size = options->max_frame_size;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata
@@ -630,5 +628,5 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
     deadline_enc(exec_ctx, c, deadline, &st);
   }
 
-  finish_frame(&st, 1, is_eof);
+  finish_frame(&st, 1, options->is_eof);
 }
