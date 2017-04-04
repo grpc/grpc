@@ -61,17 +61,18 @@ extern "C" {
 namespace grpc {
 namespace testing {
 
-static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
-  b->SetMaxReceiveMessageSize(INT_MAX);
-  b->SetMaxSendMessageSize(INT_MAX);
-}
+class BaseFixture : public TrackCounters {
+ public:
+  virtual void ApplyCommonChannelArguments(ChannelArguments* c) {
+    c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
+    c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+  }
 
-static void ApplyCommonChannelArguments(ChannelArguments* c) {
-  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
-  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
-}
-
-class BaseFixture : public TrackCounters {};
+  virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
+    b->SetMaxReceiveMessageSize(INT_MAX);
+    b->SetMaxSendMessageSize(INT_MAX);
+  }
+};
 
 class FullstackFixture : public BaseFixture {
  public:
@@ -237,6 +238,28 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     return p;
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// Minimal stack fixtures
+
+template <class Base>
+class MinStackize : public Base {
+ public:
+  MinStackize(Service* service) : Base(service) {}
+
+  void ApplyCommonChannelArguments(ChannelArguments* a) {
+    a->SetInt(GRPC_ARG_MINIMAL_STACK, 1);
+  }
+
+  void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
+    b->AddChannelArgument(GRPC_ARG_MINIMAL_STACK, 1);
+  }
+};
+
+typedef MinStackize<TCP> MinTCP;
+typedef MinStackize<UDS> MinUDS;
+typedef MinStackize<SockPair> MinSockPair;
+typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 
 }  // namespace testing
 }  // namespace grpc
