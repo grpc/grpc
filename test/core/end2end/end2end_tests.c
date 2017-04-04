@@ -65,6 +65,8 @@ extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
 extern void cancel_in_a_vacuum_pre_init(void);
 extern void cancel_with_status(grpc_end2end_test_config config);
 extern void cancel_with_status_pre_init(void);
+extern void channel_tracing(grpc_end2end_test_config config);
+extern void channel_tracing_pre_init(void);
 extern void compressed_payload(grpc_end2end_test_config config);
 extern void compressed_payload_pre_init(void);
 extern void connectivity(grpc_end2end_test_config config);
@@ -164,6 +166,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
+  channel_tracing_pre_init();
   compressed_payload_pre_init();
   connectivity_pre_init();
   default_host_pre_init();
@@ -225,6 +228,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
+    channel_tracing(config);
     compressed_payload(config);
     connectivity(config);
     default_host(config);
@@ -309,6 +313,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("cancel_with_status", argv[i])) {
       cancel_with_status(config);
+      continue;
+    }
+    if (0 == strcmp("channel_tracing", argv[i])) {
+      channel_tracing(config);
       continue;
     }
     if (0 == strcmp("compressed_payload", argv[i])) {

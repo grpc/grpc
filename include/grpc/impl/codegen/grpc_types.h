@@ -252,6 +252,9 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** The maximum number of trace nodes to keep in the tracer for each channel or
+ * subchannel. The default is 10. If set to 0, channel tracing is disabled. */
+#define GRPC_ARG_CHANNEL_TRACING_MAX_NODES "grpc.channel_tracing_max_nodes"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames when

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\channel\channel_tracing_test.c">
+      <Filter>test\core\channel</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{c70d7379-50cf-53dd-346c-1ca341a2c93c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{27547f7a-7c0d-0dbb-a88d-159983fdba4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\channel">
+      <UniqueIdentifier>{c80755e9-1328-64bc-49c7-a24dac4ee030}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

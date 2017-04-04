@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,67 +31,45 @@
  *
  */
 
+#include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
+#include <grpc/support/useful.h>
+#include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/json/json.h"
 
-grpc_json* grpc_json_create(grpc_json_type type) {
-  grpc_json* json = gpr_zalloc(sizeof(*json));
-  json->type = type;
-
-  return json;
+static grpc_json* get_json_child(grpc_json* parent, const char* key) {
+  GPR_ASSERT(parent != NULL);
+  for (grpc_json* child = parent->child; child != NULL; child = child->next) {
+    if (child->key != NULL && strcmp(child->key, key) == 0) return child;
+  }
+  return NULL;
 }
 
-void grpc_json_destroy(grpc_json* json) {
-  while (json->child) {
-    grpc_json_destroy(json->child);
+void validate_json_array_size(grpc_json* json, const char* key,
+                              size_t expected_size) {
+  grpc_json* arr = get_json_child(json, key);
+  GPR_ASSERT(arr);
+  GPR_ASSERT(arr->type == GRPC_JSON_ARRAY);
+  size_t count = 0;
+  for (grpc_json* child = arr->child; child != NULL; child = child->next) {
+    ++count;
   }
-
-  if (json->next) {
-    json->next->prev = json->prev;
-  }
-
-  if (json->prev) {
-    json->prev->next = json->next;
-  } else if (json->parent) {
-    json->parent->child = json->next;
-  }
-
-  if (json->owns_value) {
-    gpr_free((void*)json->value);
-  }
-  gpr_free(json);
+  GPR_ASSERT(count == expected_size);
 }
 
-grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child, grpc_json* sibling) {
-  // first child case.
-  if (parent->child == NULL) {
-    GPR_ASSERT(sibling == NULL);
-    parent->child = child;
-    return child;
-  }
-  if (sibling == NULL) {
-    sibling = parent->child;
-  }
-  // always find the right most sibling.
-  while (sibling->next != NULL) {
-    sibling = sibling->next;
-  }
-  sibling->next = child;
-  return child;
-}
-
-grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
-                                  const char* key, const char* value,
-                                  grpc_json_type type, bool owns_value) {
-  grpc_json* child = grpc_json_create(type);
-  grpc_json_link_child(parent, child, sibling);
-  child->owns_value = owns_value;
-  child->parent = parent;
-  child->value = value;
-  child->key = key;
-  return child;
+void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
+                           size_t actual_num_nodes_expected) {
+  GPR_ASSERT(json);
+  grpc_json* channel_data = get_json_child(json, "channelData");
+  grpc_json* num_nodes_logged_json =
+      get_json_child(channel_data, "numNodesLogged");
+  GPR_ASSERT(num_nodes_logged_json);
+  grpc_json* start_time = get_json_child(channel_data, "startTime");
+  GPR_ASSERT(start_time);
+  size_t num_nodes_logged =
+      (size_t)strtol(num_nodes_logged_json->value, NULL, 0);
+  GPR_ASSERT(num_nodes_logged == num_nodes_logged_expected);
+  validate_json_array_size(channel_data, "nodes", actual_num_nodes_expected);
 }

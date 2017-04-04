@@ -46,12 +46,14 @@
 #include "src/core/ext/client_channel/subchannel_index.h"
 #include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -85,6 +87,7 @@ typedef struct external_state_watcher {
 } external_state_watcher;
 
 struct grpc_subchannel {
+  intptr_t uuid;
   grpc_connector *connector;
 
   /** refcount
@@ -140,6 +143,8 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
+  /* tracer object */
+  grpc_channel_tracer *tracer;
 };
 
 struct grpc_subchannel_call {
@@ -209,6 +214,7 @@ void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
 static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_subchannel *c = arg;
+  grpc_object_registry_unregister_object(c->uuid);
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(exec_ctx, c->args);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
@@ -314,6 +320,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   }
 
   c = gpr_zalloc(sizeof(*c));
+  c->uuid =
+      grpc_object_registry_register_object(c, GPRC_OBJECT_REGISTRY_SUBCHANNEL);
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -389,6 +397,15 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(exec_ctx, key, c);
+}
+
+char *grpc_subchannel_get_trace(grpc_subchannel *subchannel, bool recursive) {
+  return subchannel->tracer != NULL
+             ? grpc_channel_tracer_render_trace(subchannel->tracer, recursive)
+             : NULL;
+}
+intptr_t grpc_subchannel_get_uuid(grpc_subchannel *subchannel) {
+  return subchannel->uuid;
 }
 
 static void continue_connect_locked(grpc_exec_ctx *exec_ctx,

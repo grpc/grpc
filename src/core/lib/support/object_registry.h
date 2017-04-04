@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,67 +31,24 @@
  *
  */
 
-#include <string.h>
+#ifndef GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
+#define GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <stdint.h>
 
-#include "src/core/lib/json/json.h"
+typedef enum {
+  GRPC_OBJECT_REGISTRY_CHANNEL,
+  GPRC_OBJECT_REGISTRY_SUBCHANNEL,
+  GRPC_OBJECT_REGISTRY_UNKNOWN,
+} grpc_object_registry_type;
 
-grpc_json* grpc_json_create(grpc_json_type type) {
-  grpc_json* json = gpr_zalloc(sizeof(*json));
-  json->type = type;
+void grpc_object_registry_init();
+void grpc_object_registry_shutdown();
 
-  return json;
-}
+intptr_t grpc_object_registry_register_object(void* object,
+                                              grpc_object_registry_type type);
+void grpc_object_registry_unregister_object(intptr_t uuid);
+grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
+                                                          void** object);
 
-void grpc_json_destroy(grpc_json* json) {
-  while (json->child) {
-    grpc_json_destroy(json->child);
-  }
-
-  if (json->next) {
-    json->next->prev = json->prev;
-  }
-
-  if (json->prev) {
-    json->prev->next = json->next;
-  } else if (json->parent) {
-    json->parent->child = json->next;
-  }
-
-  if (json->owns_value) {
-    gpr_free((void*)json->value);
-  }
-  gpr_free(json);
-}
-
-grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child, grpc_json* sibling) {
-  // first child case.
-  if (parent->child == NULL) {
-    GPR_ASSERT(sibling == NULL);
-    parent->child = child;
-    return child;
-  }
-  if (sibling == NULL) {
-    sibling = parent->child;
-  }
-  // always find the right most sibling.
-  while (sibling->next != NULL) {
-    sibling = sibling->next;
-  }
-  sibling->next = child;
-  return child;
-}
-
-grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
-                                  const char* key, const char* value,
-                                  grpc_json_type type, bool owns_value) {
-  grpc_json* child = grpc_json_create(type);
-  grpc_json_link_child(parent, child, sibling);
-  child->owns_value = owns_value;
-  child->parent = parent;
-  child->value = value;
-  child->key = key;
-  return child;
-}
+#endif /* GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H */

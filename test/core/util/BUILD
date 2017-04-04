@@ -46,6 +46,7 @@ cc_library(
 cc_library(
     name = "grpc_test_util",
     srcs = [
+        "channel_tracing_utils.c",
         "debugger_macros.c",
         "grpc_profiler.c",
         "mock_endpoint.c",
@@ -59,6 +60,7 @@ cc_library(
         "trickle_endpoint.c",
     ],
     hdrs = [
+        "channel_tracing_utils.h",
         "debugger_macros.h",
         "trickle_endpoint.h",
         "grpc_profiler.h",
