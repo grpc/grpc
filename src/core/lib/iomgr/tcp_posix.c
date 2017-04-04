@@ -69,7 +69,11 @@
 #ifdef GRPC_MSG_IOVLEN_TYPE
 typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
+#ifdef __GLIBC__
 typedef size_t msg_iovlen_type;
+#else
+typedef int msg_iovlen_type;
+#endif
 #endif
 
 int grpc_tcp_trace = 0;

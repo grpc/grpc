@@ -31,11 +31,11 @@
  *
  */
 
-#include <limits.h>
 #include <string.h>
 
 #include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
+#include <limits.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/load_reporting/load_reporting.h"
