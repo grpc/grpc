@@ -346,3 +346,10 @@ int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
   }
   return arg->value.integer;
 }
+
+bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
+  const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK);
+  if (arg == NULL) return false;
+  if (arg->type == GRPC_ARG_INTEGER && arg->value.integer == 0) return false;
+  return true;
+}

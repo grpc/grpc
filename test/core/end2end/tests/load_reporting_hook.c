@@ -41,8 +41,8 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/ext/load_reporting/load_reporting.h"
-#include "src/core/ext/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/load_reporting.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/static_metadata.h"
 
