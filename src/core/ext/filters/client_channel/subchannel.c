@@ -748,11 +748,11 @@ char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
 
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *call,
-                                     grpc_transport_stream_op *op) {
+                                     grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("grpc_subchannel_call_process_op", 0);
   grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
-  top_elem->filter->start_transport_stream_op(exec_ctx, top_elem, op);
+  top_elem->filter->start_transport_stream_op_batch(exec_ctx, top_elem, op);
   GPR_TIMER_END("grpc_subchannel_call_process_op", 0);
 }
 

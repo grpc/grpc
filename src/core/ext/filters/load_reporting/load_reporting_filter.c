@@ -183,25 +183,28 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
-static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
-                                         grpc_call_element *elem,
-                                         grpc_transport_stream_op *op) {
-  GPR_TIMER_BEGIN("lr_start_transport_stream_op", 0);
+static void lr_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
+  GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata) {
-    calld->recv_initial_metadata = op->recv_initial_metadata;
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
     /* substitute our callback for the higher callback */
-    calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
+    calld->ops_recv_initial_metadata_ready =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->on_initial_md_ready;
   }
   grpc_call_next_op(exec_ctx, elem, op);
 
-  GPR_TIMER_END("lr_start_transport_stream_op", 0);
+  GPR_TIMER_END("lr_start_transport_stream_op_batch", 0);
 }
 
 const grpc_channel_filter grpc_load_reporting_filter = {
-    lr_start_transport_stream_op,
+    lr_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
