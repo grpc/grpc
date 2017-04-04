@@ -1102,7 +1102,7 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       return; /* early out */
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
                                      &s->fetching_slice, UINT32_MAX,
-                                     &s->complete_fetch)) {
+                                     &s->complete_fetch_locked)) {
       add_fetched_slice_locked(exec_ctx, t, s);
     }
   }
@@ -1140,13 +1140,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                                      grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
-  grpc_transport_stream_op *op = stream_op;
+  grpc_transport_stream_op_batch *op = stream_op;
   grpc_chttp2_stream *s = op->handler_private.extra_arg;
-  grpc_transport_stream_op_payload *op_payload = op->payload;
+  grpc_transport_stream_op_batch_payload *op_payload = op->payload;
   grpc_chttp2_transport *t = s->t;
 
   if (grpc_http_trace) {
-    char *str = grpc_transport_stream_op_string(op);
+    char *str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
     gpr_free(str);
@@ -1321,7 +1321,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_trailing_metadata_finished,
             grpc_metadata_batch_is_empty(
-                op->payload->send_initial_metadata.send_initial_metadata)
+                op->payload->send_trailing_metadata.send_trailing_metadata)
                 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Attempt to send trailing metadata after "
@@ -1374,13 +1374,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 }
 
 static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                              grpc_stream *gs, grpc_transport_stream_op *op) {
+                              grpc_stream *gs,
+                              grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("perform_stream_op", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
   if (grpc_http_trace) {
-    char *str = grpc_transport_stream_op_string(op);
+    char *str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op[s=%p/%d]: %s", s, s->id, str);
     gpr_free(str);
   }

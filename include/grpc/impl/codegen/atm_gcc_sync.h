@@ -39,6 +39,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 typedef intptr_t gpr_atm;
+#define GPR_ATM_MAX INTPTR_MAX
 
 #define GPR_ATM_COMPILE_BARRIER_() __asm__ __volatile__("" : : : "memory")
 
@@ -83,6 +84,7 @@ static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
 #define gpr_atm_no_barrier_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 #define gpr_atm_acq_cas(p, o, n) (__sync_bool_compare_and_swap((p), (o), (n)))
 #define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
+#define gpr_atm_full_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 
 static __inline gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n) {
   gpr_atm cur;

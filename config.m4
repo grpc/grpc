@@ -94,6 +94,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -168,7 +169,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/security/util/b64.c \
+    src/core/lib/slice/b64.c \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
@@ -253,9 +254,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/tsi_error.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
-    src/core/lib/tsi/fake_transport_security.c \
-    src/core/lib/tsi/ssl_transport_security.c \
-    src/core/lib/tsi/transport_security.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_channel/channel_connectivity.c \
@@ -668,8 +669,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)

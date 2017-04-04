@@ -49,7 +49,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 

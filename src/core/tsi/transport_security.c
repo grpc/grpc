@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -101,7 +101,7 @@ tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector *self, unsigned char *protected_output_frames,
     size_t *protected_output_frames_size, size_t *still_pending_size) {
   if (self == NULL || protected_output_frames == NULL ||
-      protected_output_frames == NULL || still_pending_size == NULL) {
+      protected_output_frames_size == NULL || still_pending_size == NULL) {
     return TSI_INVALID_ARGUMENT;
   }
   return self->vtable->protect_flush(self, protected_output_frames,

@@ -255,6 +255,22 @@ static void test_similar(void) {
                                    gpr_time_from_micros(10, GPR_TIMESPAN)));
 }
 
+static void test_convert_extreme(void) {
+  gpr_timespec realtime = {INT64_MAX, 1, GPR_CLOCK_REALTIME};
+  gpr_timespec monotime = gpr_convert_clock_type(realtime, GPR_CLOCK_MONOTONIC);
+  GPR_ASSERT(monotime.tv_sec == realtime.tv_sec);
+  GPR_ASSERT(monotime.clock_type == GPR_CLOCK_MONOTONIC);
+}
+
+static void test_cmp_extreme(void) {
+  gpr_timespec t1 = {INT64_MAX, 1, GPR_CLOCK_REALTIME};
+  gpr_timespec t2 = {INT64_MAX, 2, GPR_CLOCK_REALTIME};
+  GPR_ASSERT(gpr_time_cmp(t1, t2) == 0);
+  t1.tv_sec = INT64_MIN;
+  t2.tv_sec = INT64_MIN;
+  GPR_ASSERT(gpr_time_cmp(t1, t2) == 0);
+}
+
 int main(int argc, char *argv[]) {
   grpc_test_init(argc, argv);
 
@@ -263,5 +279,7 @@ int main(int argc, char *argv[]) {
   test_overflow();
   test_sticky_infinities();
   test_similar();
+  test_convert_extreme();
+  test_cmp_extreme();
   return 0;
 }

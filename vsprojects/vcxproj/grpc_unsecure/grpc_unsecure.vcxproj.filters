@@ -40,6 +40,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -262,8 +265,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
-      <Filter>src\core\lib\security\util</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+      <Filter>src\core\lib\slice</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
@@ -663,6 +666,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -685,9 +691,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -741,6 +744,9 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
@@ -940,6 +946,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h">
+      <Filter>src\core\lib\slice</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
@@ -1354,12 +1363,6 @@
     </Filter>
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{681cdaeb-c47f-8853-d985-bf13c2873947}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\security">
-      <UniqueIdentifier>{02c849c5-66eb-e42f-c9f7-2cf7cc9db06a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\security\util">
-      <UniqueIdentifier>{c22aef1f-8b7b-6b5c-9e22-321b11f6352d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\slice">
       <UniqueIdentifier>{74c81ab7-e329-a362-3890-4c41b90f0511}</UniqueIdentifier>
