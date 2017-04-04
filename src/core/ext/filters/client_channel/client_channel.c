@@ -1154,14 +1154,17 @@ static void start_transport_stream_op_batch_locked_inner(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
+      gpr_atm_rel_store(&calld->subchannel_call,
+                        (gpr_atm)(uintptr_t)subchannel_call);
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+    } else {
+      gpr_atm_rel_store(&calld->subchannel_call,
+                        (gpr_atm)(uintptr_t)subchannel_call);
+      retry_waiting_locked(exec_ctx, calld);
+      /* recurse to retry */
+      start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
     }
-    gpr_atm_rel_store(&calld->subchannel_call,
-                      (gpr_atm)(uintptr_t)subchannel_call);
-    retry_waiting_locked(exec_ctx, calld);
-    /* recurse to retry */
-    start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
     /* early out */
     return;
   }
