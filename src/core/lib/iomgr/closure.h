@@ -99,6 +99,10 @@ struct grpc_closure {
     grpc_error *error;
     uintptr_t scratch;
   } error_data;
+
+#ifndef NDEBUG
+  bool scheduled;
+#endif
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
