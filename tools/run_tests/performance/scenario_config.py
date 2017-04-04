@@ -112,6 +112,7 @@ def _ping_pong_scenario(name, rpc_type,
                         channels=None,
                         outstanding=None,
                         resource_quota_size=None,
+                        messages_per_stream=None,
                         excluded_poll_engines=[]):
   """Creates a basic ping pong scenario."""
   scenario = {
@@ -165,6 +166,8 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
 
+  if messages_per_stream:
+    scenario['client_config']['messages_per_stream'] = messages_per_stream
   if client_language:
     # the CLIENT_LANGUAGE field is recognized by run_performance_tests.py
     scenario['CLIENT_LANGUAGE'] = client_language
@@ -213,6 +216,26 @@ class CXXLanguage:
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
           categories=smoketest_categories+[SCALABLE])
+
+      for mps in geometric_progression(1, 20, 10):
+        yield _ping_pong_scenario(
+            'cpp_generic_async_streaming_qps_unconstrained_%smps_%s' % (mps, secstr),
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            unconstrained_client='async', use_generic_payload=True,
+            secure=secure, messages_per_stream=mps,
+            categories=smoketest_categories+[SCALABLE])
+
+      for mps in geometric_progression(1, 200, math.sqrt(10)):
+        yield _ping_pong_scenario(
+            'cpp_generic_async_streaming_qps_unconstrained_%smps_%s' % (mps, secstr),
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            unconstrained_client='async', use_generic_payload=True,
+            secure=secure, messages_per_stream=mps,
+            categories=[SWEEP])
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_1channel_1MBmsg_%s' % secstr,
@@ -330,6 +353,27 @@ class CXXLanguage:
           #     secure=secure,
           #     categories=smoketest_categories+[SCALABLE],
           #     resource_quota_size=500*1024)
+
+          if rpc_type == 'streaming':
+            for mps in geometric_progression(1, 20, 10):
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_%s_qps_unconstrained_%smps_%s' % (synchronicity, rpc_type, mps, secstr),
+                  rpc_type=rpc_type.upper(),
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  unconstrained_client=synchronicity,
+                  secure=secure, messages_per_stream=mps,
+                  categories=smoketest_categories+[SCALABLE])
+
+            for mps in geometric_progression(1, 200, math.sqrt(10)):
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_%s_qps_unconstrained_%smps_%s' % (synchronicity, rpc_type, mps, secstr),
+                  rpc_type=rpc_type.upper(),
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  unconstrained_client=synchronicity,
+                  secure=secure, messages_per_stream=mps,
+                  categories=[SWEEP])
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):

@@ -134,7 +134,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 
 // Inject our own on_complete callback into op.
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
-                                  grpc_transport_stream_op* op) {
+                                  grpc_transport_stream_op_batch* op) {
   deadline_state->next_on_complete = op->on_complete;
   grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state,
                     grpc_schedule_on_exec_ctx);
@@ -196,16 +196,16 @@ void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   start_timer_if_needed(exec_ctx, elem, new_deadline);
 }
 
-void grpc_deadline_state_client_start_transport_stream_op(
+void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op* op) {
+    grpc_transport_stream_op_batch* op) {
   grpc_deadline_state* deadline_state = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE) {
+  if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, deadline_state);
   } else {
     // Make sure we know when the call is complete, so that we can cancel
     // the timer.
-    if (op->recv_trailing_metadata != NULL) {
+    if (op->recv_trailing_metadata) {
       inject_on_complete_cb(deadline_state, op);
     }
   }
@@ -261,10 +261,11 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 }
 
 // Method for starting a call op for client filter.
-static void client_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
-                                             grpc_call_element* elem,
-                                             grpc_transport_stream_op* op) {
-  grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
+static void client_start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
+  grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem,
+                                                             op);
   // Chain to next filter.
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -282,30 +283,33 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 // Method for starting a call op for server filter.
-static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
-                                             grpc_call_element* elem,
-                                             grpc_transport_stream_op* op) {
+static void server_start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   server_call_data* calld = elem->call_data;
-  if (op->cancel_error != GRPC_ERROR_NONE) {
+  if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);
   } else {
     // If we're receiving initial metadata, we need to get the deadline
     // from the recv_initial_metadata_ready callback.  So we inject our
     // own callback into that hook.
-    if (op->recv_initial_metadata_ready != NULL) {
-      calld->next_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
-      calld->recv_initial_metadata = op->recv_initial_metadata;
+    if (op->recv_initial_metadata) {
+      calld->next_recv_initial_metadata_ready =
+          op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+      calld->recv_initial_metadata =
+          op->payload->recv_initial_metadata.recv_initial_metadata;
       grpc_closure_init(&calld->recv_initial_metadata_ready,
                         recv_initial_metadata_ready, elem,
                         grpc_schedule_on_exec_ctx);
-      op->recv_initial_metadata_ready = &calld->recv_initial_metadata_ready;
+      op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+          &calld->recv_initial_metadata_ready;
     }
     // Make sure we know when the call is complete, so that we can cancel
     // the timer.
     // Note that we trigger this on recv_trailing_metadata, even though
     // the client never sends trailing metadata, because this is the
     // hook that tells us when the call is complete on the server side.
-    if (op->recv_trailing_metadata != NULL) {
+    if (op->recv_trailing_metadata) {
       inject_on_complete_cb(&calld->base.deadline_state, op);
     }
   }
@@ -314,7 +318,7 @@ static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
 }
 
 const grpc_channel_filter grpc_client_deadline_filter = {
-    client_start_transport_stream_op,
+    client_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(base_call_data),
     init_call_elem,
@@ -329,7 +333,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
 };
 
 const grpc_channel_filter grpc_server_deadline_filter = {
-    server_start_transport_stream_op,
+    server_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(server_call_data),
     init_call_elem,

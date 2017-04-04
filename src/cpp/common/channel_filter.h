@@ -140,63 +140,80 @@ class TransportOp {
   grpc_transport_op *op_;  // Not owned.
 };
 
-/// A C++ wrapper for the \c grpc_transport_stream_op struct.
-class TransportStreamOp {
+/// A C++ wrapper for the \c grpc_transport_stream_op_batch struct.
+class TransportStreamOpBatch {
  public:
   /// Borrows a pointer to \a op, but does NOT take ownership.
   /// The caller must ensure that \a op continues to exist for as
-  /// long as the TransportStreamOp object does.
-  explicit TransportStreamOp(grpc_transport_stream_op *op)
+  /// long as the TransportStreamOpBatch object does.
+  explicit TransportStreamOpBatch(grpc_transport_stream_op_batch *op)
       : op_(op),
-        send_initial_metadata_(op->send_initial_metadata),
-        send_trailing_metadata_(op->send_trailing_metadata),
-        recv_initial_metadata_(op->recv_initial_metadata),
-        recv_trailing_metadata_(op->recv_trailing_metadata) {}
+        send_initial_metadata_(
+            op->send_initial_metadata
+                ? op->payload->send_initial_metadata.send_initial_metadata
+                : nullptr),
+        send_trailing_metadata_(
+            op->send_trailing_metadata
+                ? op->payload->send_trailing_metadata.send_trailing_metadata
+                : nullptr),
+        recv_initial_metadata_(
+            op->recv_initial_metadata
+                ? op->payload->recv_initial_metadata.recv_initial_metadata
+                : nullptr),
+        recv_trailing_metadata_(
+            op->recv_trailing_metadata
+                ? op->payload->recv_trailing_metadata.recv_trailing_metadata
+                : nullptr) {}
 
-  grpc_transport_stream_op *op() const { return op_; }
+  grpc_transport_stream_op_batch *op() const { return op_; }
 
   grpc_closure *on_complete() const { return op_->on_complete; }
   void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
 
   MetadataBatch *send_initial_metadata() {
-    return op_->send_initial_metadata == nullptr ? nullptr
-                                                 : &send_initial_metadata_;
+    return op_->send_initial_metadata ? &send_initial_metadata_ : nullptr;
   }
   MetadataBatch *send_trailing_metadata() {
-    return op_->send_trailing_metadata == nullptr ? nullptr
-                                                  : &send_trailing_metadata_;
+    return op_->send_trailing_metadata ? &send_trailing_metadata_ : nullptr;
   }
   MetadataBatch *recv_initial_metadata() {
-    return op_->recv_initial_metadata == nullptr ? nullptr
-                                                 : &recv_initial_metadata_;
+    return op_->recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
   }
   MetadataBatch *recv_trailing_metadata() {
-    return op_->recv_trailing_metadata == nullptr ? nullptr
-                                                  : &recv_trailing_metadata_;
+    return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
   uint32_t *send_initial_metadata_flags() const {
-    return &op_->send_initial_metadata_flags;
+    return op_->send_initial_metadata
+               ? &op_->payload->send_initial_metadata
+                      .send_initial_metadata_flags
+               : nullptr;
   }
 
   grpc_closure *recv_initial_metadata_ready() const {
-    return op_->recv_initial_metadata_ready;
+    return op_->recv_initial_metadata
+               ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
+               : nullptr;
   }
   void set_recv_initial_metadata_ready(grpc_closure *closure) {
-    op_->recv_initial_metadata_ready = closure;
+    op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream *send_message() const { return op_->send_message; }
+  grpc_byte_stream *send_message() const {
+    return op_->send_message ? op_->payload->send_message.send_message
+                             : nullptr;
+  }
   void set_send_message(grpc_byte_stream *send_message) {
-    op_->send_message = send_message;
+    op_->send_message = true;
+    op_->payload->send_message.send_message = send_message;
   }
 
   census_context *get_census_context() const {
-    return (census_context *)op_->context[GRPC_CONTEXT_TRACING].value;
+    return (census_context *)op_->payload->context[GRPC_CONTEXT_TRACING].value;
   }
 
  private:
-  grpc_transport_stream_op *op_;  // Not owned.
+  grpc_transport_stream_op_batch *op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
   MetadataBatch recv_initial_metadata_;
@@ -240,9 +257,9 @@ class CallData {
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
   /// Starts a new stream operation.
-  virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      TransportStreamOp *op);
+  virtual void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                           grpc_call_element *elem,
+                                           TransportStreamOpBatch *op);
 
   /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
@@ -312,12 +329,12 @@ class ChannelFilter final {
     reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
   }
 
-  static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem,
-                                     grpc_transport_stream_op *op) {
+  static void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op) {
     CallDataType *call_data = (CallDataType *)elem->call_data;
-    TransportStreamOp op_wrapper(op);
-    call_data->StartTransportStreamOp(exec_ctx, elem, &op_wrapper);
+    TransportStreamOpBatch op_wrapper(op);
+    call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
   }
 
   static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
@@ -369,7 +386,7 @@ void RegisterChannelFilter(
       stack_type,
       priority,
       include_filter,
-      {FilterType::StartTransportStreamOp, FilterType::StartTransportOp,
+      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,
