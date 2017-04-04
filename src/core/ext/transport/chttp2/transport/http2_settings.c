@@ -61,9 +61,9 @@ bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
     uint32_t delta = (uint32_t)r[y];
     h += delta;
   }
-  *out = (grpc_chttp2_setting_id)i;
-  return i < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) &&
-         grpc_setting_id_to_wire_id[i] == wire_id;
+  *out = (grpc_chttp2_setting_id)h;
+  return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) &&
+         grpc_setting_id_to_wire_id[h] == wire_id;
 }
 const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS] = {
