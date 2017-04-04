@@ -204,7 +204,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
   internal_request *req = arg;
-
+  gpr_log(GPR_DEBUG, "on_connected");
   if (!req->ep) {
     next_address(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
@@ -236,6 +236,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   arg.value.pointer.p = req->resource_quota;
   arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {1, &arg};
+  gpr_log(GPR_DEBUG, "grpc_tcp_client_connect");
   grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
                           req->context->pollset_set, &args, addr,
                           req->deadline);
@@ -243,6 +244,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
+  gpr_log(GPR_DEBUG, "on_resolved");
   if (error != GRPC_ERROR_NONE) {
     finish(exec_ctx, req, error);
     return;

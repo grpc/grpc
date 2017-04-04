@@ -37,6 +37,9 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -169,6 +172,25 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_lb_addresses *addresses = grpc_lb_addresses_create(
         r->addresses->naddrs, NULL /* user_data_vtable */);
     for (size_t i = 0; i < r->addresses->naddrs; ++i) {
+      struct sockaddr_in *addr =
+          (struct sockaddr_in *)&r->addresses->addrs[i].addr;
+      if (addr->sin_family == AF_INET) {
+        char output[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
+        gpr_log(GPR_DEBUG,
+                "native resolver gets a AF_INET result: \n"
+                "  addr: %s\n",
+                output);
+      } else {
+        struct sockaddr_in6 *addr6 =
+            (struct sockaddr_in6 *)&r->addresses->addrs[i].addr;
+        char output[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &addr6->sin6_addr, output, INET6_ADDRSTRLEN);
+        gpr_log(GPR_DEBUG,
+                "native resolver gets a AF_INET6 result: \n"
+                "  addr: %s\n, sin6_scope_id: %d\n",
+                output, addr6->sin6_scope_id);
+      }
       grpc_lb_addresses_set_address(
           addresses, i, &r->addresses->addrs[i].addr,
           r->addresses->addrs[i].len, false /* is_balancer */,
