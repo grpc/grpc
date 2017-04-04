@@ -90,9 +90,14 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
-    uint32_t stream_id = static_cast<uint32_t>(state.iterations());
-    grpc_chttp2_encode_header(&exec_ctx, &c, stream_id, &b, state.range(0),
-                              state.range(1), &stats, &outbuf);
+    grpc_encode_header_options hopt = {
+        static_cast<uint32_t>(state.iterations()),
+        state.range(0) != 0,
+        false,
+        (size_t)state.range(1),
+        &stats,
+    };
+    grpc_chttp2_encode_header(&exec_ctx, &c, &b, &hopt, &outbuf);
     if (!logged_representative_output) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
