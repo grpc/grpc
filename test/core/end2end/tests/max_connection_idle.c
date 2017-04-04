@@ -89,8 +89,8 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   /* wait for the channel to reach its maximum idle time */
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
-      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 500), f.cq,
-      tag(99));
+      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000),
+      f.cq, tag(99));
   CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);

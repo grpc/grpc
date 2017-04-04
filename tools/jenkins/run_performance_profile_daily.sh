@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,17 +30,16 @@
 
 set -ex
 
-if [ "$CONFIG" != "gcov" ] ; then exit ; fi
+cd $(dirname $0)/../..
 
-root=$(readlink -f $(dirname $0)/../../..)
-out=$root/reports/php_ext_coverage
-tmp1=$(mktemp)
-tmp2=$(mktemp)
-cd $root
-lcov --capture --directory . --output-file $tmp1
-lcov --extract $tmp1 "$root/src/php/ext/grpc/*" --output-file $tmp2
-genhtml $tmp2 --output-directory $out
-rm $tmp2
-rm $tmp1
+# try to use pypy for generating reports
+# each trace dumps 7-8gig of text to disk, and processing this into a report is
+# heavyweight - so any speed boost is worthwhile
+# TODO(ctiller): consider rewriting report generation in C++ for performance
+if which pypy >/dev/null; then
+  PYTHON=pypy
+else
+  PYTHON=python2.7
+fi
 
-# todo(mattkwong): generate coverage report for php and copy to reports/php
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency
