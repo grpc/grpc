@@ -156,7 +156,6 @@ filegroups:
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/port_platform.h
-  - include/grpc/impl/codegen/slice.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
@@ -252,6 +251,7 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
@@ -263,6 +263,7 @@ filegroups:
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
@@ -368,6 +369,7 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/slice/b64.c
   - src/core/lib/slice/percent_encoding.c
   - src/core/lib/slice/slice.c
   - src/core/lib/slice/slice_buffer.c
@@ -386,6 +388,7 @@ filegroups:
   - src/core/lib/surface/channel_ping.c
   - src/core/lib/surface/channel_stack_type.c
   - src/core/lib/surface/completion_queue.c
+  - src/core/lib/surface/completion_queue_factory.c
   - src/core/lib/surface/event_string.c
   - src/core/lib/surface/lame_client.c
   - src/core/lib/surface/metadata_array.c
@@ -411,45 +414,45 @@ filegroups:
   - grpc_codegen
 - name: grpc_client_channel
   headers:
-  - src/core/ext/client_channel/client_channel.h
-  - src/core/ext/client_channel/client_channel_factory.h
-  - src/core/ext/client_channel/connector.h
-  - src/core/ext/client_channel/http_connect_handshaker.h
-  - src/core/ext/client_channel/http_proxy.h
-  - src/core/ext/client_channel/lb_policy.h
-  - src/core/ext/client_channel/lb_policy_factory.h
-  - src/core/ext/client_channel/lb_policy_registry.h
-  - src/core/ext/client_channel/parse_address.h
-  - src/core/ext/client_channel/proxy_mapper.h
-  - src/core/ext/client_channel/proxy_mapper_registry.h
-  - src/core/ext/client_channel/resolver.h
-  - src/core/ext/client_channel/resolver_factory.h
-  - src/core/ext/client_channel/resolver_registry.h
-  - src/core/ext/client_channel/retry_throttle.h
-  - src/core/ext/client_channel/subchannel.h
-  - src/core/ext/client_channel/subchannel_index.h
-  - src/core/ext/client_channel/uri_parser.h
+  - src/core/ext/filters/client_channel/client_channel.h
+  - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/connector.h
+  - src/core/ext/filters/client_channel/http_connect_handshaker.h
+  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy_factory.h
+  - src/core/ext/filters/client_channel/lb_policy_registry.h
+  - src/core/ext/filters/client_channel/parse_address.h
+  - src/core/ext/filters/client_channel/proxy_mapper.h
+  - src/core/ext/filters/client_channel/proxy_mapper_registry.h
+  - src/core/ext/filters/client_channel/resolver.h
+  - src/core/ext/filters/client_channel/resolver_factory.h
+  - src/core/ext/filters/client_channel/resolver_registry.h
+  - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/subchannel.h
+  - src/core/ext/filters/client_channel/subchannel_index.h
+  - src/core/ext/filters/client_channel/uri_parser.h
   src:
-  - src/core/ext/client_channel/channel_connectivity.c
-  - src/core/ext/client_channel/client_channel.c
-  - src/core/ext/client_channel/client_channel_factory.c
-  - src/core/ext/client_channel/client_channel_plugin.c
-  - src/core/ext/client_channel/connector.c
-  - src/core/ext/client_channel/http_connect_handshaker.c
-  - src/core/ext/client_channel/http_proxy.c
-  - src/core/ext/client_channel/lb_policy.c
-  - src/core/ext/client_channel/lb_policy_factory.c
-  - src/core/ext/client_channel/lb_policy_registry.c
-  - src/core/ext/client_channel/parse_address.c
-  - src/core/ext/client_channel/proxy_mapper.c
-  - src/core/ext/client_channel/proxy_mapper_registry.c
-  - src/core/ext/client_channel/resolver.c
-  - src/core/ext/client_channel/resolver_factory.c
-  - src/core/ext/client_channel/resolver_registry.c
-  - src/core/ext/client_channel/retry_throttle.c
-  - src/core/ext/client_channel/subchannel.c
-  - src/core/ext/client_channel/subchannel_index.c
-  - src/core/ext/client_channel/uri_parser.c
+  - src/core/ext/filters/client_channel/channel_connectivity.c
+  - src/core/ext/filters/client_channel/client_channel.c
+  - src/core/ext/filters/client_channel/client_channel_factory.c
+  - src/core/ext/filters/client_channel/client_channel_plugin.c
+  - src/core/ext/filters/client_channel/connector.c
+  - src/core/ext/filters/client_channel/http_connect_handshaker.c
+  - src/core/ext/filters/client_channel/http_proxy.c
+  - src/core/ext/filters/client_channel/lb_policy.c
+  - src/core/ext/filters/client_channel/lb_policy_factory.c
+  - src/core/ext/filters/client_channel/lb_policy_registry.c
+  - src/core/ext/filters/client_channel/parse_address.c
+  - src/core/ext/filters/client_channel/proxy_mapper.c
+  - src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  - src/core/ext/filters/client_channel/resolver.c
+  - src/core/ext/filters/client_channel/resolver_factory.c
+  - src/core/ext/filters/client_channel/resolver_registry.c
+  - src/core/ext/filters/client_channel/retry_throttle.c
+  - src/core/ext/filters/client_channel/subchannel.c
+  - src/core/ext/filters/client_channel/subchannel_index.c
+  - src/core/ext/filters/client_channel/uri_parser.c
   plugin: grpc_client_channel
   uses:
   - grpc_base
@@ -461,20 +464,21 @@ filegroups:
   - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
-  - src/core/ext/lb_policy/grpclb/grpclb.h
-  - src/core/ext/lb_policy/grpclb/grpclb_channel.h
-  - src/core/ext/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
-  - src/core/ext/lb_policy/grpclb/grpclb.c
-  - src/core/ext/lb_policy/grpclb/grpclb_channel.c
-  - src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
@@ -482,54 +486,75 @@ filegroups:
   - nanopb
 - name: grpc_lb_policy_grpclb_secure
   headers:
-  - src/core/ext/lb_policy/grpclb/grpclb.h
-  - src/core/ext/lb_policy/grpclb/grpclb_channel.h
-  - src/core/ext/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
-  - src/core/ext/lb_policy/grpclb/grpclb.c
-  - src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c
-  - src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
+  - grpc_secure
   - grpc_client_channel
   - nanopb
 - name: grpc_lb_policy_pick_first
   src:
-  - src/core/ext/lb_policy/pick_first/pick_first.c
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
   plugin: grpc_lb_policy_pick_first
   uses:
   - grpc_base
   - grpc_client_channel
 - name: grpc_lb_policy_round_robin
   src:
-  - src/core/ext/lb_policy/round_robin/round_robin.c
+  - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   plugin: grpc_lb_policy_round_robin
   uses:
   - grpc_base
   - grpc_client_channel
 - name: grpc_load_reporting
   headers:
-  - src/core/ext/load_reporting/load_reporting.h
-  - src/core/ext/load_reporting/load_reporting_filter.h
+  - src/core/ext/filters/load_reporting/load_reporting.h
+  - src/core/ext/filters/load_reporting/load_reporting_filter.h
   src:
-  - src/core/ext/load_reporting/load_reporting.c
-  - src/core/ext/load_reporting/load_reporting_filter.c
+  - src/core/ext/filters/load_reporting/load_reporting.c
+  - src/core/ext/filters/load_reporting/load_reporting_filter.c
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base
+- name: grpc_max_age_filter
+  headers:
+  - src/core/ext/filters/max_age/max_age_filter.h
+  src:
+  - src/core/ext/filters/max_age/max_age_filter.c
+  plugin: grpc_max_age_filter
+  uses:
+  - grpc_base
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_dns_native
   src:
-  - src/core/ext/resolver/dns/native/dns_resolver.c
+  - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
   plugin: grpc_resolver_dns_native
   uses:
   - grpc_base
   - grpc_client_channel
 - name: grpc_resolver_sockaddr
   src:
-  - src/core/ext/resolver/sockaddr/sockaddr_resolver.c
+  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
   plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
@@ -556,7 +581,6 @@ filegroups:
   - src/core/lib/security/transport/security_connector.h
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
-  - src/core/lib/security/util/b64.h
   - src/core/lib/security/util/json_util.h
   src:
   - src/core/lib/http/httpcli_security_connector.c
@@ -581,7 +605,6 @@ filegroups:
   - src/core/lib/security/transport/security_handshaker.c
   - src/core/lib/security/transport/server_auth_filter.c
   - src/core/lib/security/transport/tsi_error.c
-  - src/core/lib/security/util/b64.c
   - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
   secure: true
@@ -686,6 +709,7 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
+  - grpc_client_channel
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -755,15 +779,15 @@ filegroups:
   - third_party/nanopb/pb_encode.c
 - name: tsi
   headers:
-  - src/core/lib/tsi/fake_transport_security.h
-  - src/core/lib/tsi/ssl_transport_security.h
-  - src/core/lib/tsi/ssl_types.h
-  - src/core/lib/tsi/transport_security.h
-  - src/core/lib/tsi/transport_security_interface.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_interface.h
   src:
-  - src/core/lib/tsi/fake_transport_security.c
-  - src/core/lib/tsi/ssl_transport_security.c
-  - src/core/lib/tsi/transport_security.c
+  - src/core/tsi/fake_transport_security.c
+  - src/core/tsi/ssl_transport_security.c
+  - src/core/tsi/transport_security.c
   deps:
   - gpr
   secure: true
@@ -859,6 +883,8 @@ filegroups:
   - src/cpp/util/time_cc.cc
   uses:
   - grpc++_codegen_base
+  - grpc_base
+  - nanopb
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -964,11 +990,13 @@ libs:
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
   - grpc_secure
   - census
+  - grpc_max_age_filter
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1057,6 +1085,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1064,6 +1093,7 @@ libs:
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - census
+  - grpc_max_age_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -1238,6 +1268,7 @@ libs:
   - grpc++
   - grpc_test_util
   - grpc
+  defaults: benchmark
 - name: grpc_cli_libs
   build: private
   language: c++
@@ -1276,11 +1307,15 @@ libs:
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/php_generator.h
   - src/compiler/php_generator_helpers.h
+  - src/compiler/protobuf_plugin.h
   - src/compiler/python_generator.h
+  - src/compiler/python_generator_helpers.h
+  - src/compiler/python_private_generator.h
   - src/compiler/ruby_generator.h
   - src/compiler/ruby_generator_helpers-inl.h
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
+  - src/compiler/schema_interface.h
   src:
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
@@ -1386,6 +1421,7 @@ libs:
   build: private
   language: c++
   headers:
+  - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
@@ -1396,13 +1432,13 @@ libs:
   - test/cpp/qps/server.h
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
-  - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/services.proto
+  - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
@@ -1412,7 +1448,6 @@ libs:
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
-  - test/cpp/util/benchmark_config.cc
   deps:
   - grpc_test_util
   - grpc++_test_util
@@ -2019,7 +2054,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/b64_test.c
+  - test/core/slice/b64_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3072,6 +3107,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3092,6 +3128,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3112,6 +3149,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3132,6 +3170,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3152,6 +3191,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3172,6 +3212,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3192,6 +3233,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3212,6 +3254,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3236,6 +3279,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3260,6 +3304,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3284,6 +3329,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3308,6 +3354,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3328,6 +3375,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  defaults: benchmark
   platforms:
   - mac
   - linux
@@ -3811,6 +3859,7 @@ targets:
   - test/cpp/microbenchmarks/noop-benchmark.cc
   deps:
   - benchmark
+  defaults: benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -4119,7 +4168,6 @@ targets:
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
-  - test/cpp/util/create_test_channel.cc
   - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
@@ -4256,6 +4304,9 @@ configs:
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
+  lto:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -4308,6 +4359,11 @@ configs:
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
+  ares:
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
+      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4398,11 +4454,13 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z

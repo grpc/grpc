@@ -62,7 +62,7 @@ typedef struct call_data {
   /** If true, contents of \a compression_algorithm are authoritative */
   int has_compression_algorithm;
 
-  grpc_transport_stream_op *send_op;
+  grpc_transport_stream_op_batch *send_op;
   uint32_t send_length;
   uint32_t send_flags;
   grpc_slice incoming_slice;
@@ -210,7 +210,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
-  calld->send_op->send_message = &calld->replacement_stream.base;
+  calld->send_op->payload->send_message.send_message =
+      &calld->replacement_stream.base;
   calld->post_send = calld->send_op->on_complete;
   calld->send_op->on_complete = &calld->send_done;
 
@@ -237,9 +238,9 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  while (grpc_byte_stream_next(exec_ctx, calld->send_op->send_message,
+  while (grpc_byte_stream_next(exec_ctx, calld->send_op->payload->send_message.send_message,
                                ~(size_t)0, &calld->got_slice)) {
-    grpc_byte_stream_pull(exec_ctx, calld->send_op->send_message,
+    grpc_byte_stream_pull(exec_ctx, calld->send_op->payload->send_message.send_message,
                           &calld->incoming_slice);
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
@@ -249,33 +250,34 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
-                                               grpc_call_element *elem,
-                                               grpc_transport_stream_op *op) {
+static void compress_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
-  GPR_TIMER_BEGIN("compress_start_transport_stream_op", 0);
+  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
 
   if (op->send_initial_metadata) {
     grpc_error *error = process_send_initial_metadata(
-        exec_ctx, elem, op->send_initial_metadata);
+        exec_ctx, elem,
+        op->payload->send_initial_metadata.send_initial_metadata);
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
       return;
     }
   }
-  if (op->send_message != NULL &&
-      !skip_compression(elem, op->send_message->flags)) {
+  if (op->send_message &&
+      !skip_compression(elem, op->payload->send_message.send_message->flags)) {
     calld->send_op = op;
-    calld->send_length = op->send_message->length;
-    calld->send_flags = op->send_message->flags;
+    calld->send_length = op->payload->send_message.send_message->length;
+    calld->send_flags = op->payload->send_message.send_message->flags;
     continue_send_message(exec_ctx, elem);
   } else {
     /* pass control down the stack */
     grpc_call_next_op(exec_ctx, elem, op);
   }
 
-  GPR_TIMER_END("compress_start_transport_stream_op", 0);
+  GPR_TIMER_END("compress_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
@@ -344,7 +346,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_compress_filter = {
-    compress_start_transport_stream_op,
+    compress_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

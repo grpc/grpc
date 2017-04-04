@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -56,14 +57,13 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
-  grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_metadata_batch *recv_trailing_metadata;
   uint8_t *payload_bytes;
 
   /* Vars to read data off of send_message */
-  grpc_transport_stream_op send_op;
+  grpc_transport_stream_op_batch *send_op;
   uint32_t send_length;
   uint32_t send_flags;
   grpc_slice incoming_slice;
@@ -219,9 +219,9 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   uint8_t *wrptr = calld->payload_bytes;
-  while (grpc_byte_stream_next(exec_ctx, calld->send_op.send_message,
+  while (grpc_byte_stream_next(exec_ctx, calld->send_op->payload->send_message.send_message,
                                ~(size_t)0, &calld->got_slice)) {
-    grpc_byte_stream_pull(exec_ctx, calld->send_op.send_message,
+    grpc_byte_stream_pull(exec_ctx, calld->send_op->payload->send_message.send_message,
                           &calld->incoming_slice);
     memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
            GRPC_SLICE_LENGTH(calld->incoming_slice));
@@ -249,10 +249,11 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
     /* Pass down the original send_message op that was blocked.*/
     grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                   calld->send_flags);
-    calld->send_op.send_message = &calld->replacement_stream.base;
-    calld->post_send = calld->send_op.on_complete;
-    calld->send_op.on_complete = &calld->send_done;
-    grpc_call_next_op(exec_ctx, elem, &calld->send_op);
+    calld->send_op->payload->send_message.send_message =
+        &calld->replacement_stream.base;
+    calld->post_send = calld->send_op->on_complete;
+    calld->send_op->on_complete = &calld->send_done;
+    grpc_call_next_op(exec_ctx, elem, calld->send_op);
   } else {
     continue_send_message(exec_ctx, elem);
   }
@@ -260,29 +261,30 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 
 static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_transport_stream_op *op) {
+                                grpc_transport_stream_op_batch *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   grpc_error *error;
 
-  if (op->send_initial_metadata != NULL) {
+  if (op->send_initial_metadata) {
     /* Decide which HTTP VERB to use. We use GET if the request is marked
     cacheable, and the operation contains both initial metadata and send
     message, and the payload is below the size threshold, and all the data
     for this request is immediately available. */
     grpc_mdelem method = GRPC_MDELEM_METHOD_POST;
-    if ((op->send_initial_metadata_flags &
+    if (op->send_message &&
+        (op->payload->send_initial_metadata.send_initial_metadata_flags &
          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
-        op->send_message != NULL &&
-        op->send_message->length < channeld->max_payload_size_for_get) {
+        op->payload->send_message.send_message->length <
+            channeld->max_payload_size_for_get) {
       method = GRPC_MDELEM_METHOD_GET;
       /* The following write to calld->send_message_blocked isn't racy with
       reads in hc_start_transport_op (which deals with SEND_MESSAGE ops) because
       being here means ops->send_message is not NULL, which is primarily
       guarding the read there. */
       calld->send_message_blocked = true;
-    } else if (op->send_initial_metadata_flags &
+    } else if (op->payload->send_initial_metadata.send_initial_metadata_flags &
                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
       method = GRPC_MDELEM_METHOD_PUT;
     }
@@ -290,28 +292,71 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
     /* Attempt to read the data from send_message and create a header field. */
     if (grpc_mdelem_eq(method, GRPC_MDELEM_METHOD_GET)) {
       /* allocate memory to hold the entire payload */
-      calld->payload_bytes = gpr_malloc(op->send_message->length);
+      calld->payload_bytes =
+          gpr_malloc(op->payload->send_message.send_message->length);
 
       /* read slices of send_message and copy into payload_bytes */
-      calld->send_op = *op;
-      calld->send_length = op->send_message->length;
-      calld->send_flags = op->send_message->flags;
+      calld->send_op = op;
+      calld->send_length = op->payload->send_message.send_message->length;
+      calld->send_flags = op->payload->send_message.send_message->flags;
       continue_send_message(exec_ctx, elem);
 
       if (calld->send_message_blocked == false) {
-        /* when all the send_message data is available, then create a MDELEM and
-        append to headers */
-        grpc_mdelem payload_bin = grpc_mdelem_from_slices(
-            exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
-                                          op->send_message->length));
-        error =
-            grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
-                                         &calld->payload_bin, payload_bin);
+        /* when all the send_message data is available, then modify the path
+         * MDELEM by appending base64 encoded query to the path */
+        const int k_url_safe = 1;
+        const int k_multi_line = 0;
+        const unsigned char k_query_separator = '?';
+
+        grpc_slice path_slice =
+            GRPC_MDVALUE(op->payload->send_initial_metadata
+                             .send_initial_metadata->idx.named.path->md);
+        /* sum up individual component's lengths and allocate enough memory to
+         * hold combined path+query */
+        size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
+        estimated_len++; /* for the '?' */
+        estimated_len += grpc_base64_estimate_encoded_size(
+            op->payload->send_message.send_message->length, k_url_safe,
+            k_multi_line);
+        estimated_len += 1; /* for the trailing 0 */
+        grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
+
+        /* memcopy individual pieces into this slice */
+        uint8_t *write_ptr =
+            (uint8_t *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        uint8_t *original_path = (uint8_t *)GRPC_SLICE_START_PTR(path_slice);
+        memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
+        write_ptr += GRPC_SLICE_LENGTH(path_slice);
+
+        *write_ptr = k_query_separator;
+        write_ptr++; /* for the '?' */
+
+        grpc_base64_encode_core((char *)write_ptr, calld->payload_bytes,
+                                op->payload->send_message.send_message->length,
+                                k_url_safe, k_multi_line);
+
+        /* remove trailing unused memory and add trailing 0 to terminate string
+         */
+        char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
+        /* safe to use strlen since base64_encode will always add '\0' */
+        size_t path_length = strlen(t) + 1;
+        *(t + path_length) = '\0';
+        path_with_query_slice =
+            grpc_slice_sub(path_with_query_slice, 0, path_length);
+
+        /* substitute previous path with the new path+query */
+        grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH, path_with_query_slice);
+        grpc_metadata_batch *b =
+            op->payload->send_initial_metadata.send_initial_metadata;
+        error = grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                               mdelem_path_and_query);
         if (error != GRPC_ERROR_NONE) return error;
+
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
-        op->send_message = NULL;
+        op->send_message = false;
+        grpc_slice_unref_internal(exec_ctx, path_with_query_slice);
       } else {
         /* Not all data is available. Fall back to POST. */
         gpr_log(GPR_DEBUG,
@@ -321,47 +366,60 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
       }
     }
 
-    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_METHOD);
-    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_SCHEME);
-    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_TE);
-    remove_if_present(exec_ctx, op->send_initial_metadata,
+    remove_if_present(exec_ctx,
+                      op->payload->send_initial_metadata.send_initial_metadata,
+                      GRPC_BATCH_METHOD);
+    remove_if_present(exec_ctx,
+                      op->payload->send_initial_metadata.send_initial_metadata,
+                      GRPC_BATCH_SCHEME);
+    remove_if_present(exec_ctx,
+                      op->payload->send_initial_metadata.send_initial_metadata,
+                      GRPC_BATCH_TE);
+    remove_if_present(exec_ctx,
+                      op->payload->send_initial_metadata.send_initial_metadata,
                       GRPC_BATCH_CONTENT_TYPE);
-    remove_if_present(exec_ctx, op->send_initial_metadata,
+    remove_if_present(exec_ctx,
+                      op->payload->send_initial_metadata.send_initial_metadata,
                       GRPC_BATCH_USER_AGENT);
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    error = grpc_metadata_batch_add_head(exec_ctx, op->send_initial_metadata,
-                                         &calld->method, method);
+    error = grpc_metadata_batch_add_head(
+        exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
+        &calld->method, method);
     if (error != GRPC_ERROR_NONE) return error;
-    error =
-        grpc_metadata_batch_add_head(exec_ctx, op->send_initial_metadata,
-                                     &calld->scheme, channeld->static_scheme);
-    if (error != GRPC_ERROR_NONE) return error;
-    error = grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
-                                         &calld->te_trailers,
-                                         GRPC_MDELEM_TE_TRAILERS);
+    error = grpc_metadata_batch_add_head(
+        exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
+        &calld->scheme, channeld->static_scheme);
     if (error != GRPC_ERROR_NONE) return error;
     error = grpc_metadata_batch_add_tail(
-        exec_ctx, op->send_initial_metadata, &calld->content_type,
-        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+        exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
+        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
     if (error != GRPC_ERROR_NONE) return error;
-    error = grpc_metadata_batch_add_tail(exec_ctx, op->send_initial_metadata,
-                                         &calld->user_agent,
-                                         GRPC_MDELEM_REF(channeld->user_agent));
+    error = grpc_metadata_batch_add_tail(
+        exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
+        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(
+        exec_ctx, op->payload->send_initial_metadata.send_initial_metadata,
+        &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
     if (error != GRPC_ERROR_NONE) return error;
   }
 
-  if (op->recv_initial_metadata != NULL) {
+  if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
-    calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->hc_on_recv_initial_metadata;
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->on_done_recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->hc_on_recv_initial_metadata;
   }
 
-  if (op->recv_trailing_metadata != NULL) {
+  if (op->recv_trailing_metadata) {
     /* substitute our callback for the higher callback */
-    calld->recv_trailing_metadata = op->recv_trailing_metadata;
+    calld->recv_trailing_metadata =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata;
     calld->on_done_recv_trailing_metadata = op->on_complete;
     op->on_complete = &calld->hc_on_recv_trailing_metadata;
   }
@@ -371,17 +429,17 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_transport_stream_op *op) {
+                                  grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
   } else {
     call_data *calld = elem->call_data;
-    if (op->send_message != NULL && calld->send_message_blocked) {
+    if (op->send_message && calld->send_message_blocked) {
       /* Don't forward the op. send_message contains slices that aren't ready
-      yet. The call will be forwarded by the op_complete of slice read call.
+         yet. The call will be forwarded by the op_complete of slice read call.
       */
     } else {
       grpc_call_next_op(exec_ctx, elem, op);

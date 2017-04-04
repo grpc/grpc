@@ -58,6 +58,9 @@
     'conditions': [
       ['grpc_uv=="true"', {
         'defines': [
+          'GRPC_ARES=0',
+          # Disabling this while bugs are ironed out. Uncomment this to
+          # re-enable libuv integration in C core.
           'GRPC_UV'
         ]
       }],
@@ -103,7 +106,8 @@
       }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/zlib"
+          "third_party/zlib",
+          "third_party/cares/cares"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',
@@ -126,7 +130,8 @@
           'config': '<!(echo $CONFIG)',
         },
         'include_dirs': [
-          '<(node_root_dir)/deps/zlib'
+          '<(node_root_dir)/deps/zlib',
+          '<(node_root_dir)/deps/cares/include',
         ],
         'conditions': [
           ['config=="gcov"', {
@@ -527,6 +532,7 @@
     }]
   ],
   'targets': [
+
     {
       'cflags': [
         '-std=c99',
@@ -605,6 +611,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -693,6 +700,7 @@
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
         'src/core/lib/json/json_writer.c',
+        'src/core/lib/slice/b64.c',
         'src/core/lib/slice/percent_encoding.c',
         'src/core/lib/slice/slice.c',
         'src/core/lib/slice/slice_buffer.c',
@@ -711,6 +719,7 @@
         'src/core/lib/surface/channel_ping.c',
         'src/core/lib/surface/channel_stack_type.c',
         'src/core/lib/surface/completion_queue.c',
+        'src/core/lib/surface/completion_queue_factory.c',
         'src/core/lib/surface/event_string.c',
         'src/core/lib/surface/lame_client.c',
         'src/core/lib/surface/metadata_array.c',
@@ -774,52 +783,54 @@
         'src/core/lib/security/transport/security_handshaker.c',
         'src/core/lib/security/transport/server_auth_filter.c',
         'src/core/lib/security/transport/tsi_error.c',
-        'src/core/lib/security/util/b64.c',
         'src/core/lib/security/util/json_util.c',
         'src/core/lib/surface/init_secure.c',
-        'src/core/lib/tsi/fake_transport_security.c',
-        'src/core/lib/tsi/ssl_transport_security.c',
-        'src/core/lib/tsi/transport_security.c',
+        'src/core/tsi/fake_transport_security.c',
+        'src/core/tsi/ssl_transport_security.c',
+        'src/core/tsi/transport_security.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
-        'src/core/ext/client_channel/channel_connectivity.c',
-        'src/core/ext/client_channel/client_channel.c',
-        'src/core/ext/client_channel/client_channel_factory.c',
-        'src/core/ext/client_channel/client_channel_plugin.c',
-        'src/core/ext/client_channel/connector.c',
-        'src/core/ext/client_channel/http_connect_handshaker.c',
-        'src/core/ext/client_channel/http_proxy.c',
-        'src/core/ext/client_channel/lb_policy.c',
-        'src/core/ext/client_channel/lb_policy_factory.c',
-        'src/core/ext/client_channel/lb_policy_registry.c',
-        'src/core/ext/client_channel/parse_address.c',
-        'src/core/ext/client_channel/proxy_mapper.c',
-        'src/core/ext/client_channel/proxy_mapper_registry.c',
-        'src/core/ext/client_channel/resolver.c',
-        'src/core/ext/client_channel/resolver_factory.c',
-        'src/core/ext/client_channel/resolver_registry.c',
-        'src/core/ext/client_channel/retry_throttle.c',
-        'src/core/ext/client_channel/subchannel.c',
-        'src/core/ext/client_channel/subchannel_index.c',
-        'src/core/ext/client_channel/uri_parser.c',
+        'src/core/ext/filters/client_channel/channel_connectivity.c',
+        'src/core/ext/filters/client_channel/client_channel.c',
+        'src/core/ext/filters/client_channel/client_channel_factory.c',
+        'src/core/ext/filters/client_channel/client_channel_plugin.c',
+        'src/core/ext/filters/client_channel/connector.c',
+        'src/core/ext/filters/client_channel/http_connect_handshaker.c',
+        'src/core/ext/filters/client_channel/http_proxy.c',
+        'src/core/ext/filters/client_channel/lb_policy.c',
+        'src/core/ext/filters/client_channel/lb_policy_factory.c',
+        'src/core/ext/filters/client_channel/lb_policy_registry.c',
+        'src/core/ext/filters/client_channel/parse_address.c',
+        'src/core/ext/filters/client_channel/proxy_mapper.c',
+        'src/core/ext/filters/client_channel/proxy_mapper_registry.c',
+        'src/core/ext/filters/client_channel/resolver.c',
+        'src/core/ext/filters/client_channel/resolver_factory.c',
+        'src/core/ext/filters/client_channel/resolver_registry.c',
+        'src/core/ext/filters/client_channel/retry_throttle.c',
+        'src/core/ext/filters/client_channel/subchannel.c',
+        'src/core/ext/filters/client_channel/subchannel_index.c',
+        'src/core/ext/filters/client_channel/uri_parser.c',
         'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
-        'src/core/ext/lb_policy/grpclb/grpclb.c',
-        'src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c',
-        'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-        'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
-        'src/core/ext/lb_policy/pick_first/pick_first.c',
-        'src/core/ext/lb_policy/round_robin/round_robin.c',
-        'src/core/ext/resolver/dns/native/dns_resolver.c',
-        'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
-        'src/core/ext/load_reporting/load_reporting.c',
-        'src/core/ext/load_reporting/load_reporting_filter.c',
+        'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
+        'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
+        'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
+        'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
+        'src/core/ext/filters/load_reporting/load_reporting.c',
+        'src/core/ext/filters/load_reporting/load_reporting_filter.c',
         'src/core/ext/census/base_resources.c',
         'src/core/ext/census/context.c',
         'src/core/ext/census/gen/census.pb.c',
@@ -834,6 +845,7 @@
         'src/core/ext/census/resource.c',
         'src/core/ext/census/trace_context.c',
         'src/core/ext/census/tracing.c',
+        'src/core/ext/filters/max_age/max_age_filter.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [
@@ -906,6 +918,7 @@
       "dependencies": [
         "grpc",
         "gpr",
+        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

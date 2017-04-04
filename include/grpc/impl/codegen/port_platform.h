@@ -364,11 +364,21 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
+#ifndef GRPC_ARES
+#ifdef GPR_WINDOWS
+#define GRPC_ARES 0
+#else
+#define GRPC_ARES 1
+#endif
+#endif
+
 #ifndef GRPC_MUST_USE_RESULT
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
 #else
 #define GRPC_MUST_USE_RESULT
+#define GPR_ALIGN_STRUCT(n)
 #endif
 #endif
 

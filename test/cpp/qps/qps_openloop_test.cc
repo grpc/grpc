@@ -36,9 +36,9 @@
 #include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
+#include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
-#include "test/cpp/util/benchmark_config.h"
 
 namespace grpc {
 namespace testing {
