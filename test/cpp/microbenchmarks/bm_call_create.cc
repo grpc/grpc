@@ -45,8 +45,8 @@
 #include <grpc/support/string_util.h>
 
 extern "C" {
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
