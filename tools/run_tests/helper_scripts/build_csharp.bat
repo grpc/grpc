@@ -31,9 +31,7 @@ setlocal
 
 cd /d %~dp0\..\..\..\src\csharp
 
-dotnet restore . || goto :error
-
-dotnet build --configuration %MSBUILD_CONFIG% "**/project.json" || goto :error
+dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
 
 endlocal
 

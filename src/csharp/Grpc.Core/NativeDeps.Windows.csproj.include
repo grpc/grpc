@@ -1,8 +1,8 @@
 <Project>
   <ItemGroup>
-    <Content Include="..\..\..\cmake\build\Win32\$(NativeDependenciesConfiguration)\grpc_csharp_ext.dll">
+    <Content Include="..\..\..\cmake\build\x64\$(NativeDependenciesConfiguration)\grpc_csharp_ext.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>grpc_csharp_ext.x86.dll</Link>
+      <Link>grpc_csharp_ext.x64.dll</Link>
       <Pack>false</Pack>
     </Content>
   </ItemGroup>

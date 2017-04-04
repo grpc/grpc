@@ -32,5 +32,12 @@ set -ex
 
 cd $(dirname $0)/../../../src/csharp
 
-# overriding NativeDependenciesConfigurationUnix is needed to make gcov code coverage work.
-xbuild /p:Configuration=$MSBUILD_CONFIG /p:NativeDependenciesConfigurationUnix=$CONFIG Grpc.sln
+OVERRIDE_NATIVELIB_MAYBE=""
+if [ "$CONFIG" == "gcov" ]
+then
+  # overriding NativeDependenciesConfigurationUnix makes C# project pick up
+  # the gcov flavor of grpc_csharp_ext
+  OVERRIDE_NATIVELIB_MAYBE="/p:NativeDependenciesConfigurationUnix=$CONFIG"
+fi
+
+dotnet build --configuration $MSBUILD_CONFIG $OVERRIDE_NATIVELIB_MAYBE Grpc.sln
