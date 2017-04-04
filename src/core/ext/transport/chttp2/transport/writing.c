@@ -161,7 +161,7 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
 }
 
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
-  return (uint32_t)GPR_MAX(
+  return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->stream_total_over_incoming_window +
           (int64_t)GPR_MAX(
