@@ -152,6 +152,9 @@ typedef struct {
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
 /** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
+/** Request that optional features default to off (regardless of what they
+    usually default to) - to enable tight control over what gets enabled */
+#define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"

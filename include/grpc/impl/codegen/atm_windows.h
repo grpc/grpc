@@ -38,6 +38,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 typedef intptr_t gpr_atm;
+#define GPR_ATM_MAX INTPTR_MAX
 
 #define gpr_atm_full_barrier MemoryBarrier
 

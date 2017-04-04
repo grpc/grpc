@@ -73,7 +73,7 @@ static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 static void call_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                      grpc_transport_stream_op *op) {
+                      grpc_transport_stream_op_batch *op) {
   ++*(int *)(elem->call_data);
 }
 
