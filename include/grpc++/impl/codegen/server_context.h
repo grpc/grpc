@@ -39,7 +39,6 @@
 #include <vector>
 
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/load_reporting.h>
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>

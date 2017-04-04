@@ -49,7 +49,7 @@ typedef struct call_data {
      up-call on transport_op, and remember to call our on_done_recv member after
      handling it. */
   grpc_closure auth_on_recv;
-  grpc_transport_stream_op *transport_op;
+  grpc_transport_stream_op_batch *transport_op;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
@@ -138,13 +138,11 @@ static void on_md_processing_done(
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message) {
       grpc_byte_stream_destroy(
           &exec_ctx, calld->transport_op->payload->send_message.send_message);
-      calld->transport_op->send_message = false;
+      calld->transport_op->payload->send_message.send_message = NULL;
     }
-    calld->transport_op->send_trailing_metadata = NULL;
     grpc_closure_sched(
         &exec_ctx, calld->on_done_recv,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
@@ -172,7 +170,7 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
-                                      grpc_transport_stream_op *op) {
+                                      grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata) {
@@ -194,7 +192,7 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
    that is being sent or received. */
 static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
-                                    grpc_transport_stream_op *op) {
+                                    grpc_transport_stream_op_batch *op) {
   set_recv_ops_md_callbacks(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
 }

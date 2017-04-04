@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -60,8 +60,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include "src/core/lib/tsi/ssl_types.h"
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/ssl_types.h"
+#include "src/core/tsi/transport_security.h"
 
 /* --- Constants. ---*/
 

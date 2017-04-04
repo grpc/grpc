@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,25 +27,67 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+licenses(["notice"])  # 3-clause BSD
 
-cd $(dirname $0)/../../..
+cc_test(
+    name = "noop-benchmark",
+    srcs = ["noop-benchmark.cc"],
+    deps = ["//external:benchmark"],
+    linkopts = ["-pthread"],
+)
 
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
+cc_library(
+    name = "helpers",
+    srcs = ["helpers.cc"],
+    hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
+    deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+    linkopts = ["-pthread"],
+)
 
-# try to use pypy for generating reports
-# each trace dumps 7-8gig of text to disk, and processing this into a report is
-# heavyweight - so any speed boost is worthwhile
-# TODO(ctiller): consider rewriting report generation in C++ for performance
-if which pypy >/dev/null; then
-  PYTHON=pypy
-else
-  PYTHON=python2.7
-fi
+cc_test(
+    name = "bm_closure",
+    srcs = ["bm_closure.cc"],
+    deps = [":helpers"],
+)
 
-make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server
-bins/opt/memory_profile_test
-bq load microbenchmarks.memory memory_usage.csv
+cc_test(
+    name = "bm_cq",
+    srcs = ["bm_cq.cc"],
+    deps = [":helpers"],
+)
 
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency --bigquery_upload
+cc_test(
+    name = "bm_error",
+    srcs = ["bm_error.cc"],
+    deps = [":helpers"],
+)
 
+cc_test(
+    name = "bm_fullstack_streaming_ping_pong",
+    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    deps = [":helpers"],
+
+    )
+cc_test(
+    name = "bm_fullstack_streaming_pump",
+    srcs = ["bm_fullstack_streaming_pump.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_trickle",
+    srcs = ["bm_fullstack_trickle.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_fullstack_unary_ping_pong",
+    srcs = ["bm_fullstack_unary_ping_pong.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
+)

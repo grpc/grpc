@@ -132,13 +132,13 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_free(message_string);
   }
   // Invoke the next callback.
-  grpc_closure_sched(exec_ctx, calld->next_recv_message_ready, error);
+  grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
-static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
-                                      grpc_call_element* elem,
-                                      grpc_transport_stream_op* op) {
+static void start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   call_data* calld = elem->call_data;
   // Check max send message size.
   if (op->send_message && calld->max_send_size >= 0 &&
@@ -148,7 +148,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->payload->send_message.send_message->length,
                  calld->max_send_size);
-    grpc_transport_stream_op_finish_with_failure(
+    grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
                            GRPC_ERROR_INT_GRPC_STATUS,
@@ -157,7 +157,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
     return;
   }
   // Inject callback for receiving a message.
-  if (op->payload->recv_message.recv_message_ready != NULL) {
+  if (op->recv_message) {
     calld->next_recv_message_ready =
         op->payload->recv_message.recv_message_ready;
     calld->recv_message = op->payload->recv_message.recv_message;
@@ -256,7 +256,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
 }
 
 const grpc_channel_filter grpc_message_size_filter = {
-    start_transport_stream_op,
+    start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
