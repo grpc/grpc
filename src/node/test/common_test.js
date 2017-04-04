@@ -176,7 +176,7 @@ describe('Proto message oneof serialize and deserialize', function() {
     var test_message2 = {oneof_choice: 'string_choice', string_choice: 'abc'};
     var serialized2 = oneofSerialize(test_message2);
     var deserialized2 = oneofDeserialize(serialized2);
-    assert.equal(deserialized2.oneof_choice, 'int_choice');
+    assert.equal(deserialized2.oneof_choice, 'string_choice');
   });
 });
 describe('Proto message enum serialize and deserialize', function() {

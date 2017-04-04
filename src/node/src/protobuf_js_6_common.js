@@ -77,11 +77,11 @@ exports.serializeCls = function serializeCls(cls) {
    * @return {Buffer} The serialized object
    */
   return function serialize(arg) {
-    var message = cls.fromObject(arg);
-    var errMsg = cls.verify(message);
+    var errMsg = cls.verify(arg);
     if (errMsg) {
       throw Error(errMsg);
     }
+    var message = cls.create(arg);
     return cls.encode(message).finish();
   };
 };
