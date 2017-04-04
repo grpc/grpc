@@ -182,6 +182,8 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/compiler/config.h",
+        "src/compiler/schema_interface.h",
+        "src/compiler/protobuf_plugin.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
         "src/compiler/csharp_generator.h",
@@ -194,6 +196,8 @@ grpc_cc_library(
         "src/compiler/php_generator.h",
         "src/compiler/php_generator_helpers.h",
         "src/compiler/python_generator.h",
+        "src/compiler/python_generator_helpers.h",
+        "src/compiler/python_private_generator.h",
         "src/compiler/ruby_generator.h",
         "src/compiler/ruby_generator_helpers-inl.h",
         "src/compiler/ruby_generator_map-inl.h",
