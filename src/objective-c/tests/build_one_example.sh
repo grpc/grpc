@@ -53,7 +53,7 @@ pod install
 
 set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
-xcodebuild \
+time xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \

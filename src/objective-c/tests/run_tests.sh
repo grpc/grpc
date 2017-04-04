@@ -55,27 +55,27 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 echo "TIME:  $(date)"
-xcodebuild \
+time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
     -destination name="iPhone 6" \
     test | xcpretty
 
-echo "TIME:  $(date)"
+time echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 6" \
     test | xcpretty
 
-echo "TIME:  $(date)"
+time echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 6" \
     test | xcpretty
 
-echo "TIME:  $(date)"
+time echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
