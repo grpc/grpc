@@ -107,7 +107,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-// Simple request via a server channel filter that always fails to
+// Simple request via a SERVER_CHANNEL filter that always fails to
 // initialize the call.
 static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_call *c;
@@ -203,8 +203,8 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-// Simple request via a client channel filter that always fails to
-// initialize the call.
+// Simple request via a CLIENT_CHANNEL or CLIENT_DIRECT_CHANNEL filter
+// that always fails to initialize the call.
 static void test_client_channel_filter(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_slice request_payload_slice =
@@ -293,7 +293,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-// Simple request via a client subchannel filter that always fails to
+// Simple request via a CLIENT_SUBCHANNEL filter that always fails to
 // initialize the call.
 static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_call *c;
@@ -517,23 +517,27 @@ static void init_plugin(void) {
                                    maybe_add_client_channel_filter, NULL);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
                                    maybe_add_client_subchannel_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   maybe_add_client_channel_filter, NULL);
 }
 
 static void destroy_plugin(void) {}
 
 void filter_call_init_fails(grpc_end2end_test_config config) {
-  gpr_log(GPR_INFO, "Testing server channel filter.");
+  gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
   test_server_channel_filter(config);
   g_enable_server_channel_filter = false;
-  gpr_log(GPR_INFO, "Testing client channel filter.");
+  gpr_log(GPR_INFO, "Testing CLIENT_CHANNEL / CLIENT_DIRECT_CHANNEL filter.");
   g_enable_client_channel_filter = true;
   test_client_channel_filter(config);
   g_enable_client_channel_filter = false;
-  gpr_log(GPR_INFO, "Testing client subchannel filter.");
-  g_enable_client_subchannel_filter = true;
-  test_client_subchannel_filter(config);
-  g_enable_client_subchannel_filter = false;
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) {
+    gpr_log(GPR_INFO, "Testing CLIENT_SUBCHANNEL filter.");
+    g_enable_client_subchannel_filter = true;
+    test_client_subchannel_filter(config);
+    g_enable_client_subchannel_filter = false;
+  }
 }
 
 void filter_call_init_fails_pre_init(void) {
