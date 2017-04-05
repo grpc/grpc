@@ -529,14 +529,14 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
 }
 
 void grpc_call_destroy(grpc_call *c) {
-  parent_call *pc = get_parent_call(c);
   child_call *cc = c->child_call;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GPR_TIMER_BEGIN("grpc_call_destroy", 0);
   GRPC_API_TRACE("grpc_call_destroy(c=%p)", 1, (c));
 
-  if (pc) {
+  if (cc) {
+    parent_call *pc = get_parent_call(cc->parent);
     gpr_mu_lock(&pc->child_list_mu);
     if (c == pc->first_child) {
       pc->first_child = cc->sibling_next;
