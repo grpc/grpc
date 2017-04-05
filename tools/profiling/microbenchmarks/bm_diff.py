@@ -45,6 +45,16 @@ import jobset
 import itertools
 import speedup
 
+_INTERESTING = (
+  'cpu_time',
+  'real_time',
+  'locks_per_iteration',
+  'allocs_per_iteration',
+  'writes_per_iteration',
+  'atm_cas_per_iteration',
+  'atm_add_per_iteration',
+)
+
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
   if float(n) <= .0001: n = 0
@@ -78,9 +88,9 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
-                  choices=sorted(_INTERESTING.keys()),
+                  choices=sorted(_INTERESTING),
                   nargs='+',
-                  default=sorted(_INTERESTING.keys()),
+                  default=sorted(_INTERESTING),
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
