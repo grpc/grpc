@@ -237,6 +237,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       now_writing = true;
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
+      if (!t->is_client) {
+        t->ping_recv_state.last_ping_recv_time =
+            gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        t->ping_recv_state.ping_strikes = 0;
+      }
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -246,6 +251,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                 s->id, s->announce_window, &s->stats.outgoing));
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
+      if (!t->is_client) {
+        t->ping_recv_state.last_ping_recv_time =
+            gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        t->ping_recv_state.ping_strikes = 0;
+      }
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -278,6 +288,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                            send_bytes);
           t->ping_state.pings_before_data_required =
               t->ping_policy.max_pings_without_data;
+          if (!t->is_client) {
+            t->ping_recv_state.last_ping_recv_time =
+                gpr_inf_past(GPR_CLOCK_MONOTONIC);
+            t->ping_recv_state.ping_strikes = 0;
+          }
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
@@ -363,6 +378,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                           0, announced, &throwaway_stats));
     t->ping_state.pings_before_data_required =
         t->ping_policy.max_pings_without_data;
+    if (!t->is_client) {
+      t->ping_recv_state.last_ping_recv_time =
+          gpr_inf_past(GPR_CLOCK_MONOTONIC);
+      t->ping_recv_state.ping_strikes = 0;
+    }
   }
 
   for (size_t i = 0; i < t->ping_ack_count; i++) {
