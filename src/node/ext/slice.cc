@@ -37,7 +37,6 @@
 #include <grpc/support/alloc.h>
 
 #include "slice.h"
-#include "byte_buffer.h"
 
 namespace grpc {
 namespace node {
@@ -93,9 +92,9 @@ Local<Value> CreateBufferFromSlice(const grpc_slice slice) {
   Nan::EscapableHandleScope scope;
   grpc_slice *slice_ptr = new grpc_slice;
   *slice_ptr = grpc_slice_ref(slice);
-  return scope.Escape(MakeFastBuffer(Nan::NewBuffer(
+  return scope.Escape(Nan::NewBuffer(
       const_cast<char *>(reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(*slice_ptr))),
-      GRPC_SLICE_LENGTH(*slice_ptr), SliceFreeCallback, slice_ptr).ToLocalChecked()));
+      GRPC_SLICE_LENGTH(*slice_ptr), SliceFreeCallback, slice_ptr).ToLocalChecked());
 }
 
 }  // namespace node

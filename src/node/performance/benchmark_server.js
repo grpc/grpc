@@ -88,6 +88,13 @@ function streamingCall(call) {
   });
 }
 
+function makeUnaryGenericCall(response_size) {
+  var response = zeroBuffer(response_size);
+  return function unaryGenericCall(call, callback) {
+    callback(null, response);
+  };
+}
+
 function makeStreamingGenericCall(response_size) {
   var response = zeroBuffer(response_size);
   return function streamingGenericCall(call) {
@@ -129,6 +136,7 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   this.port = server.bind(host + ':' + port, server_creds);
   if (generic) {
     server.addService(genericService, {
+      unaryCall: makeUnaryGenericCall(response_size),
       streamingCall: makeStreamingGenericCall(response_size)
     });
   } else {

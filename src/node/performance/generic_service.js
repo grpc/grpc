@@ -34,8 +34,17 @@
 var _ = require('lodash');
 
 module.exports = {
+  'unaryCall' : {
+    path: '/grpc.testing.BenchmarkService/UnaryCall',
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  },
   'streamingCall' : {
-    path: '/grpc.testing/BenchmarkService',
+    path: '/grpc.testing.BenchmarkService/StreamingCall',
     requestStream: true,
     responseStream: true,
     requestSerialize: _.identity,
