@@ -189,7 +189,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   cq_verifier *cqv = cq_verifier_create(sf->cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_call_details call_details;
   grpc_call_error error;
   int was_cancelled = 2;
@@ -197,12 +198,11 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   grpc_byte_buffer *response_payload;
 
   memset(ops, 0, sizeof(ops));
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  error = grpc_server_request_call(sf->server, &s, &call_details,
-                                   &request_metadata_recv, sf->cq, sf->cq,
-                                   tag(200));
+  error = grpc_server_request_call(
+      sf->server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, sf->cq, sf->cq, tag(200));
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s](%s) up", sf->servers_hostport,
           sf->balancer_name);
@@ -212,8 +212,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
           sf->balancer_name);
 
   // make sure we've received the initial metadata from the grpclb request.
-  GPR_ASSERT(request_metadata_recv.count > 0);
-  GPR_ASSERT(request_metadata_recv.metadata != NULL);
+  GPR_ASSERT(request_metadata_recv_count > 0);
+  GPR_ASSERT(request_metadata_recv != NULL);
 
   // receive request for backends
   op = ops;
@@ -314,7 +314,6 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
 
   cq_verifier_destroy(cqv);
 
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 }
 
@@ -323,7 +322,8 @@ static void start_backend_server(server_fixture *sf) {
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_call_details call_details;
   grpc_call_error error;
   int was_cancelled;
@@ -335,12 +335,11 @@ static void start_backend_server(server_fixture *sf) {
     memset(ops, 0, sizeof(ops));
     cqv = cq_verifier_create(sf->cq);
     was_cancelled = 2;
-    grpc_metadata_array_init(&request_metadata_recv);
     grpc_call_details_init(&call_details);
 
-    error = grpc_server_request_call(sf->server, &s, &call_details,
-                                     &request_metadata_recv, sf->cq, sf->cq,
-                                     tag(100));
+    error = grpc_server_request_call(
+        sf->server, &s, &call_details, &request_metadata_recv,
+        &request_metadata_recv_count, sf->cq, sf->cq, tag(100));
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
     ev = grpc_completion_queue_next(sf->cq,
@@ -348,7 +347,6 @@ static void start_backend_server(server_fixture *sf) {
     if (!ev.success) {
       gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
       cq_verifier_destroy(cqv);
-      grpc_metadata_array_destroy(&request_metadata_recv);
       grpc_call_details_destroy(&call_details);
       return;
     }
@@ -460,7 +458,6 @@ static void start_backend_server(server_fixture *sf) {
 
     grpc_call_destroy(s);
     cq_verifier_destroy(cqv);
-    grpc_metadata_array_destroy(&request_metadata_recv);
     grpc_call_details_destroy(&call_details);
   }
 }
@@ -470,8 +467,10 @@ static void perform_request(client_fixture *cf) {
   cq_verifier *cqv = cq_verifier_create(cf->cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
@@ -491,9 +490,6 @@ static void perform_request(client_fixture *cf) {
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -566,8 +562,6 @@ static void perform_request(client_fixture *cf) {
   cq_verify_empty_timeout(cqv, 1 /* seconds */);
   cq_verifier_destroy(cqv);
 
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
   gpr_log(GPR_INFO, "Client call (peer %s) DESTROYED.", peer);
   gpr_free(peer);
