@@ -42,8 +42,6 @@
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
 
-extern "C" void* grpc_call_arena_alloc(grpc_call* call, size_t size);
-
 namespace grpc {
 
 class CompletionQueue;
@@ -69,7 +67,8 @@ class ClientAsyncResponseReader final
                                            const W& request) {
     Call call = channel->CreateCall(method, context, cq);
     ClientAsyncResponseReader* reader =
-        new (grpc_call_arena_alloc(call.call(), sizeof(*reader)))
+        new (g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
+                                                             sizeof(*reader)))
             ClientAsyncResponseReader(call, context);
 
     reader->init_buf_.SendInitialMetadata(context->send_initial_metadata_,
