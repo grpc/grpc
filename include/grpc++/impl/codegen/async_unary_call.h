@@ -66,18 +66,9 @@ class ClientAsyncResponseReader final
                                            ClientContext* context,
                                            const W& request) {
     Call call = channel->CreateCall(method, context, cq);
-    ClientAsyncResponseReader* reader =
-        new (g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
-                                                             sizeof(*reader)))
-            ClientAsyncResponseReader(call, context);
-
-    reader->init_buf_.SendInitialMetadata(context->send_initial_metadata_,
-                                          context->initial_metadata_flags());
-    // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(reader->init_buf_.SendMessage(request).ok());
-    reader->init_buf_.ClientSendClose();
-    reader->call_.PerformOps(&reader->init_buf_);
-    return reader;
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader)))
+        ClientAsyncResponseReader(call, context, request);
   }
 
   // always allocated against a call arena, no memory free required
@@ -108,8 +99,16 @@ class ClientAsyncResponseReader final
   ClientContext* const context_;
   Call call_;
 
-  ClientAsyncResponseReader(Call call, ClientContext* context)
-      : context_(context), call_(call) {}
+  template <class W>
+  ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
+      : context_(context), call_(call) {
+    init_buf_.SendInitialMetadata(context->send_initial_metadata_,
+                                  context->initial_metadata_flags());
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(init_buf_.SendMessage(request).ok());
+    init_buf_.ClientSendClose();
+    call_.PerformOps(&init_buf_);
+  }
 
   // disable operator new
   static void* operator new(std::size_t size);
