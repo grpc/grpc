@@ -45,8 +45,8 @@
 #include <grpc/support/string_util.h>
 
 extern "C" {
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -221,7 +221,7 @@ namespace dummy_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {}
+                                   grpc_transport_stream_op_batch *op) {}
 
 static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
@@ -296,7 +296,7 @@ void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_transport_stream_op *op) {
+                     grpc_stream *stream, grpc_transport_stream_op_batch *op) {
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
 
@@ -346,13 +346,15 @@ class SendEmptyMetadata {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = grpc_closure_init(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
+    op_.send_initial_metadata = true;
+    op_.payload = &op_payload_;
   }
 
   class Op {
    public:
     Op(grpc_exec_ctx *exec_ctx, SendEmptyMetadata *p, grpc_call_stack *s) {
       grpc_metadata_batch_init(&batch_);
-      p->op_.send_initial_metadata = &batch_;
+      p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
     void Finish(grpc_exec_ctx *exec_ctx) {
       grpc_metadata_batch_destroy(exec_ctx, &batch_);
@@ -366,7 +368,8 @@ class SendEmptyMetadata {
   const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_slice method_ = grpc_slice_from_static_string("/foo/bar");
-  grpc_transport_stream_op op_;
+  grpc_transport_stream_op_batch op_;
+  grpc_transport_stream_op_batch_payload op_payload_;
   grpc_closure closure_;
 };
 
@@ -488,13 +491,16 @@ namespace isolated_call_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {
+                                   grpc_transport_stream_op_batch *op) {
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
-                       GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE);
   }
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_NONE);
   }
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
