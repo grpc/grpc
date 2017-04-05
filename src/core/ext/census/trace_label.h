@@ -58,4 +58,4 @@ typedef struct trace_label {
   } value;
 } trace_label;
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_TRACE_LABEL_H */

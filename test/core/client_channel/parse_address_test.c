@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
