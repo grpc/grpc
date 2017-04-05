@@ -8221,6 +8221,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
     test/core/end2end/tests/cancel_after_accept.c \
@@ -8313,6 +8314,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \

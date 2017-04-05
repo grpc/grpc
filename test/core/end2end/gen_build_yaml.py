@@ -93,6 +93,7 @@ LOWCPU = 0.1
 END2END_TESTS = {
     'authority_not_supported': default_test_options,
     'bad_hostname': default_test_options,
+    'bad_ping': connectivity_test_options._replace(proxyable=False),
     'binary_metadata': default_test_options,
     'resource_quota_server': default_test_options._replace(large_writes=True,
                                                            proxyable=False),
