@@ -46,8 +46,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-#define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
-
 static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
   *out++ = (uint8_t)(length >> 16);
   *out++ = (uint8_t)(length >> 8);
