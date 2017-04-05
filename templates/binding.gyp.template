@@ -41,11 +41,7 @@
   {
     'variables': {
       'runtime%': 'node',
-      # UV integration in C core is disabled by default while bugs are ironed
-      # out. It can be re-enabled for one build by setting the npm config
-      # variable grpc_uv to true, and it can be re-enabled permanently by
-      # setting it to true here.
-      'grpc_uv%': 'false'
+      'grpc_uv%': 'true'
     },
     'target_defaults': {
       'include_dirs': [
@@ -58,8 +54,6 @@
       'conditions': [
         ['runtime=="node" and grpc_uv=="true"', {
           'defines': [
-            # Disabling this while bugs are ironed out. Uncomment this to
-            # re-enable libuv integration in C core.
             'GRPC_UV'
           ]
         }],
