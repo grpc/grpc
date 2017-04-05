@@ -136,7 +136,8 @@ ServerContext::ServerContext()
       sent_initial_metadata_(false),
       compression_level_set_(false) {}
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+                             size_t metadata_count)
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
@@ -145,7 +146,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false) {
-  std::swap(*client_metadata_.arr(), *arr);
+  std::swap(*client_metadata_.pmetadata(), metadata);
+  std::swap(*client_metadata_.psize(), metadata_count);
   client_metadata_.FillMap();
 }
 

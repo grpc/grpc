@@ -35,23 +35,18 @@
 #define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 
 #include <grpc++/impl/codegen/slice.h>
+#include <map>
 
 namespace grpc {
 
 class MetadataMap {
  public:
-  MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
-
-  ~MetadataMap() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
-  }
-
   void FillMap() {
-    for (size_t i = 0; i < arr_.count; i++) {
+    for (size_t i = 0; i < size_; i++) {
       // TODO(yangg) handle duplicates?
       map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-          StringRefFromSlice(&arr_.metadata[i].key),
-          StringRefFromSlice(&arr_.metadata[i].value)));
+          StringRefFromSlice(&metadata_[i].key),
+          StringRefFromSlice(&metadata_[i].value)));
     }
   }
 
@@ -59,10 +54,12 @@ class MetadataMap {
   const std::multimap<grpc::string_ref, grpc::string_ref> *map() const {
     return &map_;
   }
-  grpc_metadata_array *arr() { return &arr_; }
+  grpc_metadata **pmetadata() { return &metadata_; }
+  size_t *psize() { return &size_; }
 
  private:
-  grpc_metadata_array arr_;
+  grpc_metadata *metadata_ = nullptr;
+  size_t size_ = 0;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
 };
 
