@@ -107,8 +107,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-// Simple request via a server filter that always fails to initialize
-// the call.
+// Simple request via a server channel filter that always fails to
+// initialize the call.
 static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -211,7 +211,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = five_seconds_from_now();
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_call_init_fails", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -301,7 +301,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = five_seconds_from_now();
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_call_init_fails", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
