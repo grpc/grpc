@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -106,10 +106,9 @@ decorated_settings = [DecoratedSetting(hash(setting.id), name, setting)
                       for name, setting in _SETTINGS.iteritems()]
 
 print >>H, 'typedef enum {'
-for name in sorted(_SETTINGS.keys()):
-  setting = _SETTINGS[name]
+for decorated_setting in sorted(decorated_settings):
   print >>H, '  GRPC_CHTTP2_SETTINGS_%s = %d, /* wire id %d */' % (
-      name, hash(setting.id), setting.id)
+      decorated_setting.name, decorated_setting.enum, decorated_setting.setting.id)
 print >>H, '} grpc_chttp2_setting_id;'
 print >>H
 print >>H, '#define GRPC_CHTTP2_NUM_SETTINGS %d' % (max(x.enum for x in decorated_settings) + 1)

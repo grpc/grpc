@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,13 +40,13 @@
 #include <stdint.h>
 
 typedef enum {
-  GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 1,                     /* wire id 2 */
-  GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA = 6, /* wire id 65027 */
   GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 0,               /* wire id 1 */
-  GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE = 3,             /* wire id 4 */
+  GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 1,                     /* wire id 2 */
   GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS = 2,          /* wire id 3 */
+  GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE = 3,             /* wire id 4 */
   GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE = 4,                  /* wire id 5 */
   GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE = 5,            /* wire id 6 */
+  GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA = 6, /* wire id 65027 */
 } grpc_chttp2_setting_id;
 
 #define GRPC_CHTTP2_NUM_SETTINGS 7
