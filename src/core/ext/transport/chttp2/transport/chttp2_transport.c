@@ -1651,6 +1651,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       incoming_byte_stream_unref(exec_ctx, bs);
       s->data_parser.parsing_frame = NULL;
     } else {
+      GRPC_ERROR_UNREF(s->byte_stream_error);
       s->byte_stream_error = GRPC_ERROR_REF(error);
     }
   }
