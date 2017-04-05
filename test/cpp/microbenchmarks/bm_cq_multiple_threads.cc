@@ -132,11 +132,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   track_counters.Finish(state);
 }
 
-BENCHMARK(BM_Cq_Throughput)->Threads(1)->UseRealTime();
-BENCHMARK(BM_Cq_Throughput)->Threads(2)->UseRealTime();
-BENCHMARK(BM_Cq_Throughput)->Threads(4)->UseRealTime();
-BENCHMARK(BM_Cq_Throughput)->Threads(8)->UseRealTime();
-BENCHMARK(BM_Cq_Throughput)->Threads(16)->UseRealTime();
+BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
 
 }  // namespace testing
 }  // namespace grpc
