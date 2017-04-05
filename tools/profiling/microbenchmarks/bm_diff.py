@@ -181,9 +181,10 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
+      print '%s: new=%r old=%r' % (f, new, old)
       s = speedup.speedup(new, old)
       if s:
-        self.final[f] = '%d%%' % s
+        self.final[f] = '%+d%%' % s
     return self.final.keys()
 
   def skip(self):
