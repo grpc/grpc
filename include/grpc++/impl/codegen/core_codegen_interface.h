@@ -97,6 +97,7 @@ class CoreCodegenInterface {
   virtual void grpc_call_ref(grpc_call* call) = 0;
   virtual void grpc_call_unref(grpc_call* call) = 0;
 
+  virtual grpc_slice grpc_empty_slice() = 0;
   virtual grpc_slice grpc_slice_malloc(size_t length) = 0;
   virtual void grpc_slice_unref(grpc_slice slice) = 0;
   virtual grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) = 0;

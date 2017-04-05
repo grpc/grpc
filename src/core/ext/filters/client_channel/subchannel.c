@@ -782,8 +782,6 @@ grpc_error *grpc_connected_subchannel_create_call(
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-
-    gpr_free(*call);
     return error;
   }
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");

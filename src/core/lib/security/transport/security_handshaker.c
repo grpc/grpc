@@ -287,12 +287,11 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   if (num_left_overs > 0) {
     /* Put the leftovers in our buffer (ownership transfered). */
     if (has_left_overs_in_current_slice) {
-      grpc_slice_buffer_add(
-          &h->left_overs,
-          grpc_slice_split_tail(&h->args->read_buffer->slices[i],
-                                consumed_slice_size));
+      grpc_slice tail = grpc_slice_split_tail(&h->args->read_buffer->slices[i],
+                                              consumed_slice_size);
+      grpc_slice_buffer_add(&h->left_overs, tail);
       /* split_tail above increments refcount. */
-      grpc_slice_unref_internal(exec_ctx, h->args->read_buffer->slices[i]);
+      grpc_slice_unref_internal(exec_ctx, tail);
     }
     grpc_slice_buffer_addn(
         &h->left_overs, &h->args->read_buffer->slices[i + 1],

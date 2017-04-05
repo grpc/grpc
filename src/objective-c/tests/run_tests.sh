@@ -68,12 +68,16 @@ xcodebuild \
     -destination name="iPhone 6" \
     test | xcpretty
 
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetUnitTests \
-    -destination name="iPhone 6" \
-    test | xcpretty
+# Temporarily disabled for (possible) flakiness on Jenkins.
+# Fix or reenable after confirmation/disconfirmation that it is the source of
+# Jenkins problem.
+
+# echo "TIME:  $(date)"
+# xcodebuild \
+#     -workspace Tests.xcworkspace \
+#     -scheme CronetUnitTests \
+#     -destination name="iPhone 6" \
+#     test | xcpretty
 
 echo "TIME:  $(date)"
 xcodebuild \
