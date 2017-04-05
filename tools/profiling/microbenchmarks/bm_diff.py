@@ -63,26 +63,6 @@ def median(ary):
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
-nanos = {
-  'abs_diff': 5,
-  'pct_diff': 10,
-}
-counter = {
-  'abs_diff': 0.5,
-  'pct_diff': 10,
-}
-
-_INTERESTING = {
-  'cpu_time': nanos,
-  'real_time': nanos,
-  'locks_per_iteration': counter,
-  'allocs_per_iteration': counter,
-  'writes_per_iteration': counter,
-  'atm_cas_per_iteration': counter,
-  'atm_add_per_iteration': counter,
-}
-
-
 _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
                               'bm_fullstack_streaming_ping_pong',
                               'bm_fullstack_streaming_pump',
@@ -181,9 +161,10 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      print '%s: new=%r old=%r' % (f, new, old)
+      mdn_diff = abs(median(new) - median(old))
+      print '%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff)
       s = speedup.speedup(new, old)
-      if s:
+      if s and mdn_diff > 0.5:
         self.final[f] = '%+d%%' % s
     return self.final.keys()
 
