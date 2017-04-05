@@ -118,25 +118,29 @@ print >>C, 'const uint16_t grpc_setting_id_to_wire_id[] = {%s};' % ','.join(
     '%d' % s for s in p.slots)
 print >>H
 print >>H, "bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out);"
-print >>C, """
-bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
-  static const uint32_t r[] = {%(r)s};
-  uint32_t i = wire_id %(offset_sign)s %(offset)d;
-  uint32_t x = i %% %(t)d;
-  uint32_t y = i / %(t)d;
-  uint32_t h = x;
-  if (y < GPR_ARRAY_SIZE(r)) {
-    uint32_t delta = (uint32_t)r[y];
-    h += delta;
-  }
-  *out = (grpc_chttp2_setting_id)h;
-  return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) && grpc_setting_id_to_wire_id[h] == wire_id;
-}""" % {
+cgargs = {
       'r': ','.join('%d' % (r if r is not None else 0) for r in p.r),
       't': p.t,
       'offset': abs(p.offset),
       'offset_sign': '+' if p.offset > 0 else '-'
   }
+print >>C, """
+bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
+  uint32_t i = wire_id %(offset_sign)s %(offset)d;
+  uint32_t x = i %% %(t)d;
+  uint32_t y = i / %(t)d;
+  uint32_t h = x;
+  switch (y) {
+""" % cgargs
+for i, r in enumerate(p.r):
+  if not r: continue
+  if r < 0: print >>C, 'case %d: h -= %d; break;' % (i, -r)
+  else: print >>C, 'case %d: h += %d; break;' % (i, r)
+print >>C, """
+  }
+  *out = (grpc_chttp2_setting_id)h;
+  return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) && grpc_setting_id_to_wire_id[h] == wire_id;
+}""" % cgargs
 
 print >>H, """
 typedef enum {
