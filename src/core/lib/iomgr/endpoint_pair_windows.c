@@ -88,10 +88,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  p.client = grpc_tcp_create(&exec_ctx, grpc_winsocket_create(sv[1], "endpoint:client"),
+  p.client = grpc_tcp_create(&exec_ctx,
+                             grpc_winsocket_create(sv[1], "endpoint:client"),
                              channel_args, "endpoint:server");
-  p.server = grpc_tcp_create(&exec_ctx,grpc_winsocket_create(sv[0], "endpoint:server"),
-	  channel_args, "endpoint:client");
+  p.server = grpc_tcp_create(&exec_ctx,
+                             grpc_winsocket_create(sv[0], "endpoint:server"),
+                             channel_args, "endpoint:client");
   grpc_exec_ctx_finish(&exec_ctx);
   return p;
 }

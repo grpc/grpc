@@ -72,7 +72,7 @@ static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-	  grpc_channel_args_destroy(exec_ctx, ac->channel_args);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
@@ -119,7 +119,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
       } else {
-        *ep = grpc_tcp_create(exec_ctx, socket, ac->channel_args, ac->addr_name);
+        *ep =
+            grpc_tcp_create(exec_ctx, socket, ac->channel_args, ac->addr_name);
         socket = NULL;
       }
     } else {
