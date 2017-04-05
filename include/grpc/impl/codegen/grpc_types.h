@@ -175,6 +175,12 @@ typedef struct {
 /** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
+/** Enable/disable support for per-message compression. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Enable/disable support for deadline checking. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
+#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"

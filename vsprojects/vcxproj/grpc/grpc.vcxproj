@@ -300,19 +300,15 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
@@ -429,6 +425,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.h" />
@@ -502,9 +501,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>
@@ -512,23 +514,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
@@ -798,6 +790,14 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.c">
@@ -967,6 +967,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
     </ClCompile>

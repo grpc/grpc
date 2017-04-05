@@ -1050,6 +1050,7 @@ memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
 memory_profile_server: $(BINDIR)/$(CONFIG)/memory_profile_server
 memory_profile_test: $(BINDIR)/$(CONFIG)/memory_profile_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
+minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
 mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
@@ -1421,6 +1422,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
   $(BINDIR)/$(CONFIG)/memory_profile_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
+  $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
   $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
@@ -1871,6 +1873,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/memory_profile_test || ( echo test memory_profile_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing minimal_stack_is_minimal_test"
+	$(Q) $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test || ( echo test minimal_stack_is_minimal_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
 	$(Q) $(BINDIR)/$(CONFIG)/multiple_server_queues_test || ( echo test multiple_server_queues_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
@@ -2809,18 +2813,14 @@ endif
 
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -2955,6 +2955,10 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/filters/http/client/http_client_filter.c \
+    src/core/ext/filters/http/compress/compress_filter.c \
+    src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/server/http_server_filter.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -3040,6 +3044,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
+    src/core/ext/filters/message_size/message_size_filter.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3129,18 +3134,14 @@ endif
 
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -3278,6 +3279,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/filters/http/client/http_client_filter.c \
+    src/core/ext/filters/http/compress/compress_filter.c \
+    src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
     src/core/ext/filters/client_channel/client_channel.c \
     src/core/ext/filters/client_channel/client_channel_factory.c \
@@ -3436,18 +3441,14 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_server_client.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -3668,18 +3669,14 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -3815,6 +3812,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/filters/http/client/http_client_filter.c \
+    src/core/ext/filters/http/compress/compress_filter.c \
+    src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
@@ -3870,6 +3871,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
+    src/core/ext/filters/message_size/message_size_filter.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -4061,18 +4063,14 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -4399,18 +4397,14 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -4551,6 +4545,10 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/filters/http/client/http_client_filter.c \
+    src/core/ext/filters/http/compress/compress_filter.c \
+    src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
     src/core/ext/filters/client_channel/client_channel.c \
     src/core/ext/filters/client_channel/client_channel_factory.c \
@@ -5089,18 +5087,14 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -11491,6 +11485,38 @@ deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MINIMAL_STACK_IS_MINIMAL_TEST_SRC = \
+    test/core/channel/minimal_stack_is_minimal_test.c \
+
+MINIMAL_STACK_IS_MINIMAL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MINIMAL_STACK_IS_MINIMAL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/minimal_stack_is_minimal_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
 endif
 endif
 

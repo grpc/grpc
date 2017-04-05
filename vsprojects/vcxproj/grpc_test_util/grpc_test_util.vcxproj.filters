@@ -61,6 +61,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -70,13 +73,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
@@ -86,15 +83,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
@@ -575,6 +563,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -584,16 +575,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
@@ -603,15 +588,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h">
@@ -925,6 +901,15 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{f7bfac91-5eb2-dea7-4601-6c63edbbf997}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext">
+      <UniqueIdentifier>{5db70e06-741d-708c-bf0a-b59f8ca1f8bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters">
+      <UniqueIdentifier>{f0f88514-c2d8-c4c9-c3bd-591682207751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\deadline">
+      <UniqueIdentifier>{2c9ab189-bb7e-355d-9f37-385472e86b9f}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{f4e8c61e-1ca6-0fdd-7b5e-b7f9a30c9a21}</UniqueIdentifier>
