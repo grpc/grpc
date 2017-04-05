@@ -1210,6 +1210,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     *call->receiving_buffer = NULL;
     call->receiving_message = 0;
     finish_batch_step(exec_ctx, bctl);
+    GRPC_ERROR_UNREF(error);
   }
 }
 

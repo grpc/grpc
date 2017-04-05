@@ -1583,7 +1583,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
                                  &s->frame_storage);
         }
-        /* error handling ok? */
         error = deframe_unprocessed_incoming_frames(
             exec_ctx, &s->data_parser, s,
             &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
@@ -1593,6 +1592,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                                      &s->frame_storage);
           grpc_slice_buffer_reset_and_unref_internal(
               exec_ctx, &s->unprocessed_incoming_frames_buffer);
+          GRPC_ERROR_UNREF(error);
           break;
         } else if (*s->recv_message != NULL) {
           break;
