@@ -51,12 +51,18 @@
 }
 
 // Designated initializer
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable {
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable
+                    dispatchQueue:(dispatch_queue_t)queue {
   if (self = [super init]) {
-    _writeableQueue = dispatch_get_main_queue();
+    _writeableQueue = queue;
     _writeable = writeable;
   }
   return self;
+}
+
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable {
+  return [self initWithWriteable:writeable
+                   dispatchQueue:dispatch_get_main_queue()];
 }
 
 - (void)enqueueValue:(id)value completionHandler:(void (^)())handler {

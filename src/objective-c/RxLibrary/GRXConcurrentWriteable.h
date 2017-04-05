@@ -53,7 +53,9 @@
  * The GRXWriteable instance is retained until writesFinishedWithError: is sent to it, and released
  * after that.
  */
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable
+                    dispatchQueue:(dispatch_queue_t)queue NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable;
 
 /**
  * Enqueues writeValue: to be sent to the writeable in the main thread.

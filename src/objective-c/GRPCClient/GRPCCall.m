@@ -113,6 +113,10 @@ static NSMutableDictionary *callFlags;
   // the SendClose op is added.
   BOOL _unaryCall;
   NSMutableArray *_unaryOpBatch;
+
+  // The dispatch queue to be used for enqueuing responses to user. Defaulted to the main dispatch
+  // queue
+  dispatch_queue_t _responseQueue;
 }
 
 @synthesize state = _state;
@@ -175,8 +179,17 @@ static NSMutableDictionary *callFlags;
       _unaryCall = YES;
       _unaryOpBatch = [NSMutableArray arrayWithCapacity:kMaxClientBatch];
     }
+
+    _responseQueue = dispatch_get_main_queue();
   }
   return self;
+}
+
+- (void)setResponseDispatchQueue:(dispatch_queue_t)queue {
+  if (_state != GRXWriterStateNotStarted) {
+    return;
+  }
+  _responseQueue = queue;
 }
 
 #pragma mark Finish
@@ -424,7 +437,8 @@ static NSMutableDictionary *callFlags;
   // that the life of the instance is determined by this retain cycle.
   _retainSelf = self;
 
-  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
+  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable
+                                                           dispatchQueue:_responseQueue];
 
   _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host path:_path];
   NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
