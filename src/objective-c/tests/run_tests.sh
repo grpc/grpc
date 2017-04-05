@@ -53,31 +53,10 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme AllTests \
-    -destination name="iPhone 6" \
-    test | xcpretty
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests \
-    -destination name="iPhone 6" \
-    test | xcpretty
-
+XCODEBUILD_FILTER='(^Test Case.*|^(I|D|E)[0-9][0-9][0-9][0-9] .*)'
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 6" \
-    test | xcpretty
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 6" \
-    test | xcpretty
+    test | egrep "$XCODEBUILD_FILTER"

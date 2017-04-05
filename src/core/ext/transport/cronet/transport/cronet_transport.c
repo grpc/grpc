@@ -62,7 +62,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
+int grpc_cronet_trace = 1;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
