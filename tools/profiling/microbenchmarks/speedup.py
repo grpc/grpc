@@ -40,7 +40,7 @@ def cmp(a, b):
 
 def speedup(new, old):
   s0, p0 = cmp(new, old)
-  if math.isnan(p0) return 0
+  if math.isnan(p0): return 0
   if s0 == 0: return 0
   if p0 > _THRESHOLD: return 0
   if s0 < 0:
