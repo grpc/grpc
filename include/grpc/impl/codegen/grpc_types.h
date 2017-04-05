@@ -205,17 +205,27 @@ typedef struct {
      a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
+/** How many misbehaving pings the server can bear before sending goaway and
+    closing the transport?
+    (0 indicates that the server can bear an infinite number of misbehaving
+     pings) */
+#define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
+/** Minimum allowed time between two pings without sending any data frame. Int
+    valued, seconds */
+#define GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS \
+  "grpc.http2.min_ping_interval_without_data_ms"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
 /** Should we allow receipt of true-binary data on http2 connections? */
 #define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
-/** After a duration of this time the client pings the server to see if the
-    transport is still alive. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIME_S "grpc.client_keepalive_time"
-/** After waiting for a duration of this time, if the client does not receive
-    the ping ack, it will close the transport. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S "grpc.client_keepalive_timeout"
+/** After a duration of this time the client/server pings its peer to see if the
+    transport is still alive. Int valued, milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIME_MS "grpc.keepalive_time_ms"
+/** After waiting for a duration of this time, if the keepalive ping sender does
+    not receive the ping ack, it will close the transport. Int valued,
+    milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
 #define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
