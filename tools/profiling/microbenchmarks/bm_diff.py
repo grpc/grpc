@@ -43,6 +43,7 @@ sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_test
 import comment_on_pr
 import jobset
 import itertools
+import speedup
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -180,16 +181,9 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      p = stats.ttest_ind(new, old)[1]
-      new_mdn = median(new)
-      old_mdn = median(old)
-      delta = new_mdn - old_mdn
-      ratio = changed_ratio(new_mdn, old_mdn)
-      print '%s: new=%r old=%r new_mdn=%f old_mdn=%f delta=%f(%f:%f) ratio=%f(%f:%f) p=%f' % (
-      f, new, old, new_mdn, old_mdn, delta, abs(delta), _INTERESTING[f]['abs_diff'], ratio, abs(ratio), _INTERESTING[f]['pct_diff']/100.0, p
-      )
-      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']/100.0:
-        self.final[f] = delta
+      s = speedup.speedup(new, old)
+      if s:
+        self.final[f] = '%d%%' % s
     return self.final.keys()
 
   def skip(self):
@@ -226,7 +220,7 @@ really_interesting = set()
 for name, bm in benchmarks.items():
   print name
   really_interesting.update(bm.process())
-fields = [f for f in args.track if f in args.track]
+fields = [f for f in args.track if f in really_interesting]
 
 headers = ['Benchmark'] + fields
 rows = []
