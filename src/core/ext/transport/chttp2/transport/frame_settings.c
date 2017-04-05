@@ -77,7 +77,6 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
 
   for (i = 0; i < count; i++) {
     if (new[i] != old[i] || (force_mask & (1u << i)) != 0) {
-      GPR_ASSERT(i);
       *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i] >> 8);
       *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i]);
       *p++ = (uint8_t)(new[i] >> 24);
