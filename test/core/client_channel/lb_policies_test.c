@@ -60,7 +60,8 @@ typedef struct servers_fixture {
   grpc_call **server_calls;
   grpc_completion_queue *cq;
   char **servers_hostports;
-  grpc_metadata_array *request_metadata_recv;
+  grpc_metadata **request_metadata_recv;
+  size_t *request_metadata_recv_count;
 } servers_fixture;
 
 typedef struct request_sequences {
@@ -155,8 +156,10 @@ static void kill_server(const servers_fixture *f, size_t i) {
 }
 
 typedef struct request_data {
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_slice details;
   grpc_status_code status;
   grpc_call_details *call_details;
@@ -179,7 +182,8 @@ static void revive_server(const servers_fixture *f, request_data *rdata,
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f->servers[i], &f->server_calls[i],
                                       &rdata->call_details[i],
-                                      &f->request_metadata_recv[i], f->cq,
+                                      &f->request_metadata_recv[i],
+                                      &f->request_metadata_recv_count[i], f->cq,
                                       f->cq, tag(1000 + (int)i)));
 }
 
@@ -191,14 +195,13 @@ static servers_fixture *setup_servers(const char *server_host,
 
   f->num_servers = num_servers;
   f->server_calls = gpr_malloc(sizeof(grpc_call *) * num_servers);
-  f->request_metadata_recv =
-      gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
+  f->request_metadata_recv = gpr_malloc(sizeof(grpc_metadata *) * num_servers);
+  f->request_metadata_recv_count = gpr_malloc(sizeof(size_t) * num_servers);
   /* Create servers. */
   f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
   f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
   f->cq = grpc_completion_queue_create(NULL);
   for (i = 0; i < num_servers; i++) {
-    grpc_metadata_array_init(&f->request_metadata_recv[i]);
     gpr_join_host_port(&f->servers_hostports[i], server_host,
                        grpc_pick_unused_port_or_die());
     f->servers[i] = 0;
@@ -226,7 +229,6 @@ static void teardown_servers(servers_fixture *f) {
 
   for (i = 0; i < f->num_servers; i++) {
     gpr_free(f->servers_hostports[i]);
-    grpc_metadata_array_destroy(&f->request_metadata_recv[i]);
   }
 
   gpr_free(f->servers_hostports);
@@ -283,8 +285,6 @@ static request_sequences perform_request(servers_fixture *f,
     }
 
     sequences.connections[iter_num] = -1;
-    grpc_metadata_array_init(&rdata->initial_metadata_recv);
-    grpc_metadata_array_init(&rdata->trailing_metadata_recv);
 
     for (i = 0; i < f->num_servers; i++) {
       grpc_call_details_init(&rdata->call_details[i]);
@@ -310,8 +310,9 @@ static request_sequences perform_request(servers_fixture *f,
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata =
+    op->data.recv_initial_metadata.initial_metadata =
         &rdata->initial_metadata_recv;
+    op->data.recv_initial_metadata.count = &rdata->initial_metadata_recv_count;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -397,8 +398,9 @@ static request_sequences perform_request(servers_fixture *f,
       GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                      f->servers[s_idx], &f->server_calls[s_idx],
                                      &rdata->call_details[s_idx],
-                                     &f->request_metadata_recv[s_idx], f->cq,
-                                     f->cq, tag(1000 + (int)s_idx)));
+                                     &f->request_metadata_recv[s_idx],
+                                     &f->request_metadata_recv_count[s_idx],
+                                     f->cq, f->cq, tag(1000 + (int)s_idx)));
     } else { /* no response from server */
       grpc_call_cancel(c, NULL);
       if (!completed_client) {
@@ -411,9 +413,6 @@ static request_sequences perform_request(servers_fixture *f,
         grpc_completion_queue_next(
             f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), NULL)
             .type == GRPC_QUEUE_TIMEOUT);
-
-    grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
-    grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
 
     cq_verifier_destroy(cqv);
 

@@ -82,7 +82,8 @@ typedef struct requested_call {
   grpc_completion_queue *cq_bound_to_call;
   grpc_call **call;
   grpc_cq_completion completion;
-  grpc_metadata_array *initial_metadata;
+  grpc_metadata **initial_metadata;
+  size_t *initial_metadata_count;
   union {
     struct {
       grpc_call_details *details;
@@ -155,7 +156,8 @@ struct call_data {
 
   grpc_metadata_batch *recv_initial_metadata;
   uint32_t recv_initial_metadata_flags;
-  grpc_metadata_array initial_metadata;
+  grpc_metadata *initial_metadata;
+  size_t initial_metadata_count;
 
   request_matcher *request_matcher;
   grpc_byte_buffer *payload;
@@ -489,7 +491,8 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
   grpc_call *call = calld->call;
   *rc->call = call;
   calld->cq_new = server->cqs[cq_idx];
-  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
+  *rc->initial_metadata = calld->initial_metadata;
+  *rc->initial_metadata_count = calld->initial_metadata_count;
   switch (rc->type) {
     case BATCH_CALL:
       GPR_ASSERT(calld->host_set);
@@ -849,8 +852,8 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata =
-      &calld->initial_metadata;
+  op.data.recv_initial_metadata.initial_metadata = &calld->initial_metadata;
+  op.data.recv_initial_metadata.count = &calld->initial_metadata_count;
   grpc_closure_init(&calld->got_initial_metadata, got_initial_metadata, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_call_start_batch_and_execute(exec_ctx, call, &op, 1,
@@ -909,7 +912,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (calld->path_set) {
     grpc_slice_unref_internal(exec_ctx, calld->path);
   }
-  grpc_metadata_array_destroy(&calld->initial_metadata);
 
   gpr_mu_destroy(&calld->mu_state);
 
@@ -1415,7 +1417,7 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
 
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *initial_metadata,
+    grpc_metadata **initial_metadata, size_t *initial_metadata_count,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   grpc_call_error error;
@@ -1448,6 +1450,7 @@ grpc_call_error grpc_server_request_call(
   rc->call = call;
   rc->data.batch.details = details;
   rc->initial_metadata = initial_metadata;
+  rc->initial_metadata_count = initial_metadata_count;
   error = queue_call_request(&exec_ctx, server, cq_idx, rc);
 done:
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1456,7 +1459,8 @@ done:
 
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *rmp, grpc_call **call, gpr_timespec *deadline,
-    grpc_metadata_array *initial_metadata, grpc_byte_buffer **optional_payload,
+    grpc_metadata **initial_metadata, size_t *initial_metadata_count,
+    grpc_byte_buffer **optional_payload,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   grpc_call_error error;
@@ -1498,6 +1502,7 @@ grpc_call_error grpc_server_request_registered_call(
   rc->data.registered.registered_method = rm;
   rc->data.registered.deadline = deadline;
   rc->initial_metadata = initial_metadata;
+  rc->initial_metadata_count = initial_metadata_count;
   rc->data.registered.optional_payload = optional_payload;
   error = queue_call_request(&exec_ctx, server, cq_idx, rc);
 done:
@@ -1508,7 +1513,7 @@ done:
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
                       size_t cq_idx, requested_call *rc, grpc_error *error) {
   *rc->call = NULL;
-  rc->initial_metadata->count = 0;
+  *rc->initial_metadata_count = 0;
   GPR_ASSERT(error != GRPC_ERROR_NONE);
 
   server_ref(server);

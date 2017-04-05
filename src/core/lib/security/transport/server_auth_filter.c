@@ -42,6 +42,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
+  gpr_arena *arena;
   grpc_metadata_batch *recv_initial_metadata;
   /* Closure to call when finished with the auth_on_recv hook. */
   grpc_closure *on_done_recv;
@@ -50,7 +51,8 @@ typedef struct call_data {
      handling it. */
   grpc_closure auth_on_recv;
   grpc_transport_stream_op_batch *transport_op;
-  grpc_metadata_array md;
+  grpc_metadata *md;
+  size_t md_count;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_auth_context *auth_context;
@@ -61,26 +63,19 @@ typedef struct channel_data {
   grpc_server_credentials *creds;
 } channel_data;
 
-static grpc_metadata_array metadata_batch_to_md_array(
-    const grpc_metadata_batch *batch) {
+static void metadata_batch_to_md_array(gpr_arena *arena,
+                                       const grpc_metadata_batch *batch,
+                                       grpc_metadata **result,
+                                       size_t *result_count) {
   grpc_linked_mdelem *l;
-  grpc_metadata_array result;
-  grpc_metadata_array_init(&result);
-  for (l = batch->list.head; l != NULL; l = l->next) {
-    grpc_metadata *usr_md = NULL;
+  *result_count = batch->list.count;
+  *result = gpr_arena_alloc(arena, sizeof(grpc_metadata) * batch->list.count);
+  grpc_metadata *usr_md = *result;
+  for (l = batch->list.head; l != NULL; l = l->next, usr_md++) {
     grpc_mdelem md = l->md;
-    grpc_slice key = GRPC_MDKEY(md);
-    grpc_slice value = GRPC_MDVALUE(md);
-    if (result.count == result.capacity) {
-      result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
-      result.metadata =
-          gpr_realloc(result.metadata, result.capacity * sizeof(grpc_metadata));
-    }
-    usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_slice_ref_internal(key);
-    usr_md->value = grpc_slice_ref_internal(value);
+    usr_md->key = grpc_slice_ref_internal(GRPC_MDKEY(md));
+    usr_md->value = grpc_slice_ref_internal(GRPC_MDVALUE(md));
   }
-  return result;
 }
 
 static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
@@ -123,18 +118,16 @@ static void on_md_processing_done(
         grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
                                    remove_consumed_md, elem,
                                    "Response metadata filtering error"));
-    for (size_t i = 0; i < calld->md.count; i++) {
-      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
-      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    for (size_t i = 0; i < calld->md_count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md[i].value);
     }
-    grpc_metadata_array_destroy(&calld->md);
     grpc_closure_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE);
   } else {
-    for (size_t i = 0; i < calld->md.count; i++) {
-      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
-      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    for (size_t i = 0; i < calld->md_count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md[i].value);
     }
-    grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
@@ -159,10 +152,11 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   channel_data *chand = elem->channel_data;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
-      calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
+      metadata_batch_to_md_array(calld->arena, calld->recv_initial_metadata,
+                                 &calld->md, &calld->md_count);
       chand->creds->processor.process(
-          chand->creds->processor.state, calld->auth_context,
-          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
+          chand->creds->processor.state, calld->auth_context, calld->md,
+          calld->md_count, on_md_processing_done, elem);
       return;
     }
   }
@@ -207,9 +201,10 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_server_security_context *server_ctx = NULL;
 
   /* initialize members */
-  memset(calld, 0, sizeof(*calld));
   grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem,
                     grpc_schedule_on_exec_ctx);
+
+  calld->arena = args->arena;
 
   if (args->context[GRPC_CONTEXT_SECURITY].value != NULL) {
     args->context[GRPC_CONTEXT_SECURITY].destroy(

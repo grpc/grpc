@@ -328,9 +328,12 @@ typedef struct glb_lb_policy {
 
   grpc_call *lb_call; /* streaming call to the LB server, */
 
-  grpc_metadata_array lb_initial_metadata_recv; /* initial MD from LB server */
-  grpc_metadata_array
-      lb_trailing_metadata_recv; /* trailing MD from LB server */
+  /* initial MD from LB server */
+  grpc_metadata *lb_initial_metadata_recv;
+  size_t lb_initial_metadata_recv_count;
+  /* trailing MD from LB server */
+  grpc_metadata *lb_trailing_metadata_recv;
+  size_t lb_trailing_metadata_recv_count;
 
   /* what's being sent to the LB server. Note that its value may vary if the LB
    * server indicates a redirect. */
@@ -1123,9 +1126,6 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       &host, glb_policy->deadline, NULL);
 
-  grpc_metadata_array_init(&glb_policy->lb_initial_metadata_recv);
-  grpc_metadata_array_init(&glb_policy->lb_trailing_metadata_recv);
-
   grpc_grpclb_request *request =
       grpc_grpclb_request_create(glb_policy->server_name);
   grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
@@ -1154,9 +1154,6 @@ static void lb_call_destroy_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(glb_policy->lb_call != NULL);
   grpc_call_destroy(glb_policy->lb_call);
   glb_policy->lb_call = NULL;
-
-  grpc_metadata_array_destroy(&glb_policy->lb_initial_metadata_recv);
-  grpc_metadata_array_destroy(&glb_policy->lb_trailing_metadata_recv);
 
   grpc_byte_buffer_destroy(glb_policy->lb_request_payload);
   grpc_slice_unref_internal(exec_ctx, glb_policy->lb_call_status_details);
@@ -1190,8 +1187,10 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op++;
 
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op->data.recv_initial_metadata.initial_metadata =
       &glb_policy->lb_initial_metadata_recv;
+  op->data.recv_initial_metadata.count =
+      &glb_policy->lb_initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;

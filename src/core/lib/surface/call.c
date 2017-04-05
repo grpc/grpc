@@ -145,6 +145,11 @@ typedef struct batch_control {
   grpc_transport_stream_op_batch op;
 } batch_control;
 
+typedef struct {
+  grpc_metadata **metadata;
+  size_t *count;
+} output_metadata;
+
 struct grpc_call {
   gpr_arena *arena;
   grpc_completion_queue *cq;
@@ -181,9 +186,8 @@ struct grpc_call {
   /* first idx: is_receiving, second idx: is_trailing */
   grpc_metadata_batch metadata_batch[2][2];
 
-  /* Buffered read metadata waiting to be returned to the application.
-     Element 0 is initial metadata, element 1 is trailing metadata. */
-  grpc_metadata_array *buffered_metadata[2];
+  /* output pointers to metadata: index is is_trailing */
+  output_metadata output_metadata[2];
 
   /* Packed received call statuses from various sources */
   gpr_atm status[STATUS_SOURCE_COUNT];
@@ -929,17 +933,12 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
                                  int is_trailing) {
   if (b->list.count == 0) return;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
-  grpc_metadata_array *dest;
-  grpc_metadata *mdusr;
-  dest = call->buffered_metadata[is_trailing];
-  if (dest->count + b->list.count > dest->capacity) {
-    dest->capacity =
-        GPR_MAX(dest->capacity + b->list.count, dest->capacity * 3 / 2);
-    dest->metadata =
-        gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
-  }
-  for (grpc_linked_mdelem *l = b->list.head; l != NULL; l = l->next) {
-    mdusr = &dest->metadata[dest->count++];
+  output_metadata *dest = &call->output_metadata[is_trailing];
+  *dest->metadata =
+      gpr_arena_alloc(call->arena, b->list.count * sizeof(grpc_metadata));
+  *dest->count = b->list.count;
+  grpc_metadata *mdusr = *dest->metadata;
+  for (grpc_linked_mdelem *l = b->list.head; l != NULL; l = l->next, ++mdusr) {
     /* we pass back borrowed slices that are valid whilst the call is valid */
     mdusr->key = GRPC_MDKEY(l->md);
     mdusr->value = GRPC_MDVALUE(l->md);
@@ -1582,8 +1581,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
            that case we're not necessarily covered by a poller. */
         stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = true;
-        call->buffered_metadata[0] =
-            op->data.recv_initial_metadata.recv_initial_metadata;
+        call->output_metadata[0] = (output_metadata){
+            .metadata = op->data.recv_initial_metadata.initial_metadata,
+            .count = op->data.recv_initial_metadata.count,
+        };
         grpc_closure_init(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
@@ -1629,8 +1630,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         call->requested_final_op = true;
-        call->buffered_metadata[1] =
-            op->data.recv_status_on_client.trailing_metadata;
+        call->output_metadata[1] = (output_metadata){
+            .metadata = op->data.recv_status_on_client.trailing_metadata,
+            .count = op->data.recv_status_on_client.trailing_metadata_count,
+        };
         call->final_op.client.status = op->data.recv_status_on_client.status;
         call->final_op.client.status_details =
             op->data.recv_status_on_client.status_details;

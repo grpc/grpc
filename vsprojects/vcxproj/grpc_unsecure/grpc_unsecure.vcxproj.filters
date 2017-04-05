@@ -328,9 +328,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
-      <Filter>src\core\lib\surface</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>

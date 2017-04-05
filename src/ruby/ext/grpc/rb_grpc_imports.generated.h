@@ -197,12 +197,6 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
-typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array *array);
-extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
-#define grpc_metadata_array_init grpc_metadata_array_init_import
-typedef void(*grpc_metadata_array_destroy_type)(grpc_metadata_array *array);
-extern grpc_metadata_array_destroy_type grpc_metadata_array_destroy_import;
-#define grpc_metadata_array_destroy grpc_metadata_array_destroy_import
 typedef void(*grpc_call_details_init_type)(grpc_call_details *details);
 extern grpc_call_details_init_type grpc_call_details_init_import;
 #define grpc_call_details_init grpc_call_details_init_import
@@ -314,13 +308,13 @@ extern grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 typedef void(*grpc_call_destroy_type)(grpc_call *call);
 extern grpc_call_destroy_type grpc_call_destroy_import;
 #define grpc_call_destroy grpc_call_destroy_import
-typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *request_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
+typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata *const *request_metadata, size_t *request_metadata_count, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
 typedef void *(*grpc_server_register_method_type)(grpc_server *server, const char *method, const char *host, grpc_server_register_method_payload_handling payload_handling, uint32_t flags);
 extern grpc_server_register_method_type grpc_server_register_method_import;
 #define grpc_server_register_method grpc_server_register_method_import
-typedef grpc_call_error(*grpc_server_request_registered_call_type)(grpc_server *server, void *registered_method, grpc_call **call, gpr_timespec *deadline, grpc_metadata_array *request_metadata, grpc_byte_buffer **optional_payload, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
+typedef grpc_call_error(*grpc_server_request_registered_call_type)(grpc_server *server, void *registered_method, grpc_call **call, gpr_timespec *deadline, grpc_metadata *const *request_metadata, size_t request_metadata_count, grpc_byte_buffer **optional_payload, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_registered_call_type grpc_server_request_registered_call_import;
 #define grpc_server_request_registered_call grpc_server_request_registered_call_import
 typedef grpc_server *(*grpc_server_create_type)(const grpc_channel_args *args, void *reserved);

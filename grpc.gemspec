@@ -481,7 +481,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/completion_queue_factory.c )
   s.files += %w( src/core/lib/surface/event_string.c )
   s.files += %w( src/core/lib/surface/lame_client.c )
-  s.files += %w( src/core/lib/surface/metadata_array.c )
   s.files += %w( src/core/lib/surface/server.c )
   s.files += %w( src/core/lib/surface/validate_metadata.c )
   s.files += %w( src/core/lib/surface/version.c )

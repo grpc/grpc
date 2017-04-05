@@ -356,7 +356,8 @@ static void start_backend_server(server_fixture *sf) {
     const string expected_token =
         strlen(sf->lb_token_prefix) == 0 ? "" : sf->lb_token_prefix +
                                                     std::to_string(sf->port);
-    GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
+    GPR_ASSERT(contains_metadata(request_metadata_recv,
+                                 request_metadata_recv_count, "lb-token",
                                  expected_token.c_str()));
 
     gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
@@ -501,12 +502,15 @@ static void perform_request(client_fixture *cf) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;

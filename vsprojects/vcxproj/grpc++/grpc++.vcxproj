@@ -789,8 +789,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.c">
