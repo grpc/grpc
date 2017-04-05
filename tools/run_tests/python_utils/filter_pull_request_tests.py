@@ -127,6 +127,9 @@ _WHITELIST_DICT = {
   'setup\.py$': [_PYTHON_TEST_SUITE]
 }
 
+# Regex that combines all keys in _WHITELIST_DICT
+_ALL_TRIGGERS = "(" + ")|(".join(_WHITELIST_DICT.keys()) + ")"
+
 # Add all triggers to their respective test suites
 for trigger, test_suites in six.iteritems(_WHITELIST_DICT):
   for test_suite in test_suites:
@@ -169,6 +172,21 @@ def _remove_irrelevant_tests(tests, skippable_labels):
           test.labels[2] not in skippable_labels]
 
 
+def affects_c_cpp(base_branch):
+  """
+  Determines if a pull request's changes affect C/C++. This function exists because
+  there are pull request tests that only test C/C++ code
+  :param base_branch: branch that a pull request is requesting to merge into
+  :return: boolean indicating whether C/C++ changes are made in pull request
+  """
+  changed_files = _get_changed_files(base_branch)
+  # Run all tests if any changed file is not in the whitelist dictionary
+  for changed_file in changed_files:
+    if not re.match(_ALL_TRIGGERS, changed_file):
+      return True
+  return not _can_skip_tests(changed_files, _CPP_TEST_SUITE.triggers + _CORE_TEST_SUITE.triggers)
+
+
 def filter_tests(tests, base_branch):
   """
   Filters out tests that are safe to ignore
@@ -181,11 +199,9 @@ def filter_tests(tests, base_branch):
     print('  %s' % changed_file)
   print('')
 
-  # Regex that combines all keys in _WHITELIST_DICT
-  all_triggers = "(" + ")|(".join(_WHITELIST_DICT.keys()) + ")"
-  # Check if all tests have to be run
+  # Run all tests if any changed file is not in the whitelist dictionary
   for changed_file in changed_files:
-    if not re.match(all_triggers, changed_file):
+    if not re.match(_ALL_TRIGGERS, changed_file):
       return(tests)
   # Figure out which language and platform tests to run
   skippable_labels = []
@@ -196,4 +212,3 @@ def filter_tests(tests, base_branch):
         skippable_labels.append(label)
   tests = _remove_irrelevant_tests(tests, skippable_labels)
   return tests
-
