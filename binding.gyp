@@ -45,9 +45,42 @@
     # Some Node installations use the system installation of OpenSSL, and on
     # some systems, the system OpenSSL still does not have ALPN support. This
     # will let users recompile gRPC to work without ALPN.
-    'grpc_alpn%': 'true'
+    'grpc_alpn%': 'true',
+    # Indicates that the library should be built with gcov.
+    'grpc_gcov%': 'false'
   },
   'target_defaults': {
+    'configurations': {
+      'Release': {
+        'cflags': [
+            '-O2',
+        ],
+        'defines': [
+            'NDEBUG',
+        ],
+      },
+      'Debug': {
+        'cflags': [
+            '-O0',
+        ],
+        'defines': [
+            '_DEBUG',
+            'DEBUG',
+        ],
+      },
+    },
+    'cflags': [
+        '-g',
+        '-Wall',
+        '-Wextra',
+        '-Werror',
+        '-Wno-long-long',
+        '-Wno-unused-parameter',
+        '-DOSATOMIC_USE_INLINED=1',
+    ],
+    'ldflags': [
+        '-g',
+    ],
     'include_dirs': [
       '.',
       'include'
@@ -63,6 +96,24 @@
           # re-enable libuv integration in C core.
           'GRPC_UV'
         ]
+      }],
+      ['grpc_gcov=="true"', {
+        'cflags': [
+            '-O0',
+            '-fprofile-arcs',
+            '-ftest-coverage',
+            '-Wno-return-type',
+        ],
+        'defines': [
+            '_DEBUG',
+            'DEBUG',
+            'GPR_GCOV',
+        ],
+        'ldflags': [
+            '-fprofile-arcs',
+            '-ftest-coverage',
+            '-rdynamic',
+        ],
       }],
       ['OS!="win" and runtime=="electron"', {
         "defines": [
@@ -126,26 +177,9 @@
           "ws2_32"
         ]
       }, { # OS != "win"
-        'variables': {
-          'config': '<!(echo $CONFIG)',
-        },
         'include_dirs': [
           '<(node_root_dir)/deps/zlib',
-          '<(node_root_dir)/deps/cares/include',
-        ],
-        'conditions': [
-          ['config=="gcov"', {
-            'cflags': [
-              '-ftest-coverage',
-              '-fprofile-arcs',
-              '-O0'
-            ],
-            'ldflags': [
-              '-ftest-coverage',
-              '-fprofile-arcs'
-            ]
-          }
-         ]
+          '<(node_root_dir)/deps/cares/include'
         ]
       }]
     ]
@@ -863,15 +897,9 @@
       ],
       'cflags': [
         '-std=c++11',
-        '-Wall',
         '-pthread',
-        '-g',
         '-zdefs',
-        '-Werror',
         '-Wno-error=deprecated-declarations'
-      ],
-      'ldflags': [
-        '-g'
       ],
       "conditions": [
         ['OS=="win" or runtime=="electron"', {

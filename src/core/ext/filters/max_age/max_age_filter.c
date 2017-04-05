@@ -46,6 +46,7 @@
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
+#define MAX_CONNECTION_AGE_JITTER 0.1
 
 typedef struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
@@ -254,6 +255,21 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
   }
 }
 
+/* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
+   connection storms. Note that the MAX_CONNECTION_AGE option without jitter
+   would not create connection storms by itself, but if there happened to be a
+   connection storm it could cause it to repeat at a fixed period. */
+static int add_random_max_connection_age_jitter(int value) {
+  /* generate a random number between 1 - MAX_CONNECTION_AGE_JITTER and
+     1 + MAX_CONNECTION_AGE_JITTER */
+  double multiplier = rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX +
+                      1.0 - MAX_CONNECTION_AGE_JITTER;
+  double result = multiplier * value;
+  /* INT_MAX - 0.5 converts the value to float, so that result will not be
+     cast to int implicitly before the comparison. */
+  return result > INT_MAX - 0.5 ? INT_MAX : (int)result;
+}
+
 /* Constructor for call_data. */
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
@@ -283,7 +299,9 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   chand->max_connection_age =
       DEFAULT_MAX_CONNECTION_AGE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_AGE_MS, GPR_TIMESPAN);
+          : gpr_time_from_millis(add_random_max_connection_age_jitter(
+                                     DEFAULT_MAX_CONNECTION_AGE_MS),
+                                 GPR_TIMESPAN);
   chand->max_connection_age_grace =
       DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
@@ -300,8 +318,10 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
           &args->channel_args->args[i],
           (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX});
       chand->max_connection_age =
-          value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_millis(value, GPR_TIMESPAN);
+          value == INT_MAX
+              ? gpr_inf_future(GPR_TIMESPAN)
+              : gpr_time_from_millis(
+                    add_random_max_connection_age_jitter(value), GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
