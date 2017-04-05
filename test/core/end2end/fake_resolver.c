@@ -32,6 +32,7 @@
 // This is similar to the sockaddr resolver, except that it supports a
 // bunch of query args that are useful for dependency injection in tests.
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +52,14 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
+
+#include "test/core/end2end/fake_resolver.h"
+
+#define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
+  "grpc.fake_resolver.response_generator"
+#define GRPC_ARG_FAKE_RESOLVER_LB_ENABLED "grpc.fake_resolver.lb_enabled"
+#define GRPC_ARG_FAKE_RESOLVER_BALANCER_NAMES \
+  "grpc.fake_resolver.balancer_names"
 
 //
 // fake_resolver
@@ -73,6 +82,38 @@ typedef struct {
   // target result address for next completion
   grpc_channel_args** target_result;
 } fake_resolver;
+
+grpc_arg grpc_fake_resolver_lb_enabled_arg() {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = GRPC_ARG_FAKE_RESOLVER_LB_ENABLED;
+  arg.value.integer = 1;
+  return arg;
+}
+
+grpc_arg grpc_fake_resolver_balancer_names_arg(
+    char* comma_separated_balancer_names) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_FAKE_RESOLVER_BALANCER_NAMES;
+  arg.value.string = comma_separated_balancer_names;
+  return arg;
+}
+
+bool grpc_fake_resolver_get_lb_enabled(const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_LB_ENABLED);
+  if (arg == NULL) return false;
+  return grpc_channel_arg_get_boolean(arg);
+}
+
+const char* grpc_fake_resolver_get_balancer_names(
+    const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_BALANCER_NAMES);
+  if (arg == NULL || arg->type != GRPC_ARG_STRING) return NULL;
+  return arg->value.string;
+}
 
 static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
@@ -131,33 +172,13 @@ static const grpc_resolver_vtable fake_resolver_vtable = {
     fake_resolver_destroy, fake_resolver_shutdown,
     fake_resolver_channel_saw_error, fake_resolver_next};
 
-//
-// fake_resolver_factory
-//
-
-static void fake_resolver_factory_ref(grpc_resolver_factory* factory) {}
-
-static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
-
 static void do_nothing(void* ignored) {}
-
-static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
-                                           grpc_resolver_factory* factory,
-                                           grpc_resolver_args* args) {
-  if (0 != strcmp(args->uri->authority, "")) {
-    gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
-            args->uri->scheme);
-    return NULL;
-  }
-  // Get lb_enabled arg.  Anything other than "0" is interpreted as true.
-  const char* lb_enabled_qpart =
-      grpc_uri_get_query_arg(args->uri, "lb_enabled");
-  const bool lb_enabled =
-      lb_enabled_qpart != NULL && strcmp("0", lb_enabled_qpart) != 0;
-
+static grpc_lb_addresses* build_addresses(grpc_exec_ctx* exec_ctx,
+                                          const grpc_uri* uri,
+                                          const grpc_channel_args* args) {
+  const bool lb_enabled = grpc_fake_resolver_get_lb_enabled(args);
   // Get the balancer's names.
-  const char* balancer_names =
-      grpc_uri_get_query_arg(args->uri, "balancer_names");
+  const char* balancer_names = grpc_fake_resolver_get_balancer_names(args);
   grpc_slice_buffer balancer_names_parts;
   grpc_slice_buffer_init(&balancer_names_parts);
   if (balancer_names != NULL) {
@@ -166,10 +187,9 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
     grpc_slice_split(balancer_names_slice, ",", &balancer_names_parts);
     grpc_slice_unref(balancer_names_slice);
   }
-
   // Construct addresses.
   grpc_slice path_slice =
-      grpc_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
+      grpc_slice_new(uri->path, strlen(uri->path), do_nothing);
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
@@ -186,10 +206,10 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
       grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    grpc_uri ith_uri = *args->uri;
+    grpc_uri ith_uri;
     char* part_str = grpc_slice_to_c_string(path_parts.slices[i]);
     ith_uri.path = part_str;
-    if (!parse_ipv4(&ith_uri, &addresses->addresses[i].address)) {
+    if (!grpc_parse_ipv4(&ith_uri, &addresses->addresses[i].address)) {
       errors_found = true;
     }
     gpr_free(part_str);
@@ -207,13 +227,119 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
     grpc_lb_addresses_destroy(exec_ctx, addresses);
     return NULL;
   }
+  return addresses;
+}
+
+struct grpc_fake_resolver_response_generator {
+  fake_resolver* resolver;  // Set by the fake_resolver constructor to itself.
+  gpr_refcount refcount;
+};
+
+grpc_fake_resolver_response_generator*
+grpc_fake_resolver_response_generator_create() {
+  grpc_fake_resolver_response_generator* generator =
+      gpr_zalloc(sizeof(*generator));
+  gpr_ref_init(&generator->refcount, 1);
+  return generator;
+}
+
+grpc_fake_resolver_response_generator*
+grpc_fake_resolver_response_generator_ref(
+    grpc_fake_resolver_response_generator* generator) {
+  gpr_ref(&generator->refcount);
+  return generator;
+}
+
+void grpc_fake_resolver_response_generator_unref(
+    grpc_fake_resolver_response_generator* generator) {
+  if (gpr_unref(&generator->refcount)) {
+    gpr_free(generator);
+  }
+}
+
+void grpc_fake_resolver_response_generator_set_response(
+    grpc_exec_ctx* exec_ctx,
+    const grpc_fake_resolver_response_generator* response_generator,
+    const grpc_uri* uri, const grpc_channel_args* args) {
+  if (response_generator->resolver == NULL) return;
+  fake_resolver* r = response_generator->resolver;
+  GPR_ASSERT(r != NULL);
+  gpr_mu_lock(&r->mu);
+  if (r->addresses != NULL) {
+    grpc_lb_addresses_destroy(exec_ctx, r->addresses);
+  }
+  r->addresses = build_addresses(exec_ctx, uri, args);
+  GPR_ASSERT(r->addresses);
+  r->published = false;
+  fake_resolver_maybe_finish_next_locked(exec_ctx, r);
+  gpr_mu_unlock(&r->mu);
+}
+
+static void* response_generator_arg_copy(void* p) {
+  return grpc_fake_resolver_response_generator_ref(p);
+}
+
+static void response_generator_arg_destroy(grpc_exec_ctx* exec_ctx, void* p) {
+  grpc_fake_resolver_response_generator_unref(p);
+}
+
+static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable response_generator_arg_vtable = {
+    response_generator_arg_copy, response_generator_arg_destroy,
+    response_generator_cmp};
+
+grpc_arg grpc_fake_resolver_response_generator_arg(
+    grpc_fake_resolver_response_generator* generator) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  arg.value.pointer.p = generator;
+  arg.value.pointer.vtable = &response_generator_arg_vtable;
+  return arg;
+}
+
+grpc_fake_resolver_response_generator*
+grpc_fake_resolver_get_response_generator(const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return NULL;
+  return arg->value.pointer.p;
+}
+
+//
+// fake_resolver_factory
+//
+
+static void fake_resolver_factory_ref(grpc_resolver_factory* factory) {}
+
+static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
+
+static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
+                                           grpc_resolver_factory* factory,
+                                           grpc_resolver_args* args) {
+  if (0 != strcmp(args->uri->authority, "")) {
+    gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
+            args->uri->scheme);
+    return NULL;
+  }
+  grpc_lb_addresses* addresses =
+      build_addresses(exec_ctx, args->uri, args->args);
+  if (addresses == NULL) return NULL;
+
   // Instantiate resolver.
-  fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
-  memset(r, 0, sizeof(*r));
-  r->channel_args = grpc_channel_args_copy(args->args);
+  fake_resolver* r = gpr_zalloc(sizeof(*r));
   r->addresses = addresses;
+  r->channel_args = grpc_channel_args_copy(args->args);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
+
+  grpc_fake_resolver_response_generator* response_generator =
+      grpc_fake_resolver_get_response_generator(args->args);
+  if (response_generator != NULL) {
+    response_generator->resolver = r;
+  }
+
   return &r->base;
 }
 

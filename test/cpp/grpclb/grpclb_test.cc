@@ -112,7 +112,7 @@ typedef struct server_fixture {
   grpc_call *server_call;
   grpc_completion_queue *cq;
   char *servers_hostport;
-  const char *balancer_name;
+  char *balancer_name;
   int port;
   const char *lb_token_prefix;
   gpr_thd_id tid;
@@ -573,28 +573,22 @@ static void perform_request(client_fixture *cf) {
 static void setup_client(const server_fixture *lb_server,
                          const server_fixture *backends, client_fixture *cf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *lb_uri;
-  // The grpclb LB policy will be automatically selected by virtue of
-  // the fact that the returned addresses are balancer addresses.
-  gpr_asprintf(&lb_uri, "test:///%s?lb_enabled=1&balancer_names=%s",
-               lb_server->servers_hostport, lb_server->balancer_name);
-
-  grpc_arg expected_target_arg;
-  expected_target_arg.type = GRPC_ARG_STRING;
-  expected_target_arg.key =
-      const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
 
   char *expected_target_names = NULL;
   const char *backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
-  expected_target_arg.value.string = const_cast<char *>(expected_target_names);
+  const grpc_arg new_args[] = {
+      grpc_fake_transport_expected_targets_arg(expected_target_names),
+      grpc_fake_resolver_balancer_names_arg(lb_server->balancer_name),
+      grpc_fake_resolver_lb_enabled_arg()};
+
   grpc_channel_args *args =
-      grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
+      grpc_channel_args_copy_and_add(NULL, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
   cf->cq = grpc_completion_queue_create(NULL);
-  cf->server_uri = lb_uri;
+  gpr_asprintf(&cf->server_uri, "test:///%s", lb_server->servers_hostport);
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
@@ -657,6 +651,7 @@ static void teardown_server(server_fixture *sf) {
 
   gpr_log(GPR_INFO, "Server[%s] bye bye", sf->servers_hostport);
   gpr_free(sf->servers_hostport);
+  gpr_free(sf->balancer_name);
 }
 
 static void fork_backend_server(void *arg) {
@@ -696,7 +691,7 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
-  tf.lb_server.balancer_name = BALANCERS_NAME;
+  tf.lb_server.balancer_name = gpr_strdup(BALANCERS_NAME);
   setup_server("127.0.0.1", &tf.lb_server);
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
   setup_client(&tf.lb_server, tf.lb_backends, &tf.client);

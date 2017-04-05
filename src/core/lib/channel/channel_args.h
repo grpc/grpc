@@ -121,6 +121,11 @@ typedef struct grpc_integer_options {
   int max_value;
 } grpc_integer_options;
 /** Returns the value of \a arg, subject to the contraints in \a options. */
-int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options);
+int grpc_channel_arg_get_integer(const grpc_arg *arg,
+                                 const grpc_integer_options options);
+
+/** Returns the value of \a arg interpreted as a boolean. Note that \a arg
+ * should be an integer arg. Returned value defaults to false. */
+bool grpc_channel_arg_get_boolean(const grpc_arg *arg);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

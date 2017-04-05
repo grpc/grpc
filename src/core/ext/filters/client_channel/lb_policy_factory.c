@@ -40,12 +40,11 @@
 
 grpc_lb_addresses* grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
-  grpc_lb_addresses* addresses = gpr_malloc(sizeof(grpc_lb_addresses));
+  grpc_lb_addresses* addresses = gpr_zalloc(sizeof(grpc_lb_addresses));
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = gpr_malloc(addresses_size);
-  memset(addresses->addresses, 0, addresses_size);
+  addresses->addresses = gpr_zalloc(addresses_size);
   return addresses;
 }
 
@@ -77,7 +76,7 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   memcpy(target->address.addr, address, address_len);
   target->address.len = address_len;
   target->is_balancer = is_balancer;
-  target->balancer_name = balancer_name;
+  target->balancer_name = gpr_strdup(balancer_name);
   target->user_data = user_data;
 }
 

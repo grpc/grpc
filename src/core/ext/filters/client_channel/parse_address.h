@@ -41,14 +41,14 @@
 
 /** Populate \a addr and \a len from \a uri, whose path is expected to contain a
  * unix socket path. Returns true upon success. */
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr);
+bool grpc_parse_unix(const grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
 /** Populate /a addr and \a len from \a uri, whose path is expected to contain a
  * host:port pair. Returns true upon success. */
-int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr);
+bool grpc_parse_ipv4(const grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
 /** Populate /a addr and \a len from \a uri, whose path is expected to contain a
  * host:port pair. Returns true upon success. */
-int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr);
+bool grpc_parse_ipv6(const grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */

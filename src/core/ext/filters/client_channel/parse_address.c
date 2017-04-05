@@ -48,7 +48,8 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
   struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
@@ -61,21 +62,24 @@ int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) { abort(); }
+int grpc_parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+  abort();
+}
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv4(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
   const char *host_port = uri->path;
   char *host;
   char *port;
   int port_num;
-  int result = 0;
+  bool result = false;
   struct sockaddr_in *in = (struct sockaddr_in *)resolved_addr->addr;
 
   if (*host_port == '/') ++host_port;
   if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
+    return false;
   }
 
   memset(resolved_addr, 0, sizeof(grpc_resolved_address));
@@ -98,14 +102,15 @@ int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
     goto done;
   }
 
-  result = 1;
+  result = true;
 done:
   gpr_free(host);
   gpr_free(port);
   return result;
 }
 
-int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv6(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
   const char *host_port = uri->path;
   char *host;
   char *port;
