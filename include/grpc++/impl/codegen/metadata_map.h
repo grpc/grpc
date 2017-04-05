@@ -35,6 +35,7 @@
 #define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 
 #include <grpc++/impl/codegen/slice.h>
+#include <atomic>
 #include <map>
 
 namespace grpc {
@@ -42,25 +43,45 @@ namespace grpc {
 class MetadataMap {
  public:
   void FillMap() {
-    for (size_t i = 0; i < size_; i++) {
-      // TODO(yangg) handle duplicates?
-      map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-          StringRefFromSlice(&metadata_[i].key),
-          StringRefFromSlice(&metadata_[i].value)));
-    }
+    GPR_CODEGEN_ASSERT(map_.load(std::memory_order::memory_order_relaxed) ==
+                       nullptr);
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref> *map() { return &map_; }
+  std::multimap<grpc::string_ref, grpc::string_ref> *map() {
+    return FetchMap();
+  }
   const std::multimap<grpc::string_ref, grpc::string_ref> *map() const {
-    return &map_;
+    return FetchMap();
   }
   grpc_metadata **pmetadata() { return &metadata_; }
   size_t *psize() { return &size_; }
 
  private:
+  typedef std::multimap<grpc::string_ref, grpc::string_ref> MapRep;
+
+  MapRep *FetchMap() const {
+    MapRep *r = map_.load(std::memory_order::memory_order_acquire);
+    if (r == nullptr) {
+      r = new MapRep;
+      for (size_t i = 0; i < size_; i++) {
+        r->insert(std::pair<grpc::string_ref, grpc::string_ref>(
+            StringRefFromSlice(&metadata_[i].key),
+            StringRefFromSlice(&metadata_[i].value)));
+      }
+      MapRep *prev = nullptr;
+      if (!map_.compare_exchange_strong(
+              prev, r, std::memory_order::memory_order_release,
+              std::memory_order::memory_order_relaxed)) {
+        delete r;
+        r = prev;
+      }
+    }
+    return r;
+  }
+
   grpc_metadata *metadata_ = nullptr;
   size_t size_ = 0;
-  std::multimap<grpc::string_ref, grpc::string_ref> map_;
+  mutable std::atomic<MapRep *> map_{nullptr};
 };
 
 }  // namespace grpc
