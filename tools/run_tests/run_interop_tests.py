@@ -607,17 +607,13 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
   common_options = [
       '--test_case=%s' % test_case,
       '--server_host=%s' % server_host,
+      '--server_port=%s' % server_port,
   ]
   if test_case in _HTTP2_BADSERVER_TEST_CASES:
-    # We are running the http2_badserver_interop test. Adjust command line accordingly.
-    offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
-    client_options = common_options + ['--server_port=%s' %
-                                       (int(server_port)+offset)]
-    cmdline = bash_cmdline(language.client_cmd_http2interop(client_options))
+    cmdline = bash_cmdline(language.client_cmd_http2interop(common_options))
     cwd = language.http2_cwd
   else:
-    client_options = interop_only_options + common_options + ['--server_port=%s' % server_port]
-    cmdline = bash_cmdline(language.client_cmd(client_options))
+    cmdline = bash_cmdline(language.client_cmd(common_options+interop_only_options))
     cwd = language.client_cwd
 
   environ = language.global_env()
@@ -653,30 +649,40 @@ def server_jobspec(language, docker_image, insecure=False):
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT,
                            '--use_tls=%s' % ('false' if insecure else 'true')]))
   environ = language.global_env()
+  docker_args = ['--name=%s' % container_name]
   if language.safename == 'http2':
     # we are running the http2 interop server. Open next N ports beginning
     # with the server port. These ports are used for http2 interop test
-    # (one test case per port). We also attach the docker container running
-    # the server to local network, so we don't have to mess with port mapping
-    port_args = [
-      '-p', str(_DEFAULT_SERVER_PORT+0),
-      '-p', str(_DEFAULT_SERVER_PORT+1),
-      '-p', str(_DEFAULT_SERVER_PORT+2),
-      '-p', str(_DEFAULT_SERVER_PORT+3),
-      '-p', str(_DEFAULT_SERVER_PORT+4),
-      '-p', str(_DEFAULT_SERVER_PORT+5),
-      '-p', str(_DEFAULT_SERVER_PORT+6),
-      '--net=host',
+    # (one test case per port).
+    docker_args += list(
+        itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
+                                      for i in range(
+                                          len(_HTTP2_BADSERVER_TEST_CASES))))
+    # Enable docker's healthcheck mechanism.
+    # This runs a Python script inside the container every second. The script
+    # pings the http2 server to verify it is ready. The 'health-retries' flag
+    # specifies the number of consecutive failures before docker will report
+    # the container's status as 'unhealthy'. Prior to the first 'health_retries'
+    # failures or the first success, the status will be 'starting'. 'docker ps'
+    # or 'docker inspect' can be used to see the health of the container on the
+    # command line.
+    docker_args += [
+        '--health-cmd=python test/http2_test/http2_server_health_check.py '
+        '--server_host=%s --server_port=%d'
+        % ('localhost', _DEFAULT_SERVER_PORT),
+        '--health-interval=1s',
+        '--health-retries=5',
+        '--health-timeout=10s',
     ]
+
   else:
-    port_args = ['-p', str(_DEFAULT_SERVER_PORT)]
+    docker_args += ['-p', str(_DEFAULT_SERVER_PORT)]
 
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
                                       environ=environ,
-                                      docker_args=port_args +
-                                        ['--name', container_name])
+                                      docker_args=docker_args)
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
@@ -849,7 +855,8 @@ languages = set(_LANGUAGES[l]
 languages_http2_badserver_interop = set()
 if args.http2_badserver_interop:
   languages_http2_badserver_interop = set(
-      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS)
+      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS
+      if 'all' in args.language or l in args.language)
 
 http2Interop = Http2Client() if args.http2_interop else None
 http2InteropServer = Http2Server() if args.http2_badserver_interop else None
@@ -888,8 +895,9 @@ if args.use_docker:
       sys.exit(1)
 
 # Start interop servers.
-server_jobs={}
-server_addresses={}
+server_jobs = {}
+server_addresses = {}
+http2_badserver_ports = ()
 try:
   for s in servers:
     lang = str(s)
@@ -899,12 +907,13 @@ try:
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
 
+  http2_badserver_job = None
   if args.http2_badserver_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
     spec = server_jobspec(http2InteropServer, docker_images.get(lang))
-    job = dockerjob.DockerJob(spec)
-    server_jobs[lang] = job
+    http2_badserver_job = dockerjob.DockerJob(spec)
+    server_jobs[lang] = http2_badserver_job
 
   jobs = []
   if args.cloud_to_prod:
@@ -981,13 +990,16 @@ try:
         jobs.append(test_job)
 
   if args.http2_badserver_interop:
+    http2_badserver_job.wait_for_healthy(timeout_seconds=600)
     for language in languages_http2_badserver_interop:
       for test_case in _HTTP2_BADSERVER_TEST_CASES:
+        offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
+        server_port = http2_badserver_job.mapped_port(_DEFAULT_SERVER_PORT+offset)
         test_job = cloud_to_cloud_jobspec(language,
                                           test_case,
                                           str(http2InteropServer),
                                           'localhost',
-                                          _DEFAULT_SERVER_PORT,
+                                          server_port,
                                           docker_image=docker_images.get(str(language)))
         jobs.append(test_job)
 
