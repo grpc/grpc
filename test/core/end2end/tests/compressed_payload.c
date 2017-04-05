@@ -65,16 +65,18 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -113,7 +115,6 @@ static void request_for_disabled_algorithm(
   grpc_call *s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
-  gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
   grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
@@ -150,6 +151,7 @@ static void request_for_disabled_algorithm(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -290,7 +292,6 @@ static void request_with_payload_template(
   grpc_call *s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
-  gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
   grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
@@ -329,6 +330,7 @@ static void request_with_payload_template(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),

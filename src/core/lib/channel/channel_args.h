@@ -113,6 +113,8 @@ grpc_channel_args *grpc_channel_args_set_socket_mutator(
 const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
                                        const char *name);
 
+bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args);
+
 typedef struct grpc_integer_options {
   int default_value;  // Return this if value is outside of expected bounds.
   int min_value;

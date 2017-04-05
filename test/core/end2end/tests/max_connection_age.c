@@ -57,7 +57,7 @@
    should be shorter than CALL_DEADLINE_S - CQ_MAX_CONNECTION_AGE_WAIT_TIME_S */
 #define CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S 2
 /* The grace period for the test to observe the channel shutdown process */
-#define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 300
+#define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
 static void *tag(intptr_t t) { return (void *)t; }
 
