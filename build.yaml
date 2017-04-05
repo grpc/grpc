@@ -480,6 +480,8 @@ filegroups:
   - src/core/ext/filters/http/http_filters_plugin.c
   - src/core/ext/filters/http/server/http_server_filter.c
   plugin: grpc_http_filters
+  uses:
+  - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h

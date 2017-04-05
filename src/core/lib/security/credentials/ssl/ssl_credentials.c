@@ -35,7 +35,6 @@
 
 #include <string.h>
 
-#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
 

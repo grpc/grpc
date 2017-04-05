@@ -8007,7 +8007,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
     "headers": [
       "src/core/ext/filters/http/client/http_client_filter.h", 
       "src/core/ext/filters/http/compress/compress_filter.h", 

@@ -205,6 +205,8 @@ typedef struct {
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
+/* Channel arg to override the http2 :scheme header */
+#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
     frame?
     (0 indicates that an infinite number of pings can be sent without sending

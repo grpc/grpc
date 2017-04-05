@@ -38,9 +38,6 @@
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_client_filter;
 
-/* Channel arg to override the http2 :scheme header */
-#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-
 /* Channel arg to determine maximum size of payload eligable for GET request */
 #define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
 
