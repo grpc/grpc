@@ -76,6 +76,8 @@ class Call : public Nan::ObjectWrap {
   Call(const Call &);
   Call &operator=(const Call &);
 
+  void DestroyCall();
+
   static NAN_METHOD(New);
   static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);

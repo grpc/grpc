@@ -515,16 +515,20 @@ void DestroyTag(void *tag) {
   delete tag_struct;
 }
 
+void Call::DestroyCall() {
+  if (this->wrapped_call != NULL) {
+    grpc_call_destroy(this->wrapped_call);
+    this->wrapped_call = NULL;
+  }
+}
+
 Call::Call(grpc_call *call) : wrapped_call(call),
                               pending_batches(0),
                               has_final_op_completed(false) {
 }
 
 Call::~Call() {
-  if (wrapped_call != NULL) {
-    grpc_call_destroy(wrapped_call);
-    wrapped_call = NULL;
-  }
+  DestroyCall();
 }
 
 void Call::Init(Local<Object> exports) {
@@ -570,10 +574,8 @@ void Call::CompleteBatch(bool is_final_op) {
     this->has_final_op_completed = true;
   }
   this->pending_batches--;
-  if (this->has_final_op_completed && this->pending_batches == 0 &&
-      this->wrapped_call != NULL) {
-    grpc_call_destroy(this->wrapped_call);
-    this->wrapped_call = NULL;
+  if (this->has_final_op_completed && this->pending_batches == 0) {
+    this->DestroyCall();
   }
 }
 
