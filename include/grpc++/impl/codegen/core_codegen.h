@@ -80,6 +80,7 @@ class CoreCodegen : public CoreCodegenInterface {
   grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;
 
+  grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;

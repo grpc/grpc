@@ -116,6 +116,8 @@ grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,
   return ::grpc_raw_byte_buffer_create(slice, nslices);
 }
 
+grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
+
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
   return ::grpc_slice_malloc(length);
 }

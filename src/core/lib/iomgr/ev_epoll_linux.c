@@ -56,6 +56,7 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
@@ -1467,8 +1468,9 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  int millis = gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  return millis >= 1 ? millis : 1;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -1650,6 +1652,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
       if (data_ptr == &global_wakeup_fd) {
+        grpc_timer_consume_kick();
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
@@ -1714,7 +1717,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   worker.pt_id = pthread_self();
   gpr_atm_no_barrier_store(&worker.is_kicked, (gpr_atm)0);
 
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
@@ -1792,7 +1795,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     gpr_mu_lock(&pollset->po.mu);
   }
 
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)0);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)0);

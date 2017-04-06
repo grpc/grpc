@@ -45,16 +45,18 @@
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -92,7 +94,6 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
                                         long delay_us) {
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f->cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -108,6 +109,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   config.init_client(f, client_args);
   config.init_server(f, server_args);
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
       grpc_slice_from_static_string("/foo"),

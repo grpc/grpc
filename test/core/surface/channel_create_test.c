@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"

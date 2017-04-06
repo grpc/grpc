@@ -45,8 +45,8 @@
 #include <grpc/support/string_util.h>
 
 extern "C" {
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -54,6 +54,7 @@ extern "C" {
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 }
@@ -152,6 +153,7 @@ static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
   grpc::testing::EchoResponse recv_response;
   grpc::Status recv_status;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
     reader->Finish(&recv_response, &recv_status, tag(0));
@@ -221,7 +223,7 @@ namespace dummy_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {}
+                                   grpc_transport_stream_op_batch *op) {}
 
 static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
@@ -296,7 +298,7 @@ void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_transport_stream_op *op) {
+                     grpc_stream *stream, grpc_transport_stream_op_batch *op) {
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
 
@@ -346,13 +348,15 @@ class SendEmptyMetadata {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = grpc_closure_init(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
+    op_.send_initial_metadata = true;
+    op_.payload = &op_payload_;
   }
 
   class Op {
    public:
     Op(grpc_exec_ctx *exec_ctx, SendEmptyMetadata *p, grpc_call_stack *s) {
       grpc_metadata_batch_init(&batch_);
-      p->op_.send_initial_metadata = &batch_;
+      p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
     void Finish(grpc_exec_ctx *exec_ctx) {
       grpc_metadata_batch_destroy(exec_ctx, &batch_);
@@ -366,7 +370,8 @@ class SendEmptyMetadata {
   const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_slice method_ = grpc_slice_from_static_string("/foo/bar");
-  grpc_transport_stream_op op_;
+  grpc_transport_stream_op_batch op_;
+  grpc_transport_stream_op_batch_payload op_payload_;
   grpc_closure closure_;
 };
 
@@ -426,6 +431,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   const int kArenaSize = 4096;
   call_args.arena = gpr_arena_create(kArenaSize);
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
                                           DoNothing, NULL, &call_args));
     typename TestOp::Op op(&exec_ctx, &test_op_data, call_stack);
@@ -488,13 +494,16 @@ namespace isolated_call_filter {
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {
+                                   grpc_transport_stream_op_batch *op) {
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
-                       GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE);
   }
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_NONE);
   }
   grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
@@ -590,6 +599,7 @@ static void BM_IsolatedCall_NoOp(benchmark::State &state) {
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_destroy(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL));
@@ -628,6 +638,7 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
   ops[5].data.recv_status_on_client.status_details = &status_details;
   ops[5].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call *call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL);
@@ -670,6 +681,7 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_start_batch(call, ops, 1, tag(2), NULL);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);

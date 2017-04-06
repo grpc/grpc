@@ -97,6 +97,8 @@ typedef struct {
 typedef struct {
   gpr_timespec min_time_between_pings;
   int max_pings_without_data;
+  int max_ping_strikes;
+  gpr_timespec min_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
@@ -105,6 +107,11 @@ typedef struct {
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
+
+typedef struct {
+  gpr_timespec last_ping_recv_time;
+  int ping_strikes;
+} grpc_chttp2_server_ping_recv_state;
 
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
@@ -316,6 +323,7 @@ struct grpc_chttp2_transport {
   size_t ping_ack_count;
   size_t ping_ack_capacity;
   uint64_t *ping_acks;
+  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
@@ -452,7 +460,6 @@ struct grpc_chttp2_stream {
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
   bool complete_fetch_covered_by_poller;
-  grpc_closure complete_fetch;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -793,6 +800,13 @@ void grpc_chttp2_incoming_byte_stream_finished(
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id);
 
+/** Add a new ping strike to ping_recv_state.ping_strikes. If
+    ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
+    with error code ENHANCE_YOUR_CALM and additional debug data resembling
+    “too_many_pings” followed by immediately closing the connection. */
+void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t);
+
 typedef enum {
   /* don't initiate a transport write, but piggyback on the next one */
   GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
@@ -832,6 +846,7 @@ uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
 
 /** Set the default keepalive configurations, must only be called at
     initialization */
-void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args);
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
+                                               bool is_client);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

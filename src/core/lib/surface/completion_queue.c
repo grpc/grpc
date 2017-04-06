@@ -365,7 +365,6 @@ static void dump_pending_tags(grpc_completion_queue *cc) {}
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline, void *reserved) {
   grpc_event ret;
-  grpc_pollset_worker *worker = NULL;
   gpr_timespec now;
 
   if (cc->completion_type != GRPC_CQ_NEXT) {
@@ -453,8 +452,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(cc->mu);
       continue;
     } else {
-      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc),
-                                          &worker, now, iteration_deadline);
+      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), NULL,
+                                          now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);

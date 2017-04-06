@@ -75,16 +75,18 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -145,7 +147,6 @@ static void request_response_with_payload_and_call_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
   grpc_end2end_test_fixture f;
   cq_verifier *cqv;
   grpc_op ops[6];
@@ -167,6 +168,7 @@ static void request_response_with_payload_and_call_creds(
   f = begin_test(config, test_name, 0);
   cqv = cq_verifier_create(f.cq);
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -385,7 +387,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_op *op;
   grpc_call *c;
   grpc_end2end_test_fixture f;
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = five_seconds_from_now();
   cq_verifier *cqv;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
