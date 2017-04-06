@@ -47,16 +47,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
-
-/* Channel arg (integer) setting how large a slice to try and read from the wire
-   each time recvmsg (or equivalent) is called */
-#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
-#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
-  "grpc.experimental.tcp_min_read_chunk_size"
-#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
-  "grpc.experimental.tcp_max_read_chunk_size"
-
 extern int grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.

@@ -37,7 +37,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/iomgr/tcp_posix.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 

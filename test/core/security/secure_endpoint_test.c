@@ -42,7 +42,6 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/fake_transport_security.h"
