@@ -36,6 +36,8 @@
 
 /* Lock free event notification for file descriptors */
 
+#include <grpc/support/atm.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 void grpc_lfev_init(gpr_atm *state);
