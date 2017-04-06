@@ -841,9 +841,9 @@ TEST_P(AsyncEnd2endTest, ServerCheckShutdown) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message(GetParam().message_content);
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  // send_request.set_message(GetParam().message_content);
+  // std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+  //     stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
