@@ -143,18 +143,6 @@ static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
   op->on_complete = &deadline_state->on_complete;
 }
 
-void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_stack* call_stack) {
-  grpc_deadline_state* deadline_state = elem->call_data;
-  deadline_state->call_stack = call_stack;
-}
-
-void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
-                                 grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state = elem->call_data;
-  cancel_timer_if_needed(exec_ctx, deadline_state);
-}
-
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
@@ -169,8 +157,11 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
   gpr_free(state);
 }
 
-void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec deadline) {
+void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                              grpc_call_stack* call_stack,
+                              gpr_timespec deadline) {
+  grpc_deadline_state* deadline_state = elem->call_data;
+  deadline_state->call_stack = call_stack;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -189,6 +180,12 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                       grpc_schedule_on_exec_ctx);
     grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
+}
+
+void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
+                                 grpc_call_element* elem) {
+  grpc_deadline_state* deadline_state = elem->call_data;
+  cancel_timer_if_needed(exec_ctx, deadline_state);
 }
 
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
@@ -250,8 +247,7 @@ typedef struct server_call_data {
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
-  grpc_deadline_state_start(exec_ctx, elem, args->deadline);
+  grpc_deadline_state_init(exec_ctx, elem, args->call_stack, args->deadline);
   return GRPC_ERROR_NONE;
 }
 

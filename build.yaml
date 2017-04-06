@@ -173,7 +173,6 @@ filegroups:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   headers:
-  - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -280,7 +279,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/ext/filters/deadline/deadline_filter.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -476,8 +474,8 @@ filegroups:
   - src/core/ext/filters/http/server/http_server_filter.h
   src:
   - src/core/ext/filters/http/client/http_client_filter.c
-  - src/core/ext/filters/http/message_compress/message_compress_filter.c
   - src/core/ext/filters/http/http_filters_plugin.c
+  - src/core/ext/filters/http/message_compress/message_compress_filter.c
   - src/core/ext/filters/http/server/http_server_filter.c
   plugin: grpc_http_filters
   uses:

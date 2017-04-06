@@ -83,7 +83,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
     src/core/lib/surface/init.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -226,8 +225,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
@@ -278,6 +277,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
@@ -641,7 +641,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/compress)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/message_compress)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)

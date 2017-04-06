@@ -958,9 +958,9 @@ src/core/ext/filters/deadline/deadline_filter.c \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.c \
 src/core/ext/filters/http/client/http_client_filter.h \
+src/core/ext/filters/http/http_filters_plugin.c \
 src/core/ext/filters/http/message_compress/message_compress_filter.c \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
-src/core/ext/filters/http/http_filters_plugin.c \
 src/core/ext/filters/http/server/http_server_filter.c \
 src/core/ext/filters/http/server/http_server_filter.h \
 src/core/ext/filters/load_reporting/load_reporting.c \

@@ -2813,7 +2813,6 @@ endif
 
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -2956,8 +2955,8 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
@@ -3008,6 +3007,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
@@ -3134,7 +3134,6 @@ endif
 
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3280,8 +3279,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
     src/core/ext/filters/client_channel/client_channel.c \
@@ -3303,6 +3302,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -3441,7 +3441,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_server_client.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3669,7 +3668,6 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -3813,8 +3811,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -3840,6 +3838,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
@@ -4063,7 +4062,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -4397,7 +4395,6 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -4546,8 +4543,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
     src/core/ext/filters/client_channel/client_channel.c \
@@ -4569,6 +4566,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
@@ -5087,7 +5085,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \

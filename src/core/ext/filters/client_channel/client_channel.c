@@ -1278,8 +1278,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->owning_call = args->call_stack;
   calld->arena = args->arena;
   if (chand->deadline_checking_enabled) {
-    grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
-    grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
+    grpc_deadline_state_init(exec_ctx, elem, args->call_stack, calld->deadline);
   }
   return GRPC_ERROR_NONE;
 }

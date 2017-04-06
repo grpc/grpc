@@ -300,7 +300,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -426,7 +425,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h" />
@@ -471,6 +470,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.h" />
@@ -505,8 +505,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>
@@ -792,9 +790,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
     </ClCompile>
@@ -895,6 +893,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
     </ClCompile>

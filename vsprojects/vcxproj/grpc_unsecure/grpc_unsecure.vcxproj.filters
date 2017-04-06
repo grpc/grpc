@@ -7,9 +7,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
-      <Filter>src\core\ext\filters\deadline</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -439,11 +436,11 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
       <Filter>src\core\ext\filters\http\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.c">
-      <Filter>src\core\ext\filters\http\compress</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
       <Filter>src\core\ext\filters\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
       <Filter>src\core\ext\filters\http\server</Filter>
@@ -519,6 +516,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -713,9 +713,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
-      <Filter>src\core\ext\filters\deadline</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -1091,8 +1088,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h">
       <Filter>src\core\ext\filters\http\client</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.h">
-      <Filter>src\core\ext\filters\http\compress</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h">
       <Filter>src\core\ext\filters\http\server</Filter>
@@ -1156,6 +1153,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -1331,8 +1331,8 @@
     <Filter Include="src\core\ext\filters\http\client">
       <UniqueIdentifier>{95cd5972-7339-6f09-2332-e6769b3cba3f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\filters\http\compress">
-      <UniqueIdentifier>{b257d9a5-2100-4b83-9a03-d28707827b1e}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\http\message_compress">
+      <UniqueIdentifier>{cf8cb886-3020-e143-317e-730ff9bbddc3}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\http\server">
       <UniqueIdentifier>{2c1e7897-6f69-f8b9-0b90-5c3fae59a48f}</UniqueIdentifier>

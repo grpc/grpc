@@ -64,14 +64,10 @@ typedef struct grpc_deadline_state {
 
 // assumes elem->call_data is zero'd
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_stack* call_stack);
+                              grpc_call_stack* call_stack,
+                              gpr_timespec deadline);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
-
-// Starts the timer with the specified deadline.
-// Should be called from the filter's init_call_elem() method.
-void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec deadline);
 
 // Cancels the existing timer and starts a new one with new_deadline.
 //

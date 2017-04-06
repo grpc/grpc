@@ -4,9 +4,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
-      <Filter>src\core\ext\filters\deadline</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -433,11 +430,11 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
       <Filter>src\core\ext\filters\http\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.c">
-      <Filter>src\core\ext\filters\http\compress</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
       <Filter>src\core\ext\filters\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
       <Filter>src\core\ext\filters\http\server</Filter>
@@ -588,6 +585,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
       <Filter>src\core\ext\transport\chttp2\client</Filter>
@@ -800,9 +800,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
-      <Filter>src\core\ext\filters\deadline</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -1178,8 +1175,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h">
       <Filter>src\core\ext\filters\http\client</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\compress\compress_filter.h">
-      <Filter>src\core\ext\filters\http\compress</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h">
       <Filter>src\core\ext\filters\http\server</Filter>
@@ -1312,6 +1309,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h">
       <Filter>src\core\ext\transport\chttp2\client</Filter>
@@ -1490,8 +1490,8 @@
     <Filter Include="src\core\ext\filters\http\client">
       <UniqueIdentifier>{e4f7616b-2b49-7df9-8ca3-eb7848d4609d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\filters\http\compress">
-      <UniqueIdentifier>{8f3d6045-e672-b61f-437e-052557970f41}</UniqueIdentifier>
+    <Filter Include="src\core\ext\filters\http\message_compress">
+      <UniqueIdentifier>{7b595f5a-c5b5-29fe-74c2-5ec5fd5c94d2}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\http\server">
       <UniqueIdentifier>{a40e82ca-0c04-35b8-898d-7ad5f323d110}</UniqueIdentifier>
