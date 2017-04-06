@@ -732,6 +732,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+        "grpc_deadline_filter",
     ],
 )
 
