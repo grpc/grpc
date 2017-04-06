@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/max_age/max_age_filter.h"
 
 #include <limits.h>
 #include <string.h>
@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/service_config.h"
 
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
