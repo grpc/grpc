@@ -91,7 +91,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, grpc_fd *emfd, void *user_data) {
 }
 
 static void on_fd_orphaned(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
-                           grpc_closure* closure, void *user_data) {
+                           grpc_closure *closure, void *user_data) {
   gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
           grpc_fd_wrapped_fd(emfd));
   g_number_of_orphan_calls++;
