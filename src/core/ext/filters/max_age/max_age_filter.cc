@@ -97,6 +97,7 @@ static void increase_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
 /* Decrease the nubmer of active calls. After the decrement, if there are no
    calls, the max_idle_timer should be started. */
 static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
+retry:
   while (gpr_atm_full_fetch_add(&chand->call_count, -1) == 2) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_idle_timer");
     grpc_timer_init(exec_ctx, &chand->max_idle_timer,
@@ -110,7 +111,10 @@ static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
                              "max_age max_idle_timer");
     gpr_atm_full_fetch_add(&chand->call_count, 1);
   }
-  gpr_atm_full_fetch_add(&chand->call_count, -1);
+  if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
+    gpr_atm_full_fetch_add(&chand->call_count, 2);
+    goto retry;
+  }
 }
 
 static void start_max_idle_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
@@ -164,10 +168,8 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
 static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   channel_data* chand = (channel_data*)arg;
-  gpr_atm_no_barrier_fetch_add(&chand->call_count, 2);
   if (error == GRPC_ERROR_NONE) {
-    /* Prevent the max idle timer from being set again */
-    gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
+    gpr_atm_no_barrier_fetch_add(&chand->call_count, 2);
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
