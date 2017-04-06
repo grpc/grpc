@@ -338,7 +338,7 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
-const grpc_channel_filter grpc_compress_filter = {
+const grpc_channel_filter grpc_message_compress_filter = {
     compress_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),

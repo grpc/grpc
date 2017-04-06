@@ -46,7 +46,7 @@ typedef struct {
 } optional_filter;
 
 static optional_filter compress_filter = {
-    &grpc_compress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION};
+    &grpc_message_compress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION};
 
 static bool is_building_http_like_transport(
     grpc_channel_stack_builder *builder) {
