@@ -84,7 +84,12 @@ exports.serializeCls = function serializeCls(Cls) {
    * @return {Buffer} The serialized object
    */
   return function serialize(arg) {
-    return new Buffer(new Cls(arg).encode().toBuffer());
+    // maybe we already have a protobufjs object?
+    if (!(arg instanceof Cls)) {
+      // nope - create one
+      arg = new Cls(arg);
+    }
+    return new Buffer(arg.encode().toBuffer());
   };
 };
 
