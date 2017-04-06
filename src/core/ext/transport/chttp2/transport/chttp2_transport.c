@@ -1621,8 +1621,9 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
             exec_ctx, &s->unprocessed_incoming_frames_buffer);
       }
     }
+    bool pending_data = s->pending_byte_stream || s->unprocessed_incoming_frames_buffer.length > 0;
     if (s->read_closed && s->frame_storage.length == 0 &&
-        (!s->pending_byte_stream || s->seen_error) &&
+        (!pending_data || s->seen_error) &&
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
