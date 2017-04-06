@@ -223,17 +223,13 @@ message_size_limits get_message_size_limits(
   for (size_t i = 0; i < channel_args->num_args; ++i) {
     if (strcmp(channel_args->args[i].key, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) ==
         0) {
-      const grpc_integer_options options = {
-          default_size(channel_args, GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH), 0,
-          INT_MAX};
+      const grpc_integer_options options = {lim.max_send_size, 0, INT_MAX};
       lim.max_send_size =
           grpc_channel_arg_get_integer(&channel_args->args[i], options);
     }
     if (strcmp(channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {
-          default_size(channel_args, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH), 0,
-          INT_MAX};
+      const grpc_integer_options options = {lim.max_recv_size, 0, INT_MAX};
       lim.max_recv_size =
           grpc_channel_arg_get_integer(&channel_args->args[i], options);
     }
