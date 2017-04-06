@@ -87,6 +87,7 @@ struct grpc_fd {
   gpr_atm refst;
 
   grpc_wakeup_fd workqueue_wakeup_fd;
+  grpc_closure_scheduler workqueue_scheduler;
 
   /* The fd is either closed or we relinquished control of it. In either
      cases, this indicates that the 'fd' on this structure is no longer
@@ -105,21 +106,6 @@ struct grpc_fd {
 
   grpc_iomgr_object iomgr_object;
 };
-
-/* Reference counting for fds */
-// #define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
-static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
-                     int line);
-#define GRPC_FD_REF(fd, reason) fd_ref(fd, reason, __FILE__, __LINE__)
-#define GRPC_FD_UNREF(fd, reason) fd_unref(fd, reason, __FILE__, __LINE__)
-#else
-static void fd_ref(grpc_fd *fd);
-static void fd_unref(grpc_fd *fd);
-#define GRPC_FD_REF(fd, reason) fd_ref(fd)
-#define GRPC_FD_UNREF(fd, reason) fd_unref(fd)
-#endif
 
 static void fd_global_init(void);
 static void fd_global_shutdown(void);
@@ -168,49 +154,6 @@ static bool append_error(grpc_error **composite, grpc_error *error,
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
-}
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
-                                     const char *file, int line,
-                                     const char *reason) {
-  if (workqueue != NULL) {
-    abort();
-  }
-  return workqueue;
-}
-
-static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            const char *file, int line, const char *reason) {
-  if (workqueue != NULL) {
-    abort();
-  }
-}
-#else
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
-  if (workqueue != NULL) {
-    abort();
-  }
-  return workqueue;
-}
-
-static void workqueue_unref(grpc_exec_ctx *exec_ctx,
-                            grpc_workqueue *workqueue) {
-  if (workqueue != NULL) {
-    abort();
-  }
-}
-#endif
-
-static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                              grpc_error *error) {
-  GPR_TIMER_BEGIN("workqueue.enqueue", 0);
-  // grpc_workqueue *workqueue = (grpc_workqueue *)closure->scheduler;
-  abort();
-}
-
-static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
-  abort();
 }
 
 /*******************************************************************************
@@ -323,6 +266,10 @@ static grpc_fd *fd_create(int fd, const char *name) {
   grpc_lfev_init(&new_fd->write_closure);
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
+  GRPC_LOG_IF_ERROR("fd_create",
+                    grpc_wakeup_fd_init(&new_fd->workqueue_wakeup_fd));
+  new_fd->workqueue_scheduler.vtable = &workqueue_scheduler_vtable;
+
   new_fd->freelist_next = NULL;
   new_fd->on_done_closure = NULL;
 
@@ -412,6 +359,50 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { abort(); }
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
+                                     const char *file, int line,
+                                     const char *reason) {
+  if (workqueue != NULL) {
+    ref_by((grpc_fd *)workqueue, 2, file, line, reason);
+  }
+  return workqueue;
+}
+
+static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            const char *file, int line, const char *reason) {
+  if (workqueue != NULL) {
+    unref_by((grpc_fd *)workqueue, 2, file, line, reason);
+  }
+}
+#else
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
+  if (workqueue != NULL) {
+    ref_by((grpc_fd *)workqueue, 2);
+  }
+  return workqueue;
+}
+
+static void workqueue_unref(grpc_exec_ctx *exec_ctx,
+                            grpc_workqueue *workqueue) {
+  if (workqueue != NULL) {
+    unref_by((grpc_fd *)workqueue, 2);
+  }
+}
+#endif
+
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                              grpc_error *error) {
+  GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  grpc_fd *fd = (grpc_fd *)(((char *)closure->scheduler) -
+                            offsetof(grpc_fd, workqueue_scheduler));
+  abort();
+}
+
+static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
+  return &((grpc_fd *)workqueue)->workqueue_scheduler;
+}
 
 /*******************************************************************************
  * Pollset Definitions
