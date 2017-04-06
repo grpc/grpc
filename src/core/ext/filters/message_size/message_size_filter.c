@@ -91,8 +91,7 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
 }
 
 typedef struct call_data {
-  int max_send_size;
-  int max_recv_size;
+  message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to
   // call our next_recv_message_ready member after handling it.
@@ -104,8 +103,7 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  int max_send_size;
-  int max_recv_size;
+  message_size_limits limits;
   // Maps path names to message_size_limits structs.
   grpc_slice_hash_table* method_limit_table;
 } channel_data;
@@ -116,12 +114,12 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                                grpc_error* error) {
   grpc_call_element* elem = user_data;
   call_data* calld = elem->call_data;
-  if (*calld->recv_message != NULL && calld->max_recv_size >= 0 &&
-      (*calld->recv_message)->length > (size_t)calld->max_recv_size) {
+  if (*calld->recv_message != NULL && calld->limits.max_recv_size >= 0 &&
+      (*calld->recv_message)->length > (size_t)calld->limits.max_recv_size) {
     char* message_string;
     gpr_asprintf(&message_string,
                  "Received message larger than max (%u vs. %d)",
-                 (*calld->recv_message)->length, calld->max_recv_size);
+                 (*calld->recv_message)->length, calld->limits.max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
@@ -143,13 +141,13 @@ static void start_transport_stream_op_batch(
     grpc_transport_stream_op_batch* op) {
   call_data* calld = elem->call_data;
   // Check max send message size.
-  if (op->send_message && calld->max_send_size >= 0 &&
+  if (op->send_message && calld->limits.max_send_size >= 0 &&
       op->payload->send_message.send_message->length >
-          (size_t)calld->max_send_size) {
+          (size_t)calld->limits.max_send_size) {
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->payload->send_message.send_message->length,
-                 calld->max_send_size);
+                 calld->limits.max_send_size);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
@@ -182,21 +180,20 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response
   // size to the receive limit.
-  calld->max_send_size = chand->max_send_size;
-  calld->max_recv_size = chand->max_recv_size;
+  calld->limits = chand->limits;
   if (chand->method_limit_table != NULL) {
     message_size_limits* limits = grpc_method_config_table_get(
         exec_ctx, chand->method_limit_table, args->path);
     if (limits != NULL) {
       if (limits->max_send_size >= 0 &&
-          (limits->max_send_size < calld->max_send_size ||
-           calld->max_send_size < 0)) {
-        calld->max_send_size = limits->max_send_size;
+          (limits->max_send_size < calld->limits.max_send_size ||
+           calld->limits.max_send_size < 0)) {
+        calld->limits.max_send_size = limits->max_send_size;
       }
       if (limits->max_recv_size >= 0 &&
-          (limits->max_recv_size < calld->max_recv_size ||
-           calld->max_recv_size < 0)) {
-        calld->max_recv_size = limits->max_recv_size;
+          (limits->max_recv_size < calld->limits.max_recv_size ||
+           calld->limits.max_recv_size < 0)) {
+        calld->limits.max_recv_size = limits->max_recv_size;
       }
     }
   }
@@ -216,13 +213,9 @@ static int default_size(const grpc_channel_args* args,
   return without_minimal_stack;
 }
 
-typedef struct {
-  int max_recv_size;
-  int max_send_size;
-} channel_limits;
-
-channel_limits get_channel_limits(const grpc_channel_args* channel_args) {
-  channel_limits lim;
+message_size_limits get_message_size_limits(
+    const grpc_channel_args* channel_args) {
+  message_size_limits lim;
   lim.max_send_size =
       default_size(channel_args, GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
   lim.max_recv_size =
@@ -254,9 +247,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  channel_limits lim = get_channel_limits(args->channel_args);
-  chand->max_send_size = lim.max_send_size;
-  chand->max_recv_size = lim.max_recv_size;
+  chand->limits = get_message_size_limits(args->channel_args);
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
@@ -302,7 +293,7 @@ static bool maybe_add_message_size_filter(grpc_exec_ctx* exec_ctx,
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = false;
-  channel_limits lim = get_channel_limits(channel_args);
+  message_size_limits lim = get_message_size_limits(channel_args);
   if (lim.max_send_size != INT_MAX || lim.max_recv_size != INT_MAX) {
     enable = true;
   }

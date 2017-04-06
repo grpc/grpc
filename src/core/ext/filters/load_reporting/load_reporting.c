@@ -63,14 +63,8 @@ void grpc_call_set_load_reporting_cost_context(
 }
 
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
-  if (a == NULL) return false;
-  for (size_t i = 0; i < a->num_args; i++) {
-    if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
-      return a->args[i].type == GRPC_ARG_INTEGER &&
-             a->args[i].value.integer != 0;
-    }
-  }
-  return false;
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(a, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
 }
 
 static bool maybe_add_load_reporting_filter(grpc_exec_ctx *exec_ctx,

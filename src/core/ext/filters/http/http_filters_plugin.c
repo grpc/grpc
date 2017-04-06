@@ -61,12 +61,9 @@ static bool maybe_add_optional_filter(grpc_exec_ctx *exec_ctx,
   optional_filter *filtarg = arg;
   const grpc_channel_args *channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  bool enable = !grpc_channel_args_want_minimal_stack(channel_args);
-  const grpc_arg *ctlarg =
-      grpc_channel_args_find(channel_args, filtarg->control_channel_arg);
-  if (ctlarg != NULL) {
-    enable = !(ctlarg->type == GRPC_ARG_INTEGER && ctlarg->value.integer == 0);
-  }
+  bool enable = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(channel_args, filtarg->control_channel_arg),
+      !grpc_channel_args_want_minimal_stack(channel_args));
   return enable ? grpc_channel_stack_builder_prepend_filter(
                       builder, filtarg->filter, NULL, NULL)
                 : true;

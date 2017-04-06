@@ -346,13 +346,9 @@ const grpc_channel_filter grpc_server_deadline_filter = {
 };
 
 bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
-  bool enable = !grpc_channel_args_want_minimal_stack(channel_args);
-  const grpc_arg* a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS);
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != 0) {
-    enable = true;
-  }
-  return enable;
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS),
+      !grpc_channel_args_want_minimal_stack(channel_args));
 }
 
 static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
