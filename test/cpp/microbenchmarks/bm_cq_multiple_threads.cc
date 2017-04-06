@@ -124,6 +124,8 @@ static void BM_Cq_Throughput(benchmark::State& state) {
     grpc_completion_queue_next(g_cq, deadline, NULL);
   }
 
+  state.SetItemsProcessed(state.iterations());
+
   if (state.thread_index == 0) {
     grpc_completion_queue_shutdown(g_cq);
     grpc_completion_queue_destroy(g_cq);
